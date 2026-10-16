@@ -96,7 +96,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args \
 
 키 입력은 Gazebo 창이 아닌 이 터미널에서 받는다. `i`: 전진, `u/o`: 전진하면서 회전, `j/l`: 제자리 회전, `k`: 정지. Shift+J/L의 횡이동은 기존 보행 제어기의 실제 구현·안정성을 확인한 뒤 사용한다.
 
-키를 놓는 것만으로 정지한다고 가정하지 않는다. 구간마다 `k`를 눌러 정지한다. `Ctrl+C` 후에도 움직임이 남으면 별도 터미널에서 다음 정지 명령을 보낸다. 기존 FSM의 명령 수신 watchdog을 이번 작업에서 추가한 것은 아니다.
+키를 놓는 것만으로 정지한다고 가정하지 않는다. 구간마다 `k`를 눌러 정지한다. `Ctrl+C` 후에도 움직임이 남으면 별도 터미널에서 다음 정지 명령을 보낸다. 11.7 통합 코드부터 FSM에 기본 0.5초 명령 watchdog이 추가되어 있다. 실제 정지는 별도로 확인한다.
 
 ```bash
 ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist \
@@ -140,7 +140,7 @@ bash Ch11/scripts/save_slam_map.sh "$HOME/Pysical_AI_book/Ch11/maps/my_lab_map_r
 ```bash
 mkdir -p "$HOME/Pysical_AI_book/Ch11/maps"
 ros2 run nav2_map_server map_saver_cli -t /map \
-  -f "$HOME/Pysical_AI_book/Ch11/maps/manual_run" --fmt pgm \
+  -f "$HOME/Pysical_AI_book/Ch11/maps/manual_run" --fmt pgm --free 0.196 --occ 0.65 \
   --ros-args -p use_sim_time:=true -p save_map_timeout:=10.0 \
   -p map_subscribe_transient_local:=true
 ```

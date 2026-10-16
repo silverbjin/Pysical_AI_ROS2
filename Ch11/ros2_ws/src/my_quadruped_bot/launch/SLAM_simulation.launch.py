@@ -16,11 +16,11 @@ def generate_launch_description():
                               description='Run the existing FSM to stand; no cmd_vel is sent.'),
         DeclareLaunchArgument('start_rviz', default_value='true'),
         DeclareLaunchArgument('lidar_3d', default_value='false'),
+        DeclareLaunchArgument('world', default_value=os.path.join(share, 'worlds', 'sensor_figure_world.sdf')),
         DeclareLaunchArgument('rviz_config', default_value=os.path.join(share, 'rviz', 'figure_11_2.rviz')),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(
             os.path.join(share, 'launch', 'simulation.launch.py')),
-            launch_arguments={'world': os.path.join(
-                share, 'worlds', 'sensor_figure_world.sdf'),
+            launch_arguments={'world': LaunchConfiguration('world'),
                 'lidar_3d': LaunchConfiguration('lidar_3d')}.items()),
         Node(package='ros_gz_bridge', executable='parameter_bridge', name='cloud_bridge',
              parameters=[{'config_file': os.path.join(share, 'config', 'ros_gz_cloud_bridge.yaml')}],
