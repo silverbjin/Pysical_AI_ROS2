@@ -1,0 +1,36 @@
+.............................F........                                   [100%]
+=================================== FAILURES ===================================
+____________ test_training_fall_threshold_and_twenty_second_timeout ____________
+
+    def test_training_fall_threshold_and_twenty_second_timeout():
+        with QuadrupedTrainingEnv(max_episode_steps=2) as env:
+            env.reset(seed=0)
+            env.step(np.zeros(12))
+            _, _, terminated, truncated, _ = env.step(np.zeros(12))
+            assert truncated and not terminated
+            env.reset(seed=0)
+            env.data.qpos[2] = .19
+            mujoco.mj_forward(env.model, env.data)
+>           assert env.step(np.zeros(12))[2]
+E           assert False
+
+Ch12/tests/test_training_env.py:88: AssertionError
+=============================== warnings summary ===============================
+tests/test_env.py::test_gym_contract_and_seed_replay[textbook-30]
+tests/test_env.py::test_gym_contract_and_seed_replay[full-45]
+tests/test_training_env.py::test_checker_and_seed_replay_for_training_profile[position]
+tests/test_training_env.py::test_checker_and_seed_replay_for_training_profile[torque]
+  /tmp/ch12-121-rl-venv/lib/python3.12/site-packages/gymnasium/utils/env_checker.py:311: UserWarning: [33mWARN: A Box observation space minimum value is -infinity. This is probably too low.[0m
+    logger.warn(
+
+tests/test_env.py::test_gym_contract_and_seed_replay[textbook-30]
+tests/test_env.py::test_gym_contract_and_seed_replay[full-45]
+tests/test_training_env.py::test_checker_and_seed_replay_for_training_profile[position]
+tests/test_training_env.py::test_checker_and_seed_replay_for_training_profile[torque]
+  /tmp/ch12-121-rl-venv/lib/python3.12/site-packages/gymnasium/utils/env_checker.py:315: UserWarning: [33mWARN: A Box observation space maximum value is infinity. This is probably too high.[0m
+    logger.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED Ch12/tests/test_training_env.py::test_training_fall_threshold_and_twenty_second_timeout
+1 failed, 37 passed, 8 warnings in 2.02s

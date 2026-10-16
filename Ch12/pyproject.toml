@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "physical-ai-quadruped-rl"
-version = "0.1.0"
-description = "Chapter 12.1: a runnable twelve-joint MuJoCo learning environment"
+version = "0.2.0"
+description = "Chapter 12.1-12.2: twelve-joint MuJoCo training environments"
 requires-python = ">=3.10"
 dependencies = ["mujoco==3.3.7", "gymnasium==1.2.1", "numpy>=1.26,<3"]
 
@@ -18,6 +18,10 @@ quadruped-rl = "quadruped_rl.demo:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["quadruped_env"]
 
 [tool.setuptools.package-data]
 quadruped_rl = ["models/*.xml"]
