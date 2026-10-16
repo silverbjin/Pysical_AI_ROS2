@@ -12,22 +12,9 @@ from my_quadruped_bot.generalized_gait_planner import GeneralizedGaitPlanner
 from my_quadruped_bot.trajectory_generator import TrajectoryGenerator
 from my_quadruped_bot.inverse_kinematics import InverseKinematics
 
-# Odometry 발행, TF 브로드캐스팅, 동적 파라미터 재구성, 속도 명령 LPF
-import math
-from rclpy.parameter import Parameter
+# Dynamic control parameters and velocity LPF; no state estimation here.
 from rcl_interfaces.msg import SetParametersResult
-from geometry_msgs.msg import Twist, TransformStamped, Quaternion
-from nav_msgs.msg import Odometry
-from sensor_msgs.msg import JointState
-from tf2_ros import TransformBroadcaster
-
-def euler_to_quaternion(roll, pitch, yaw) -> Quaternion:
-    """Euler 각도를 Quaternion 메시지로 변환하는 헬퍼 함수"""
-    qx = np.sin(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) - np.cos(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
-    qy = np.cos(roll/2) * np.sin(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.cos(pitch/2) * np.sin(yaw/2)
-    qz = np.cos(roll/2) * np.cos(pitch/2) * np.sin(yaw/2) - np.sin(roll/2) * np.sin(pitch/2) * np.cos(yaw/2)
-    qw = np.cos(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
-    return Quaternion(x=qx, y=qy, z=qz, w=qw)
+from geometry_msgs.msg import Twist
 
 class RobotState(Enum):
     IDLE = 1          
@@ -250,15 +237,11 @@ class TrotControllerNode(Node):
         self.last_time = None  # 초기화 지연으로 인한 첫 dt 폭증 방지
         self.timer = self.create_timer(self.dt, self.timer_callback)
         
-        # Odometry 발행, TF 브로드캐스팅, 동적 파라미터 재구성, 속도 명령 LPF
+        # Dynamic control parameters and velocity LPF; no state estimation here.
         # 1. 동적 파라미터 선언 (Dynamic Reconfiguration)
         self.declare_parameter('lpf_alpha', 0.1)       # 속도 스무딩 계수 (0.0 ~ 1.0)
         self.declare_parameter('gait_period', 0.5)     # Trot 1주기 시간 (초)
         self.declare_parameter('step_height', 0.05)    # 발을 드는 높이 (m)
-        # self.declare_parameter('base_frame_id', 'base_link')
-        self.declare_parameter('base_frame_id', 'base_footprint')  # URDF에서 base_footprint를 루트로 사용
-        self.declare_parameter('odom_frame_id', 'odom')
-        
         # 파라미터 업데이트 콜백 등록
         self.add_on_set_parameters_callback(self.parameters_callback)
         self.update_parameters()
@@ -272,28 +255,9 @@ class TrotControllerNode(Node):
         self.current_vel_y = 0.0
         self.current_omega_z = 0.0
 
-        # 3. Odometry 추정 변수
-        self.odom_x = 0.0
-        self.odom_y = 0.0
-        self.odom_th = 0.0
+        # Ch11: state estimation belongs exclusively to robot_localization.
+        self.get_logger().info("FSM active; odometry and TF are owned by EKF.")
 
-        # 4. FSM 및 제어 주기 변수
-        # self.phase = 0.0
-        # self.control_rate = 100 # Hz
-        # self.dt = 1.0 / self.control_rate
-        # self.last_time = self.get_clock().now()
-
-        # 5. Publisher / Subscriber / TF Broadcaster
-        # self.cmd_vel_sub = self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
-        
-        self.odom_pub = self.create_publisher(Odometry, 'odom', 10)
-        # self.joint_pub = self.create_publisher(JointState, 'joint_states', 10) # 실제 제어기에 맞게 토픽/메시지 타입 변경 필요
-        self.tf_broadcaster = TransformBroadcaster(self)
-
-        # 제어 루프 타이머
-        # self.timer = self.create_timer(self.dt, self.control_loop)
-        self.get_logger().info("TrotControllerFSM initialized with Odometry, TF, LPF, and Dynamic Params.")
-        
     def cmd_vel_callback(self, msg: Twist):
         # self.controller.update_command(msg)
         """목표 속도 수신 (LPF 적용을 위해 target에만 저장)"""
@@ -327,8 +291,6 @@ class TrotControllerNode(Node):
         safe_twist.angular.z = self.current_omega_z
         self.controller.update_command(safe_twist)
                 
-        # 3. Odometry 및 TF 업데이트
-        self.update_odometry_and_tf(current_time, dt_sec)        
                 
         # 4. FSM 및 IK 제어 스텝 실행 (고정값 self.dt 대신 실제 측정된 dt_sec 주입)
         joint_cmds = self.controller.run_step(dt_sec)
@@ -344,57 +306,11 @@ class TrotControllerNode(Node):
                 msg.data = float(angles[i])
                 self.joint_publishers[joint_name].publish(msg)
 
-    # Odometry 발행, TF 브로드캐스팅, 동적 파라미터 재구성, 속도 명령 LPF                    
-    def update_odometry_and_tf(self, current_time, dt_sec):
-        """Kinematics 기반 Odometry 계산 및 TF 발행"""        
-        
-        # 1. Odometry 적분 (Local -> Global Transform)
-        delta_x = (self.current_vel_x * math.cos(self.odom_th) - self.current_vel_y * math.sin(self.odom_th)) * dt_sec
-        delta_y = (self.current_vel_x * math.sin(self.odom_th) + self.current_vel_y * math.cos(self.odom_th)) * dt_sec
-        delta_th = self.current_omega_z * dt_sec
-
-        self.odom_x += delta_x
-        self.odom_y += delta_y
-        self.odom_th += delta_th
-
-        odom_quat = euler_to_quaternion(0, 0, self.odom_th)
-
-        # 2. Transform Broadcaster (odom -> base_link)
-        t = TransformStamped()
-        t.header.stamp = current_time.to_msg()
-        t.header.frame_id = self.odom_frame_id
-        t.child_frame_id = self.base_frame_id
-        t.transform.translation.x = self.odom_x
-        t.transform.translation.y = self.odom_y
-        t.transform.translation.z = 0.0 # 평면 보행 가정, 필요시 로봇 높이 반영
-        t.transform.rotation = odom_quat
-        self.tf_broadcaster.sendTransform(t)
-
-        # 3. Odometry Topic 발행
-        odom_msg = Odometry()
-        odom_msg.header.stamp = current_time.to_msg()
-        odom_msg.header.frame_id = self.odom_frame_id
-        odom_msg.child_frame_id = self.base_frame_id
-        
-        odom_msg.pose.pose.position.x = self.odom_x
-        odom_msg.pose.pose.position.y = self.odom_y
-        odom_msg.pose.pose.position.z = 0.0
-        odom_msg.pose.pose.orientation = odom_quat
-        
-        # LPF가 적용된 현재 속도 반영
-        odom_msg.twist.twist.linear.x = self.current_vel_x
-        odom_msg.twist.twist.linear.y = self.current_vel_y
-        odom_msg.twist.twist.angular.z = self.current_omega_z
-        
-        self.odom_pub.publish(odom_msg)
-        
     def update_parameters(self):
         """파라미터 서버로부터 최신 값을 가져와 로컬 변수에 캐싱"""
         self.lpf_alpha = self.get_parameter('lpf_alpha').value
         self.gait_period = self.get_parameter('gait_period').value
         self.step_height = self.get_parameter('step_height').value
-        self.base_frame_id = self.get_parameter('base_frame_id').value
-        self.odom_frame_id = self.get_parameter('odom_frame_id').value
         
         # [추가] 초기화 시 알고리즘 코어에도 동기화
         self._sync_controller_params()

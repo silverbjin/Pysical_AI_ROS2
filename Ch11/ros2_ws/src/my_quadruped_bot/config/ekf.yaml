@@ -1,45 +1,35 @@
-### ekf_node 파라미터 설정 ###
+# Simulation contract: model observations + IMU, not encoder/contact odometry.
 ekf_filter_node:
   ros__parameters:
-    # frequency: 50.0   # 필터 동작 주파수 (Hz)
-    frequency: 30.0   # 필터 동작 주파수 (Hz)
-    two_d_mode: false # 4족 로봇의 Roll/Pitch 변화를 반영하기 위해 3D 모드 활성화
-    publish_tf: true  # odom -> base_link TF 변환을 직접 브로드캐스팅함
-
-    # 좌표계 세팅
+    use_sim_time: true
+    frequency: 30.0
+    sensor_timeout: 0.2
+    two_d_mode: false
+    publish_tf: true
     map_frame: map
     odom_frame: odom
-    # base_link_frame: base_link
     base_link_frame: base_footprint
     world_frame: odom
+    print_diagnostics: true
 
-    # ---------------------------------------------------------
-    # 입력 센서 1: 다리 오도메트리 (Leg Odometry)
-    # ---------------------------------------------------------
+    # Absolute position and heading; derived velocities are correlated with pose.
     odom0: /odom/raw
-    odom0_config: [true,  true,  true,   # x, y, z (3D 모드 안정화를 위해 위치 기본값 수용)
-                   false, false, false,  # roll, pitch, yaw
-                   true,  true,  true,   # vx, vy, vz (속도 성분은 전적으로 신뢰)
-                   false, false, true,   # vroll, vpitch, vyaw (회전 중 yaw 각속도 수용)
-                   false, false, false]  # 가속도 미사용
-    
+    odom0_config: [true, true, true,
+                   false, false, true,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
     odom0_differential: false
     odom0_relative: false
     odom0_queue_size: 10
 
-    # ---------------------------------------------------------
-    # 입력 센서 2: IMU (관성 센서)
-    # ---------------------------------------------------------
-    imu0: /imu/data
-    imu0_config: [false, false, false,  # x, y, z
-                  true,  true,  false,  # roll, pitch 절대 자세 수용 (yaw는 드리프트로 인해 제외)
-                  false, false, false,  # vx, vy, vz
-                  true,  true,  true,   # vroll, vpitch, vyaw (3축 각속도 전부 활용)
-                  false, false, false]  # ax, ay, az (이중 적분 오차 방지를 위해 선가속도는 false)
-    
+    # Actual sensor_msgs/Imu bridge output, not the RPY debug array.
+    imu0: /imu/data_raw
+    imu0_config: [false, false, false,
+                  true, true, false,
+                  false, false, false,
+                  true, true, true,
+                  false, false, false]
     imu0_differential: false
-    imu0_relative: true  # 시작 시점의 IMU 자세를 기준점(0)으로 리셋
+    imu0_relative: false
     imu0_queue_size: 10
-
-    # TIP: process_noise_covariance는 명시할 경우 225개 원소를 전부 적어야 하므로,
-    # 패키지 내부의 최적화된 기본값을 사용하기 위해 설정을 통째로 생략(Omit)합니다.

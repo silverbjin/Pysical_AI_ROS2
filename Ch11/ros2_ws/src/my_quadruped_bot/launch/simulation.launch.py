@@ -34,7 +34,7 @@ def generate_launch_description():
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
-        parameters=[{'robot_description': robot_description_raw}]
+        parameters=[{'robot_description': robot_description_raw, 'use_sim_time': True}]
     )
  
     # 5. Gazebo 환경 내에 로봇 엔티티 생성 노드 (create)
@@ -66,3 +66,4 @@ def generate_launch_description():
         spawn_entity,
         node_bridge
     ])
+

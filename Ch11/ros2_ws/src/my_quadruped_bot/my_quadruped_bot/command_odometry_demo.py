@@ -1,3 +1,4 @@
+"""Teaching-only command integration. Never used by localization.launch.py."""
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
@@ -11,13 +12,13 @@ def euler_to_quaternion(roll, pitch, yaw):
     qw = math.cos(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) + math.sin(roll/2) * math.sin(pitch/2) * math.sin(yaw/2)
     return [qx, qy, qz, qw]
 
-class LegOdometry(Node):
+class CommandOdometryDemo(Node):
     def __init__(self):
-        super().__init__('leg_odometry')
+        super().__init__('command_odometry_demo')
         
         # 1. 구독 및 발행 설정
-        self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
-        self.odom_pub = self.create_publisher(Odometry, '/odom/raw', 10)
+        self.create_subscription(Twist, '/demo/cmd_vel', self.cmd_vel_callback, 10)
+        self.odom_pub = self.create_publisher(Odometry, '/demo/odom', 10)
         
         # 로봇 상태 변수
         self.x = 0.0
@@ -35,7 +36,7 @@ class LegOdometry(Node):
         # self.create_timer(0.02, self.update_odometry)
         # 기존 50Hz(0.02)에서 30Hz(약 0.033초) 주기로 데이터 발행 변경
         self.create_timer(0.033, self.update_odometry)
-        self.get_logger().info("Leg Odometry Publisher Started")
+        self.get_logger().info("DEMO ONLY: integrating commands, not measuring robot motion")
 
     def cmd_vel_callback(self, msg):
         slip_factor = 0.9 
@@ -113,7 +114,7 @@ class LegOdometry(Node):
         
 def main(args=None):
     rclpy.init(args=args)
-    node = LegOdometry()
+    node = CommandOdometryDemo()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

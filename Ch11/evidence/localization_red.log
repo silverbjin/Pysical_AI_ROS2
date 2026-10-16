@@ -1,0 +1,122 @@
+test_covariance_is_positive_and_not_claimed_zero_error (test_localization_contract.ObservationTests.test_covariance_is_positive_and_not_claimed_zero_error) ... FAIL
+test_external_motion_is_not_command_integration (test_localization_contract.ObservationTests.test_external_motion_is_not_command_integration) ... FAIL
+test_preserves_observed_motion_and_sensor_stamp (test_localization_contract.ObservationTests.test_preserves_observed_motion_and_sensor_stamp) ... FAIL
+test_rejects_invalid_quaternion (test_localization_contract.ObservationTests.test_rejects_invalid_quaternion) ... FAIL
+test_rejects_invalid_stamp (test_localization_contract.ObservationTests.test_rejects_invalid_stamp) ... FAIL
+test_rejects_nonfinite_pose_and_twist (test_localization_contract.ObservationTests.test_rejects_nonfinite_pose_and_twist) ... FAIL
+test_rejects_wrong_frames (test_localization_contract.ObservationTests.test_rejects_wrong_frames) ... FAIL
+test_active_launch_has_no_command_integrator (test_localization_contract.WiringTests.test_active_launch_has_no_command_integrator) ... FAIL
+test_ekf_does_not_double_count_pose_and_derived_velocity (test_localization_contract.WiringTests.test_ekf_does_not_double_count_pose_and_derived_velocity) ... FAIL
+test_fsm_is_not_an_odometry_or_tf_authority (test_localization_contract.WiringTests.test_fsm_is_not_an_odometry_or_tf_authority) ... FAIL
+test_gazebo_measures_3d_pose_without_ros_tf_bridge (test_localization_contract.WiringTests.test_gazebo_measures_3d_pose_without_ros_tf_bridge) ... FAIL
+test_imu_frame_is_explicit_physical_mount (test_localization_contract.WiringTests.test_imu_frame_is_explicit_physical_mount) ... FAIL
+test_imu_input_has_bridge_source (test_localization_contract.WiringTests.test_imu_input_has_bridge_source) ... FAIL
+
+======================================================================
+FAIL: test_covariance_is_positive_and_not_claimed_zero_error (test_localization_contract.ObservationTests.test_covariance_is_positive_and_not_claimed_zero_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 33, in setUp
+    self.assertIsNotNone(importlib.util.find_spec(name),
+AssertionError: unexpectedly None : Missing measured-odometry adapter core
+
+======================================================================
+FAIL: test_external_motion_is_not_command_integration (test_localization_contract.ObservationTests.test_external_motion_is_not_command_integration)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 33, in setUp
+    self.assertIsNotNone(importlib.util.find_spec(name),
+AssertionError: unexpectedly None : Missing measured-odometry adapter core
+
+======================================================================
+FAIL: test_preserves_observed_motion_and_sensor_stamp (test_localization_contract.ObservationTests.test_preserves_observed_motion_and_sensor_stamp)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 33, in setUp
+    self.assertIsNotNone(importlib.util.find_spec(name),
+AssertionError: unexpectedly None : Missing measured-odometry adapter core
+
+======================================================================
+FAIL: test_rejects_invalid_quaternion (test_localization_contract.ObservationTests.test_rejects_invalid_quaternion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 33, in setUp
+    self.assertIsNotNone(importlib.util.find_spec(name),
+AssertionError: unexpectedly None : Missing measured-odometry adapter core
+
+======================================================================
+FAIL: test_rejects_invalid_stamp (test_localization_contract.ObservationTests.test_rejects_invalid_stamp)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 33, in setUp
+    self.assertIsNotNone(importlib.util.find_spec(name),
+AssertionError: unexpectedly None : Missing measured-odometry adapter core
+
+======================================================================
+FAIL: test_rejects_nonfinite_pose_and_twist (test_localization_contract.ObservationTests.test_rejects_nonfinite_pose_and_twist)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 33, in setUp
+    self.assertIsNotNone(importlib.util.find_spec(name),
+AssertionError: unexpectedly None : Missing measured-odometry adapter core
+
+======================================================================
+FAIL: test_rejects_wrong_frames (test_localization_contract.ObservationTests.test_rejects_wrong_frames)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 33, in setUp
+    self.assertIsNotNone(importlib.util.find_spec(name),
+AssertionError: unexpectedly None : Missing measured-odometry adapter core
+
+======================================================================
+FAIL: test_active_launch_has_no_command_integrator (test_localization_contract.WiringTests.test_active_launch_has_no_command_integrator)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 123, in test_active_launch_has_no_command_integrator
+    self.assertNotIn("executable='leg_odometry'", text)
+AssertionError: "executable='leg_odometry'" unexpectedly found in "# 파일 생성: ~/ros2_ws/src/my_quadruped_bot/launch/localization.launch.py\nfrom launch import LaunchDescription\nfrom launch_ros.actions import Node\nimport os\nfrom ament_index_python.packages import get_package_share_directory\n\ndef generate_launch_description():\n    # 앞서 생성한 패키지명(my_quadruped_bot)과 일치시킵니다.\n    pkg_share = get_package_share_directory('my_quadruped_bot')\n    ekf_config_path = os.path.join(pkg_share, 'config', 'ekf.yaml')\n\n    return LaunchDescription([\n        # 1. 다리 오도메트리 발행 노드\n        Node(\n            package='my_quadruped_bot',\n            executable='leg_odometry',\n            name='leg_odometry',\n            output='screen'\n        ),\n        \n        # 2. Robot Localization (EKF) 노드\n        Node(\n            package='robot_localization',\n            executable='ekf_node',\n            name='ekf_filter_node',\n            output='screen',\n            parameters=[ekf_config_path],\n            remappings=[('/odometry/filtered', '/odom')] # 최종 출력을 /odom으로 통일하여 RViz2 연동 편의성 확보\n        )\n    ])\n"
+
+======================================================================
+FAIL: test_ekf_does_not_double_count_pose_and_derived_velocity (test_localization_contract.WiringTests.test_ekf_does_not_double_count_pose_and_derived_velocity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 116, in test_ekf_does_not_double_count_pose_and_derived_velocity
+    self.assertTrue(self.ekf.get('use_sim_time', False))
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_fsm_is_not_an_odometry_or_tf_authority (test_localization_contract.WiringTests.test_fsm_is_not_an_odometry_or_tf_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 112, in test_fsm_is_not_an_odometry_or_tf_authority
+    self.assertNotIn('TransformBroadcaster', names)
+AssertionError: 'TransformBroadcaster' unexpectedly found in {'math', 'j_type', 'ly', 'abs', 'qw', 'delta_x', 'leg_states', 'total_vel_y', 'Twist', 'joint_name', 'min', 'param', 'i', 'qy', 'is_swing', 'KeyboardInterrupt', 'super', 'str', 'TransformStamped', 'RobotState', 'msg', 'height', 'phase', 'is_right', 'local_x', 'odom_msg', 'name', 'np', '__name__', 'local_z', 'current_time', 'STAND', 'v_rot_y', 'TransformBroadcaster', 'start_pos', 'dt', 'end_pos', 'joint_cmds', 'main', 'TrotController', 'half_stride_y', 'leg_name', 'qx', 'delta_th', 'vel_norm', 'leg', 'nominal_pos', 'rclpy', 'roll', 'self', 'hasattr', 'leg_names', 'active_vel', 'stand_duration', 'target_pos', 'target_x', 'Odometry', 'Float64', 'joint_commands', 'list', 'stance_time', 'params', 'yaw', 'TrotControllerNode', 'pitch', 'target_y', 'enumerate', 'q', 'qz', 'SetParametersResult', 'dict', 'lx', 't', 'LOCOMOTION', 'hip_offsets', 'joint_types', 'safe_twist', 'prefix', 'args', 'odom_quat', 'euler_to_quaternion', 'ratio', 'current_freq', 'angles', 'cmd_active', 'v_rot_x', 'Quaternion', 'total_vel_x', 'GeneralizedGaitPlanner', 'TrajectoryGenerator', 'IDLE', 'node', 'delta_y', 'topic_name', 'InverseKinematics', 'dt_sec', 'joint_type', 'local_y', 'Enum', 'STAND_UP', 'float', 'half_stride_x', 'next_state', 'Node'}
+
+======================================================================
+FAIL: test_gazebo_measures_3d_pose_without_ros_tf_bridge (test_localization_contract.WiringTests.test_gazebo_measures_3d_pose_without_ros_tf_bridge)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 103, in test_gazebo_measures_3d_pose_without_ros_tf_bridge
+    self.assertIsNotNone(plugin, 'No physical observation source configured')
+AssertionError: unexpectedly None : No physical observation source configured
+
+======================================================================
+FAIL: test_imu_frame_is_explicit_physical_mount (test_localization_contract.WiringTests.test_imu_frame_is_explicit_physical_mount)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 98, in test_imu_frame_is_explicit_physical_mount
+    self.assertEqual(imu.findtext('gz_frame_id'), 'base_link')
+AssertionError: None != 'base_link'
+
+======================================================================
+FAIL: test_imu_input_has_bridge_source (test_localization_contract.WiringTests.test_imu_input_has_bridge_source)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_localization_contract.py", line 93, in test_imu_input_has_bridge_source
+    self.assertIn(self.ekf['imu0'], sources)
+AssertionError: '/imu/data' not found in {'/joint_states', '/imu/data_raw', '/clock', '/scan'}
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.054s
+
+FAILED (failures=13)
