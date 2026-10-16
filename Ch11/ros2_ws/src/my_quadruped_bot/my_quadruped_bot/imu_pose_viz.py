@@ -24,13 +24,14 @@ class ImuPoseViz(Node):
             Imu, '/imu/data_raw', self.on_imu, qos_profile_sensor_data)
         self.pending = deque(maxlen=100)
         self.last_now = None
+        self.last_publish_time = None
         self.timer = self.create_timer(0.03, self.flush)
         self.get_logger().info('IMU axes: /imu/data_raw -> /figure_11_2/imu_pose in odom')
 
     def on_imu(self, message):
         if message.header.frame_id != 'base_link':
             self.get_logger().warning(
-                'Figure expects a base_link-aligned IMU; check gz_frame_id.',
+                'Figure expects a base_link-aligned IMU; check bridge frame_id.',
                 throttle_duration_sec=5.0)
             return
         try:
@@ -46,20 +47,23 @@ class ImuPoseViz(Node):
         now = self.get_clock().now().nanoseconds
         if self.last_now is not None and now < self.last_now:
             self.pending.clear()
+            self.last_publish_time = None
         self.last_now = now
         latest = None
+        expired = False
         while self.pending:
             message = self.pending[0]
             stamp = Time.from_msg(message.header.stamp)
             age = (now-stamp.nanoseconds)/1e9
             if age > 0.5 or age < -0.5:
                 self.pending.popleft()
+                expired = True
                 continue
             try:
                 transform = self.buffer.lookup_transform('odom', 'base_link', stamp)
             except TransformException:
                 # Keep the sample until the EKF's next TF arrives, up to 0.5 s.
-                self.get_logger().warning(
+                self.get_logger().debug(
                     'Waiting for timestamp-matched odom -> base_link TF.',
                     throttle_duration_sec=5.0)
                 break
@@ -79,6 +83,13 @@ class ImuPoseViz(Node):
             latest = pose
         if latest is not None:
             self.publisher.publish(latest)
+            self.last_publish_time = now
+        elif expired and (self.last_publish_time is None or
+                          now - self.last_publish_time > 500_000_000):
+            self.get_logger().warning(
+                'IMU samples expired without timestamp-matched odom -> base_link TF '
+                'for 0.5 s; check EKF, /clock and use_sim_time.',
+                throttle_duration_sec=5.0)
 
 
 def main(args=None):

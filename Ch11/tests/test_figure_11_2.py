@@ -95,6 +95,7 @@ class FigureAssetsTests(unittest.TestCase):
             sdf = subprocess.run(['gz', 'sdf', '-p', str(path)],
                                  capture_output=True, text=True, timeout=30)
         self.assertEqual(sdf.returncode, 0, sdf.stderr)
+        self.assertNotIn('not defined in SDF', sdf.stderr)
         model = ET.fromstring(sdf.stdout).find('model')
         links = {link.get('name') for link in model.findall('link')}
         self.assertIn('base_link', links, sdf.stderr)

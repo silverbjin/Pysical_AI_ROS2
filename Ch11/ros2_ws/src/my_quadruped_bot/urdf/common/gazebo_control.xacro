@@ -27,7 +27,7 @@
   <!-- Gazebo Harmonic IMU 센서 및 플러그인 설정 -->
   <gazebo reference="base_link">
     <sensor name="imu_sensor" type="imu">
-      <gz_frame_id>base_link</gz_frame_id>
+      <!-- ROS header.frame_id is set per topic in ros_gz_bridge.yaml. -->
       <!-- 1. 센서가 항상 활성화되도록 설정하고 데이터 발행 주기(Hz) 지정 (사족보행은 최소 100Hz 이상 추천) -->
       <!-- <always_on>true</always_on> -->
       <always_on>true</always_on>
@@ -70,7 +70,7 @@
       <topic>/model/my_quadruped/scan</topic>
       <!-- <topic>/scan</topic> -->      
       <!-- Gazebo 공식 SDF 표준 규격 태그<frame_id>: 가제보가 토픽을 발행할 때 심을 frame_id 지정 -->      
-      <gz_frame_id>lidar_link</gz_frame_id>
+      <!-- ROS header.frame_id is set per topic in ros_gz_bridge.yaml. -->
       
       <ray>
         <scan>

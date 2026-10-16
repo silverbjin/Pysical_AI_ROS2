@@ -107,6 +107,8 @@ RViz Fixed Frame은 odom이다. 몸체에 붙은 base_link를 Fixed Frame으로 
 
 TF의 회전을 IMU quaternion에 다시 곱하지 않는다. 그 방식은 같은 몸체 회전을 중복 적용할 수 있다. 최대 0.5초 동안 TF를 기다리며, 오래된 입력·유효하지 않은 quaternion·orientation 미제공(covariance[0]=-1)을 대신할 가짜 자세를 만들지 않는다.
 
+ROS 메시지의 프레임 이름은 `config/ros_gz_bridge.yaml`에서 토픽별 `frame_id`로 지정한다. Harmonic의 비표준 `<gz_frame_id>` 태그는 사용하지 않는다. 정상적인 짧은 TF 대기는 DEBUG이고, 시뮬레이션 0.5초를 넘겨 샘플이 만료되고 자세 출력도 없으면 WARN이다. 시작 직후 TF보다 이른 첫 스캔이 한 번 버려질 수 있다. 반복적인 스캔 손실과는 구분하며, 자세한 변경과 확인 결과는 [센서·TF 경고 수정 기록](FIGURE_11_2_WARNINGS_KO.md)을 참조한다.
+
 **전제:** 이 그림은 base_link에 정렬된 Gazebo IMU와 yaw=0 초기 스폰을 사용하며 IMU 방향 기준과 odom을 정렬된 것으로 취급한다. 다른 장착 각도·초기 기준·실물 IMU를 쓰면 기준 좌표계 보정을 추가해야 한다. 센서 frame_id만 바꿔서 방향 기준을 맞출 수는 없다.
 
 실제 가속도계·자이로만으로 절대 자세가 저절로 주어지는 것은 아니다. 여기서는 Gazebo IMU가 제공하는 orientation을 사용한다. 실물에서는 센서 내부 또는 외부 자세 추정기의 출력 유효성을 확인해야 한다.

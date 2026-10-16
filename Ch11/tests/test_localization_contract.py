@@ -118,8 +118,10 @@ class WiringTests(unittest.TestCase):
 
     def test_imu_frame_is_explicit_physical_mount(self):
         root = ET.parse(PKG / 'urdf/common/gazebo_control.xacro').getroot()
-        imu = root.find(".//sensor[@type='imu']")
-        self.assertEqual(imu.findtext('gz_frame_id'), 'base_link')
+        imu = root.find("./gazebo[@reference='base_link']/sensor[@type='imu']")
+        self.assertIsNotNone(imu)
+        bridge = next(x for x in self.bridge if x['ros_topic_name'] == '/imu/data_raw')
+        self.assertEqual(bridge['frame_id'], 'base_link')
 
     def test_gazebo_measures_3d_pose_without_ros_tf_bridge(self):
         root = ET.parse(PKG / 'urdf/common/gazebo_control.xacro').getroot()
