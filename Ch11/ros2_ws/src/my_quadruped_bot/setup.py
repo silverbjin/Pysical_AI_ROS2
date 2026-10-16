@@ -64,6 +64,7 @@ setup(
             'trot_controllerFSM = my_quadruped_bot.trot_controllerFSM:main',
             'quadruped_controller_ros2 = my_quadruped_bot.quadruped_controller_ros2:main',
             # Ch11
+            'autonomous_explorer = my_quadruped_bot.mission.autonomous_explorer:main',
             'scan_stabilizer = my_quadruped_bot.sensors.scan_stabilizer:main',
             'projection_frame = my_quadruped_bot.projection_frame:main',
             'slam_scan_filter = my_quadruped_bot.slam_scan_filter:main',

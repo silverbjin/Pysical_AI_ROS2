@@ -76,7 +76,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args \
   -p speed:=0.05 -p turn:=0.15 -p stamped:=false
 ```
 
-짧게 전진·회전한 뒤 `k`로 정지한다. 키를 놓는 것만으로 정지를 보장하지 않는다. FSM 수신 watchdog을 추가한 것은 아니다. 필요하면 정지 명령을 직접 보낸다.
+짧게 전진·회전한 뒤 `k`로 정지한다. 키를 놓는 것만으로 정지를 보장하지 않는다. 11.7 통합 코드부터 FSM에 기본 0.5초 명령 watchdog이 추가되어 있다. 필요하면 정지 명령을 직접 보낸다.
 
 ```bash
 ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist \

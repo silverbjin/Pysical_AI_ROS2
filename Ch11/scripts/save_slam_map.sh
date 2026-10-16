@@ -15,7 +15,7 @@ for suffix in yaml pgm png; do
     exit 2
   fi
 done
-ros2 run nav2_map_server map_saver_cli -t /map -f "$map_prefix" --fmt pgm \
+ros2 run nav2_map_server map_saver_cli -t /map -f "$map_prefix" --fmt pgm --free 0.196 --occ 0.65 \
   --ros-args -p use_sim_time:=true -p save_map_timeout:=10.0 \
   -p map_subscribe_transient_local:=true
 test -s "$map_prefix.yaml"

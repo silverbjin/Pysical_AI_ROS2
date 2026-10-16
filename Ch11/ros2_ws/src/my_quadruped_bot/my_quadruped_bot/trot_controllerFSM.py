@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import rclpy
+import time
+from my_quadruped_bot.mission.exploration_core import CommandWatchdog
+from rcl_interfaces.msg import ParameterDescriptor
 import numpy as np
 from rclpy.node import Node
 # from geometry_msgs.msg import Twist
@@ -222,6 +225,8 @@ class TrotControllerNode(Node):
         self.get_logger().info("4족 보행 로봇 Trot Controller FSM 노드 시작!")
         
         self.controller = TrotController()
+        self.declare_parameter('command_timeout', 0.5, ParameterDescriptor(read_only=True))
+        self.command_watchdog = CommandWatchdog(self.get_parameter('command_timeout').value)
         
         self.sub_cmd = self.create_subscription(
             Twist,
@@ -268,9 +273,8 @@ class TrotControllerNode(Node):
     def cmd_vel_callback(self, msg: Twist):
         # self.controller.update_command(msg)
         """목표 속도 수신 (LPF 적용을 위해 target에만 저장)"""
-        self.target_vel_x = msg.linear.x
-        self.target_vel_y = msg.linear.y
-        self.target_omega_z = msg.angular.z
+        self.command_watchdog.receive((msg.linear.x, msg.linear.y, msg.angular.z), time.monotonic())
+        self.target_vel_x, self.target_vel_y, self.target_omega_z = self.command_watchdog.value(time.monotonic())
 
     def apply_low_pass_filter(self):
         """속도 명령 스무딩 (Gait Transition 시 급격한 위상 변화 및 물리엔진 충돌 방지)"""
@@ -288,6 +292,13 @@ class TrotControllerNode(Node):
         dt_sec = (current_time - self.last_time).nanoseconds / 1e9
         self.last_time = current_time
         
+        # Wall-clock silence must stop even when ROS simulation time pauses.
+        self.target_vel_x, self.target_vel_y, self.target_omega_z = self.command_watchdog.value(time.monotonic())
+        if not self.command_watchdog.fresh(time.monotonic()):
+            self.current_vel_x = self.current_vel_y = self.current_omega_z = 0.0
+        if dt_sec <= 0:
+            return
+        dt_sec = min(dt_sec, 0.1)
         # 1. 속도 스무딩 (LPF 적용)
         self.apply_low_pass_filter()
         

@@ -1,0 +1,97 @@
+test_clear_path_advances_at_low_bounded_speed (test_autonomous_mapping.ExplorationTests.test_clear_path_advances_at_low_bounded_speed) ... ok
+test_close_front_turns_towards_more_space_then_needs_yaw_progress (test_autonomous_mapping.ExplorationTests.test_close_front_turns_towards_more_space_then_needs_yaw_progress) ... ok
+test_close_side_obstacle_blocks_forward_swept_body (test_autonomous_mapping.ExplorationTests.test_close_side_obstacle_blocks_forward_swept_body) ... FAIL
+test_deadline_finishes_with_zero_command (test_autonomous_mapping.ExplorationTests.test_deadline_finishes_with_zero_command) ... ok
+test_nan_partial_fov_unknown_but_positive_infinity_is_no_hit (test_autonomous_mapping.ExplorationTests.test_nan_partial_fov_unknown_but_positive_infinity_is_no_hit) ... ok
+test_no_readiness_or_scan_means_no_motion (test_autonomous_mapping.ExplorationTests.test_no_readiness_or_scan_means_no_motion) ... ok
+test_obstacle_in_swept_radius_blocks_rotation (test_autonomous_mapping.ExplorationTests.test_obstacle_in_swept_radius_blocks_rotation) ... ok
+test_real_angles_not_array_midpoint_define_front (test_autonomous_mapping.ExplorationTests.test_real_angles_not_array_midpoint_define_front) ... ok
+test_sensor_loss_stops_even_during_turn (test_autonomous_mapping.ExplorationTests.test_sensor_loss_stops_even_during_turn) ... ok
+test_stuck_forward_does_not_continue_indefinitely (test_autonomous_mapping.ExplorationTests.test_stuck_forward_does_not_continue_indefinitely) ... ok
+test_watchdog_rejects_stale_and_nonfinite_commands (test_autonomous_mapping.ExplorationTests.test_watchdog_rejects_stale_and_nonfinite_commands) ... ok
+test_controller_enforces_watchdog (test_autonomous_mapping.MappingProjectAssetsTests.test_controller_enforces_watchdog) ... ok
+test_total_launch_avoids_timer_delays_and_duplicate_localization (test_autonomous_mapping.MappingProjectAssetsTests.test_total_launch_avoids_timer_delays_and_duplicate_localization) ... ok
+test_world_has_four_boundaries_and_local_sensor_systems (test_autonomous_mapping.MappingProjectAssetsTests.test_world_has_four_boundaries_and_local_sensor_systems) ... ok
+test_malformed_yaml_has_controlled_value_error (test_autonomous_mapping.SavedMapTests.test_malformed_yaml_has_controlled_value_error) ... ERROR
+test_p5_keeps_whitespace_valued_first_pixel (test_autonomous_mapping.SavedMapTests.test_p5_keeps_whitespace_valued_first_pixel) ... ok
+test_truncated_pgm_is_rejected (test_autonomous_mapping.SavedMapTests.test_truncated_pgm_is_rejected) ... ok
+test_yaml_and_image_statistics_do_not_claim_accuracy (test_autonomous_mapping.SavedMapTests.test_yaml_and_image_statistics_do_not_claim_accuracy) ... ok
+
+======================================================================
+ERROR: test_malformed_yaml_has_controlled_value_error (test_autonomous_mapping.SavedMapTests.test_malformed_yaml_has_controlled_value_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_autonomous_mapping.py", line 149, in test_malformed_yaml_has_controlled_value_error
+    with self.assertRaises(ValueError): self.m.analyze_map(p)
+                                        ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/ros2_ws/src/my_quadruped_bot/my_quadruped_bot/mission/map_artifacts.py", line 41, in analyze_map
+    meta = yaml.safe_load(path.read_text())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/__init__.py", line 125, in safe_load
+    return load(stream, SafeLoader)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/__init__.py", line 81, in load
+    return loader.get_single_data()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/constructor.py", line 49, in get_single_data
+    node = self.get_single_node()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/composer.py", line 36, in get_single_node
+    document = self.compose_document()
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/composer.py", line 55, in compose_document
+    node = self.compose_node(None, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/composer.py", line 84, in compose_node
+    node = self.compose_mapping_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/composer.py", line 133, in compose_mapping_node
+    item_value = self.compose_node(node, item_key)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/composer.py", line 82, in compose_node
+    node = self.compose_sequence_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/composer.py", line 110, in compose_sequence_node
+    while not self.check_event(SequenceEndEvent):
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/parser.py", line 98, in check_event
+    self.current_event = self.state()
+                         ^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/parser.py", line 474, in parse_flow_sequence_first_entry
+    return self.parse_flow_sequence_entry(first=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/parser.py", line 495, in parse_flow_sequence_entry
+    return self.parse_flow_node()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/parser.py", line 268, in parse_flow_node
+    return self.parse_node()
+           ^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/yaml/parser.py", line 369, in parse_node
+    raise ParserError("while parsing a %s node" % node, start_mark,
+yaml.parser.ParserError: while parsing a flow node
+expected the node content, but found '<stream end>'
+  in "<unicode string>", line 1, column 9:
+    image: [
+            ^
+
+======================================================================
+FAIL: test_close_side_obstacle_blocks_forward_swept_body (test_autonomous_mapping.ExplorationTests.test_close_side_obstacle_blocks_forward_swept_body)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/7c5057bbedf9/repo/Ch11/tests/test_autonomous_mapping.py", line 49, in test_close_side_obstacle_blocks_forward_swept_body
+    self.assertEqual(self.e.step(0, True, near, (0,0,0)), (0,0))
+AssertionError: Tuples differ: (0.05, 0) != (0, 0)
+
+First differing element 0:
+0.05
+0
+
+- (0.05, 0)
+?   ---
+
++ (0, 0)
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.016s
+
+FAILED (failures=1, errors=1)
