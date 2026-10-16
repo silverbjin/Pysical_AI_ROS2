@@ -87,7 +87,7 @@ ros2 pkg executables my_quadruped_bot
 ### 터미널 1: 벽·상자가 있는 기존 월드
 
 ```bash
-ros2 launch my_quadruped_bot figure_11_2.launch.py
+ros2 launch my_quadruped_bot SLAM_simulation.launch.py
 ```
 
 이 구성은 기립 제어·Gazebo·RViz를 실행한다. 벽·상자가 있어 유효한 거리 반환을 관찰하기 쉽다. 원래 simulation.launch.py의 빈 월드에서는 모든 값이 Inf인 경우가 생길 수 있다.

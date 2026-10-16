@@ -47,7 +47,7 @@ source /opt/ros/jazzy/setup.bash
 cd Ch11/ros2_ws
 colcon build --symlink-install --packages-up-to my_quadruped_bot
 source install/setup.bash
-ros2 launch my_quadruped_bot figure_11_2.launch.py
+ros2 launch my_quadruped_bot SLAM_simulation.launch.py
 ```
 
 Nav2에서 중요한 것은 경고 문자열의 유무보다 측정 시각에 유효한 TF와 실제 센서 수신이다. 현재 구성은 `odom → base_footprint → base_link → lidar_link`를 제공한다. Nav2 통합 시에는 AMCL 또는 SLAM이 제공하는 `map → odom`과 관련 노드의 `use_sim_time: true`가 추가로 필요하다. `map → odom`을 임의의 고정 TF로 대체하지 않는다. 이번 작업은 센서·TF 경로를 검사했으며 Nav2 전체 주행을 실행·보증한 것은 아니다.

@@ -27,4 +27,4 @@ case "$prefix" in
 esac
 # Catch model/controller mismatches before starting physics after a merge.
 python3 -m unittest discover -s "$chapter/tests" -p test_figure_11_2.py
-exec ros2 launch my_quadruped_bot figure_11_2.launch.py "$@"
+exec ros2 launch my_quadruped_bot SLAM_simulation.launch.py "$@"
