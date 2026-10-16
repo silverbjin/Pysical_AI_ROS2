@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_rgb_renderer_produces_nonuniform_pixels_and_reopens ___________
+
+    @pytest.mark.skipif(os.environ.get('CH12_TEST_RENDER') != '1',
+                        reason='Requires a working OpenGL context')
+    def test_rgb_renderer_produces_nonuniform_pixels_and_reopens():
+        env = QuadrupedEnv(render_mode='rgb_array')
+        try:
+            env.reset(seed=0)
+>           pixels = env.render()
+                     ^^^^^^^^^^^^
+
+tests/test_render.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <quadruped_rl.env.QuadrupedEnv object at 0x73ee49821550>
+
+    def render(self):
+        if self.render_mode == "rgb_array":
+            if self._renderer is None:
+>               self._renderer = mujoco.Renderer(self.model, height=480, width=640)
+                                 ^^^^^^
+E               UnboundLocalError: cannot access local variable 'mujoco' where it is not associated with a value
+
+src/quadruped_rl/env.py:133: UnboundLocalError
+=========================== short test summary info ============================
+FAILED tests/test_render.py::test_rgb_renderer_produces_nonuniform_pixels_and_reopens
+1 failed in 0.81s
