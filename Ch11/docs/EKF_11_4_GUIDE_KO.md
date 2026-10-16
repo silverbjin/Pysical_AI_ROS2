@@ -105,7 +105,7 @@ source install/setup.bash
 ### 터미널 1: 기존 로봇·센서·TF
 
 ```bash
-ros2 launch my_quadruped_bot figure_11_2.launch.py
+ros2 launch my_quadruped_bot SLAM_simulation.launch.py
 ```
 
 이 실행의 기존 EKF는 로봇 표시·관측 기반 위치 추정 경로다. 다음 실습 EKF의 입력을 대신하지 않는다.

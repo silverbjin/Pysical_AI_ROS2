@@ -56,7 +56,7 @@ bash Ch11/scripts/run_figure_11_2.sh
 스크립트는 Ch11을 빌드하고 올바른 install 경로를 확인한 뒤 그림 회귀 검사 8개를 실행한다. 검사에 실패하면 중단하며, 통과하면 다음 launch를 실행한다.
 
 ```bash
-ros2 launch my_quadruped_bot figure_11_2.launch.py
+ros2 launch my_quadruped_bot SLAM_simulation.launch.py
 ```
 
 이미 다른 장이나 Ch11 시뮬레이션이 실행 중이면 먼저 그 세션을 정상 종료한다. 동일한 로봇·브리지·EKF를 두 번 실행하지 않는다. 새 터미널에서의 실험 격리가 필요하면 모든 실험 터미널에 동일한 별도 `ROS_DOMAIN_ID`와 `GZ_PARTITION`을 설정한다.
@@ -68,7 +68,7 @@ source /opt/ros/jazzy/setup.bash
 cd ~/Pysical_AI_ROS2_publish/Ch11/ros2_ws
 colcon build --symlink-install --packages-up-to my_quadruped_bot
 source install/setup.bash
-ros2 launch my_quadruped_bot figure_11_2.launch.py
+ros2 launch my_quadruped_bot SLAM_simulation.launch.py
 ```
 
 기립·모델 안정화와 센서 초기화를 기다린다. 기립이 불안정하면 해당 장면을 성공 그림으로 사용하지 말고 Gazebo를 일시정지한 뒤 제어기·기구학을 점검한다. 이번 변경은 기존 모델·보행 제어를 재튜닝한 것이 아니다.
@@ -184,7 +184,7 @@ rviz2 -d "$(ros2 pkg prefix --share my_quadruped_bot)/rviz/figure_11_2.rviz" \
 
 코드:
 
-- launch/figure_11_2.launch.py
+- launch/SLAM_simulation.launch.py
 - worlds/sensor_figure_world.sdf
 - rviz/figure_11_2.rviz
 - my_quadruped_bot/imu_pose_viz.py

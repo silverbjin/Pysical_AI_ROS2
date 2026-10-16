@@ -77,7 +77,7 @@ source install/setup.bash
 ### 터미널 1: 기존 센서 시각화 실행
 
 ```bash
-ros2 launch my_quadruped_bot figure_11_2.launch.py
+ros2 launch my_quadruped_bot SLAM_simulation.launch.py
 ```
 
 이 launch는 Gazebo·RViz·기립 제어·센서·EKF를 실행하며 이번 필터 노드는 실행하지 않는다. 기립과 센서 수신을 확인한 뒤 터미널 2를 실행한다.

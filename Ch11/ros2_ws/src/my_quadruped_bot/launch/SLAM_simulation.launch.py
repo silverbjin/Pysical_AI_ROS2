@@ -1,4 +1,4 @@
-"""Gazebo and RViz composition for book figure 11-2; no velocity commands."""
+"""Ch11 SLAM simulation, local EKF, FSM and optional sensor RViz."""
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -15,6 +15,7 @@ def generate_launch_description():
         DeclareLaunchArgument('start_controller', default_value='true',
                               description='Run the existing FSM to stand; no cmd_vel is sent.'),
         DeclareLaunchArgument('start_rviz', default_value='true'),
+        DeclareLaunchArgument('rviz_config', default_value=os.path.join(share, 'rviz', 'figure_11_2.rviz')),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(
             os.path.join(share, 'launch', 'simulation.launch.py')),
             launch_arguments={'world': os.path.join(
@@ -27,7 +28,7 @@ def generate_launch_description():
         Node(package='my_quadruped_bot', executable='imu_pose_viz',
              output='screen', parameters=[{'use_sim_time': True}]),
         Node(package='rviz2', executable='rviz2', name='figure_11_2_rviz',
-             arguments=['-d', os.path.join(share, 'rviz', 'figure_11_2.rviz')],
+             arguments=['-d', LaunchConfiguration('rviz_config')],
              parameters=[{'use_sim_time': True}],
              condition=IfCondition(LaunchConfiguration('start_rviz'))),
     ])
