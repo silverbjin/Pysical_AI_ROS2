@@ -64,6 +64,8 @@ setup(
             'trot_controllerFSM = my_quadruped_bot.trot_controllerFSM:main',
             'quadruped_controller_ros2 = my_quadruped_bot.quadruped_controller_ros2:main',
             # Ch11
+            'scan_stabilizer = my_quadruped_bot.sensors.scan_stabilizer:main',
+            'projection_frame = my_quadruped_bot.projection_frame:main',
             'slam_scan_filter = my_quadruped_bot.slam_scan_filter:main',
             'imu_processor = my_quadruped_bot.sensors.imu_processor:main',
             'lidar_safety = my_quadruped_bot.lidar_safety:main',      

@@ -81,6 +81,14 @@
             <min_angle>-3.1415926</min_angle> <!-- -180도 (후방) -->
             <max_angle>3.1415926</max_angle>  <!-- +180도 (후방) -->
           </horizontal>
+          <xacro:if value="$(arg lidar_3d)">
+            <vertical>
+              <samples>16</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.3490658504</min_angle>
+              <max_angle>0.3490658504</max_angle>
+            </vertical>
+          </xacro:if>
         </scan>
         <range>
           <!-- 사족 보행 로봇 동체에 레이저가 걸리는 것을 방지하기 위해 최소 반경을 10cm로 제한 -->
