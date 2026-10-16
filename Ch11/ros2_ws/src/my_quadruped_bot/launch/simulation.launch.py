@@ -3,7 +3,8 @@ import os
 import xacro # [보완] Xacro 파일을 런타임에 직접 파싱하기 위해 필수 임포트
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -13,7 +14,8 @@ def generate_launch_description():
     pkg_share = get_package_share_directory(pkg_name)
  
     # 1. 월드(World) 파일 경로 설정 (앞서 만든 9.4.4절의 SDF 무대)
-    world_file = os.path.join(pkg_share, 'worlds', 'empty_world.sdf')
+    default_world = os.path.join(pkg_share, 'worlds', 'empty_world.sdf')
+    world_file = LaunchConfiguration('world')
     
     # 2. Gazebo Harmonic 실행 가동 (ros_gz_sim의 기본 런치 파일 포함)
     # '-r' 인자를 전달하여 시뮬레이터가 켜짐과 동시에 재생(Run)되도록 설정
@@ -21,7 +23,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
         ),
-        launch_arguments={'gz_args': f'-r {world_file}'}.items(),
+        launch_arguments={'gz_args': ['-r ', world_file]}.items(),
     )
  
     # 3. 로봇 모델(Xacro) 실시간 파싱 및 URDF 변환
@@ -61,6 +63,7 @@ def generate_launch_description():
  
     # 정의된 모든 인프라 노드들을 런치 엔진에 반환하여 동시 구동
     return LaunchDescription([
+        DeclareLaunchArgument('world', default_value=default_world),
         gazebo,
         node_robot_state_publisher,
         spawn_entity,
