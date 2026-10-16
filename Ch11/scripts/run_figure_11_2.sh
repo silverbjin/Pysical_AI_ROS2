@@ -25,4 +25,6 @@ case "$prefix" in
   "$chapter/ros2_ws/install"/*) ;;
   *) echo "Wrong chapter overlay: $prefix"; exit 2 ;;
 esac
+# Catch model/controller mismatches before starting physics after a merge.
+python3 -m unittest discover -s "$chapter/tests" -p test_figure_11_2.py
 exec ros2 launch my_quadruped_bot figure_11_2.launch.py "$@"

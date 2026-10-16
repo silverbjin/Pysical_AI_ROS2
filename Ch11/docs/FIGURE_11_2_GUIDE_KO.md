@@ -2,6 +2,8 @@
 
 작성일: 2026-10-16. ROS 2 Jazzy / Gazebo Harmonic / Ubuntu 24.04 / Windows 11 WSL2 기준.
 
+2026-10-17 기립 불안정 재발: 활성 FSM이 과거 코드로 되돌아간 것을 복구했다. 실행 스크립트는 이제 빌드 후 그림 회귀 검사 8개가 통과해야 Gazebo를 시작한다. 원인과 반복 실행 결과는 [재디버깅 보고서](FIGURE_11_2_REDEBUG_REPORT_KO.md)를 참조한다.
+
 ## 1. 무엇을 실행하는가?
 
 기존 `Ch11/ros2_ws/src/my_quadruped_bot`을 사용한다. 새 패키지는 만들지 않았다. 앞서 수정한 IMU·TF·관측 기반 오도메트리 구성을 포함하는 커밋 `d2cdce9939471519fb3641ff556a5411d56388fc`에 그림 전용 파일을 추가했다.
@@ -51,7 +53,7 @@ rosdep를 한 번도 초기화하지 않았다면 `sudo rosdep init`, `rosdep up
 bash Ch11/scripts/run_figure_11_2.sh
 ```
 
-스크립트는 Ch11을 빌드하고 올바른 install 경로를 확인한 뒤 다음 launch를 실행한다.
+스크립트는 Ch11을 빌드하고 올바른 install 경로를 확인한 뒤 그림 회귀 검사 8개를 실행한다. 검사에 실패하면 중단하며, 통과하면 다음 launch를 실행한다.
 
 ```bash
 ros2 launch my_quadruped_bot figure_11_2.launch.py

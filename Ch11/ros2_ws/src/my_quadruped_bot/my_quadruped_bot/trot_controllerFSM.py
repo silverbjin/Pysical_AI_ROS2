@@ -29,6 +29,9 @@ class TrotController:
         self.gait_planner = GeneralizedGaitPlanner(initial_gait='trot')
         self.traj_gen = TrajectoryGenerator()
         self.ik_solver = InverseKinematics()
+        # Ch11 URDF uses 0.25 m segments (the generic solver defaults to 0.20).
+        self.ik_solver.l2 = 0.25
+        self.ik_solver.l3 = 0.25
         
         self.state = RobotState.IDLE
         self.state_time = 0.0 
@@ -190,10 +193,10 @@ class TrotController:
         
         # 각 다리별 고관절(Hip Joint)의 물리적 오프셋 딕셔너리
         hip_offsets = {
-            'FL': ( 0.25,  0.15),
-            'FR': ( 0.25, -0.15),
-            'RL': (-0.25,  0.15),
-            'RR': (-0.25, -0.15)
+            'FL': ( 0.25,  0.10),
+            'FR': ( 0.25, -0.10),
+            'RL': (-0.25,  0.10),
+            'RR': (-0.25, -0.10)
         }
         
         # 바디 중심 기준 좌표에서 고관절 오프셋을 제거하여 '다리 중심 로컬 좌표'로 변환
@@ -205,8 +208,12 @@ class TrotController:
         # 변환된 로컬 좌표를 IK 솔버에 입력
         q = self.ik_solver.solve(local_x, local_y, local_z, is_right)
         
-        # IK 연산 실패 시 안전 기립 각도 대입
-        return q if q is not None else [0.0, -0.6, 1.2]
+        # Use the knee-back branch and subtract the URDF's fixed origin
+        # rotations (thigh +1.2, calf -2.4). The generic solver returns
+        # geometric angles relative to straight links, not URDF joint values.
+        if q is None:
+            return [0.0, 0.0, 0.0]  # URDF's initial crouch
+        return [q[0], -q[1] - 1.2, -q[2] + 2.4]
 
 
 class TrotControllerNode(Node):
@@ -355,10 +362,12 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.get_logger().info("컨트롤러 노드를 종료합니다.")
+        if rclpy.ok():
+            node.get_logger().info("컨트롤러 노드를 종료합니다.")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
