@@ -1,0 +1,27 @@
+from my_robot_env import MuJoCoArmEnv
+import numpy as np
+
+# 1. 환경 생성
+env = MuJoCoArmEnv(render_mode="human") # human 모드로 설정하여 화면 출력
+
+# 2. 초기화
+obs, info = env.reset()
+print("초기 관측값:", obs)
+
+# 3. 시뮬레이션 루프
+for i in range(1000):
+    # 랜덤한 행동 생성 (AI 대신 무작위로 움직임)
+    action = env.action_space.sample()
+    
+    # 환경에 행동 전달
+    obs, reward, terminated, truncated, info = env.step(action)
+    
+    # 상태 출력 (100번마다)
+    if i % 100 == 0:
+        print(f"Step {i}: Action={action}, Reward={reward:.4f}, Dist={info['distance']:.4f}")
+    
+    if terminated:
+        print("목표 도달! 에피소드 초기화")
+        obs, info = env.reset()
+
+env.close()

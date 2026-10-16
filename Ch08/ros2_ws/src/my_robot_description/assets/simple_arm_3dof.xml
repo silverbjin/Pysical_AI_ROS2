@@ -1,0 +1,50 @@
+<mujoco model="simple_arm_3dof">
+  <option timestep="0.01" integrator="RK4" gravity="0 0 -9.81"/>
+
+  <asset>
+    <texture name="sky" type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="32" height="32"/>
+    <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="300" height="300" mark="edge" markrgb=".8 .8 .8"/>
+    <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2"/>
+    <material name="robot_mat" rgba="0.9 0.9 0.9 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 .05" type="plane" material="grid" condim="3"/>
+
+    <!-- <body name="target" pos="0.5 0.5 0.5" > -->
+    <body name="target" pos="0.5 0.5 0.5" mocap="true" >    
+      <geom name="target_sphere" type="sphere" size="0.05" rgba="1 0 0 0.5" conaffinity="0" contype="0"/>
+      <!-- <joint name="target_joint" type="free" damping="0"/> -->
+    </body>
+
+    <body name="base_link" pos="0 0 0">
+      <geom type="cylinder" size="0.1 0.05" rgba="0.2 0.2 0.2 1"/>
+
+      <body name="link1" pos="0 0 0.05">
+        <joint name="joint1" type="hinge" axis="0 0 1" range="-180 180" damping="1.0"/>
+        <geom type="capsule" fromto="0 0 0 0 0 0.3" size="0.04" material="robot_mat"/>
+
+        <body name="link2" pos="0 0 0.3">
+          <joint name="joint2" type="hinge" axis="0 1 0" range="-150 150" damping="1.0"/>
+          <geom type="capsule" fromto="0 0 0 0 0 0.3" size="0.035" material="robot_mat"/>
+
+          <body name="link3" pos="0 0 0.3">
+            <joint name="joint3" type="hinge" axis="0 1 0" range="-150 150" damping="1.0"/>
+            <geom type="capsule" fromto="0 0 0 0 0 0.2" size="0.03" material="robot_mat"/>
+            
+            <body name="link_ee" pos="0 0 0.2">
+                <geom type="sphere" size="0.04" rgba="0 1 0 1"/>
+            </body>
+           </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor name="act1" joint="joint1" gear="50" ctrlrange="-1 1"/>
+    <motor name="act2" joint="joint2" gear="50" ctrlrange="-1 1"/>
+    <motor name="act3" joint="joint3" gear="30" ctrlrange="-1 1"/>
+  </actuator>
+</mujoco>

@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<robot name="my_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find vision_basics)/urdf/my_robot.urdf" />
+  <xacro:include filename="$(find vision_basics)/urdf/my_robot.ros2_camera_gazebo.xacro" />
+
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>joint1</joint_name>
+      <topic>/model/my_robot/joint1/cmd_pos</topic>
+      <p_gain>1200.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>15.0</d_gain>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>joint2</joint_name>
+      <topic>/model/my_robot/joint2/cmd_pos</topic>
+      <p_gain>1000.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>10.0</d_gain>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>joint3</joint_name>
+      <topic>/model/my_robot/joint3/cmd_pos</topic>
+      <p_gain>1000.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>10.0</d_gain>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>joint4</joint_name>
+      <topic>/model/my_robot/joint4/cmd_pos</topic>
+      <p_gain>800.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>8.0</d_gain>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>joint_wrist</joint_name>
+      <topic>/model/my_robot/joint_wrist/cmd_pos</topic>
+      <p_gain>500.0</p_gain>
+      <i_gain>0.05</i_gain>
+      <d_gain>5.0</d_gain>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>joint_finger1</joint_name>
+      <topic>/model/my_robot/joint_finger1/cmd_pos</topic>
+      <p_gain>300.0</p_gain>
+      <i_gain>0.01</i_gain>
+      <d_gain>2.0</d_gain>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>joint_finger2</joint_name>
+      <topic>/model/my_robot/joint_finger2/cmd_pos</topic>
+      <p_gain>300.0</p_gain>
+      <i_gain>0.01</i_gain>
+      <d_gain>2.0</d_gain>
+    </plugin>
+  </gazebo>
+
+</robot>

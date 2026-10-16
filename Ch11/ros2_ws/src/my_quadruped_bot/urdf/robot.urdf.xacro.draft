@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<robot name="my_quadruped" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="common/robot_properties.xacro"/>
+    <xacro:include filename="common/materials.xacro"/>
+    <xacro:include filename="parts/leg.xacro"/>
+
+    <link name="base_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}"/>
+            </geometry>
+            <material name="black"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <xacro:leg prefix="fr" x_reflect="1" y_reflect="-1" />
+    <xacro:leg prefix="fl" x_reflect="1" y_reflect="1" />
+    <xacro:leg prefix="rr" x_reflect="-1" y_reflect="-1" />
+    <xacro:leg prefix="rl" x_reflect="-1" y_reflect="1" />
+
+</robot>

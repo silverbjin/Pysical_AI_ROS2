@@ -1,0 +1,84 @@
+import numpy as np
+import gymnasium as gym
+from stable_baselines3 import PPO
+from rl_env import ReachEnv
+from tqdm import tqdm # 진행률 표시 라이브러리
+
+def evaluate_policy_robotics(model, env, n_eval_episodes=100):
+    """
+    로봇 매니퓰레이션 특화 평가 함수
+    """
+    success_count = 0
+    episode_rewards = []
+    episode_lengths = []
+    
+    # 부드러움 측정 (Jerk 최소화 관점): 액션의 변화량 합계
+    action_smoothness_scores = [] 
+
+    print(f"--- 평가 시작 ({n_eval_episodes} 에피소드) ---")
+    
+    for i in tqdm(range(n_eval_episodes)):
+        obs, _ = env.reset()
+        done = False
+        total_reward = 0
+        steps = 0
+        last_action = np.zeros(env.action_space.shape)
+        episode_action_diff = 0
+        
+        while not done:
+            # Deterministic=True: 학습된 최적의 행동만 선택 (탐험 X)
+            action, _ = model.predict(obs, deterministic=True)
+            
+            obs, reward, terminated, truncated, info = env.step(action)
+            
+            total_reward += reward
+            steps += 1
+            
+            # 부드러움 측정: 이전 액션과 현재 액션의 차이 누적
+            episode_action_diff += np.linalg.norm(action - last_action)
+            last_action = action
+
+            # 성공 여부 확인 (info 딕셔너리에 'distance'가 있다고 가정)
+            if terminated:
+                # 8.4절의 환경 코드에서 성공 시 terminated=True와 함께 
+                # reward에 보너스를 주었으므로 이를 성공 기준으로 삼음
+                success_count += 1
+                done = True
+            
+            if truncated or steps >= 500: # 타임아웃
+                done = True
+        
+        episode_rewards.append(total_reward)
+        episode_lengths.append(steps)
+        action_smoothness_scores.append(episode_action_diff / steps) # 스텝당 평균 변화량
+
+    # 통계 계산
+    success_rate = (success_count / n_eval_episodes) * 100
+    mean_reward = np.mean(episode_rewards)
+    std_reward = np.std(episode_rewards)
+    mean_smoothness = np.mean(action_smoothness_scores)
+
+    print("\n--- 평가 결과 요약 ---")
+    print(f"1. 성공률 (Success Rate): {success_rate:.2f}%")
+    print(f"2. 평균 보상 (Mean Reward): {mean_reward:.2f} +/- {std_reward:.2f}")
+    print(f"3. 평균 소요 스텝 (Mean Steps): {np.mean(episode_lengths):.1f}")
+    print(f"4. 동작 거칠기 (Action Jerk): {mean_smoothness:.4f} (낮을수록 부드러움)")
+    
+    return success_rate, mean_reward
+
+if __name__ == "__main__":
+    # 1. 환경 및 모델 로드
+    env = ReachEnv(render_mode=None) # 평가 속도를 위해 렌더링 끔
+    model_path = "./models/ppo_reach_final"
+    
+    try:
+        model = PPO.load(model_path)
+        print(f"모델 로드 성공: {model_path}")
+        
+        # 2. 평가 실행
+        evaluate_policy_robotics(model, env, n_eval_episodes=100)
+        
+    except FileNotFoundError:
+        print("저장된 모델을 찾을 수 없습니다. 학습을 먼저 진행하시오.")
+    finally:
+        env.close()

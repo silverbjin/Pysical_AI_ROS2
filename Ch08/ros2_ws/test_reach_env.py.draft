@@ -1,0 +1,36 @@
+from rl_env import ReachEnv
+import time
+
+def main():
+    # 1. 환경 생성 (render_mode='human'으로 설정하여 화면 출력)
+    env = ReachEnv(render_mode="human")
+    
+    # 2. 에피소드 반복
+    for episode in range(5):
+        obs, _ = env.reset()
+        print(f"Episode {episode+1} Start. Target Pos: {obs[6:9]}")
+        
+        done = False
+        step = 0
+        while not done:
+            # 랜덤 액션 생성
+            action = env.action_space.sample()
+            
+            # 환경 진행
+            obs, reward, terminated, truncated, info = env.step(action)
+            
+            # 너무 빠르면 눈으로 볼 수 없으므로 약간의 딜레이
+            time.sleep(0.01) 
+            
+            step += 1
+            if step % 50 == 0:
+                print(f"Step {step}, Reward: {reward:.4f}, Dist: {info['distance']:.4f}")
+            
+            if terminated or step > 300: # 300스텝 넘으면 강제 종료
+                done = True
+                print("Episode Finished.")
+
+    env.close()
+
+if __name__ == "__main__":
+    main()

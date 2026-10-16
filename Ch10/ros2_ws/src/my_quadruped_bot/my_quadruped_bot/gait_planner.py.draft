@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+import numpy as np
+from typing import List, Tuple, Dict
+
+class GaitPlanner:
+    def __init__(self, gait_type: str = 'trot', cycle_time: float = 0.5):
+        """
+        4족 보행 로봇의 위상(Phase) 및 접촉 상태(Contact)를 관리하는 스케줄러 클래스
+        """
+        # 보행 주기 (초 단위): 소형~중형 로봇의 Trot에는 0.5s ~ 0.8s가 적합
+        # self.T_cycle: float = 0.5 
+        self.T_cycle: float = cycle_time
+        
+        # 현재 누적 시간 (sec)
+        self.current_time: float = 0.0
+        
+        # 보행 패턴별 파라미터 초기화
+        self.gait_type: str = ''
+        self.duty_factor: float = 0.0
+        self.phase_offsets: np.ndarray = np.zeros(4)
+        
+        self.set_gait_type(gait_type)
+        
+    def set_gait_type(self, gait_type: str) -> None:
+        """
+        보행 타입에 따라 Duty Factor와 다리별 Phase Offset을 동적으로 설정
+        - 다리 순서 규칙: [0: FL, 1: FR, 2: RL, 3: RR]
+        """
+        self.gait_type = gait_type
+        
+        if gait_type == 'trot':
+            # Trot: 대각선 다리 동기화 (2박자 보행)
+            self.duty_factor = 0.5 
+            # FL-RR 그룹(0.0위상), FR-RL 그룹(0.5위상차)
+            self.phase_offsets = np.array([0.0, 0.5, 0.5, 0.0])
+            
+        elif gait_type == 'walk':
+            # Walk: 한 번에 한 다리씩 번갈아 들어 올림 (4박자 고안정 보행)
+            self.duty_factor = 0.75 
+            # 0.0 -> 0.5 -> 0.75 -> 0.25 순으로 순차적 위상 오프셋 부여
+            self.phase_offsets = np.array([0.0, 0.5, 0.75, 0.25])
+            
+        elif gait_type == 'pace':
+            # Pace: [10.6절 대비 추가] 같은 방향의 측면 다리 동기화 (2박자 보행)
+            self.duty_factor = 0.5
+            # 좌측 다리 그룹 FL-RL(0.0), 우측 다리 그룹 FR-RR(0.5)
+            self.phase_offsets = np.array([0.0, 0.5, 0.0, 0.5])
+            
+        else:
+            raise ValueError(f"Unknown gait type: {gait_type}")
+ 
+    # def update(self, dt: float) -> None:
+    #     """매 제어 주기(dt)마다 호출되어 물리 시간을 업데이트"""
+    #     self.current_time += dt
+    #     # 부동 소수점 오버플로우 방지를 위한 주기적 래핑 (선택 사항)
+    #     if self.current_time >= self.T_cycle * 10000.0:
+    #         self.current_time = 0.0
+    #     # ❌ 에러 원인: 계산만 하고 정작 결과를 return하지 않음 (파이썬 특성상 None 반환)
+    def update(self, dt: float) -> dict:
+        """
+        제어 주기에 따라 현재 시간을 업데이트하고, 4다리의 위상 상태를 반환한다.
+        """
+        self.current_time += dt
+        if self.current_time >= self.T_cycle:
+            self.current_time -= self.T_cycle
+
+        leg_phases = {}
+        
+        # 각 다리별 위상 계산 루프
+        for i, leg in enumerate(['FR', 'FL', 'RR', 'RL']):
+            # 힙 좌표계 기준 정규화된 시간 계산
+            leg_time = self.current_time - (self.phase_offsets[i] * self.T_cycle)
+            if leg_time < 0:
+                leg_time += self.T_cycle
+                
+            # 현재 다리의 주기 내 위치 (0.0 ~ 1.0)
+            normalized_phase = leg_time / self.T_cycle
+            
+            # 듀티 팩터를 기준으로 스윙(유각기)과 스탠스(입각기) 분기 판단
+            if normalized_phase < self.duty_factor:
+                # 스탠스 구간 (Trot의 경우 0.0 ~ 0.5)
+                phase = normalized_phase / self.duty_factor
+                is_swing = False
+            else:
+                # 스윙 구간 (Trot의 경우 0.5 ~ 1.0)
+                phase = (normalized_phase - self.duty_factor) / (1.0 - self.duty_factor)
+                is_swing = True
+                
+            leg_phases[leg] = (phase, is_swing)
+            
+        #  [핵심 수정] 계산된 4다리의 상태 딕셔너리를 메인 컨트롤러에 반환
+        return leg_phases
+    
+ 
+    def get_leg_states(self) -> Tuple[List[bool], List[float]]:
+        """
+        현재 시간 기준의 각 다리 상태 및 위상(Phase) 연산
+        
+        Return:
+            contact_states (List[bool]): True = Stance(접지), False = Swing(공중 이동)
+            leg_phases (List[float]): 각 다리의 0.0 ~ 1.0 사이 정규화된 위상 값
+        """
+        # 1. 전체 기준 글로벌 위상 계산 (0.0 <= phi_global < 1.0)
+        phi_global = (self.current_time % self.T_cycle) / self.T_cycle
+        
+        contact_states: List[bool] = []
+        leg_phases: List[float] = []
+        
+        # 10.2.2절 표준 정의 준수: 
+        # 위상의 전반부(0 ~ 1-D)는 Swing(False), 후반부(1-D ~ 1.0)는 Stance(True)
+        swing_duration = 1.0 - self.duty_factor
+        
+        for i in range(4):
+            # 2. 각 다리의 개별 오프셋 위상 계산 및 1.0 래핑
+            phi_i = (phi_global + self.phase_offsets[i]) % 1.0
+            leg_phases.append(phi_i)
+            
+            # 3. Swing / Stance 상태 판별
+            if phi_i < swing_duration:
+                # 0.0 이상 swing_duration 미만일 때는 공중에 떠 있는 상태
+                contact_states.append(False)  # Swing
+            else:
+                # 지면에 붙어 몸통을 밀어주는 상태
+                contact_states.append(True)   # Stance
+                
+        return contact_states, leg_phases

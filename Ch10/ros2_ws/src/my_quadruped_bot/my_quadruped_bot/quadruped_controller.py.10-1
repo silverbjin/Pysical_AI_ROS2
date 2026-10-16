@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from std_msgs.msg import Float64
+import numpy as np
+from typing import Dict, List
+
+# 10.1절 예제: 보행 제어기 기본 구조 (Skeleton)
+# 설명: 9장의 아키텍처 제약(Method C, 비대칭 브릿지)을 준수하는 제어기 뼈대
+
+class QuadrupedController(Node):
+    def __init__(self):
+        super().__init__('quadruped_controller')
+        
+        # 1. 로봇의 물리적 제원 설정 (단위: m)
+        self.L_HIP_X = 0.25  # 몸통 중심 -> 앞/뒤 엉덩이 X축 거리 절반
+        self.L_HIP_Y = 0.15  # 몸통 중심 -> 좌/우 엉덩이 Y축 거리 절반
+        self.L_THIGH = 0.20  # 허벅지 링크 길이
+        self.L_CALF = 0.20   # 종아리 링크 길이
+        
+        # 2. 통신 인터페이스 설정 (Subscribers)
+        self.cmd_vel_sub = self.create_subscription(
+            Twist, '/cmd_vel', self.cmd_vel_callback, 10
+        )
+        
+        # 3. 통신 인터페이스 설정 (Publishers)
+        # [Ch.09 제약 준수] ros_gz_bridge와의 매핑을 위해 각 관절별 개별 Float64 토픽 생성
+        self.joint_names = [
+            'fl_hip', 'fl_thigh', 'fl_calf',
+            'fr_hip', 'fr_thigh', 'fr_calf',
+            'rl_hip', 'rl_thigh', 'rl_calf',
+            'rr_hip', 'rr_thigh', 'rr_calf'
+        ]
+        self.publishers_ = {}
+        for name in self.joint_names:
+            topic_name = f'/model/my_quadruped/joint/{name}_joint/cmd_pos'
+            self.publishers_[name] = self.create_publisher(Float64, topic_name, 10)
+        
+        # 4. 제어 타이머 설정 (50Hz = 0.02초 주기)
+        self.dt = 0.02 
+        self.timer = self.create_timer(self.dt, self.control_loop)
+        
+        # 5. 상태 변수 초기화
+        self.current_time = 0.0
+        self.linear_velocity = np.array([0.0, 0.0]) # v_x, v_y
+        self.angular_velocity = 0.0                 # w_z
+        
+        self.get_logger().info("Quadruped Controller Initialized! (Ready for Ch.10)")
+
+    def cmd_vel_callback(self, msg: Twist) -> None:
+        """사용자(조이스틱 등)로부터 속도 명령 수신"""
+        self.linear_velocity[0] = msg.linear.x
+        self.linear_velocity[1] = msg.linear.y
+        self.angular_velocity = msg.angular.z
+
+    def control_loop(self) -> None:
+        """[메인 제어 루프] 50Hz 주기로 실행되는 보행 파이프라인"""
+        self.current_time += self.dt
+        
+        # [Step 1 & 2] Gait Planner & Trajectory Generator
+        foot_positions = self.get_standing_pose()
+        
+        # [Step 3] Inverse Kinematics (Body -> Hip 변환 및 관절각 계산)
+        joint_angles = self.solve_inverse_kinematics(foot_positions)
+        
+        # [Step 4] Motor Driver Command Publish
+        self.publish_joints(joint_angles)
+
+    def get_standing_pose(self) -> Dict[str, List[float]]:
+        """제자리 기립 상태의 발끝 좌표 (Body Frame 기준, 단위: m)"""
+        z_clearance = -0.3  # 지면으로부터 몸체가 떠 있는 높이
+        return {
+            'fl': [ self.L_HIP_X,  self.L_HIP_Y, z_clearance],
+            'fr': [ self.L_HIP_X, -self.L_HIP_Y, z_clearance],
+            'rl': [-self.L_HIP_X,  self.L_HIP_Y, z_clearance],
+            'rr': [-self.L_HIP_X, -self.L_HIP_Y, z_clearance]
+        }
+
+    def solve_inverse_kinematics(self, foot_positions: Dict[str, List[float]]) -> Dict[str, float]:
+        """
+        [Placeholder] 발끝 좌표(xyz) -> 관절 각도 변환
+        - 10.4절에서 완전한 수식이 구현됩니다.
+        - 주의: 9장 Method C에 따라 기준 자세 오프셋(-0.6, 1.2)이 필수적으로 포함되어야 합니다.
+        """
+        target_angles = {}
+        for leg in ['fl', 'fr', 'rl', 'rr']:
+            target_angles[f'{leg}_hip'] = 0.0
+            target_angles[f'{leg}_thigh'] = -0.6  # [Method C] 허벅지 기준점
+            target_angles[f'{leg}_calf'] = 1.2    # [Method C] 종아리 기준점
+            
+        return target_angles
+
+    def publish_joints(self, angles: Dict[str, float]) -> None:
+        """계산된 12개 관절 각도를 개별 토픽으로 발행"""
+        for joint_name, angle in angles.items():
+            msg = Float64()
+            msg.data = angle
+            self.publishers_[joint_name].publish(msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+    controller = QuadrupedController()
+    try:
+        rclpy.spin(controller)
+    except KeyboardInterrupt:
+        controller.get_logger().info("Shutting down Quadruped Controller.")
+    finally:
+        controller.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

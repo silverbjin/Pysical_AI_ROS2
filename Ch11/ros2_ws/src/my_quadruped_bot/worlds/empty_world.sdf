@@ -1,0 +1,79 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="my_empty_world">
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>    
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>    
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <!-- The "Push" Test: -->
+    <!-- https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1ApplyLinkWrench.html?utm_source=chatgpt.com -->
+    <plugin filename="gz-sim-apply-link-wrench-system" name="gz::sim::systems::ApplyLinkWrench"/>
+    <!-- tutorial code: Gazebo Harmonic IMU 센서 및 플러그인 설정 -->
+    <!-- https://github.com/gazebosim/docs/blob/master/harmonic/tutorials/sensors/sensor_tutorial.sdf -->
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"> </plugin> 
+    <!-- 실행 중인 Gazebo .sdf 월드 파일 내부에 배치되어야 함 -->
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>    
+    <!-- tutorial code: Gazebo Harmonic Lidar 센서 및 플러그인 설정 -->
+    <!-- https://github.com/gazebosim/docs/blob/master/harmonic/tutorials/sensors/sensor_tutorial.sdf -->
+    <!-- https://github.com/gazebosim/docs/tree/master/harmonic/tutorials -->
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact" />
+    <!-- cpu lidar plugin -->
+    <!-- <plugin filename="gz-sim-cpu-lidar-system" name="gz::sim::systems::CpuLidar" /> -->
+    
+    
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <gravity>0 0 -9.8</gravity>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <!-- for test -->
+                <mu>0.05</mu> <!-- default 1.0 -->
+                <mu2>0.05</mu2> <!-- default 1.0 -->
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.8 0.8 0.8 1</specular>
+          </material>
+        </visual>
+        
+      </link>
+    </model>
+  </world>
+</sdf>

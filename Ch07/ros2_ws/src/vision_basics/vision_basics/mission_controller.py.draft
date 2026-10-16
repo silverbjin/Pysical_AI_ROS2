@@ -1,0 +1,165 @@
+#!/usr/bin/env python3
+import time
+import rclpy
+from rclpy.node import Node
+from rclpy.action import ActionClient
+from geometry_msgs.msg import Point, PoseStamped
+from moveit_msgs.action import MoveGroup
+from control_msgs.action import FollowJointTrajectory
+from trajectory_msgs.msg import JointTrajectoryPoint
+
+# 7.6절에서 만든 그리퍼 컨트롤러 클래스 재사용 가능 (여기서는 통합함)
+
+class MissionController(Node):
+    def __init__(self):
+        super().__init__('mission_controller')
+
+        # 1. 상태 변수
+        self.target_coords = None
+        self.is_working = False # 현재 작업 중인지 플래그
+
+        # 2. Vision Subscriber (좌표 수신)
+        self.create_subscription(
+            Point, 
+            '/robot/target_position', 
+            self.coord_callback, 
+            10
+        )
+
+        # 3. MoveIt Action Client (팔 제어)
+        self.move_group_client = ActionClient(self, MoveGroup, 'move_action')
+        
+        # 4. Gripper Action Client (손 제어)
+        self.gripper_client = ActionClient(
+            self, 
+            FollowJointTrajectory, 
+            '/gripper_controller/follow_joint_trajectory'
+        )
+
+        self.get_logger().info("Mission Controller Initialized. Waiting for servers...")
+        # self.move_group_client.wait_for_server() # 실제 환경에선 주석 해제 권장
+        # self.gripper_client.wait_for_server()
+        self.get_logger().info("System Ready! Waiting for visual target...")
+
+    def coord_callback(self, msg):
+        # 작업 중이 아닐 때만 새로운 좌표를 업데이트
+        if not self.is_working:
+            self.target_coords = msg
+            self.get_logger().info(f"Target Detected: ({msg.x:.3f}, {msg.y:.3f}, {msg.z:.3f})")
+            # 좌표를 받으면 즉시 작업 시작
+            self.execute_pick_and_place()
+
+    def execute_pick_and_place(self):
+        self.is_working = True
+        target = self.target_coords
+        
+        try:
+            # [Step 1] Pre-Grasp: 물체 상공 15cm로 이동
+            self.get_logger().info(">>> [Step 1] Pre-Grasp Approach")
+            self.move_arm(target.x, target.y, target.z + 0.15)
+            self.control_gripper("open")
+            time.sleep(1.0) # 안정화 대기
+
+            # [Step 2] Grasp Approach: 하강
+            self.get_logger().info(">>> [Step 2] Descending to Object")
+            self.move_arm(target.x, target.y, target.z + 0.02) # 물체 두께 고려 (약간 위)
+            time.sleep(0.5)
+
+            # [Step 3] Grasping: 잡기
+            self.get_logger().info(">>> [Step 3] Gripping")
+            self.control_gripper("close")
+            time.sleep(1.0) # 물리적으로 잡을 시간 부여
+
+            # [Step 4] Post-Grasp: 들어 올리기
+            self.get_logger().info(">>> [Step 4] Lifting")
+            self.move_arm(target.x, target.y, target.z + 0.20)
+            time.sleep(0.5)
+
+            # [Step 5] Move to Bin: 바구니로 이동 (고정 좌표 예시)
+            # 가정: 바구니는 로봇의 왼쪽에 위치 (y = 0.3)
+            self.get_logger().info(">>> [Step 5] Moving to Bin")
+            bin_x, bin_y, bin_z = 0.0, 0.3, 0.3
+            self.move_arm(bin_x, bin_y, bin_z)
+            time.sleep(1.0)
+
+            # [Step 6] Release: 놓기
+            self.get_logger().info(">>> [Step 6] Releasing")
+            self.control_gripper("open")
+            time.sleep(0.5)
+
+            # [Step 7] Return Home
+            self.get_logger().info(">>> [Step 7] Mission Complete. Returning Home.")
+            self.move_to_named_target("home")
+
+        except Exception as e:
+            self.get_logger().error(f"Mission Failed: {e}")
+        
+        finally:
+            self.is_working = False # 작업 완료 후 플래그 해제
+
+    # --- Helper Functions (Low Level Control) ---
+
+    def move_arm(self, x, y, z):
+        """MoveIt Action을 이용해 엔드 이펙터를 (x,y,z)로 이동"""
+        # 참고: 실제 MoveIt 구현 시에는 Constraints 설정 등 복잡한 코드가 필요하나,
+        # 여기서는 개념 전달을 위해 'moveit_py' 스타일의 간소화된 로직을 의사 코드로 표현함.
+        # 실제로는 MoveIt Helper 라이브러리를 사용하거나 Action Goal을 상세히 구성해야 함.
+        
+        goal_msg = MoveGroup.Goal()
+        
+        # Workspace 설정
+        goal_msg.request.workspace_parameters.header.frame_id = "base_link"
+        goal_msg.request.workspace_parameters.min_corner.x = -1.0
+        goal_msg.request.workspace_parameters.min_corner.y = -1.0
+        goal_msg.request.workspace_parameters.min_corner.z = -1.0
+        goal_msg.request.workspace_parameters.max_corner.x = 1.0
+        goal_msg.request.workspace_parameters.max_corner.y = 1.0
+        goal_msg.request.workspace_parameters.max_corner.z = 1.0
+
+        # 목표 Pose 설정 (Orientation은 아래쪽을 향하도록 고정: Quaternion)
+        target_pose = PoseStamped()
+        target_pose.header.frame_id = "base_link"
+        target_pose.pose.position.x = x
+        target_pose.pose.position.y = y
+        target_pose.pose.position.z = z
+        # 그리퍼가 바닥을 보게 하는 쿼터니언 (x=1, y=0, z=0, w=0 -> 180도 회전)
+        target_pose.pose.orientation.x = 1.0 
+        target_pose.pose.orientation.y = 0.0
+        target_pose.pose.orientation.z = 0.0
+        target_pose.pose.orientation.w = 0.0
+
+        # Constraints 생성 (Position constraint)
+        # ... (생략: MoveIt Constraints 메시지 구성 코드) ...
+        # 간단한 구현을 위해 move_group_python_interface 등을 사용하는 것이 일반적임.
+        
+        # 여기서는 로그로 대체
+        self.get_logger().info(f"Commanding MoveIt to: {x:.2f}, {y:.2f}, {z:.2f}")
+        # self.move_group_client.send_goal(goal_msg) ...
+
+    def control_gripper(self, command):
+        """ command: 'open' or 'close' """
+        width = 0.08 if command == 'open' else 0.025 # 캔 지름(5cm) 고려하여 2.5cm까지 조임 시도
+        
+        goal = FollowJointTrajectory.Goal()
+        goal.trajectory.joint_names = ['gripper_joint']
+        point = JointTrajectoryPoint()
+        point.positions = [width]
+        point.time_from_start.sec = 1
+        goal.trajectory.points = [point]
+        
+        self.gripper_client.send_goal_async(goal)
+
+    def move_to_named_target(self, name):
+        """ 'home', 'sleep' 등 미리 정의된 자세로 이동 """
+        self.get_logger().info(f"Moving to named target: {name}")
+        # MoveIt Named Target 호출 로직
+
+def main(args=None):
+    rclpy.init(args=args)
+    controller = MissionController()
+    rclpy.spin(controller)
+    controller.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

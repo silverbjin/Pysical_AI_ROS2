@@ -1,0 +1,60 @@
+import numpy as np
+
+class GaitConfig:
+    """ 보행 패턴의 파라미터를 저장하는 데이터 클래스 """
+    def __init__(self, name, duty_factor, offsets, frequency):
+        self.name = name
+        self.duty_factor = duty_factor
+        # offsets 순서: [FL, FR, RL, RR]
+        self.offsets = np.array(offsets)
+        self.frequency = frequency # Hz
+
+# 미리 정의된 보행 패턴 라이브러리
+GAIT_LIBRARY = {
+    'trot': GaitConfig('trot', 0.5, [0.0, 0.5, 0.5, 0.0], 2.0),
+    'pace': GaitConfig('pace', 0.5, [0.0, 0.5, 0.0, 0.5], 2.0),
+    'bound': GaitConfig('bound', 0.5, [0.0, 0.0, 0.5, 0.5], 2.5),
+    # 'crawl': GaitConfig('crawl', 0.75, [0.75, 0.25, 0.5, 0.0], 1.0)
+    # 수정 코드 (본문의 RR -> FR -> RL -> FL 순서를 정확히 구현)
+    'crawl': GaitConfig('crawl', 0.75, [0.0, 0.5, 0.25, 0.75], 1.0)
+}
+
+class GeneralizedGaitPlanner:
+    def __init__(self, initial_gait='trot'):
+        self.current_gait = GAIT_LIBRARY[initial_gait]
+        self.next_gait = None  # 전환 예약용 변수 추가
+        self.current_time = 0.0
+        
+    def set_gait(self, gait_name):
+        """ 실시간으로 보행 패턴 전환을 예약한다 """
+        if gait_name in GAIT_LIBRARY:
+            # 즉시 바꾸지 않고 예약만 걸어둠
+            self.next_gait = GAIT_LIBRARY[gait_name]
+        else:
+            print(f"Warning: Unknown gait {gait_name}")
+ 
+    # def update(self, dt):
+    #     T_cycle = 1.0 / self.current_gait.frequency
+    #     phi_global = (self.current_time % T_cycle) / T_cycle
+        
+    #     # [핵심] 현재 사이클이 거의 끝나 오차 범위 안으로 들어왔을 때 예약된 보행으로 안전 전환
+    #     if self.next_gait is not None and phi_global < 0.02:
+    #         self.current_gait = self.next_gait
+    #         self.next_gait = None
+    #         self.current_time = 0.0  # 시간축을 동기화하여 불연속성 완전 제거
+            
+    #     self.current_time += dt
+        
+    def update(self, dt):
+        self.current_time += dt
+        
+        # 사이클이 초기화되는 시점에 변경 적용
+        T_current = 1.0 / self.current_gait.frequency
+        if self.current_time >= T_current:
+            # [최적화] 0.0으로 밀어버리는 대신 초과한 dt(잔여 오차)를 다음 주기로 이월
+            self.current_time -= T_current 
+            
+            # 대기 중인 다음 보행 패턴이 있다면 이때 적용
+            if self.next_gait_name is not None:
+                self.current_gait = GAIT_LIBRARY[self.next_gait_name]
+                self.next_gait_name = None

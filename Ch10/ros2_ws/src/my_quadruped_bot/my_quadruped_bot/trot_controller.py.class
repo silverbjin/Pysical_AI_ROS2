@@ -1,0 +1,91 @@
+import numpy as np
+from geometry_msgs.msg import Twist
+
+# 앞서 정의한 패키지 구조 명세에 맞춘 임포트 경로 수정
+from my_quadruped_bot.gait_planner import GaitPlanner
+from my_quadruped_bot.trajectory_generator import TrajectoryGenerator
+from my_quadruped_bot.inverse_kinematics import InverseKinematics
+
+class TrotController:
+    def __init__(self):
+        # 1. 하위 모듈 초기화
+        self.gait_planner = GaitPlanner('trot')
+        self.traj_gen = TrajectoryGenerator()
+        self.ik_solver = InverseKinematics()
+        
+        # 2. 로봇 기하학 및 보행 파라미터 설정
+        self.default_height = 0.30  # 목표 높이 (m)
+        self.step_frequency = 2.0   # 2Hz Trot 보행 (주기 0.5초)
+        
+        # 3. 제어 상태 변수
+        self.cmd_vel = {'x': 0.0, 'y': 0.0, 'yaw': 0.0}
+        self.base_foot_pos = self.get_nominal_foot_positions()
+ 
+    def update_command(self, msg: Twist):
+        """ROS 2 cmd_vel 콜백 함수와 연동되어 목표 속도 갱신"""
+        self.cmd_vel['x'] = msg.linear.x
+        self.cmd_vel['y'] = msg.linear.y
+        self.cmd_vel['yaw'] = msg.angular.z
+ 
+    def get_nominal_foot_positions(self):
+        """로봇의 기본 Stand 상태 발 위치 (Body Frame 기준)"""
+        lx, ly = 0.25, 0.15 
+        return {
+            'FL': np.array([ lx,  ly, -self.default_height]),
+            'FR': np.array([ lx, -ly, -self.default_height]),
+            'RL': np.array([-lx,  ly, -self.default_height]),
+            'RR': np.array([-lx, -ly, -self.default_height])
+        }
+ 
+    def run_step(self, dt: float) -> dict:
+        """
+        100Hz 제어 타이머 루프에서 호출되는 핵심 파이프라인
+        """
+        # 1. 위상 플래너 업데이트 및 상태 로드
+        self.gait_planner.update(dt)
+        leg_states = self.gait_planner.get_leg_states() # 명세서 스펙 반영 dict 반환 구조
+        
+        joint_commands = {}
+        leg_names = ['FL', 'FR', 'RL', 'RR']
+        
+        # 스탠스 시간 계산 (T_stance = 1 / (2 * freq) for Trot)
+        stance_time = 1.0 / (2.0 * self.step_frequency)
+        
+        # 2. 다리별 독립 궤적 생성 loop
+        for name in leg_names:
+            phase, is_swing = leg_states[name]
+            nominal_pos = self.base_foot_pos[name]
+            
+            # Raibert Heuristic에 따른 전후좌우 반 보폭(Half Stride) 계산
+            half_stride_x = self.cmd_vel['x'] * stance_time / 2.0
+            half_stride_y = self.cmd_vel['y'] * stance_time / 2.0
+            
+            if not is_swing:
+                # [스탠스기 (Stance Phase)]
+                # 위상 진행(0.0->1.0)에 따라 발을 착지점(+Half)에서 이륙점(-Half)으로 밀어냄
+                target_x = nominal_pos[0] + half_stride_x * (1.0 - 2.0 * phase)
+                target_y = nominal_pos[1] + half_stride_y * (1.0 - 2.0 * phase)
+                target_pos = np.array([target_x, target_y, -self.default_height])
+                
+            else:
+                # [유각기 (Swing Phase)]
+                # 정확히 이륙점(-Half)에서 시작하여 목표 착지점(+Half)으로 수렴하는 궤적
+                start_pos = np.array([nominal_pos[0] - half_stride_x, nominal_pos[1] - half_stride_y, -self.default_height])
+                end_pos = np.array([nominal_pos[0] + half_stride_x, nominal_pos[1] + half_stride_y, -self.default_height])
+                
+                # 사이클로이드 수직 유각 궤적 생성기 호출
+                target_pos = self.traj_gen.generate_swing(start_pos, end_pos, phase)
+            
+            # TODO: 3. Yaw 회전 행렬 보정 구간 (10.6절 확장 예정)
+            
+            # 4. 역운동학(IK) 풀이 및 예외 처리
+            is_right = (name in ['FR', 'RR'])
+            q = self.ik_solver.solve(target_pos[0], target_pos[1], target_pos[2], is_right)
+            
+            # 기립 방어 코드 적용 (컨텍스트 명세 동기화)
+            if q is not None:
+                joint_commands[name] = q
+            else:
+                joint_commands[name] = [0.0, -0.6, 1.2] 
+                
+        return joint_commands

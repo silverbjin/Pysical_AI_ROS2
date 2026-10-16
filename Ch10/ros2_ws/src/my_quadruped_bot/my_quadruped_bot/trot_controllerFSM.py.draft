@@ -1,0 +1,172 @@
+import numpy as np
+from enum import Enum
+from geometry_msgs.msg import Twist
+
+# 앞서 정의한 패키지 구조 명세에 맞춘 임포트
+from my_quadruped_bot.gait_planner import GaitPlanner
+from my_quadruped_bot.trajectory_generator import TrajectoryGenerator
+from my_quadruped_bot.inverse_kinematics import InverseKinematics
+
+class RobotState(Enum):
+    IDLE = 1          # 엎드린 자세 (토크 오프 대기)
+    STAND_UP = 2      # 기립 중 (보간 제어 구간)
+    STAND = 3         # 정지 기립 상태 (보행 대기)
+    LOCOMOTION = 4    # 트로트 보행 상태
+
+class TrotController:
+    def __init__(self):
+        # 1. 하위 컴포넌트 초기화
+        self.gait_planner = GaitPlanner('trot')
+        self.traj_gen = TrajectoryGenerator()
+        self.ik_solver = InverseKinematics()
+        
+        # 2. 로봇 상태 및 타이머 변수
+        self.state = RobotState.IDLE
+        self.state_time = 0.0  # 현재 상태에서 경과된 시간 (s)
+        
+        # 3. 보행 제어 파라미터
+        self.idle_height = 0.10      # IDLE 상태 다리 길이 (엎드림)
+        self.target_height = 0.30    # 목표 기립 다리 길이
+        self.current_height = self.idle_height
+        self.step_frequency = 2.0
+        
+        # 4. 속도 명령 및 발 위치
+        self.cmd_vel = {'x': 0.0, 'y': 0.0, 'yaw': 0.0}
+        self.last_non_zero_vel = {'x': 0.0, 'y': 0.0} # LOCOMOTION 탈출용 메모리
+        self.base_foot_pos = self.get_nominal_foot_positions(self.idle_height)
+
+    def update_command(self, msg: Twist):
+        """ROS 2 토픽 콜백 연동"""
+        self.cmd_vel['x'] = msg.linear.x
+        self.cmd_vel['y'] = msg.linear.y
+        self.cmd_vel['yaw'] = msg.angular.z
+
+    def get_nominal_foot_positions(self, height: float) -> dict:
+        """Body Frame 기준 기본 발 위치 산출"""
+        lx, ly = 0.25, 0.15 
+        return {
+            'FL': np.array([ lx,  ly, -height]),
+            'FR': np.array([ lx, -ly, -height]),
+            'RL': np.array([-lx,  ly, -height]),
+            'RR': np.array([-lx, -ly, -height])
+        }
+
+    def run_step(self, dt: float) -> dict:
+        """
+        100Hz 메인 제어 루프에서 호출되는 FSM 기반 파이프라인
+        """
+        self.state_time += dt
+        joint_commands = {}
+        leg_names = ['FL', 'FR', 'RL', 'RR']
+        
+        # 속도 크기(Norm) 계산 (임계치 검사용)
+        vel_norm = np.hypot(self.cmd_vel['x'], self.cmd_vel['y'])
+
+        # ==========================================
+        # [STATE MACHINE TRANSITION & LOGIC]
+        # ==========================================
+        
+        if self.state == RobotState.IDLE:
+            # 기본 엎드린 자세 유지
+            self.base_foot_pos = self.get_nominal_foot_positions(self.idle_height)
+            for name in leg_names:
+                joint_commands[name] = self._solve_leg_ik(name, self.base_foot_pos[name])
+            
+            # 외부 기립 트리거 조건 (예시: 본 구현에서는 1초 후 자동 기립 시작)
+            if self.state_time > 1.0:
+                self._transition_to(RobotState.STAND_UP)
+
+        elif self.state == RobotState.STAND_UP:
+            # 3초 동안 선형 보간(Linear Interpolation)을 통한 안전 기립
+            stand_duration = 3.0
+            ratio = min(self.state_time / stand_duration, 1.0)
+            
+            # 높이 보간: -0.1m -> -0.3m
+            self.current_height = self.idle_height + (self.target_height - self.idle_height) * ratio
+            self.base_foot_pos = self.get_nominal_foot_positions(self.current_height)
+            
+            for name in leg_names:
+                joint_commands[name] = self._solve_leg_ik(name, self.base_foot_pos[name])
+                
+            if ratio >= 1.0:
+                self._transition_to(RobotState.STAND)
+
+        elif self.state == RobotState.STAND:
+            # 완전 기립 상태 유지
+            self.base_foot_pos = self.get_nominal_foot_positions(self.target_height)
+            for name in leg_names:
+                joint_commands[name] = self._solve_leg_ik(name, self.base_foot_pos[name])
+                
+            # 속도 명령 입력 시 보행(LOCOMOTION) 진입
+            if vel_norm > 0.01:
+                self._transition_to(RobotState.LOCOMOTION)
+
+        elif self.state == RobotState.LOCOMOTION:
+            # 보행 위상 플래너 구동
+            self.gait_planner.update(dt)
+                                 
+            # [수정 포인트] 튜플 분해가 아니라, 리팩토링된 단일 딕셔너리 구조를 그대로 수신
+            leg_states = self.gait_planner.get_leg_states()
+            # [수정 포인트] 튜플 구조 (contacts, phases)를 안전하게 언패킹  
+            # contacts, phases = self.gait_planner.get_leg_states()
+            stance_time = 1.0 / (2.0 * self.step_frequency)
+            
+            # 속도가 살아있을 때 마지막 유효 속도를 백업 (회복 주기용)
+            if vel_norm > 0.01:
+                self.last_non_zero_vel['x'] = self.cmd_vel['x']
+                self.last_non_zero_vel['y'] = self.cmd_vel['y']
+                active_vel = self.cmd_vel
+            else:
+                # 사용자는 멈췄으나 '마지막 보행 주기 완료'를 위해 백업 속도로 잔여 스트로크 수행
+                active_vel = {'x': self.last_non_zero_vel['x'], 'y': self.last_non_zero_vel['y']}
+
+            for name in leg_names:
+            # for i, name in enumerate(leg_names):
+                # [수정 포인트] 딕셔너리에서 다리 이름별로 (phase, is_swing)을 안전하게 추출
+                phase, is_swing = leg_states[name]
+                # # [수정 포인트] gait_planner의 내부 구현(Dict형태 vs List형태)에 모두 대응하는 방어 코드
+                # if isinstance(contacts, dict):
+                #     is_stance = contacts[name]  # True(Stance), False(Swing)
+                #     phase = phases[name]        # 0.0 ~ 1.0
+                # else:
+                #     is_stance = contacts[i]
+                #     phase = phases[i]
+                    
+                # # 명세서 기반 변수 매핑: is_swing은 is_stance의 역수
+                # is_swing = not is_stance
+                nominal_pos = self.base_foot_pos[name]
+                
+                half_stride_x = active_vel['x'] * stance_time / 2.0
+                half_stride_y = active_vel['y'] * stance_time / 2.0
+                
+                if not is_swing:
+                    # [스탠스기] 진행률(phase)에 따라 발을 앞에서 뒤로 밀어냄
+                    target_x = nominal_pos[0] + half_stride_x * (1.0 - 2.0 * phase)
+                    target_y = nominal_pos[1] + half_stride_y * (1.0 - 2.0 * phase)
+                    target_pos = np.array([target_x, target_y, -self.target_height])
+                else:
+                    # [유각기] 이륙점에서 착지점까지 사이클로이드 공중 궤적 생성
+                    start_pos = np.array([nominal_pos[0] - half_stride_x, nominal_pos[1] - half_stride_y, -self.target_height])
+                    end_pos = np.array([nominal_pos[0] + half_stride_x, nominal_pos[1] + half_stride_y, -self.target_height])
+                    target_pos = self.traj_gen.generate_swing(start_pos, end_pos, phase)
+                    
+                joint_commands[name] = self._solve_leg_ik(name, target_pos)
+
+            # [Recovery 조건]: cmd_vel이 0이고, Gait Planner가 한 주기를 완벽히 마쳐서 
+            # 모든 다리가 지면에 정렬되는 순간(Phase가 초기화되는 시점) STAND로 안전 복귀
+            if vel_norm <= 0.01 and self.gait_planner.is_cycle_completed():
+                self._transition_to(RobotState.STAND)
+
+        return joint_commands
+
+    def _transition_to(self, next_state: RobotState):
+        """상태 전이 시 타이머 및 플래그 초기화 안전 함수"""
+        # print(f"[FSM] State Changed: {self.state.name} -> {next_state.name}") # 디버깅용
+        self.state = next_state
+        self.state_time = 0.0
+
+    def _solve_leg_ik(self, name: str, target_pos: np.ndarray) -> list:
+        """역운동학 래퍼 및 기립 방어"""
+        is_right = (name in ['FR', 'RR'])
+        q = self.ik_solver.solve(target_pos[0], target_pos[1], target_pos[2], is_right)
+        return q if q is not None else [0.0, -0.6, 1.2]

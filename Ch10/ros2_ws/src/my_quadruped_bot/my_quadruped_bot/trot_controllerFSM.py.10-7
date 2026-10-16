@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+import rclpy
+import numpy as np
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from std_msgs.msg import Float64
+from enum import Enum
+
+# 패키지 구조 명세에 맞춘 임포트
+# GAIT_LIBRARY 검증 및 예약을 위해 함께 임포트
+from my_quadruped_bot.generalized_gait_planner import GeneralizedGaitPlanner, GAIT_LIBRARY
+from my_quadruped_bot.trajectory_generator import TrajectoryGenerator
+from my_quadruped_bot.inverse_kinematics import InverseKinematics
+
+# ROS 2 서비스 인터페이스 임포트
+from my_robot_interfaces.srv import SetGait
+
+class RobotState(Enum):
+    IDLE = 1          
+    STAND_UP = 2      
+    STAND = 3         
+    LOCOMOTION = 4    
+
+class TrotController:
+    def __init__(self):
+        # 새로 구현한 GeneralizedGaitPlanner로 교체 (기본값 trot)
+        self.gait_planner = GeneralizedGaitPlanner(initial_gait='trot')
+        self.traj_gen = TrajectoryGenerator()
+        self.ik_solver = InverseKinematics()
+        
+        self.state = RobotState.IDLE
+        self.state_time = 0.0 
+        
+        self.idle_height = 0.18      
+        self.target_height = 0.25 # 0.30    
+        self.current_height = self.idle_height
+        self.step_frequency = 2.0
+        
+        self.cmd_vel = {'x': 0.0, 'y': 0.0, 'yaw': 0.0}
+        self.last_non_zero_vel = {'x': 0.0, 'y': 0.0, 'yaw': 0.0}
+        self.base_foot_pos = self.get_nominal_foot_positions(self.idle_height)
+
+    def update_command(self, msg: Twist):
+        self.cmd_vel['x'] = msg.linear.x
+        self.cmd_vel['y'] = msg.linear.y
+        self.cmd_vel['yaw'] = msg.angular.z
+
+    def get_nominal_foot_positions(self, height: float) -> dict:
+        """Body Frame 중심 기준 기본 발 위치 산출 (오픈루프 안정성 강화를 위해 좌우 폭 확장)"""
+        lx = 0.25        
+        ly = 0.15 + 0.04
+        
+        return {
+            'FL': np.array([ lx,  ly, -height]),
+            'FR': np.array([ lx, -ly, -height]),
+            'RL': np.array([-lx,  ly, -height]),
+            'RR': np.array([-lx, -ly, -height])
+        }
+
+    def run_step(self, dt: float) -> dict:
+        self.state_time += dt
+        joint_commands = {}
+        leg_names = ['FL', 'FR', 'RL', 'RR']
+        
+        vel_norm = np.hypot(self.cmd_vel['x'], self.cmd_vel['y'])
+        cmd_active = (vel_norm > 0.01 or abs(self.cmd_vel['yaw']) > 0.01)
+
+        if self.state == RobotState.IDLE:
+            self.base_foot_pos = self.get_nominal_foot_positions(self.idle_height)
+            for name in leg_names:
+                joint_commands[name] = self._solve_leg_ik(name, self.base_foot_pos[name])
+            if self.state_time > 1.0:
+                self._transition_to(RobotState.STAND_UP)
+
+        elif self.state == RobotState.STAND_UP:
+            stand_duration = 3.0
+            ratio = min(self.state_time / stand_duration, 1.0)
+            
+            self.current_height = self.idle_height + (self.target_height - self.idle_height) * ratio
+            self.base_foot_pos = self.get_nominal_foot_positions(self.current_height)
+            
+            for name in leg_names:
+                joint_commands[name] = self._solve_leg_ik(name, self.base_foot_pos[name])
+            if ratio >= 1.0:
+                self._transition_to(RobotState.STAND)
+
+        elif self.state == RobotState.STAND:
+            self.base_foot_pos = self.get_nominal_foot_positions(self.target_height)
+            for name in leg_names:
+                joint_commands[name] = self._solve_leg_ik(name, self.base_foot_pos[name])
+            if cmd_active:
+                self._transition_to(RobotState.LOCOMOTION)
+
+        elif self.state == RobotState.LOCOMOTION:
+            # -----------------------------------------------------------
+            # 속도 명령 크기에 따른 보행 패턴 실시간 전이 예약
+            # -----------------------------------------------------------
+            if cmd_active:
+                if vel_norm < 0.1:  # 0.05 m/s 등 초저속 주행 시
+                    self.gait_planner.set_gait('crawl')  # 정적 안정성이 높은 크롤 예약
+                else:
+                    self.gait_planner.set_gait('trot')   # 일반 속도에서는 트로트 예약
+            
+            # -----------------------------------------------------------
+            # 통합 플래너의 주기적 시간 업데이트 및 상태 추출
+            # -----------------------------------------------------------
+            self.gait_planner.update(dt) # 한 주기가 끝나는 시점에 안전하게 보행 전이됨
+            leg_states = self.gait_planner.get_leg_states()
+            
+            # 주파수 기반 스탠스 타임 계산 동적 보완
+            current_freq = self.gait_planner.current_gait.frequency
+            stance_time = 1.0 / (2.0 * current_freq)
+            
+            if cmd_active:
+                self.last_non_zero_vel['x'] = self.cmd_vel['x']
+                self.last_non_zero_vel['y'] = self.cmd_vel['y']
+                self.last_non_zero_vel['yaw'] = self.cmd_vel['yaw']
+                active_vel = self.cmd_vel
+            else:
+                active_vel = {
+                    'x': self.last_non_zero_vel.get('x', 0.0), 
+                    'y': self.last_non_zero_vel.get('y', 0.0),
+                    'yaw': self.last_non_zero_vel.get('yaw', 0.0)
+                }
+
+            for name in leg_names:
+                phase, is_swing = leg_states[name]
+                nominal_pos = self.base_foot_pos[name]
+                
+                v_rot_x = -active_vel['yaw'] * nominal_pos[1]
+                v_rot_y = active_vel['yaw'] * nominal_pos[0]
+                
+                total_vel_x = active_vel['x'] + v_rot_x
+                total_vel_y = active_vel['y'] + v_rot_y
+                
+                half_stride_x = total_vel_x * stance_time / 2.0
+                half_stride_y = total_vel_y * stance_time / 2.0
+                
+                if not is_swing:
+                    target_x = nominal_pos[0] + half_stride_x * (1.0 - 2.0 * phase)
+                    target_y = nominal_pos[1] + half_stride_y * (1.0 - 2.0 * phase)
+                    target_pos = np.array([target_x, target_y, -self.target_height])
+                else:
+                    start_pos = np.array([nominal_pos[0] - half_stride_x, nominal_pos[1] - half_stride_y, -self.target_height])
+                    end_pos = np.array([nominal_pos[0] + half_stride_x, nominal_pos[1] + half_stride_y, -self.target_height])
+                    target_pos = self.traj_gen.generate_swing(start_pos, end_pos, phase)
+                    
+                joint_commands[name] = self._solve_leg_ik(name, target_pos)
+
+            if not cmd_active and self.gait_planner.is_cycle_completed():
+                self._transition_to(RobotState.STAND)
+
+        return joint_commands
+
+    def _transition_to(self, next_state: RobotState):
+        self.state = next_state
+        self.state_time = 0.0
+
+    def _solve_leg_ik(self, name: str, target_pos: np.ndarray) -> list:
+        is_right = (name in ['FR', 'RR'])
+        
+        hip_offsets = {
+            'FL': ( 0.25,  0.15),
+            'FR': ( 0.25, -0.15),
+            'RL': (-0.25,  0.15),
+            'RR': (-0.25, -0.15)
+        }
+        
+        lx, ly = hip_offsets[name]
+        local_x = target_pos[0] - lx
+        local_y = target_pos[1] - ly
+        local_z = target_pos[2]  
+        
+        q = self.ik_solver.solve(local_x, local_y, local_z, is_right)
+        return q if q is not None else [0.0, -0.6, 1.2]
+
+
+class TrotControllerNode(Node):
+    def __init__(self):
+        super().__init__('trot_controller')
+        self.get_logger().info("4족 보행 로봇 Trot Controller FSM 노드 시작!")
+        
+        self.controller = TrotController()
+        
+        self.sub_cmd = self.create_subscription(
+            Twist,
+            'cmd_vel',
+            self.cmd_vel_callback,
+            10
+        )
+        
+        # [추가] 보행 패턴 변경을 위한 ROS 2 서비스 서버 선언
+        self.srv = self.create_service(
+            SetGait, 
+            'set_gait', 
+            self.set_gait_callback
+        )
+        
+        self.joint_publishers = {}
+        leg_names = ['FL', 'FR', 'RL', 'RR']
+        
+        for leg in leg_names:
+            prefix = leg.lower() 
+            for joint_type in ['hip', 'thigh', 'calf']:
+                joint_name = f"{prefix}_{joint_type}_joint"
+                topic_name = f"/model/my_quadruped/joint/{joint_name}/cmd_pos"
+                self.joint_publishers[joint_name] = self.create_publisher(Float64, topic_name, 10)
+        
+        self.dt = 0.01
+        self.timer = self.create_timer(self.dt, self.timer_callback)
+
+    def cmd_vel_callback(self, msg: Twist):
+        self.controller.update_command(msg)
+
+    # [추가] 서비스 요청을 안전하게 처리하는 콜백 함수 구현
+    def set_gait_callback(self, request, response):
+        gait_name = request.gait_name
+        
+        # 플래너 보행 라이브러리에 존재하는 패턴인지 검증
+        if gait_name in GAIT_LIBRARY:
+            # 내부 메서드 캡슐화 원칙 준수 및 인스턴스 경로 지정 수정
+            self.controller.gait_planner.set_gait(gait_name)
+            
+            response.success = True
+            response.message = f"Successfully scheduled transition to '{gait_name}'."
+            self.get_logger().info(f"Gait change requested via service: {gait_name}")
+        else:
+            response.success = False
+            response.message = f"Gait change failed. Unknown gait: '{gait_name}'."
+            self.get_logger().warn(f"Unknown gait request received: {gait_name}")
+            
+        return response
+
+    def timer_callback(self):
+        joint_cmds = self.controller.run_step(self.dt)
+        joint_types = ['hip', 'thigh', 'calf']
+        
+        for leg_name, angles in joint_cmds.items():
+            prefix = leg_name.lower()
+            for i, j_type in enumerate(joint_types):
+                joint_name = f"{prefix}_{j_type}_joint"
+                msg = Float64()
+                msg.data = float(angles[i])
+                self.joint_publishers[joint_name].publish(msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = TrotControllerNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info("컨트롤러 노드를 종료합니다.")
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

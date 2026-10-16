@@ -1,0 +1,53 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz (제어 루프 주기, 10ms)
+
+    # 관절 상태를 퍼블리시하는 브로드캐스터 (필수)
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # 로봇 팔 제어기 (위치 기반 궤적 제어)
+    arm_group_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    # 그리퍼(집게) 제어기
+    gripper_group_controller:
+      # type: position_controllers/GripperActionController
+  # 그리퍼 양방향 동시 제어기 (컨트롤러 타입 변경)
+      type: joint_trajectory_controller/JointTrajectoryController # ⬅️ [수정] Trajectory 타입으로 변경
+
+arm_group_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint_wrist  # ⬅️ [수정] 누락되었던 손목 관절 추가
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    
+    # 궤적 실행 시 허용 오차 설정
+    allow_partial_joints_goal: false
+    open_loop_control: false  # ⬅️ Gazebo 시뮬레이션 피드백을 받도록 피드백 제어 활성화
+    allow_integration_in_goal_trajectories: true
+
+gripper_group_controller:
+  ros__parameters:
+    # joint: gripper_joint
+# # ⬇️ [수정] 그리퍼 컨트롤러 파라미터 전체 재정의
+    joints:
+      - joint_finger1  # 좌측 핑거
+      - joint_finger2  # 우측 핑거
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity      # xacro에 선언된 상태 인터페이스와 일치시킵니다.
+    
+    allow_partial_joints_goal: false
+    open_loop_control: false
+    allow_integration_in_goal_trajectories: true

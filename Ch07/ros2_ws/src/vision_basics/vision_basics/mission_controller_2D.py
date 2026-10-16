@@ -1,0 +1,381 @@
+#!/usr/bin/env python3
+import time
+import threading
+import rclpy
+from rclpy.node import Node
+from rclpy.action import ActionClient
+from moveit_msgs.action import MoveGroup
+from moveit_msgs.msg import Constraints, PositionConstraint, OrientationConstraint, PositionIKRequest
+from geometry_msgs.msg import PoseStamped   # PositionIKRequest 대용
+from control_msgs.action import FollowJointTrajectory
+from trajectory_msgs.msg import JointTrajectoryPoint
+from tf2_ros import Buffer, TransformListener
+from shape_msgs.msg import SolidPrimitive
+from geometry_msgs.msg import Quaternion
+
+from moveit_msgs.msg import (
+    Constraints,
+    JointConstraint,
+    RobotState
+)
+
+from moveit_msgs.srv import GetPositionIK
+
+
+class MissionController(Node):
+    def __init__(self):
+        super().__init__('mission_controller')
+
+        self.is_working = False
+        # ⭐️ 추가: 물체를 한 번 인식했는지 확인하는 플래그
+        self.target_acquired = False 
+        
+        # 1. TF Listener 설정
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        # 2. Action Clients
+        self.move_group_client = ActionClient(self, MoveGroup, 'move_action')
+        self.gripper_client = ActionClient(
+            self, FollowJointTrajectory, '/gripper_group_controller/follow_joint_trajectory'
+        )
+        
+        # compute_ik
+        self.compute_ik_client = self.create_client(
+            GetPositionIK,
+            "/compute_ik"
+        )
+        self.get_logger().info("Waiting for /compute_ik ...")
+        self.compute_ik_client.wait_for_service()
+
+        self.get_logger().info("Waiting for Action Servers (MoveIt & Gripper)...")
+        self.move_group_client.wait_for_server()
+        self.gripper_client.wait_for_server()
+        self.get_logger().info("System Ready! Waiting for TF [target_object]...")
+
+        # 3. FSM 트리거용 타이머
+        self.timer = self.create_timer(1.0, self.check_target_and_execute)
+
+    def check_target_and_execute(self):
+        # ⭐️ 플래그 검사: 이미 작업 중이거나, 목표물을 한 번이라도 인식했다면 바로 리턴
+        if self.is_working or self.target_acquired:
+            return
+
+        try:
+            transform = self.tf_buffer.lookup_transform(
+                "base_link", "target_object", rclpy.time.Time()
+            )
+            
+            target_x = transform.transform.translation.x
+            target_y = transform.transform.translation.y
+            target_z = transform.transform.translation.z
+            
+            self.get_logger().info(f"Target TF Detected: ({target_x:.3f}, {target_y:.3f}, {target_z:.3f})")
+            
+            # ⭐️ 핵심 변경: 첫 인식 후 플래그 활성화 및 타이머 정지
+            self.target_acquired = True
+            self.is_working = True
+            self.timer.cancel() # 더 이상 TF를 조회하지 않도록 타이머 콜백을 완전히 중지시킵니다.
+            
+            threading.Thread(target=self.execute_pick_and_place, args=(target_x, target_y, target_z)).start()
+
+        except Exception:
+            # TF를 찾지 못한 경우(카메라에 안 보이는 경우) 계속 대기
+            pass
+
+    # ... (이하 execute_pick_and_place, move_arm, control_gripper 등의 메서드는 기존 코드와 동일하게 유지) ...
+    
+    
+    def execute_pick_and_place(self, t_x, t_y, t_z):
+        try:
+            # ⭐️ time.sleep() 대신 Action의 완료를 기다리도록 로직 변경 (내부적으로 while not future.done() 사용)
+            
+            # [Step 1] Pre-Grasp: 물체 상공 15cm
+            self.get_logger().info(">>> [Step 1] Pre-Grasp Approach")
+            self.control_gripper("open") # 그리퍼를 먼저 열면서 이동
+            # ⭐️ 순서 변경: 팔을 움직이기 전에 그리퍼를 먼저 완벽히 엽니다.
+            time.sleep(1.0) # 그리퍼가 벌어질 때까지 확실하게 대기 (자가 충돌 해제 시간)            
+            # self.move_arm(t_x - 0.3, t_y, t_z + 0.15)
+            # self.move_arm(0.90829, 0.0, 0.1289+0.2)
+            # self.move_arm(1.0, 0.0, 0.1289+0.3)
+            self.move_arm(t_x, 0.0, t_z+0.4289) #ok
+            # self.move_arm(t_x, t_y, t_z+0.4289) #fail
+            
+            # time.sleep(8) # 동작 완료 대기
+            time.sleep(1.0) 
+
+            # [Step 2] Grasp Approach: 하강 (z + 0.02)
+            self.get_logger().info(">>> [Step 2] Descending to Object")
+            # self.move_arm(t_x, t_y, t_z + 0.02) 
+            # self.move_arm(0.90829, 0.0, 0.1289+0.02)
+            # self.move_arm(1.0, 0.0, 0.1289+0.02)
+            self.move_arm(t_x, 0.0, t_z + 0.15)
+            time.sleep(1.0) 
+            
+            # [Step 3] Grasping: 잡기
+            self.get_logger().info(">>> [Step 3] Gripping")
+            self.control_gripper("close")
+            # time.sleep(0.5) # 물리 엔진에서 물체가 잡히는 안정화 시간 (이 경우는 sleep 허용)
+            time.sleep(1) # 물리 엔진에서 물체가 잡히는 안정화 시간 (이 경우는 sleep 허용)
+
+            # [Step 4] Post-Grasp: 들어 올리기
+            self.get_logger().info(">>> [Step 4] Lifting")
+            # self.move_arm(t_x, t_y, t_z + 0.20)
+            self.move_arm(0.90829, 0.0, 0.1289+0.3)
+            # self.move_arm(1,0, 0.0, 0.1289+0.3)            
+
+            # [Step 5] Move to Bin (x=0.0, y=0.3, z=0.3)
+            self.get_logger().info(">>> [Step 5] Moving to Bin")
+            # self.move_arm(0.0, 0.3, 0.3)
+            self.move_arm(1.05, 0.0, 0.1289+0.1)
+            time.sleep(1) # 물리 엔진에서 물체가 잡히는 안정화 시간 (이 경우는 sleep 허용)
+
+            # [Step 6] Release: 놓기
+            self.get_logger().info(">>> [Step 6] Releasing")
+            self.control_gripper("open")
+            time.sleep(1)
+
+            self.get_logger().info(">>> [Step 7] Mission Complete.")
+
+        except Exception as e:
+            self.get_logger().error(f"Mission Failed: {e}")
+        finally:
+            self.is_working = False 
+
+    def move_arm(self, x, y, z, qx=0.0, qy=1.0, qz=0.0, qw=0.0):
+    # def move_arm(self, x, y, z, qx=0.0, qy=0.7071, qz=0.0, qw=0.7071):    
+    # def move_arm(self, x, y, z, qx=0.674506, qy=-0.677911, qz=-0.206224, qw=0.207243):
+    #ori_constraint.orientation = Quaternion(x=-0.674506, y=0.677911, z=-0.206224, w=0.207243)    
+        req = GetPositionIK.Request()
+        req.ik_request.group_name = "arm_group"
+        req.ik_request.avoid_collisions = True
+        req.ik_request.pose_stamped.header.frame_id = "base_link"
+        req.ik_request.pose_stamped.pose.position.x = x
+        req.ik_request.pose_stamped.pose.position.y = y
+        req.ik_request.pose_stamped.pose.position.z = z
+        req.ik_request.pose_stamped.pose.orientation.x = qx
+        req.ik_request.pose_stamped.pose.orientation.y = qy
+        req.ik_request.pose_stamped.pose.orientation.z = qz
+        req.ik_request.pose_stamped.pose.orientation.w = qw
+        self.get_logger().info(f"ComputeIK -> ({x:.3f}, {y:.3f}, {z:.3f})")
+        future = self.compute_ik_client.call_async(req)
+        # while not future.done():
+        #     rclpy.spin_once(self, timeout_sec=0.1)
+        while not future.done():
+            time.sleep(0.05)
+        response = future.result()
+        if response is None:
+            raise RuntimeError("IK response is None")
+        if response.error_code.val != 1:
+            raise RuntimeError(f"IK Failed (error={response.error_code.val})")
+        joint_state = response.solution.joint_state
+        joint_map = dict(zip(joint_state.name, joint_state.position))
+        goal_msg = MoveGroup.Goal()
+        goal_msg.request.group_name = "arm_group"
+        goal_msg.request.allowed_planning_time = 5.0
+        goal_msg.request.num_planning_attempts = 5
+        goal_msg.planning_options.plan_only = False
+        goal_msg.planning_options.replan = False
+        constraints = Constraints()
+        for joint_name in ["joint1", "joint2", "joint3", "joint4", "joint_wrist"]:
+            if joint_name not in joint_map:
+                continue
+            jc = JointConstraint()
+            jc.joint_name = joint_name
+            jc.position = float(joint_map[joint_name])
+            jc.tolerance_above = 0.01
+            jc.tolerance_below = 0.01
+            jc.weight = 1.0
+            constraints.joint_constraints.append(jc)
+        goal_msg.request.goal_constraints.append(constraints)
+        self.get_logger().info("Sending MoveGroup Goal...")
+        future = self.move_group_client.send_goal_async(goal_msg)
+        while not future.done():
+            # rclpy.spin_once(self, timeout_sec=0.1)
+            time.sleep(0.05)
+        goal_handle = future.result()
+        if not goal_handle or not goal_handle.accepted:
+            raise RuntimeError("MoveGroup rejected goal")
+        result_future = goal_handle.get_result_async()
+        while not result_future.done():
+            # rclpy.spin_once(self, timeout_sec=0.1)
+            time.sleep(0.05)
+        result = result_future.result()
+        if result is None:
+            raise RuntimeError("MoveGroup result is None")
+        self.get_logger().info(f"MoveIt status = {result.status}")
+        if result.status != 4:
+            raise RuntimeError("Move execution failed")
+        self.get_logger().info("Move SUCCESS")
+
+    def control_gripper(self, command):
+        # width = 0.025 if command == 'open' else 0.005 
+        # width = 0.005 if command == 'open' else 0.02
+        width = 0.001 if command == 'open' else 0.02
+        
+        goal = FollowJointTrajectory.Goal()
+        
+        # ⭐️ 로봇 모델에 맞는 정확한 그리퍼 조인트 이름으로 변경!
+        # [후보 1] 단일 조인트일 경우:
+        # goal.trajectory.joint_names = ['finger_joint'] 
+        # [후보 2] 양쪽 핑거를 개별 제어하는 멀티 조인트일 경우:
+        goal.trajectory.joint_names = ['joint_finger1', 'joint_finger2']
+        
+        point = JointTrajectoryPoint()
+        # point.positions = [width]
+        point.positions = [width, width] # 조인트 개수에 맞게 위치 배열도 늘려야 함
+        point.time_from_start.sec = 1
+        point.time_from_start.nanosec = 0
+        goal.trajectory.points = [point]
+        
+        # 액션 전송
+        self.get_logger().info(f"Sending Gripper Goal: {width}")
+        future = self.gripper_client.send_goal_async(goal)
+        
+        # ⭐️ 그리퍼도 실행이 끝날 때까지 대기
+        while not future.done():
+            time.sleep(0.05)
+            
+        goal_handle = future.result()
+        if goal_handle.accepted:
+            result_future = goal_handle.get_result_async()
+            while not result_future.done():
+                time.sleep(0.05)
+
+    # 'JointConstraint 방식' 분리 진단 테스트: ok
+    def test_joint_goal(self):
+        self.latest_joint_state = None
+        goal_msg = MoveGroup.Goal()
+        goal_msg.request.group_name = "arm_group"
+        goal_msg.request.allowed_planning_time = 5.0
+        goal_msg.request.num_planning_attempts = 5
+        goal_msg.planning_options.plan_only = False
+        goal_msg.planning_options.replan = False
+        # Start State
+        if self.latest_joint_state is not None:
+            start_state = RobotState()
+            start_state.joint_state.name = \
+                list(self.latest_joint_state.name)
+            start_state.joint_state.position = \
+                list(self.latest_joint_state.position)
+            goal_msg.request.start_state = start_state
+        # Goal Joint Constraints
+        jc1 = JointConstraint()
+        jc1.joint_name = "joint1"
+        jc1.position = 0.0
+        jc1.tolerance_above = 0.05
+        jc1.tolerance_below = 0.05
+        jc1.weight = 1.0
+
+        jc2 = JointConstraint()
+        jc2.joint_name = "joint2"
+        jc2.position = 0.3
+        jc2.tolerance_above = 0.05
+        jc2.tolerance_below = 0.05
+        jc2.weight = 1.0
+
+        jc3 = JointConstraint()
+        jc3.joint_name = "joint3"
+        jc3.position = 1.57
+        jc3.tolerance_above = 0.05
+        jc3.tolerance_below = 0.05
+        jc3.weight = 1.0
+
+        jc4 = JointConstraint()
+        jc4.joint_name = "joint4"
+        jc4.position = 0.3
+        jc4.tolerance_above = 0.05
+        jc4.tolerance_below = 0.05
+        jc4.weight = 1.0
+
+        jc5 = JointConstraint()
+        jc5.joint_name = "joint_wrist"
+        jc5.position = 0.0
+        jc5.tolerance_above = 0.05
+        jc5.tolerance_below = 0.05
+        jc5.weight = 1.0
+
+        constraints = Constraints()
+
+        constraints.joint_constraints = [jc1, jc2, jc3, jc4, jc5]
+        goal_msg.request.goal_constraints.append(constraints)
+        self.get_logger().info("Sending Joint Goal Test...")
+        future = self.move_group_client.send_goal_async(goal_msg)
+        while not future.done():
+            time.sleep(0.05)
+
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            raise RuntimeError("MoveGroup rejected goal")
+
+        result_future = goal_handle.get_result_async()
+        while not result_future.done():
+            time.sleep(0.05)
+
+        result = result_future.result()
+        self.get_logger().info(
+            f"MoveIt status = {result.status}"
+        )
+
+        if result.status != 4:
+            raise RuntimeError("Joint goal execution failed")
+        self.get_logger().info("Joint Goal SUCCESS")
+
+    # 'PositionConstraint 기반 Goal 생성' 분리 진단 테스트
+    from geometry_msgs.msg import PoseStamped
+    from moveit_msgs.msg import Constraints
+    from moveit_msgs.msg import PositionConstraint
+    from shape_msgs.msg import SolidPrimitive
+
+    # PositionConstraint 기반 Goal
+    def move_arm_pose_test(self):
+        goal = MoveGroup.Goal()
+        goal.request.group_name = "arm_group"
+        goal.planning_options.plan_only = True
+        goal.request.allowed_planning_time = 10.0
+        goal.request.num_planning_attempts = 10
+
+        pose_constraint = PositionConstraint()
+        pose_constraint.header.frame_id = "base_link"
+        pose_constraint.link_name = "link_wrist"
+        # pose_constraint.link_name = "link4"
+        pose_constraint.weight = 1.0
+
+        sphere = SolidPrimitive()
+        sphere.type = SolidPrimitive.SPHERE
+        sphere.dimensions = [0.1]
+
+        pose_constraint.constraint_region.primitives.append(
+            sphere
+        )
+
+        target = PoseStamped()
+        target.header.frame_id = "base_link"
+
+        target.pose.position.x = 0.30
+        target.pose.position.y = 0.00
+        target.pose.position.z = 0.40
+
+        pose_constraint.constraint_region.primitive_poses.append(
+            target.pose
+        )
+
+        goal.request.goal_constraints.append(
+            Constraints(
+                position_constraints=[pose_constraint]
+            )
+        )
+
+        future = self.move_group_client.send_goal_async(
+            goal
+        )
+    
+def main(args=None):
+    rclpy.init(args=args)
+    controller = MissionController()
+    rclpy.spin(controller)
+    controller.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

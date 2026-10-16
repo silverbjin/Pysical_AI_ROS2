@@ -1,0 +1,35 @@
+digraph G {
+node [shape=box];
+"base_link" [label="base_link"];
+"link1" [label="link1"];
+"link2" [label="link2"];
+"link3" [label="link3"];
+"link4" [label="link4"];
+"link_wrist_pitch" [label="link_wrist_pitch"];
+"link_wrist_yaw" [label="link_wrist_yaw"];
+"tool0" [label="tool0"];
+"gripper_base" [label="gripper_base"];
+"finger1" [label="finger1"];
+"finger2" [label="finger2"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"base_link" -> "joint1" [label="xyz: 0 0 0.1 \nrpy: 0 -0 0"]
+"joint1" -> "link1"
+"link1" -> "joint2" [label="xyz: 0 0 0.5 \nrpy: 0 -0 0"]
+"joint2" -> "link2"
+"link2" -> "joint3" [label="xyz: 0 0 0.5 \nrpy: 0 -0 0"]
+"joint3" -> "link3"
+"link3" -> "joint4" [label="xyz: 0 0 0.5 \nrpy: 0 -0 0"]
+"joint4" -> "link4"
+"link4" -> "joint5" [label="xyz: 0 0 0.5 \nrpy: 0 -0 0"]
+"joint5" -> "link_wrist_pitch"
+"link_wrist_pitch" -> "joint6" [label="xyz: 0 0 0.08 \nrpy: 0 -0 0"]
+"joint6" -> "link_wrist_yaw"
+"link_wrist_yaw" -> "tool0_fixed" [label="xyz: 0 0 0.04 \nrpy: 0 -0 0"]
+"tool0_fixed" -> "tool0"
+"tool0" -> "gripper_base_fixed" [label="xyz: 0 0 0 \nrpy: 0 -0 0"]
+"gripper_base_fixed" -> "gripper_base"
+"gripper_base" -> "joint_finger1" [label="xyz: -0.03 0 0.04 \nrpy: 0 -0 0"]
+"joint_finger1" -> "finger1"
+"gripper_base" -> "joint_finger2" [label="xyz: 0.03 0 0.04 \nrpy: 0 -0 0"]
+"joint_finger2" -> "finger2"
+}

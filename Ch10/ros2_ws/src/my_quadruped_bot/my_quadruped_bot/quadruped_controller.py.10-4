@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from std_msgs.msg import Float64
+import numpy as np
+from typing import Dict, List, Tuple
+
+# 10.2절 리팩토링에서 완성한 GaitPlanner 클래스 임포트
+# (실제 패키지 구조에 맞게 같은 디렉토리 내에 있다고 가정합니다)
+from my_quadruped_bot.gait_planner import GaitPlanner
+
+class QuadrupedController(Node):
+    def __init__(self) -> None:
+        super().__init__('quadruped_controller')
+        
+        # 1. 로봇의 물리적 제원 설정 (단위: m)
+        self.L_HIP_X: float = 0.25  # 몸통 중심 -> 앞/뒤 엉덩이 X축 거리 절반
+        self.L_HIP_Y: float = 0.15  # 몸통 중심 -> 좌/우 엉덩이 Y축 거리 절반
+        self.L_THIGH: float = 0.20  # 허벅지 링크 길이
+        self.L_CALF: float = 0.20   # 종아리 링크 길이
+        
+        # 2. 보행 플래너(Gait Scheduler) 장착
+        # 기본 보행은 'trot'으로 설정 (원하는 경우 'walk' 또는 'pace'로 변경 가능)
+        self.planner: GaitPlanner = GaitPlanner(gait_type='trot')
+        
+        # 3. 통신 인터페이스 설정 (Subscribers)
+        self.cmd_vel_sub = self.create_subscription(
+            Twist, '/cmd_vel', self.cmd_vel_callback, 10
+        )
+        
+        # 4. 통신 인터페이스 설정 (Publishers)
+        # [Ch.09 제약 준수] ros_gz_bridge 연계를 위한 12개 관절 개별 Float64 토픽 선언
+        self.leg_names: List[str] = ['fl', 'fr', 'rl', 'rr']
+        self.joint_types: List[str] = ['hip', 'thigh', 'calf']
+        self.publishers_: Dict[str, rclpy.publisher.Publisher] = {}
+        
+        for leg in self.leg_names:
+            for j_type in self.joint_types:
+                joint_name = f'{leg}_{j_type}'
+                topic_name = f'/model/my_quadruped/joint/{joint_name}_joint/cmd_pos'
+                self.publishers_[joint_name] = self.create_publisher(Float64, topic_name, 10)
+        
+        # 5. 제어 타이머 설정 (50Hz = 0.02초 주기)
+        self.dt: float = 0.02 
+        self.timer = self.create_timer(self.dt, self.control_loop)
+        
+        # 6. 상태 변수 초기화
+        self.linear_velocity: np.ndarray = np.array([0.0, 0.0])  # v_x, v_y
+        self.angular_velocity: float = 0.0                      # w_z
+        
+        self.get_logger().info("Quadruped Controller with GaitPlanner Initialized!")
+
+    def cmd_vel_callback(self, msg: Twist) -> None:
+        """사용자(조이스틱 또는 상위 내비게이션)로부터 속도 명령 수신 콜백"""
+        self.linear_velocity[0] = msg.linear.x
+        self.linear_velocity[1] = msg.linear.y
+        self.angular_velocity = msg.angular.z
+
+    def control_loop(self) -> None:
+        """[메인 제어 루프] 50Hz 주기로 실행되는 보행 제어 파이프라인"""
+        # [Step 1] 내부 타이머 및 스케줄러 시간 업데이트
+        self.planner.update(self.dt)
+        
+        # [Step 2] 현재 시간 기준 각 다리의 상태(Swing/Stance)와 개별 위상(Phase) 획득
+        contact_states, leg_phases = self.planner.get_leg_states()
+        
+        # [Step 3] 발끝 목표 위치 계산 
+        # (10.3절에서 궤적 생성기가 연동되면 contact_states와 leg_phases를 매개변수로 전달하게 됩니다)
+        foot_positions = self.get_standing_pose()
+        
+        # [Step 4] 역운동학(IK) 계산을 통해 관절각 도출
+        joint_angles = self.solve_inverse_kinematics(foot_positions)
+        
+        # [Step 5] 계산된 관절 명령을 가제보(또는 실제 로봇)로 송출
+        self.publish_joints(joint_angles)
+        
+        # 데이터 모니터링 로그 (실습 디버깅용, 주기가 빠르므로 필요 시 활성화)
+        # self.debug_gait_log(contact_states, leg_phases)
+
+    def get_standing_pose(self) -> Dict[str, List[float]]:
+        """제자리 기립 상태의 발끝 좌표 (Body Frame 기준, 단위: m)"""
+        z_clearance = -0.3  # 지면으로부터 몸체가 떠 있는 목표 높이
+        return {
+            'fl': [ self.L_HIP_X,  self.L_HIP_Y, z_clearance],
+            'fr': [ self.L_HIP_X, -self.L_HIP_Y, z_clearance],
+            'rl': [-self.L_HIP_X,  self.L_HIP_Y, z_clearance],
+            'rr': [-self.L_HIP_X, -self.L_HIP_Y, z_clearance]
+        }
+
+    def solve_inverse_kinematics(self, foot_positions: Dict[str, List[float]]) -> Dict[str, float]:
+        """
+        [Placeholder] 발끝 좌표(xyz) -> 관절 각도 변환
+        - 10.4절에서 완전한 수식이 구현됩니다.
+        - [Ch.09 제약 준수] Method C에 따른 기립 기준 자세 바이어스(-0.6, 1.2 rad) 반영
+        """
+        target_angles: Dict[str, float] = {}
+        for leg in self.leg_names:
+            target_angles[f'{leg}_hip'] = 0.0
+            target_angles[f'{leg}_thigh'] = -0.6  # [Method C] 허벅지 기준 기립 각도
+            target_angles[f'{leg}_calf'] = 1.2    # [Method C] 종아리 기준 기립 각도
+            
+        return target_angles
+
+    def publish_joints(self, angles: Dict[str, float]) -> None:
+        """계산된 12개 관절 각도를 개별 토픽으로 순차 발행"""
+        for joint_name, angle in angles.items():
+            if joint_name in self.publishers_:
+                msg = Float64()
+                msg.data = angle
+                self.publishers_[joint_name].publish(msg)
+
+    def debug_gait_log(self, contact_states: List[bool], leg_phases: List[float]) -> None:
+        """다리별 상태 및 위상을 터미널에 시각적으로 출력하는 디버그 유틸리티"""
+        state_str = ""
+        for i, leg in enumerate(self.leg_names):
+            status = "STANCE" if contact_states[i] else "SWING "
+            state_str += f"[{leg.upper()}: {status} ({leg_phases[i]:.2f})] "
+        self.get_logger().info(state_str)
+
+def main(args=None):
+    rclpy.init(args=args)
+    controller = QuadrupedController()
+    try:
+        rclpy.spin(controller)
+    except KeyboardInterrupt:
+        controller.get_logger().info("Program interrupted by user. Shutting down.")
+    finally:
+        controller.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

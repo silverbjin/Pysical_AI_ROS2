@@ -1,0 +1,128 @@
+import gymnasium as gym
+from gymnasium import spaces
+import numpy as np
+import mujoco
+import os
+
+class MuJoCoArmEnv(gym.Env):
+    """
+    MuJoCo 시뮬레이터와 연동되는 3관절 로봇 팔 강화학습 환경
+    """
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
+
+    # def __init__(self, model_path="simple_arm.xml", render_mode=None):
+    def __init__(self, model_path="src/my_robot_description/urdf/two_dof_arm.xml", render_mode=None):
+        super(MuJoCoArmEnv, self).__init__()
+        
+        # 1. MuJoCo 모델 로드
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"모델 파일을 찾을 수 없습니다: {model_path}")
+            
+        self.model = mujoco.MjModel.from_xml_path(model_path)
+        self.data = mujoco.MjData(self.model)
+        
+        self.render_mode = render_mode
+        self.viewer = None # 렌더링 뷰어 객체
+
+        # 2. Action Space 정의 (3개 관절의 토크 제어)
+        # 범위: -1.0 ~ 1.0 (step 함수 내부에서 실제 토크로 변환 예정)
+        n_actions = 3
+        self.action_space = spaces.Box(
+            low=-1.0, high=1.0, shape=(n_actions,), dtype=np.float32
+        )
+
+        # 3. Observation Space 정의
+        # [관절각도(3), 관절속도(3), 목표위치(3)] = 9차원
+        n_observations = 9
+        self.observation_space = spaces.Box(
+            low=-np.inf, high=np.inf, shape=(n_observations,), dtype=np.float32
+        )
+        
+        # 목표 지점 설정 (임시 초기화)
+        self.target_pos = np.array([0.5, 0.0, 0.5])
+
+    def _get_obs(self):
+        """
+        현재 시뮬레이터(self.data)에서 관측값을 추출하여 반환하는 헬퍼 함수
+        """
+        # qpos: 관절 위치, qvel: 관절 속도
+        # MuJoCo의 qpos는 구조에 따라 크기가 다를 수 있으므로 인덱싱에 주의
+        qpos = self.data.qpos[:3].astype(np.float32)
+        qvel = self.data.qvel[:3].astype(np.float32)
+        target = self.target_pos.astype(np.float32)
+        
+        # 모든 정보를 하나의 1차원 배열로 합친다 (Concatenate)
+        return np.concatenate([qpos, qvel, target])
+
+    def reset(self, seed=None, options=None):
+        """
+        에피소드가 끝날 때마다 환경을 초기 상태로 되돌리는 함수
+        """
+        super().reset(seed=seed)
+        
+        # 1. MuJoCo 데이터 초기화 (t=0, qpos=0, qvel=0)
+        mujoco.mj_resetData(self.model, self.data)
+        
+        # 2. 목표 위치를 랜덤하게 재설정 (Domain Randomization의 기초)
+        # 예: x(0.3~0.7), y(-0.2~0.2), z(0.3~0.6) 범위 내 랜덤 생성
+        self.target_pos = np.random.uniform(
+            low=[0.3, -0.2, 0.3], high=[0.7, 0.2, 0.6]
+        )
+        
+        # 시뮬레이터를 초기 상태로 한 번 동기화
+        mujoco.mj_forward(self.model, self.data)
+        
+        observation = self._get_obs()
+        info = {} # 추가 정보가 필요하면 딕셔너리에 담는다.
+        
+        return observation, info
+    
+    def step(self, action):
+        """
+        Agent의 행동을 받아 1 step 진행
+        action: Agent가 출력한 모터 토크 값 (-1.0 ~ 1.0)
+        """
+        # 1. Action 적용
+        # AI의 출력 범위(-1 ~ 1)를 실제 모터 토크 범위(-50Nm ~ 50Nm)로 변환
+        motor_scaling = 50.0
+        self.data.ctrl[:] = action * motor_scaling
+        
+        # 2. 물리 시뮬레이션 진행 (MuJoCo Core)
+        # frame skip: 학습 속도를 위해 한 번의 step 호출에 물리 연산을 여러 번 수행
+        # 예: 물리 timestep이 0.002초이고 10번 반복하면, 제어 주기는 0.02초(50Hz)가 됨
+        for _ in range(10):
+            mujoco.mj_step(self.model, self.data)
+            
+        # 3. 새로운 관측값 획득
+        observation = self._get_obs()
+        
+        # 4. 보상(Reward) 계산 (매우 중요!)
+        # 로봇 팔 끝(End-Effector)의 위치 가져오기
+        # 'end_effector'는 XML에서 정의한 body 이름이어야 함
+        ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "link_ee")
+        ee_pos = self.data.xpos[ee_id]
+        
+        # 목표 지점과의 거리 계산 (유클리드 거리)
+        distance = np.linalg.norm(ee_pos - self.target_pos)
+        
+        # 보상 설계: 거리가 가까울수록 0에 가깝고, 멀수록 큰 음수값 (Negative Reward)
+        reward = -distance 
+        
+        # 5. 종료 조건 확인 (Terminated vs Truncated)
+        terminated = False
+        if distance < 0.05: # 목표 반경 5cm 이내에 도달하면 성공 종료
+            reward += 10.0 # 성공 보너스
+            terminated = True
+            
+        truncated = False # 시간 초과 등에 사용 (여기서는 미사용)
+        
+        info = {
+            "distance": distance
+        }
+        
+        return observation, reward, terminated, truncated, info
+
+    def close(self):
+        if self.viewer is not None:
+            self.viewer.close()
+

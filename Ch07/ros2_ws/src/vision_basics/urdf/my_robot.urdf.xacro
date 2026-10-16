@@ -1,0 +1,194 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="my_robot">
+
+  <xacro:property name="base_radius" value="0.1"/>
+  <xacro:property name="base_height" value="0.1"/>
+  <xacro:property name="link_len" value="0.5"/>
+  <xacro:property name="link_width" value="0.05"/>
+  <xacro:property name="link_mass" value="1.0"/>
+
+  <xacro:macro name="box_inertia" params="m w h d">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${(m/12) * (h*h + d*d)}" ixy="0.0" ixz="0.0"
+               iyy="${(m/12) * (w*w + d*d)}" iyz="0.0"
+               izz="${(m/12) * (w*w + h*h)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="cylinder_inertia" params="m r h">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${(m/12) * (3*r*r + h*h)}" ixy="0.0" ixz="0.0"
+               iyy="${(m/12) * (3*r*r + h*h)}" iyz="0.0"
+               izz="${(m/2) * (r*r)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="arm_link_macro" params="name color_name r g b">
+    <link name="${name}">
+      <visual>
+        <geometry>
+          <box size="${link_width} ${link_width} ${link_len}"/>
+        </geometry>
+        <origin xyz="0 0 ${link_len/2}" rpy="0 0 0"/>
+        <material name="${color_name}">
+          <color rgba="${r} ${g} ${b} 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${link_width} ${link_width} ${link_len}"/>
+        </geometry>
+        <origin xyz="0 0 ${link_len/2}" rpy="0 0 0"/>
+      </collision>
+      <xacro:box_inertia m="${link_mass}" w="${link_width}" h="${link_len}" d="${link_width}"/>
+    </link>
+  </xacro:macro>
+
+  <!-- <link name="world"/>
+  
+  <joint name="world_to_base_joint" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint> -->
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="${base_height}" radius="${base_radius}"/>
+      </geometry>
+      <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+      <material name="gray"><color rgba="0.2 0.2 0.2 1"/></material>
+    </visual>
+    <collision>
+      <geometry><cylinder length="${base_height}" radius="${base_radius}"/></geometry>
+      <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+    </collision>
+    <xacro:cylinder_inertia m="10.0" r="${base_radius}" h="${base_height}"/>
+  </link>
+
+  <xacro:arm_link_macro name="link1" color_name="orange" r="1" g="0.6" b="0"/>
+
+  <joint name="joint1" type="revolute">
+    <parent link="base_link"/>
+    <child link="link1"/>
+    <origin xyz="0 0 ${base_height}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/> <limit lower="-3.14159" upper="3.14159" effort="100" velocity="1.0"/>
+  </joint>
+
+  <xacro:arm_link_macro name="link2" color_name="yellow" r="1" g="1" b="0"/>
+
+  <joint name="joint2" type="revolute">
+    <parent link="link1"/>
+    <child link="link2"/>
+    <origin xyz="0 0 ${link_len}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/> <limit lower="-1.57079" upper="1.57079" effort="100" velocity="1.0"/>
+  </joint>
+
+  <xacro:arm_link_macro name="link3" color_name="green" r="0" g="0.8" b="0.2"/>
+
+  <joint name="joint3" type="revolute">
+    <parent link="link2"/>
+    <child link="link3"/>
+    <origin xyz="0 0 ${link_len}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/> <limit lower="-2.0944" upper="2.0944" effort="100" velocity="1.5"/>
+  </joint>
+
+  <xacro:arm_link_macro name="link4" color_name="blue" r="0" g="0.4" b="1"/>
+
+  <joint name="joint4" type="revolute">
+    <parent link="link3"/>
+    <child link="link4"/>
+    <origin xyz="0 0 ${link_len}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/> <limit lower="-3.14159" upper="3.14159" effort="100" velocity="2.0"/>
+  </joint>
+
+  <link name="link_wrist">
+    <visual>
+      <geometry>
+        <box size="0.08 0.06 0.06"/>
+      </geometry>
+      <origin xyz="0 0 0.03" rpy="0 0 0"/>
+      <material name="magenta"><color rgba="0.8 0 0.8 1"/></material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.08 0.06 0.06"/>
+      </geometry>
+      <origin xyz="0 0 0.03" rpy="0 0 0"/>
+    </collision>
+    <xacro:box_inertia m="0.3" w="0.08" h="0.06" d="0.06"/>
+  </link>
+
+  <joint name="joint_wrist" type="revolute">
+    <parent link="link4"/>
+    <child link="link_wrist"/>
+    <origin xyz="0 0 ${link_len}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.5708" upper="1.5708" effort="50" velocity="2.5"/>
+  </joint>
+
+  <link name="finger1">
+    <visual>
+      <geometry>
+        <box size="0.015 0.03 0.08"/>
+      </geometry>
+      <origin xyz="0 0 0.04" rpy="0 0 0"/>
+      <material name="white"><color rgba="1 1 1 1"/></material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.015 0.03 0.08"/>
+      </geometry>
+      <origin xyz="0 0 0.04" rpy="0 0 0"/>
+    </collision>
+    <xacro:box_inertia m="0.05" w="0.015" h="0.03" d="0.08"/>
+  </link>
+
+  <joint name="joint_finger1" type="prismatic">
+    <parent link="link_wrist"/>
+    <child link="finger1"/>
+    <origin xyz="-0.03 0 0.06" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="0.0" upper="0.025" effort="20" velocity="0.2"/>
+  </joint>
+
+  <link name="finger2">
+    <visual>
+      <geometry>
+        <box size="0.015 0.03 0.08"/>
+      </geometry>
+      <origin xyz="0 0 0.04" rpy="0 0 0"/>
+      <material name="white"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.015 0.03 0.08"/>
+      </geometry>
+      <origin xyz="0 0 0.04" rpy="0 0 0"/>
+    </collision>
+    <xacro:box_inertia m="0.05" w="0.015" h="0.03" d="0.08"/>
+  </link>
+
+  <joint name="joint_finger2" type="prismatic">
+    <parent link="link_wrist"/>
+    <child link="finger2"/>
+    <origin xyz="0.03 0 0.06" rpy="0 0 0"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="0.0" upper="0.025" effort="20" velocity="0.2"/>
+  </joint>
+
+  <!-- ROS2 Control을 위한 시스템 정의 -->
+  <!-- <xacro:include filename="$(find vision_basics)/urdf/my_robot.ros2_control.xacro" />
+  
+  <xacro:my_robot_ros2_control name="FakeSystem" initial_positions_file="$(find my_robot_moveit_config)/config/initial_positions.yaml"/> -->
+  
+  <!-- <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find vision_basics)/config/ros2_controllers.yaml</parameters>
+    </plugin>
+  </gazebo> -->
+
+</robot>

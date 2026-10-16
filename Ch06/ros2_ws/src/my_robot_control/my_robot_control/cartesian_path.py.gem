@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+import time
+import os
+import gc
+import rclpy
+import copy
+from geometry_msgs.msg import PoseStamped
+
+from moveit.planning import MoveItPy
+from moveit_configs_utils import MoveItConfigsBuilder
+from ament_index_python.packages import get_package_share_directory
+
+def build_cartesian_config():
+    moveit_config = (
+        MoveItConfigsBuilder(robot_name="my_robot", package_name="my_robot_moveit_config")
+        .robot_description(file_path="urdf/my_robot.urdf.xacro")
+        .robot_description_semantic(file_path="config/my_robot.srdf")
+        .robot_description_kinematics(file_path="config/kinematics.yaml")
+        .joint_limits(file_path="config/joint_limits.yaml")
+        .to_moveit_configs()
+    )
+    
+    params = moveit_config.to_dict()
+
+    # Pilz 파이프라인 활성화 및 기본화
+    params["planning_pipelines"] = {
+        "pipeline_names": ["ompl", "pilz_industrial_motion_planner"],
+        "default_planning_pipeline": "pilz_industrial_motion_planner", 
+    }
+
+    # 현재 상태를 읽어오기 위한 모니터 필수 설정
+    params["planning_scene_monitor_options"] = {
+        "name": "planning_scene_monitor",
+        "robot_description": "robot_description",
+        "joint_state_topic": "/joint_states",
+        "wait_for_initial_state_timeout": 10.0,
+    }
+
+    # LIN(직선 이동) 파라미터 강제 주입
+    params["plan_request_params"] = {
+        "planning_pipeline": "pilz_industrial_motion_planner",
+        "planner_id": "LIN", 
+        "planning_attempts": 1,
+        "planning_time": 5.0,
+        "max_velocity_scaling_factor": 0.1,    
+        "max_acceleration_scaling_factor": 0.1,
+    }
+    
+    return params
+
+def main():
+    rclpy.init()
+    
+    print("=== MoveItPy Cartesian Path Tutorial ===")
+    config_dict = build_cartesian_config()
+    
+    my_robot = MoveItPy(node_name="cartesian_tutorial", config_dict=config_dict)
+    arm = my_robot.get_planning_component("arm_group")
+    
+    time.sleep(2.0) 
+
+    # ---------------------------------------------------------
+    # 데카르트 직선 이동: 안전한 상대 좌표 방식
+    # ---------------------------------------------------------
+    print("\n[직선 이동] 현재 위치를 읽어와 Z축으로 +5cm 수직 상승합니다.")
+    
+    # 1. 현재 로봇 위치(Pose) 읽기
+    with my_robot.get_planning_scene_monitor().read_only() as scene:
+        robot_state = scene.current_state
+        current_pose_msg = robot_state.get_pose("link_wrist") 
+        # (주의: "link_wrist"가 SRDF에 정의된 실제 엔드 이펙터 링크 이름인지 확인하세요)
+
+    # 2. 현재 포즈를 기반으로 +5cm 상대 이동 목표 생성
+    target_pose = PoseStamped()
+    target_pose.header.frame_id = "base_link"
+    target_pose.pose = current_pose_msg
+    target_pose.pose.position.z += 0.05  # 딱 5cm만 위로!
+
+    arm.set_start_state_to_current_state()
+    arm.set_goal_state(pose_stamped_msg=target_pose, pose_link="link_wrist")
+
+    lin_plan = arm.plan()
+
+    if lin_plan:
+        print(">> 데카르트 경로(LIN) 계획 성공! 궤적을 실행합니다.")
+        my_robot.execute(lin_plan.trajectory, controllers=[])
+    else:
+        print(">> 데카르트 경로 계획 실패. (특이점 또는 관절 한계 초과 가능성)")
+
+    time.sleep(2.0)
+    print("\n=== Tutorial Finished ===")
+        
+    # ---------------------------------------------------------
+    # 안전하고 깔끔한 프로세스 강제 종료 (Segfault 회피용)
+    # ---------------------------------------------------------
+    print("\n=== Tutorial Finished ===")
+    
+    # 1. 사용한 하위 컴포넌트 변수들을 명시적으로 수동 초기화
+    try:
+        del arm
+        del my_robot
+    except NameError:
+        pass
+
+    # 2. 파이썬 가비지 컬렉터 강제 작동
+    gc.collect()
+    
+    # 3. rclcpp 컨텍스트 종료
+    if rclpy.ok():
+        rclpy.shutdown()
+        
+    # 4. 중요: C++ 소멸자 스레드가 꼬이기 전에 OS 레벨에서 프로세스 깔끔하게 즉시 종료
+    os._exit(0)
+
+if __name__ == "__main__":
+    main()

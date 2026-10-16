@@ -1,0 +1,227 @@
+<mujoco model="my_robot">
+  <default>
+    <default class="robot">
+      <default class="motor">
+        <joint />
+        <motor />
+      </default>
+      <default class="visual">
+        <geom material="visualgeom" contype="0" conaffinity="0" group="2" />
+      </default>
+      <default class="collision">
+        <!-- <geom material="collision_material" condim="3" contype="0" conaffinity="1" priority="1" group="1" solref="0.005 1" solimp="0.99 0.999 1e-05" friction="1 0.01 0.01" /> -->
+        <!-- cube environment 5. Self Contact -->
+        <!-- <geom material="collision_material" condim="3" contype="1" conaffinity="1" priority="1" group="1" solref="0.005 1" solimp="0.99 0.999 1e-05" friction="1 0.01 0.01" /> -->
+        <geom material="collision_material" condim="6" contype="1" conaffinity="1" priority="1" group="1" solref="0.005 1" solimp="0.95 0.99 0.001" friction="2 1 0.2" />
+      </default>
+    </default>
+  </default>
+
+  <compiler angle="radian" />
+
+  <asset>
+    <material name="gray" rgba="0.2 0.2 0.2 1" />
+    <material name="orange" rgba="1 0.6 0 1" />
+    <material name="yellow" rgba="1 1 0 1" />
+    <material name="green" rgba="0 0.8 0.2 1" />
+    <material name="blue" rgba="0 0.4 1 1" />
+    <material name="cyan" rgba="0 1 1 1" />
+    <material name="purple" rgba="0.8 0 0.8 1" />
+    <material name="red" rgba="1 0 0 1" />
+    <material name="dark_gray" rgba="0.3 0.3 0.3 1" />
+    <material name="white" rgba="1 1 1 1" />
+    <material name="default_material" rgba="0.7 0.7 0.7 1" />
+    <material name="collision_material" rgba="1.0 0.28 0.1 0.9" />
+  </asset>
+
+  <worldbody>
+    <!-- cube environment 1. Ground Plane -->
+    <geom name="ground" type="plane" size="3 3 0.1" rgba="0.8 0.8 0.8 1" condim="6"/>
+    <body name="base_link" pos="0.00000000 0.00000000 0.00000000" quat="1 0 0 0" childclass="robot">
+      <!-- 1) floating base 제거 -->
+      <!-- <freejoint name="floating_base"/> -->
+      <geom name="base_link_collision" pos="0 0 0.05" quat="1.0 0.0 0.0 0.0" type="cylinder" size="0.1 0.05" class="collision" />
+      <geom name="base_link_visual" pos="0 0 0.05" quat="1.0 0.0 0.0 0.0" material="gray" type="cylinder" size="0.1 0.05" class="visual" />
+      <body name="link1" pos="0 0 0.1" quat="1.0 0.0 0.0 0.0">
+        <!-- damping="10" 추가 -->
+        <joint name="joint1" type="hinge" ref="0.0" class="motor" range="-3.14159 3.14159" axis="0 0 1" damping="10" />
+        <inertial pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" mass="1.0" diaginertia="0.021041666666666667 0.00041666666666666675 0.021041666666666667" />
+        <geom name="link1_collision" pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" type="box" size="0.025 0.025 0.25" class="collision" />
+        <geom name="link1_visual" pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" material="orange" type="box" size="0.025 0.025 0.25" class="visual" />
+        <body name="link2" pos="0 0 0.5" quat="1.0 0.0 0.0 0.0">
+          <!-- damping="10" 추가 -->
+          <joint name="joint2" type="hinge" ref="0.0" class="motor" range="-1.57079 1.57079" axis="0 1 0" damping="10" />
+          <inertial pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" mass="1.0" diaginertia="0.021041666666666667 0.00041666666666666675 0.021041666666666667" />
+          <geom name="link2_collision" pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" type="box" size="0.025 0.025 0.25" class="collision" />
+          <geom name="link2_visual" pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" material="yellow" type="box" size="0.025 0.025 0.25" class="visual" />
+          <body name="link3" pos="0 0 0.5" quat="1.0 0.0 0.0 0.0">
+            <!-- damping="10" 추가 -->
+            <joint name="joint3" type="hinge" ref="0.0" class="motor" range="-2.0944 2.0944" axis="0 1 0" damping="10" />
+            <inertial pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" mass="1.0" diaginertia="0.021041666666666667 0.00041666666666666675 0.021041666666666667" />
+            <geom name="link3_collision" pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" type="box" size="0.025 0.025 0.25" class="collision" />
+            <geom name="link3_visual" pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" material="green" type="box" size="0.025 0.025 0.25" class="visual" />
+            <body name="link4" pos="0 0 0.5" quat="1.0 0.0 0.0 0.0">
+              <!-- damping="5" 추가 -->
+              <joint name="joint4" type="hinge" ref="0.0" class="motor" range="-3.14159 3.14159" axis="1 0 0" damping="5" />
+              <inertial pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" mass="1.0" diaginertia="0.021041666666666667 0.00041666666666666675 0.021041666666666667" />
+              <geom name="link4_collision" pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" type="box" size="0.025 0.025 0.25" class="collision" />
+              <geom name="link4_visual" pos="0 0 0.25" quat="1.0 0.0 0.0 0.0" material="blue" type="box" size="0.025 0.025 0.25" class="visual" />
+              <body name="link_wrist_pitch" pos="0 0 0.5" quat="1.0 0.0 0.0 0.0">
+                <!-- damping="5" 추가 -->
+                <joint name="joint5" type="hinge" ref="0.0" class="motor" range="-1.5708 1.5708" axis="0 1 0" damping="5" />
+                <inertial pos="0 0 0.04" quat="1.0 0.0 0.0 0.0" mass="0.3" diaginertia="0.00020999999999999998 0.00020999999999999998 0.00024" />
+                <geom name="link_wrist_pitch_collision" pos="0 0 0.04" quat="0.7071054825112363 0.7071080798594735 0.0 0.0" type="cylinder" size="0.04 0.03" class="collision" />
+                <geom name="link_wrist_pitch_visual" pos="0 0 0.04" quat="0.7071054825112363 0.7071080798594735 0.0 0.0" material="cyan" type="cylinder" size="0.04 0.03" class="visual" />
+                <body name="link_wrist_yaw" pos="0 0 0.08" quat="1.0 0.0 0.0 0.0">
+                  <!-- damping="5" 추가 -->
+                  <joint name="joint6" type="hinge" ref="0.0" class="motor" range="-3.14159 3.14159" axis="0 0 1" damping="5" />
+                  <inertial pos="0 0 0.02" quat="1.0 0.0 0.0 0.0" mass="0.2" diaginertia="8.791666666666668e-05 8.791666666666668e-05 0.00012250000000000002" />
+                  <geom name="link_wrist_yaw_collision" pos="0 0 0.02" quat="1.0 0.0 0.0 0.0" type="cylinder" size="0.035 0.02" class="collision" />
+                  <geom name="link_wrist_yaw_visual" pos="0 0 0.02" quat="1.0 0.0 0.0 0.0" material="purple" type="cylinder" size="0.035 0.02" class="visual" />
+                  <body name="tool0" pos="0 0 0.04" quat="1.0 0.0 0.0 0.0">
+                    <!-- 2) ee_site 추가: tool0 내부 -->
+                    <site name="ee_site" pos="0 0 0" size="0.005" rgba="1 0 0 1"/>
+                    <!-- for grapping  -->
+                    <geom name="tool0_visual" pos="0 0 0" quat="1 0 0 0" material="red" type="sphere" size="0.01" class="visual" />
+                    <body name="gripper_base" pos="0 0 0" quat="1 0 0 0">
+                      <!-- <inertial pos="0 0 0.02" quat="1 0 0 0" mass="0.2" diaginertia="0.0002 0.0002 0.0002"/> -->
+                      <geom name="gripper_base_collision" type="box" pos="0 0 0.02" size="0.025 0.02 0.02" class="collision"/>
+                      <!-- <geom name="gripper_base_collision" type="box" pos="0 0 0.02" size="0.025 0.02 0.02" contype="0" conaffinity="0" class="collision" /> -->
+                      <geom name="gripper_base_visual" type="box" pos="0 0 0.02" size="0.025 0.02 0.02" contype="0" conaffinity="0" material="dark_gray" class="visual"/>
+                      <!-- <site name="grasp_site" pos="0 0 0.08" size="0.005" rgba="1 1 0 1"/> -->
+                      <site name="grasp_site" pos="0 0 0.07" size="0.005" rgba="1 1 0 1"/>
+
+                      <body name="finger1" pos="-0.03 0 0.04">
+                        <joint name="joint_finger1" type="slide" axis="1 0 0" range="0 0.04" damping="2" limited="true"/>
+                        <!-- <joint name="joint_finger1" type="slide" axis="1 0 0" range="0 0.015" damping="0.1" limited="true"/> -->
+                        <!-- <inertial pos="0 0 0.03" mass="0.05" diaginertia="3e-05 3e-05 5e-06"/> -->
+                        <!-- <geom name="finger1_collision" type="box" pos="0 0 0.03" size="0.006 0.012 0.03" class="collision" friction="3 1 0.2" condim="6"/> -->
+                        <geom name="finger1_collision" type="box" pos="0 0 0.03" size="0.006 0.012 0.03" class="collision" friction="2.0 0.1 0.001" condim="6" solref="0.004 1" solimp="0.95 0.99 0.001" />
+                        <!-- <geom name="finger1_tip" type="box" pos="0 0 0.065" size="0.006 0.012 0.005" class="collision" friction="3 1 0.2" condim="6"/> -->
+                        <geom name="finger1_visual" type="box" pos="0 0 0.03" size="0.006 0.012 0.03" material="white" class="visual"/>
+                        <site name="finger1_site" pos="0 0 0.065" size="0.003" rgba="0 1 0 1"/>
+                      </body>
+
+                      <body name="finger2" pos="0.03 0 0.04">
+                        <joint name="joint_finger2" type="slide" axis="-1 0 0" range="0 0.04" damping="2" limited="true"/>
+                        <!-- <joint name="joint_finger2" type="slide" axis="-1 0 0" range="0 0.015" damping="0.1" limited="true"/> -->
+                        <!-- <inertial pos="0 0 0.03" mass="0.05" diaginertia="3e-05 3e-05 5e-06"/> -->
+                        <!-- <geom name="finger2_collision" type="box" pos="0 0 0.03" size="0.006 0.012 0.03" class="collision" friction="3 1 0.2" condim="6"/> -->
+                        <geom name="finger2_collision" type="box" pos="0 0 0.03" size="0.006 0.012 0.03" class="collision" friction="2.0 0.1 0.001" condim="6" solref="0.004 1" solimp="0.95 0.99 0.001" />
+                        <!-- <geom name="finger2_tip" type="box" pos="0 0 0.065" size="0.006 0.012 0.005" class="collision" friction="3 1 0.2" condim="6"/> -->
+                        <geom name="finger2_visual" type="box" pos="0 0 0.03" size="0.006 0.012 0.03" material="white" class="visual"/>
+                        <site name="finger2_site" pos="0 0 0.065" size="0.003" rgba="0 1 0 1"/>
+                      </body>
+                    </body>
+                   
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <site name="base_link_site" pos="0 0 0" quat="1 0 0 0" />
+      <camera name="front_camera" mode="track" fovy="90.0" quat="4.329780281177467e-17 4.329780281177466e-17 0.7071067811865475 0.7071067811865476" pos="0.0 2.0 0.5" />
+      <camera name="side_camera" mode="track" fovy="90.0" quat="-0.5 -0.4999999999999999 0.5 0.5000000000000001" pos="-2.0 0.0 0.5" />
+    </body>
+
+    <!-- cube environment 2. Add Cube Object -->
+    <!-- <body name="cube" pos="0.6 0 0.05"> -->
+    <!-- <body name="cube" pos="-1.0 0 0.015">
+      <freejoint/>
+      <inertial mass="0.02" pos="0 0 0" diaginertia="0.00013 0.00013 0.00013"/>
+      <geom name="cube_geom" type="box" size="0.015 0.015 0.015" rgba="1 0 0 1" friction="4.0 0.1 0.001" solimp="0.95 0.99 0.001" solref="0.004 1" /> -->
+      <!-- cube environment 3. Add Cube site -->
+      <!-- <site name="cube_site" pos="0 0 0" size="0.005" rgba="1 1 0 1"/>
+    </body>  -->
+
+    <body name="cube" pos="-1.0 0 0.015">
+      <freejoint/>
+      <geom name="cube_geom" type="box" size="0.015 0.015 0.015" rgba="1 0 0 1" mass="0.02" friction="2.0 0.1 0.001" solimp="0.99 0.99 0.001" solref="0.005 1"/>
+      <site name="cube_site" pos="0 0 0" size="0.005" rgba="1 0 0 1"/>
+    </body>
+
+  </worldbody>
+
+  <actuator>
+    <!-- Torque control -->
+    <!-- <motor name="joint1_ctrl" joint="joint1" class="motor" />
+    <motor name="joint2_ctrl" joint="joint2" class="motor" />
+    <motor name="joint3_ctrl" joint="joint3" class="motor" />
+    <motor name="joint4_ctrl" joint="joint4" class="motor" />
+    <motor name="joint5_ctrl" joint="joint5" class="motor" />
+    <motor name="joint6_ctrl" joint="joint6" class="motor" />
+    <motor name="joint_finger1_ctrl" joint="joint_finger1" class="motor" />
+    <motor name="joint_finger2_ctrl" joint="joint_finger2" class="motor" /> -->
+
+    <!-- Position control -->
+    <!-- <position name="joint1_ctrl" joint="joint1" kp="20" ctrllimited="true" ctrlrange="-1.57 1.57"/>
+    <position name="joint2_ctrl" joint="joint2" kp="20" ctrllimited="true" ctrlrange="-1.57 1.57"/>
+    <position name="joint3_ctrl" joint="joint3" kp="20" ctrllimited="true" ctrlrange="-1.57 1.57"/>
+    <position name="joint4_ctrl" joint="joint4" kp="10" ctrllimited="true" ctrlrange="-1.57 1.57"/>
+    <position name="joint5_ctrl" joint="joint5" kp="10" ctrllimited="true" ctrlrange="-1.57 1.57"/>
+    <position name="joint6_ctrl" joint="joint6" kp="10" ctrllimited="true" ctrlrange="-1.57 1.57"/>
+    <position name="finger1_ctrl" joint="joint_finger1" kp="30"/>
+    <position name="finger2_ctrl" joint="joint_finger2" kp="30"/> -->
+
+    <position name="joint1_ctrl" joint="joint1" kp="800" forcerange="-300 300" ctrllimited="true" ctrlrange="-3.14159 3.14159"/>
+    <position name="joint2_ctrl" joint="joint2" kp="1200" forcerange="-400 400" ctrllimited="true" ctrlrange="-1.57079 1.57079"/>
+    <position name="joint3_ctrl" joint="joint3" kp="1200" forcerange="-400 400" ctrllimited="true" ctrlrange="-2.0944 2.0944"/>
+    <position name="joint4_ctrl" joint="joint4" kp="400" forcerange="-150 150" ctrllimited="true" ctrlrange="-3.14159 3.14159"/>
+    <position name="joint5_ctrl" joint="joint5" kp="400" forcerange="-100 100" ctrllimited="true" ctrlrange="-1.5708 1.5708"/>
+    <position name="joint6_ctrl" joint="joint6" kp="400" forcerange="-50 50" ctrllimited="true" ctrlrange="-3.14159 3.14159"/>
+    <position name="finger1_ctrl" joint="joint_finger1" kp="1000" forcerange="-200 200" ctrllimited="true" ctrlrange="0.0 0.04"/>
+    <position name="finger2_ctrl" joint="joint_finger2" kp="1000" forcerange="-200 200" ctrllimited="true" ctrlrange="0.0 0.04"/>
+    <!-- <position name="finger1_ctrl" joint="joint_finger1" kp="1000" forcerange="-200 200" ctrllimited="true" ctrlrange="0.0 0.015"/>
+    <position name="finger2_ctrl" joint="joint_finger2" kp="1000" forcerange="-200 200" ctrllimited="true" ctrlrange="0.0 0.015"/> -->
+    <!-- <position name="finger1_ctrl" joint="joint_finger1" kp="500" forcerange="-100 100" ctrllimited="true" ctrlrange="0 0.05"/>
+    <position name="finger2_ctrl" joint="joint_finger2" kp="500" forcerange="-100 100" ctrllimited="true" ctrlrange="0 0.05"/> -->
+  
+  </actuator>
+
+  <!-- 5) contact는 현재 방향 유지 -->
+  <contact>
+    <exclude body1="base_link" body2="link1" />
+    <exclude body1="link1" body2="link2" />
+    <exclude body1="link2" body2="link3" />
+    <exclude body1="link3" body2="link4" />
+    <exclude body1="link4" body2="link_wrist_pitch" />
+    <exclude body1="link_wrist_pitch" body2="link_wrist_yaw" />
+    <exclude body1="gripper_base" body2="finger1" />
+    <exclude body1="gripper_base" body2="finger2" />
+
+    <!-- <pair geom1="finger1_collision" geom2="cube_geom"/>
+    <pair geom1="finger2_collision" geom2="cube_geom"/> -->
+  </contact>
+
+  <!-- for debugging -->
+  <!-- <sensor>
+    <framepos name="base_link_site_pos" objtype="site" objname="base_link_site" />
+    <framequat name="base_link_site_quat" objtype="site" objname="base_link_site" />
+    <framelinvel name="base_link_site_linvel" objtype="site" objname="base_link_site" />
+    <frameangvel name="base_link_site_angvel" objtype="site" objname="base_link_site" />
+    <velocimeter name="base_link_site_vel" site="base_link_site" />
+  </sensor> -->
+  <!-- 4) sensor 블록 교체/추가 -->
+  <sensor>
+    <framepos name="ee_pos" objtype="site" objname="ee_site"/>
+    <framequat name="ee_quat" objtype="site" objname="ee_site"/>
+    <framelinvel name="ee_linvel" objtype="site" objname="ee_site"/>
+    <frameangvel name="ee_angvel" objtype="site" objname="ee_site"/>
+    <touch name="finger1_touch" site="finger1_site"/>
+    <touch name="finger2_touch" site="finger2_site"/>
+    <!-- cube environment 4. Cube sensor -->
+    <framepos name="cube_pos" objtype="site" objname="cube_site"/>
+    <framequat name="cube_quat" objtype="site" objname="cube_site"/>
+  </sensor>
+
+  <!-- for reinforce learning -->
+  <option timestep="0.002" gravity="0 0 -9.81" integrator="implicitfast" cone="elliptic" impratio="10" />
+  <!-- <option timestep="0.0002" gravity="0 0 -9.81" integrator="implicitfast"/> -->
+
+  <!-- <visual>
+    <scale contactwidth="0.01" contactheight="0.01" forcewidth="0.02"/>
+  </visual> -->
+
+</mujoco>

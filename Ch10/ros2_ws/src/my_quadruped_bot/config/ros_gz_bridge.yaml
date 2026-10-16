@@ -1,0 +1,99 @@
+# ====================================================================
+# config/ros_gz_bridge.yaml
+# Gazebo Harmonic (Left) <-> ROS 2 Jazzy (Right) 전방향 통신 브리지 명세서
+# ====================================================================
+
+# 1. 시뮬레이션 시스템 클럭 동기화 (Gazebo -> ROS 2)
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: GZ_TO_ROS
+
+# 2. 로봇 전체 관절 상태 피드백 수집 (Gazebo -> ROS 2)
+- ros_topic_name: "/joint_states"
+  gz_topic_name: "/joint_states"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  gz_type_name: "gz.msgs.Model"
+  direction: GZ_TO_ROS
+
+# ====================================================================
+# 3. 12개 액추에이터 (위치) 제어 명령 토픽 브리지(리매핑) 설정 (ROS 2 -> Gazebo)
+# [PRO-TIP] ros_topic_name과 gz_topic_name을 분리 선언하면,
+# 가제보의 복잡한 절대 경로 토픽을 ROS 2 가독성이 높은 짧은 이름으로 자동 세탁할 수 있습니다.
+# ====================================================================
+# 3.1. 앞오른쪽 다리 (Front Right Leg)
+- ros_topic_name: "/model/my_quadruped/joint/fr_hip_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/fr_hip_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "/model/my_quadruped/joint/fr_thigh_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/fr_thigh_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "/model/my_quadruped/joint/fr_calf_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/fr_calf_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+# 3.2. 앞왼쪽 다리 (Front Left Leg)
+- ros_topic_name: "/model/my_quadruped/joint/fl_hip_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/fl_hip_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "/model/my_quadruped/joint/fl_thigh_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/fl_thigh_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "/model/my_quadruped/joint/fl_calf_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/fl_calf_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+# 3.3. 뒤오른쪽 다리 (Rear Right Leg)
+- ros_topic_name: "/model/my_quadruped/joint/rr_hip_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/rr_hip_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "/model/my_quadruped/joint/rr_thigh_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/rr_thigh_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "/model/my_quadruped/joint/rr_calf_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/rr_calf_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+# 3.4. 뒤왼쪽 다리 (Rear Left Leg)
+- ros_topic_name: "/model/my_quadruped/joint/rl_hip_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/rl_hip_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "/model/my_quadruped/joint/rl_thigh_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/rl_thigh_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "/model/my_quadruped/joint/rl_calf_joint/cmd_pos"
+  gz_topic_name: "/model/my_quadruped/joint/rl_calf_joint/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ

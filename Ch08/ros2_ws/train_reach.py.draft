@@ -1,0 +1,70 @@
+import os
+import gymnasium as gym
+from stable_baselines3 import PPO
+from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.callbacks import CheckpointCallback
+
+# 우리가 만든 환경 클래스 임포트 (파일명을 맞춰준다)
+from rl_env import ReachEnv
+
+def main():
+    # 1. 로그 및 모델 저장 경로 설정
+    log_dir = "./logs/"
+    model_dir = "./models/"
+    os.makedirs(log_dir, exist_ok=True)
+    os.makedirs(model_dir, exist_ok=True)
+
+    # 2. 환경 생성 및 래핑(Wrapping)
+    # Monitor: 학습 로그(보상, 에피소드 길이)를 기록하는 래퍼
+    env = ReachEnv(render_mode=None) # 학습 중에는 렌더링 끔 (속도 향상)
+    
+    # 환경 무결성 체크 (Gymnasium 표준을 잘 따르는지 확인)
+    print("환경 무결성 검사 중...")
+    check_env(env)
+    print("검사 통과!")
+
+    env = Monitor(env, log_dir) 
+    
+    # 3. PPO 모델 생성
+    # MlpPolicy: 이미지 입력이 아닌 벡터 입력(관절 각도 등)이므로 MLP(Multi-Layer Perceptron) 사용
+    # verbose=1: 학습 진행 상황을 콘솔에 출력
+    model = PPO(
+        "MlpPolicy", 
+        env, 
+        verbose=1,
+        learning_rate=3e-4,     # 학습률 (0.0003)
+        n_steps=2048,           # 정책 업데이트 전 수집할 스텝 수
+        batch_size=64,          # 미니 배치 크기
+        n_epochs=10,            # 수집된 데이터로 반복 학습할 횟수
+        gamma=0.99,             # 할인율 (미래 보상의 가치)
+        gae_lambda=0.95,        # GAE 파라미터
+        clip_range=0.2,         # PPO Clipping 범위
+        tensorboard_log=log_dir # 텐서보드 로그 경로
+    )
+
+    # 4. 체크포인트 콜백 설정
+    # 10만 스텝마다 모델을 중간 저장 (전기가 나가거나 컴퓨터가 멈춰도 안심)
+    checkpoint_callback = CheckpointCallback(
+        save_freq=100000, 
+        save_path=model_dir,
+        name_prefix="ppo_reach"
+    )
+
+    # 5. 학습 시작
+    print("학습을 시작한다... (목표: 1,000,000 steps)")
+    # total_timesteps: 총 시뮬레이션 스텝 수. 
+    # 3자유도 로봇 팔 Reaching 태스크는 보통 50만~100만 스텝이면 수렴함.
+    model.learn(
+        total_timesteps=1_000_000, 
+        callback=checkpoint_callback,
+        progress_bar=True
+    )
+
+    # 6. 최종 모델 저장
+    model.save(f"{model_dir}/ppo_reach_final")
+    print("학습 완료 및 모델 저장 성공!")
+
+if __name__ == "__main__":
+    main()

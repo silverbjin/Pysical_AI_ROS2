@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+import numpy as np
+from sensor_msgs.msg import JointState
+from geometry_msgs.msg import Twist
+
+# 10장 이전 절에서 구현한 핵심 제어 모듈 임포트
+from my_quadruped_bot.gait_planner import GaitPlanner
+from my_quadruped_bot.trajectory_generator import TrajectoryGenerator
+from my_quadruped_bot.inverse_kinematics import InverseKinematics
+
+class QuadrupedController(Node):
+    """
+    4족 보행 로봇의 최상위 제어 노드 (High-level Control Loop)
+    Gait -> Trajectory -> IK -> Joint Command의 파이프라인을 100Hz로 구동
+    """
+    def __init__(self):
+        super().__init__('quadruped_controller')
+        
+        # --- 1. 로봇 제어 파라미터 설정 ---
+        self.dt = 0.01  # 제어 주기 100Hz (0.01초)
+        
+        # 다리 식별자 및 우측 다리 여부 매핑 (대칭성 보정용)
+        self.leg_names = ['FR', 'FL', 'RR', 'RL']
+        self.is_right_leg_map = {'FR': True, 'FL': False, 'RR': True, 'RL': False}
+        
+        # 로봇 관절 이름 (URDF 정의와 일치해야 함)
+        self.joint_names = [
+            'FR_hip_joint', 'FR_thigh_joint', 'FR_calf_joint',
+            'FL_hip_joint', 'FL_thigh_joint', 'FL_calf_joint',
+            'RR_hip_joint', 'RR_thigh_joint', 'RR_calf_joint',
+            'RL_hip_joint', 'RL_thigh_joint', 'RL_calf_joint'
+        ]
+
+        # --- 2. 핵심 알고리즘 모듈 인스턴스화 ---
+        # self.gait_planner = GaitPlanner(step_freq=2.0) # 2Hz Trot 보행
+        # 수정 후: 주기 0.5초(2Hz)로 설정
+        self.gait_planner = GaitPlanner(gait_type='trot', cycle_time=0.5)
+        self.traj_generator = TrajectoryGenerator(step_height=0.05, stance_depth=-0.30)
+        self.ik_solver = InverseKinematics()
+
+        # --- 3. ROS 2 통신 인터페이스 ---
+        # 사용자/상위 내비게이션의 속도 명령(cmd_vel) 구독
+        self.cmd_vel_sub = self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
+        self.current_velocity = np.array([0.0, 0.0, 0.0]) # [vx, vy, wz]
+
+        # 하위 하드웨어/시뮬레이터(Gazebo)로 관절 목표 각도 퍼블리시
+        self.joint_pub = self.create_publisher(JointState, 'joint_commands', 10)
+
+        # --- 4. 메인 제어 타이머 (Control Loop) ---
+        self.control_timer = self.create_timer(self.dt, self.control_loop_callback)
+        
+        self.get_logger().info("Quadruped Controller Node has been successfully started.")
+
+    def cmd_vel_callback(self, msg: Twist):
+        """상위 노드로부터 목표 속도 수신"""
+        self.current_velocity[0] = msg.linear.x   # 전후진 속도
+        self.current_velocity[1] = msg.linear.y   # 좌우 횡이동 속도
+        self.current_velocity[2] = msg.angular.z  # 제자리 회전 속도
+
+    def control_loop_callback(self):
+        """
+        100Hz로 반복 실행되는 로봇의 심장(Heartbeat).
+        Phase Update -> 3D Trajectory -> Joint IK -> Publish의 4단계로 구성.
+        """
+        # [Step 1] 보행 위상(Phase) 업데이트
+        # 현재 시간에 따른 각 다리의 스윙(Swing)/스탠스(Stance) 상태와 진행률(0~1) 반환
+        leg_phases = self.gait_planner.update(self.dt)
+        
+        joint_msg = JointState()
+        joint_msg.header.stamp = self.get_clock().now().to_msg()
+        joint_msg.name = self.joint_names
+        joint_msg.position = []
+
+        # [Step 2 & 3] 각 다리별 궤적 생성 및 역운동학 해석
+        for leg in self.leg_names:
+            phase, is_swing = leg_phases[leg]
+            
+            # Step 2: 현재 속도 명령과 다리 위상을 기반으로 발끝의 3D 목표 좌표(X, Y, Z) 생성
+            target_x, target_y, target_z = self.traj_generator.generate(
+                leg_id=leg,
+                phase=phase,
+                is_swing=is_swing,
+                velocity=self.current_velocity
+            )
+            
+            # Step 3: 생성된 3D 좌표를 IK 솔버에 넣어 관절 각도(q1, q2, q3) 도출
+            is_right = self.is_right_leg_map[leg]
+            joint_angles = self.ik_solver.solve(target_x, target_y, target_z, is_right_leg=is_right)
+            
+            # 예외 처리: 작업 공간을 벗어나 IK 해를 찾지 못한 경우 방어적 코드
+            if joint_angles is None:
+                self.get_logger().warn(f"IK Domain Error at {leg} leg! Clamping to safe pose.", throttle_duration_sec=1.0)
+                # 도달 실패 시 이전 각도를 유지하거나 안전 각도(기립 자세) 주입 로직 필요
+                joint_angles = [0.0, -0.6, 1.2] 
+
+            joint_msg.position.extend(joint_angles)
+
+        # [Step 4] 도출된 12개의 관절 각도 퍼블리시
+        self.joint_pub.publish(joint_msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = QuadrupedController()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info("Shutting down Quadruped Controller.")
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

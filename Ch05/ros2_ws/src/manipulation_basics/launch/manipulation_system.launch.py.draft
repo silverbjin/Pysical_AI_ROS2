@@ -1,0 +1,103 @@
+# manipulation_system.launch.py
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription, RegisterEventHandler, ExecuteProcess
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.event_handlers import OnProcessExit
+from launch_ros.actions import Node
+import xacro
+
+def generate_launch_description():
+    # 1. 패키지 경로 설정
+    pkg_manipulation = get_package_share_directory('manipulation_basics')
+    pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
+
+    # 2. URDF 파일 파싱 (Xacro -> XML 변환)
+    # (주의: 여러분의 xacro 파일 경로에 맞게 수정 필요)
+    xacro_file = os.path.join(pkg_manipulation, 'urdf', 'my_robot_arm.urdf.xacro')
+    doc = xacro.parse(open(xacro_file))
+    xacro.process_doc(doc)
+    robot_description = {'robot_description': doc.toxml()}
+
+    # 3. Gazebo 시뮬레이터 실행 (ros_gz_sim)
+    # -r 옵션: 시뮬레이션 자동 실행 (Run)
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
+        launch_arguments={'gz_args': '-r empty.sdf'}.items(),
+    )
+
+    # 4. Robot State Publisher 노드 (로봇 모델 정보 발행)
+    node_robot_state_publisher = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='screen',
+        parameters=[robot_description, {'use_sim_time': True}] # 중요: 시뮬레이션 시간 사용
+    )
+
+    # 5. Gazebo에 로봇 소환 (Spawn)
+    spawn_entity = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=['-topic', 'robot_description',
+                   '-name', 'my_robot_arm',
+                   '-z', '0.0'], # 바닥(z=0)에 배치
+        output='screen'
+    )
+
+    # 6. 컨트롤러 스포너 (Controller Spawner)
+    # 6-1. Joint State Broadcaster (관절 상태 퍼블리셔)
+    joint_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster'],
+        output='screen'
+    )
+
+    # 6-2. Arm Controller (로봇 팔 제어기)
+    arm_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['arm_controller'],
+        output='screen'
+    )
+    
+    # 6-3. 실행 순서 제어 (이벤트 핸들러)
+    # 로봇이 소환된 후에 -> Joint State Broadcaster 실행
+    # Joint State Broadcaster가 실행된 후에 -> Arm Controller 실행
+    # (순서가 꼬이면 제어기가 로봇을 못 찾을 수 있음)
+    
+    delayed_joint_broad_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=spawn_entity,
+            on_exit=[joint_state_broadcaster_spawner],
+        )
+    )
+
+    delayed_arm_controller_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[arm_controller_spawner],
+        )
+    )
+
+    # 7. Bridge 설정 (ROS 2 <-> Gazebo 통신)
+    # 필요한 토픽만 브리지 하거나, ros_gz_bridge 패키지의 파라미터 브리지 사용
+    # 여기서는 ros_gz_control이 자동으로 해주므로 생략 가능하나, 
+    # Clock 동기화를 위해 추가하는 것이 좋음.
+    bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
+        output='screen'
+    )
+
+    return LaunchDescription([
+        gazebo,
+        node_robot_state_publisher,
+        spawn_entity,
+        bridge,
+        delayed_joint_broad_spawner,
+        delayed_arm_controller_spawner
+    ])

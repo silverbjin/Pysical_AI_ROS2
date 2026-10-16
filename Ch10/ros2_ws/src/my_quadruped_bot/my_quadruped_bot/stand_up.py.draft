@@ -1,0 +1,64 @@
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import Float64
+
+class StandUpNode(Node):
+    def __init__(self):
+        super().__init__('stand_up_node')
+        
+        # 12개 관절 이름 정의
+        joints = [
+            'fr_hip', 'fr_thigh', 'fr_calf', 
+            'fl_hip', 'fl_thigh', 'fl_calf',
+            'rr_hip', 'rr_thigh', 'rr_calf',
+            'rl_hip', 'rl_thigh', 'rl_calf'
+        ]
+        
+        # 목표 자세 정의 (Nominal Pose)
+        self.target_pose = {
+            'hip': 0.0,
+            # 'thigh': 0.6,  # 0.5 ~ 0.8 rad 사이 추천 (살짝 웅크린 자세)
+            # 'calf': -1.2   # -1.0 ~ -1.5 rad 사이 추천 (thigh의 약 -2배)
+            'thigh': -0.6,  # 0.0(웅크림) 상태에서 역으로 -0.6만큼 펴서 일어남
+            'calf': 1.2     # 0.0(웅크림) 상태에서 역으로 +1.2만큼 펴서 일어남
+        }
+        
+        # 12개 관절에 대한 퍼블리셔 생성
+        self.pubs = {}
+        for j in joints:
+            # Gazebo Sim 표준 토픽 규칙에 맞춰 생성 (/model/{로봇이름}/joint/{관절이름}/cmd_pos)
+            # ※ 주의: 구버전 Ignition Gazebo와 달리 중간에 '/0/' 인덱스가 들어가지 않습니다.
+            topic_name = f'/model/my_quadruped/joint/{j}_joint/cmd_pos'
+            self.pubs[j] = self.create_publisher(Float64, topic_name, 10)
+        
+        # 100Hz 주기로 명령을 전송하는 타이머 생성 (0.01초 간격)
+        self.timer = self.create_timer(0.01, self.publish_commands)
+        self.get_logger().info("Stand Up Node Started! Holding nominal pose...")
+
+    def publish_commands(self):
+        for name, pub in self.pubs.items():
+            msg = Float64()
+            
+            # 관절 이름에 포함된 키워드별로 목표 각도 분기 분배
+            if 'hip' in name:
+                msg.data = self.target_pose['hip']
+            elif 'thigh' in name:
+                msg.data = self.target_pose['thigh']
+            elif 'calf' in name:
+                msg.data = self.target_pose['calf']
+            
+            pub.publish(msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = StandUpNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info("Shutting down Stand Up Node...")
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

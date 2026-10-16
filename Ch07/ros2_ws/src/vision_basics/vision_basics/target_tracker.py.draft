@@ -1,0 +1,126 @@
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from sensor_msgs.msg import Image
+from geometry_msgs.msg import Point
+# 수정됨: Point 대신 PointStamped 사용 (Header 포함)
+from geometry_msgs.msg import PointStamped 
+from cv_bridge import CvBridge, CvBridgeError
+import numpy as np
+
+class TargetTracker3D(Node):
+    def __init__(self):
+        super().__init__('target_tracker_3d')
+        self.bridge = CvBridge()
+
+        # 최신 Depth 이미지를 저장할 변수
+        self.latest_depth_msg = None
+
+        # [QoS 설정] 영상 및 센서 데이터 수신용
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=5
+        )
+
+        # 1. 3D 카메라 Depth 이미지 구독
+        self.depth_sub = self.create_subscription(
+            Image,
+            '/camera/depth/image_raw',
+            self.depth_callback,
+            qos_profile
+        )
+
+        # 2. object_detector 노드로부터 픽셀 좌표(u, v) 구독
+        self.pixel_sub = self.create_subscription(
+            PointStamped,
+            '/camera/target_pixel',
+            self.pixel_callback,
+            10
+        )
+
+        # 카메라 내부 파라미터 (Intrinsic Matrix: fx, fy, cx, cy)
+        # 3D 공간 좌표(X, Y, Z)를 복원하기 위해 필요합니다. 환경에 맞게 수정하십시오.
+        self.fx = 554.25  # 예시 값 (Gazebo 기본 캘리브레이션 값 등)
+        self.fy = 554.25
+        self.cx = 320.0
+        self.cy = 240.0
+
+        self.get_logger().info('Target Tracker 3D Initialized.')
+
+    def depth_callback(self, msg):
+        # 들어오는 깊이 영상 메시지를 계속 최신화
+        self.latest_depth_msg = msg
+
+    def pixel_callback(self, msg):
+        # 1. 인식 실패 예외 처리 (인식 노드에서 찾지 못했을 때 -1을 보낸다고 가정)
+        # if msg.x == -1 or msg.y == -1:
+        if msg.point.x == -1 or msg.point.y == -1: # msg.x 대신 msg.point.x 사용
+            self.get_logger().warn("Target lost in 2D detection.")
+            return
+
+        # target_u = int(msg.x)
+        # target_v = int(msg.y)
+        target_u = int(msg.point.x)
+        target_v = int(msg.point.y)
+
+        # 2. 깊이 영상 데이터 수신 여부 확인
+        if self.latest_depth_msg is None:
+            self.get_logger().warn("Depth image missing. Cannot calculate 3D position.")
+            return
+
+        try:
+            # ROS Depth Image -> OpenCV 
+            # Gazebo 시뮬레이션의 경우 주로 '32FC1'(미터 단위 float32)을 사용하며, 
+            # 실제 RealSense 등은 '16UC1'(밀리미터 단위 uint16)을 주로 사용합니다.
+            # 'passthrough'를 사용하면 원본 인코딩을 유지합니다.
+            depth_image = self.bridge.imgmsg_to_cv2(self.latest_depth_msg, desired_encoding="passthrough")
+            
+            h, w = depth_image.shape[:2]
+
+            # 3. 인덱스가 이미지 경계를 벗어나지 않는지 검사
+            if 0 <= target_u < w and 0 <= target_v < h:
+                # OpenCV 행렬 인덱싱은 [row, col] 이므로 [v, u] 순서입니다.
+                depth = depth_image[target_v, target_u]
+
+                # RealSense(16UC1) 사용 시 미터 단위 변환 (밀리미터 -> 미터)
+                if depth_image.dtype == np.uint16:
+                    depth = float(depth) / 1000.0
+
+                # 4. 깊이 데이터 유효성 검사 (NaN, Inf, 0 또는 음수 값 처리)
+                if np.isnan(depth) or np.isinf(depth) or depth <= 0.1:
+                    self.get_logger().warn(f"Invalid depth value ({depth:.3f}m) at pixel ({target_u}, {target_v})")
+                    return
+
+                # 5. 핀홀 카메라 모델을 이용한 3D 좌표 변환 (투영 기하학)
+                # 카메라 기준 좌표계: X(우), Y(하), Z(정면 거리)
+                X_3d = (target_u - self.cx) * depth / self.fx
+                Y_3d = (target_v - self.cy) * depth / self.fy
+                Z_3d = depth
+
+                self.get_logger().info(
+                    f"Target Found -> Pixel: ({target_u}, {target_v}) | "
+                    f"3D Coord (Camera Frame): X={X_3d:.3f}m, Y={Y_3d:.3f}m, Z={Z_3d:.3f}m"
+                )
+
+                # TODO: 필요 시 이 3D 좌표를 기반으로 제어 명령(Twist) 생성 또는 TF 발행
+
+            else:
+                self.get_logger().error(f"Target pixel ({target_u}, {target_v}) out of depth image bounds.")
+
+        except CvBridgeError as e:
+            self.get_logger().error(f"CvBridge Error in pixel_callback: {e}")
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = TargetTracker3D()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

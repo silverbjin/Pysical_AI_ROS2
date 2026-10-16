@@ -1,0 +1,281 @@
+#!/usr/bin/env python3
+import os
+import gc
+import time
+import yaml
+
+import rclpy
+
+from moveit.planning import MoveItPy
+from moveit_configs_utils import MoveItConfigsBuilder
+
+from ament_index_python.packages import get_package_share_directory
+from geometry_msgs.msg import PoseStamped
+
+
+def build_moveit_config():
+
+    package_name = "my_robot_moveit_config"
+
+    pkg_share = get_package_share_directory(
+        package_name
+    )
+    config_dir = os.path.join(
+        pkg_share,
+        "config"
+    )
+    moveit_config = (
+        MoveItConfigsBuilder(
+            robot_name="my_robot",
+            package_name=package_name,
+        )
+        .robot_description(
+            file_path="urdf/my_robot.urdf"
+        )
+        .robot_description_semantic(
+            file_path="config/my_robot.srdf"
+        )
+        .robot_description_kinematics(
+            file_path="config/kinematics.yaml"
+        )
+        .joint_limits(
+            file_path="config/joint_limits.yaml"
+        )
+        .trajectory_execution(
+            file_path="config/moveit_controllers.yaml"
+        )
+        .to_moveit_configs()
+    )
+
+    params = moveit_config.to_dict()
+
+    ompl_file = os.path.join(
+        config_dir,
+        "ompl_planning.yaml"
+    )
+
+    with open(ompl_file, "r") as f:
+        ompl_config = yaml.safe_load(f)
+
+    params["ompl"] = ompl_config
+
+    params["planning_pipelines"] = {
+        "pipeline_names": ["ompl"],
+        "default_planning_pipeline": "ompl",
+    }
+
+    params["planning_scene_monitor_options"] = {
+        "name": "planning_scene_monitor",
+        "robot_description": "robot_description",
+        "joint_state_topic": "/joint_states",
+        "wait_for_initial_state_timeout": 10.0,
+    }
+
+    params["plan_request_params"] = {
+        "planning_pipeline": "ompl",
+        "planner_id": "RRTConnectkConfigDefault",
+        "planning_attempts": 1,
+        "planning_time": 5.0,
+        "max_velocity_scaling_factor": 1.0,
+        "max_acceleration_scaling_factor": 1.0,
+    }
+
+    return params
+
+
+def move_to_pose(
+    arm,
+    robot,
+    x,
+    y,
+    z
+):
+
+    pose_goal = PoseStamped()
+
+    pose_goal.header.frame_id = "base_link"
+
+    pose_goal.pose.position.x = x
+    pose_goal.pose.position.y = y
+    pose_goal.pose.position.z = z
+
+    pose_goal.pose.orientation.x = 0.0
+    pose_goal.pose.orientation.y = 0.0
+    pose_goal.pose.orientation.z = 0.0
+    pose_goal.pose.orientation.w = 1.0
+
+    arm.set_start_state_to_current_state()
+
+    arm.set_goal_state(
+        pose_stamped_msg=pose_goal,
+        pose_link="link_wrist"
+    )
+
+    plan_result = arm.plan()
+
+    if not plan_result:
+        print(
+            f"Planning Failed "
+            f"({x:.2f}, {y:.2f}, {z:.2f})"
+        )
+        return False
+
+    robot.execute(
+        plan_result.trajectory,
+        controllers=[]
+    )
+
+    print(
+        f"Reached "
+        f"({x:.2f}, {y:.2f}, {z:.2f})"
+    )
+
+    time.sleep(1.0)
+
+    return True
+
+
+def main():
+
+    rclpy.init()
+
+    print("=== MoveIt Loading ===")
+
+    moveit_config = build_moveit_config()
+
+    my_robot = MoveItPy(
+        node_name="cartesian_test",
+        config_dict=moveit_config,
+    )
+
+    arm = my_robot.get_planning_component(
+        "arm_group"
+    )
+
+    time.sleep(2.0)
+
+    print("=== Move To Ready ===")
+
+    arm.set_start_state_to_current_state()
+
+    arm.set_goal_state(
+        configuration_name="ready"
+    )
+
+    plan_result = arm.plan()
+
+    if not plan_result:
+        print("Ready Planning Failed")
+        return
+
+    my_robot.execute(
+        plan_result.trajectory,
+        controllers=[]
+    )
+
+    time.sleep(2.0)
+    
+    print(dir(arm))
+
+    ##################################################
+    # 사각형 경로
+    ##################################################
+
+    print("\n=== Rectangle Motion ===")
+
+    points = [
+
+        # # 시작점
+        # (0.0, 0.0, 2.1),
+
+        # # 오른쪽
+        # (0.0, 0.2, 2.1),
+
+        # # 위
+        # (0.0, 0.2, 2.3),
+
+        # # 왼쪽
+        # (0.0, 0.0, 2.3),
+
+        # # 아래
+        # (0.0, 0.0, 2.1),
+        
+        
+        # # 시작점
+        # (0.30, 0.00, 1.50),
+
+        # # 오른쪽
+        # (0.30, 0.10, 1.50),
+
+        # # 위
+        # (0.30, 0.10, 1.60),
+
+        # # 왼쪽
+        # (0.30, 0.00, 1.60),
+
+        # # 원위치
+        # (0.30, 0.00, 1.50),
+        
+        
+        # (0.30, 0.00, 1.50),
+
+        # (0.40, 0.00, 1.50),
+
+        # (0.40, 0.00, 1.60),
+
+        # (0.30, 0.00, 1.60),
+
+        # (0.30, 0.00, 1.50),
+        
+        
+        # (0.30, 0.00, 1.50),
+
+        # (0.40, 0.00, 1.50),
+
+        # (0.40, 0.00, 1.60),
+
+        # (0.30, 0.00, 1.60),
+
+        # (0.30, 0.00, 1.50),
+        
+        
+        (0.30, 0.00, 1.50),
+        
+        # (0.31, 0.00, 1.50),
+        
+        # (0.32, 0.00, 1.50),
+        
+        # (0.33, 0.00, 1.50),
+        
+            
+    ]
+
+    for x, y, z in points:
+
+        success = move_to_pose(
+            arm,
+            my_robot,
+            x,
+            y,
+            z
+        )
+
+        if not success:
+            print(
+                "Rectangle Motion Aborted"
+            )
+            break
+
+    print("\n=== Finished ===")
+
+    del my_robot
+
+    gc.collect()
+
+    rclpy.shutdown()
+
+    os._exit(0)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,45 @@
+planning_plugins:
+  - ompl_interface/OMPLPlanner
+
+# 에러가 났던 어댑터 이름들을 Jazzy 버전에 맞게 수정
+request_adapters:
+  - default_planning_request_adapters/ResolveConstraintFrames
+  - default_planning_request_adapters/ValidateWorkspaceBounds
+  - default_planning_request_adapters/CheckStartStateBounds
+  - default_planning_request_adapters/CheckStartStateCollision
+  - default_planning_request_adapters/CheckForStackedConstraints
+
+  # 추가 권장: 플래너가 짠 경로를 후가공하는 응답 어댑터들
+response_adapters:
+  - default_planning_response_adapters/AddTimeOptimalParameterization # 경로에 최적의 시간/속도/가속도 주입 (중요!)
+  - default_planning_response_adapters/ValidateSolution               # 완성된 궤적이 충돌이 없는지 최종 검증
+  - default_planning_response_adapters/DisplayMotionPath              # Rviz에 궤적 시각화 데이터 전달
+
+planner_configs:
+  RRTConnectkConfigDefault:
+    type: geometric::RRTConnect
+    range: 0.0
+    goal_bias: 0.05
+  RRTstarkConfigDefault:
+    type: geometric::RRTstar
+    range: 0.0
+    goal_bias: 0.05
+  PRMkConfigDefault:
+    type: geometric::PRM
+    max_nearest_neighbors: 10
+
+# 1. 로봇 팔 메인 그룹 설정 (SRDF의 arm_group과 매칭)
+arm_group:
+  default_planner_config: RRTConnectkConfigDefault
+  planner_configs:
+    - RRTConnectkConfigDefault
+    - RRTstarkConfigDefault
+    - PRMkConfigDefault
+  longest_valid_segment_fraction: 0.005
+
+# 2. 엔드이펙터 그리퍼 그룹 설정 (SRDF의 gripper_group과 매칭)
+gripper_group:
+  default_planner_config: RRTConnectkConfigDefault
+  planner_configs:
+    - RRTConnectkConfigDefault
+  longest_valid_segment_fraction: 0.005

@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from sensor_msgs.msg import Image
+from geometry_msgs.msg import Point # 중심점 좌표 전송용
+from cv_bridge import CvBridge, CvBridgeError
+import cv2
+import numpy as np
+
+class ObjectDetector(Node):
+    def __init__(self):
+        super().__init__('object_detector')
+
+        # [QoS 설정] Gazebo 영상 데이터 손실 방지
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+
+        # 1. Subscriber: 카메라 영상 수신
+        self.subscription = self.create_subscription(
+            Image,
+            '/camera/image_raw',
+            self.image_callback,
+            qos_profile
+        )
+
+        # 2. Publisher: 디버깅용 이미지 & 물체 픽셀 좌표(u, v) 송신
+        # 검출된 결과 영상은 신뢰성 있게 보낸다.
+        self.img_pub = self.create_publisher(Image, '/camera/detection_result', 10)
+        # 물체의 중심 좌표 (x=u, y=v, z=area)
+        self.coord_pub = self.create_publisher(Point, '/camera/target_pixel', 10)
+
+        self.bridge = CvBridge()
+        
+        # [색상 범위 설정] 'Red' Coke Can Detection
+        # 빨간색은 HSV 스펙트럼의 양 끝(0도 근처, 180도 근처)에 걸쳐 있어 두 범위를 합쳐야 한다.
+        # Range 1: 0 ~ 10 (주황 섞인 빨강)
+        self.lower_red1 = np.array([0, 100, 100])
+        # self.lower_red1 = np.array([0, 50, 50])
+        self.upper_red1 = np.array([10, 255, 255])
+        # Range 2: 170 ~ 180 (보라 섞인 빨강)
+        self.lower_red2 = np.array([170, 100, 100])
+        # self.lower_red2 = np.array([170, 50, 50])
+        self.upper_red2 = np.array([180, 255, 255])
+
+        self.get_logger().info('Object Detector Initialized: Looking for RED objects.')
+
+    def image_callback(self, msg):
+        try:
+            # 1. ROS Image -> OpenCV (BGR)
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        except CvBridgeError as e:
+            self.get_logger().error(f'CV Bridge Error: {e}')
+            return
+
+        # 2. 전처리: BGR -> HSV 변환
+        hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+
+        # 3. 마스크 생성 (Thresholding)
+        mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
+        mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
+        # 두 마스크를 합침 (OR 연산)
+        mask = cv2.bitwise_or(mask1, mask2)
+
+        # 4. 형태학적 연산 (Morphology) - 노이즈 제거
+        kernel = np.ones((5, 5), np.uint8)
+        # Opening (Erosion -> Dilation): 좁쌀 노이즈 제거
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        # Closing (Dilation -> Erosion): 물체 내부 구멍 메우기
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+        # 5. 컨투어(Contours) 찾기
+        # RETR_EXTERNAL: 가장 바깥쪽 외곽선만 찾음
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        target_x, target_y = -1, -1 # 초기값 (못 찾음)
+        
+        if len(contours) > 0:
+            # 가장 면적이 큰 컨투어를 찾는다 (가장 가까운 물체일 확률 높음)
+            c = max(contours, key=cv2.contourArea)
+            area = cv2.contourArea(c)
+
+            # 너무 작은 물체(노이즈)는 무시 (최소 면적 500 픽셀 이상)
+            if area > 50:
+                # 6. 모멘트 계산 및 중심점(Centroid) 추출
+                M = cv2.moments(c)
+                if M["m00"] != 0:
+                    cx = int(M["m10"] / M["m00"])
+                    cy = int(M["m01"] / M["m00"])
+                    target_x, target_y = cx, cy
+
+                    # [시각화] 중심점과 외곽선 그리기
+                    # 외곽선: 초록색(0, 255, 0), 두께 2
+                    cv2.drawContours(cv_image, [c], -1, (0, 255, 0), 2)
+                    # 중심점: 파란색 원
+                    cv2.circle(cv_image, (cx, cy), 7, (255, 0, 0), -1)
+                    # 좌표 텍스트 표시
+                    cv2.putText(cv_image, f"({cx}, {cy})", (cx - 20, cy - 20),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                    
+                    # 7. 결과 좌표 Publish (이후 Control 노드에서 사용)
+                    point_msg = Point()
+                    point_msg.x = float(cx)
+                    point_msg.y = float(cy)
+                    point_msg.z = float(area) # Z축에는 면적 정보를 담아 보냄 (거리 추정용 힌트)
+                    self.coord_pub.publish(point_msg)
+
+        # 8. 결과 이미지 Publish (RQt 확인용)
+        # 원본 영상에 이미지를 그린 것을 송출
+        try:
+            detected_img_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
+            detected_img_msg.header = msg.header # 시간 동기화 필수!
+            self.img_pub.publish(detected_img_msg)
+        except CvBridgeError as e:
+            self.get_logger().error(f'CV Bridge Pub Error: {e}')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = ObjectDetector()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,10 @@
+planner_configs:
+  RRTConnectkConfigDefault:
+    type: geometric::RRTConnect
+    range: 0.0  # 가지의 최대 길이 (0.0이면 자동 설정)
+
+arm_group:
+  default_planner_config: RRTConnectkConfigDefault
+  planner_configs:
+    - RRTConnectkConfigDefault
+    - RRTstarkConfigDefault # 최적 경로를 찾는 RRT* (속도는 느림)

@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+import time
+import rclpy
+from rclpy.node import Node
+
+# MoveIt 2의 핵심 라이브러리 임포트
+from moveit.planning import MoveItPy
+from moveit.core.robot_state import RobotState
+
+# 로봇 설정을 쉽게 불러오기 위한 빌더
+from moveit_configs_utils import MoveItConfigsBuilder
+# 좌표 메시지 타입
+from geometry_msgs.msg import PoseStamped
+
+def main():
+    # 1. ROS 2 초기화
+    rclpy.init()
+    
+    # 2. MoveIt 설정 로드 (가장 중요한 단계!)
+    # Setup Assistant로 만든 패키지 이름을 정확히 적어야 한다.
+    # 이 빌더가 URDF, SRDF, Kinematics 설정 등을 자동으로 긁어온다.
+    moveit_config = (
+        MoveItConfigsBuilder(robot_name="my_robot", package_name="my_robot_moveit_config")
+        .robot_description(file_path="urdf/my_robot.urdf")
+        .robot_description_semantic(file_path="config/my_robot.srdf")
+        .trajectory_execution(file_path="config/moveit_controllers.yaml")
+        # .kinematics()
+        # --- 아래 한 줄을 반드시 추가해야 OMPL 파이프라인이 로드됩니다 ---
+        # .planning_pipelines(default_planning_pipeline="ompl", pipelines=["ompl"])
+        # .planning_pipelines(pipelines=["ompl", "pilz_industrial_motion_planner"])
+        .to_moveit_configs()        
+    )
+    
+    # 진단을 위해 추가하는 코드
+    import pprint
+
+    print("==== [진단] MoveItConfig 파라미터 키 목록 ====")
+    # 전체를 다 찍으면 너무 길므로 'planning' 관련 키가 있는지 확인
+    planning_keys = [k for k in moveit_config.to_dict().keys() if 'planning' in k]
+    pprint.pprint(planning_keys)
+    print("============================================")
+    
+    # 디버깅용 덤프
+    import yaml
+
+    config_data = moveit_config.to_dict()
+    print("=== [정밀 진단] 파라미터 구조 덤프 ===")
+    print(yaml.dump(config_data.get('planning_pipelines', {}), default_flow_style=False))
+
+    # 3. MoveItPy 인스턴스 생성 (노드 역할 포함)
+    my_robot = MoveItPy(node_name="hello_moveit", config_dict=moveit_config.to_dict())
+    
+    # 4. 제어할 그룹 선택 (arm_group)
+    # Setup Assistant에서 정한 그룹 이름과 똑같아야 한다.
+    arm_group = my_robot.get_planning_component("arm_group")
+    
+    # 로봇이 준비될 때까지 잠시 대기 (안전장치)
+    time.sleep(1.0)
+    print(">>> 로봇 제어 준비 완료!")
+
+    # ---------------------------------------------------------
+    # [Task 1] 사전 정의된 자세(Named Pose)로 이동하기: "Home"
+    # ---------------------------------------------------------
+    print("\n[Task 1] 'Home' 자세로 이동합니다...")
+    
+    # 목표 상태 설정 (SRDF에 정의된 'home' 이름 사용)
+    arm_group.set_start_state_to_current_state()
+    arm_group.set_goal_state(configuration_name="home")
+    
+    # 경로 계획 (Plan)
+    plan_result = arm_group.plan()
+    
+    # 계획 성공 여부 확인 및 실행
+    if plan_result:
+        print(">>> 경로 계획 성공! 실행합니다.")
+        my_robot.execute(plan_result.trajectory, controllers=[])
+    else:
+        print(">>> 경로 계획 실패! (충돌이 있거나 도달 불가능)")
+
+    time.sleep(2.0) # 동작 확인을 위한 대기
+
+    # ---------------------------------------------------------
+    # [Task 2] 역운동학(IK) 제어: 특정 좌표로 이동하기
+    # ---------------------------------------------------------
+    print("\n[Task 2] 목표 좌표(IK)로 이동합니다...")
+
+    # 목표 포즈(Pose) 메시지 생성
+    pose_goal = PoseStamped()
+    pose_goal.header.frame_id = "base_link" # 기준 좌표계 (로봇 바닥)
+    
+    # 위치 (Position) - 단위: 미터(m)
+    # 로봇 팔이 닿을 수 있는 적절한 위치를 입력해야 한다.
+    pose_goal.pose.position.x = 0.3
+    pose_goal.pose.position.y = 0.0
+    pose_goal.pose.position.z = 0.4 
+    
+    # 자세 (Orientation) - 쿼터니언 (x, y, z, w)
+    # 아래 값은 그리퍼가 아래쪽을 향하거나 수평을 유지하는 등 특정 자세임.
+    # (여기서는 예시로 정면을 보는 자세 가정)
+    pose_goal.pose.orientation.w = 1.0
+    pose_goal.pose.orientation.x = 0.0
+    pose_goal.pose.orientation.y = 0.0
+    pose_goal.pose.orientation.z = 0.0
+
+    # 목표 설정
+    arm_group.set_start_state_to_current_state()
+    arm_group.set_goal_state(pose_stamped_msg=pose_goal, pose_link="link_wrist")
+
+    # 경로 계획 및 실행
+    plan_result_ik = arm_group.plan()
+
+    if plan_result_ik:
+        print(">>> IK 경로 계획 성공! 이동합니다.")
+        my_robot.execute(plan_result_ik.trajectory, controllers=[])
+    else:
+        print(">>> IK 경로 계획 실패! (목표가 너무 멀거나 특이점일 수 있음)")
+
+    # ---------------------------------------------------------
+    # 종료 처리
+    # ---------------------------------------------------------
+    print("\n>>> 모든 작업 완료. 종료합니다.")
+    rclpy.shutdown()
+
+if __name__ == "__main__":
+    main()

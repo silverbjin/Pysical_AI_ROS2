@@ -1,0 +1,45 @@
+<mujoco model="minimal_gripper_reference">
+
+  <contact>
+    <exclude body1="arm" body2="left_finger"/>
+    <exclude body1="arm" body2="right_finger"/>
+  </contact>
+
+  <option timestep="0.002" gravity="0 0 -9.81" cone="elliptic" impratio="10" integrator="implicitfast"/>
+
+  <worldbody>
+    <geom name="ground" type="plane" size="1 1 0.1" rgba="0.8 0.8 0.8 1" condim="3"/>
+    
+    <body name="cube" pos="0 0 0.05">
+      <freejoint/>
+      <geom name="cube_geom" type="box" size="0.05 0.05 0.05" rgba="1 0 0 1" mass="0.1" 
+            friction="2.0 0.1 0.001" solimp="0.95 0.99 0.001" solref="0.004 1"/>
+    </body>
+
+    <body name="arm" pos="0 0 0.4">
+      <joint name="lift_joint" type="slide" axis="0 0 1" damping="10"/>
+      <geom name="arm_base" type="box" size="0.1 0.02 0.02" rgba="0.2 0.2 0.2 1"/>
+      <site name="grasp_site" pos="0 0 -0.1" size="0.01" rgba="1 1 0 1" />
+      
+      <body name="left_finger" pos="-0.08 0 -0.1">
+        <!-- <joint name="left_joint" type="slide" axis="1 0 0" damping="1"/> -->
+        <joint name="left_joint" type="slide" axis="1 0 0" damping="0.1" limited="true" range="0 0.05"/>        
+        <geom name="left_geom" type="box" size="0.01 0.04 0.1" rgba="0.8 0.8 0.8 1"
+              friction="2.0 0.1 0.001" solimp="0.95 0.99 0.001" solref="0.004 1"/>
+      </body>
+      
+      <body name="right_finger" pos="0.08 0 -0.1">
+        <!-- <joint name="right_joint" type="slide" axis="-1 0 0" damping="1"/> -->
+        <joint name="right_joint" type="slide" axis="-1 0 0" damping="0.1" limited="true" range="0 0.05"/>
+        <geom name="right_geom" type="box" size="0.01 0.04 0.1" rgba="0.8 0.8 0.8 1"
+              friction="2.0 0.1 0.001" solimp="0.95 0.99 0.001" solref="0.004 1"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <position name="lift_act" joint="lift_joint" kp="2000" forcerange="-500 500" ctrllimited="true" ctrlrange="-0.5 0.5"/>
+    <position name="left_act" joint="left_joint" kp="500" forcerange="-100 100" ctrllimited="true" ctrlrange="0 0.05"/>
+    <position name="right_act" joint="right_joint" kp="500" forcerange="-100 100" ctrllimited="true" ctrlrange="0 0.05"/>
+  </actuator>
+</mujoco>

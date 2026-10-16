@@ -1,0 +1,124 @@
+import gymnasium as gym
+from gymnasium import spaces
+import numpy as np
+import mujoco
+import os
+
+class ReachEnv(gym.Env):
+    """
+    3자유도 로봇 팔이 목표 지점(빨간 구)에 도달하도록 학습하는 환경 (물리 정합성 수정본)
+    """
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 50}
+
+    def __init__(self, render_mode=None):
+        super(ReachEnv, self).__init__()
+        
+        # 1. 모델 로드 (가장 안전한 절대 경로 기법 유지)
+        # xml_path = os.path.join(os.path.dirname(__file__), "assets", "simple_arm_3dof.xml")
+        xml_path = os.path.join(os.path.dirname(__file__), "src/my_robot_description/assets", "simple_arm_3dof.xml")
+        if not os.path.exists(xml_path):
+             raise FileNotFoundError(f"XML File not found: {xml_path}")
+
+        self.model = mujoco.MjModel.from_xml_path(xml_path)
+        self.data = mujoco.MjData(self.model)
+        
+        self.render_mode = render_mode
+        self.viewer = None
+
+        # [최적화] API 오버헤드 방지를 위한 바디 및 조인트 ID 사전 캐싱
+        self.ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "link_ee")
+        self.target_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "target")
+        self.target_jnt_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "target_joint")
+
+        # 2. Action Space: 3개 관절의 토크 정규화 범위 (-1.0 ~ 1.0)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
+
+        # 3. Observation Space: 12차원 [qpos(3), qvel(3), target_pos(3), dist_vec(3)]
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32)
+        
+        # 기본 초기화 상태 백업
+        self.init_qpos = self.data.qpos.ravel().copy()
+        self.init_qvel = self.data.qvel.ravel().copy()
+
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+        
+        # 초기화 배열 복사
+        qpos = self.init_qpos.copy()
+        qvel = self.init_qvel.copy()
+        
+        # [교정] Target의 쿼터니언을 오염시키지 않도록 로봇 관절(앞의 3개)에만 노이즈 주입
+        qpos[:3] += self.np_random.uniform(low=-0.1, high=0.1, size=3)
+        qvel[:3] += self.np_random.uniform(low=-0.005, high=0.005, size=3)
+        
+        # 2. 작업 영역 내 목표물(Target) 위치 랜덤 설정
+        while True:
+            target_pos = self.np_random.uniform(low=[-0.4, -0.4, 0.1], high=[0.4, 0.4, 0.5])
+            if np.linalg.norm(target_pos) < 0.5: # 물리적 한계 도달 반경 필터링
+                break
+        
+        # Free joint 주소를 명확하게 역산하여 Target의 위치만 덮어쓰기
+        qpos_adr = self.model.jnt_qposadr[self.target_jnt_id]
+        qpos[qpos_adr:qpos_adr+3] = target_pos
+        
+        # 시뮬레이터 상태 동기화
+        self.data.qpos[:] = qpos
+        self.data.qvel[:] = qvel
+        mujoco.mj_forward(self.model, self.data)
+        
+        return self._get_obs(), {}
+
+    def step(self, action):
+        # 1. Action Clipping 및 토크 주입
+        action = np.clip(action, -1.0, 1.0)
+        self.data.ctrl[:] = action 
+        
+        # 2. [교정] 무조건 에러가 나는 nstep 인자 제거 및 정상적인 Frame Skip 루프 가동
+        # 0.01초 타임스텝 * 5회 수행 = 0.05초 제어 주기 (20Hz)
+        for _ in range(5):
+            mujoco.mj_step(self.model, self.data)
+            
+        # 3. 데이터 및 기하 정보 획득 (캐싱된 ID 활용)
+        obs = self._get_obs()
+        ee_pos = self.data.xpos[self.ee_id]
+        target_pos = self.data.xpos[self.target_id]
+        
+        dist_vec = target_pos - ee_pos
+        distance = np.linalg.norm(dist_vec)
+        
+        # 4. 보상 계산 (Reward Shaping)
+        reward_dist = -distance  # R_dist (Dense)
+        reward_ctrl = -np.square(action).sum() * 0.01  # R_ctrl (Regularization, 본문 가중치 0.01 반영)
+        reward = reward_dist + reward_ctrl
+        
+        # 성공 판정 수렴 및 종료 조건
+        terminated = False
+        if distance < 0.05: 
+            reward += 10.0 # R_bonus (Sparse)
+            terminated = True
+
+        if self.render_mode == "human":
+            self.render()
+
+        return obs, reward, terminated, False, {"distance": distance}
+
+    def _get_obs(self):
+        # 안전한 슬라이싱을 통한 12차원 핵심 피처 가공
+        qpos = self.data.qpos[:3].astype(np.float32)
+        qvel = self.data.qvel[:3].astype(np.float32)
+        
+        target_pos = self.data.xpos[self.target_id].astype(np.float32)
+        ee_pos = self.data.xpos[self.ee_id].astype(np.float32)
+        dist_vec = target_pos - ee_pos
+        
+        return np.concatenate([qpos, qvel, target_pos, dist_vec])
+
+    def render(self):
+        if self.viewer is None:
+            import mujoco.viewer
+            self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
+        self.viewer.sync()
+
+    def close(self):
+        if self.viewer is not None:
+            self.viewer.close()

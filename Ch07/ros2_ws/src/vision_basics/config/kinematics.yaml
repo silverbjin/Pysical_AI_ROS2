@@ -1,0 +1,18 @@
+# config/kinematics.yaml
+
+# 관절 그룹 이름 (setup assistant에서 정한 이름)
+# arm_group:
+#   # 기본 KDL 솔버 사용
+#   kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+#   kinematics_solver_search_resolution: 0.005 # 해를 찾을 때 각도 탐색 간격 (라디안)
+#   kinematics_solver_timeout: 0.005           # 0.005초 내에 못 찾으면 포기
+
+arm_group:
+  # 플러그인을 Trac-IK로 변경
+  kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+  
+  # 제한 시간 (복잡한 로봇일수록 조금 늘려주는 것이 좋다)
+  kinematics_solver_timeout: 0.1  # 0.01초
+  
+  # Trac-IK 전용 파라미터
+  solve_type: Distance  # Distance: 최소 이동 거리 선호 / Speed: 빠른 연산 선호

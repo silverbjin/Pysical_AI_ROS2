@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<robot name="my_quadruped" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="common/robot_properties.xacro"/>
+    <xacro:include filename="common/materials.xacro"/>
+    <xacro:include filename="common/inertial_macros.xacro"/>
+    <xacro:include filename="common/gazebo_control.xacro"/>
+    <xacro:include filename="parts/leg.xacro"/>
+    
+    <!-- dummy link to satisfy Gazebo's requirement for a root link. 
+    This link is not used in the robot's kinematics or dynamics, 
+    and it is fixed to the base_link. -->
+    <!-- <link name="base_footprint"/> -->
+    <link name="base_footprint">
+        <!-- 물리 엔진이 링크를 지우지 않도록 아주 작은 더미 관성 주입 -->
+        <!-- <inertial>
+            <mass value="0.0001"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.000001" iyz="0.0" izz="0.000001"/>
+        </inertial> -->
+    </link>
+    
+    <joint name="base_footprint_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- [추가] Gazebo가 base_footprint 조인트를 무시하고 병합하는 것을 방지 -->
+    <gazebo reference="base_footprint_joint">
+        <preserveFixedJoint>true</preserveFixedJoint>
+    </gazebo>
+
+    <link name="base_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}"/>
+            </geometry>
+            <material name="black"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}"/>
+            </geometry>
+        </collision>
+        <xacro:box_inertia m="${base_mass}" x="${base_length}" y="${base_width}" z="${base_height}" xyz="0 0 0" rpy="0 0 0"/>
+    </link>
+
+    <xacro:leg prefix="fr" x_reflect="1" y_reflect="-1" />
+    <xacro:leg prefix="fl" x_reflect="1" y_reflect="1" />
+    <xacro:leg prefix="rr" x_reflect="-1" y_reflect="-1" />
+    <xacro:leg prefix="rl" x_reflect="-1" y_reflect="1" />
+
+    <!-- LiDAR Link -->
+    <link name="lidar_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry> <cylinder radius="0.03" length="0.04"/> </geometry>
+            <material name="dark_grey"/>
+        </visual>
+
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry> <cylinder radius="0.03" length="0.04"/> </geometry>
+        </collision>
+
+        <inertial>
+            <mass value="0.10"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia ixx="5.0e-5" ixy="0.0" ixz="0.0" iyy="5.0e-5" iyz="0.0" izz="5.0e-5"/>
+        </inertial>
+    </link>
+
+    <!-- LiDAR joint -->
+    <joint name="lidar_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="lidar_link"/>
+        <!-- base_link 상단 -->
+        <origin xyz="0 0 0.11" rpy="0 0 0"/>
+    </joint>
+
+
+
+</robot>

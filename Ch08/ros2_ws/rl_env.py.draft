@@ -1,0 +1,142 @@
+import gymnasium as gym
+from gymnasium import spaces
+import numpy as np
+import mujoco
+import os
+
+class ReachEnv(gym.Env):
+    """
+    3자유도 로봇 팔이 목표 지점(빨간 구)에 도달하도록 학습하는 환경
+    """
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
+
+    def __init__(self, render_mode=None):
+        super(ReachEnv, self).__init__()
+        
+        # 1. 모델 로드
+        # 현재 디렉토리의 assets 폴더 내 xml 파일 로드
+        xml_path = os.path.join(os.path.dirname(__file__), "assets", "simple_arm_3dof.xml")
+        if not os.path.exists(xml_path):
+             raise FileNotFoundError(f"XML File not found: {xml_path}")
+
+        self.model = mujoco.MjModel.from_xml_path(xml_path)
+        self.data = mujoco.MjData(self.model)
+        
+        self.render_mode = render_mode
+        self.viewer = None
+
+        # 2. Action Space: 3개 관절의 토크 (-1.0 ~ 1.0)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
+
+        # 3. Observation Space: 12차원
+        # [qpos(3), qvel(3), target_pos(3), dist_vec(3)]
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32)
+        
+        # 내부 변수 초기화
+        self.init_qpos = self.data.qpos.ravel().copy()
+        self.init_qvel = self.data.qvel.ravel().copy()
+
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+        
+        # 1. 로봇 초기화 (약간의 노이즈 추가하여 초기 자세 다양화)
+        # qpos의 앞부분 3개가 로봇 관절임 (나머지는 target object 등)
+        qpos = self.init_qpos + self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq)
+        qvel = self.init_qvel + self.np_random.uniform(low=-0.005, high=0.005, size=self.model.nv)
+        
+        # 2. 목표물(Target) 위치 랜덤 설정
+        # 로봇 팔이 닿을 수 있는 범위 내에서 생성 (반경 0.1m ~ 0.4m 사이)
+        while True:
+            target_pos = self.np_random.uniform(low=[-0.4, -0.4, 0.1], high=[0.4, 0.4, 0.5])
+            if np.linalg.norm(target_pos) < 0.5: # 너무 멀지 않은 곳만
+                break
+        
+        # XML에서 target joint는 보통 마지막에 위치함. (body 이름으로 id 찾기)
+        target_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "target")
+        # target body는 freejoint를 가지므로 qpos의 해당 인덱스를 찾아 수정해야 함
+        # 편의상 mocap body를 쓰거나 직접 qpos 수정. 
+        # 여기서는 간단히 joint 주소를 찾아 수정하는 방식 사용.
+        target_jnt_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "target_joint")
+        qpos_adr = self.model.jnt_qposadr[target_jnt_id]
+        
+        # Free joint는 7개의 값(pos 3 + quat 4)을 가짐
+        qpos[qpos_adr:qpos_adr+3] = target_pos
+        
+        # MuJoCo 상태 설정
+        self.data.qpos[:] = qpos
+        self.data.qvel[:] = qvel
+        mujoco.mj_forward(self.model, self.data)
+        
+        return self._get_obs(), {}
+
+    def step(self, action):
+        # 1. Action Rescaling & Clipping
+        action = np.clip(action, -1.0, 1.0)
+        # XML의 gear=50 이므로, 1.0 입력 시 50Nm 토크 발생
+        self.data.ctrl[:] = action 
+        
+        # 2. Simulation Step (Frame Skip)
+        # 물리 연산 5번 반복 = 0.01s * 5 = 0.05s 제어 주기
+        mujoco.mj_step(self.model, self.data, nstep=5)
+            
+        # 3. 정보 추출
+        obs = self._get_obs()
+        
+        # End-Effector 위치 (XML에서 정의한 site 혹은 body 이름)
+        ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "end_effector")
+        ee_pos = self.data.xpos[ee_id]
+        
+        # Target 위치
+        target_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "target")
+        target_pos = self.data.xpos[target_id]
+        
+        # 거리 계산
+        dist_vec = target_pos - ee_pos
+        distance = np.linalg.norm(dist_vec)
+        
+        # 4. 보상 계산
+        reward_dist = -distance  # 거리 보상
+        reward_ctrl = -np.square(action).sum() * 0.1  # 에너지 페널티
+        reward = reward_dist + reward_ctrl
+        
+        # 성공 판정
+        terminated = False
+        if distance < 0.05: # 5cm 이내 도달
+            reward += 10.0 # 성공 보너스
+            terminated = True
+            print(f"Target Reached! Dist: {distance:.3f}")
+
+        # 렌더링 (human 모드일 때만)
+        if self.render_mode == "human":
+            self.render()
+
+        return obs, reward, terminated, False, {"distance": distance}
+
+    def _get_obs(self):
+        # 로봇 관절 각도 (처음 3개)
+        qpos = self.data.qpos[:3].astype(np.float32)
+        qvel = self.data.qvel[:3].astype(np.float32)
+        
+        # Target 위치
+        target_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "target")
+        target_pos = self.data.xpos[target_id].astype(np.float32)
+        
+        # EE 위치
+        ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "end_effector")
+        ee_pos = self.data.xpos[ee_id].astype(np.float32)
+        
+        # 상대 벡터
+        dist_vec = target_pos - ee_pos
+        
+        return np.concatenate([qpos, qvel, target_pos, dist_vec])
+
+    def render(self):
+        if self.viewer is None:
+            import mujoco.viewer
+            self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
+        
+        self.viewer.sync()
+
+    def close(self):
+        if self.viewer is not None:
+            self.viewer.close()

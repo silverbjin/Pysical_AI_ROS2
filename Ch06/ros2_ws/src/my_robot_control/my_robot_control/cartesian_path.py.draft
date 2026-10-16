@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+import rclpy
+import copy
+from rclpy.node import Node
+from moveit.planning import MoveItPy
+from moveit_configs_utils import MoveItConfigsBuilder
+from geometry_msgs.msg import Pose
+
+def main():
+    rclpy.init()
+
+    # 1. MoveIt 설정 및 초기화
+    moveit_config = (
+        MoveItConfigsBuilder(robot_name="my_robot", package_name="my_robot_moveit_config")
+        .robot_description(file_path="urdf/my_robot.urdf.xacro")
+        .robot_description_semantic(file_path="config/my_robot.srdf")
+        .trajectory_execution(file_path="config/moveit_controllers.yaml")
+        .to_moveit_configs()
+    )
+    
+    my_robot = MoveItPy(node_name="cartesian_test", config_dict=moveit_config.to_dict())
+    arm_group = my_robot.get_planning_component("arm_group")
+
+    print(">>> 로봇 초기화 완료. 'Home' 위치로 이동합니다.")
+    
+    # 시작을 위해 안전한 Home 자세로 이동
+    arm_group.set_start_state_to_current_state()
+    arm_group.set_goal_state(configuration_name="ready") # ready 자세가 있다고 가정
+    plan_result = arm_group.plan()
+    if plan_result:
+        my_robot.execute(plan_result.trajectory, controllers=[])
+    else:
+        print("초기 위치 이동 실패")
+        return
+
+    # ---------------------------------------------------------
+    # 데카르트 경로 계획 (Cartesian Path Planning)
+    # ---------------------------------------------------------
+    print("\n>>> 사각형 그리기 경로 계획 시작...")
+
+    # 1. 현재 로봇의 손끝 위치(Pose)를 가져온다.
+    # 주의: get_current_pose()는 StampedPose를 반환하므로 .pose로 접근
+    wpose = arm_group.get_current_pose().pose
+    
+    waypoints = []
+
+    # 2. Waypoints 생성 (사각형 궤적)
+    # Waypoint 1: Y축으로 +20cm 이동 (오른쪽)
+    wpose.position.y += 0.2
+    waypoints.append(copy.deepcopy(wpose))
+
+    # Waypoint 2: Z축으로 +20cm 이동 (위)
+    wpose.position.z += 0.2
+    waypoints.append(copy.deepcopy(wpose))
+
+    # Waypoint 3: Y축으로 -20cm 이동 (왼쪽)
+    wpose.position.y -= 0.2
+    waypoints.append(copy.deepcopy(wpose))
+
+    # Waypoint 4: Z축으로 -20cm 이동 (원위치 복귀)
+    wpose.position.z -= 0.2
+    waypoints.append(copy.deepcopy(wpose))
+
+    # 3. 경로 계산 (compute_cartesian_path)
+    # - waypoints: 경유지 리스트
+    # - eef_step: 보간 간격 (0.01 = 1cm) -> 작을수록 정밀하지만 계산 오래 걸림
+    # - jump_threshold: 관절 점프 허용치 (0.0 = 점프 금지) -> 급격한 관절 회전 방지
+    
+    # moveit_py 최신 API에서는 plan() 대신 별도의 함수 사용 혹은 planning interface 확인 필요
+    # (참고: moveit_py의 API는 C++ MoveGroupInterface와 유사함)
+    
+    trajectory, fraction = arm_group.compute_cartesian_path(
+        waypoints=waypoints,
+        eef_step=0.01,       # 1cm 간격으로 IK 풀기
+        jump_threshold=0.0   # 점프(급발진) 절대 금지
+    )
+
+    print(f">>> 경로 계산 결과: {fraction * 100:.2f}% 생성됨")
+
+    # 4. 실행 (Execute)
+    # fraction이 1.0(100%)이 아니면 실행할지 말지 결정해야 함
+    if fraction > 0.9:  # 90% 이상 성공 시 실행
+        print(">>> 경로 실행 중...")
+        my_robot.execute(trajectory, controllers=[])
+    else:
+        print(f">>> 경로 생성 실패! (성공률 저조: {fraction})")
+
+    rclpy.shutdown()
+
+if __name__ == "__main__":
+    main()
