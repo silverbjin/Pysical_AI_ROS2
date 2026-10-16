@@ -16,11 +16,14 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         DeclareLaunchArgument('start_rviz', default_value='true'),
+        DeclareLaunchArgument('start_scan_filter', default_value='true'),
+        DeclareLaunchArgument('rviz_config', default_value=os.path.join(share, 'rviz', 'slam.rviz')),
         DeclareLaunchArgument('slam_params_file', default_value=os.path.join(
             share, 'config', 'mapper_params_online_async.yaml')),
         DeclareLaunchArgument('max_tilt_degrees', default_value='5.0'),
         DeclareLaunchArgument('min_scan_interval', default_value='0.15'),
         Node(package='my_quadruped_bot', executable='slam_scan_filter',
+             condition=IfCondition(LaunchConfiguration('start_scan_filter')),
              output='screen', parameters=[{
                  'use_sim_time': sim_time,
                  'max_tilt_degrees': ParameterValue(
@@ -38,7 +41,7 @@ def generate_launch_description():
                 'use_lifecycle_manager': 'false',
             }.items()),
         Node(package='rviz2', executable='rviz2', name='slam_rviz',
-             arguments=['-d', os.path.join(share, 'rviz', 'slam.rviz')],
+             arguments=['-d', LaunchConfiguration('rviz_config')],
              parameters=[{'use_sim_time': sim_time}],
              condition=IfCondition(LaunchConfiguration('start_rviz'))),
     ])

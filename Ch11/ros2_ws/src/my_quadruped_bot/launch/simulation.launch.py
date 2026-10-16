@@ -1,12 +1,12 @@
 # [코드 9-15] launch/simulation.launch.py
 import os
-import xacro # [보완] Xacro 파일을 런타임에 직접 파싱하기 위해 필수 임포트
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import Command, LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     # 패키지 이름 및 셰어(Share) 디렉터리 경로 설정
@@ -29,7 +29,8 @@ def generate_launch_description():
     # 3. 로봇 모델(Xacro) 실시간 파싱 및 URDF 변환
     # [정석 구현] 미리 변환할 필요 없이, 런치 시스템이 켜지면서 자동으로 URDF 컴파일을 수행함
     xacro_file = os.path.join(pkg_share, 'urdf', 'robot.urdf.xacro')
-    robot_description_raw = xacro.process_file(xacro_file).toxml()
+    robot_description_raw = ParameterValue(Command([
+        'xacro ', xacro_file, ' lidar_3d:=', LaunchConfiguration('lidar_3d')]), value_type=str)
  
     # 4. Robot State Publisher 노드 (로봇의 TF 링크 트리 상태 계산 및 /tf 발행)
     node_robot_state_publisher = Node(
@@ -64,6 +65,7 @@ def generate_launch_description():
     # 정의된 모든 인프라 노드들을 런치 엔진에 반환하여 동시 구동
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value=default_world),
+        DeclareLaunchArgument('lidar_3d', default_value='false'),
         gazebo,
         node_robot_state_publisher,
         spawn_entity,

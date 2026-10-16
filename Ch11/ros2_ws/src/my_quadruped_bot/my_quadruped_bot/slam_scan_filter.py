@@ -13,10 +13,10 @@ from my_quadruped_bot.sensors.scan_gate import ScanGate
 
 
 class SlamScanFilter(Node):
-    def __init__(self):
-        super().__init__('slam_scan_filter')
+    def __init__(self, node_name='slam_scan_filter', output_default='/scan/slam'):
+        super().__init__(node_name)
         descriptor = ParameterDescriptor(read_only=True)
-        defaults = {'input_topic': '/scan', 'output_topic': '/scan/slam',
+        defaults = {'input_topic': '/scan', 'output_topic': output_default,
                     'reference_frame': 'odom', 'expected_scan_frame': 'lidar_link',
                     'max_tilt_degrees': 5.0, 'min_scan_interval': 0.15,
                     'max_scan_age': 0.5}
@@ -66,18 +66,23 @@ class SlamScanFilter(Node):
                 self.queue.popleft()
                 self.counts['stale_or_future'] += 1
                 continue
-            try:
-                tf = self.buffer.lookup_transform(self.reference_frame, msg.header.frame_id,
-                                                  Time.from_msg(msg.header.stamp))
-            except TransformException:
-                # Nonblocking retry; never substitute latest TF for measurement-time TF.
+            q = self.rotation_at(msg)
+            if q is None:
                 return
             self.queue.popleft()
-            q = tf.transform.rotation
-            result = self.gate.check(stamp_ns, now_ns, (q.x, q.y, q.z, q.w))
+            result = self.gate.check(stamp_ns, now_ns, q)
             self.counts[result] += 1
             if result == 'accepted':
                 self.pub.publish(msg)  # Preserve stamp, frame, angles and ranges verbatim.
+
+    def rotation_at(self, msg):
+        try:
+            tf = self.buffer.lookup_transform(self.reference_frame, msg.header.frame_id,
+                                              Time.from_msg(msg.header.stamp))
+        except TransformException:
+            return None
+        q = tf.transform.rotation
+        return (q.x, q.y, q.z, q.w)
 
     def report(self):
         self.get_logger().info(f'SLAM scan gate: {dict(self.counts)}, pending={len(self.queue)}')
