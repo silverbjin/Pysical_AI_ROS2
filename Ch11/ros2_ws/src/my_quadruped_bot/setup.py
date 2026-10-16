@@ -67,6 +67,7 @@ setup(
             'imu_processor = my_quadruped_bot.imu_processor:main',      
             'lidar_safety = my_quadruped_bot.lidar_safety:main',      
             'sim_odometry = my_quadruped_bot.sim_odometry:main',
+            'imu_pose_viz = my_quadruped_bot.imu_pose_viz:main',
             'command_odometry_demo = my_quadruped_bot.command_odometry_demo:main',
         ],
     },
