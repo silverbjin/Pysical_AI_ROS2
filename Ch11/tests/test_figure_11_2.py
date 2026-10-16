@@ -2,6 +2,9 @@
 import importlib
 import importlib.util
 import math
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 import sys
 import unittest
@@ -43,6 +46,63 @@ class ImuFigureTests(unittest.TestCase):
 
 
 class FigureAssetsTests(unittest.TestCase):
+    @unittest.skipUnless(importlib.util.find_spec('rclpy'), 'Requires ROS Python')
+    def test_standing_commands_reach_targets_in_actual_urdf(self):
+        import numpy as np
+        from my_quadruped_bot.trot_controllerFSM import TrotController
+
+        urdf = subprocess.run(['xacro', str(PKG / 'urdf/robot.urdf.xacro')],
+                              capture_output=True, text=True, check=True, timeout=30)
+        joints = {j.get('name'): j for j in ET.fromstring(urdf.stdout).findall('joint')}
+        controller = TrotController()
+        for height in (controller.idle_height, controller.target_height):
+            for leg, target in controller.get_nominal_foot_positions(height).items():
+                angles = controller._solve_leg_ik(leg, target)
+                transform = np.eye(4)
+                for kind, angle in zip(('hip', 'thigh', 'calf', 'foot'), [*angles, 0]):
+                    joint = joints[f'{leg.lower()}_{kind}_' + ('fixed' if kind == 'foot' else 'joint')]
+                    origin = joint.find('origin')
+                    xyz = [float(v) for v in origin.get('xyz').split()]
+                    roll, pitch, yaw = [float(v) for v in origin.get('rpy').split()]
+                    def rotation(axis, value):
+                        c, s = math.cos(value), math.sin(value)
+                        if axis == 'x':
+                            return np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+                        if axis == 'y':
+                            return np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+                        return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+                    step = np.eye(4)
+                    step[:3, 3] = xyz
+                    step[:3, :3] = rotation('z', yaw) @ rotation('y', pitch) @ rotation('x', roll)
+                    if kind != 'foot':
+                        limit = joint.find('limit')
+                        self.assertGreaterEqual(angle, float(limit.get('lower')))
+                        self.assertLessEqual(angle, float(limit.get('upper')))
+                        step[:3, :3] = step[:3, :3] @ rotation('x' if kind == 'hip' else 'y', angle)
+                    transform = transform @ step
+                np.testing.assert_allclose(transform[:3, 3], target, atol=1e-6,
+                                           err_msg=f'{leg} at height {height}')
+
+    @unittest.skipUnless(shutil.which('xacro') and shutil.which('gz'),
+                         'Requires ROS xacro and Gazebo CLI')
+    def test_gazebo_conversion_keeps_body_legs_and_sensors(self):
+        urdf = subprocess.run(
+            ['xacro', str(PKG / 'urdf/robot.urdf.xacro')],
+            capture_output=True, text=True, check=True, timeout=30)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'robot.urdf'
+            path.write_text(urdf.stdout)
+            sdf = subprocess.run(['gz', 'sdf', '-p', str(path)],
+                                 capture_output=True, text=True, timeout=30)
+        self.assertEqual(sdf.returncode, 0, sdf.stderr)
+        model = ET.fromstring(sdf.stdout).find('model')
+        links = {link.get('name') for link in model.findall('link')}
+        self.assertIn('base_link', links, sdf.stderr)
+        for leg in ('fr', 'fl', 'rr', 'rl'):
+            self.assertIn(f'{leg}_calf_link', links)
+        self.assertIsNotNone(model.find(".//sensor[@type='imu']"))
+        self.assertIsNotNone(model.find(".//sensor[@type='gpu_lidar']"))
+
     def test_rviz_uses_real_scan_and_pose_axes(self):
         p = PKG / 'rviz/figure_11_2.rviz'
         self.assertTrue(p.exists(), 'Missing figure RViz configuration')

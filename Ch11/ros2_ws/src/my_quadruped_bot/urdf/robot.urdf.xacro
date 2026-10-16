@@ -7,17 +7,15 @@
     <xacro:include filename="common/gazebo_control.xacro"/>
     <xacro:include filename="parts/leg.xacro"/>
     
-    <!-- dummy link to satisfy Gazebo's requirement for a root link. 
-    This link is not used in the robot's kinematics or dynamics, 
-    and it is fixed to the base_link. -->
-    <!-- <link name="base_footprint"/> -->
+    <!-- Fixed root retained in SDF: it needs positive mass and inertia when
+         base_footprint_joint is preserved, or Gazebo drops the whole robot. -->
     <link name="base_footprint">
         <!-- 물리 엔진이 링크를 지우지 않도록 아주 작은 더미 관성 주입 -->
-        <!-- <inertial>
+        <inertial>
             <mass value="0.0001"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.000001" iyz="0.0" izz="0.000001"/>
-        </inertial> -->
+        </inertial>
     </link>
     
     <joint name="base_footprint_joint" type="fixed">
