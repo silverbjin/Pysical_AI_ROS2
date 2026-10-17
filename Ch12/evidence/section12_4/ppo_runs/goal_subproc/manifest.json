@@ -1,0 +1,53 @@
+{
+  "format_version": 1,
+  "task": "goal",
+  "observation_schema": "goal-polar-sincos-v1-48",
+  "env_kwargs": {
+    "max_episode_steps": 200
+  },
+  "observation_size": 48,
+  "action_size": 12,
+  "normalization": "none",
+  "evaluation_env_kwargs": {
+    "max_episode_steps": 200,
+    "goal_mode": "terminate"
+  },
+  "training": {
+    "total_timesteps": 128,
+    "n_envs": 2,
+    "backend": "subproc",
+    "device": "cpu",
+    "seed": 42,
+    "n_steps": 32,
+    "batch_size": 64,
+    "n_epochs": 2,
+    "learning_rate": 0.0003,
+    "gamma": 0.99,
+    "ent_coef": 0.005,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "net_arch": {
+      "pi": [
+        256,
+        256
+      ],
+      "vf": [
+        256,
+        256
+      ]
+    },
+    "activation": "Tanh",
+    "torch_threads": 1,
+    "eval_every": 64,
+    "eval_episodes": 2,
+    "checkpoint_every": 64
+  },
+  "eval_callback_frequency": 32,
+  "versions": {
+    "physical-ai-quadruped-rl": "0.5.0",
+    "stable-baselines3": "2.7.1",
+    "torch": "2.5.1+cpu",
+    "mujoco": "3.3.7",
+    "gymnasium": "1.2.1"
+  }
+}

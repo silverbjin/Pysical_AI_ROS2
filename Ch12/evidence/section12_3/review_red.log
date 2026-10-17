@@ -1,0 +1,67 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_____________ test_reset_metadata_names_the_locomotion_observation _____________
+
+    def test_reset_metadata_names_the_locomotion_observation():
+        with QuadrupedLocomotionEnv() as env:
+            _, info = env.reset(seed=0)
+>           assert info['observation_mode'] == 'locomotion'
+E           AssertionError: assert 'quaternion' == 'locomotion'
+E             
+E             - locomotion
+E             + quaternion
+
+Ch12/tests/test_locomotion_env.py:177: AssertionError
+______ test_cli_implicit_command_uses_same_validation_as_explicit_command ______
+
+    def test_cli_implicit_command_uses_same_validation_as_explicit_command():
+        with pytest.raises(SystemExit) as error:
+>           main(['--section', '12.3', '--target-velocity', '4', '--steps', '1'])
+
+Ch12/tests/test_locomotion_env.py:182: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch12/src/quadruped_rl/demo.py:147: in main
+    report = run_demo(steps=args.steps, policy=args.policy, seed=args.seed,
+Ch12/src/quadruped_rl/demo.py:63: in run_demo
+    with env_class(target_velocity=target_velocity,
+Ch12/src/quadruped_rl/locomotion_env.py:25: in __init__
+    self._configured_command = self._validate_command(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = (4.0, 0, 0)
+
+    @staticmethod
+    def _validate_command(value):
+        result = np.asarray(value, dtype=np.float64)
+        if result.shape != (3,) or not np.isfinite(result).all() or np.any(np.abs(result) > 3):
+>           raise ValueError("command must contain vx, vy, yaw rate in [-3, 3]")
+E           ValueError: command must contain vx, vy, yaw rate in [-3, 3]
+
+Ch12/src/quadruped_rl/locomotion_env.py:48: ValueError
+_________ test_transient_contacts_after_initial_fall_remain_in_penalty _________
+
+    def test_transient_contacts_after_initial_fall_remain_in_penalty():
+        # This real 0.2 s frame bounces back clear after briefly hitting other links.
+        with QuadrupedLocomotionEnv(frame_skip=100) as env:
+            env.reset(seed=0)
+            env.data.qpos[2] = .2
+            half = math.pi/8
+            env.data.qpos[3:7] = [math.cos(half), math.sin(half), 0, 0]
+            env.data.qvel[2] = -5
+            mujoco.mj_forward(env.model, env.data)
+            _, _, terminated, _, info = env.step(np.zeros(12))
+            assert terminated
+>           assert {'base_link', 'fl_calf_link', 'rl_calf_link'} <= set(info['unwanted_contact_bodies'])
+E           AssertionError: assert {'base_link',...rl_calf_link'} <= {'fr_calf_lin...r_thigh_link'}
+E             
+E             Extra items in the left set:
+E             'rl_calf_link'
+E             'fl_calf_link'
+E             'base_link'
+
+Ch12/tests/test_locomotion_env.py:197: AssertionError
+=========================== short test summary info ============================
+FAILED Ch12/tests/test_locomotion_env.py::test_reset_metadata_names_the_locomotion_observation
+FAILED Ch12/tests/test_locomotion_env.py::test_cli_implicit_command_uses_same_validation_as_explicit_command
+FAILED Ch12/tests/test_locomotion_env.py::test_transient_contacts_after_initial_fall_remain_in_penalty
+3 failed, 20 deselected in 0.77s
