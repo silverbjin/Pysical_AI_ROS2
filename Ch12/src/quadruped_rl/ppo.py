@@ -15,7 +15,8 @@ from .locomotion_env import QuadrupedLocomotionEnv
 from .rewards import RewardConfig
 
 
-SCHEMAS = {'locomotion': 'locomotion-v1-48', 'goal': 'goal-polar-sincos-v1-48'}
+SCHEMAS = {'locomotion': 'locomotion-v1-48', 'goal': 'goal-polar-sincos-v1-48',
+           'avoidance':'avoidance-goal-body-lidar-v1'}
 
 
 def make_env(task, env_kwargs, monitor_path=None):
@@ -28,9 +29,13 @@ def make_env(task, env_kwargs, monitor_path=None):
     elif task == 'goal':
         from .goal_env import QuadrupedGoalEnv
         env = QuadrupedGoalEnv(**kwargs)
+    elif task == 'avoidance':
+        from .avoidance_env import QuadrupedAvoidanceEnv
+        env = QuadrupedAvoidanceEnv(**kwargs)
     else:
         raise ValueError('Unknown task')
-    return Monitor(env, filename=monitor_path)
+    return Monitor(env, filename=monitor_path,
+        info_keywords=('obstacle_collision','lidar_min') if task=='avoidance' else ())
 
 
 def _write_json(path, value):
@@ -84,6 +89,7 @@ def train(output, *, task='locomotion', env_kwargs=None, total_timesteps=2_000_0
         raise ValueError('env_kwargs must be a finite JSON object') from error
     # Validate the real environment before creating output or worker processes.
     probe = make_env(task,kwargs)
+    observation_size = probe.observation_space.shape[0]
     probe.close()
     root = Path(output).resolve()
     root.mkdir(parents=True,exist_ok=False)
@@ -98,14 +104,14 @@ def train(output, *, task='locomotion', env_kwargs=None, total_timesteps=2_000_0
         torch_threads=1,eval_every=eval_every,eval_episodes=eval_episodes,
         checkpoint_every=checkpoint_every)
     evaluation_kwargs = dict(kwargs)
-    if task == 'goal':
+    if task in ('goal','avoidance'):
         evaluation_kwargs['goal_mode'] = 'terminate'
     manifest = dict(format_version=1,task=task,observation_schema=SCHEMAS[task],
-        env_kwargs=kwargs,observation_size=48,action_size=12,normalization='none',
+        env_kwargs=kwargs,observation_size=observation_size,action_size=12,normalization='none',
         evaluation_env_kwargs=evaluation_kwargs,
         training=config,eval_callback_frequency=max(eval_every//n_envs,1),
         versions={name:importlib.metadata.version(name) for name in
-            ('physical-ai-quadruped-rl','stable-baselines3','torch','mujoco','gymnasium')})
+            ('physical-ai-quadruped-rl','stable-baselines3','torch','mujoco','gymnasium','numpy')})
     _write_json(root/'manifest.json',manifest)
     try:
         factories = [partial(make_env,task,kwargs,str(root/'monitor'/f'worker_{i}'))
@@ -174,6 +180,9 @@ def load_bundle(output, *, model_name='best_model/best_model.zip',render_mode=No
     root = Path(output).resolve()
     manifest = json.loads((root/'manifest.json').read_text(encoding='utf-8'))
     task = manifest.get('task')
+    saved_numpy=manifest.get('versions',{}).get('numpy')
+    if saved_numpy and saved_numpy.split('.')[0]!=np.__version__.split('.')[0]:
+        raise ValueError('NumPy major version differs from training; use the recorded environment or retrain')
     if expected_task is not None and task != expected_task:
         raise ValueError('Model task does not match requested task')
     if (manifest.get('format_version') != 1 or task not in SCHEMAS
@@ -183,7 +192,12 @@ def load_bundle(output, *, model_name='best_model/best_model.zip',render_mode=No
     kwargs = dict(manifest['env_kwargs'],render_mode=render_mode)
     env = make_env(task,kwargs)
     try:
-        model = PPO.load(root/model_name,device=device)
+        try:
+            model = PPO.load(root/model_name,device=device)
+        except ModuleNotFoundError as error:
+            if 'numpy' in str(error):
+                raise ValueError('Checkpoint NumPy serialization incompatible; use its training environment or retrain') from error
+            raise
         if (getattr(model,'chapter12_schema',None) != SCHEMAS[task]
                 or getattr(model,'chapter12_env_kwargs',None) != manifest['env_kwargs']):
             raise ValueError('Model task/schema/environment differs from manifest')
@@ -205,7 +219,7 @@ def play(output, *, steps=1000,model_name='best_model/best_model.zip',render=Fal
         render_mode='human' if render else 'rgb_array' if frame_path else None,
         expected_task=expected_task)
     reward_total = 0.
-    episodes = successes = 0
+    episodes = successes = collisions = 0
     rows = []
     try:
         obs,_ = env.reset(seed=seed)
@@ -215,11 +229,13 @@ def play(output, *, steps=1000,model_name='best_model/best_model.zip',render=Fal
             obs,reward,done,cut,info = env.step(action)
             reward_total += reward
             successes += int(info.get('is_success',False))
+            collisions += int(info.get('obstacle_collision',False))
             target = info.get('evaluated_target',[np.nan,np.nan])
             rows.append([index,episodes,float(env.unwrapped.data.time),
                          *env.unwrapped.data.qpos[:3].tolist(),float(reward),
                          float(info.get('distance',np.nan)),int(info.get('is_success',False)),
-                         *target[:2]])
+                         *target[:2],float(info.get('lidar_min',np.nan)),
+                         int(info.get('obstacle_collision',False))])
             if render:
                 viewer = env.unwrapped._viewer
                 if viewer is not None and not viewer.is_running():
@@ -234,9 +250,9 @@ def play(output, *, steps=1000,model_name='best_model/best_model.zip',render=Fal
             Image.fromarray(env.render()).save(frame_path)
         if trajectory_path:
             np.savetxt(trajectory_path,rows,delimiter=',',header=
-                'step,episode,sim_time,x,y,z,reward,distance,success,target_x,target_y',comments='')
+                'step,episode,sim_time,x,y,z,reward,distance,success,target_x,target_y,lidar_min,collision',comments='')
         return dict(task=manifest['task'],steps=len(rows),reward_total=reward_total,
-                    episodes=episodes,successes=successes)
+                    episodes=episodes,successes=successes,collisions=collisions)
     finally:
         env.close()
 

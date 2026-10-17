@@ -19,17 +19,28 @@ def main(argv=None):
     parser.add_argument('--target',nargs=2,type=float)
     parser.add_argument('--radius-range',nargs=2,type=float,default=[2,3])
     parser.add_argument('--goal-mode',choices=['resample','terminate'],default='resample')
+    parser.add_argument('--task',choices=['goal','avoidance'],default='goal')
+    parser.add_argument('--num-rays',type=int,choices=[16,32],default=16)
+    parser.add_argument('--obstacle-count',type=int,default=10)
+    parser.add_argument('--lidar-noise-std',type=float,default=.05)
     args = parser.parse_args(argv)
     if args.steps <= 0 or (args.render and args.frame_path):
         parser.error('steps must be positive; choose render or frame-path')
     try:
-        env = QuadrupedGoalEnv(radius_range=args.radius_range,goal_mode=args.goal_mode,
+        env_class = QuadrupedGoalEnv
+        settings = {}
+        if args.task=='avoidance':
+            from .avoidance_env import QuadrupedAvoidanceEnv
+            env_class = QuadrupedAvoidanceEnv
+            settings = dict(num_rays=args.num_rays,obstacle_count=args.obstacle_count,
+                            lidar_noise_std=args.lidar_noise_std)
+        env = env_class(radius_range=args.radius_range,goal_mode=args.goal_mode,**settings,
             render_mode='human' if args.render else 'rgb_array' if args.frame_path else None)
     except ValueError as error:
         parser.error(str(error))
     rng = np.random.default_rng(args.seed)
     rows = []
-    falls = timeouts = arrivals = episode = 0
+    falls = timeouts = arrivals = episode = collisions = 0
     total = 0.
     try:
         env.reset(seed=args.seed,options={'target':args.target} if args.target is not None else None)
@@ -39,10 +50,12 @@ def main(argv=None):
             obs,reward,done,cut,info = env.step(action)
             total += reward
             arrivals += int(info['is_success'])
-            falls += int(done and not info['is_success'])
+            collisions += int(info.get('obstacle_collision',False))
+            falls += int(info.get('fallen',done and not info['is_success']))
             timeouts += int(cut)
             rows.append([index,episode,env.data.time,*env.data.qpos[:3],reward,
-                info['distance'],int(info['is_success']),*info['evaluated_target'][:2]])
+                info['distance'],int(info['is_success']),*info['evaluated_target'][:2],
+                float(info.get('lidar_min',np.nan)),int(info.get('obstacle_collision',False))])
             if args.render:
                 if not env._viewer.is_running():
                     break
@@ -55,8 +68,8 @@ def main(argv=None):
             Image.fromarray(env.render()).save(args.frame_path)
         if args.trajectory_path:
             np.savetxt(args.trajectory_path,rows,delimiter=',',header=
-                'step,episode,sim_time,x,y,z,reward,distance,success,target_x,target_y',comments='')
-        print(json.dumps(dict(policy=args.policy,steps=len(rows),falls=falls,timeouts=timeouts,
+                'step,episode,sim_time,x,y,z,reward,distance,success,target_x,target_y,lidar_min,collision',comments='')
+        print(json.dumps(dict(task=args.task,policy=args.policy,steps=len(rows),falls=falls,timeouts=timeouts,collisions=collisions,
             arrivals=arrivals,reward_total=total,observation_size=len(obs),
             note='baseline physics demo; no trained navigation policy'),indent=2))
     except ValueError as error:

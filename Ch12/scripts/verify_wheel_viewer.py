@@ -16,12 +16,13 @@ parser = argparse.ArgumentParser(description='Real wheel viewer, saved policy an
 parser.add_argument('--bundle',type=Path,required=True)
 parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--wheel-root',type=Path,required=True)
+parser.add_argument('--expected-version',default='0.6.0')
 args = parser.parse_args()
 evidence = args.output
 evidence.mkdir(parents=True,exist_ok=True)
 (evidence/'wheel_human.json').unlink(missing_ok=True)
 assert Path(quadruped_rl.__file__).resolve().is_relative_to(args.wheel_root.resolve())
-assert importlib.metadata.version('physical-ai-quadruped-rl') == '0.5.0'
+assert importlib.metadata.version('physical-ai-quadruped-rl') == args.expected_version
 model,env,manifest = load_bundle(args.bundle,render_mode='human')
 try:
     obs,_ = env.reset(seed=42)
@@ -35,7 +36,8 @@ try:
         if done or cut:
             obs,_ = env.reset()
         time.sleep(.02)
-    assert peak_trail > 1
+    if manifest['task'] in ('goal','avoidance'):
+        assert peak_trail > 1
     assert env.unwrapped._viewer.is_running()
 finally:
     env.close()
@@ -44,9 +46,10 @@ assert env.unwrapped._viewer is None
 code = '''import sys
 from quadruped_rl.goal_demo import main
 print("READY",flush=True)
-sys.exit(main(["--render","--policy","stand","--steps","1000000"]))
+sys.exit(main(["--task",sys.argv[1],"--render","--policy","stand","--steps","1000000"]))
 '''
-child = subprocess.Popen([sys.executable,'-u','-c',code],cwd='/tmp',
+child = subprocess.Popen([sys.executable,'-u','-c',code,
+    'avoidance' if manifest['task']=='avoidance' else 'goal'],cwd='/tmp',
     stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
 try:
     assert select.select([child.stdout],[],[],20)[0]
@@ -59,7 +62,7 @@ finally:
     if child.poll() is None:
         child.kill()
         child.wait()
-report = dict(status='PASS',version='0.5.0',wheel_package=quadruped_rl.__file__,
+report = dict(status='PASS',version=args.expected_version,task=manifest['task'],wheel_package=quadruped_rl.__file__,
     policy_source='short PPO smoke model; navigation ability not established',
     viewer_running=True,steps=100,peak_trail_geoms=peak_trail,viewer_closed=True,
     ctrl_c_exit=child.returncode)

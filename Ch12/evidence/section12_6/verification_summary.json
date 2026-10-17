@@ -1,0 +1,137 @@
+{
+  "status": "PASS",
+  "section": "12.6",
+  "package_version": "0.6.0",
+  "source_base": "5a5c88a",
+  "source_state": "base plus uncommitted 12.6 implementation; integration manifest recorded by main",
+  "tests": {
+    "status": "PASS",
+    "passed": 109,
+    "log": "green.log",
+    "scope": "12.1 through 12.6 at execution; concurrent incomplete 12.8 collection failure preserved",
+    "render": "real EGL RGB",
+    "command": "MUJOCO_GL=egl CH12_TEST_RENDER=1 python -m pytest -q --ignore=tests/test_robust_env.py"
+  },
+  "transient_contact_regression": {
+    "status": "PASS",
+    "fallen": false,
+    "final_contact": false,
+    "reward": -100,
+    "terminated": true,
+    "initial_contact": false,
+    "latched_collision": true
+  },
+  "physics": {
+    "falls_definition": "historical run excludes collision terminations; current verifier now counts info.fallen independently",
+    "status": "PASS",
+    "source": "result.json",
+    "combinations": 24,
+    "control_steps": 12000
+  },
+  "ppo": {
+    "status": "PASS",
+    "training_transitions_total": 2304,
+    "historical_result_transitions": 2176,
+    "historical_backends": [
+      "dummy",
+      "dummy"
+    ],
+    "historical_mislabeled_folder": "ppo_runs/subproc",
+    "historical_parameter_deltas": [
+      1.90199613571167,
+      0.3123379647731781
+    ],
+    "verified_subproc": {
+      "manifest": "ppo_runs/subproc_verified/manifest.json",
+      "parameter_delta": 0.2703481912612915,
+      "final_eval_mean": 1.5264514999999999,
+      "transitions": 128,
+      "actual_backend": "subproc",
+      "success_rate": 0,
+      "final_eval_std": 1.0013085,
+      "tensorboard": "ppo_runs/subproc_verified/verified_backend.json",
+      "replay": {
+        "task": "avoidance",
+        "steps": 200,
+        "reward_total": 2.0760788653634186,
+        "episodes": 1,
+        "successes": 0,
+        "collisions": 0
+      }
+    },
+    "final_success_rates": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "proficiency_proven": false,
+    "backend_defect_fixed": "verify_avoidance_env.py now passes backend=backend"
+  },
+  "wheel": {
+    "status": "PASS",
+    "version": "0.6.0",
+    "task": "avoidance",
+    "wheel_package": "/tmp/ch12-126-wheel-only/quadruped_rl/__init__.py",
+    "policy_source": "short PPO smoke model; navigation ability not established",
+    "viewer_running": true,
+    "steps": 100,
+    "peak_trail_geoms": 117,
+    "viewer_closed": true,
+    "ctrl_c_exit": 130
+  },
+  "viewer_shutdown": {
+    "status": "PASS",
+    "normal_exits": 5,
+    "sigint_exits": 10
+  },
+  "gazebo": {
+    "status": "PASS",
+    "observation": {
+      "status": "PASS",
+      "checks": {
+        "complete_observation": true,
+        "all_streams_fresh": true,
+        "standing_height": true,
+        "standing_tilt": true,
+        "scan_returns": true,
+        "tf": true
+      },
+      "counts": {
+        "imu": 3804,
+        "joints": 35695,
+        "scan": 381,
+        "truth": 1119,
+        "odom": 1141,
+        "pose": 1119
+      },
+      "wall_seconds": 82.03,
+      "tf": {
+        "base_link": 1,
+        "lidar_link": 1
+      },
+      "scan": {
+        "frame": "lidar_link",
+        "rays": 360,
+        "finite_returns": 360,
+        "minimum": 1.494346022605896,
+        "maximum": 4.858143329620361
+      },
+      "sim_start": 8.024,
+      "sim_end": 38.046,
+      "height_min": 0.24916571318655942,
+      "height_max": 0.25020292714278136,
+      "tilt_max_deg": 1.1429764170795043,
+      "xy_displacement": 0.0011362145050124192
+    },
+    "shutdown_clean": true,
+    "gazebo_stop_ack": true,
+    "forced_cleanup": false,
+    "runner_exit": 0
+  },
+  "limitations": [
+    "Sparse tilted body-plane scan; no complete obstacle/cliff coverage",
+    "No guaranteed global free path",
+    "No trained avoidance proficiency demonstrated",
+    "Gazebo is existing Ch11 ROS regression, not PPO deployment"
+  ]
+}
