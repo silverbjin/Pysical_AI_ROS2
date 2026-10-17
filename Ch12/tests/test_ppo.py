@@ -73,3 +73,35 @@ def test_goal_train_and_reject_same_size_wrong_weights(tmp_path):
     model.save(tmp_path/'goal/wrong_env.zip')
     with pytest.raises(ValueError,match='environment'):
         load_bundle(tmp_path/'goal',model_name='wrong_env.zip')
+
+
+def test_avoidance_train_shape_and_sensor_settings_guard(tmp_path):
+    from stable_baselines3 import PPO
+    result = train(tmp_path/'avoidance',task='avoidance',total_timesteps=64,n_envs=2,
+        n_steps=16,batch_size=16,n_epochs=1,eval_every=32,eval_episodes=1,
+        checkpoint_every=32,max_episode_steps=20,env_kwargs={'num_rays':32})
+    assert result['parameter_delta']>0
+    root = tmp_path/'avoidance'
+    manifest = json.loads((root/'manifest.json').read_text())
+    assert manifest['observation_size']==80
+    assert manifest['evaluation_env_kwargs']['goal_mode']=='terminate'
+    assert play(root,steps=5,expected_task='avoidance')['steps']==5
+    model = PPO.load(root/'final_model.zip')
+    model.chapter12_env_kwargs['lidar_max_range']=3
+    model.save(root/'wrong_range.zip')
+    with pytest.raises(ValueError,match='environment'):
+        load_bundle(root,model_name='wrong_range.zip')
+
+
+def test_robust_bundle_and_numpy_major_guard(tmp_path):
+    root=tmp_path/'robust'
+    train(root,task='robust',env_kwargs={'task':'locomotion'},
+          total_timesteps=32,n_envs=1,n_steps=16,batch_size=16,n_epochs=1,
+          eval_every=32,eval_episodes=1,max_episode_steps=20,checkpoint_every=32)
+    assert play(root,steps=3,expected_task='robust')['steps']==3
+    path=root/'manifest.json'
+    manifest=json.loads(path.read_text())
+    manifest['versions']['numpy']='999.0.0'
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError,match='NumPy major'):
+        load_bundle(root)

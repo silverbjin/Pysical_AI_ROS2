@@ -1,0 +1,70 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_dynamics_reset_preserves_seeded_pose_velocity_and_mocap[locomotion] ___
+
+task = 'locomotion'
+
+    @pytest.mark.parametrize('task', ['locomotion','goal','avoidance'])
+    def test_dynamics_reset_preserves_seeded_pose_velocity_and_mocap(task):
+        with RobustQuadrupedEnv(task=task,randomize_dynamics=False,sensor_noise=False,
+                action_delay=0,observation_delay=0,push_probability=0) as baseline, \
+             RobustQuadrupedEnv(task=task,randomize_dynamics=True,sensor_noise=False,
+                action_delay=0,observation_delay=0,push_probability=0) as randomized:
+            baseline_obs,_ = baseline.reset(seed=4)
+            obs,info = randomized.reset(seed=4)
+            a,b = baseline.unwrapped,randomized.unwrapped
+>           assert b.data.qpos[2] == pytest.approx(.5)
+E           assert np.float64(0.41) == 0.5 ± 5.0e-07
+E             
+E             comparison failed
+E             Obtained: 0.41
+E             Expected: 0.5 ± 5.0e-07
+
+tests/test_robust_env.py:142: AssertionError
+______ test_dynamics_reset_preserves_seeded_pose_velocity_and_mocap[goal] ______
+
+task = 'goal'
+
+    @pytest.mark.parametrize('task', ['locomotion','goal','avoidance'])
+    def test_dynamics_reset_preserves_seeded_pose_velocity_and_mocap(task):
+        with RobustQuadrupedEnv(task=task,randomize_dynamics=False,sensor_noise=False,
+                action_delay=0,observation_delay=0,push_probability=0) as baseline, \
+             RobustQuadrupedEnv(task=task,randomize_dynamics=True,sensor_noise=False,
+                action_delay=0,observation_delay=0,push_probability=0) as randomized:
+            baseline_obs,_ = baseline.reset(seed=4)
+            obs,info = randomized.reset(seed=4)
+            a,b = baseline.unwrapped,randomized.unwrapped
+>           assert b.data.qpos[2] == pytest.approx(.5)
+E           assert np.float64(0.41) == 0.5 ± 5.0e-07
+E             
+E             comparison failed
+E             Obtained: 0.41
+E             Expected: 0.5 ± 5.0e-07
+
+tests/test_robust_env.py:142: AssertionError
+___ test_dynamics_reset_preserves_seeded_pose_velocity_and_mocap[avoidance] ____
+
+task = 'avoidance'
+
+    @pytest.mark.parametrize('task', ['locomotion','goal','avoidance'])
+    def test_dynamics_reset_preserves_seeded_pose_velocity_and_mocap(task):
+        with RobustQuadrupedEnv(task=task,randomize_dynamics=False,sensor_noise=False,
+                action_delay=0,observation_delay=0,push_probability=0) as baseline, \
+             RobustQuadrupedEnv(task=task,randomize_dynamics=True,sensor_noise=False,
+                action_delay=0,observation_delay=0,push_probability=0) as randomized:
+            baseline_obs,_ = baseline.reset(seed=4)
+            obs,info = randomized.reset(seed=4)
+            a,b = baseline.unwrapped,randomized.unwrapped
+>           assert b.data.qpos[2] == pytest.approx(.5)
+E           assert np.float64(0.41) == 0.5 ± 5.0e-07
+E             
+E             comparison failed
+E             Obtained: 0.41
+E             Expected: 0.5 ± 5.0e-07
+
+tests/test_robust_env.py:142: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_robust_env.py::test_dynamics_reset_preserves_seeded_pose_velocity_and_mocap[locomotion]
+FAILED tests/test_robust_env.py::test_dynamics_reset_preserves_seeded_pose_velocity_and_mocap[goal]
+FAILED tests/test_robust_env.py::test_dynamics_reset_preserves_seeded_pose_velocity_and_mocap[avoidance]
+3 failed, 16 deselected in 0.94s

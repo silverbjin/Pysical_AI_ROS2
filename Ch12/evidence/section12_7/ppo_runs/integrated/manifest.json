@@ -1,0 +1,82 @@
+{
+  "format_version": 1,
+  "task": "robust",
+  "observation_schema": "robust-task-sensor-delay-v1",
+  "env_kwargs": {
+    "task": "locomotion",
+    "enabled": true,
+    "randomize_dynamics": true,
+    "sensor_noise": true,
+    "action_delay": 2,
+    "observation_delay": 2,
+    "push_probability": 0.01,
+    "push_force": 50.0,
+    "noise_std": {
+      "linear_velocity": 0.05,
+      "angular_velocity": 0.02,
+      "gravity": 0.01,
+      "joint_position": 0.005,
+      "joint_velocity": 0.02
+    },
+    "max_episode_steps": 40
+  },
+  "observation_size": 48,
+  "action_size": 12,
+  "normalization": "none",
+  "evaluation_env_kwargs": {
+    "task": "locomotion",
+    "enabled": true,
+    "randomize_dynamics": true,
+    "sensor_noise": true,
+    "action_delay": 2,
+    "observation_delay": 2,
+    "push_probability": 0.01,
+    "push_force": 50.0,
+    "noise_std": {
+      "linear_velocity": 0.05,
+      "angular_velocity": 0.02,
+      "gravity": 0.01,
+      "joint_position": 0.005,
+      "joint_velocity": 0.02
+    },
+    "max_episode_steps": 40
+  },
+  "training": {
+    "total_timesteps": 256,
+    "n_envs": 2,
+    "backend": "subproc",
+    "device": "cpu",
+    "seed": 42,
+    "n_steps": 32,
+    "batch_size": 32,
+    "n_epochs": 2,
+    "learning_rate": 0.0003,
+    "gamma": 0.99,
+    "ent_coef": 0.005,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "net_arch": {
+      "pi": [
+        256,
+        256
+      ],
+      "vf": [
+        256,
+        256
+      ]
+    },
+    "activation": "Tanh",
+    "torch_threads": 1,
+    "eval_every": 128,
+    "eval_episodes": 1,
+    "checkpoint_every": 128
+  },
+  "eval_callback_frequency": 64,
+  "versions": {
+    "physical-ai-quadruped-rl": "0.8.0",
+    "stable-baselines3": "2.7.1",
+    "torch": "2.5.1+cpu",
+    "mujoco": "3.3.7",
+    "gymnasium": "1.2.1"
+  }
+}

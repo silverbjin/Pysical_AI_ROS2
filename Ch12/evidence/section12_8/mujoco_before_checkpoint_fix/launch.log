@@ -1,0 +1,32 @@
+[INFO] [launch]: All log files can be found below /home/jinho/.ros/log/2026-10-17-14-54-50-147123-DESKTOP-4B51LPI-66056
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [mujoco_bridge-1]: process started with pid [66077]
+[INFO] [rl_controller-2]: process started with pid [66078]
+[mujoco_bridge-1] [WARN] [1792216494.989825182] [mujoco_bridge]: Joint target timeout: holding last accepted position target
+[rl_controller-2] Traceback (most recent call last):
+[rl_controller-2]   File "/mnt/c/Users/Jinho/Documents/Codex/2026-10-17/12-1-md-gazebo-mujoco-md/work/Pysical_AI_ROS2/Ch12/ros2_ws/install/quadruped_rl_ros/lib/quadruped_rl_ros/rl_controller", line 33, in <module>
+[rl_controller-2]     sys.exit(load_entry_point('quadruped-rl-ros', 'console_scripts', 'rl_controller')())
+[rl_controller-2]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rl_controller-2]   File "/mnt/c/Users/Jinho/Documents/Codex/2026-10-17/12-1-md-gazebo-mujoco-md/work/Pysical_AI_ROS2/Ch12/ros2_ws/build/quadruped_rl_ros/quadruped_rl_ros/rl_controller.py", line 199, in main
+[rl_controller-2]     node=RLController();rclpy.spin(node)
+[rl_controller-2]          ^^^^^^^^^^^^^^
+[rl_controller-2]   File "/mnt/c/Users/Jinho/Documents/Codex/2026-10-17/12-1-md-gazebo-mujoco-md/work/Pysical_AI_ROS2/Ch12/ros2_ws/build/quadruped_rl_ros/quadruped_rl_ros/rl_controller.py", line 40, in __init__
+[rl_controller-2]     self.model,env,manifest=load_bundle(self.cfg['bundle_path'],model_name=self.cfg['model_name'])
+[rl_controller-2]                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rl_controller-2]   File "/mnt/c/Users/Jinho/Documents/Codex/2026-10-17/12-1-md-gazebo-mujoco-md/work/Pysical_AI_ROS2/Ch12/src/quadruped_rl/ppo.py", line 195, in load_bundle
+[rl_controller-2]     model = PPO.load(root/model_name,device=device)
+[rl_controller-2]             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rl_controller-2]   File "/tmp/ch12-ros-venv/lib/python3.12/site-packages/stable_baselines3/common/base_class.py", line 681, in load
+[rl_controller-2]     data, params, pytorch_variables = load_from_zip_file(
+[rl_controller-2]                                       ^^^^^^^^^^^^^^^^^^^
+[rl_controller-2]   File "/tmp/ch12-ros-venv/lib/python3.12/site-packages/stable_baselines3/common/save_util.py", line 434, in load_from_zip_file
+[rl_controller-2]     data = json_to_data(json_data, custom_objects=custom_objects)
+[rl_controller-2]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rl_controller-2]   File "/tmp/ch12-ros-venv/lib/python3.12/site-packages/stable_baselines3/common/save_util.py", line 165, in json_to_data
+[rl_controller-2]     deserialized_object = cloudpickle.loads(base64_object)
+[rl_controller-2]                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rl_controller-2] ModuleNotFoundError: No module named 'numpy._core.numeric'
+[ERROR] [rl_controller-2]: process has died [pid 66078, exit code 1, cmd '/mnt/c/Users/Jinho/Documents/Codex/2026-10-17/12-1-md-gazebo-mujoco-md/work/Pysical_AI_ROS2/Ch12/ros2_ws/install/quadruped_rl_ros/lib/quadruped_rl_ros/rl_controller --ros-args --params-file /tmp/launch_params_ugnoq1w9'].
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [mujoco_bridge-1]: sending signal 'SIGINT' to process[mujoco_bridge-1]
+[INFO] [mujoco_bridge-1]: process has finished cleanly [pid 66077]

@@ -1,0 +1,32 @@
+.............F                                                           [100%]
+=================================== FAILURES ===================================
+_________________________ test_rgb_obstacles_and_lidar _________________________
+
+    @pytest.mark.skipif(os.environ.get('CH12_TEST_RENDER') != '1',reason='Real GL test')
+    def test_rgb_obstacles_and_lidar():
+        with QuadrupedAvoidanceEnv(render_mode='rgb_array',obstacle_count=1) as env:
+            env.reset(seed=42,options={'target':[2,1],'obstacles':[[1,-1]]})
+            image = env.render()
+            assert image.shape == (480,640,3) and image.std()>1
+>           assert env._renderer.scene.ngeom >= env.model.ngeom+16
+E           assert 37 >= (29 + 16)
+E            +  where 37 = <mujoco._structs.MjvScene object at 0x7f43ca788030>.ngeom
+E            +    where <mujoco._structs.MjvScene object at 0x7f43ca788030> = <mujoco.renderer.Renderer object at 0x7f43ca79a5d0>.scene
+E            +      where <mujoco.renderer.Renderer object at 0x7f43ca79a5d0> = <quadruped_rl.avoidance_env.QuadrupedAvoidanceEnv object at 0x7f43b65ff8f0>._renderer
+E            +  and   29 = <mujoco._structs.MjModel object at 0x7f43b646cf30>.ngeom
+E            +    where <mujoco._structs.MjModel object at 0x7f43b646cf30> = <quadruped_rl.avoidance_env.QuadrupedAvoidanceEnv object at 0x7f43b65ff8f0>.model
+
+Ch12/tests/test_avoidance_env.py:121: AssertionError
+=============================== warnings summary ===============================
+tests/test_avoidance_env.py::test_fixed_layout_target_rejection_and_empty_scan
+  /tmp/ch12-resume-venv/lib/python3.12/site-packages/gymnasium/utils/env_checker.py:311: UserWarning: [33mWARN: A Box observation space minimum value is -infinity. This is probably too low.[0m
+    logger.warn(
+
+tests/test_avoidance_env.py::test_fixed_layout_target_rejection_and_empty_scan
+  /tmp/ch12-resume-venv/lib/python3.12/site-packages/gymnasium/utils/env_checker.py:315: UserWarning: [33mWARN: A Box observation space maximum value is infinity. This is probably too high.[0m
+    logger.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED Ch12/tests/test_avoidance_env.py::test_rgb_obstacles_and_lidar - asser...
+1 failed, 13 passed, 2 warnings in 1.32s
