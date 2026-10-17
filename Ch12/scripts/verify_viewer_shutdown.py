@@ -13,13 +13,13 @@ root = parser.parse_args().output
 root.mkdir(parents=True,exist_ok=True)
 (root/'viewer_shutdown_repeat.json').unlink(missing_ok=True)
 runs = []
-for section in ('12.1','12.2','12.3','12.5'):
+for section in ('12.1','12.2','12.3','12.5','12.6'):
     for interrupt in (False,True,True):
         code = '''import sys
-from quadruped_rl import QuadrupedEnv,QuadrupedTrainingEnv,QuadrupedLocomotionEnv,QuadrupedGoalEnv
+from quadruped_rl import QuadrupedEnv,QuadrupedTrainingEnv,QuadrupedLocomotionEnv,QuadrupedGoalEnv,QuadrupedAvoidanceEnv
 from quadruped_rl.demo import stand_action
 import time
-classes = {'12.1':QuadrupedEnv,'12.2':QuadrupedTrainingEnv,'12.3':QuadrupedLocomotionEnv,'12.5':QuadrupedGoalEnv}
+classes = {'12.1':QuadrupedEnv,'12.2':QuadrupedTrainingEnv,'12.3':QuadrupedLocomotionEnv,'12.5':QuadrupedGoalEnv,'12.6':QuadrupedAvoidanceEnv}
 env = classes[sys.argv[1]](render_mode='human')
 try:
     env.reset(seed=42)
@@ -49,6 +49,6 @@ finally:
             if child.poll() is None:
                 child.kill()
                 child.wait()
-report = dict(status='PASS',runs=runs,normal_exits=4,sigint_exits=8)
+report = dict(status='PASS',runs=runs,normal_exits=5,sigint_exits=10)
 (root/'viewer_shutdown_repeat.json').write_text(json.dumps(report,indent=2)+'\n')
-print(json.dumps(dict(status='PASS',normal_exits=4,sigint_exits=8)))
+print(json.dumps(dict(status='PASS',normal_exits=5,sigint_exits=10)))
