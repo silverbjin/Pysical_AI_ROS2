@@ -11,12 +11,12 @@
 
 | 참고 자산 | 해당 파일 최종 커밋 | SHA-256 | Ch13 반영 방식 |
 |---|---|---|---|
-| `Ch05/.../robot.urdf.xacro` | `92fa2fea6b61ac04362690341559af21f694a7fc` | `3ea15c8f6680e2c74d5d17cb9ee17e6497d1fce82451d57be8395f204faa099e` | 팔 Xacro 분리와 링크 관성 작성 방식을 참고. 형상·이름은 새로 작성 |
-| `Ch06/.../ros2_controllers.yaml` | `92fa2fea6b61ac04362690341559af21f694a7fc` | `fd0a0a777c1b8c70003a9d66d4de5e35033d546ab9220f8e718cc02a664d98e1` | JointTrajectoryController 구성 관례 참고 |
-| `Ch09/.../robot.urdf.xacro` | `92fa2fea6b61ac04362690341559af21f694a7fc` | `ddb75ba6df166a3780d57502335fc4f152b0d86ff90950d43e0daabf27d264a7` | 4족 링크/관절 계층 참고. Ch13은 소문자 정규 이름과 새 원시 형상 사용 |
-| `Ch09/.../empty_world.sdf` | `92fa2fea6b61ac04362690341559af21f694a7fc` | `cc37d102c7a852dcac0be0ad797fdfd47cf6437168e7ee0d16c1c949e9d0bcbc` | Gazebo 월드 시스템 구성을 참고해 Ch13 전용 월드 작성 |
-| `Ch12/.../quadruped.xml` | `948718efa81b32708158c67815d8fe6b36aaec43` | `e76c2e9a3eae32e6818063cb0f102901c93c2c094edfb86e1a57c958e5f804e6` | MuJoCo 4족 계층·초기 자세와 위치 액추에이터 의미 참고 |
-| `Ch12/.../ros_core.py` | `2077fd0b5f7fcaee8c003a9d57b5215253f33f88` | `1a10b04275245d03f4ee77e5c02f47626ee7c4366ca722a566397b76bd4f1f0d` | Ch12.8의 위치 잔차 명령 정책을 확인하는 용도. 코드 복사 없음 |
+| `Ch05/ros2_ws/src/manipulation_basics/urdf/robot.urdf.xacro` | `92fa2fea6b61ac04362690341559af21f694a7fc` | `3ea15c8f6680e2c74d5d17cb9ee17e6497d1fce82451d57be8395f204faa099e` | 팔 Xacro 분리와 링크 관성 작성 방식을 참고. 형상·이름은 새로 작성 |
+| `Ch06/ros2_ws/src/my_robot_moveit_config/config/ros2_controllers.yaml` | `92fa2fea6b61ac04362690341559af21f694a7fc` | `fd0a0a777c1b8c70003a9d66d4de5e35033d546ab9220f8e718cc02a664d98e1` | JointTrajectoryController 구성 관례 참고 |
+| `Ch09/ros2_ws/src/my_quadruped_bot/urdf/robot.urdf.xacro` | `92fa2fea6b61ac04362690341559af21f694a7fc` | `ddb75ba6df166a3780d57502335fc4f152b0d86ff90950d43e0daabf27d264a7` | 4족 링크/관절 계층 참고. Ch13은 소문자 정규 이름과 새 원시 형상 사용 |
+| `Ch09/ros2_ws/src/my_quadruped_bot/worlds/empty_world.sdf` | `92fa2fea6b61ac04362690341559af21f694a7fc` | `cc37d102c7a852dcac0be0ad797fdfd47cf6437168e7ee0d16c1c949e9d0bcbc` | Gazebo 월드 시스템 구성을 참고해 Ch13 전용 월드 작성 |
+| `Ch12/src/quadruped_rl/models/quadruped.xml` | `948718efa81b32708158c67815d8fe6b36aaec43` | `e76c2e9a3eae32e6818063cb0f102901c93c2c094edfb86e1a57c958e5f804e6` | MuJoCo 4족 계층·초기 자세와 위치 액추에이터 의미 참고 |
+| `Ch12/src/quadruped_rl/ros_core.py` | `2077fd0b5f7fcaee8c003a9d57b5215253f33f88` | `1a10b04275245d03f4ee77e5c02f47626ee7c4366ca722a566397b76bd4f1f0d` | Ch12.8의 위치 잔차 명령 정책을 확인하는 용도. 코드 복사 없음 |
 
 해시는 구현 시점의 파일을 대상으로 계산했다. 재현 시 다음 명령으로 현 파일과 비교할 수 있다.
 

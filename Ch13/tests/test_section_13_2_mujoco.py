@@ -81,11 +81,11 @@ def test_native_mujoco_loads_and_steps_finite_upright_model():
 def test_mujoco_launch_uses_official_system_interface_and_custom_node():
     source = (PKG / "launch/mujoco.launch.py").read_text(encoding="utf-8")
     ast.parse(source)
-    assert 'package="mujoco_ros2_control"' in source
-    assert 'executable="ros2_control_node"' in source
+    assert "package='mujoco_ros2_control'" in source
+    assert "executable='ros2_control_node'" in source
     assert "control_backend:=mujoco" in source
     assert "robot_system.xml" in source
-    assert '"--param-file", controllers' in source
+    assert "'--param-file', controllers" in source
     assert "materialize_controller_config" in source
     assert "tempfile.gettempdir" in source
 

@@ -11,6 +11,7 @@ from control_msgs.action import FollowJointTrajectory
 from controller_manager_msgs.srv import ListControllers
 from rclpy.action import ActionClient
 from rclpy.node import Node
+from action_msgs.msg import GoalStatus
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectoryPoint
 
@@ -83,6 +84,14 @@ def send_arm_goal(node, current, timeout=20.0):
     result_future = handle.get_result_async()
     if not spin_until(node, result_future.done, timeout):
         raise TimeoutError("arm trajectory result timed out")
+    wrapped_result = result_future.result()
+    if wrapped_result.status != GoalStatus.STATUS_SUCCEEDED:
+        raise RuntimeError(f"arm trajectory status was {wrapped_result.status}")
+    if wrapped_result.result.error_code != FollowJointTrajectory.Result.SUCCESSFUL:
+        raise RuntimeError(
+            f"arm trajectory error code was {wrapped_result.result.error_code}: "
+            f"{wrapped_result.result.error_string}"
+        )
     return point.positions
 
 
@@ -91,6 +100,20 @@ def gazebo_pose():
         ["gz", "model", "-m", "integrated_robot", "-p"], capture_output=True, text=True, timeout=10
     )
     return {"exit_code": completed.returncode, "stdout": completed.stdout.strip(), "stderr": completed.stderr.strip()}
+
+
+def validate_gazebo_pose(pose):
+    if pose["exit_code"] != 0:
+        raise RuntimeError(f"gz model pose failed: {pose['stderr']}")
+    rows = [line.strip() for line in pose["stdout"].splitlines() if line.strip().startswith("[")]
+    if len(rows) != 2:
+        raise RuntimeError(f"unexpected gz model pose output: {pose['stdout']}")
+    position = [float(value) for value in rows[0].strip("[]").split()]
+    orientation = [float(value) for value in rows[1].strip("[]").split()]
+    if not all(math.isfinite(value) for value in position + orientation):
+        raise RuntimeError("Gazebo model pose contains a non-finite value")
+    if position[2] <= 0.30 or abs(orientation[0]) >= 0.20 or abs(orientation[1]) >= 0.20:
+        raise RuntimeError(f"Gazebo model is fallen or below the floor: {position}, {orientation}")
 
 
 def write_result(path, result):
@@ -122,7 +145,9 @@ def main():
         result.update(status="PASS", joint_count=20, controllers=controllers, arm_joint_2_delta=response)
         if args.engine == "gazebo":
             result["model_pose"] = gazebo_pose()
+            validate_gazebo_pose(result["model_pose"])
     except Exception as exc:
+        result["status"] = "FAIL"
         result["error"] = str(exc)
         raise
     finally:
