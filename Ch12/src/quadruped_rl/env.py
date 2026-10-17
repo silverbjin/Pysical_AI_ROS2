@@ -2,6 +2,7 @@
 from importlib.resources import as_file, files
 import math
 from numbers import Integral
+import time
 
 import gymnasium as gym
 import mujoco
@@ -14,6 +15,7 @@ class QuadrupedEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 100}
     joint_names = tuple(f"{leg}_{joint}_joint" for leg in ("fr", "fl", "rr", "rl")
                         for joint in ("hip", "thigh", "calf"))
+    model_files = {'position': 'quadruped_position.xml', 'torque': 'quadruped.xml'}
 
     def __init__(self, observation_mode="textbook", render_mode=None,
                  max_episode_steps=1000, frame_skip=5, target_velocity=0.5,
@@ -42,7 +44,7 @@ class QuadrupedEnv(gym.Env):
         self.frame_skip = int(frame_skip)
         self.max_episode_steps = int(max_episode_steps)
         self.target_velocity = float(target_velocity)
-        model_name = "quadruped_position.xml" if control_mode == "position" else "quadruped.xml"
+        model_name = self.model_files[control_mode]
         # Loading by resource path preserves sibling MJCF include resolution.
         with as_file(files("quadruped_rl").joinpath("models", model_name)) as path:
             self.model = mujoco.MjModel.from_xml_path(str(path))
@@ -194,6 +196,17 @@ class QuadrupedEnv(gym.Env):
     def close(self):
         if self._viewer is not None:
             self._viewer.close()
+            # MuJoCo 3.3.7 close() requests exit but does not join its daemon
+            # render thread. is_running() also only checks the exit request.
+            # Its internal weakref expires after render_loop/destroy complete;
+            # waiting prevents Python's GLFW atexit hook racing that cleanup.
+            # Keep this version-specific compatibility use isolated here.
+            sim_reference = self._viewer._sim
+            deadline = time.monotonic()+5.
+            while sim_reference() is not None:
+                if time.monotonic() >= deadline:
+                    raise RuntimeError('MuJoCo viewer did not finish shutdown within 5 seconds')
+                time.sleep(.005)
             self._viewer = None
         if self._renderer is not None:
             self._renderer.close()

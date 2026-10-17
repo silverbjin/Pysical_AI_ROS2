@@ -4,17 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "physical-ai-quadruped-rl"
-version = "0.3.0"
-description = "Chapter 12.1-12.3: command-conditioned MuJoCo quadruped environments"
+version = "0.5.0"
+description = "Chapter 12.1-12.5: MuJoCo quadruped PPO and goal-conditioned navigation"
 requires-python = ">=3.10"
 dependencies = ["mujoco==3.3.7", "gymnasium==1.2.1", "numpy>=1.26,<3"]
 
 [project.optional-dependencies]
 test = ["pytest==8.4.2"]
 visual = ["pillow>=10"]
+train = ["stable-baselines3==2.7.1", "tensorboard==2.20.0", "torch>=2.3,<3"]
 
 [project.scripts]
 quadruped-rl = "quadruped_rl.demo:main"
+quadruped-train = "quadruped_rl.ppo:train_main"
+quadruped-play = "quadruped_rl.ppo:play_main"
+quadruped-goal = "quadruped_rl.goal_demo:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,0 +1,8 @@
+{
+  "status": "FAIL_BEFORE_FIX",
+  "version": "MuJoCo 3.3.7, GLFW 3.4, Ubuntu-24.04 WSLg",
+  "reproduction": "Wheel viewer regression: goal-demo child receives SIGINT after two seconds",
+  "exit_code": -6,
+  "stderr": "python: /builds/florianrhiem/pyGLFW/glfw-3.4/src/posix_thread.c:70: _glfwPlatformSetTls: Assertion `tls->posix.allocated == GLFW_TRUE' failed.",
+  "root_cause": "Handle.close requests exit; daemon rendering thread can outlive it and race GLFW atexit. Handle.is_running only checks exitrequest."
+}
