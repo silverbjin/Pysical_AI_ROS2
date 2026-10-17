@@ -123,6 +123,17 @@ class QuadrupedEnv(gym.Env):
             self._needs_reset = True
             raise FloatingPointError("Non-finite MuJoCo state; reset the environment")
 
+    def _compute_reward(self, applied, previous_action, terminated):
+        """Weighted contributions; subclasses can replace the task without a new step loop."""
+        torque = self.data.actuator_force[self._actuator_ids]
+        return {
+            "survival": 0.0 if terminated else 1.0,
+            "velocity": math.exp(-((self.data.qvel[0]-self.target_velocity)/.5)**2),
+            "energy": -0.002 * float(np.mean(np.abs(torque*self.data.qvel[self._qvel_ids]))),
+            "action_rate": -0.01 * float(np.mean((applied-previous_action)**2)),
+            "fall": -5.0 if terminated else 0.0,
+        }
+
     def step(self, action):
         if self._needs_reset:
             raise RuntimeError("Call reset() before step() and after episode end")
@@ -143,21 +154,20 @@ class QuadrupedEnv(gym.Env):
             if any(self.data.warning[i].number > n for i, n in zip(warning_ids, before)):
                 self._needs_reset = True
                 raise FloatingPointError("MuJoCo reported numerical instability; reset required")
-            terminated = terminated or self._check_termination()
+            fallen_now = self._check_termination()
+            terminated = terminated or fallen_now
         # Synchronize derived poses/contacts with the integrated qpos.
         mujoco.mj_forward(self.model, self.data)
         self._ensure_finite_state()
-        torque = self.data.actuator_force[self._actuator_ids]
         self._steps += 1
-        terminated = terminated or self._check_termination()
+        fallen_now = self._check_termination()
+        terminated = terminated or fallen_now
         truncated = self._steps >= self.max_episode_steps
-        terms = {
-            "survival": 0.0 if terminated else 1.0,
-            "velocity": math.exp(-((self.data.qvel[0]-self.target_velocity)/.5)**2),
-            "energy": -0.002 * float(np.mean(np.abs(torque*self.data.qvel[self._qvel_ids]))),
-            "action_rate": -0.01 * float(np.mean((applied-self._previous_action)**2)),
-            "fall": -5.0 if terminated else 0.0,
-        }
+        try:
+            terms = self._compute_reward(applied, self._previous_action, terminated)
+        except FloatingPointError:
+            self._needs_reset = True
+            raise
         self._previous_action[:] = applied
         self._needs_reset = terminated or truncated
         info = {"reward_terms": terms, "action_clipped": bool(np.any(action != applied)),
