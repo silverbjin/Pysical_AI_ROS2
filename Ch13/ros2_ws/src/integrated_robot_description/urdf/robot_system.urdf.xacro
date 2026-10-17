@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="quadruped_arm_system">
+  <xacro:arg name="control_backend" default="mock"/>
+  <xacro:arg name="controllers_file" default="config/controllers.yaml"/>
+  <xacro:arg name="mujoco_model_path" default="mujoco/robot_system.xml"/>
+
+  <xacro:include filename="materials.xacro"/>
+  <xacro:include filename="inertial_macros.xacro"/>
+  <xacro:include filename="quadruped_base.xacro"/>
+  <xacro:include filename="manipulator.xacro"/>
+  <xacro:include filename="system.ros2_control.xacro"/>
+
+  <xacro:property name="backend" value="$(arg control_backend)"/>
+  <xacro:unless value="${backend in ['mock', 'gazebo', 'mujoco']}">
+    <xacro:error message="control_backend must be mock, gazebo, or mujoco"/>
+  </xacro:unless>
+
+  <xacro:quadruped_base/>
+  <xacro:manipulator_arm parent_link="base_link" prefix="arm_" xyz="0 0 0.095" rpy="0 0 0"/>
+  <xacro:system_ros2_control name="IntegratedRobotSystem" backend="${backend}" mujoco_model_path="$(arg mujoco_model_path)"/>
+
+  <xacro:if value="${backend == 'gazebo'}">
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(arg controllers_file)</parameters>
+      </plugin>
+    </gazebo>
+  </xacro:if>
+</robot>
