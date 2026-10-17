@@ -1,0 +1,64 @@
+{
+  "status": "PASS",
+  "section": "12.2",
+  "version": "0.2.0",
+  "package_tests": 42,
+  "existing_ch11_tests": 104,
+  "reviewer_tests": 42,
+  "implementation_control_steps": 12000,
+  "reviewer_control_steps": 12000,
+  "legacy_regression_control_steps": 12000,
+  "position_and_torque_standing": "all three seeds: zero falls over 20 seconds",
+  "rgb_render": "PASS",
+  "wheel_human_and_ctrl_c": "PASS",
+  "gazebo": {
+    "status": "PASS",
+    "observation": {
+      "status": "PASS",
+      "checks": {
+        "complete_observation": true,
+        "all_streams_fresh": true,
+        "standing_height": true,
+        "standing_tilt": true,
+        "scan_returns": true,
+        "tf": true
+      },
+      "counts": {
+        "imu": 3805,
+        "joints": 32671,
+        "scan": 381,
+        "truth": 1119,
+        "odom": 1141,
+        "pose": 1107
+      },
+      "wall_seconds": 80.9,
+      "tf": {
+        "base_link": 1,
+        "lidar_link": 1
+      },
+      "scan": {
+        "frame": "lidar_link",
+        "rays": 360,
+        "finite_returns": 360,
+        "minimum": 1.4936139583587646,
+        "maximum": 4.859219074249268
+      },
+      "sim_start": 8.024,
+      "sim_end": 38.046,
+      "height_min": 0.24798269295941644,
+      "height_max": 0.24903890612643134,
+      "tilt_max_deg": 1.2676400668262917,
+      "xy_displacement": 0.001149401257084468
+    },
+    "shutdown_clean": true,
+    "gazebo_stop_ack": true,
+    "forced_cleanup": false,
+    "runner_exit": 0
+  },
+  "source_manifest": "source_manifest.json",
+  "diagnostics": [
+    "Gymnasium unbounded Box warnings",
+    "Intentional QVEL instability injection in negative test",
+    "Existing KDL root inertia warning"
+  ]
+}

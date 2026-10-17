@@ -1,0 +1,49 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_____ test_torque_standing_baseline_remains_upright_for_twenty_seconds[0] ______
+
+seed = 0
+
+    @pytest.mark.parametrize('seed', [0, 42, 123])
+    def test_torque_standing_baseline_remains_upright_for_twenty_seconds(seed):
+        with QuadrupedTrainingEnv(control_mode='torque') as env:
+            env.reset(seed=seed)
+            for _ in range(1000):
+                _, _, terminated, _, _ = env.step(stand_action(env))
+>               assert not terminated
+E               assert not True
+
+Ch12/tests/test_training_env.py:148: AssertionError
+_____ test_torque_standing_baseline_remains_upright_for_twenty_seconds[42] _____
+
+seed = 42
+
+    @pytest.mark.parametrize('seed', [0, 42, 123])
+    def test_torque_standing_baseline_remains_upright_for_twenty_seconds(seed):
+        with QuadrupedTrainingEnv(control_mode='torque') as env:
+            env.reset(seed=seed)
+            for _ in range(1000):
+                _, _, terminated, _, _ = env.step(stand_action(env))
+>               assert not terminated
+E               assert not True
+
+Ch12/tests/test_training_env.py:148: AssertionError
+____ test_torque_standing_baseline_remains_upright_for_twenty_seconds[123] _____
+
+seed = 123
+
+    @pytest.mark.parametrize('seed', [0, 42, 123])
+    def test_torque_standing_baseline_remains_upright_for_twenty_seconds(seed):
+        with QuadrupedTrainingEnv(control_mode='torque') as env:
+            env.reset(seed=seed)
+            for _ in range(1000):
+                _, _, terminated, _, _ = env.step(stand_action(env))
+>               assert not terminated
+E               assert not True
+
+Ch12/tests/test_training_env.py:148: AssertionError
+=========================== short test summary info ============================
+FAILED Ch12/tests/test_training_env.py::test_torque_standing_baseline_remains_upright_for_twenty_seconds[0]
+FAILED Ch12/tests/test_training_env.py::test_torque_standing_baseline_remains_upright_for_twenty_seconds[42]
+FAILED Ch12/tests/test_training_env.py::test_torque_standing_baseline_remains_upright_for_twenty_seconds[123]
+3 failed, 16 deselected in 2.53s
