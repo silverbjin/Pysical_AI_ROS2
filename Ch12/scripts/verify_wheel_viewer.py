@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='Real wheel viewer, saved policy an
 parser.add_argument('--bundle',type=Path,required=True)
 parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--wheel-root',type=Path,required=True)
-parser.add_argument('--expected-version',default='0.6.0')
+parser.add_argument('--expected-version',default='0.7.0')
 args = parser.parse_args()
 evidence = args.output
 evidence.mkdir(parents=True,exist_ok=True)

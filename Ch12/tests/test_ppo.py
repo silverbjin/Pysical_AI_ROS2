@@ -91,3 +91,17 @@ def test_avoidance_train_shape_and_sensor_settings_guard(tmp_path):
     model.save(root/'wrong_range.zip')
     with pytest.raises(ValueError,match='environment'):
         load_bundle(root,model_name='wrong_range.zip')
+
+
+def test_robust_bundle_and_numpy_major_guard(tmp_path):
+    root=tmp_path/'robust'
+    train(root,task='robust',env_kwargs={'task':'locomotion'},
+          total_timesteps=32,n_envs=1,n_steps=16,batch_size=16,n_epochs=1,
+          eval_every=32,eval_episodes=1,max_episode_steps=20,checkpoint_every=32)
+    assert play(root,steps=3,expected_task='robust')['steps']==3
+    path=root/'manifest.json'
+    manifest=json.loads(path.read_text())
+    manifest['versions']['numpy']='999.0.0'
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError,match='NumPy major'):
+        load_bundle(root)

@@ -1,0 +1,1 @@
+These pre-review runs did not detect that mj_setConst reset actual qpos to qpos0. They are superseded by the parent-directory post-fix results. Retained for provenance; do not treat these traces, PPO runs or benchmarks as correct reset-state validation.

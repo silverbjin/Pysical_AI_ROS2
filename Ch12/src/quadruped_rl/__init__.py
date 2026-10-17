@@ -4,7 +4,8 @@ from .training_env import QuadrupedTrainingEnv
 from .locomotion_env import QuadrupedLocomotionEnv
 from .goal_env import QuadrupedGoalEnv
 from .avoidance_env import QuadrupedAvoidanceEnv
+from .robust_env import RobustQuadrupedEnv
 from .rewards import RewardConfig
 
 __all__ = ["QuadrupedEnv", "QuadrupedTrainingEnv", "QuadrupedLocomotionEnv",
-           "QuadrupedGoalEnv", "QuadrupedAvoidanceEnv", "RewardConfig"]
+           "QuadrupedGoalEnv", "QuadrupedAvoidanceEnv", "RobustQuadrupedEnv", "RewardConfig"]
