@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:macro name="controlled_joint" params="name initial">
+  <xacro:macro name="controlled_joint" params="name initial lower upper">
     <joint name="${name}">
-      <command_interface name="position"><param name="min">-6.3</param><param name="max">6.3</param></command_interface>
+      <command_interface name="position"><param name="min">${lower}</param><param name="max">${upper}</param></command_interface>
       <state_interface name="position"><param name="initial_value">${initial}</param></state_interface>
       <state_interface name="velocity"/>
     </joint>
@@ -15,13 +15,13 @@
         <xacro:if value="${backend == 'gazebo'}"><plugin>gz_ros2_control/GazeboSimSystem</plugin></xacro:if>
         <xacro:if value="${backend == 'mujoco'}"><plugin>mujoco_ros2_control/MujocoSystemInterface</plugin><param name="mujoco_model">${mujoco_model_path}</param></xacro:if>
       </hardware>
-      <xacro:controlled_joint name="fr_hip_joint" initial="0"/><xacro:controlled_joint name="fr_thigh_joint" initial="-0.5"/><xacro:controlled_joint name="fr_calf_joint" initial="1.0"/>
-      <xacro:controlled_joint name="fl_hip_joint" initial="0"/><xacro:controlled_joint name="fl_thigh_joint" initial="-0.5"/><xacro:controlled_joint name="fl_calf_joint" initial="1.0"/>
-      <xacro:controlled_joint name="rr_hip_joint" initial="0"/><xacro:controlled_joint name="rr_thigh_joint" initial="-0.5"/><xacro:controlled_joint name="rr_calf_joint" initial="1.0"/>
-      <xacro:controlled_joint name="rl_hip_joint" initial="0"/><xacro:controlled_joint name="rl_thigh_joint" initial="-0.5"/><xacro:controlled_joint name="rl_calf_joint" initial="1.0"/>
-      <xacro:controlled_joint name="arm_joint_1" initial="0"/><xacro:controlled_joint name="arm_joint_2" initial="0"/><xacro:controlled_joint name="arm_joint_3" initial="0"/>
-      <xacro:controlled_joint name="arm_joint_4" initial="0"/><xacro:controlled_joint name="arm_joint_5" initial="0"/><xacro:controlled_joint name="arm_joint_6" initial="0"/>
-      <xacro:controlled_joint name="gripper_left_joint" initial="0.015"/><xacro:controlled_joint name="gripper_right_joint" initial="0.015"/>
+      <xacro:controlled_joint name="fr_hip_joint" initial="0" lower="-0.8" upper="0.8"/><xacro:controlled_joint name="fr_thigh_joint" initial="-0.5" lower="-1.0" upper="4.0"/><xacro:controlled_joint name="fr_calf_joint" initial="1.0" lower="-2.8" upper="2.8"/>
+      <xacro:controlled_joint name="fl_hip_joint" initial="0" lower="-0.8" upper="0.8"/><xacro:controlled_joint name="fl_thigh_joint" initial="-0.5" lower="-1.0" upper="4.0"/><xacro:controlled_joint name="fl_calf_joint" initial="1.0" lower="-2.8" upper="2.8"/>
+      <xacro:controlled_joint name="rr_hip_joint" initial="0" lower="-0.8" upper="0.8"/><xacro:controlled_joint name="rr_thigh_joint" initial="-0.5" lower="-1.0" upper="4.0"/><xacro:controlled_joint name="rr_calf_joint" initial="1.0" lower="-2.8" upper="2.8"/>
+      <xacro:controlled_joint name="rl_hip_joint" initial="0" lower="-0.8" upper="0.8"/><xacro:controlled_joint name="rl_thigh_joint" initial="-0.5" lower="-1.0" upper="4.0"/><xacro:controlled_joint name="rl_calf_joint" initial="1.0" lower="-2.8" upper="2.8"/>
+      <xacro:controlled_joint name="arm_joint_1" initial="0" lower="-3.14159" upper="3.14159"/><xacro:controlled_joint name="arm_joint_2" initial="0" lower="-1.5708" upper="1.5708"/><xacro:controlled_joint name="arm_joint_3" initial="0" lower="-2.0944" upper="2.0944"/>
+      <xacro:controlled_joint name="arm_joint_4" initial="0" lower="-3.14159" upper="3.14159"/><xacro:controlled_joint name="arm_joint_5" initial="0" lower="-1.5708" upper="1.5708"/><xacro:controlled_joint name="arm_joint_6" initial="0" lower="-3.14159" upper="3.14159"/>
+      <xacro:controlled_joint name="gripper_left_joint" initial="0.015" lower="0" upper="0.03"/><xacro:controlled_joint name="gripper_right_joint" initial="0.015" lower="0" upper="0.03"/>
     </ros2_control>
   </xacro:macro>
 </robot>

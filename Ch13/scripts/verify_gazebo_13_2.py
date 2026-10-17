@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import asyncio
 import json
 import math
 from pathlib import Path
@@ -25,8 +24,8 @@ EXPECTED = {
 
 
 class Probe(Node):
-    def __init__(self):
-        super().__init__("section_13_2_gazebo_probe")
+    def __init__(self, engine):
+        super().__init__(f"section_13_2_{engine}_probe")
         self.last_joint_state = None
         self.create_subscription(JointState, "/joint_states", self._on_joint_state, 10)
         self.list_client = self.create_client(ListControllers, "/controller_manager/list_controllers")
@@ -103,10 +102,11 @@ def write_result(path, result):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
+    parser.add_argument("--engine", choices=("gazebo", "mujoco"), default="gazebo")
     args = parser.parse_args()
     rclpy.init()
-    node = Probe()
-    result = {"engine": "gazebo", "status": "FAIL"}
+    node = Probe(args.engine)
+    result = {"engine": args.engine, "mode": "ros2_control", "status": "FAIL"}
     try:
         before = collect_joint_state(node)
         controllers = list_controllers(node)
@@ -119,7 +119,9 @@ def main():
         response = abs(after["arm_joint_2"] - before["arm_joint_2"])
         if response < 0.04:
             raise RuntimeError(f"arm_joint_2 response too small: {response}")
-        result.update(status="PASS", joint_count=20, controllers=controllers, arm_joint_2_delta=response, model_pose=gazebo_pose())
+        result.update(status="PASS", joint_count=20, controllers=controllers, arm_joint_2_delta=response)
+        if args.engine == "gazebo":
+            result["model_pose"] = gazebo_pose()
     except Exception as exc:
         result["error"] = str(exc)
         raise

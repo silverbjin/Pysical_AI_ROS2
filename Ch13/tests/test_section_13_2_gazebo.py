@@ -48,4 +48,5 @@ def test_verifier_checks_state_command_and_controller_ownership():
     assert {"collect_joint_state", "list_controllers", "send_arm_goal", "write_result"} <= names
     assert "arm_joint_2" in source
     assert "20" in source
+    assert 'choices=("gazebo", "mujoco")' in source
 

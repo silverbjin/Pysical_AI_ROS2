@@ -54,7 +54,15 @@ def test_model_is_one_tree_with_positive_inertia():
     assert len(links - set(children)) == 1
     assert links - set(children) == {"base_footprint"}
     assert len(children) == len(set(children))
-    assert {"base_link", "arm_mount", "arm_base_link", "arm_tool0"} <= links
+    assert {"base_link", "lidar_link", "arm_mount", "arm_base_link", "arm_tool0", "camera_link"} <= links
+
+    parents = {
+        joint.find("child").attrib["link"]: joint.find("parent").attrib["link"]
+        for joint in root.findall("joint")
+    }
+    assert parents["lidar_link"] == "base_link"
+    assert parents["arm_mount"] == "base_link"
+    assert parents["camera_link"] == "arm_link_6"
 
     for link in root.findall("link"):
         inertial = link.find("inertial")
@@ -84,6 +92,14 @@ def test_backend_selects_one_hardware_plugin(backend, plugin):
     for joint in blocks[0].findall("joint"):
         assert [item.attrib["name"] for item in joint.findall("command_interface")] == ["position"]
         assert [item.attrib["name"] for item in joint.findall("state_interface")] == ["position", "velocity"]
+        model_joint = root.find(f"joint[@name='{joint.attrib['name']}']")
+        model_limit = model_joint.find("limit").attrib
+        command_params = {
+            item.attrib["name"]: item.text
+            for item in joint.find("command_interface").findall("param")
+        }
+        assert float(command_params["min"]) == pytest.approx(float(model_limit["lower"]))
+        assert float(command_params["max"]) == pytest.approx(float(model_limit["upper"]))
 
 
 def test_controller_command_ownership_is_complete_and_disjoint():

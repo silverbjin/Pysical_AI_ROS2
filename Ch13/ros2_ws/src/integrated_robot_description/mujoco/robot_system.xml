@@ -1,0 +1,61 @@
+<mujoco model="quadruped_arm_system">
+  <compiler angle="radian"/>
+  <option timestep="0.002" gravity="0 0 -9.81" integrator="implicitfast"/>
+  <default>
+    <joint damping="0.5" armature="0.01" limited="true"/>
+    <geom contype="1" conaffinity="1" friction="1 0.005 0.0001"/>
+  </default>
+  <worldbody>
+    <light pos="0 -2 4" dir="0 0 -1"/>
+    <geom name="ground" type="plane" size="10 10 .1" rgba=".75 .78 .8 1"/>
+    <camera name="overview" pos="1.5 -1.5 1.2" xyaxes=".707 .707 0 -.3 .3 .905"/>
+    <body name="base_link" pos="0 0 .46">
+      <freejoint name="root"/>
+      <geom name="base_collision" type="box" size=".30 .15 .075" mass="6" rgba=".08 .09 .10 1"/>
+      <body name="lidar_link" pos="-.18 0 .12"><geom type="cylinder" size=".035 .0225" mass=".12" rgba=".05 .3 .7 1"/></body>
+
+      <body name="fr_hip_link" pos=".25 -.10 0"><joint name="fr_hip_joint" axis="1 0 0" range="-.8 .8"/><geom type="box" size=".04 .02 .02" mass=".2"/><body name="fr_thigh_link" pos="0 -.05 0"><joint name="fr_thigh_joint" axis="0 1 0" range="-1 4"/><geom type="capsule" fromto="0 0 0 0 0 -.25" size=".02" mass=".7"/><body name="fr_calf_link" pos="0 0 -.25"><joint name="fr_calf_joint" axis="0 1 0" range="-2.8 2.8"/><geom type="capsule" fromto="0 0 0 0 0 -.25" size=".015" mass=".5"/><body name="fr_foot" pos="0 0 -.25"><geom name="fr_foot_collision" type="sphere" size=".02" mass=".1"/></body></body></body></body>
+      <body name="fl_hip_link" pos=".25 .10 0"><joint name="fl_hip_joint" axis="1 0 0" range="-.8 .8"/><geom type="box" size=".04 .02 .02" mass=".2"/><body name="fl_thigh_link" pos="0 .05 0"><joint name="fl_thigh_joint" axis="0 1 0" range="-1 4"/><geom type="capsule" fromto="0 0 0 0 0 -.25" size=".02" mass=".7"/><body name="fl_calf_link" pos="0 0 -.25"><joint name="fl_calf_joint" axis="0 1 0" range="-2.8 2.8"/><geom type="capsule" fromto="0 0 0 0 0 -.25" size=".015" mass=".5"/><body name="fl_foot" pos="0 0 -.25"><geom name="fl_foot_collision" type="sphere" size=".02" mass=".1"/></body></body></body></body>
+      <body name="rr_hip_link" pos="-.25 -.10 0"><joint name="rr_hip_joint" axis="1 0 0" range="-.8 .8"/><geom type="box" size=".04 .02 .02" mass=".2"/><body name="rr_thigh_link" pos="0 -.05 0"><joint name="rr_thigh_joint" axis="0 1 0" range="-1 4"/><geom type="capsule" fromto="0 0 0 0 0 -.25" size=".02" mass=".7"/><body name="rr_calf_link" pos="0 0 -.25"><joint name="rr_calf_joint" axis="0 1 0" range="-2.8 2.8"/><geom type="capsule" fromto="0 0 0 0 0 -.25" size=".015" mass=".5"/><body name="rr_foot" pos="0 0 -.25"><geom name="rr_foot_collision" type="sphere" size=".02" mass=".1"/></body></body></body></body>
+      <body name="rl_hip_link" pos="-.25 .10 0"><joint name="rl_hip_joint" axis="1 0 0" range="-.8 .8"/><geom type="box" size=".04 .02 .02" mass=".2"/><body name="rl_thigh_link" pos="0 .05 0"><joint name="rl_thigh_joint" axis="0 1 0" range="-1 4"/><geom type="capsule" fromto="0 0 0 0 0 -.25" size=".02" mass=".7"/><body name="rl_calf_link" pos="0 0 -.25"><joint name="rl_calf_joint" axis="0 1 0" range="-2.8 2.8"/><geom type="capsule" fromto="0 0 0 0 0 -.25" size=".015" mass=".5"/><body name="rl_foot" pos="0 0 -.25"><geom name="rl_foot_collision" type="sphere" size=".02" mass=".1"/></body></body></body></body>
+
+      <body name="arm_mount" pos="0 0 .095">
+        <geom type="box" size=".08 .07 .02" mass=".30" rgba=".35 .38 .42 1"/>
+        <body name="arm_base_link" pos="0 0 .035">
+          <geom type="cylinder" size=".065 .03" mass=".45" rgba=".08 .09 .10 1"/>
+          <body name="arm_link_1" pos="0 0 .06"><joint name="arm_joint_1" axis="0 0 1" range="-3.14159 3.14159"/><geom type="capsule" fromto="0 0 0 0 0 .10" size=".04" mass=".35" rgba=".95 .42 .08 1"/>
+            <body name="arm_link_2" pos="0 0 .10"><joint name="arm_joint_2" axis="0 1 0" range="-1.5708 1.5708"/><geom type="capsule" fromto="0 0 0 0 0 .18" size=".035" mass=".55" rgba=".95 .42 .08 1"/>
+              <body name="arm_link_3" pos="0 0 .18"><joint name="arm_joint_3" axis="0 1 0" range="-2.0944 2.0944"/><geom type="capsule" fromto="0 0 0 0 0 .16" size=".032" mass=".45" rgba=".95 .42 .08 1"/>
+                <body name="arm_link_4" pos="0 0 .16"><joint name="arm_joint_4" axis="1 0 0" range="-3.14159 3.14159"/><geom type="capsule" fromto="0 0 0 0 0 .10" size=".028" mass=".28" rgba=".95 .42 .08 1"/>
+                  <body name="arm_link_5" pos="0 0 .10"><joint name="arm_joint_5" axis="0 1 0" range="-1.5708 1.5708"/><geom type="capsule" fromto="0 0 0 0 0 .08" size=".025" mass=".20" rgba=".95 .42 .08 1"/>
+                    <body name="arm_link_6" pos="0 0 .08"><joint name="arm_joint_6" axis="0 0 1" range="-3.14159 3.14159"/><geom type="capsule" fromto="0 0 0 0 0 .06" size=".022" mass=".15" rgba=".95 .42 .08 1"/>
+                      <body name="camera_link" pos=".03 0 .03" quat=".7071068 0 -.7071068 0"><geom type="box" size=".01 .025 .01" mass=".05" rgba=".08 .09 .10 1"/></body>
+                      <body name="arm_tool0" pos="0 0 .06"><geom type="sphere" size=".015" mass=".03" rgba=".05 .3 .7 1"/>
+                        <body name="gripper_base_link"><geom type="box" pos="0 0 .02" size=".05 .03 .02" mass=".16"/>
+                          <body name="gripper_left_finger" pos="0 .025 .04"><joint name="gripper_left_joint" type="slide" axis="0 1 0" range="0 .03"/><geom type="box" pos="0 0 .04" size=".009 .009 .04" mass=".06"/></body>
+                          <body name="gripper_right_finger" pos="0 -.025 .04"><joint name="gripper_right_joint" type="slide" axis="0 -1 0" range="0 .03"/><geom type="box" pos="0 0 .04" size=".009 .009 .04" mass=".06"/></body>
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator>
+    <position name="fr_hip_joint_motor" joint="fr_hip_joint" kp="40" kv="2" ctrlrange="-.8 .8" forcerange="-20 20"/><position name="fr_thigh_joint_motor" joint="fr_thigh_joint" kp="100" kv="4" ctrlrange="-1 4" forcerange="-30 30"/><position name="fr_calf_joint_motor" joint="fr_calf_joint" kp="100" kv="4" ctrlrange="-2.8 2.8" forcerange="-30 30"/>
+    <position name="fl_hip_joint_motor" joint="fl_hip_joint" kp="40" kv="2" ctrlrange="-.8 .8" forcerange="-20 20"/><position name="fl_thigh_joint_motor" joint="fl_thigh_joint" kp="100" kv="4" ctrlrange="-1 4" forcerange="-30 30"/><position name="fl_calf_joint_motor" joint="fl_calf_joint" kp="100" kv="4" ctrlrange="-2.8 2.8" forcerange="-30 30"/>
+    <position name="rr_hip_joint_motor" joint="rr_hip_joint" kp="40" kv="2" ctrlrange="-.8 .8" forcerange="-20 20"/><position name="rr_thigh_joint_motor" joint="rr_thigh_joint" kp="100" kv="4" ctrlrange="-1 4" forcerange="-30 30"/><position name="rr_calf_joint_motor" joint="rr_calf_joint" kp="100" kv="4" ctrlrange="-2.8 2.8" forcerange="-30 30"/>
+    <position name="rl_hip_joint_motor" joint="rl_hip_joint" kp="40" kv="2" ctrlrange="-.8 .8" forcerange="-20 20"/><position name="rl_thigh_joint_motor" joint="rl_thigh_joint" kp="100" kv="4" ctrlrange="-1 4" forcerange="-30 30"/><position name="rl_calf_joint_motor" joint="rl_calf_joint" kp="100" kv="4" ctrlrange="-2.8 2.8" forcerange="-30 30"/>
+    <position name="arm_joint_1_motor" joint="arm_joint_1" kp="80" kv="5" ctrlrange="-3.14159 3.14159" forcerange="-35 35"/><position name="arm_joint_2_motor" joint="arm_joint_2" kp="80" kv="5" ctrlrange="-1.5708 1.5708" forcerange="-35 35"/><position name="arm_joint_3_motor" joint="arm_joint_3" kp="70" kv="4" ctrlrange="-2.0944 2.0944" forcerange="-30 30"/>
+    <position name="arm_joint_4_motor" joint="arm_joint_4" kp="50" kv="3" ctrlrange="-3.14159 3.14159" forcerange="-20 20"/><position name="arm_joint_5_motor" joint="arm_joint_5" kp="45" kv="3" ctrlrange="-1.5708 1.5708" forcerange="-15 15"/><position name="arm_joint_6_motor" joint="arm_joint_6" kp="40" kv="2" ctrlrange="-3.14159 3.14159" forcerange="-12 12"/>
+    <position name="gripper_left_joint_motor" joint="gripper_left_joint" kp="100" kv="3" ctrlrange="0 .03" forcerange="-15 15"/><position name="gripper_right_joint_motor" joint="gripper_right_joint" kp="100" kv="3" ctrlrange="0 .03" forcerange="-15 15"/>
+  </actuator>
+  <keyframe>
+    <key name="home" qpos="0 0 .46 1 0 0 0 0 -.5 1 0 -.5 1 0 -.5 1 0 -.5 1 0 0 0 0 0 0 .015 .015" ctrl="0 -.5 1 0 -.5 1 0 -.5 1 0 -.5 1 0 0 0 0 0 0 .015 .015"/>
+  </keyframe>
+</mujoco>
