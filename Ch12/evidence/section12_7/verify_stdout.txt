@@ -1,0 +1,262 @@
+{
+  "status": "PASS",
+  "mujoco": "3.3.7",
+  "torch": "2.5.1+cpu",
+  "action_observation_impulse_trace": [
+    {
+      "step": 1,
+      "commanded": 0.1,
+      "delayed": 0.0,
+      "observed_previous_action": 0.0,
+      "policy_frame_is_reset": true
+    },
+    {
+      "step": 2,
+      "commanded": 0.0,
+      "delayed": 0.0,
+      "observed_previous_action": 0.0,
+      "policy_frame_is_reset": true
+    },
+    {
+      "step": 3,
+      "commanded": 0.0,
+      "delayed": 0.1,
+      "observed_previous_action": 0.0,
+      "policy_frame_is_reset": false
+    },
+    {
+      "step": 4,
+      "commanded": 0.0,
+      "delayed": 0.0,
+      "observed_previous_action": 0.0,
+      "policy_frame_is_reset": false
+    },
+    {
+      "step": 5,
+      "commanded": 0.0,
+      "delayed": 0.0,
+      "observed_previous_action": 0.10000000149011612,
+      "policy_frame_is_reset": false
+    }
+  ],
+  "episode_domains": [
+    {
+      "robot_body_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "mass_factors": [
+        1.0644822131459488,
+        1.197763599194766,
+        1.0310772327350095,
+        0.8567526043747012,
+        1.0771310517370354,
+        1.0761947301752766,
+        1.1416749096395622,
+        1.0719583286592123,
+        0.9293870814279148,
+        0.8163124817762342,
+        0.9792012499082353,
+        1.051288057660594,
+        1.0936597987997843,
+        1.0684624826301112,
+        1.0391805349098049,
+        1.0418803401747603,
+        0.8933276436725325
+      ],
+      "friction_factor": 0.8926199246988747,
+      "actuator_strength": 0.9835463681562733
+    },
+    {
+      "robot_body_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "mass_factors": [
+        1.125025543536311,
+        1.1847157838372981,
+        0.8644791702142886,
+        0.8266662709807463,
+        0.8597222462391128,
+        0.9307380898946809,
+        0.9461764003646703,
+        1.036576287740861,
+        0.8186417362786317,
+        1.1698120688900944,
+        1.0655455497191813,
+        1.0142678860071852,
+        1.194910037930749,
+        0.9723652751049656,
+        0.9194471583990262,
+        1.0995666535375808,
+        1.1235213229048018
+      ],
+      "friction_factor": 1.2170756816249657,
+      "actuator_strength": 1.0730491709689622
+    },
+    {
+      "robot_body_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "mass_factors": [
+        1.0644822131459488,
+        1.197763599194766,
+        1.0310772327350095,
+        0.8567526043747012,
+        1.0771310517370354,
+        1.0761947301752766,
+        1.1416749096395622,
+        1.0719583286592123,
+        0.9293870814279148,
+        0.8163124817762342,
+        0.9792012499082353,
+        1.051288057660594,
+        1.0936597987997843,
+        1.0684624826301112,
+        1.0391805349098049,
+        1.0418803401747603,
+        0.8933276436725325
+      ],
+      "friction_factor": 0.8926199246988747,
+      "actuator_strength": 0.9835463681562733
+    }
+  ],
+  "ppo_runs": [
+    {
+      "task": "locomotion",
+      "backend": "dummy",
+      "transitions": 128,
+      "parameter_l1_change": 6.389464051288087,
+      "checkpoint": "locomotion_dummy_smoke.zip",
+      "save_reload_inference": "PASS"
+    },
+    {
+      "task": "goal",
+      "backend": "dummy",
+      "transitions": 128,
+      "parameter_l1_change": 6.055893854121678,
+      "checkpoint": "goal_dummy_smoke.zip",
+      "save_reload_inference": "PASS"
+    },
+    {
+      "task": "avoidance",
+      "backend": "subproc",
+      "transitions": 128,
+      "parameter_l1_change": 7.490070451749489,
+      "checkpoint": "avoidance_subproc_smoke.zip",
+      "save_reload_inference": "PASS"
+    }
+  ],
+  "reset_state_contracts": [
+    {
+      "task": "locomotion",
+      "seed": 4,
+      "height": 0.5,
+      "joint_positions": [
+        0.008861122111447352,
+        -0.4997734489437128,
+        1.009524874114154,
+        -0.008383279522087957,
+        -0.4978528833600994,
+        0.9975297316875454,
+        0.006038024139716146,
+        -0.5065094436771195,
+        1.007432705483753,
+        0.000878828015269964,
+        -0.4919556984056802,
+        0.9995430704767841
+      ],
+      "seeded_pose_velocity_controls_mocap_and_observation": "PASS",
+      "mass_randomization": "PASS"
+    },
+    {
+      "task": "goal",
+      "seed": 4,
+      "height": 0.5,
+      "joint_positions": [
+        0.008861122111447352,
+        -0.4997734489437128,
+        1.009524874114154,
+        -0.008383279522087957,
+        -0.4978528833600994,
+        0.9975297316875454,
+        0.006038024139716146,
+        -0.5065094436771195,
+        1.007432705483753,
+        0.000878828015269964,
+        -0.4919556984056802,
+        0.9995430704767841
+      ],
+      "seeded_pose_velocity_controls_mocap_and_observation": "PASS",
+      "mass_randomization": "PASS"
+    },
+    {
+      "task": "avoidance",
+      "seed": 4,
+      "height": 0.5,
+      "joint_positions": [
+        0.008861122111447352,
+        -0.4997734489437128,
+        1.009524874114154,
+        -0.008383279522087957,
+        -0.4978528833600994,
+        0.9975297316875454,
+        0.006038024139716146,
+        -0.5065094436771195,
+        1.007432705483753,
+        0.000878828015269964,
+        -0.4919556984056802,
+        0.9995430704767841
+      ],
+      "seeded_pose_velocity_controls_mocap_and_observation": "PASS",
+      "mass_randomization": "PASS"
+    }
+  ],
+  "limitation": "Smoke updates validate integration; no learned walking, robustness improvement or hardware sim-to-real performance is established."
+}

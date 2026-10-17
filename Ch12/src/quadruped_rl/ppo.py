@@ -16,7 +16,7 @@ from .rewards import RewardConfig
 
 
 SCHEMAS = {'locomotion': 'locomotion-v1-48', 'goal': 'goal-polar-sincos-v1-48',
-           'avoidance':'avoidance-goal-body-lidar-v1'}
+           'avoidance':'avoidance-goal-body-lidar-v1','robust':'robust-task-sensor-delay-v1'}
 
 
 def make_env(task, env_kwargs, monitor_path=None):
@@ -32,6 +32,9 @@ def make_env(task, env_kwargs, monitor_path=None):
     elif task == 'avoidance':
         from .avoidance_env import QuadrupedAvoidanceEnv
         env = QuadrupedAvoidanceEnv(**kwargs)
+    elif task == 'robust':
+        from .robust_env import RobustQuadrupedEnv
+        env = RobustQuadrupedEnv(**kwargs)
     else:
         raise ValueError('Unknown task')
     return Monitor(env, filename=monitor_path,
@@ -104,7 +107,7 @@ def train(output, *, task='locomotion', env_kwargs=None, total_timesteps=2_000_0
         torch_threads=1,eval_every=eval_every,eval_episodes=eval_episodes,
         checkpoint_every=checkpoint_every)
     evaluation_kwargs = dict(kwargs)
-    if task in ('goal','avoidance'):
+    if task in ('goal','avoidance') or (task=='robust' and kwargs.get('task','locomotion') in ('goal','avoidance')):
         evaluation_kwargs['goal_mode'] = 'terminate'
     manifest = dict(format_version=1,task=task,observation_schema=SCHEMAS[task],
         env_kwargs=kwargs,observation_size=observation_size,action_size=12,normalization='none',

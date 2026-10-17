@@ -6,6 +6,7 @@
 - [12.4 PPO 실습 가이드](docs/LAB_12_4_GUIDE_KO.md) · [보고서](docs/SECTION_12_4_REPORT_KO.md)
 - [12.5 목표 이동 실습 가이드](docs/LAB_12_5_GUIDE_KO.md) · [보고서](docs/SECTION_12_5_REPORT_KO.md)
 - [12.6 장애물 회피 실습 가이드](docs/LAB_12_6_GUIDE_KO.md) · [보고서](docs/SECTION_12_6_REPORT_KO.md)
+- [12.7 강건성·병렬 처리 가이드](docs/LAB_12_7_GUIDE_KO.md) · [보고서](docs/SECTION_12_7_REPORT_KO.md)
 
 리포지토리 루트에서 Ubuntu/WSL 가상환경을 활성화하고 실행한다.
 
