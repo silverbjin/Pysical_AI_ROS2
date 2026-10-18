@@ -1,0 +1,9 @@
+{
+  "status": "EXPECTED_FAILURE_REPRODUCED",
+  "engines": ["gazebo", "mujoco"],
+  "functional_checks": "PASS",
+  "runtime_shutdown": "FAIL",
+  "observed_warning": "The following exception was never retrieved: cannot use Destroyable because destruction was requested",
+  "cause": "installed Jazzy Executor.shutdown destroys guard conditions before joining the MultiThreadedExecutor worker pool",
+  "fix": "keep context alive and drain executor worker pool before calling inherited shutdown"
+}

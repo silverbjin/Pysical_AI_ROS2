@@ -1,0 +1,7 @@
+{
+  "status": "EXPECTED_FAILURE_REPRODUCED",
+  "condition": "repeated Gazebo harness runs in the same ROS_DOMAIN_ID",
+  "observed": "gz server child outlived the exited launch parent; next run discovered the previous controller_manager",
+  "impact": "safe-pose action deadline exceeded while the new engine was still initializing",
+  "fix": "after launch parent shutdown, terminate only the process group created by this harness with start_new_session=True"
+}

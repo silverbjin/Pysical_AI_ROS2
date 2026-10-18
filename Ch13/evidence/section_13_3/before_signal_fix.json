@@ -1,0 +1,9 @@
+{
+  "status": "EXPECTED_FAILURE_REPRODUCED",
+  "engine": "mujoco",
+  "functional_checks": "PASS",
+  "runtime_shutdown": "FAIL",
+  "observed_error": "RuntimeError: Unable to convert call argument '0' to Python object",
+  "location": "state_manager default SIGINT KeyboardInterrupt during rclpy take_message pybind conversion",
+  "fix": "SIGINT only sets a stop event; bounded executor spin returns before callbacks and context are cleaned up"
+}
