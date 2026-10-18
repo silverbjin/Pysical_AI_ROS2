@@ -43,8 +43,8 @@ class ObjectDetector(Node):
         self.delay = self.declare_parameter('processing_delay_s', 0.).value
         self.confidence = self.declare_parameter('confidence', .5).value
         if (not all(math.isfinite(v) for v in (self.rate, self.delay, self.confidence))
-                or not 0 < self.rate <= 10 or self.delay < 0 or not .5 <= self.confidence <= 1):
-            raise ValueError('rate in (0,10], nonnegative delay, confidence in [.5,1] required')
+                or not 0 < self.rate <= 15 or self.delay < 0 or not .5 <= self.confidence <= 1):
+            raise ValueError('rate in (0,15], nonnegative delay, confidence in [.5,1] required')
         if self.backend_name == 'yolo':
             if not weights or not Path(weights).is_absolute():
                 raise FileNotFoundError('YOLO requires an explicit absolute local weights_path')

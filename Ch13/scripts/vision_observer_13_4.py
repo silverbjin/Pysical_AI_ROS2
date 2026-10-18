@@ -59,6 +59,7 @@ class VisionObserver(Node):
         self.joint_velocities, self.calibrations = [], {}
         self.commands = []
         self.diagnostics = []
+        self.leg_states = []
         self.tf_owners, self.tf_parents, self.model_parents = {}, {}, {}
         self.tf_metadata_fields = set()
         self.collecting, self.saved_frame = False, False
@@ -186,6 +187,9 @@ class VisionObserver(Node):
 
     def on_legs(self, message):
         self.legs = json.loads(message.data)
+        self.leg_states.append(dict(wall=time.monotonic(), **self.legs))
+        if len(self.leg_states) > 10000:
+            del self.leg_states[:1000]
 
     def on_status(self, message):
         value = json.loads(message.data)
@@ -308,7 +312,7 @@ class VisionObserver(Node):
     def save(self):
         payload = dict(counts=dict(self.counts), invalid=dict(self.invalid), samples=self.samples,
                        detections=self.detections, tracks=self.tracks, tracking=self.states,
-                       diagnostics=self.diagnostics,
+                       diagnostics=self.diagnostics, leg_states=self.leg_states,
                        actions=self.actions, commands=self.commands, references=self.references,
                        tf_owners={k: sorted(v) for k, v in self.tf_owners.items()},
                        tf_parents={k: sorted(v) for k, v in self.tf_parents.items()},

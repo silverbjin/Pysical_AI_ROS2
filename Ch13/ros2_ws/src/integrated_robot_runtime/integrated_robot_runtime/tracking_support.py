@@ -231,12 +231,20 @@ class TrackingSupport:
         self.publish_status('disabled')
 
     def publish_status(self, event='heartbeat'):
+        joint = self.joints[-1] if self.joints else None
+        inputs = dict(ros_now_ns=self.node.get_clock().now().nanoseconds,
+                      target_capture_ns=nanoseconds(self.target.header.stamp) if self.target else 0,
+                      target_received_wall=self.target_at,
+                      joint_capture_ns=joint[0] if joint else 0,
+                      joint_received_wall=joint[1] if joint else 0.,
+                      leg_positions=list(joint[3]) if joint else [],
+                      leg_status=dict(self.legs), leg_status_received_wall=self.legs_at)
         self.status.publish(String(data=json.dumps(dict(
             enabled=self.guard.enabled, mode=self.mode, reason=self.guard.reason, goal_count=self.goal_count,
             reserved=self.node.busy, outstanding=self.node.arm_owner.pending is not None,
             fault=self.node.arm_owner.fault or self.guard.fault, generation=self.guard.generation,
             session_generation=self.token, event=event, emitted_monotonic=time.monotonic(),
-            owner=self.node.arm_owner.snapshot()))))
+            owner=self.node.arm_owner.snapshot(), inputs=inputs))))
 
     def _release(self):
         if self.record is not None and self.record.terminal:

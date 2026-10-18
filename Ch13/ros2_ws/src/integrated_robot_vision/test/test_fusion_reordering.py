@@ -1,5 +1,6 @@
 """Cross-topic DDS arrival order is not capture order: use real messages and tf2."""
 import time
+from threading import Event
 
 from geometry_msgs.msg import TransformStamped
 from integrated_robot_interfaces.msg import TrackedTarget
@@ -11,6 +12,96 @@ from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
 
 from test_rgbd_cache import images, info
+
+
+def test_duplicate_during_fusion_does_not_queue_a_second_job_or_invalidate_result(monkeypatch):
+    import integrated_robot_vision.vision_processor as module
+    entered, release = Event(), Event()
+    calculate = module.capture_observations
+
+    def blocked(*args, **kwargs):
+        entered.set()
+        assert release.wait(timeout=.2)
+        return calculate(*args, **kwargs)
+
+    monkeypatch.setattr(module, 'capture_observations', blocked)
+    rclpy.init(domain_id=147)
+    node, peer = VisionProcessor(), Node('duplicate_fusion_peer')
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
+    executor.add_node(peer)
+    states = []
+    sub = peer.create_subscription(TrackedTarget, '/vision/tracked_target', states.append, 10)
+    try:
+        transform = TransformStamped()
+        transform.header.frame_id, transform.child_frame_id = 'odom', 'camera_optical_frame'
+        transform.transform.rotation.w = 1.
+        node.tf_buffer.set_transform_static(transform, 'unit_test_only')
+        capture = peer.get_clock().now().nanoseconds/1e9
+        node.on_info(info(capture))
+        rgb, depth = images(capture, capture)
+        node.on_rgb(rgb)
+        node.on_depth(depth)
+        message = to_detection_array([Box2D(5., 5., 6., 6., 'fixture_red', 1.)], rgb.header)
+        node.on_detections(message)
+        assert entered.wait(timeout=.1)
+        node.on_detections(message)
+        release.set()
+        deadline = time.monotonic()+.12
+        while time.monotonic() < deadline:
+            executor.spin_once(timeout_sec=.005)
+        assert states and all(v.valid for v in states), 'duplicate fusion invalidated a fresh accepted capture'
+    finally:
+        release.set()
+        executor.shutdown(timeout_sec=2.)
+        node.destroy_node()
+        peer.destroy_node()
+        rclpy.try_shutdown()
+
+
+def test_newer_unpaired_detection_cannot_discard_an_older_complete_fresh_capture():
+    rclpy.init(domain_id=147)
+    node, peer = VisionProcessor(), Node('complete_pair_peer')
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
+    executor.add_node(peer)
+    states = []
+    sub = peer.create_subscription(TrackedTarget, '/vision/tracked_target', states.append, 10)
+    try:
+        transform = TransformStamped()
+        transform.header.frame_id, transform.child_frame_id = 'odom', 'camera_optical_frame'
+        transform.transform.rotation.w = 1.
+        node.tf_buffer.set_transform_static(transform, 'unit_test_only')
+        capture = peer.get_clock().now().nanoseconds/1e9
+        node.on_info(info(capture))
+        a, ad = images(capture, capture)
+        b, bd = images(capture+.01, capture+.01)
+        boxes = [Box2D(5., 5., 6., 6., 'fixture_red', 1.)]
+        node.on_detections(to_detection_array(boxes, a.header))
+        node.on_detections(to_detection_array(boxes, b.header))
+        # B is newer but missing depth. A is now a complete, fresh RGB-D pair.
+        node.on_rgb(a)
+        node.on_depth(ad)
+        deadline = time.monotonic()+.18
+        while not any(v.valid and v.source_header.stamp == a.header.stamp for v in states):
+            if time.monotonic() >= deadline:
+                break
+            executor.spin_once(timeout_sec=.005)
+        assert any(v.valid and v.source_header.stamp == a.header.stamp for v in states), (
+            'a newer incomplete capture discarded the last usable RGB-D candidate')
+        node.on_rgb(b)
+        node.on_depth(bd)
+        deadline = time.monotonic()+.1
+        while not any(v.valid and v.source_header.stamp == b.header.stamp for v in states):
+            if time.monotonic() >= deadline:
+                break
+            executor.spin_once(timeout_sec=.005)
+        assert any(v.valid and v.source_header.stamp == b.header.stamp for v in states)
+    finally:
+        executor.shutdown(timeout_sec=2.)
+        node.destroy_node()
+        peer.destroy_node()
+        rclpy.try_shutdown()
 
 
 def test_detection_arriving_before_aligned_images_waits_without_invalidating_live_track():

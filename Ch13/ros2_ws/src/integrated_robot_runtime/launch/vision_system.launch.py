@@ -28,6 +28,10 @@ def launch_nodes(context):
             (not Path(values['weights_path']).is_absolute() or not Path(values['weights_path']).is_file())):
         raise ValueError('existing absolute local YOLO weights required before starting engine')
     delay = float(values['processing_delay_s'])
+    values['max_rate_hz'] = LaunchConfiguration('max_rate_hz', default='10').perform(context)
+    rate = float(values['max_rate_hz'])
+    if not math.isfinite(rate) or not 0 < rate <= 15:
+        raise ValueError('max_rate_hz must be finite and in (0,15]')
     if not math.isfinite(delay) or delay < 0:
         raise ValueError('finite nonnegative inference delay required')
 
@@ -52,7 +56,7 @@ def launch_nodes(context):
                         'allow_camera_motion_test': values['allow_camera_motion_test']}),
                include('integrated_robot_vision', 'vision.launch.py',
                        {k: values[k] for k in ('detector_backend', 'weights_path',
-                                              'processing_delay_s', 'use_sim_time')})]
+                                              'processing_delay_s', 'use_sim_time', 'max_rate_hz')})]
     if values['tracking_enabled'].lower() == 'true':
         actions.append(Node(package='integrated_robot_runtime', executable='tracking_requester',
                             output='screen', parameters=[{'use_sim_time': True}]))
@@ -62,6 +66,7 @@ def launch_nodes(context):
 def generate_launch_description():
     defaults = dict(engine='mujoco', detector_backend='yolo', weights_path='',
                     tracking_enabled='false', processing_delay_s='0', use_sim_time='true',
-                    world='', model_path='', allow_camera_motion_test='false', mujoco_headless='true')
+                    world='', model_path='', allow_camera_motion_test='false', mujoco_headless='true',
+                    max_rate_hz='10')
     return LaunchDescription([*[DeclareLaunchArgument(k, default_value=v) for k, v in defaults.items()],
                               OpaqueFunction(function=launch_nodes)])

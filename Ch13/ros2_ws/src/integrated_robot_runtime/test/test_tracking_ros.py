@@ -52,7 +52,7 @@ def test_enable_and_disable_ack_are_published_even_before_any_control_tick():
         while node.count_subscribers('/architecture/visual_tracking') < 1 and time.monotonic() < deadline:
             executor.spin_once(timeout_sec=.01)
         tracking = node.tracking
-        tracking.joints.append((1, time.monotonic(), dict.fromkeys(ARM_NAMES, 0.)))
+        tracking.joints.append((1, time.monotonic(), dict.fromkeys(ARM_NAMES, 0.), list(STAND)))
         node.safe = True
         with patch.object(tracking, 'conditions', return_value=dict.fromkeys(tracking.guard.CONDITIONS, True)):
             response = tracking.toggle(SetBool.Request(data=True), SetBool.Response())
@@ -63,6 +63,9 @@ def test_enable_and_disable_ack_are_published_even_before_any_control_tick():
             executor.spin_once(timeout_sec=.01)
         assert [v['enabled'] for v in states] == [True, False]
         assert states[0]['event'] == 'enable_ack'
+        assert states[0]['inputs']['target_capture_ns'] == 0
+        assert states[0]['inputs']['leg_positions'] == list(STAND)
+        assert states[0]['inputs']['joint_capture_ns'] == 1
         assert states[1]['generation'] > states[0]['generation']
     finally:
         executor.shutdown()

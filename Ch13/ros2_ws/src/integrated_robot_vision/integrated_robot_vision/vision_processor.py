@@ -87,7 +87,8 @@ class VisionProcessor(Node):
         self.tracker = TrackManager(tau=tau, alpha=alpha if filter_mode == 'fixed_alpha' else None)
         self.last_source_header, self.last_published_state = None, None
         self.last_epoch, self.last_stamp = -1, 0.
-        self.pending_detection = None
+        self.last_submitted_ns = 0
+        self.pending_detections = {}
         self.tf_buffer = Buffer(node=self)
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.raw_pub = self.create_publisher(PointStamped, '/vision/target_raw', 10)
@@ -135,9 +136,10 @@ class VisionProcessor(Node):
                     # our smaller epoch resets must discard dynamic history too.
                     self.tf_buffer.clear()
                 self.cache.clear(epoch)
-                self.pending_detection = None
+                self.pending_detections.clear()
                 self.slot.take(0)
                 self.last_stamp, self.last_epoch = 0., epoch
+                self.last_submitted_ns = 0
                 self.report('RESET')
             expired = self.tracker.expire(ros_now, wall_now)
             if expired is not None:
@@ -158,7 +160,7 @@ class VisionProcessor(Node):
                 self.report('INVALID_CALIBRATION')
             if previous != self.cache.calibration_id:
                 self.slot.take(0)
-                self.pending_detection = None
+                self.pending_detections.clear()
                 self.report('RESET')
             self.try_pending(now, wall, epoch)
 
@@ -195,8 +197,8 @@ class VisionProcessor(Node):
                 if nanoseconds(msg.header.stamp) <= 0 or msg.header.frame_id != 'camera_optical_frame':
                     raise ValueError('positive capture time and canonical optical frame required')
                 stamp = seconds(msg.header.stamp)
-                if stamp <= self.last_stamp or (self.pending_detection is not None
-                        and stamp <= seconds(self.pending_detection[0].stamp)):
+                key = nanoseconds(msg.header.stamp)
+                if stamp <= self.last_stamp or key <= self.last_submitted_ns or key in self.pending_detections:
                     return  # old/duplicate inference never invalidates or renews a newer track
                 for detection in msg.detections[:32]:
                     if not detection.results:
@@ -206,29 +208,44 @@ class VisionProcessor(Node):
                         box = detection.bbox
                         boxes.append(Box2D(box.center.position.x, box.center.position.y,
                                            box.size_x, box.size_y, best.class_id, best.score))
-                self.pending_detection = (deepcopy(msg.header), boxes, epoch, wall)
-                self.slot.take(0)  # only the newest waiting detection/frame is useful
+                self.pending_detections[key] = (deepcopy(msg.header), boxes, epoch, wall)
+                while len(self.pending_detections) > 10:  # same bound as the RGB-D cache
+                    del self.pending_detections[min(self.pending_detections)]
                 self.try_pending(now, wall, epoch)
             except (ValueError, RuntimeError, TypeError):
                 self.report('INVALID_DETECTION')
 
+    @property
+    def pending_detection(self):
+        with self.lock:
+            return (self.pending_detections[max(self.pending_detections)]
+                    if self.pending_detections else None)
+
     def try_pending(self, now, wall, epoch):
-        """Wait for cross-topic arrival, never extend capture/receipt deadlines."""
-        pending = self.pending_detection
-        if pending is None:
-            return
-        header, boxes, source_epoch, received = pending
-        if not self.gate.valid(seconds(header.stamp), source_epoch, now, wall, received):
-            self.pending_detection = None
-            self.report('NO_FRESH_ALIGNED_PAIR')
-            return
-        bundle = self.cache.match(header.stamp, header.frame_id, epoch)
-        if bundle is None:
-            return  # watchdog and subsequent RGB/depth callbacks retry within original TTL
-        self.pending_detection = None
-        if self.current(bundle):
-            self.slot.replace((bundle, boxes))
-        else:
+        """Newest COMPLETE capture wins; an unpaired newer one cannot erase it.
+
+        Candidate metadata shares the 10-image cache bound. The processing
+        slot is still capacity one; no capture or receipt deadline is renewed.
+        """
+        expired = False
+        for key, pending in sorted(list(self.pending_detections.items()), reverse=True):
+            header, boxes, source_epoch, received = pending
+            if (seconds(header.stamp) <= self.last_stamp or
+                    not self.gate.valid(seconds(header.stamp), source_epoch, now, wall, received)):
+                self.pending_detections.pop(key, None)
+                expired = True
+                continue
+            bundle = self.cache.match(header.stamp, header.frame_id, epoch)
+            if bundle is None:
+                continue
+            if self.current(bundle):
+                for previous in list(self.pending_detections):
+                    if previous <= key:
+                        del self.pending_detections[previous]
+                self.slot.replace((bundle, boxes))
+                self.last_submitted_ns = key
+                return
+        if expired and not self.pending_detections:
             self.report('NO_FRESH_ALIGNED_PAIR')
 
     def work(self):

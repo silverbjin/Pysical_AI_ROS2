@@ -5,6 +5,7 @@ from pathlib import Path
 from launch import LaunchContext
 from launch.actions import IncludeLaunchDescription
 from launch_ros.actions import Node
+from launch_ros.utilities import evaluate_parameters
 import pytest
 import yaml
 import subprocess
@@ -49,6 +50,22 @@ def test_observation_launch_contains_two_nodes_and_requires_explicit_backend_ass
         module.launch_nodes(context(detector_backend='yolo', weights_path='yolov8n.pt'))
     with pytest.raises(ValueError):
         module.launch_nodes(context(processing_delay_s='nan'))
+
+
+def test_rate_option_is_forwarded_and_rejected_before_starting_native_engine():
+    vision = load('integrated_robot_vision', 'vision.launch.py')
+    system = load('integrated_robot_runtime', 'vision_system.launch.py')
+    node = vision.launch_nodes(context(max_rate_hz='15'))[0]
+    assert any(parameters.get('max_rate_hz') == 15. for parameters in
+               evaluate_parameters(context(max_rate_hz='15'), node._Node__parameters)
+               if isinstance(parameters, dict))
+    actions = system.launch_nodes(context(max_rate_hz='15'))
+    arguments = dict(actions[2].launch_arguments)
+    assert arguments['max_rate_hz'] == '15'
+    for value in ('15.01', 'nan', '0'):
+        for module in (vision, system):
+            with pytest.raises(ValueError):
+                module.launch_nodes(context(max_rate_hz=value))
 
 
 def test_system_launch_includes_one_engine_runtime_and_vision_default_observation_only():

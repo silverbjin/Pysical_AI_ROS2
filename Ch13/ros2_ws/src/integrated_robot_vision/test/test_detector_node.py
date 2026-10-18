@@ -19,6 +19,27 @@ from integrated_robot_vision.object_detector import ObjectDetector
 from test_rgbd_cache import info, stamp
 
 
+def test_explicit_fifteen_hz_option_keeps_default_ten_and_single_worker():
+    rclpy.init(domain_id=146)
+    nodes = []
+    try:
+        default = ObjectDetector(parameter_overrides=[Parameter('backend', value='color_fixture')])
+        nodes.append(default)
+        assert default.rate == 10.
+        max_age = default.gate.max_age
+        default.destroy_node()
+        nodes.clear()
+        selected = ObjectDetector(parameter_overrides=[
+            Parameter('backend', value='color_fixture'), Parameter('max_rate_hz', value=15.)])
+        nodes.append(selected)
+        assert selected.rate == 15. and selected.worker.is_alive()
+        assert selected.gate.max_age == max_age == .3
+    finally:
+        for node in nodes:
+            node.destroy_node()
+        rclpy.try_shutdown()
+
+
 @pytest.mark.parametrize('delay,should_publish', [(.15, True), (.35, False)])
 def test_delayed_detector_capture_header_and_stale_completion(delay, should_publish):
     rclpy.init(domain_id=146)

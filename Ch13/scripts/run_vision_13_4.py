@@ -170,9 +170,12 @@ def required_checks(scenario):
 
 
 def build_launch_command(args, delay):
+    rate = float(getattr(args, 'inference_rate_hz', 10.))
+    if not math.isfinite(rate) or not 0 < rate <= 15:
+        raise ValueError('inference rate must be finite and in (0,15]')
     command = ['ros2', 'launch', 'integrated_robot_runtime', 'vision_system.launch.py',
         'engine:='+args.engine, 'detector_backend:='+args.detector_backend,
-        'processing_delay_s:='+str(delay), 'tracking_enabled:=false',
+        'processing_delay_s:='+str(delay), 'tracking_enabled:=false', 'max_rate_hz:='+str(rate),
         'allow_camera_motion_test:='+str(args.scenario == 'delay').lower()]
     if args.weights_path:
         command.append('weights_path:='+args.weights_path)
@@ -224,6 +227,7 @@ def run_trial(args, *, launch_command=None):
             run.result.update(engine=args.engine, detector_backend=args.detector_backend,
                               scenario=args.scenario, processing_delay_s=delay, processes=[])
             command = launch_command or build_launch_command(args, delay)
+            run.result['inference_rate_hz'] = float(getattr(args, 'inference_rate_hz', 10.))
             fixture_y = 0.
             if args.scenario == 'yolo' and getattr(args, 'semantic_fixture', 'red') == 'cup':
                 from ament_index_python.packages import get_package_share_directory
@@ -559,6 +563,7 @@ def main():
     parser.add_argument('--timeout', type=float, default=60.)
     parser.add_argument('--duration', type=float, default=20.)
     parser.add_argument('--processing-delay-s', type=float)
+    parser.add_argument('--inference-rate-hz', type=float, default=10.)
     args = parser.parse_args()
     args.scenario = args.scenario or ('geometry' if args.detector_backend == 'color_fixture' else 'yolo')
     if args.scenario == 'geometry':

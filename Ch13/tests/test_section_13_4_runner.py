@@ -56,6 +56,17 @@ def test_observer_preserves_diagnostic_timeline_not_only_aggregate_counts():
     assert state.diagnostics[-1]['wall'] > 0
 
 
+def test_observer_keeps_leg_readiness_timeline_for_standing_gate_diagnosis():
+    observer = importlib.import_module('vision_observer_13_4')
+    from std_msgs.msg import String
+    state = SimpleNamespace(legs={}, leg_states=[])
+    observer.VisionObserver.on_legs(state, String(data=json.dumps(dict(
+        active=True, ready=False, mode='STOP', max_timer_gap_s=.62))))
+    assert state.leg_states[-1]['ready'] is False
+    assert state.leg_states[-1]['wall'] > 0
+    assert state.leg_states[-1]['max_timer_gap_s'] == .62
+
+
 def test_offset_fixture_changes_physical_geometry_not_sensor_or_command_source(tmp_path):
     runner = importlib.import_module('run_vision_13_4')
     import xml.etree.ElementTree as ET
@@ -145,6 +156,19 @@ def test_fixture_launch_omits_empty_optional_weights_instead_of_invalid_ros_argu
     assert 'weights_path:=' not in command
     args.weights_path = '/explicit/weights.pt'
     assert 'weights_path:=/explicit/weights.pt' in runner.build_launch_command(args, .15)
+
+
+def test_comparison_rate_reaches_launch_and_invalid_rate_never_starts_engine():
+    runner = importlib.import_module('run_vision_13_4')
+    args = argparse.Namespace(engine='mujoco', detector_backend='color_fixture',
+                              weights_path='', scenario='tracking')
+    assert 'max_rate_hz:=10.0' in runner.build_launch_command(args, 0.)
+    args.inference_rate_hz = 15.
+    assert 'max_rate_hz:=15.0' in runner.build_launch_command(args, 0.)
+    for value in (15.01, float('nan'), 0.):
+        args.inference_rate_hz = value
+        with pytest.raises(ValueError):
+            runner.build_launch_command(args, 0.)
 
 
 def test_jazzy_dict_message_info_records_actual_tf_publisher_identity():
