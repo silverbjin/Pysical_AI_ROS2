@@ -16,6 +16,9 @@ def launch_nodes(context):
         'processing_delay_s', 'use_sim_time', 'world', 'model_path', 'allow_camera_motion_test')}
     if values['engine'] not in ('gazebo', 'mujoco'):
         raise ValueError('select exactly one engine: gazebo or mujoco')
+    camera_backend = LaunchConfiguration('vision_camera_backend', default='upstream').perform(context)
+    if camera_backend not in ('upstream', 'snapshot'):
+        raise ValueError('vision_camera_backend must be upstream or snapshot')
     if values['use_sim_time'].lower() != 'true':
         raise ValueError('native engine system requires use_sim_time=true')
     if values['tracking_enabled'].lower() not in ('true', 'false'):
@@ -46,6 +49,7 @@ def launch_nodes(context):
         if headless not in ('true', 'false'):
             raise ValueError('mujoco_headless must be an explicit boolean')
         engine_arguments['mujoco_headless'] = headless
+        engine_arguments['vision_camera_backend'] = camera_backend
     override = 'world' if values['engine'] == 'gazebo' else 'model_path'
     if values[override]:
         engine_arguments[override] = values[override]
@@ -67,6 +71,6 @@ def generate_launch_description():
     defaults = dict(engine='mujoco', detector_backend='yolo', weights_path='',
                     tracking_enabled='false', processing_delay_s='0', use_sim_time='true',
                     world='', model_path='', allow_camera_motion_test='false', mujoco_headless='true',
-                    max_rate_hz='10')
+                    max_rate_hz='10', vision_camera_backend='upstream')
     return LaunchDescription([*[DeclareLaunchArgument(k, default_value=v) for k, v in defaults.items()],
                               OpaqueFunction(function=launch_nodes)])

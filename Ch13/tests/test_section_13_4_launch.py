@@ -97,3 +97,66 @@ def test_legacy_mujoco_explicit_camera_config_keeps_eye_disabled():
     merged = yaml.safe_load(Path(module.materialize_controller_config(
         share/'config/controllers.yaml', config)).read_text())
     assert merged['controller_manager']['ros__parameters']['update_rate'] == 100
+
+
+def test_snapshot_backend_changes_only_camera_class():
+    module = load('integrated_robot_description', 'mujoco.launch.py')
+    share = SRC/'integrated_robot_description'
+    def plugins(backend):
+        path = module.camera_plugin_config(share, True, backend)
+        return yaml.safe_load(Path(path).read_text())['/**']['ros__parameters']['mujoco_plugins']
+    upstream, snapshot = plugins('upstream'), plugins('snapshot')
+    assert snapshot['eye_camera']['type'] == 'integrated_robot_camera/SnapshotCameraPlugin'
+    assert snapshot['native_pose'] == upstream['native_pose']
+    assert snapshot['eye_camera'] == dict(upstream['eye_camera'],
+                                        type='integrated_robot_camera/SnapshotCameraPlugin')
+    for backend in ('upstream', 'snapshot'):
+        assert module.camera_plugin_config(share, False, backend) == module.camera_plugin_config(share, False)
+    with pytest.raises(ValueError):
+        module.camera_plugin_config(share, True, 'typo')
+
+
+def test_camera_backend_forwarded_only_to_mujoco_and_unknown_fails_before_include():
+    module = load('integrated_robot_runtime', 'vision_system.launch.py')
+    for engine in ('mujoco', 'gazebo'):
+        actions = module.launch_nodes(context(engine=engine, vision_camera_backend='snapshot'))
+        arguments = dict(actions[0].launch_arguments)
+        if engine == 'mujoco':
+            assert arguments['vision_camera_backend'] == 'snapshot'
+        else:
+            assert 'vision_camera_backend' not in arguments
+    with pytest.raises(ValueError):
+        module.launch_nodes(context(vision_camera_backend='typo'))
+
+
+def test_actual_snapshot_probe_accepts_active_prefix_and_rejects_other_prefix(tmp_path):
+    from ament_index_python.packages import get_package_prefix
+    import hashlib
+    module = load('integrated_robot_description', 'mujoco.launch.py')
+    prefix = Path(get_package_prefix('integrated_robot_camera'))
+    audit = module.probe_snapshot_plugin(prefix)
+    library = Path(audit['library_path'])
+    assert audit['class_id'] == 'integrated_robot_camera/SnapshotCameraPlugin'
+    assert library.is_file() and library.is_relative_to(prefix.resolve())
+    assert audit['library_sha256'] == hashlib.sha256(library.read_bytes()).hexdigest()
+    assert audit['package_prefix'] == str(prefix.resolve())
+    with pytest.raises(RuntimeError):
+        module.probe_snapshot_plugin(tmp_path)
+
+
+def test_missing_probe_and_library_fail_before_native_node(tmp_path, monkeypatch):
+    module = load('integrated_robot_description', 'mujoco.launch.py')
+    monkeypatch.setattr(module, 'get_package_prefix', lambda name: str(tmp_path))
+    monkeypatch.setattr(module, 'get_package_share_directory',
+                        lambda name: str(SRC/'integrated_robot_description'))
+    monkeypatch.setattr(module, 'Node', lambda **kwargs: pytest.fail('native node created before failed probe'))
+    ctx = context(vision_enabled='true', mujoco_headless='true', vision_camera_backend='snapshot')
+    with pytest.raises(RuntimeError, match='probe'):
+        module.launch_nodes(ctx)
+    # Only a disposable local probe double changes; real installed libraries stay untouched.
+    probe = tmp_path/'lib/integrated_robot_camera/camera_plugin_probe'
+    probe.parent.mkdir(parents=True)
+    probe.write_text('#!/bin/sh\nprintf "%s\\n" "'+str(tmp_path/'lib/missing.so')+'"\n')
+    probe.chmod(0o755)
+    with pytest.raises(RuntimeError, match='library'):
+        module.launch_nodes(ctx)

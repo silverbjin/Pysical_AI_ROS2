@@ -65,3 +65,16 @@ mutex와 mailbox mutex를 중첩하지 않으며 렌더/발행/join 동안 metad
 서비스는 weak selection state만 캡처해 cleanup 이후 plugin 객체를 참조하지 않는다.
 GLFW 전역 terminate는 호스트의 다른 창을 파괴할 수 있어 호출하지 않고, worker가
 자신의 창/context/scene만 해제한다.
+
+## Task3
+
+- RED: `backend-red.log`, 새4건 실패 /기존5건 통과.
+- GREEN: `backend-green.log`, launch/13.2 모델21건 PASS /17.14초.
+  실제 설치 probe 생성·해시/경로 확인, 잘못된 prefix 거부, 없는 probe/library일 때
+  native Node 생성 전 실패, Gazebo에 MuJoCo 전용 인자 미전달을 확인했다.
+- 전체 기존+새 소스 회귀: `task3-pytest.log`,258건 PASS /125.20초.
+- snapshot YAML은 eye_camera의 type만 변경하며 토픽·15Hz·native_pose는 동일하다.
+  `vision=false`는 두 backend 모두 기존 legacy 카메라 파일을 사용한다.
+  backend 기본은 upstream이며 자동 fallback이나 기본 전환은 없다.
+- probe는 설치된 libexec/class loader를 실제 실행한다. launch는 저장소 scripts를
+  import하지 않는다. Ch13의 완전한5패키지 fresh 설치 감사는 다음 Task4에서 수행한다.

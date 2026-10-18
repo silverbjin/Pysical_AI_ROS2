@@ -16,8 +16,9 @@ import hashlib
 import os
 from pathlib import Path
 import tempfile
+import subprocess
 
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.substitutions import Command, LaunchConfiguration
@@ -41,20 +42,52 @@ def materialize_controller_config(source, plugin_source=None):
     return str(target)
 
 
-def camera_plugin_config(share, vision):
+def camera_plugin_config(share, vision, backend='upstream'):
+    if backend not in ('upstream', 'snapshot'):
+        raise ValueError('vision_camera_backend must be upstream or snapshot')
     return str(Path(share)/'config'/(
-        'mujoco_vision_plugins.yaml' if vision else 'mujoco_legacy_cameras.yaml'))
+        ('mujoco_snapshot_vision_plugins.yaml' if backend == 'snapshot' else
+         'mujoco_vision_plugins.yaml') if vision else 'mujoco_legacy_cameras.yaml'))
+
+
+def probe_snapshot_plugin(expected_prefix: Path) -> dict:
+    """Actually load the selected class, then reject stale/foreign installed code."""
+    try:
+        prefix = Path(get_package_prefix('integrated_robot_camera')).resolve()
+        probe = prefix/'lib/integrated_robot_camera/camera_plugin_probe'
+        if not probe.is_file() or not probe.resolve().is_relative_to(prefix):
+            raise RuntimeError('snapshot camera probe missing or outside package prefix')
+        result = subprocess.run([str(probe)], check=True, capture_output=True,
+                                text=True, timeout=15)
+    except (OSError, subprocess.SubprocessError, LookupError) as error:
+        raise RuntimeError(f'snapshot camera probe unavailable: {error}') from error
+    lines = result.stdout.strip().splitlines()
+    if len(lines) != 1:
+        raise RuntimeError('snapshot camera probe did not return one library path')
+    library = Path(lines[0])
+    if not library.is_absolute() or not library.is_file():
+        raise RuntimeError('snapshot camera library is not an existing absolute file')
+    library = library.resolve()
+    if prefix != Path(expected_prefix).resolve() or not library.is_relative_to(prefix):
+        raise RuntimeError('snapshot camera library does not match expected package prefix')
+    return dict(class_id='integrated_robot_camera/SnapshotCameraPlugin',
+                library_path=str(library), library_sha256=hashlib.sha256(library.read_bytes()).hexdigest(),
+                package_prefix=str(prefix))
 
 
 def launch_nodes(context):
     share = get_package_share_directory('integrated_robot_description')
     vision = LaunchConfiguration('vision_enabled').perform(context).lower() == 'true'
+    backend = LaunchConfiguration('vision_camera_backend', default='upstream').perform(context)
+    camera_config = camera_plugin_config(share, vision, backend)
+    if vision and backend == 'snapshot':
+        probe_snapshot_plugin(Path(get_package_prefix('integrated_robot_camera')))
     xacro_path = os.path.join(share, 'urdf', 'robot_system.urdf.xacro')
     model_path = LaunchConfiguration('model_path').perform(context) or os.path.join(
         share, 'mujoco', 'vision_fixture.xml' if vision else 'robot_system.xml')
     controllers = materialize_controller_config(
         os.path.join(share, 'config', 'controllers.yaml'),
-        camera_plugin_config(share, vision),
+        camera_config,
     )
     description = ParameterValue(
         Command(
@@ -102,6 +135,7 @@ def launch_nodes(context):
 
 def generate_launch_description():
     return LaunchDescription([DeclareLaunchArgument('vision_enabled', default_value='false'),
+                              DeclareLaunchArgument('vision_camera_backend', default_value='upstream'),
                               DeclareLaunchArgument('mujoco_headless', default_value='false'),
                               DeclareLaunchArgument('model_path', default_value=''),
                               OpaqueFunction(function=launch_nodes)])
