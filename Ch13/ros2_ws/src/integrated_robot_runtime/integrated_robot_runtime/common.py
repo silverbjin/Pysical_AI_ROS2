@@ -54,6 +54,14 @@ def spin(node_type, threads=4):
         pass
     finally:
         signal.signal(signal.SIGINT, signal.SIG_IGN)
+        if hasattr(node, 'begin_shutdown'):
+            node.begin_shutdown()
+            deadline = time.monotonic() + 1.
+            while rclpy.ok() and not node.shutdown_ready() and time.monotonic() < deadline:
+                executor.spin_once(timeout_sec=.02)
+            if not node.shutdown_ready():
+                node.get_logger().error(
+                    'Arm shutdown cancellation unconfirmed; controller hold is NOT proven')
         executor.shutdown(timeout_sec=10)
         node.destroy_node()
         if rclpy.ok():

@@ -1,0 +1,25 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_failed_action_result_latches_tracking_off_instead_of_retrying ______
+
+    def test_failed_action_result_latches_tracking_off_instead_of_retrying():
+        rclpy.init(domain_id=148)
+        node = ManipulationNode()
+        try:
+            tracking = node.tracking
+            token = tracking.guard.enable(dict.fromkeys(tracking.guard.CONDITIONS, True))
+            tracking.token = token
+            tracking.guard.reserve(token)
+            tracking.session = node.busy = True
+            tracking.record = SimpleNamespace(terminal=True, result=SimpleNamespace(status=6),
+                                               error='controller aborted')
+            tracking._release()
+>           assert not tracking.guard.enabled
+E           assert not True
+E            +  where True = <integrated_robot_runtime.visual_tracking.VisualTrackingGuard object at 0x723985b22000>.enabled
+E            +    where <integrated_robot_runtime.visual_tracking.VisualTrackingGuard object at 0x723985b22000> = <integrated_robot_runtime.tracking_support.TrackingSupport object at 0x723985fc20f0>.guard
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:155: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py::test_failed_action_result_latches_tracking_off_instead_of_retrying
+1 failed, 4 deselected in 6.56s

@@ -13,8 +13,10 @@ from sensor_msgs.msg import JointState
 from std_srvs.srv import Trigger
 from trajectory_msgs.msg import JointTrajectoryPoint
 
-from .common import seconds, spin, wait_future
+from .common import seconds, spin
 from .policy import ARM_NAMES, SAFE_ARM, joint_snapshot, safe_arm, validate_target
+from .arm_action_owner import ArmActionOwner
+from .tracking_support import TrackingSupport
 
 
 class ManipulationNode(LifecycleNode):
@@ -23,6 +25,7 @@ class ManipulationNode(LifecycleNode):
         self.lock = threading.RLock()
         self.enabled = False
         self.busy = False
+        self.work_running = False
         self.safe = False
         self.arm = None
         self.received = self.stamp = 0.0
@@ -32,6 +35,8 @@ class ManipulationNode(LifecycleNode):
         self.trajectory = ActionClient(self, FollowJointTrajectory,
                                        '/arm_trajectory_controller/follow_joint_trajectory',
                                        callback_group=self.group)
+        self.arm_owner = ArmActionOwner(self.trajectory)
+        self.tracking = TrackingSupport(self)
         self.create_service(Trigger, '~/stow', self.stow, callback_group=self.group)
         self.action = ActionServer(
             self, PickObject, '~/pick_object', execute_callback=self.execute,
@@ -43,6 +48,7 @@ class ManipulationNode(LifecycleNode):
             self.arm = joint_snapshot(message.name, message.position, ARM_NAMES)
             self.received = time.monotonic()
             self.stamp = seconds(message.header.stamp)
+            self.tracking.on_joints(message)
 
     def measured_safe(self):
         ros_age = self.get_clock().now().nanoseconds * 1e-9 - self.stamp
@@ -61,6 +67,8 @@ class ManipulationNode(LifecycleNode):
     def on_deactivate(self, state):
         with self.lock:
             self.enabled = self.safe = False
+            self.tracking.disable('lifecycle inactive')
+            self.arm_owner.cancel(now=time.monotonic())
         return TransitionCallbackReturn.SUCCESS
 
     def on_cleanup(self, state):
@@ -69,14 +77,22 @@ class ManipulationNode(LifecycleNode):
     def on_shutdown(self, state):
         return self.on_deactivate(state)
 
+    def begin_shutdown(self):
+        # Keep context/executor and the physical controller alive for cancel/result.
+        self.on_deactivate(None)
+
+    def shutdown_ready(self):
+        return self.arm_owner.pending is None
+
     def stow(self, request, response):
         with self.lock:
-            if not self.enabled or self.busy:
+            if not self.enabled or self.busy or not self.tracking.guard.arm_available:
                 response.message = 'Arm inactive or busy'
                 return response
             self.busy = True
+            self.work_running = True
             self.safe = False
-        handle = None
+        record = None
         try:
             if not self.trajectory.wait_for_server(timeout_sec=5):
                 raise TimeoutError('arm trajectory controller unavailable')
@@ -85,11 +101,16 @@ class ManipulationNode(LifecycleNode):
             point = JointTrajectoryPoint(positions=list(SAFE_ARM))
             point.time_from_start.sec = 2
             goal.trajectory.points = [point]
-            handle = wait_future(self.trajectory.send_goal_async(goal), 5,
-                                 lambda: self.enabled)
-            if not handle.accepted:
-                raise RuntimeError('safe pose trajectory rejected')
-            result = wait_future(handle.get_result_async(), 8, lambda: self.enabled)
+            with self.lock:
+                if not self.enabled:
+                    raise RuntimeError('lifecycle became inactive')
+                record = self.arm_owner.send(goal, now=time.monotonic(), timeout=8.)
+            deadline = time.monotonic()+8.
+            while self.enabled and not record.terminal and time.monotonic() < deadline:
+                time.sleep(.01)
+            if not record.terminal or record.result is None:
+                raise RuntimeError(record.error or 'safe pose trajectory did not complete')
+            result = record.result
             if (result.status != GoalStatus.STATUS_SUCCEEDED
                     or result.result.error_code != FollowJointTrajectory.Result.SUCCESSFUL):
                 raise RuntimeError('safe pose trajectory failed')
@@ -104,12 +125,13 @@ class ManipulationNode(LifecycleNode):
                 time.sleep(0.02)
             raise TimeoutError('fresh measured safe arm pose unavailable')
         except Exception as exc:
-            if handle is not None and handle.accepted:
-                handle.cancel_goal_async()
+            if record is not None and not record.terminal:
+                self.arm_owner.cancel(now=time.monotonic())
             response.message = str(exc)
         finally:
             with self.lock:
-                self.busy = False
+                self.work_running = False
+                self.busy = self.arm_owner.pending is not None or bool(self.arm_owner.fault)
         return response
 
     def accept_goal(self, goal):
@@ -123,11 +145,13 @@ class ManipulationNode(LifecycleNode):
             [pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w],
             goal.dry_run)
         with self.lock:
-            if error or not self.enabled or not self.safe or self.busy or not self.measured_safe():
+            if (error or not self.enabled or not self.safe or self.busy or not self.measured_safe()
+                    or not self.tracking.guard.arm_available):
                 self.get_logger().info(
                     f'Pick rejected: {error or "inactive, unsafe, or busy"}; age_s={now-stamp:.6f}')
                 return GoalResponse.REJECT
             self.busy = True
+            self.work_running = True
         return GoalResponse.ACCEPT
 
     def execute(self, handle):
@@ -159,6 +183,7 @@ class ManipulationNode(LifecycleNode):
         finally:
             with self.lock:
                 self.busy = False
+                self.work_running = False
 
 
 def main():

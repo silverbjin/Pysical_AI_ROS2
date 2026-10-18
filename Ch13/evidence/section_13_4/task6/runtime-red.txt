@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_default_off_exclusive_session_and_disable_cancels_without_successor ___
+
+    def test_default_off_exclusive_session_and_disable_cancels_without_successor():
+        rclpy.init(domain_id=148)
+        node, peer, executor, thread = None, None, None, None
+        try:
+            node, peer = ManipulationNode(), Node('tracking_action_peer')
+>           assert hasattr(node, 'tracking'), 'missing runtime tracking integration'
+E           AssertionError: missing runtime tracking integration
+E           assert False
+E            +  where False = hasattr(<integrated_robot_runtime.manipulation.ManipulationNode object at 0x76e078b0bec0>, 'tracking')
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:39: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py::test_default_off_exclusive_session_and_disable_cancels_without_successor
+1 failed in 2.00s
