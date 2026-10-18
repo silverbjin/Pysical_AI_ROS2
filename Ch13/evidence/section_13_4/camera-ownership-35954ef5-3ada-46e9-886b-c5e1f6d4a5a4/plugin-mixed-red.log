@@ -1,0 +1,44 @@
+Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+Note: Google Test filter = CameraTest.StreamingOverwritePreservesPendingPollWithoutRepeatingIt
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CameraTest
+[ RUN      ] CameraTest.StreamingOverwritePreservesPendingPollWithoutRepeatingIt
+[INFO] [1792352689.795731337] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+[INFO] [1792352689.796505553] [snapshot_camera_test]: Adding camera: 'eye'
+[INFO] [1792352689.797066003] [snapshot_camera_test]:     policy: 'streaming'
+[INFO] [1792352689.797694378] [snapshot_camera_test]:     frame_name: 'camera_optical_frame'
+[INFO] [1792352689.798253911] [snapshot_camera_test]:     info_topic: 'eye/camera_info'
+[INFO] [1792352689.798802903] [snapshot_camera_test]:     image_topic: 'eye/color'
+[INFO] [1792352689.799388286] [snapshot_camera_test]:     depth_topic: 'eye/depth'
+[INFO] [1792352689.805792669] [snapshot_camera_test]: Adding camera: 'other'
+[INFO] [1792352689.806415910] [snapshot_camera_test]:     policy: 'polled'
+[INFO] [1792352689.806916960] [snapshot_camera_test]:     frame_name: 'other_frame'
+[INFO] [1792352689.807488135] [snapshot_camera_test]:     info_topic: 'other/camera_info'
+[INFO] [1792352689.808146852] [snapshot_camera_test]:     image_topic: 'other/color'
+[INFO] [1792352689.808980743] [snapshot_camera_test]:     depth_topic: 'other/depth'
+[INFO] [1792352689.809830860] [snapshot_camera_test]:     trigger_service_name: 'other/trigger'
+[INFO] [1792352690.122112662] [SnapshotCameraPlugin]: Snapshot renderer GLFW: llvmpipe (LLVM 20.1.2, 256 bits)
+[INFO] [1792352690.158973657] [SnapshotCameraPlugin]: integrated_robot_camera/SnapshotCameraPlugin initialized
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:261: Failure
+Value of: until([&] {return polled.size() == 1;})
+  Actual: false
+Expected: true
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:267: Failure
+Expected equality of these values:
+  polled.size()
+    Which is: 0
+  1u
+    Which is: 1
+
+[  FAILED  ] CameraTest.StreamingOverwritePreservesPendingPollWithoutRepeatingIt (5583 ms)
+[----------] 1 test from CameraTest (5585 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5631 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CameraTest.StreamingOverwritePreservesPendingPollWithoutRepeatingIt
+
+ 1 FAILED TEST

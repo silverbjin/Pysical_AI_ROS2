@@ -31,3 +31,37 @@ source하지 않았다. Python 기존 회귀는 기존 debug install 환경에�
 
 다음 단계: 새 플러그인 구현, 실제 GL 및 동적 로딩 검증, backend 선택/설치 감사,
 실제 두 엔진 인수. 전체13.4 완료나13.5 재개를 선언하지 않는다.
+
+## Task2
+
+- 원본 파생본 RED: 재초기화 후 readback 미도달, reset 후 과거 RGB/depth/Info 발행,
+  새 class 등록 부재. `plugin-red-camera.xml`, `plugin-red-native.log`,
+  `plugin-red-result.log`에 보존했다. 첫 build의 CMake export 이름 오류와 첫
+  colcon test의 Ch01 탐색 오류는 환경/명령 오류이며 기능 RED로 세지 않는다.
+- 원본에서도 header/깊이 단위/이미지 부호/disabled/polled/잘못된 policy 시험은
+  통과했다. 새 수정으로 생긴 성과라고 주장하지 않는다.
+- 최초 연결 후 혼합 정책 RED: `plugin-mixed-red.log/.xml`, 실제 readback 보류 중
+  polled 요청이 streaming-only 최신 프레임에 유실되어 촬영0건(기대1건).
+- 보완: 기존4인자 submit은 유지하고, 두 슬롯에 유계 retained camera 목록을
+  전달하는5인자 overload를 추가했다. 아직 취득하지 않은 polled 요청만 최신
+  snapshot에 병합하며 취득/reset 뒤에는 반복하지 않는다. 추가 API RED는
+  `mailbox-retained-red-build.log`에 보존했다.
+- 최종 native C++: **19개 gtest PASS** (core11 + 실제 GL7 + 실제 pluginlib1).
+  `plugin-retained-green-{build,tests,result}.log`, `plugin-final-native.log`,
+  `plugin-final-camera.xml`, `mailbox-final.xml`. colcon의22건은 등록된3개
+  CTest harness까지 포함한 집계이며 별도22개의 기능 시험이라는 뜻이 아니다.
+- 기존 소스 회귀: **254건 PASS /148.09초**, `task2-pytest.log`, exit0.
+- 최신 코어 TSAN: build PASS, 실행 exit1 / unexpected memory mapping.
+  `mailbox-final-tsan-build.log`, `mailbox-final-tsan.log`.
+  최신 코드의 sanitizer 인수는 **UNVERIFIED**이며 이전9건 단일 성공으로 채우지 않는다.
+- 실제 설치 probe의 경로는 `plugin-final-probe.log`, 바이너리 SHA는
+  `plugin-final-binary-sha256.log`. 원본 class와 별도 class를 모두 실제 생성했다.
+  `upstream-final-status.log`는0바이트(외부 원본 변경 없음)다.
+
+scope: 실제 작은 MuJoCo 모델과 GL/DDS를 사용한 플러그인 시험이다. 통합 로봇의
+종단 추적/물리 파지/두 엔진 인수를 대체하지 않는다. backend 기본값은 바꾸지 않았다.
+생산자 제어 스레드는 pending만, 단일 worker는 취득 lease만 사용한다. metadata
+mutex와 mailbox mutex를 중첩하지 않으며 렌더/발행/join 동안 metadata lock 없음.
+서비스는 weak selection state만 캡처해 cleanup 이후 plugin 객체를 참조하지 않는다.
+GLFW 전역 terminate는 호스트의 다른 창을 파괴할 수 있어 호출하지 않고, worker가
+자신의 창/context/scene만 해제한다.

@@ -1,0 +1,202 @@
+Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/Testing/20261018-1938/Test.xml: 3 tests, 0 errors, 2 failures, 0 skipped
+- test_snapshot_camera_plugin
+  <<< failure message
+    -- run_test.py: invoking following command in '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera':
+     - /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_snapshot_camera_plugin --gtest_output=xml:/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_results/integrated_robot_camera/test_snapshot_camera_plugin.gtest.xml
+    Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+    [==========] Running 6 tests from 1 test suite.
+    [----------] Global test environment set-up.
+    [----------] 6 tests from CameraTest
+    [ RUN      ] CameraTest.FrameHeadersMatchAcquiredSnapshot
+    [INFO] [1792352286.188294498] [snapshot_camera_test]: SnapshotCameraPlugin initializing cameras...
+    [INFO] [1792352286.188448681] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+    [INFO] [1792352286.188553089] [snapshot_camera_test]: Adding camera: 'eye'
+    [INFO] [1792352286.188561156] [snapshot_camera_test]:     policy: 'streaming'
+    [INFO] [1792352286.188565464] [snapshot_camera_test]:     frame_name: 'camera_optical_frame'
+    [INFO] [1792352286.188570231] [snapshot_camera_test]:     info_topic: 'eye/camera_info'
+    [INFO] [1792352286.188574631] [snapshot_camera_test]:     image_topic: 'eye/color'
+    [INFO] [1792352286.188582331] [snapshot_camera_test]:     depth_topic: 'eye/depth'
+    [INFO] [1792352286.194410131] [snapshot_camera_test]: Adding camera: 'other'
+    [INFO] [1792352286.194453581] [snapshot_camera_test]:     policy: 'disabled'
+    [INFO] [1792352286.194460823] [snapshot_camera_test]:     frame_name: 'other_frame'
+    [INFO] [1792352286.470834906] [snapshot_camera_test]: Initializing rendering for cameras (using GLFW)
+    [INFO] [1792352286.471013106] [snapshot_camera_test]: Starting the camera rendering loop, publishing at 1000000.000000 Hz
+    [INFO] [1792352286.502371081] [snapshot_camera_test]: Resized offscreen buffer to 320 x 240
+    [       OK ] CameraTest.FrameHeadersMatchAcquiredSnapshot (442 ms)
+    [ RUN      ] CameraTest.DisabledCameraNeverRenders
+    [INFO] [1792352286.599752889] [snapshot_camera_test]: SnapshotCameraPlugin initializing cameras...
+    [INFO] [1792352286.599816414] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+    [INFO] [1792352286.599902489] [snapshot_camera_test]: Adding camera: 'eye'
+    [INFO] [1792352286.599911289] [snapshot_camera_test]:     policy: 'disabled'
+    [INFO] [1792352286.599915964] [snapshot_camera_test]:     frame_name: 'camera_optical_frame'
+    [INFO] [1792352286.599962989] [snapshot_camera_test]: Adding camera: 'other'
+    [INFO] [1792352286.599967481] [snapshot_camera_test]:     policy: 'disabled'
+    [INFO] [1792352286.599970598] [snapshot_camera_test]:     frame_name: 'other_frame'
+    [       OK ] CameraTest.DisabledCameraNeverRenders (9 ms)
+    [ RUN      ] CameraTest.PolledRequestsCoalesceWithLatestSnapshot
+    [INFO] [1792352286.612072706] [snapshot_camera_test]: SnapshotCameraPlugin initializing cameras...
+    [INFO] [1792352286.612159239] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+    [INFO] [1792352286.612235964] [snapshot_camera_test]: Adding camera: 'eye'
+    [INFO] [1792352286.612244031] [snapshot_camera_test]:     policy: 'polled'
+    [INFO] [1792352286.612248889] [snapshot_camera_test]:     frame_name: 'camera_optical_frame'
+    [INFO] [1792352286.612254114] [snapshot_camera_test]:     info_topic: 'eye/camera_info'
+    [INFO] [1792352286.612258789] [snapshot_camera_test]:     image_topic: 'eye/color'
+    [INFO] [1792352286.612263464] [snapshot_camera_test]:     depth_topic: 'eye/depth'
+    [INFO] [1792352286.612268323] [snapshot_camera_test]:     trigger_service_name: 'eye/trigger'
+    [INFO] [1792352286.616033623] [snapshot_camera_test]: Adding camera: 'other'
+    [INFO] [1792352286.616064606] [snapshot_camera_test]:     policy: 'disabled'
+    [INFO] [1792352286.616070289] [snapshot_camera_test]:     frame_name: 'other_frame'
+    [INFO] [1792352286.632788456] [snapshot_camera_test]: Initializing rendering for cameras (using GLFW)
+    [INFO] [1792352286.632948689] [snapshot_camera_test]: Starting the camera rendering loop, publishing at 1000000.000000 Hz
+    [INFO] [1792352286.665535731] [snapshot_camera_test]: Resized offscreen buffer to 320 x 240
+    [       OK ] CameraTest.PolledRequestsCoalesceWithLatestSnapshot (270 ms)
+    [ RUN      ] CameraTest.CleanupDuringInitializationAndRender
+    [INFO] [1792352286.883224998] [snapshot_camera_test]: SnapshotCameraPlugin initializing cameras...
+    [INFO] [1792352286.883310798] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+    [INFO] [1792352286.883402648] [snapshot_camera_test]: Adding camera: 'eye'
+    [INFO] [1792352286.883412089] [snapshot_camera_test]:     policy: 'streaming'
+    [INFO] [1792352286.883416306] [snapshot_camera_test]:     frame_name: 'camera_optical_frame'
+    [INFO] [1792352286.883420431] [snapshot_camera_test]:     info_topic: 'eye/camera_info'
+    [INFO] [1792352286.883424006] [snapshot_camera_test]:     image_topic: 'eye/color'
+    [INFO] [1792352286.883427398] [snapshot_camera_test]:     depth_topic: 'eye/depth'
+    [INFO] [1792352286.886753706] [snapshot_camera_test]: Adding camera: 'other'
+    [INFO] [1792352286.886834739] [snapshot_camera_test]:     policy: 'disabled'
+    [INFO] [1792352286.886843631] [snapshot_camera_test]:     frame_name: 'other_frame'
+    [INFO] [1792352286.905124164] [snapshot_camera_test]: Initializing rendering for cameras (using GLFW)
+    [INFO] [1792352286.905252131] [snapshot_camera_test]: Starting the camera rendering loop, publishing at 1000000.000000 Hz
+    [INFO] [1792352286.937484698] [snapshot_camera_test]: Resized offscreen buffer to 320 x 240
+    [INFO] [1792352286.941861048] [snapshot_camera_test]: SnapshotCameraPlugin initializing cameras...
+    [INFO] [1792352286.941956748] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+    [INFO] [1792352286.942659556] [snapshot_camera_test]: Adding camera: 'eye'
+    [INFO] [1792352286.942684856] [snapshot_camera_test]:     policy: 'streaming'
+    [INFO] [1792352286.942689806] [snapshot_camera_test]:     frame_name: 'camera_optical_frame'
+    [INFO] [1792352286.942694206] [snapshot_camera_test]:     info_topic: 'eye/camera_info'
+    [INFO] [1792352286.942699523] [snapshot_camera_test]:     image_topic: 'eye/color'
+    [INFO] [1792352286.942704656] [snapshot_camera_test]:     depth_topic: 'eye/depth'
+    [INFO] [1792352286.944461173] [snapshot_camera_test]: Adding camera: 'other'
+    [INFO] [1792352286.944510214] [snapshot_camera_test]:     policy: 'disabled'
+    [INFO] [1792352286.944520756] [snapshot_camera_test]:     frame_name: 'other_frame'
+    [INFO] [1792352286.965883306] [snapshot_camera_test]: Initializing rendering for cameras (using GLFW)
+    [INFO] [1792352286.966004673] [snapshot_camera_test]: Starting the camera rendering loop, publishing at 1000000.000000 Hz
+    [INFO] [1792352287.001114931] [snapshot_camera_test]: Resized offscreen buffer to 320 x 240
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:143: Failure
+    Failed
+    real GL worker did not reach readback
+    
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:238: Failure
+    Value of: readback.wait()
+      Actual: false
+    Expected: true
+    
+    [  FAILED  ] CameraTest.CleanupDuringInitializationAndRender (20078 ms)
+    [ RUN      ] CameraTest.ResetDiscardsAcquiredOldEpochBeforePublish
+    [INFO] [1792352309.243469375] [snapshot_camera_test]: SnapshotCameraPlugin initializing cameras...
+    [INFO] [1792352309.243539675] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+    [INFO] [1792352309.243626475] [snapshot_camera_test]: Adding camera: 'eye'
+    [INFO] [1792352309.243633975] [snapshot_camera_test]:     policy: 'streaming'
+    [INFO] [1792352309.243637875] [snapshot_camera_test]:     frame_name: 'camera_optical_frame'
+    [INFO] [1792352309.243641675] [snapshot_camera_test]:     info_topic: 'eye/camera_info'
+    [INFO] [1792352309.243645675] [snapshot_camera_test]:     image_topic: 'eye/color'
+    [INFO] [1792352309.243649375] [snapshot_camera_test]:     depth_topic: 'eye/depth'
+    [INFO] [1792352309.244768675] [snapshot_camera_test]: Adding camera: 'other'
+    [INFO] [1792352309.244795075] [snapshot_camera_test]:     policy: 'disabled'
+    [INFO] [1792352309.244799675] [snapshot_camera_test]:     frame_name: 'other_frame'
+    [INFO] [1792352309.257019075] [snapshot_camera_test]: Initializing rendering for cameras (using GLFW)
+    [INFO] [1792352309.257132675] [snapshot_camera_test]: Starting the camera rendering loop, publishing at 1000000.000000 Hz
+    [INFO] [1792352309.279756375] [snapshot_camera_test]: Resized offscreen buffer to 320 x 240
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:257: Failure
+    Value of: rgb.empty()
+      Actual: false
+    Expected: true
+    
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:258: Failure
+    Value of: depth.empty()
+      Actual: false
+    Expected: true
+    
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:259: Failure
+    Value of: info.empty()
+      Actual: false
+    Expected: true
+    
+    [  FAILED  ] CameraTest.ResetDiscardsAcquiredOldEpochBeforePublish (193 ms)
+    [ RUN      ] CameraTest.InvalidPolicyFailsClosedAndCleanupIsRepeatable
+    [INFO] [1792352309.437663075] [snapshot_camera_test]: SnapshotCameraPlugin initializing cameras...
+    [INFO] [1792352309.437705375] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+    [ERROR] [1792352309.437722075] [snapshot_camera_test]: Invalid policy for camera 'eye'
+    [ERROR] [1792352309.437745575] [snapshot_camera_test]: Failed to register cameras.
+    [       OK ] CameraTest.InvalidPolicyFailsClosedAndCleanupIsRepeatable (9 ms)
+    [----------] 6 tests from CameraTest (21003 ms total)
+    
+    [----------] Global test environment tear-down
+    [==========] 6 tests from 1 test suite ran. (21035 ms total)
+    [  PASSED  ] 4 tests.
+    [  FAILED  ] 2 tests, listed below:
+    [  FAILED  ] CameraTest.CleanupDuringInitializationAndRender
+    [  FAILED  ] CameraTest.ResetDiscardsAcquiredOldEpochBeforePublish
+    
+     2 FAILED TESTS
+    -- run_test.py: return code 1
+    -- run_test.py: inject classname prefix into gtest result file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_results/integrated_robot_camera/test_snapshot_camera_plugin.gtest.xml'
+    -- run_test.py: verify result file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_results/integrated_robot_camera/test_snapshot_camera_plugin.gtest.xml'
+  >>>
+- test_plugin_loading
+  <<< failure message
+    -- run_test.py: invoking following command in '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera':
+     - /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_plugin_loading --gtest_output=xml:/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_results/integrated_robot_camera/test_plugin_loading.gtest.xml
+    Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+    [==========] Running 1 test from 1 test suite.
+    [----------] Global test environment set-up.
+    [----------] 1 test from PluginLoading
+    [ RUN      ] PluginLoading.DistinctSnapshotAndUpstreamClassesRemainAvailable
+    unknown file: Failure
+    C++ exception with description "According to the loaded plugin descriptions the class integrated_robot_camera/SnapshotCameraPlugin with base class type mujoco_ros2_control_plugins::MuJoCoROS2ControlPluginBase does not exist. Declared types are  mujoco_ros2_control_plugins/BaseVelocityPlugin mujoco_ros2_control_plugins/CameraPlugin mujoco_ros2_control_plugins/ExternalWrenchPlugin mujoco_ros2_control_plugins/FreeJointStatePublisherPlugin mujoco_ros2_control_plugins/FtsGravCompPlugin mujoco_ros2_control_plugins/HeartbeatPublisherPlugin mujoco_ros2_control_plugins/Mujoco3dLidarPlugin mujoco_ros2_control_plugins/RangefinderLidarPlugin" thrown in the test body.
+    
+    [  FAILED  ] PluginLoading.DistinctSnapshotAndUpstreamClassesRemainAvailable (17 ms)
+    [----------] 1 test from PluginLoading (17 ms total)
+    
+    [----------] Global test environment tear-down
+    [==========] 1 test from 1 test suite ran. (17 ms total)
+    [  PASSED  ] 0 tests.
+    [  FAILED  ] 1 test, listed below:
+    [  FAILED  ] PluginLoading.DistinctSnapshotAndUpstreamClassesRemainAvailable
+    
+     1 FAILED TEST
+    -- run_test.py: return code 1
+    -- run_test.py: inject classname prefix into gtest result file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_results/integrated_robot_camera/test_plugin_loading.gtest.xml'
+    -- run_test.py: verify result file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_results/integrated_robot_camera/test_plugin_loading.gtest.xml'
+  >>>
+Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_results/integrated_robot_camera/test_plugin_loading.gtest.xml: 1 test, 0 errors, 1 failure, 0 skipped
+- integrated_robot_camera.PluginLoading DistinctSnapshotAndUpstreamClassesRemainAvailable (/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_plugin_loading.cpp:7)
+  <<< failure message
+    unknown file
+    C++ exception with description "According to the loaded plugin descriptions the class integrated_robot_camera/SnapshotCameraPlugin with base class type mujoco_ros2_control_plugins::MuJoCoROS2ControlPluginBase does not exist. Declared types are  mujoco_ros2_control_plugins/BaseVelocityPlugin mujoco_ros2_control_plugins/CameraPlugin mujoco_ros2_control_plugins/ExternalWrenchPlugin mujoco_ros2_control_plugins/FreeJointStatePublisherPlugin mujoco_ros2_control_plugins/FtsGravCompPlugin mujoco_ros2_control_plugins/HeartbeatPublisherPlugin mujoco_ros2_control_plugins/Mujoco3dLidarPlugin mujoco_ros2_control_plugins/RangefinderLidarPlugin" thrown in the test body.
+  >>>
+Ch13/ros2_ws/build13_4_snapshot_35954ef5-3ada-46e9-886b-c5e1f6d4a5a4/integrated_robot_camera/test_results/integrated_robot_camera/test_snapshot_camera_plugin.gtest.xml: 6 tests, 0 errors, 2 failures, 0 skipped
+- integrated_robot_camera.CameraTest CleanupDuringInitializationAndRender (/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:230)
+  <<< failure message
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:143
+    Failed
+    real GL worker did not reach readback
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:238
+    Value of: readback.wait()
+      Actual: false
+    Expected: true
+  >>>
+- integrated_robot_camera.CameraTest ResetDiscardsAcquiredOldEpochBeforePublish (/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:247)
+  <<< failure message
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:257
+    Value of: rgb.empty()
+      Actual: false
+    Expected: true
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:258
+    Value of: depth.empty()
+      Actual: false
+    Expected: true
+    /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:259
+    Value of: info.empty()
+      Actual: false
+    Expected: true
+  >>>
+
+Summary: 19 tests, 0 errors, 5 failures, 0 skipped

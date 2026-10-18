@@ -2,6 +2,7 @@
 #include "integrated_robot_camera/snapshot_mailbox.hpp"
 
 #include <cmath>
+#include <algorithm>
 #include <new>
 #include <stdexcept>
 #include <utility>
@@ -30,6 +31,7 @@ SnapshotMailbox::SnapshotMailbox(const mjModel * model, size_t camera_count)
       throw std::bad_alloc();
     }
     slot.cameras.reserve(camera_count);
+    slot.retained_cameras.reserve(camera_count);
   }
 }
 
@@ -49,6 +51,13 @@ ClockObservation SnapshotMailbox::observe_time(double sim_time)
 bool SnapshotMailbox::submit(const mjModel * model, const mjData * data,
   const std::vector<size_t> & cameras, uint64_t observed_epoch)
 {
+  return submit(model, data, cameras, observed_epoch, {});
+}
+
+bool SnapshotMailbox::submit(const mjModel * model, const mjData * data,
+  const std::vector<size_t> & cameras, uint64_t observed_epoch,
+  const std::vector<size_t> & retain_until_acquired)
+{
   if (model != model_ || !data) {
     throw std::invalid_argument("snapshot model mismatch or null data");
   }
@@ -63,12 +72,26 @@ bool SnapshotMailbox::submit(const mjModel * model, const mjData * data,
       }
     }
   }
+  for (size_t i = 0; i < retain_until_acquired.size(); ++i) {
+    const auto id = retain_until_acquired[i];
+    if (std::find(cameras.begin(), cameras.end(), id) == cameras.end() ||
+      std::find(retain_until_acquired.begin(), retain_until_acquired.begin() + i, id) !=
+      retain_until_acquired.begin() + i)
+    {
+      throw std::invalid_argument("retained cameras must be unique selected cameras");
+    }
+  }
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (stopped_ || observed_epoch != epoch_) {
       return false;
     }
     auto & slot = slots_[pending_index_];
+    if (!pending_) {slot.retained_cameras.clear();}
+    for (const auto id : retain_until_acquired) {
+      if (std::find(slot.retained_cameras.begin(), slot.retained_cameras.end(), id) ==
+        slot.retained_cameras.end()) {slot.retained_cameras.push_back(id);}
+    }
     // Visualization state only, matching the native upstream camera contract.
     // This never writes slots_[render_index_] while a consumer holds its lease.
     mjv_copyData(slot.data.get(), model_, data);
@@ -76,6 +99,11 @@ bool SnapshotMailbox::submit(const mjModel * model, const mjData * data,
     slot.epoch = epoch_;
     slot.sequence = ++sequence_;
     slot.cameras.assign(cameras.begin(), cameras.end());
+    for (const auto id : slot.retained_cameras) {
+      if (std::find(slot.cameras.begin(), slot.cameras.end(), id) == slot.cameras.end()) {
+        slot.cameras.push_back(id);
+      }
+    }
     pending_ = true;
   }
   ready_.notify_one();

@@ -32,6 +32,7 @@ class SnapshotMailbox
     uint64_t sequence{0};
     uint64_t epoch{0};
     std::vector<size_t> cameras;
+    std::vector<size_t> retained_cameras;
   };
 
 public:
@@ -66,6 +67,11 @@ public:
   ClockObservation observe_time(double sim_time);
   bool submit(const mjModel * model, const mjData * data,
     const std::vector<size_t> & cameras, uint64_t observed_epoch);
+  // One-shot requests survive pending overwrites, but never the acquisition of
+  // that pending frame. With no retained requests, selection is exactly latest-only.
+  bool submit(const mjModel * model, const mjData * data,
+    const std::vector<size_t> & cameras, uint64_t observed_epoch,
+    const std::vector<size_t> & retain_until_acquired);
   std::optional<RenderLease> wait_take();
   bool is_current(uint64_t epoch) const;
   void reset_epoch();

@@ -219,4 +219,42 @@ TEST_F(MailboxTest, OnlyTwoDataBuffersAreReused)
   }
   EXPECT_EQ(addresses.size(), 2u);
 }
+
+TEST_F(MailboxTest, PendingPolledSelectionSurvivesStreamingOverwriteUntilAcquired)
+{
+  SnapshotMailbox mailbox(model.get(), 2);
+  ASSERT_TRUE(send(mailbox, 1., 0.1));
+  auto first = mailbox.wait_take();
+  frame(2., 0.2);
+  ASSERT_TRUE(mailbox.submit(model.get(), input.get(), {0, 1},
+    mailbox.observe_time(2.).epoch, {1}));
+  ASSERT_TRUE(send(mailbox, 3., 0.3));
+  first.reset();
+  auto latest = mailbox.wait_take();
+  ASSERT_TRUE(latest);
+  EXPECT_EQ(latest->camera_indices(), (std::vector<size_t>{0, 1}));
+  EXPECT_DOUBLE_EQ(latest->stamp_seconds(), 3.);
+  latest.reset();
+  ASSERT_TRUE(send(mailbox, 4., 0.4));
+  auto next = mailbox.wait_take();
+  ASSERT_TRUE(next);
+  EXPECT_EQ(next->camera_indices(), (std::vector<size_t>{0}));
+}
+
+TEST_F(MailboxTest, RetainedCameraMustBeSelectedAndResetDropsUnconsumedPoll)
+{
+  SnapshotMailbox mailbox(model.get(), 2);
+  frame(1., 0.1);
+  const auto epoch = mailbox.observe_time(1.).epoch;
+  EXPECT_THROW(mailbox.submit(model.get(), input.get(), {0}, epoch, {1}),
+    std::invalid_argument);
+  EXPECT_THROW(mailbox.submit(model.get(), input.get(), {0}, epoch, {0, 0}),
+    std::invalid_argument);
+  ASSERT_TRUE(mailbox.submit(model.get(), input.get(), {1}, epoch, {1}));
+  mailbox.reset_epoch();
+  ASSERT_TRUE(send(mailbox, 2., 0.2));
+  auto next = mailbox.wait_take();
+  ASSERT_TRUE(next);
+  EXPECT_EQ(next->camera_indices(), (std::vector<size_t>{0}));
+}
 }  // namespace
