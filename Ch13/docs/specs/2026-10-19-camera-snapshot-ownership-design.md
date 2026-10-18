@@ -1,9 +1,11 @@
 # 13.4 MuJoCo 카메라 snapshot 소유권 설계
 
-작성일: 2026-10-19. 상태: **사용자 설계서 검토 대기 / 새 플러그인 미구현**.
+작성일: 2026-10-19. 상태: **사용자 설계서 승인 / 구현 계획 검토 단계 / 새 플러그인 미구현**.
 사용자는 일반 권한 진단·구조 검토 후, 외부 원본을 유지하는 Ch13 전용 복사본의
 설계서 작성을 승인했다. 설계서 작성 승인을 구현·의존성 변경 승인으로 확대하지 않는다.
 설계서 승인 후 구현 계획을 작성하고, 계획 검토와 네이티브 실행 방식 선택을 거친다.
+사용자는 이 설계서 검토 요청에 대해 승인했으며 실행 방식은 기존 네이티브 모드를
+유지한다. 구현 계획은 별도 검토 대상이다.
 
 ## 1. 목적과 범위
 
@@ -76,11 +78,16 @@ TinyXML2–FastDDS 로딩 충돌 여부를 검증하고, 필요하지 않은 원
 
 ## 5. 핵심 소유권: 두 mjData 버퍼와 한 최신 대기 슬롯
 
-초기화 때 모델에 맞는 mjData 두 개를 할당한다. 물리 스레드가 쓸 수 있는 pending
+초기화 때 모델에 맞는 mjData 두 개를 할당한다. 생산자 스레드가 쓸 수 있는 pending
 버퍼 하나와 렌더 스레드가 독점하는 render 버퍼 하나다. 무제한 프레임 큐나 프레임별
 mjData 할당은 만들지 않는다.
 
-1. 물리 update는 라이브 mjData가 안정된 해당 physics 호출에서만 snapshot을 복사한다.
+2026-10-19 계획 작성 시 호출 경로를 추가 확인했다. 고정 원본 base interface와
+`mujoco_system_interface.cpp:1213`에서 `update()`는 제어 스레드의 `control_data`
+snapshot을 전달받는다. 따라서 이전의 ‘물리 스레드/live mjData’ 표현을 생산자
+제어 스레드로 교정한다. `pre_step()`이나 라이브 물리 데이터 직접 접근으로 옮기지 않는다.
+
+1. 생산자 update는 해당 호출에 제공된 안정된 control_data snapshot에서만 복사한다.
    짧은 metadata mutex 아래 **pending 버퍼에만** 복사하고, 그 데이터의 simulation
    time, frame sequence, 선택 카메라 목록을 함께 갱신한다. 이미 대기 중이면 최신
    pending 전체 묶음으로 교체한다. render 버퍼에는 접근하지 않는다.
@@ -100,7 +107,7 @@ metadata mutex로 보호하고, render에서 직접 공유 pending flag를 읽�
 동일 카메라 요청 병합 의미는 유지하며, polled 요청마다 별도 프레임을 보장한다고
 새롭게 주장하지 않는다. disabled 카메라는 render/readback하지 않는다.
 
-mutex는 OpenGL 호출·렌더링·ROS publish·worker join 동안 보유하지 않는다. 물리
+mutex는 OpenGL 호출·렌더링·ROS publish·worker join 동안 보유하지 않는다. 생산자
 스레드에서 render 완료를 기다리지 않는다. 같은 mutex를 중첩 획득하는 새 경로를
 만들지 않는다. 이 규칙을 pointer identity/일시 정지 barrier가 있는 결정적 시험으로
 검증하며, 단순한 실행 시간 우연에 의존하는 sleep 기반 경쟁 시험만으로 대체하지 않는다.
