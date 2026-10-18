@@ -1,0 +1,25 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_shutdown_has_no_unretrieved_executor_errors _______________
+
+    def test_shutdown_has_no_unretrieved_executor_errors():
+        from pathlib import Path
+        import subprocess
+        import sys
+        # A separate process lets Future destructors run before inspecting output.
+        result = subprocess.run([
+            sys.executable, '-m', 'pytest',
+            str(Path(__file__).resolve()) + '::test_ros_fusion_preserves_capture_stamp_and_stops_worker_before_destroy',
+            '-q'], capture_output=True, text=True, timeout=20)
+        assert result.returncode == 0, result.stdout + result.stderr
+>       assert 'exception was never retrieved' not in result.stdout + result.stderr
+E       AssertionError: assert 'exception w...er retrieved' not in '.          ... requested\n'
+E         
+E         'exception was never retrieved' is contained here:
+E           following exception was never retrieved: cannot use Destroyable because destruction was requested
+E         ?           +++++++++++++++++++++++++++++
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_vision_node.py:79: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_vision_node.py::test_shutdown_has_no_unretrieved_executor_errors
+1 failed in 3.02s

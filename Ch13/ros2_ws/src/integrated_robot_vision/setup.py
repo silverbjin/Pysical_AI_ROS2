@@ -13,5 +13,6 @@ setup(
     entry_points={'console_scripts': [
         'native_pose_adapter = integrated_robot_vision.native_pose:main',
         'native_camera_info_adapter = integrated_robot_vision.camera_info_adapter:main',
+        'vision_processor = integrated_robot_vision.vision_processor:main',
     ]},
 )

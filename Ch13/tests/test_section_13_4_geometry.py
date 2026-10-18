@@ -99,3 +99,16 @@ def test_observation_copies_arrays_and_rejects_bad_covariance():
     assert not obs.point.flags.writeable
     with pytest.raises(ValueError):
         Observation(1., 0, 'cal', 'odom', obs.box, point, -cov)
+
+
+def test_configurable_depth_range_rejects_invalid_bounds_and_outside_samples():
+    depth = np.full((7, 7), .8)
+    box = Box2D(3, 3, 5, 5, 'x', .9)
+    assert sample_depth(depth, box, min_depth_m=.5, max_depth_m=1.) == (.8, 0.)
+    with pytest.raises(ValueError):
+        sample_depth(depth, box, min_depth_m=1., max_depth_m=2.)
+    for low, high in [(0, 1), (2, 1), (1, np.inf), (np.nan, 1)]:
+        with pytest.raises(ValueError):
+            sample_depth(depth, box, min_depth_m=low, max_depth_m=high)
+    with pytest.raises(ValueError):
+        deproject(50, 50, .8, intrinsics(), min_depth_m=1., max_depth_m=2.)

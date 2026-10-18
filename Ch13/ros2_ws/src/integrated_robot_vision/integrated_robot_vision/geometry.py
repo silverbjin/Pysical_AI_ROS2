@@ -22,7 +22,15 @@ def decode_depth(data: bytes, encoding: str, width: int, height: int,
     return result
 
 
-def sample_depth(depth: np.ndarray, box: Box2D, min_valid: int = 5) -> tuple[float, float]:
+def validate_depth_range(min_depth_m: float, max_depth_m: float) -> None:
+    finite(min_depth_m, max_depth_m)
+    if not 0 < min_depth_m < max_depth_m:
+        raise ValueError('positive ordered depth bounds required')
+
+
+def sample_depth(depth: np.ndarray, box: Box2D, min_valid: int = 5, *,
+                 min_depth_m: float = .1, max_depth_m: float = 5.) -> tuple[float, float]:
+    validate_depth_range(min_depth_m, max_depth_m)
     depth = np.asarray(depth)
     if depth.ndim != 2 or type(min_valid) is not int or min_valid < 1:
         raise ValueError('2D depth and positive sample count required')
@@ -35,7 +43,7 @@ def sample_depth(depth: np.ndarray, box: Box2D, min_valid: int = 5) -> tuple[flo
     top = max(0, v - 2, math.ceil(box.cy - box.height / 2))
     bottom = min(height, v + 3, math.floor(box.cy + box.height / 2) + 1)
     patch = depth[top:bottom, left:right]
-    valid = patch[np.isfinite(patch) & (patch >= .1) & (patch <= 5.)]
+    valid = patch[np.isfinite(patch) & (patch >= min_depth_m) & (patch <= max_depth_m)]
     if len(valid) < min_valid:
         raise ValueError('insufficient valid depth samples')
     median = float(np.median(valid))
@@ -45,9 +53,11 @@ def sample_depth(depth: np.ndarray, box: Box2D, min_valid: int = 5) -> tuple[flo
     return median, mad
 
 
-def deproject(u: float, v: float, depth_m: float, k: Intrinsics) -> np.ndarray:
+def deproject(u: float, v: float, depth_m: float, k: Intrinsics, *,
+              min_depth_m: float = .1, max_depth_m: float = 5.) -> np.ndarray:
+    validate_depth_range(min_depth_m, max_depth_m)
     finite(u, v, depth_m)
-    if not (0 <= u < k.width and 0 <= v < k.height and .1 <= depth_m <= 5):
+    if not (0 <= u < k.width and 0 <= v < k.height and min_depth_m <= depth_m <= max_depth_m):
         raise ValueError('pixel or depth outside calibrated limits')
     return np.array([(u-k.cx)*depth_m/k.fx, (v-k.cy)*depth_m/k.fy, depth_m])
 
