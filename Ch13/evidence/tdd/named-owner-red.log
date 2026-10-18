@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_full_command_requires_the_named_arbiter_not_just_any_single_writer ____
+
+    def test_full_command_requires_the_named_arbiter_not_just_any_single_writer():
+        from types import SimpleNamespace
+        endpoint=SimpleNamespace(endpoint_gid=[1],node_name='replacement')
+>       with pytest.raises(ValueError):sole_publisher_id([endpoint],expected_node='command_arbiter')
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: sole_publisher_id() got an unexpected keyword argument 'expected_node'
+
+Ch13/ros2_ws/src/ch13_control/test/test_command_arbiter_node.py:15: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_control/test/test_command_arbiter_node.py::test_full_command_requires_the_named_arbiter_not_just_any_single_writer
+1 failed, 2 deselected in 2.41s
