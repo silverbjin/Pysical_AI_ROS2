@@ -99,3 +99,21 @@ def test_native_artifact_bytes_survive_git_checkout_with_windows_line_endings(tm
                     '--prefix='+str(restored)+'/'], cwd=tmp_path, check=True)
     for name, value in expected.items():
         assert (restored/name).read_bytes() == value, 'checkout must not corrupt recorded artifact SHA-256'
+
+
+def test_raw_native_model_whitespace_is_preserved_without_disabling_source_checks(tmp_path):
+    subprocess.run(['git', 'init', '-q', str(tmp_path)], check=True)
+    evidence, source = tmp_path/'evidence', tmp_path/'src'
+    evidence.mkdir()
+    source.mkdir()
+    attrs = Path(__file__).resolve().parents[1]/'evidence/section_13_4/.gitattributes'
+    (evidence/'.gitattributes').write_bytes(attrs.read_bytes())
+    for directory in (evidence, source):
+        (directory/'model.xml').write_bytes(b'<mujoco>\n  \n</mujoco>\n')
+    subprocess.run(['git', 'add', 'evidence', 'src'], cwd=tmp_path, check=True)
+    raw = subprocess.run(['git', 'diff', '--cached', '--check', '--', 'evidence'],
+                         cwd=tmp_path, capture_output=True, text=True)
+    assert raw.returncode == 0, 'native generated model bytes must not be trimmed after hashing: '+raw.stdout
+    ordinary = subprocess.run(['git', 'diff', '--cached', '--check', '--', 'src'],
+                              cwd=tmp_path, capture_output=True, text=True)
+    assert ordinary.returncode != 0  # authored source whitespace remains checked
