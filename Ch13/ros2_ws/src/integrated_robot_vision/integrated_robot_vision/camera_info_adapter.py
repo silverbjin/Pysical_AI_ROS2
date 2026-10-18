@@ -51,14 +51,5 @@ class NativeCameraInfoAdapter(Node):
 
 
 def main(args=None):
-    rclpy.init(args=args)
-    node = None
-    try:
-        node = NativeCameraInfoAdapter()
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        if node is not None:
-            node.destroy_node()
-        rclpy.try_shutdown()
+    from .execution import run_node
+    run_node(NativeCameraInfoAdapter, args=args)

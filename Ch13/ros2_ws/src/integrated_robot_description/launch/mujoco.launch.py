@@ -19,7 +19,7 @@ import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import TimerAction, DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -41,14 +41,20 @@ def materialize_controller_config(source, plugin_source=None):
     return str(target)
 
 
+def camera_plugin_config(share, vision):
+    return str(Path(share)/'config'/(
+        'mujoco_vision_plugins.yaml' if vision else 'mujoco_legacy_cameras.yaml'))
+
+
 def launch_nodes(context):
     share = get_package_share_directory('integrated_robot_description')
     vision = LaunchConfiguration('vision_enabled').perform(context).lower() == 'true'
     xacro_path = os.path.join(share, 'urdf', 'robot_system.urdf.xacro')
-    model_path = os.path.join(share, 'mujoco', 'vision_fixture.xml' if vision else 'robot_system.xml')
+    model_path = LaunchConfiguration('model_path').perform(context) or os.path.join(
+        share, 'mujoco', 'vision_fixture.xml' if vision else 'robot_system.xml')
     controllers = materialize_controller_config(
         os.path.join(share, 'config', 'controllers.yaml'),
-        os.path.join(share, 'config', 'mujoco_vision_plugins.yaml') if vision else None,
+        camera_plugin_config(share, vision),
     )
     description = ParameterValue(
         Command(
@@ -87,11 +93,13 @@ def launch_nodes(context):
     if vision:
         nodes.append(Node(package='integrated_robot_vision', executable='native_pose_adapter',
                           parameters=[{'engine': 'mujoco', 'use_sim_time': True}]))
-        nodes.append(Node(package='integrated_robot_vision', executable='native_camera_info_adapter',
+        nodes.append(Node(package='integrated_robot_vision',
+                          executable='native_camera_info_adapter',
                           parameters=[{'use_sim_time': True}]))
     return nodes
 
 
 def generate_launch_description():
     return LaunchDescription([DeclareLaunchArgument('vision_enabled', default_value='false'),
+                              DeclareLaunchArgument('model_path', default_value=''),
                               OpaqueFunction(function=launch_nodes)])

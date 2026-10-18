@@ -1,4 +1,5 @@
 from setuptools import find_packages, setup
+from glob import glob
 
 setup(
     name='integrated_robot_vision', version='0.4.0', packages=find_packages(),
@@ -6,6 +7,7 @@ setup(
         ('share/ament_index/resource_index/packages', ['resource/integrated_robot_vision']),
         ('share/integrated_robot_vision', ['package.xml']),
         ('share/integrated_robot_vision/config', ['../../../config/vision_assets.json']),
+        ('share/integrated_robot_vision/launch', glob('launch/*.launch.py')),
     ],
     install_requires=['setuptools', 'numpy'], zip_safe=True,
     maintainer='Jinho', maintainer_email='jinho@todo.todo',

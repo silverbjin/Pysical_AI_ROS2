@@ -20,8 +20,8 @@ from .tracking_support import TrackingSupport
 
 
 class ManipulationNode(LifecycleNode):
-    def __init__(self):
-        super().__init__('manipulation_node')
+    def __init__(self, **kwargs):
+        super().__init__('manipulation_node', **kwargs)
         self.lock = threading.RLock()
         self.enabled = False
         self.busy = False

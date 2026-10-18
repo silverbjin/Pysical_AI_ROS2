@@ -14,6 +14,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import String
+from std_srvs.srv import SetBool
 from vision_msgs.msg import Detection2DArray
 
 from .cache import RGBDCache, seconds
@@ -55,6 +56,8 @@ class ObjectDetector(Node):
         self.lock, self.stopping = RLock(), Event()
         self.gate, self.cache, self.slot = ClockGate(), RGBDCache(), LatestSlot()
         self.last_epoch, self.last_stamp = -1, 0.
+        self.input_enabled = True
+        self.input_service = self.create_service(SetBool, '~/set_input_enabled', self.set_input_enabled)
         self.pub = self.create_publisher(Detection2DArray, '/vision/detections', qos_profile_sensor_data)
         self.status_pub = self.create_publisher(String, '/vision/detector_status', 10)
         self.rgb_sub = self.create_subscription(Image, '/camera/color/image_raw', self.on_rgb,
@@ -64,14 +67,25 @@ class ObjectDetector(Node):
         self.steady_clock = Clock(clock_type=ClockType.STEADY_TIME)
         self.watchdog = self.create_timer(.05, self.observe_clock, clock=self.steady_clock)
         self.worker = Thread(target=self.work, name='detector-inference', daemon=False)
-        self.worker.start()
         self.get_logger().info(f'explicit detector backend={self.backend_name}, max_rate_hz={self.rate}')
+        self.worker.start()  # last constructor operation; no fallible setup after start
 
     def report(self, reason):
         if not self.stopping.is_set():
             msg = String()
             msg.data = json.dumps({'backend': self.backend_name, 'status': reason, 'epoch': self.gate.epoch})
             self.status_pub.publish(msg)
+
+    def set_input_enabled(self, request, response):
+        """Pause consumer ingress, not native camera power or arm ownership."""
+        with self.lock:
+            self.input_enabled = bool(request.data)
+            self.cache.clear(self.gate.epoch)
+            self.slot.take(0)
+            self.report('INPUT_ENABLED' if self.input_enabled else 'INPUT_PAUSED')
+        response.success = True
+        response.message = 'Waiting for new calibrated captures' if request.data else 'Image ingress paused'
+        return response
 
     def observe_clock(self):
         with self.lock:
@@ -97,6 +111,8 @@ class ObjectDetector(Node):
 
     def on_rgb(self, msg):
         with self.lock:
+            if not self.input_enabled:
+                return
             _, _, epoch = self.observe_clock()
             try:
                 self.cache.add_rgb(msg, epoch)
@@ -121,7 +137,7 @@ class ObjectDetector(Node):
         with self.lock:
             now, wall, epoch = self.observe_clock()
             cached = self.cache.rgb.get(job.stamp)
-            return (not self.stopping.is_set() and job.epoch == epoch
+            return (self.input_enabled and not self.stopping.is_set() and job.epoch == epoch
                     and job.calibration_id == self.cache.calibration_id
                     and cached is not None and cached[0] is job.image
                     and job.stamp > self.last_stamp and -.03 <= now-job.info_stamp <= 1.
@@ -168,16 +184,5 @@ class ObjectDetector(Node):
 
 
 def main(args=None):
-    rclpy.init(args=args)
-    node, executor = None, SingleThreadedExecutor()
-    try:
-        node = ObjectDetector()
-        executor.add_node(node)
-        executor.spin()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        executor.shutdown(timeout_sec=2)
-        if node is not None:
-            node.destroy_node()
-        rclpy.try_shutdown()
+    from .execution import run_node
+    run_node(ObjectDetector, args=args, executor_factory=SingleThreadedExecutor)

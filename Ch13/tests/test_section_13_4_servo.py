@@ -10,6 +10,7 @@ import pytest
 from integrated_robot_vision.contracts import Intrinsics
 from integrated_robot_vision.kinematics import KinematicChain
 from integrated_robot_vision.servo import projection_jacobian, servo_target, project_target
+from integrated_robot_vision.servo import camera_motion_target
 
 PKG = Path(__file__).resolve().parents[1] / 'ros2_ws/src/integrated_robot_description'
 K = Intrinsics(320, 240, 277.128129211, 277.128129211, 160., 120., 'camera_optical_frame', 'test')
@@ -102,3 +103,20 @@ def test_collinear_camera_control_axes_are_singular_and_refused():
                  f'<parent link="{parent}"/><child link="camera_optical_frame"/></joint>')
     chain = KinematicChain.from_urdf('<robot>' + ''.join(links) + '</robot>')
     assert servo_target(chain, dict.fromkeys(ARM, 0.), np.array([.1, .1, 1.]), K, .2) is None
+
+
+def test_explicit_camera_motion_fixture_has_two_second_period_and_bounded_steps():
+    q = dict.fromkeys(ARM, 0.)
+    values = []
+    for elapsed in np.arange(0., 4., .2):
+        desired = camera_motion_target(q, elapsed, .2)
+        assert desired is not None
+        assert abs(desired['arm_joint_1']) <= .03
+        assert abs(desired['arm_joint_1']-q['arm_joint_1']) <= .02+1e-12
+        assert all(desired[n] == q[n] for n in ARM[1:])
+        assert desired['arm_joint_1'] == pytest.approx(.03*math.sin(math.pi*(elapsed+.2)))
+        values.append(desired['arm_joint_1'])
+        q = desired
+    np.testing.assert_allclose(values[:10], values[10:], atol=1e-12)
+    assert camera_motion_target(q, float('nan'), .2) is None
+    assert camera_motion_target(q, 0., -.1) is None

@@ -42,11 +42,12 @@ def spin(node_type, threads=4):
     rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
     stopping = threading.Event()
     # Do not raise KeyboardInterrupt inside a pybind take_message conversion.
-    signal.signal(signal.SIGINT, lambda *_: stopping.set())
-    node = node_type()
-    executor = DrainingExecutor(num_threads=threads)
-    executor.add_node(node)
+    previous = signal.signal(signal.SIGINT, lambda *_: stopping.set())
+    node, executor = None, None
     try:
+        node = node_type()
+        executor = DrainingExecutor(num_threads=threads)
+        executor.add_node(node)
         # A bounded wait also lets Python process SIGINT on otherwise idle nodes.
         while rclpy.ok() and not stopping.is_set():
             executor.spin_once(timeout_sec=0.1)
@@ -54,15 +55,26 @@ def spin(node_type, threads=4):
         pass
     finally:
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-        if hasattr(node, 'begin_shutdown'):
-            node.begin_shutdown()
-            deadline = time.monotonic() + 1.
-            while rclpy.ok() and not node.shutdown_ready() and time.monotonic() < deadline:
-                executor.spin_once(timeout_sec=.02)
-            if not node.shutdown_ready():
-                node.get_logger().error(
-                    'Arm shutdown cancellation unconfirmed; controller hold is NOT proven')
-        executor.shutdown(timeout_sec=10)
-        node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
+        try:
+            if executor is not None and hasattr(node, 'begin_shutdown'):
+                node.begin_shutdown()
+                deadline = time.monotonic() + 1.
+                while rclpy.ok() and not node.shutdown_ready() and time.monotonic() < deadline:
+                    executor.spin_once(timeout_sec=.02)
+                if not node.shutdown_ready():
+                    node.get_logger().error(
+                        'Arm shutdown cancellation unconfirmed; controller hold is NOT proven')
+        finally:
+            try:
+                if executor is not None:
+                    executor.shutdown(timeout_sec=10)
+            finally:
+                try:
+                    if node is not None:
+                        node.destroy_node()
+                finally:
+                    try:
+                        if rclpy.ok():
+                            rclpy.shutdown()
+                    finally:
+                        signal.signal(signal.SIGINT, previous)

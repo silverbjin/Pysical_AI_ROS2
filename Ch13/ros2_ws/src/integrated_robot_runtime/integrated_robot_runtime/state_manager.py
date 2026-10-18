@@ -13,12 +13,14 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
+from controller_manager_msgs.srv import ListControllers
 
 
 class StateManager(Node):
     def __init__(self):
         super().__init__('state_manager')
         self.declare_parameter('operation_timeout', 15.0)
+        self.declare_parameter('wait_for_controllers', False)
         self.events = []
         self.stopping = threading.Event()
         self.service_clients = {}
@@ -47,11 +49,36 @@ class StateManager(Node):
         if not self.call(ChangeState, f'/{node}/change_state', request).success:
             raise RuntimeError(f'{node} rejected lifecycle transition {transition}')
 
+    def wait_controllers(self, timeout=60.):
+        client = self.create_client(ListControllers, '/controller_manager/list_controllers')
+        deadline = time.monotonic()+timeout
+        names = ('joint_state_broadcaster', 'leg_position_controller',
+                 'arm_trajectory_controller', 'gripper_position_controller')
+        try:
+            while time.monotonic() < deadline and not self.stopping.is_set():
+                if not client.wait_for_service(timeout_sec=.1):
+                    continue
+                future = client.call_async(ListControllers.Request())
+                while not future.done() and time.monotonic() < deadline and not self.stopping.is_set():
+                    self.executor.spin_once(timeout_sec=.05)
+                if future.done():
+                    states = {v.name: v.state for v in future.result().controller}
+                    if all(states.get(name) == 'active' for name in names):
+                        return
+                next_poll = min(deadline, time.monotonic()+.1)
+                while time.monotonic() < next_poll and not self.stopping.is_set():
+                    self.executor.spin_once(timeout_sec=.02)
+            raise TimeoutError('native engine controllers not all active before deadline')
+        finally:
+            self.destroy_client(client)
+
     def startup(self):
         started = time.monotonic()
         active = []
         result = {'status': 'FAILED'}
         try:
+            if self.get_parameter('wait_for_controllers').value:
+                self.wait_controllers()
             for node, event in (('manipulation_node', 'arm_configured'),
                                 ('locomotion_node', 'legs_configured')):
                 self.transition(node, Transition.TRANSITION_CONFIGURE)

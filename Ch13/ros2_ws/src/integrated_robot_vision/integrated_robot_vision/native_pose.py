@@ -1,6 +1,7 @@
 """Forward engine observations, never integrate commands into synthetic odometry."""
 from copy import deepcopy
 import math
+import numpy as np
 
 from geometry_msgs.msg import TransformStamped
 from nav_msgs.msg import Odometry
@@ -9,12 +10,13 @@ from rclpy.node import Node
 from tf2_ros import TransformBroadcaster
 
 
-def make_odometry(pose, twist, stamp):
+def make_odometry(pose, twist, stamp, *, twist_convention='child'):
     values = [pose.position.x, pose.position.y, pose.position.z,
               pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w,
               twist.linear.x, twist.linear.y, twist.linear.z,
               twist.angular.x, twist.angular.y, twist.angular.z]
-    if (stamp.sec * 1_000_000_000 + stamp.nanosec <= 0
+    if (not 0 <= stamp.nanosec < 1_000_000_000
+            or stamp.sec * 1_000_000_000 + stamp.nanosec <= 0
             or not all(math.isfinite(v) for v in values)
             or abs(sum(v*v for v in values[3:7])-1) > 1e-5):
         raise ValueError('invalid native state/time/orientation')
@@ -24,6 +26,18 @@ def make_odometry(pose, twist, stamp):
     # base_footprint_joint is identity in this chapter, including z/roll/pitch.
     # This name is not a promise of a projected, planar footprint.
     msg.pose.pose, msg.twist.twist = deepcopy(pose), deepcopy(twist)
+    if twist_convention == 'mujoco_free':
+        # Pinned plugin world-mode copies free-joint qvel: world translation,
+        # BODY angular velocity. Odometry.twist requires child coordinates.
+        # https://mujoco.readthedocs.io/en/3.3.7/overview.html#floating-objects
+        x, y, z, w = values[3:7]
+        rotation = np.array([[1-2*(y*y+z*z), 2*(x*y-z*w), 2*(x*z+y*w)],
+                             [2*(x*y+z*w), 1-2*(x*x+z*z), 2*(y*z-x*w)],
+                             [2*(x*z-y*w), 2*(y*z+x*w), 1-2*(x*x+y*y)]])
+        velocity = rotation.T @ np.array(values[7:10])
+        msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.linear.z = velocity.tolist()
+    elif twist_convention != 'child':
+        raise ValueError('unknown native twist convention')
     return msg
 
 
@@ -47,11 +61,12 @@ class NativePoseAdapter(Node):
     def mujoco(self, msg):
         states = [v for v in msg.free_joints if v.name == 'base_link']
         if len(states) == 1 and states[0].pose.header.frame_id == '':
-            self.publish(states[0].pose.pose, states[0].twist.twist, states[0].pose.header.stamp)
+            self.publish(states[0].pose.pose, states[0].twist.twist, states[0].pose.header.stamp,
+                         twist_convention='mujoco_free')
 
-    def publish(self, pose, twist, stamp):
+    def publish(self, pose, twist, stamp, *, twist_convention='child'):
         try:
-            msg = make_odometry(pose, twist, stamp)
+            msg = make_odometry(pose, twist, stamp, twist_convention=twist_convention)
         except ValueError as exc:
             self.get_logger().warning(str(exc))
             return
@@ -66,14 +81,5 @@ class NativePoseAdapter(Node):
 
 
 def main(args=None):
-    rclpy.init(args=args)
-    node = None
-    try:
-        node = NativePoseAdapter()
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        if node is not None:
-            node.destroy_node()
-        rclpy.try_shutdown()
+    from .execution import run_node
+    run_node(NativePoseAdapter, args=args)

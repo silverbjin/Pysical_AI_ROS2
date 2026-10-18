@@ -69,7 +69,8 @@ def launch_nodes(context):
                 get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py'
             )
         ),
-        launch_arguments={'gz_args': ['-r -s ', '--headless-rendering ' if vision else '', world]}.items(),
+        launch_arguments={
+            'gz_args': ['-r -s ', '--headless-rendering ' if vision else '', world]}.items(),
     )
     state_publisher = Node(
         package='robot_state_publisher',
@@ -125,7 +126,8 @@ def launch_nodes(context):
     if vision:
         nodes.extend([
             Node(package='ros_gz_bridge', executable='parameter_bridge',
-                 parameters=[{'config_file': os.path.join(package_share, 'config', 'vision_bridge.yaml')}]),
+                 parameters=[{'config_file': os.path.join(
+                     package_share, 'config', 'vision_bridge.yaml')}]),
             Node(package='integrated_robot_vision', executable='native_pose_adapter',
                  parameters=[{'engine': 'gazebo', 'use_sim_time': True}]),
         ])

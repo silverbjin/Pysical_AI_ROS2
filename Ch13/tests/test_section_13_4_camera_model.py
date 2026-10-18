@@ -124,3 +124,20 @@ def test_native_mujoco_clipping_is_metric_not_extent_scaled():
     model = mujoco.MjModel.from_xml_path(str(PKG / 'mujoco/vision_fixture.xml'))
     assert model.vis.map.znear * model.stat.extent == pytest.approx(.1)
     assert model.vis.map.zfar * model.stat.extent == pytest.approx(5.)
+
+
+def test_native_mujoco_velocity_is_expressed_in_odometry_child_frame():
+    from builtin_interfaces.msg import Time
+    from geometry_msgs.msg import Pose, Twist
+    from integrated_robot_vision.native_pose import make_odometry
+    pose, twist = Pose(), Twist()
+    pose.orientation.z = pose.orientation.w = math.sqrt(.5)
+    twist.linear.x = 1.  # free-joint qvel translation is WORLD, angular is BODY
+    twist.angular.x, twist.angular.y, twist.angular.z = .2, .3, .4
+    odom = make_odometry(pose, twist, Time(sec=1), twist_convention='mujoco_free')
+    np.testing.assert_allclose([odom.twist.twist.linear.x, odom.twist.twist.linear.y,
+                               odom.twist.twist.linear.z], [0., -1., 0.], atol=1e-12)
+    assert odom.twist.twist.angular == twist.angular
+    assert make_odometry(pose, twist, Time(sec=1)).twist.twist == twist
+    with pytest.raises(ValueError):
+        make_odometry(pose, twist, Time(sec=1), twist_convention='unknown')

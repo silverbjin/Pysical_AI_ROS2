@@ -91,6 +91,13 @@ class YoloBackend:
         torch.set_num_threads(1)
         self.model = YOLO(str(weights.resolve()), task='detect')
         self.class_names = dict(self.model.names)
+        # Pinned Ultralytics select_device() resets torch threads during lazy
+        # predictor setup. Warm it before accepting sensor jobs, then restore
+        # the lab's one-thread budget. This synthetic warmup is NEVER published
+        # as a camera frame, detection, or semantic validation result.
+        self.model.predict(np.zeros((240, 320, 3), dtype=np.uint8), device='cpu',
+                           imgsz=320, conf=.5, verbose=False, save=False)
+        torch.set_num_threads(1)
 
     def detect(self, bgr: np.ndarray) -> list[Box2D]:
         image = bgr8(bgr)

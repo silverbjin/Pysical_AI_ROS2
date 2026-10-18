@@ -1,0 +1,488 @@
+#!/usr/bin/env python3
+"""Serial native vision trials with fresh, fail-closed evidence and owned cleanup."""
+import argparse
+from copy import copy
+import importlib.metadata
+import json
+import math
+import os
+from pathlib import Path
+import signal
+import subprocess
+from threading import Event
+import time
+import xml.etree.ElementTree as ET
+
+from verify_vision_13_4 import EvidenceRun, rms_error, geometry_summary, tf_contract_single_owners, tracking_summary, source_snapshot
+
+
+COMMON = {'one_clock', 'one_odometry', 'single_tf_owners', 'sensor_contract',
+          'measured_startup', 'engine_alive', 'clean_shutdown', 'native_snapshot'}
+
+
+def offset_fixture(engine, share, output, y):
+    """Copy a physical fixture; never replace camera images or target messages."""
+    if not math.isfinite(y) or abs(y) > .05:
+        raise ValueError('local physical fixture offset must be within .05m')
+    share, output = Path(share).resolve(), Path(output).resolve()
+    if engine == 'mujoco':
+        tree = ET.parse(share/'mujoco/vision_fixture.xml')
+        tree.find('include').set('file', str(share/'mujoco/robot_system.xml'))
+        tree.find('.//geom[@name="vision_fixture"]').set('pos', f'1 {y} .72')
+        path = output/'offset_fixture.xml'
+    elif engine == 'gazebo':
+        tree = ET.parse(share/'worlds/vision_fixture.sdf')
+        tree.find('.//model[@name="vision_fixture"]/pose').text = f'1 {y} .72 0 0 0'
+        path = output/'offset_fixture.sdf'
+    else:
+        raise ValueError('unknown physical engine')
+    tree.write(path, encoding='utf-8', xml_declaration=True)
+    return path
+
+
+def clean_shutdown(cleanup, returncode, log):
+    return (bool(cleanup) and returncode == 0 and all(
+        not v['forced_cleanup'] and not v['residual_live_pids'] for v in cleanup)
+        and not any(marker in log for marker in (
+            'process has died', 'failed to terminate', 'escalating to', 'Traceback',
+            'exception was never retrieved', 'Arm shutdown cancellation unconfirmed')))
+
+
+def wait_owned_members_exit(process, members, *, timeout=8.):
+    from probe_sensors_13_4 import live_group_pids
+    if not math.isfinite(timeout) or not 0 < timeout <= 10.:
+        raise ValueError('bounded native stop grace required')
+    for pid in members:
+        try:
+            if os.getpgid(pid) != process.pid:
+                raise ValueError('refuse to wait on an unrelated process group member')
+        except ProcessLookupError:
+            continue
+    deadline = time.monotonic()+timeout
+    while set(members) & set(live_group_pids(process.pid)):
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(.05)
+    return True
+
+
+def is_gazebo_command(command_line):
+    args = command_line.split(b'\0')
+    if args[0].startswith(b'gz sim '):
+        return True  # Ruby $0/setproctitle replaces argv with one padded string.
+    return (len(args) >= 3 and Path(os.fsdecode(args[0])).name.startswith('ruby')
+            and Path(os.fsdecode(args[1])).name == 'gz' and args[2] == b'sim')
+
+
+def owned_gazebo_members(process):
+    from probe_sensors_13_4 import live_group_pids
+    found = []
+    for pid in live_group_pids(process.pid):
+        try:
+            command_line = (Path('/proc')/str(pid)/'cmdline').read_bytes()
+            wrapper = (command_line.startswith(b'/bin/sh\0-c\0ruby ')
+                       and b'/gz sim ' in command_line)
+            if is_gazebo_command(command_line) or wrapper:
+                found.append(pid)
+        except (OSError, ValueError):
+            continue
+    return found
+
+
+def required_checks(scenario):
+    if scenario in ('static', 'delay'):
+        return COMMON | {'thirty_observations', 'geometry_rms'} | (
+            {'actual_camera_motion', 'delay_150ms'} if scenario == 'delay' else set())
+    if scenario == 'yolo':
+        return COMMON | {'actual_inference_frames', 'recognition', 'valid_3d_detections'}
+    if scenario == 'tracking':
+        return COMMON | {'five_second_tracking', 'pixel_error_reduction', 'joint_limits',
+                         'velocity_limits', 'command_rate'}
+    if scenario == 'safety':
+        return COMMON | {'actual_tracking_goal', 'fault_injected', 'input_loss_stop', 'cancel_confirmed'}
+    raise ValueError('unknown trial scenario')
+
+
+def build_launch_command(args, delay):
+    command = ['ros2', 'launch', 'integrated_robot_runtime', 'vision_system.launch.py',
+        'engine:='+args.engine, 'detector_backend:='+args.detector_backend,
+        'processing_delay_s:='+str(delay), 'tracking_enabled:=false',
+        'allow_camera_motion_test:='+str(args.scenario == 'delay').lower()]
+    if args.weights_path:
+        command.append('weights_path:='+args.weights_path)
+    return command
+
+
+def run_trial(args, *, launch_command=None):
+    """launch_command is a process-boundary test seam, never exposed as a CLI option."""
+    required = required_checks(args.scenario)
+    run = EvidenceRun(args.output_dir, required)
+    process = log = node = None
+    content = ''
+    initialized, checks, cleanup = False, {}, []
+    stopping = Event()
+    previous_signal = None
+    tracking_started, initial_errors, command_start = None, [], 0
+    with run:
+        try:
+            if args.detector_backend == 'yolo':
+                weights = Path(args.weights_path)
+                if not weights.is_absolute() or not weights.is_file():
+                    raise FileNotFoundError('explicit existing absolute YOLO weights required')
+            if args.scenario in ('static', 'delay', 'tracking', 'safety') and args.detector_backend != 'color_fixture':
+                raise ValueError('geometric fixture trials require explicit color_fixture, not YOLO fallback')
+            if args.scenario == 'yolo' and args.detector_backend != 'yolo':
+                raise ValueError('YOLO trial cannot use a fixture detector')
+            snapshot = source_snapshot(Path(__file__).resolve().parents[2])
+            (run.root/'source_snapshot.json').write_text(json.dumps(snapshot, indent=2)+'\n', encoding='utf-8')
+            run.artifact(run.root/'source_snapshot.json')
+            run.result['source_head'] = snapshot['head']
+            import numpy as np
+            import rclpy
+            from rclpy.signals import SignalHandlerOptions
+            from std_srvs.srv import SetBool
+            from vision_observer_13_4 import VisionObserver
+            from probe_sensors_13_4 import stop_owned_group
+
+            rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
+            initialized = True
+            previous_signal = signal.signal(signal.SIGINT, lambda *_: stopping.set())
+            node = VisionObserver(run.root)
+            os.environ['GZ_PARTITION'] = 'ch13_vision_'+run.run_id
+            os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+            delay = .15 if args.scenario == 'delay' else 0.
+            if args.processing_delay_s is not None:
+                delay = args.processing_delay_s
+            run.result.update(engine=args.engine, detector_backend=args.detector_backend,
+                              scenario=args.scenario, processing_delay_s=delay, processes=[])
+            command = launch_command or build_launch_command(args, delay)
+            fixture_y = 0.
+            if args.scenario in ('tracking', 'safety'):
+                from ament_index_python.packages import get_package_share_directory
+                fixture_y = .02
+                path = offset_fixture(args.engine,
+                    get_package_share_directory('integrated_robot_description'), run.root, fixture_y)
+                command.append(('world' if args.engine == 'gazebo' else 'model_path')+':='+str(path))
+                run.artifact(path)
+                run.result['physical_fixture'] = dict(center=[1., fixture_y, .72], front_x=.98)
+            log = (run.root/'system.log').open('w', encoding='utf-8')
+            process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            run.result['processes'].append(dict(pid=process.pid, pgid=process.pid, command=command,
+                                                start_new_session=True))
+            run.save()
+            last_clock = 0
+
+            def step():
+                nonlocal last_clock
+                if stopping.is_set():
+                    raise InterruptedError('operator interrupted verification')
+                if process.poll() is not None:
+                    raise RuntimeError('owned engine/launch process died: '+str(process.returncode))
+                rclpy.spin_once(node, timeout_sec=.01)
+                now = node.get_clock().now().nanoseconds
+                if now < last_clock:
+                    raise RuntimeError('native clock rolled backward during a measured trial')
+                last_clock = now
+                if args.detector_backend == 'color_fixture':
+                    node.process_samples(fixture_y=fixture_y)
+                if node.startup.get('status') == 'FAILED':
+                    raise RuntimeError('measured startup failed: '+str(node.startup))
+                if (args.scenario == 'delay' and node.collecting and node.tracking
+                        and not node.tracking.get('enabled', False)):
+                    raise RuntimeError('camera-motion benchmark stopped on safety gate: '+
+                                       node.tracking.get('reason', 'unknown'))
+
+            def until(predicate, timeout):
+                deadline = time.monotonic()+timeout
+                while time.monotonic() < deadline:
+                    step()
+                    if predicate():
+                        return
+                raise TimeoutError('native vision verification deadline exceeded')
+
+            def pump(duration):
+                deadline = time.monotonic()+duration
+                while time.monotonic() < deadline:
+                    step()
+
+            def toggle(path, enabled):
+                client = node.create_client(SetBool, path)
+                try:
+                    until(client.service_is_ready, 5.)
+                    future = client.call_async(SetBool.Request(data=enabled))
+                    until(future.done, 5.)
+                    reply = future.result()
+                    if not reply.success:
+                        raise RuntimeError('explicit mode request refused: '+reply.message)
+                    return reply.message
+                finally:
+                    node.destroy_client(client)
+
+            until(lambda: node.startup.get('status') == 'READY' and node.standing(), args.timeout)
+            checks['measured_startup'] = True
+            if args.scenario == 'delay':
+                run.result['motion_enable'] = toggle('/manipulation_node/set_camera_motion_test', True)
+                until(lambda: node.tracking.get('enabled') and node.tracking.get('mode') == 'camera_motion_test', 5.)
+            node.collecting = True
+            started = time.monotonic()
+            if args.scenario in ('static', 'delay'):
+                minimum = 6. if args.scenario == 'delay' else 3.
+                until(lambda: len({v['capture_ns'] for v in node.samples}) >= 30
+                      and time.monotonic()-started >= minimum, args.timeout)
+                errors = [v['error'] for v in node.samples]
+                measured = geometry_summary(node.samples, .05 if args.scenario == 'delay' else .03)
+                run.result['geometry'] = dict(measured,
+                    metric='capture RGB bbox ray intersect declared front surface x=.98, not object COM',
+                    elapsed_wall_s=time.monotonic()-started)
+                checks.update(thirty_observations=measured['unique_captures'] >= 30,
+                              geometry_rms=measured['rms_m'] is not None and
+                              measured['rms_m'] <= measured['rms_limit_m'] and measured['unique_timestamps'])
+                if args.scenario == 'delay':
+                    q1 = [v[2][0] for v in node.joints if v[1] >= started]
+                    run.result['motion'] = dict(measured_q1_peak_to_peak_rad=max(q1)-min(q1),
+                        nominal_amplitude_rad=.03, nominal_period_sim_s=2.,
+                        measured_trace='joints.npz; this is camera motion, NOT PPO walking')
+                    checks['actual_camera_motion'] = max(q1)-min(q1) >= .04
+                    checks['delay_150ms'] = delay == .15
+            elif args.scenario == 'yolo':
+                pump(args.duration)
+                detected = [v for v in node.detections if v['boxes']]
+                valid = [v for v in node.tracks if v['valid']]
+                run.result['recognition'] = dict(frames=len(node.detections), detected_frames=len(detected),
+                    valid_3d=len(valid), coverage=(len(detected)/len(node.detections) if node.detections else 0.),
+                    note='Actual native red fixture; COCO recognition is not assumed. No fixture fallback.')
+                checks.update(actual_inference_frames=len(node.detections) >= 10,
+                              recognition=bool(detected), valid_3d_detections=len(valid) >= 5)
+                node.save_latest_frame()  # retain actual sensors even if every inference expires
+                for key in reversed(node.boxes):
+                    # Save the actual image aligned to an actual inference result,
+                    # including an honest empty annotation when recognition failed.
+                    image = next((v[0] for v in node.cache.rgb.values()
+                        if v[0].header.stamp.sec*1_000_000_000+v[0].header.stamp.nanosec == key), None)
+                    if image is None:
+                        continue
+                    bundle = node.cache.match(image.header.stamp, 'camera_optical_frame', 0)
+                    if bundle is not None:
+                        boxes = node.boxes[key]
+                        node.save_frame(bundle, boxes[0] if boxes else None)
+                        break
+            elif args.scenario in ('tracking', 'safety'):
+                pump(1.)
+                initial = [v['pixel_error'] for v in node.samples if v['wall'] >= started]
+                initial_errors = initial
+                until(lambda: bool(node.tracks) and node.tracks[-1]['valid']
+                      and 0 <= node.get_clock().now().nanoseconds-node.tracks[-1]['capture_ns'] <= .2e9, args.timeout)
+                command_start = len(node.commands)
+                run.result['tracking_enable'] = toggle('/manipulation_node/set_visual_tracking', True)
+                until(lambda: node.tracking.get('enabled', False), 2.)
+                enabled_at = time.monotonic()
+                tracking_started = enabled_at
+                until(lambda: len(node.commands) > command_start, 3.)
+                if args.scenario == 'tracking':
+                    while time.monotonic()-enabled_at < 5.2:
+                        step()
+                        if not node.tracking.get('enabled', False):
+                            raise RuntimeError('tracking latched OFF before five seconds: '+str(node.tracking))
+                    final = [v['pixel_error'] for v in node.samples if v['wall'] >= time.monotonic()-1.]
+                    metrics = tracking_summary(node.commands[command_start:], initial, final,
+                        elapsed=time.monotonic()-enabled_at,
+                        measured_positions=[v[2] for v in node.joints if v[1] >= enabled_at],
+                        measured_velocities=[v for v, j in zip(node.joint_velocities, node.joints)
+                                             if j[1] >= enabled_at])
+                    run.result['tracking_metrics'] = metrics
+                    checks.update(metrics['checks'])
+                else:
+                    # Record healthy ownership BEFORE intentional removal of a source.
+                    before = {t: [v.node_name for v in node.get_publishers_info_by_topic(t)]
+                              for t in ('/tf', '/tf_static')}
+                    checks['single_tf_owners'] = tf_contract_single_owners(before, node.tf_parents, node.model_parents)
+                    fault = getattr(args, 'fault', 'images')
+                    fault_record = dict(kind=fault, requested_monotonic=time.monotonic())
+                    if fault == 'images':
+                        fault_record['reply'] = toggle('/object_detector/set_input_enabled', False)
+                        fault_record['scope'] = 'detector consumer ingress; native camera remains publishing'
+                    elif fault == 'tf':
+                        from probe_sensors_13_4 import live_group_pids
+                        pids = []
+                        for pid in live_group_pids(process.pid):
+                            try:
+                                argv = (Path('/proc')/str(pid)/'cmdline').read_bytes().split(b'\0')
+                                if Path(os.fsdecode(argv[0])).name == 'robot_state_publisher':
+                                    pids.append(pid)
+                            except OSError:
+                                continue
+                        if len(pids) != 1 or os.getpgid(pids[0]) != process.pid:
+                            raise RuntimeError('cannot identify exactly one owned robot_state_publisher')
+                        os.kill(pids[0], signal.SIGINT)
+                        fault_record['owned_pid'] = pids[0]
+                    elif fault == 'joints':
+                        from controller_manager_msgs.srv import SwitchController
+                        client = node.create_client(SwitchController, '/controller_manager/switch_controller')
+                        try:
+                            until(client.service_is_ready, 3.)
+                            request = SwitchController.Request(deactivate_controllers=['joint_state_broadcaster'],
+                                strictness=2, activate_asap=True)
+                            request.timeout.sec = 2
+                            future = client.call_async(request)
+                            until(future.done, 3.)
+                            if not future.result().ok:
+                                raise RuntimeError('joint broadcaster deactivation refused')
+                            fault_record['scope'] = 'joint_state_broadcaster only; consequently joint TF also becomes stale'
+                        finally:
+                            node.destroy_client(client)
+                    else:
+                        raise ValueError('unknown input loss')
+                    fault_record['effective_monotonic'] = time.monotonic()
+                    run.result['fault'] = fault_record
+                    pump(1.2)
+                    cutoff = fault_record['effective_monotonic']+.3+.2
+                    checks.update(actual_tracking_goal=len(node.commands) > command_start, fault_injected=True,
+                        input_loss_stop=not node.tracking.get('enabled', True) and
+                            not any(v['dispatched_monotonic'] > cutoff for v in node.commands),
+                        cancel_confirmed=not node.tracking.get('outstanding', True))
+                    run.result['fault']['goal_stop_deadline_monotonic'] = cutoff
+                    run.result['fault']['final_tracking'] = node.tracking
+            owners = {topic: [v.node_name for v in node.get_publishers_info_by_topic(topic)]
+                      for topic in ('/clock', '/odom', '/camera/color/image_raw', '/tf', '/tf_static')}
+            run.result['owners'] = owners
+            images = node.latest_images
+            checks.update(one_clock=len(owners['/clock']) == 1, one_odometry=len(owners['/odom']) == 1,
+                sensor_contract=all(k in images and images[k].header.frame_id == 'camera_optical_frame'
+                                    and images[k].width == 320 and images[k].height == 240
+                                    and node.counts[k] >= 30 for k in ('rgb', 'depth', 'info')),
+                engine_alive=process.poll() is None and node.get_clock().now().nanoseconds > 0)
+            checks.setdefault('single_tf_owners', tf_contract_single_owners(owners, node.tf_parents, node.model_parents))
+            checks['native_snapshot'] = node.saved_frame
+            run.result['startup'] = node.startup
+            run.result['tf_ownership_method'] = 'graph+model-parent-contract inference; Jazzy does not expose packet GID'
+            run.result['versions'] = {key: importlib.metadata.version(key)
+                for key in ('numpy', 'mujoco', 'ultralytics', 'torch', 'opencv-python')}
+            git = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True)
+            run.result['source_head'] = git.stdout.strip() if git.returncode == 0 else 'UNAVAILABLE'
+        except Exception as exc:
+            run.fail(repr(exc))
+        finally:
+            if initialized:
+                import rclpy
+                from std_srvs.srv import SetBool
+                from probe_sensors_13_4 import stop_owned_group
+                if node is not None:
+                    try:
+                        client = node.create_client(SetBool, '/manipulation_node/set_visual_tracking')
+                        if client.wait_for_service(timeout_sec=.3):
+                            future = client.call_async(SetBool.Request(data=False))
+                            rclpy.spin_until_future_complete(node, future, timeout_sec=1.)
+                            deadline = time.monotonic()+1.
+                            while time.monotonic() < deadline:
+                                rclpy.spin_once(node, timeout_sec=.02)
+                                if node.tracking and not node.tracking.get('outstanding', True):
+                                    break
+                            if node.tracking.get('outstanding'):
+                                run.fail('own trajectory terminal cancellation not confirmed')
+                        if args.scenario == 'tracking' and 'tracking_metrics' not in run.result:
+                            selected = [i for i, v in enumerate(node.joints)
+                                        if tracking_started is not None and v[1] >= tracking_started]
+                            metrics = tracking_summary(node.commands[command_start:], initial_errors, [],
+                                elapsed=time.monotonic()-tracking_started if tracking_started else 0.,
+                                measured_positions=[node.joints[i][2] for i in selected],
+                                measured_velocities=[node.joint_velocities[i] for i in selected])
+                            run.result['tracking_metrics'] = metrics
+                            checks.update(metrics['checks'])
+                        node.save()
+                        if args.scenario in ('static', 'delay'):
+                            partial = geometry_summary(node.samples, .05 if args.scenario == 'delay' else .03)
+                            run.result.setdefault('geometry', partial)
+                            checks.setdefault('thirty_observations', partial['unique_captures'] >= 30)
+                            checks.setdefault('geometry_rms', partial['rms_m'] is not None and
+                                partial['rms_m'] <= partial['rms_limit_m'] and partial['unique_timestamps'])
+                    except Exception as exc:
+                        run.fail('pre-shutdown/evidence failure: '+repr(exc))
+            if process is not None:
+                if args.engine == 'gazebo' and launch_command is None:
+                    try:
+                        native_members = owned_gazebo_members(process)
+                        if not native_members:
+                            raise RuntimeError('owned Gazebo native/launcher members could not be identified')
+                        response = subprocess.run(['gz', 'service', '-s', '/server_control', '--reqtype',
+                            'gz.msgs.ServerControl', '--reptype', 'gz.msgs.Boolean', '--timeout', '2000',
+                            '--req', 'stop: true'], capture_output=True, text=True, timeout=5.)
+                        run.result['gazebo_stop'] = dict(returncode=response.returncode, stdout=response.stdout)
+                        # ServerControl ACK means accepted, not that rendering threads
+                        # have joined. Wait for our actual native child before signaling
+                        # the remaining ROS launch group; do not guess a .5s delay.
+                        run.result['gazebo_native_stop'] = dict(pids=native_members,
+                            exited=wait_owned_members_exit(process, native_members, timeout=8.))
+                    except Exception as exc:
+                        run.fail('native stop failure: '+repr(exc))
+                try:
+                    cleanup.append(dict(pid=process.pid, **stop_owned_group(process)))
+                    run.result['launch_returncode'] = process.poll()
+                except Exception as exc:
+                    run.fail('owned cleanup failed: '+repr(exc))
+            if log is not None:
+                log.close()
+                content = (run.root/'system.log').read_text(encoding='utf-8')
+                if ('Traceback' in content or 'exception was never retrieved' in content
+                        or 'Arm shutdown cancellation unconfirmed' in content):
+                    run.fail('native/runtime exception; inspect system.log')
+            checks['clean_shutdown'] = clean_shutdown(cleanup, process.poll() if process else None, content)
+            if args.engine == 'gazebo' and launch_command is None and process is not None:
+                stop = run.result.get('gazebo_stop', {})
+                checks['clean_shutdown'] = checks['clean_shutdown'] and (
+                    stop.get('returncode') == 0 and 'data: true' in stop.get('stdout', ''))
+            if node is not None:
+                node.destroy_node()
+            if initialized:
+                rclpy.try_shutdown()
+            if previous_signal is not None:
+                signal.signal(signal.SIGINT, previous_signal)
+            run.result['cleanup'] = cleanup
+            names = ['observations.json', 'joints.npz']
+            if node is not None and node.saved_frame:
+                names += ['rgb.png', 'depth.npy', 'annotated.png', 'camera.json']
+            for name in names:
+                path = run.root/name
+                if path.exists():
+                    run.artifact(path)
+        try:
+            run.finish(checks)
+        except RuntimeError:
+            pass  # FAIL is persisted and returned as nonzero by main.
+    return run.result
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--engine', choices=('gazebo', 'mujoco'), required=True)
+    parser.add_argument('--detector-backend', choices=('yolo', 'color_fixture'), default='yolo')
+    parser.add_argument('--weights-path', default='')
+    parser.add_argument('--scenario', choices=('geometry', 'static', 'delay', 'yolo', 'tracking', 'safety'))
+    parser.add_argument('--fault', choices=('images', 'tf', 'joints'), default='images')
+    parser.add_argument('--output-dir', required=True)
+    parser.add_argument('--timeout', type=float, default=60.)
+    parser.add_argument('--duration', type=float, default=20.)
+    parser.add_argument('--processing-delay-s', type=float)
+    args = parser.parse_args()
+    args.scenario = args.scenario or ('geometry' if args.detector_backend == 'color_fixture' else 'yolo')
+    if args.scenario == 'geometry':
+        with EvidenceRun(args.output_dir, {'static', 'delay'}) as overall:
+            phases = {}
+            for scenario in ('static', 'delay'):
+                trial = copy(args)
+                trial.scenario, trial.output_dir = scenario, str(overall.root/scenario)
+                phases[scenario] = run_trial(trial)
+                overall.artifact(Path(trial.output_dir)/'result.json')
+            overall.result['phases'] = {key: value['status'] for key, value in phases.items()}
+            try:
+                overall.finish({key: value['status'] == 'PASS' for key, value in phases.items()})
+            except RuntimeError:
+                pass
+        result = overall.result
+    else:
+        result = run_trial(args)
+    print(json.dumps({key: result.get(key) for key in ('run_id', 'status', 'checks', 'errors')}, indent=2))
+    return 0 if result['status'] == 'PASS' else 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

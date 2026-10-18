@@ -16,7 +16,7 @@ from integrated_robot_interfaces.msg import TrackedTarget
 from integrated_robot_vision.cache import nanoseconds, parse_intrinsics
 from integrated_robot_vision.contracts import covariance
 from integrated_robot_vision.kinematics import KinematicChain
-from integrated_robot_vision.servo import servo_target
+from integrated_robot_vision.servo import servo_target, camera_motion_target
 import numpy as np
 from rclpy.clock import Clock, ClockType
 from rclpy.duration import Duration
@@ -37,6 +37,9 @@ class TrackingSupport:
     def __init__(self, node):
         self.node = node
         self.guard = VisualTrackingGuard()
+        self.allow_motion_test = node.declare_parameter('allow_camera_motion_test', False).value
+        self.mode = 'tracking'
+        self.motion_start = None
         self.chain = self.model_text = self.k = self.target = None
         self.joints = deque(maxlen=32)
         self.legs = {}
@@ -49,6 +52,9 @@ class TrackingSupport:
         self.reference = None
         self.last_dispatch = -math.inf
         self.goal_count = 0
+        self.source_joint_stamp = None
+        self.source_q = None
+        self.source_received_wall = None
         self.last_ros = None
         self.advanced_at = time.monotonic()
         self.buffer = Buffer(node=node)
@@ -67,8 +73,10 @@ class TrackingSupport:
                                  '/arm_trajectory_controller/follow_joint_trajectory/_action/status',
                                  self.on_status, model_qos, callback_group=group)
         node.create_service(SetBool, '~/set_visual_tracking', self.toggle, callback_group=group)
+        node.create_service(SetBool, '~/set_camera_motion_test', self.toggle_motion, callback_group=group)
         node.create_service(Trigger, '~/recover_arm_ownership', self.recover, callback_group=group)
         self.status = node.create_publisher(String, '/architecture/visual_tracking', 10)
+        self.command_audit = node.create_publisher(String, '/architecture/arm_command', 50)
         self.timer = node.create_timer(.02, self.tick, callback_group=group,
                                        clock=Clock(clock_type=ClockType.STEADY_TIME))
         self.last_report = 0.
@@ -115,14 +123,15 @@ class TrackingSupport:
                         or not all(math.isfinite(v) for v in (p.x, p.y, p.z))):
                     raise ValueError('invalid/lost target')
                 if self.target is not None:
-                    if message.track_id != self.target.track_id:
+                    if message.track_id != self.target.track_id and self.mode == 'tracking':
                         self.disable('target identity changed')
                     if stamp <= nanoseconds(self.target.header.stamp):
                         return  # duplicates never renew wall-clock validity
                 self.target, self.target_at = message, time.monotonic()
             except (ValueError, TypeError):
                 self.target = None
-                self.disable('invalid/lost target')
+                if self.mode == 'tracking':
+                    self.disable('invalid/lost target')
 
     def on_joints(self, message):
         try:
@@ -180,18 +189,31 @@ class TrackingSupport:
             clock_valid=now > 0 and wall-self.advanced_at <= .3)
 
     def toggle(self, request, response):
+        return self._toggle(request, response, 'tracking')
+
+    def toggle_motion(self, request, response):
+        if request.data and not self.allow_motion_test:
+            response.message = 'Camera motion benchmark disabled; explicit test opt-in required'
+            return response
+        return self._toggle(request, response, 'camera_motion_test')
+
+    def _toggle(self, request, response, mode):
         with self.node.lock:
             if not request.data:
                 self.disable('operator disable')
                 response.success, response.message = True, 'Tracking OFF; own cancel may be pending'
                 return response
             conditions = self.conditions(self.node.get_clock().now().nanoseconds, time.monotonic())
+            if mode == 'camera_motion_test':
+                conditions['target_valid'] = conditions['target_fresh'] = True
             conditions['arm_safe'] = conditions['arm_safe'] and self.node.safe
             try:
                 self.token = self.guard.enable(conditions)
                 self.session = self.node.busy = True
+                self.mode = mode
+                self.motion_start = self.node.get_clock().now().nanoseconds
                 self.reference = self.joints[-1][2].copy()
-                response.success, response.message = True, 'Explicit stationary local tracking enabled'
+                response.success, response.message = True, 'Explicit stationary local mode: '+mode
             except ValueError as exc:
                 response.message = str(exc) + ': ' + ','.join(k for k, v in conditions.items() if not v)
             return response
@@ -231,6 +253,17 @@ class TrackingSupport:
             return response
 
     def current_goal(self, now, wall):
+        if self.mode == 'camera_motion_test':
+            # Benchmark motion is intentionally independent of target acquisition.
+            # It still shares all measured arm/leg/clock/ownership safety gates.
+            values = camera_motion_target(self.joints[-1][2], (now-self.motion_start)*1e-9)
+            if values is not None:
+                self.source_joint_stamp = self.joints[-1][0]
+                self.source_received_wall = self.joints[-1][1]
+                self.source_q = self.joints[-1][2].copy()
+                for name in ARM_NAMES[1:]:
+                    values[name] = self.reference[name]
+            return values
         target = PointStamped(header=self.target.header, point=self.target.position)
         # Latest measured joint with a transform at THAT exact joint stamp. Never latest TF.
         for stamp, received, q, _ in reversed(self.joints):
@@ -247,6 +280,8 @@ class TrackingSupport:
                 for name in ARM_NAMES:
                     if name not in ('arm_joint_1', 'arm_joint_5'):
                         values[name] = self.reference[name]
+                self.source_joint_stamp, self.source_q = stamp, q.copy()
+                self.source_received_wall = received
                 return values
             except TransformException:
                 continue
@@ -272,26 +307,51 @@ class TrackingSupport:
                 node.busy = node.arm_owner.pending is not None or bool(node.arm_owner.fault)
             if self.guard.enabled:
                 conditions = self.conditions(now, wall)
+                if self.mode == 'camera_motion_test':
+                    conditions['target_valid'] = conditions['target_fresh'] = True
                 if not all(conditions.values()):
                     self.disable('safety gate lost: '+','.join(k for k, v in conditions.items() if not v))
                 elif self.record is None and wall-self.last_dispatch >= .2:
                     values = self.current_goal(now, wall)
                     if values is None:
                         self.disable('current-time TF, visibility or Jacobian unavailable')
-                    elif self.guard.reserve(self.token):
+                    else:
+                        # Work may overrun the deadline. Re-check immediately before
+                        # reserving/sending, including the actually selected TF/joint sample.
+                        dispatch_ros, dispatch_wall = node.get_clock().now().nanoseconds, time.monotonic()
+                        fresh = self.conditions(dispatch_ros, dispatch_wall)
+                        if self.mode == 'camera_motion_test':
+                            fresh['target_valid'] = fresh['target_fresh'] = True
+                        if (dispatch_ros < now or not all(fresh.values())
+                                or not 0 <= dispatch_wall-self.source_received_wall <= .3
+                                or not -.03e9 <= dispatch_ros-self.source_joint_stamp <= .3e9):
+                            self.disable('input expired or clock changed during servo computation')
+                            values = None
+                    if values is not None and self.guard.reserve(self.token):
                         goal = FollowJointTrajectory.Goal()
                         goal.trajectory.joint_names = list(ARM_NAMES)
                         point = JointTrajectoryPoint(positions=[values[n] for n in ARM_NAMES])
                         point.time_from_start.nanosec = 200_000_000
                         goal.trajectory.points = [point]
                         node.safe = False
-                        self.record = node.arm_owner.send(goal, now=wall, timeout=1.)
-                        self.last_dispatch, self.goal_count = wall, self.goal_count+1
+                        dispatched = time.monotonic()
+                        self.record = node.arm_owner.send(goal, now=dispatched, timeout=1.)
+                        self.last_dispatch, self.goal_count = dispatched, self.goal_count+1
+                        self.command_audit.publish(String(data=json.dumps(dict(
+                            goal_uuid=self.record.identifier.hex(), joint_names=list(ARM_NAMES),
+                            positions=[values[n] for n in ARM_NAMES],
+                            measured_positions=[self.source_q[n] for n in ARM_NAMES],
+                            activation_reference=[self.reference[n] for n in ARM_NAMES],
+                            source_joint_ros_ns=self.source_joint_stamp,
+                            source_joint_received_monotonic=self.source_received_wall,
+                            dispatched_ros_ns=node.get_clock().now().nanoseconds,
+                            dispatched_monotonic=dispatched, horizon_s=.2,
+                            mode=self.mode, goal_count=self.goal_count))))
             if self.record is None and self.session and not node.arm_owner.fault:
                 node.safe = node.measured_safe()
             if wall-self.last_report >= .2:
                 self.status.publish(String(data=json.dumps(dict(
-                    enabled=self.guard.enabled, reason=self.guard.reason, goal_count=self.goal_count,
+                    enabled=self.guard.enabled, mode=self.mode, reason=self.guard.reason, goal_count=self.goal_count,
                     reserved=node.busy, outstanding=node.arm_owner.pending is not None,
                     fault=node.arm_owner.fault or self.guard.fault, generation=self.guard.generation))))
                 self.last_report = wall

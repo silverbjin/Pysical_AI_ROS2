@@ -56,3 +56,18 @@ def servo_target(chain, q, target_base, k, dt):
         return desired
     except (ValueError, KeyError, TypeError, np.linalg.LinAlgError):
         return None
+
+
+def camera_motion_target(q, elapsed, dt=.2):
+    """Explicit test fixture ONLY: q1 sine (.03rad, 2s), never a tracking fallback."""
+    names = tuple(f'arm_joint_{i}' for i in range(1, 7))
+    if (not math.isfinite(elapsed) or elapsed < 0 or not math.isfinite(dt) or dt <= 0
+            or any(n not in q or not math.isfinite(q[n]) or abs(q[n]) >= .06 for n in names)
+            or any(abs(q[n]) > .04+1e-12 for n in CONTROL_JOINTS)):
+        return None
+    horizon = min(dt, .2)
+    desired = q.copy()
+    nominal = .03*math.sin(math.pi*(elapsed+horizon))
+    delta = float(np.clip(nominal-q['arm_joint_1'], -.10*horizon, .10*horizon))
+    desired['arm_joint_1'] = float(np.clip(q['arm_joint_1']+delta, -.03, .03))
+    return desired

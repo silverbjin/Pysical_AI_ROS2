@@ -20,7 +20,7 @@ from tf2_geometry_msgs import do_transform_point
 from tf2_ros import Buffer, TransformException, TransformListener
 from vision_msgs.msg import Detection2DArray
 
-from .cache import RGBDCache, seconds
+from .cache import RGBDCache, seconds, nanoseconds
 from .contracts import Box2D, Observation, vector
 from .freshness import ClockGate, LatestSlot
 from .geometry import decode_depth, deproject, sample_depth, validate_depth_range
@@ -87,6 +87,7 @@ class VisionProcessor(Node):
         self.tracker = TrackManager(tau=tau, alpha=alpha if filter_mode == 'fixed_alpha' else None)
         self.last_source_header, self.last_published_state = None, None
         self.last_epoch, self.last_stamp = -1, 0.
+        self.pending_detection = None
         self.tf_buffer = Buffer(node=self)
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.raw_pub = self.create_publisher(PointStamped, '/vision/target_raw', 10)
@@ -100,7 +101,7 @@ class VisionProcessor(Node):
             self.create_subscription(Detection2DArray, '/vision/detections', self.on_detections, qos_profile_sensor_data),
         ]
         self.steady_clock = Clock(clock_type=ClockType.STEADY_TIME)
-        self.watchdog = self.create_timer(.05, self.observe_clock, clock=self.steady_clock)
+        self.watchdog = self.create_timer(.05, self.poll, clock=self.steady_clock)
         self.worker = Thread(target=self.work, name='rgbd-fusion', daemon=False)
         self.worker.start()
 
@@ -134,6 +135,7 @@ class VisionProcessor(Node):
                     # our smaller epoch resets must discard dynamic history too.
                     self.tf_buffer.clear()
                 self.cache.clear(epoch)
+                self.pending_detection = None
                 self.slot.take(0)
                 self.last_stamp, self.last_epoch = 0., epoch
                 self.report('RESET')
@@ -142,9 +144,13 @@ class VisionProcessor(Node):
                 self.publish_track(expired)
             return ros_now, wall_now, epoch
 
+    def poll(self):
+        with self.lock:
+            self.try_pending(*self.observe_clock())
+
     def on_info(self, msg):
         with self.lock:
-            _, _, epoch = self.observe_clock()
+            now, wall, epoch = self.observe_clock()
             previous = self.cache.calibration_id
             try:
                 self.cache.add_info(msg, epoch)
@@ -152,23 +158,27 @@ class VisionProcessor(Node):
                 self.report('INVALID_CALIBRATION')
             if previous != self.cache.calibration_id:
                 self.slot.take(0)
+                self.pending_detection = None
                 self.report('RESET')
+            self.try_pending(now, wall, epoch)
 
     def on_rgb(self, msg):
         with self.lock:
-            _, _, epoch = self.observe_clock()
+            now, wall, epoch = self.observe_clock()
             try:
                 self.cache.add_rgb(msg, epoch)
             except ValueError:
                 self.report('INVALID_RGB')
+            self.try_pending(now, wall, epoch)
 
     def on_depth(self, msg):
         with self.lock:
-            _, _, epoch = self.observe_clock()
+            now, wall, epoch = self.observe_clock()
             try:
                 self.cache.add_depth(msg, epoch)
             except ValueError:
                 self.report('INVALID_DEPTH')
+            self.try_pending(now, wall, epoch)
 
     def current(self, bundle):
         with self.lock:
@@ -179,13 +189,15 @@ class VisionProcessor(Node):
 
     def on_detections(self, msg):
         with self.lock:
-            _, _, epoch = self.observe_clock()
-            bundle = self.cache.match(msg.header.stamp, msg.header.frame_id, epoch)
-            if bundle is None or not self.current(bundle):
-                self.report('NO_FRESH_ALIGNED_PAIR')
-                return
+            now, wall, epoch = self.observe_clock()
             boxes = []
             try:
+                if nanoseconds(msg.header.stamp) <= 0 or msg.header.frame_id != 'camera_optical_frame':
+                    raise ValueError('positive capture time and canonical optical frame required')
+                stamp = seconds(msg.header.stamp)
+                if stamp <= self.last_stamp or (self.pending_detection is not None
+                        and stamp <= seconds(self.pending_detection[0].stamp)):
+                    return  # old/duplicate inference never invalidates or renews a newer track
                 for detection in msg.detections[:32]:
                     if not detection.results:
                         continue
@@ -194,9 +206,30 @@ class VisionProcessor(Node):
                         box = detection.bbox
                         boxes.append(Box2D(box.center.position.x, box.center.position.y,
                                            box.size_x, box.size_y, best.class_id, best.score))
-                self.slot.replace((bundle, boxes))
-            except (ValueError, RuntimeError):
+                self.pending_detection = (deepcopy(msg.header), boxes, epoch, wall)
+                self.slot.take(0)  # only the newest waiting detection/frame is useful
+                self.try_pending(now, wall, epoch)
+            except (ValueError, RuntimeError, TypeError):
                 self.report('INVALID_DETECTION')
+
+    def try_pending(self, now, wall, epoch):
+        """Wait for cross-topic arrival, never extend capture/receipt deadlines."""
+        pending = self.pending_detection
+        if pending is None:
+            return
+        header, boxes, source_epoch, received = pending
+        if not self.gate.valid(seconds(header.stamp), source_epoch, now, wall, received):
+            self.pending_detection = None
+            self.report('NO_FRESH_ALIGNED_PAIR')
+            return
+        bundle = self.cache.match(header.stamp, header.frame_id, epoch)
+        if bundle is None:
+            return  # watchdog and subsequent RGB/depth callbacks retry within original TTL
+        self.pending_detection = None
+        if self.current(bundle):
+            self.slot.replace((bundle, boxes))
+        else:
+            self.report('NO_FRESH_ALIGNED_PAIR')
 
     def work(self):
         while not self.stopping.is_set():
@@ -277,16 +310,5 @@ def make_executor():
 
 
 def main(args=None):
-    rclpy.init(args=args)
-    node, executor = None, make_executor()
-    try:
-        node = VisionProcessor()
-        executor.add_node(node)
-        executor.spin()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        executor.shutdown(timeout_sec=2)
-        if node is not None:
-            node.destroy_node()
-        rclpy.try_shutdown()
+    from .execution import run_node
+    run_node(VisionProcessor, args=args, executor_factory=make_executor)

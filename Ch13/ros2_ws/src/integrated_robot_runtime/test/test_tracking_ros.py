@@ -14,6 +14,7 @@ import rclpy
 import pytest
 from rclpy.action import ActionServer, CancelResponse
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from sensor_msgs.msg import CameraInfo, JointState
 from std_msgs.msg import String
 from std_srvs.srv import SetBool, Trigger
@@ -34,18 +35,22 @@ def wait(predicate, timeout=3.):
     assert predicate(), 'ROS boundary condition did not arrive'
 
 
-@pytest.mark.parametrize('stop', ['operator', 'loss', 'lifecycle', 'foreign', 'shutdown'])
+@pytest.mark.parametrize('stop', ['operator', 'loss', 'lifecycle', 'foreign', 'shutdown', 'camera_motion',
+                                 'compute_expiry'])
 def test_default_off_exclusive_session_and_disable_cancels_without_successor(stop):
     rclpy.init(domain_id=148)
     node, peer, executor, thread = None, None, None, None
     stopping = threading.Event()
     try:
-        node, peer = ManipulationNode(), Node('tracking_action_peer')
+        node = ManipulationNode(parameter_overrides=[
+            Parameter('allow_camera_motion_test', value=stop == 'camera_motion')])
+        peer = Node('tracking_action_peer')
         assert hasattr(node, 'tracking'), 'missing runtime tracking integration'
-        goals, cancellations = [], []
+        goals, cancellations, commands, goal_ids = [], [], [], []
 
         def execute(handle):
             goals.append(handle.request)
+            goal_ids.append(bytes(handle.goal_id.uuid).hex())
             deadline = time.monotonic()+2.
             while time.monotonic() < deadline and not handle.is_cancel_requested:
                 time.sleep(.005)
@@ -60,6 +65,8 @@ def test_default_off_exclusive_session_and_disable_cancels_without_successor(sto
                               '/arm_trajectory_controller/follow_joint_trajectory', execute,
                               cancel_callback=lambda _: CancelResponse.ACCEPT,
                               callback_group=node.group)
+        audit = peer.create_subscription(String, '/architecture/arm_command',
+                                          lambda m: commands.append(json.loads(m.data)), 10)
         executor = DrainingExecutor(num_threads=6)
         executor.add_node(node)
         executor.add_node(peer)
@@ -69,11 +76,14 @@ def test_default_off_exclusive_session_and_disable_cancels_without_successor(sto
 
         thread = threading.Thread(target=spin)
         thread.start()
-        toggle = peer.create_client(SetBool, '/manipulation_node/set_visual_tracking')
+        path = '/manipulation_node/set_camera_motion_test' if stop == 'camera_motion' else (
+            '/manipulation_node/set_visual_tracking')
+        toggle = peer.create_client(SetBool, path)
         stow = peer.create_client(Trigger, '/manipulation_node/stow')
         assert toggle.wait_for_service(timeout_sec=3)
         time.sleep(.1)
         assert goals == []
+        assert commands == []
         rejected = toggle.call_async(SetBool.Request(data=True))
         wait(rejected.done)
         assert not rejected.result().success  # inactive and missing all inputs
@@ -102,10 +112,28 @@ def test_default_off_exclusive_session_and_disable_cancels_without_successor(sto
         target.header.stamp = target.source_header.stamp = node.get_clock().now().to_msg()
         target.position.x, target.position.y, target.position.z = .90, .02, .35
         node.tracking.on_target(target)
+        if stop == 'compute_expiry':
+            calculate = node.tracking.current_goal
+
+            def delayed_calculation(now, wall):
+                values = calculate(now, wall)
+                time.sleep(.31)  # real elapsed computation, not a mocked motor publisher
+                return values
+
+            node.tracking.current_goal = delayed_calculation
         enabled = toggle.call_async(SetBool.Request(data=True))
         wait(enabled.done)
         assert enabled.result().success, enabled.result().message
+        if stop == 'compute_expiry':
+            time.sleep(.6)
+            assert goals == [] and commands == []
+            assert not node.tracking.guard.enabled
+            return
         wait(lambda: bool(goals))
+        wait(lambda: bool(commands))
+        assert commands[0]['goal_uuid'] == goal_ids[0]
+        assert commands[0]['positions'] == list(goals[0].trajectory.points[0].positions)
+        assert commands[0]['joint_names'] == list(ARM_NAMES)
         assert goals[0].trajectory.joint_names == list(ARM_NAMES)
         assert max(abs(v) for v in goals[0].trajectory.points[0].positions) <= .04
         blocked = stow.call_async(Trigger.Request())
@@ -116,7 +144,7 @@ def test_default_off_exclusive_session_and_disable_cancels_without_successor(sto
         pick.target_pose.header.stamp = node.get_clock().now().to_msg()
         pick.target_pose.pose.orientation.w = 1.
         assert node.accept_goal(pick).name == 'REJECT'
-        if stop == 'operator':
+        if stop in ('operator', 'camera_motion'):
             disabled = toggle.call_async(SetBool.Request(data=False))
             wait(disabled.done)
             assert disabled.result().success
@@ -174,6 +202,18 @@ def test_malformed_model_is_not_ready_without_escaping_the_ros_callback():
     try:
         node.tracking.on_model(String(data='<robot'))
         assert node.tracking.chain is None and not node.tracking.guard.enabled
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+def test_camera_motion_benchmark_requires_explicit_test_opt_in():
+    rclpy.init(domain_id=148)
+    node = ManipulationNode()
+    try:
+        response = node.tracking.toggle_motion(SetBool.Request(data=True), SetBool.Response())
+        assert not response.success and 'disabled' in response.message.lower()
+        assert not node.tracking.guard.enabled and node.arm_owner.pending is None
     finally:
         node.destroy_node()
         rclpy.shutdown()
