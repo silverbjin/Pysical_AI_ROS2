@@ -13,10 +13,14 @@ def setup(context):
     share=Path(get_package_share_directory('ch13_robot_description'))
     description=xacro.process_file(str(share/'urdf/integrated_robot.urdf.xacro')).toxml()
     common={'use_sim_time':True}
+    leg_controller=arg('leg_controller')
+    if leg_controller not in ('hold','ppo'):raise ValueError('leg_controller must be hold or ppo')
     actions=[Node(package='robot_state_publisher',executable='robot_state_publisher',parameters=[common,{'robot_description':description}]),
         Node(package='ch13_control',executable='state_monitor',parameters=[common]),
         Node(package='ch13_control',executable='command_arbiter_node',parameters=[common]),
-        Node(package='ch13_control',executable='hold_controller',parameters=[common,{'enabled':options['enabled']}])]
+        Node(package='ch13_control',executable='hold_controller',parameters=[common,{'enabled':options['enabled'],'leg_controller':leg_controller,'fixture_demo':arg('fixture_demo').lower()=='true'}])]
+    if leg_controller=='ppo':
+        actions.append(Node(package='ch13_control',executable='rl_leg_controller',parameters=[common,{'enabled':options['enabled'],'bundle_path':arg('bundle_path')}]))
     if options['backend']=='mujoco':
         actions.append(Node(package='ch13_control',executable='mujoco_bridge',parameters=[{'seed':options['seed']}]))
     else:
@@ -24,4 +28,4 @@ def setup(context):
         actions+=gazebo_actions(share,description,options)
     return actions
 def generate_launch_description():
-    return LaunchDescription([DeclareLaunchArgument(n,default_value=v) for n,v in [('backend','mujoco'),('enabled','false'),('headless','true'),('world',''),('seed','42')]]+[OpaqueFunction(function=setup)])
+    return LaunchDescription([DeclareLaunchArgument(n,default_value=v) for n,v in [('backend','mujoco'),('enabled','false'),('headless','true'),('world',''),('seed','42'),('fixture_demo','false'),('leg_controller','hold'),('bundle_path','')]]+[OpaqueFunction(function=setup)])

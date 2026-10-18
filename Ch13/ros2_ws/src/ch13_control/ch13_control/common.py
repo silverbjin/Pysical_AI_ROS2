@@ -1,12 +1,14 @@
 """Graceful single-threaded native ROS loop; no signal-time entity destruction."""
 import signal
 import threading
+import math
 import rclpy
 from rclpy.signals import SignalHandlerOptions
 from sensor_msgs.msg import JointState
 from builtin_interfaces.msg import Time
 
 def seconds(stamp): return stamp.sec+stamp.nanosec*1e-9
+def base_tilt(q):return math.acos(max(-1.,min(1.,1-2*(q.x*q.x+q.y*q.y))))
 def sole_publisher_id(endpoints):
     # Jazzy callback metadata has timestamps/sequence numbers, not publisher GID.
     # Fail closed on discovery ambiguity; derive identity from the graph endpoint.

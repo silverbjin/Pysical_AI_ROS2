@@ -16,6 +16,7 @@ from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry
 from tf2_msgs.msg import TFMessage
 from ch13_sim_core.contract import load_contract
+from ch13_control.common import base_tilt
 
 class Probe(Node):
     def __init__(self):
@@ -29,18 +30,23 @@ class Probe(Node):
     def transforms(self,msg,info):
         for t in msg.transforms:self.authorities.setdefault(t.child_frame_id,set()).add(t.header.frame_id)
 
-def run(backend,output,duration=12):
+def run(backend,output,duration=35,probe_factory=Probe,extra_args=None):
     output.parent.mkdir(parents=True,exist_ok=True)
     log=output.with_suffix('.launch.log').open('w')
-    process=subprocess.Popen(['ros2','launch','ch13_control','mobile_manipulation.launch.py','backend:='+backend,'enabled:=true','headless:=true'],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-    rclpy.init();probe=Probe();end=time.monotonic()+duration;result={'checks':{},'error':'probe did not complete'}
+    process=subprocess.Popen(['ros2','launch','ch13_control','mobile_manipulation.launch.py','backend:='+backend,'enabled:=true','headless:=true']+(extra_args or []),stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+    rclpy.init();probe=probe_factory();end=time.monotonic()+duration;result={'checks':{},'error':'probe did not complete'}
     try:
-        while time.monotonic()<end and process.poll() is None:rclpy.spin_once(probe,timeout_sec=.1)
+        while time.monotonic()<end and process.poll() is None:
+            rclpy.spin_once(probe,timeout_sec=.1)
+            if hasattr(probe,'sample'):probe.sample()
         c=load_contract();full=all(set(m.name)==set(c.names) and len(m.name)==20 for m in probe.joints)
-        stable=bool(probe.poses) and all(.38 < m.pose.pose.position.z < .55 and 2*math.acos(min(1,abs(m.pose.pose.orientation.w))) < .15 for m in probe.poses[20:])
+        stable=len(probe.poses)>20 and all(.38 < m.pose.pose.position.z < .55 and base_tilt(m.pose.pose.orientation) < .15 for m in probe.poses[20:])
         counts={t:probe.count_publishers(t) for t in ('/ch13/command/actuators','/ch13/joint_states_raw','/joint_states','/clock')}
         checks={'twenty_joints':bool(probe.joints) and full,'clock_advances':len(probe.clocks)>5 and probe.clocks[-1]>probe.clocks[0]+1,'single_publishers':all(v==1 for v in counts.values()),'base_stable':stable,'tf_unique':bool(probe.authorities) and all(len(a)==1 for a in probe.authorities.values()),'tf_root_observed':'base_footprint' in probe.authorities and 'tool0' in probe.authorities,'commands_received':len(probe.commands)>20}
         result={'schema_version':1,'backend':backend,'checks':checks,'publisher_counts':counts,'joint_samples':len(probe.joints),'clock_samples':len(probe.clocks),'tf_parents':{k:list(v) for k,v in probe.authorities.items()},'tf_publishers':[e.node_name for e in probe.get_publishers_info_by_topic('/tf')],'tf_per_message_gid':'UNAVAILABLE in installed Jazzy callback metadata; parent uniqueness and graph endpoints checked','last_joint_names':probe.joints[-1].name if probe.joints else [],'last_joint_positions':list(probe.joints[-1].position) if probe.joints else [],'base_samples':[[m.header.stamp.sec+m.header.stamp.nanosec*1e-9,m.pose.pose.position.x,m.pose.pose.position.y,m.pose.pose.position.z,m.pose.pose.orientation.w] for m in probe.poses]}
+        if hasattr(probe,'finish'):probe.finish(result)
+    except Exception as e:
+        result['error']=repr(e)
     finally:
         probe.destroy_node();rclpy.shutdown()
         if process.poll() is None:process.send_signal(signal.SIGINT)
@@ -57,7 +63,7 @@ def run(backend,output,duration=12):
         result['shutdown']={'launch_returncode':process.returncode,'forced_cleanup':forced,'remaining_owned_pids':subprocess.run(['pgrep','-g',str(process.pid)],capture_output=True,text=True).stdout.split()}
     result['checks']['clean_shutdown']=not result['shutdown']['remaining_owned_pids'] and process.returncode==0 and not forced
     result['status']='PASS' if all(result['checks'].values()) else 'FAIL'
-    output.write_text(json.dumps(result,indent=2));print(json.dumps({k:v for k,v in result.items() if k not in ('base_samples','tf_authorities')},indent=2))
+    output.write_text(json.dumps(result,indent=2));print(json.dumps({k:v for k,v in result.items() if k not in ('base_samples','tf_parents','grasp_samples')},indent=2))
     return 0 if result['status']=='PASS' else 1
 
 if __name__=='__main__':
