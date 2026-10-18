@@ -30,11 +30,18 @@ class Probe(Node):
     def transforms(self,msg,info):
         for t in msg.transforms:self.authorities.setdefault(t.child_frame_id,set()).add(t.header.frame_id)
 
+def probe_status(result):
+    required={'twenty_joints','clock_advances','single_publishers','base_stable','tf_parent_unique','tf_root_observed','commands_received','tf_graph_owners','clean_shutdown'}
+    if result.get('backend')=='gazebo':required|={'arm_command_response','single_gazebo_joint_command_publishers','server_control_ack'}
+    elif result.get('backend')!='mujoco':return 'FAIL'
+    checks=result.get('checks',{})
+    return 'PASS' if result.get('probe_completed') is True and not result.get('error') and required.issubset(checks) and all(checks[k] is True for k in required) else 'FAIL'
+
 def run(backend,output,duration=35,probe_factory=Probe,extra_args=None):
     output.parent.mkdir(parents=True,exist_ok=True)
     log=output.with_suffix('.launch.log').open('w')
     process=subprocess.Popen(['ros2','launch','ch13_control','mobile_manipulation.launch.py','backend:='+backend,'enabled:=true','headless:=true']+(extra_args or []),stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-    rclpy.init();probe=probe_factory();end=time.monotonic()+duration;result={'checks':{},'error':'probe did not complete'}
+    rclpy.init();probe=probe_factory();end=time.monotonic()+duration;result={'backend':backend,'checks':{},'probe_completed':False}
     try:
         while time.monotonic()<end and process.poll() is None:
             rclpy.spin_once(probe,timeout_sec=.1)
@@ -47,6 +54,7 @@ def run(backend,output,duration=35,probe_factory=Probe,extra_args=None):
         checks['tf_graph_owners']=set(e.node_name for e in probe.get_publishers_info_by_topic('/tf'))==expected_tf and [e.node_name for e in probe.get_publishers_info_by_topic('/tf_static')]==['robot_state_publisher']
         result={'schema_version':1,'backend':backend,'checks':checks,'publisher_counts':counts,'joint_samples':len(probe.joints),'clock_samples':len(probe.clocks),'tf_parents':{k:list(v) for k,v in probe.authorities.items()},'tf_publishers':[e.node_name for e in probe.get_publishers_info_by_topic('/tf')],'tf_per_message_gid':'UNAVAILABLE in installed Jazzy callback metadata; parent uniqueness and graph endpoints checked','last_joint_names':probe.joints[-1].name if probe.joints else [],'last_joint_positions':list(probe.joints[-1].position) if probe.joints else [],'base_samples':[[m.header.stamp.sec+m.header.stamp.nanosec*1e-9,m.pose.pose.position.x,m.pose.pose.position.y,m.pose.pose.position.z,m.pose.pose.orientation.w] for m in probe.poses]}
         if hasattr(probe,'finish'):probe.finish(result)
+        result['probe_completed']=True
     except Exception as e:
         result['error']=repr(e)
     finally:
@@ -64,7 +72,7 @@ def run(backend,output,duration=35,probe_factory=Probe,extra_args=None):
             time.sleep(1)
         result['shutdown']={'launch_returncode':process.returncode,'forced_cleanup':forced,'remaining_owned_pids':subprocess.run(['pgrep','-g',str(process.pid)],capture_output=True,text=True).stdout.split()}
     result['checks']['clean_shutdown']=not result['shutdown']['remaining_owned_pids'] and process.returncode==0 and not forced
-    result['status']='PASS' if all(result['checks'].values()) else 'FAIL'
+    result['status']=probe_status(result)
     output.write_text(json.dumps(result,indent=2));print(json.dumps({k:v for k,v in result.items() if k not in ('base_samples','tf_parents','grasp_samples')},indent=2))
     return 0 if result['status']=='PASS' else 1
 

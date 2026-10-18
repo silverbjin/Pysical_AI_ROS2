@@ -49,3 +49,5 @@ MoveIt2, 하나의 ros2_control SystemInterface, lifecycle 시동 보장, realti
 ## 최종 리뷰 및 커밋·push
 
 최종 fresh-context 리뷰의 지적과 수정은 별도 REVIEW_FINAL_KO.md에 기록한다. 검증기는 검증한 코드 commit과 당시 dirty paths를 기록한다. evidence 파일 자신의 최종 commit SHA를 자기 내용에 넣는 순환 참조를 피하기 위해 최종 원격 SHA 일치는 인계 응답에서 별도로 확인한다. push는 13.1 브랜치에만 하며 force push나 main merge를 하지 않는다.
+
+리뷰 후 clock 초기화/정지 시 목표 적용과 검증 예외의 false-PASS 경로를 RED→GREEN으로 수정했다. 전체 pytest 63개가 통과했으며, 최종 엔진 실행은 이 수정 이후 다시 수행한다. 출처 해시는 Git blob 기준으로 교정했고 Pillow 의존성을 선언했다. 자세한 판단·비용과 독립 리뷰의 실행 한계는 REVIEW_FINAL_KO.md를 참조한다.

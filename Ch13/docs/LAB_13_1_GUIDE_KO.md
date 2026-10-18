@@ -110,6 +110,8 @@ ros2 topic hz /clock
 
 같은 그룹의 두 생산자를 동시에 켜지 않는다. 발행자 충돌·이름 누락·NaN·잘못된 그룹·미래/역순/만료 명령은 거부한다. 만료 시 마지막 안전 목표를 유지한다. simulation clock 역행 후 중재기는 새 epoch를 추측하지 않고 재시작을 요구한다. clock 정지는 물리 명령의 마지막 목표 hold이지 실시간 제어 보장이 아니다.
 
+중재기는 초기 clock 확인 전의 입력을 거부한다. 유효한 입력도 즉시 safe target을 바꾸지 않고 pending에 보관하며, clock이 엄격히 전진한 다음 tick에서만 적용한다. 따라서 최대 한 제어 주기의 추가 대기가 있으며, 정지한 clock에서는 새 목표를 적용하지 않는다. 재개 시 이미 만료된 pending은 적용하지 않는다.
+
 TF 경계는 엔진 어댑터의 `odom → base_footprint`와 robot_state_publisher의 그 아래다. Gazebo 관측 브리지는 GZ_TO_ROS 전용이다. 20개 cmd_pos는 네이티브 router가 각각 하나만 발행한다. Jazzy 콜백에는 per-message GID가 없어 그래프 endpoint와 child-parent 유일성을 검사했으며, 모든 TF 메시지의 발행자를 패킷별로 식별한 것은 아니다.
 
 ## 7. 선택적 PPO와 명확한 한계

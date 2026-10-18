@@ -14,9 +14,9 @@ Ch11/Ch08의 라이선스 TODO는 이 작업으로 해소하지 않았다. Ch13�
 ## 원본 파일 SHA-256 (기준 커밋 내용)
 
 ```text
-14ecca0f500a3728118e9b51ee4639e1779a8cd615633288ba7845febae68662  Ch11/.../urdf/parts/leg.xacro
-e39ca5427229acb964cc1ec556cd892ccf781c42f3d424a516548b6c19679acc  Ch11/.../urdf/common/robot_properties.xacro
-f2ad4c301ea88ffe79295c0b306f561bec4c9bc3ecd1da45d12b8232b818e7c4  Ch08/.../urdf/my_robot_6D.urdf.xacro
+26b9ba0fd0efadbc4e0a8523025b21b3c1a1f847ffff8970495bc1cb343436a5  Ch11/.../urdf/parts/leg.xacro
+4e09d1f3d33e1f32585eda86d5729ffc073a06f606aa249da03989e8e4a9f733  Ch11/.../urdf/common/robot_properties.xacro
+c842b5bab991c86329b361756e0cb5989cc7c0f8d07c55a6219fcf1ffb22c07e  Ch08/.../urdf/my_robot_6D.urdf.xacro
 1a10b04275245d03f4ee77e5c02f47626ee7c4366ca722a566397b76bd4f1f0d  Ch12/src/quadruped_rl/ros_core.py
 51ed3a23bc5d525844af351895fda8859db17c46a6ab748856ecff0f1ae7b491  Ch12/.../quadruped_rl_ros/rl_controller.py
 ```
