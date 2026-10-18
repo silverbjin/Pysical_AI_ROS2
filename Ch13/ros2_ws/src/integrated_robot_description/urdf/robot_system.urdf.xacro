@@ -3,12 +3,14 @@
   <xacro:arg name="control_backend" default="mock"/>
   <xacro:arg name="controllers_file" default="config/controllers.yaml"/>
   <xacro:arg name="mujoco_model_path" default="mujoco/robot_system.xml"/>
+  <xacro:arg name="vision_enabled" default="false"/>
 
   <xacro:include filename="materials.xacro"/>
   <xacro:include filename="inertial_macros.xacro"/>
   <xacro:include filename="quadruped_base.xacro"/>
   <xacro:include filename="manipulator.xacro"/>
   <xacro:include filename="system.ros2_control.xacro"/>
+  <xacro:include filename="vision_sensors.xacro"/>
 
   <xacro:property name="backend" value="$(arg control_backend)"/>
   <xacro:unless value="${backend in ['mock', 'gazebo', 'mujoco']}">
@@ -28,7 +30,7 @@
   </link>
 
   <joint name="camera_mount_joint" type="fixed">
-    <parent link="arm_link_6"/><child link="camera_link"/><origin xyz="0.03 0 0.03" rpy="0 -1.5708 0"/>
+    <parent link="arm_link_6"/><child link="camera_link"/><origin xyz="0.03 0 0.03" rpy="0 ${-pi/2} 0"/>
   </joint>
   <link name="camera_link">
     <visual><geometry><box size="0.02 0.05 0.02"/></geometry><material name="body_black"/></visual>
@@ -36,6 +38,9 @@
     <xacro:box_inertial mass="0.05" x="0.02" y="0.05" z="0.02"/>
   </link>
 
+  <xacro:if value="$(arg vision_enabled)">
+    <xacro:vision_frames enabled="true"/>
+  </xacro:if>
   <xacro:system_ros2_control name="IntegratedRobotSystem" backend="${backend}" mujoco_model_path="$(arg mujoco_model_path)"/>
 
   <xacro:if value="${backend == 'gazebo'}">

@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_native_mujoco_clipping_is_metric_not_extent_scaled ____________
+
+    def test_native_mujoco_clipping_is_metric_not_extent_scaled():
+        model = mujoco.MjModel.from_xml_path(str(PKG / 'mujoco/vision_fixture.xml'))
+>       assert model.vis.map.znear * model.stat.extent == pytest.approx(.1)
+E       assert 0.024519761289176926 == 0.1 ± 1.0e-07
+E         
+E         comparison failed
+E         Obtained: 0.024519761289176926
+E         Expected: 0.1 ± 1.0e-07
+
+Ch13/tests/test_section_13_4_camera_model.py:125: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_camera_model.py::test_native_mujoco_clipping_is_metric_not_extent_scaled
+1 failed in 0.92s
