@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="arm_segment" params="name length radius mass material:='arm_orange'">
+    <link name="${name}">
+      <visual><origin xyz="0 0 ${length/2}"/><geometry><cylinder radius="${radius}" length="${length}"/></geometry><material name="${material}"/></visual>
+      <collision><origin xyz="0 0 ${length/2}"/><geometry><cylinder radius="${radius*0.90}" length="${length*0.96}"/></geometry></collision>
+      <xacro:cylinder_inertial mass="${mass}" radius="${radius}" length="${length}" origin_xyz="0 0 ${length/2}"/>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="manipulator_arm" params="parent_link prefix:='arm_' xyz:='0 0 0.095' rpy:='0 0 0'">
+    <joint name="${prefix}mount_joint" type="fixed">
+      <parent link="${parent_link}"/><child link="${prefix}mount"/><origin xyz="${xyz}" rpy="${rpy}"/>
+    </joint>
+    <link name="${prefix}mount">
+      <visual><geometry><box size="0.16 0.14 0.04"/></geometry><material name="joint_grey"/></visual>
+      <collision><geometry><box size="0.15 0.13 0.038"/></geometry></collision>
+      <xacro:box_inertial mass="0.30" x="0.16" y="0.14" z="0.04"/>
+    </link>
+    <joint name="${prefix}base_fixed" type="fixed">
+      <parent link="${prefix}mount"/><child link="${prefix}base_link"/><origin xyz="0 0 0.035"/>
+    </joint>
+    <link name="${prefix}base_link">
+      <visual><origin xyz="0 0 0.03"/><geometry><cylinder radius="0.065" length="0.06"/></geometry><material name="body_black"/></visual>
+      <collision><origin xyz="0 0 0.03"/><geometry><cylinder radius="0.06" length="0.06"/></geometry></collision>
+      <xacro:cylinder_inertial mass="0.45" radius="0.065" length="0.06" origin_xyz="0 0 0.03"/>
+    </link>
+
+    <xacro:arm_segment name="${prefix}link_1" length="0.10" radius="0.040" mass="0.35"/>
+    <joint name="${prefix}joint_1" type="revolute"><parent link="${prefix}base_link"/><child link="${prefix}link_1"/><origin xyz="0 0 0.06"/><axis xyz="0 0 1"/><limit lower="-3.14159" upper="3.14159" effort="35" velocity="2.0"/></joint>
+    <xacro:arm_segment name="${prefix}link_2" length="0.18" radius="0.035" mass="0.55"/>
+    <joint name="${prefix}joint_2" type="revolute"><parent link="${prefix}link_1"/><child link="${prefix}link_2"/><origin xyz="0 0 0.10"/><axis xyz="0 1 0"/><limit lower="-1.5708" upper="1.5708" effort="35" velocity="2.0"/></joint>
+    <xacro:arm_segment name="${prefix}link_3" length="0.16" radius="0.032" mass="0.45"/>
+    <joint name="${prefix}joint_3" type="revolute"><parent link="${prefix}link_2"/><child link="${prefix}link_3"/><origin xyz="0 0 0.18"/><axis xyz="0 1 0"/><limit lower="-2.0944" upper="2.0944" effort="30" velocity="2.2"/></joint>
+    <xacro:arm_segment name="${prefix}link_4" length="0.10" radius="0.028" mass="0.28"/>
+    <joint name="${prefix}joint_4" type="revolute"><parent link="${prefix}link_3"/><child link="${prefix}link_4"/><origin xyz="0 0 0.16"/><axis xyz="1 0 0"/><limit lower="-3.14159" upper="3.14159" effort="20" velocity="2.8"/></joint>
+    <xacro:arm_segment name="${prefix}link_5" length="0.08" radius="0.025" mass="0.20"/>
+    <joint name="${prefix}joint_5" type="revolute"><parent link="${prefix}link_4"/><child link="${prefix}link_5"/><origin xyz="0 0 0.10"/><axis xyz="0 1 0"/><limit lower="-1.5708" upper="1.5708" effort="15" velocity="3.0"/></joint>
+    <xacro:arm_segment name="${prefix}link_6" length="0.06" radius="0.022" mass="0.15"/>
+    <joint name="${prefix}joint_6" type="revolute"><parent link="${prefix}link_5"/><child link="${prefix}link_6"/><origin xyz="0 0 0.08"/><axis xyz="0 0 1"/><limit lower="-3.14159" upper="3.14159" effort="12" velocity="3.0"/></joint>
+
+    <joint name="${prefix}tool0_fixed" type="fixed"><parent link="${prefix}link_6"/><child link="${prefix}tool0"/><origin xyz="0 0 0.06"/></joint>
+    <link name="${prefix}tool0"><visual><geometry><sphere radius="0.015"/></geometry><material name="sensor_blue"/></visual><collision><geometry><sphere radius="0.012"/></geometry></collision><xacro:sphere_inertial mass="0.03" radius="0.015"/></link>
+    <joint name="gripper_base_fixed" type="fixed"><parent link="${prefix}tool0"/><child link="gripper_base_link"/></joint>
+    <link name="gripper_base_link"><visual><origin xyz="0 0 0.02"/><geometry><box size="0.10 0.06 0.04"/></geometry><material name="joint_grey"/></visual><collision><origin xyz="0 0 0.02"/><geometry><box size="0.09 0.055 0.038"/></geometry></collision><xacro:box_inertial mass="0.16" x="0.10" y="0.06" z="0.04" origin_xyz="0 0 0.02"/></link>
+
+    <joint name="gripper_left_joint" type="prismatic"><parent link="gripper_base_link"/><child link="gripper_left_finger"/><origin xyz="0 0.025 0.04"/><axis xyz="0 1 0"/><limit lower="0" upper="0.03" effort="15" velocity="0.15"/></joint>
+    <link name="gripper_left_finger"><visual><origin xyz="0 0 0.04"/><geometry><box size="0.018 0.018 0.08"/></geometry><material name="gripper_white"/></visual><collision><origin xyz="0 0 0.04"/><geometry><box size="0.016 0.016 0.076"/></geometry></collision><xacro:box_inertial mass="0.06" x="0.018" y="0.018" z="0.08" origin_xyz="0 0 0.04"/></link>
+    <joint name="gripper_right_joint" type="prismatic"><parent link="gripper_base_link"/><child link="gripper_right_finger"/><origin xyz="0 -0.025 0.04"/><axis xyz="0 -1 0"/><limit lower="0" upper="0.03" effort="15" velocity="0.15"/></joint>
+    <link name="gripper_right_finger"><visual><origin xyz="0 0 0.04"/><geometry><box size="0.018 0.018 0.08"/></geometry><material name="gripper_white"/></visual><collision><origin xyz="0 0 0.04"/><geometry><box size="0.016 0.016 0.076"/></geometry></collision><xacro:box_inertial mass="0.06" x="0.018" y="0.018" z="0.08" origin_xyz="0 0 0.04"/></link>
+  </xacro:macro>
+</robot>

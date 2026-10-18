@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="quadruped_arm_system">
+  <xacro:arg name="control_backend" default="mock"/>
+  <xacro:arg name="controllers_file" default="config/controllers.yaml"/>
+  <xacro:arg name="mujoco_model_path" default="mujoco/robot_system.xml"/>
+
+  <xacro:include filename="materials.xacro"/>
+  <xacro:include filename="inertial_macros.xacro"/>
+  <xacro:include filename="quadruped_base.xacro"/>
+  <xacro:include filename="manipulator.xacro"/>
+  <xacro:include filename="system.ros2_control.xacro"/>
+
+  <xacro:property name="backend" value="$(arg control_backend)"/>
+  <xacro:unless value="${backend in ['mock', 'gazebo', 'mujoco']}">
+    <xacro:error message="control_backend must be mock, gazebo, or mujoco"/>
+  </xacro:unless>
+
+  <xacro:quadruped_base/>
+  <xacro:manipulator_arm parent_link="base_link" prefix="arm_" xyz="0 0 0.095" rpy="0 0 0"/>
+
+  <joint name="lidar_mount_joint" type="fixed">
+    <parent link="base_link"/><child link="lidar_link"/><origin xyz="-0.18 0 0.12"/>
+  </joint>
+  <link name="lidar_link">
+    <visual><geometry><cylinder radius="0.035" length="0.045"/></geometry><material name="sensor_blue"/></visual>
+    <collision><geometry><cylinder radius="0.033" length="0.043"/></geometry></collision>
+    <xacro:cylinder_inertial mass="0.12" radius="0.035" length="0.045"/>
+  </link>
+
+  <joint name="camera_mount_joint" type="fixed">
+    <parent link="arm_link_6"/><child link="camera_link"/><origin xyz="0.03 0 0.03" rpy="0 -1.5708 0"/>
+  </joint>
+  <link name="camera_link">
+    <visual><geometry><box size="0.02 0.05 0.02"/></geometry><material name="body_black"/></visual>
+    <collision><geometry><box size="0.018 0.048 0.018"/></geometry></collision>
+    <xacro:box_inertial mass="0.05" x="0.02" y="0.05" z="0.02"/>
+  </link>
+
+  <xacro:system_ros2_control name="IntegratedRobotSystem" backend="${backend}" mujoco_model_path="$(arg mujoco_model_path)"/>
+
+  <xacro:if value="${backend == 'gazebo'}">
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(arg controllers_file)</parameters>
+      </plugin>
+    </gazebo>
+  </xacro:if>
+</robot>

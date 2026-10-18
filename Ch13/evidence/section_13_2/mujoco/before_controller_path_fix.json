@@ -1,0 +1,10 @@
+{
+  "controller_manager_version": "4.48.1",
+  "engine": "mujoco",
+  "failure": "controller node received a trailing --params-file because the YAML path contained robot_description",
+  "mujoco_ros2_control_commit": "c261f5552edf124d1000a23fb25b6c07cadeb807",
+  "observed_controller_argument_fragment": "--params-file /tmp/launch_params_* --params-file --param use_sim_time:=true",
+  "root_cause": "controller_manager 4.48.1 filters any inherited argument containing the substring robot_description; the package directory name was integrated_robot_description",
+  "status": "EXPECTED_FAILURE_REPRODUCED",
+  "workaround": "copy controllers.yaml to a content-addressed /tmp path before launch"
+}
