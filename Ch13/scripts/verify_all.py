@@ -14,6 +14,11 @@ import time
 ROOT=Path(__file__).resolve().parents[2]
 CH=ROOT/'Ch13'
 
+def git_output(root,*args):
+    # This checkout is shared by Windows Git and WSL. Compare canonical text,
+    # not CRLF checkout bytes. Command-local option never edits Git configuration.
+    return subprocess.check_output(['git','-c','core.autocrlf=true',*args],cwd=root,text=True).strip()
+
 def source_inventory(root):
     result={}
     for directory,dirs,names in os.walk(root):
@@ -53,7 +58,7 @@ def verify():
         if results[key]['returncode']==0 and path.is_file() and path.stat().st_mtime>=commands[-1]['started_unix']-1:
             results[key]=json.loads(path.read_text())
         else:results[key]['status']='FAIL'
-    git=lambda *args:subprocess.check_output(['git',*args],cwd=ROOT,text=True).strip()
+    git=lambda *args:git_output(ROOT,*args)
     earlier=git('diff','--name-only','1451f54a64374f2ff150a39429cc89e9e3b07696','--',*[f'Ch{i:02}' for i in range(5,13)])
     results['earlier_chapters_unchanged']=not earlier
     hashes={'Ch13/'+p:digest for p,digest in source_inventory(CH).items()}

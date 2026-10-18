@@ -24,6 +24,7 @@
 - MuJoCo odometry에 실제 몸체 선속도·각속도를 넣고 IMU orientation/angular velocity를 발행한다. 측정하지 않은 가속도는 covariance=-1로 표시한다.
 - colcon test가 직접 pytest와 달리 0개 테스트를 실행하며 exit 5를 반환했다. tests_require 및 testpaths를 등록한 뒤 실제 ROS 테스트 13개가 실행되고 0 failures/0 skipped임을 확인했다. 최초 실패 로그도 보존했다.
 - 비편집 wheel을 별도 경로에 설치해 Ch13 소스가 아닌 설치본에서 계약 20개와 실제 mj_step을 확인했다. 배포 리소스 누락이 없었다. source hash 수집은 가상환경·build/install/log·evidence를 순회하지 않도록 제한했다.
+- Windows 체크아웃의 CRLF를 WSL Git이 원본 변경으로 오인하는 검증기 결함을 발견했다. 임시 저장소에서 줄바꿈만 변경/실제 내용 변경을 각각 시험한 뒤, Git 설정을 수정하지 않는 명령별 canonical text 비교로 교정했다. 원본 장 파일을 재작성하지 않았다.
 
 ## 실행 증거와 판정
 
