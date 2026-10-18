@@ -5,6 +5,7 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/integrated_robot_vision']),
         ('share/integrated_robot_vision', ['package.xml']),
+        ('share/integrated_robot_vision/config', ['../../../config/vision_assets.json']),
     ],
     install_requires=['setuptools', 'numpy'], zip_safe=True,
     maintainer='Jinho', maintainer_email='jinho@todo.todo',
@@ -14,5 +15,6 @@ setup(
         'native_pose_adapter = integrated_robot_vision.native_pose:main',
         'native_camera_info_adapter = integrated_robot_vision.camera_info_adapter:main',
         'vision_processor = integrated_robot_vision.vision_processor:main',
+        'object_detector = integrated_robot_vision.object_detector:main',
     ]},
 )
