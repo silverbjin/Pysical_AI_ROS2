@@ -137,3 +137,30 @@ def test_malformed_rgb_replacement_cannot_expose_cached_valid_frame(change):
     with pytest.raises(ValueError):
         cache.add_rgb(msg, 0)
     assert cache.match(1., 'camera_optical_frame', 0) is None
+
+
+def test_exact_ros_capture_stamps_do_not_alias_at_unix_epoch():
+    cache = RGBDCache()
+    calibration = info()
+    calibration.header.stamp.sec, calibration.header.stamp.nanosec = 1_792_300_000, 100
+    rgb, depth = images(1., 1.)
+    for msg in (rgb, depth):
+        msg.header.stamp.sec, msg.header.stamp.nanosec = 1_792_300_000, 100
+    cache.add_info(calibration, 0)
+    cache.add_rgb(rgb, 0)
+    cache.add_depth(depth, 0)
+    assert cache.match(rgb.header.stamp, 'camera_optical_frame', 0) is not None
+    wrong = deepcopy(rgb.header.stamp)
+    wrong.nanosec += 3  # Float seconds cannot distinguish these absolute times.
+    assert cache.match(wrong, 'camera_optical_frame', 0) is None
+
+
+def test_non_normalized_capture_stamp_fails_closed():
+    cache = populated()
+    wrong = deepcopy(images()[0].header.stamp)
+    wrong.nanosec = 1_000_000_001
+    assert cache.match(wrong, 'camera_optical_frame', 0) is None
+    rgb = images()[0]
+    rgb.header.stamp = wrong
+    with pytest.raises(ValueError):
+        cache.add_rgb(rgb, 0)

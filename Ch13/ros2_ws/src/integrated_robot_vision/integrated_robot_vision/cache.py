@@ -17,6 +17,12 @@ def seconds(stamp):
     return stamp.sec + stamp.nanosec / 1e9
 
 
+def nanoseconds(stamp):
+    if not 0 <= stamp.nanosec < 1_000_000_000:
+        raise ValueError('normalized ROS stamp required')
+    return stamp.sec * 1_000_000_000 + stamp.nanosec
+
+
 def parse_intrinsics(msg) -> Intrinsics:
     k, r, p = np.array(msg.k).reshape(3, 3), np.array(msg.r).reshape(3, 3), np.array(msg.p).reshape(3, 4)
     roi = msg.roi
@@ -78,7 +84,7 @@ class RGBDCache:
             try:
                 intrinsics = parse_intrinsics(msg)
                 stamp = seconds(msg.header.stamp)
-                if stamp <= 0:
+                if nanoseconds(msg.header.stamp) <= 0:
                     raise ValueError('positive calibration capture time required')
             except (ValueError, TypeError):
                 self.clear(epoch)
@@ -92,7 +98,7 @@ class RGBDCache:
         with self.lock:
             self._epoch(epoch)
             stamp = seconds(msg.header.stamp)
-            if stamp <= 0 or not msg.header.frame_id:
+            if nanoseconds(msg.header.stamp) <= 0 or not msg.header.frame_id:
                 raise ValueError('positive image capture time and frame required')
             cache.pop(stamp, None)
             if cache is self.rgb and (
@@ -114,20 +120,32 @@ class RGBDCache:
                     and rgb is not None and rgb[0] is bundle.rgb
                     and depth is not None and depth[0] is bundle.depth)
 
-    def match(self, stamp: float, frame_id: str, epoch: int):
+    def match(self, stamp, frame_id: str, epoch: int):
         with self.lock:
+            try:
+                capture_ns = nanoseconds(stamp) if hasattr(stamp, 'sec') else None
+            except ValueError:
+                return None
+            if capture_ns is not None:
+                stamp = seconds(stamp)
             if epoch != self.epoch or not math.isfinite(stamp) or stamp <= 0:
                 return None
-            rgb_key = next((s for s in self.rgb if abs(s-stamp) <= 1e-9), None)
+            rgb_key = next((s for s, (msg, _) in self.rgb.items() if
+                            (abs(nanoseconds(msg.header.stamp)-capture_ns) <= 1
+                             if capture_ns is not None else abs(s-stamp) <= 1e-9)), None)
             if rgb_key is None or not self.depth or not self.info:
                 return None
-            depth_key = min(self.depth, key=lambda s: (round(abs(s-stamp), 9), s))
+            rgb, receipt = self.rgb[rgb_key]
+            stamp = seconds(rgb.header.stamp)
+            source_ns = nanoseconds(rgb.header.stamp)
+            depth_key = min(self.depth, key=lambda s: (
+                abs(nanoseconds(self.depth[s][0].header.stamp)-source_ns),
+                nanoseconds(self.depth[s][0].header.stamp)))
             info_keys = [s for s in self.info if -.03 <= stamp-s <= 1.]
-            if abs(depth_key-stamp) > .0300000001 or not info_keys:
+            if abs(nanoseconds(self.depth[depth_key][0].header.stamp)-source_ns) > 30_000_000 or not info_keys:
                 return None
             info_key = min(info_keys, key=lambda s: (abs(s-stamp), s))
             k = self.info[info_key]
-            rgb, receipt = self.rgb[rgb_key]
             depth = self.depth[depth_key][0]
             if (rgb.header.frame_id != frame_id or depth.header.frame_id != frame_id
                     or k.frame_id != frame_id or (rgb.width, rgb.height) != (k.width, k.height)
