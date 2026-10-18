@@ -8,6 +8,7 @@ import math
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 from threading import Event
 import time
@@ -18,6 +19,34 @@ from verify_vision_13_4 import EvidenceRun, rms_error, geometry_summary, tf_cont
 
 COMMON = {'one_clock', 'one_odometry', 'single_tf_owners', 'sensor_contract',
           'measured_startup', 'engine_alive', 'clean_shutdown', 'native_snapshot'}
+
+
+def recognition_summary(detections, tracks, expected_class=None):
+    detected = [v for v in detections if any(expected_class is None or b['class_id'] == expected_class
+                                             for b in v['boxes'])]
+    valid = [v for v in tracks if v['valid'] and
+             (expected_class is None or v['class_id'] == expected_class)]
+    return dict(frames=len(detections), detected_frames=len(detected), valid_3d=len(valid),
+                expected_class=expected_class, coverage=len(detected)/len(detections) if detections else 0.)
+
+
+def wait_for_stage(predicate, step, timeout, *, stage, stages, snapshot=lambda: {}):
+    started = time.monotonic()
+    record = dict(stage=stage, started_monotonic=started, status='RUNNING')
+    stages.append(record)
+    try:
+        while not predicate():
+            if time.monotonic()-started >= timeout:
+                record['status'] = 'TIMEOUT'
+                raise TimeoutError('native vision verification deadline exceeded: '+stage)
+            step()
+        record['status'] = 'PASS'
+    except BaseException:
+        if record['status'] == 'RUNNING':
+            record['status'] = 'ERROR'
+        raise
+    finally:
+        record.update(finished_monotonic=time.monotonic(), last_inputs=snapshot())
 
 
 def offset_fixture(engine, share, output, y):
@@ -74,6 +103,43 @@ def is_gazebo_command(command_line):
             and Path(os.fsdecode(args[1])).name == 'gz' and args[2] == b'sim')
 
 
+def snapshot_owned_stacks(process, members, output):
+    """Read-only bounded debugger attach; never change ptrace policy or use sudo."""
+    members = list(members)
+    for pid in members:
+        try:
+            if os.getpgid(pid) != process.pid:
+                raise ValueError('refuse stack capture of unrelated process')
+        except ProcessLookupError:
+            continue
+    records = []
+    for pid in members:
+        try:
+            if os.getpgid(pid) != process.pid:
+                raise ValueError('owned process changed group before debugger attach')
+        except ProcessLookupError:
+            continue
+        path = Path(output)/f'shutdown-stack-{pid}.txt'
+        record = dict(pid=pid, pgid=process.pid, path=path.name)
+        if shutil.which('gdb') is None:
+            content = 'gdb unavailable; no package installation attempted\n'
+            record['status'] = 'UNAVAILABLE'
+        else:
+            command = ['gdb', '--batch', '--nx', '-iex', 'set auto-load off', '-p', str(pid),
+                       '-ex', 'set pagination off', '-ex', 'thread apply all bt', '-ex', 'detach']
+            try:
+                result = subprocess.run(command, capture_output=True, text=True, timeout=12.)
+                content = result.stdout+result.stderr
+                record.update(returncode=result.returncode, status=(
+                    'CAPTURED' if 'Thread ' in content and '#' in content else 'UNAVAILABLE'))
+            except subprocess.TimeoutExpired as exc:
+                content = 'bounded gdb timeout\n'+str(exc)
+                record['status'] = 'TIMEOUT'
+        path.write_text(content, encoding='utf-8')
+        records.append(record)
+    return records
+
+
 def owned_gazebo_members(process):
     from probe_sensors_13_4 import live_group_pids
     found = []
@@ -110,6 +176,8 @@ def build_launch_command(args, delay):
         'allow_camera_motion_test:='+str(args.scenario == 'delay').lower()]
     if args.weights_path:
         command.append('weights_path:='+args.weights_path)
+    if args.engine == 'mujoco':
+        command.append('mujoco_headless:='+str(getattr(args, 'mujoco_headless', True)).lower())
     return command
 
 
@@ -157,6 +225,15 @@ def run_trial(args, *, launch_command=None):
                               scenario=args.scenario, processing_delay_s=delay, processes=[])
             command = launch_command or build_launch_command(args, delay)
             fixture_y = 0.
+            if args.scenario == 'yolo' and getattr(args, 'semantic_fixture', 'red') == 'cup':
+                from ament_index_python.packages import get_package_share_directory
+                from semantic_fixture_13_4 import make_cup_fixture
+                path = make_cup_fixture(args.engine,
+                    get_package_share_directory('integrated_robot_description'), run.root)
+                command.append(('world' if args.engine == 'gazebo' else 'model_path')+':='+str(path))
+                run.artifact(path)
+                run.result['semantic_fixture'] = dict(kind='authored_geometry_cup', expected_class='41',
+                    note='Static hollow mug/handle and coffee on table; not a photo billboard or grasp test')
             if args.scenario in ('tracking', 'safety'):
                 from ament_index_python.packages import get_package_share_directory
                 fixture_y = .02
@@ -192,13 +269,12 @@ def run_trial(args, *, launch_command=None):
                     raise RuntimeError('camera-motion benchmark stopped on safety gate: '+
                                        node.tracking.get('reason', 'unknown'))
 
-            def until(predicate, timeout):
-                deadline = time.monotonic()+timeout
-                while time.monotonic() < deadline:
-                    step()
-                    if predicate():
-                        return
-                raise TimeoutError('native vision verification deadline exceeded')
+            run.result['stages'] = []
+
+            def until(predicate, timeout, stage):
+                wait_for_stage(predicate, step, timeout, stage=stage, stages=run.result['stages'],
+                    snapshot=lambda: dict(tracking=dict(node.tracking), counts=dict(node.counts),
+                                          command_count=len(node.commands)))
 
             def pump(duration):
                 deadline = time.monotonic()+duration
@@ -208,9 +284,9 @@ def run_trial(args, *, launch_command=None):
             def toggle(path, enabled):
                 client = node.create_client(SetBool, path)
                 try:
-                    until(client.service_is_ready, 5.)
+                    until(client.service_is_ready, 5., path+':service_ready')
                     future = client.call_async(SetBool.Request(data=enabled))
-                    until(future.done, 5.)
+                    until(future.done, 5., path+':reply')
                     reply = future.result()
                     if not reply.success:
                         raise RuntimeError('explicit mode request refused: '+reply.message)
@@ -218,17 +294,18 @@ def run_trial(args, *, launch_command=None):
                 finally:
                     node.destroy_client(client)
 
-            until(lambda: node.startup.get('status') == 'READY' and node.standing(), args.timeout)
+            until(lambda: node.startup.get('status') == 'READY' and node.standing(), args.timeout, 'startup')
             checks['measured_startup'] = True
             if args.scenario == 'delay':
                 run.result['motion_enable'] = toggle('/manipulation_node/set_camera_motion_test', True)
-                until(lambda: node.tracking.get('enabled') and node.tracking.get('mode') == 'camera_motion_test', 5.)
+                until(lambda: node.tracking.get('enabled') and node.tracking.get('mode') == 'camera_motion_test',
+                      5., 'camera_motion_ack')
             node.collecting = True
             started = time.monotonic()
             if args.scenario in ('static', 'delay'):
                 minimum = 6. if args.scenario == 'delay' else 3.
                 until(lambda: len({v['capture_ns'] for v in node.samples}) >= 30
-                      and time.monotonic()-started >= minimum, args.timeout)
+                      and time.monotonic()-started >= minimum, args.timeout, 'thirty_unique_observations')
                 errors = [v['error'] for v in node.samples]
                 measured = geometry_summary(node.samples, .05 if args.scenario == 'delay' else .03)
                 run.result['geometry'] = dict(measured,
@@ -246,13 +323,12 @@ def run_trial(args, *, launch_command=None):
                     checks['delay_150ms'] = delay == .15
             elif args.scenario == 'yolo':
                 pump(args.duration)
-                detected = [v for v in node.detections if v['boxes']]
-                valid = [v for v in node.tracks if v['valid']]
-                run.result['recognition'] = dict(frames=len(node.detections), detected_frames=len(detected),
-                    valid_3d=len(valid), coverage=(len(detected)/len(node.detections) if node.detections else 0.),
-                    note='Actual native red fixture; COCO recognition is not assumed. No fixture fallback.')
-                checks.update(actual_inference_frames=len(node.detections) >= 10,
-                              recognition=bool(detected), valid_3d_detections=len(valid) >= 5)
+                expected = run.result.get('semantic_fixture', {}).get('expected_class')
+                measured = recognition_summary(node.detections, node.tracks, expected)
+                run.result['recognition'] = dict(measured, note='Actual native camera and YOLO; no fallback')
+                checks.update(actual_inference_frames=measured['frames'] >= 10,
+                              recognition=measured['detected_frames'] > 0,
+                              valid_3d_detections=measured['valid_3d'] >= 5)
                 node.save_latest_frame()  # retain actual sensors even if every inference expires
                 for key in reversed(node.boxes):
                     # Save the actual image aligned to an actual inference result,
@@ -271,13 +347,27 @@ def run_trial(args, *, launch_command=None):
                 initial = [v['pixel_error'] for v in node.samples if v['wall'] >= started]
                 initial_errors = initial
                 until(lambda: bool(node.tracks) and node.tracks[-1]['valid']
-                      and 0 <= node.get_clock().now().nanoseconds-node.tracks[-1]['capture_ns'] <= .2e9, args.timeout)
+                      and 0 <= node.get_clock().now().nanoseconds-node.tracks[-1]['capture_ns'] <= .2e9,
+                      args.timeout, 'fresh_target')
                 command_start = len(node.commands)
+                request_at = time.monotonic()
                 run.result['tracking_enable'] = toggle('/manipulation_node/set_visual_tracking', True)
-                until(lambda: node.tracking.get('enabled', False), 2.)
+                until(lambda: any(v.get('event') == 'enable_ack' and v['wall'] >= request_at
+                                  for v in node.states), 2., 'tracking_ack')
+                acknowledgement = next(v for v in reversed(node.states)
+                                       if v.get('event') == 'enable_ack' and v['wall'] >= request_at)
+                session = acknowledgement['session_generation']
+                run.result['tracking_session'] = dict(requested_monotonic=request_at,
+                                                     acknowledgement=acknowledgement)
                 enabled_at = time.monotonic()
                 tracking_started = enabled_at
-                until(lambda: len(node.commands) > command_start, 3.)
+                def started_session():
+                    if not node.tracking.get('enabled'):
+                        raise RuntimeError('tracking stopped before fault/trial: '+str(node.tracking))
+                    return any(v.get('session_generation') == session and
+                               v['dispatched_monotonic'] >= request_at
+                               for v in node.commands[command_start:])
+                until(started_session, 3., 'first_tracking_command')
                 if args.scenario == 'tracking':
                     while time.monotonic()-enabled_at < 5.2:
                         step()
@@ -319,12 +409,12 @@ def run_trial(args, *, launch_command=None):
                         from controller_manager_msgs.srv import SwitchController
                         client = node.create_client(SwitchController, '/controller_manager/switch_controller')
                         try:
-                            until(client.service_is_ready, 3.)
+                            until(client.service_is_ready, 3., 'joint_switch_ready')
                             request = SwitchController.Request(deactivate_controllers=['joint_state_broadcaster'],
                                 strictness=2, activate_asap=True)
                             request.timeout.sec = 2
                             future = client.call_async(request)
-                            until(future.done, 3.)
+                            until(future.done, 3., 'joint_switch_reply')
                             if not future.result().ok:
                                 raise RuntimeError('joint broadcaster deactivation refused')
                             fault_record['scope'] = 'joint_state_broadcaster only; consequently joint TF also becomes stale'
@@ -412,6 +502,8 @@ def run_trial(args, *, launch_command=None):
                         # the remaining ROS launch group; do not guess a .5s delay.
                         run.result['gazebo_native_stop'] = dict(pids=native_members,
                             exited=wait_owned_members_exit(process, native_members, timeout=8.))
+                        if not run.result['gazebo_native_stop']['exited']:
+                            run.result['shutdown_stacks'] = snapshot_owned_stacks(process, native_members, run.root)
                     except Exception as exc:
                         run.fail('native stop failure: '+repr(exc))
                 try:
@@ -438,6 +530,7 @@ def run_trial(args, *, launch_command=None):
                 signal.signal(signal.SIGINT, previous_signal)
             run.result['cleanup'] = cleanup
             names = ['observations.json', 'joints.npz']
+            names += [v['path'] for v in run.result.get('shutdown_stacks', [])]
             if node is not None and node.saved_frame:
                 names += ['rgb.png', 'depth.npy', 'annotated.png', 'camera.json']
             for name in names:
@@ -458,6 +551,10 @@ def main():
     parser.add_argument('--weights-path', default='')
     parser.add_argument('--scenario', choices=('geometry', 'static', 'delay', 'yolo', 'tracking', 'safety'))
     parser.add_argument('--fault', choices=('images', 'tf', 'joints'), default='images')
+    viewer = parser.add_mutually_exclusive_group()
+    viewer.add_argument('--mujoco-headless', dest='mujoco_headless', action='store_true', default=True)
+    viewer.add_argument('--mujoco-viewer', dest='mujoco_headless', action='store_false')
+    parser.add_argument('--semantic-fixture', choices=('red', 'cup'), default='cup')
     parser.add_argument('--output-dir', required=True)
     parser.add_argument('--timeout', type=float, default=60.)
     parser.add_argument('--duration', type=float, default=20.)

@@ -20,6 +20,7 @@ from std_msgs.msg import String
 from std_srvs.srv import SetBool, Trigger
 from trajectory_msgs.msg import JointTrajectory
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from integrated_robot_runtime.common import DrainingExecutor
 from integrated_robot_runtime.manipulation import ManipulationNode
@@ -33,6 +34,86 @@ def wait(predicate, timeout=3.):
             return
         time.sleep(.005)
     assert predicate(), 'ROS boundary condition did not arrive'
+
+
+def test_enable_and_disable_ack_are_published_even_before_any_control_tick():
+    # Characterizes the lost <200ms session: real ROS publisher, no timer tick
+    # or action server. Safety predicates are covered by the boundary tests below.
+    from rclpy.executors import SingleThreadedExecutor
+    rclpy.init(domain_id=148)
+    node, peer = ManipulationNode(), Node('tracking_ack_peer')
+    executor = SingleThreadedExecutor()
+    executor.add_node(peer)
+    states = []
+    sub = peer.create_subscription(String, '/architecture/visual_tracking',
+                                    lambda msg: states.append(json.loads(msg.data)), 10)
+    try:
+        deadline = time.monotonic()+1.
+        while node.count_subscribers('/architecture/visual_tracking') < 1 and time.monotonic() < deadline:
+            executor.spin_once(timeout_sec=.01)
+        tracking = node.tracking
+        tracking.joints.append((1, time.monotonic(), dict.fromkeys(ARM_NAMES, 0.)))
+        node.safe = True
+        with patch.object(tracking, 'conditions', return_value=dict.fromkeys(tracking.guard.CONDITIONS, True)):
+            response = tracking.toggle(SetBool.Request(data=True), SetBool.Response())
+        assert response.success
+        tracking.toggle(SetBool.Request(data=False), SetBool.Response())
+        deadline = time.monotonic()+.5
+        while len(states) < 2 and time.monotonic() < deadline:
+            executor.spin_once(timeout_sec=.01)
+        assert [v['enabled'] for v in states] == [True, False]
+        assert states[0]['event'] == 'enable_ack'
+        assert states[1]['generation'] > states[0]['generation']
+    finally:
+        executor.shutdown()
+        peer.destroy_node()
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+def test_control_timer_does_not_fill_executor_with_callbacks_waiting_on_same_lock():
+    rclpy.init(domain_id=148)
+    node = ManipulationNode()
+    executor = DrainingExecutor(num_threads=4)
+    executor.add_node(node)
+    stopping, entered = threading.Event(), threading.Event()
+    active, maximum = 0, 0
+    count_lock = threading.Lock()
+    original = node.tracking.timer.callback
+
+    def measured_tick():
+        nonlocal active, maximum
+        with count_lock:
+            active += 1
+            maximum = max(maximum, active)
+        entered.set()
+        try:
+            original()
+        finally:
+            with count_lock:
+                active -= 1
+
+    def spin():
+        while not stopping.is_set():
+            executor.spin_once(timeout_sec=.01)
+
+    node.tracking.timer.callback = measured_tick
+    thread = threading.Thread(target=spin)
+    try:
+        with node.lock:
+            thread.start()
+            assert entered.wait(timeout=1.)
+            time.sleep(.12)  # real contention: every tick waits on the production lock
+        stopping.set()
+        thread.join(timeout=2.)
+        executor.shutdown(timeout_sec=3.)
+        assert maximum == 1, f'{maximum} control ticks occupied the executor simultaneously'
+    finally:
+        stopping.set()
+        thread.join(timeout=2.)
+        executor.shutdown(timeout_sec=3.)
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 @pytest.mark.parametrize('stop', ['operator', 'loss', 'lifecycle', 'foreign', 'shutdown', 'camera_motion',

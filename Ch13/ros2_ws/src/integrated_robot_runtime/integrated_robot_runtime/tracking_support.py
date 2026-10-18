@@ -19,6 +19,7 @@ from integrated_robot_vision.kinematics import KinematicChain
 from integrated_robot_vision.servo import servo_target, camera_motion_target
 import numpy as np
 from rclpy.clock import Clock, ClockType
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.duration import Duration
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from rclpy.time import Time
@@ -77,7 +78,10 @@ class TrackingSupport:
         node.create_service(Trigger, '~/recover_arm_ownership', self.recover, callback_group=group)
         self.status = node.create_publisher(String, '/architecture/visual_tracking', 10)
         self.command_audit = node.create_publisher(String, '/architecture/arm_command', 50)
-        self.timer = node.create_timer(.02, self.tick, callback_group=group,
+        # A slow tick must not queue more ticks that occupy every executor
+        # thread waiting on node.lock and starve action/TF/input callbacks.
+        self.control_group = MutuallyExclusiveCallbackGroup()
+        self.timer = node.create_timer(.02, self.tick, callback_group=self.control_group,
                                        clock=Clock(clock_type=ClockType.STEADY_TIME))
         self.last_report = 0.
 
@@ -214,6 +218,7 @@ class TrackingSupport:
                 self.motion_start = self.node.get_clock().now().nanoseconds
                 self.reference = self.joints[-1][2].copy()
                 response.success, response.message = True, 'Explicit stationary local mode: '+mode
+                self.publish_status('enable_ack')
             except ValueError as exc:
                 response.message = str(exc) + ': ' + ','.join(k for k, v in conditions.items() if not v)
             return response
@@ -223,6 +228,15 @@ class TrackingSupport:
         if self.session:
             self.node.arm_owner.cancel(now=time.monotonic())
         self._release()
+        self.publish_status('disabled')
+
+    def publish_status(self, event='heartbeat'):
+        self.status.publish(String(data=json.dumps(dict(
+            enabled=self.guard.enabled, mode=self.mode, reason=self.guard.reason, goal_count=self.goal_count,
+            reserved=self.node.busy, outstanding=self.node.arm_owner.pending is not None,
+            fault=self.node.arm_owner.fault or self.guard.fault, generation=self.guard.generation,
+            session_generation=self.token, event=event, emitted_monotonic=time.monotonic(),
+            owner=self.node.arm_owner.snapshot()))))
 
     def _release(self):
         if self.record is not None and self.record.terminal:
@@ -346,12 +360,9 @@ class TrackingSupport:
                             source_joint_received_monotonic=self.source_received_wall,
                             dispatched_ros_ns=node.get_clock().now().nanoseconds,
                             dispatched_monotonic=dispatched, horizon_s=.2,
-                            mode=self.mode, goal_count=self.goal_count))))
+                            mode=self.mode, goal_count=self.goal_count, session_generation=self.token))))
             if self.record is None and self.session and not node.arm_owner.fault:
                 node.safe = node.measured_safe()
             if wall-self.last_report >= .2:
-                self.status.publish(String(data=json.dumps(dict(
-                    enabled=self.guard.enabled, mode=self.mode, reason=self.guard.reason, goal_count=self.goal_count,
-                    reserved=node.busy, outstanding=node.arm_owner.pending is not None,
-                    fault=node.arm_owner.fault or self.guard.fault, generation=self.guard.generation))))
+                self.publish_status()
                 self.last_report = wall

@@ -105,12 +105,12 @@ class VisionProcessor(Node):
         self.worker = Thread(target=self.work, name='rgbd-fusion', daemon=False)
         self.worker.start()
 
-    def report(self, reason):
+    def report(self, reason, **details):
         with self.lock:
             if self.stopping.is_set():
                 return
             msg = String()
-            msg.data = json.dumps({'status': reason, 'epoch': self.gate.epoch})
+            msg.data = json.dumps({'status': reason, 'epoch': self.gate.epoch, **details})
             self.status_pub.publish(msg)
             status = {'RESET': 'RESET', 'TF_UNAVAILABLE': 'TF_UNAVAILABLE',
                       'INVALID_CALIBRATION': 'INVALID', 'INVALID_RGB': 'INVALID',
@@ -247,8 +247,11 @@ class VisionProcessor(Node):
                         self.last_stamp = bundle.stamp
                     elif not self.stopping.is_set():
                         self.report('EMPTY_OR_EXPIRED')
-            except TransformException:
-                self.report('TF_UNAVAILABLE')
+            except TransformException as exc:
+                self.report('TF_UNAVAILABLE', detail=str(exc),
+                            capture_ns=nanoseconds(bundle.rgb.header.stamp),
+                            source_frame=bundle.intrinsics.frame_id, target_frame='odom',
+                            ros_age_s=self.get_clock().now().nanoseconds/1e9-bundle.stamp)
             except ValueError:
                 self.report('INVALID_DEPTH_OR_GEOMETRY')
             except Exception as exc:

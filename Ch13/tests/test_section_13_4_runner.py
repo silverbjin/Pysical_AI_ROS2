@@ -13,6 +13,49 @@ SCRIPTS = Path(__file__).resolve().parents[1]/'scripts'
 sys.path.insert(0, str(SCRIPTS))
 
 
+def test_timeout_records_the_specific_failed_stage_and_last_inputs():
+    runner = importlib.import_module('run_vision_13_4')
+    stages = []
+    with pytest.raises(TimeoutError, match='tracking_ack'):
+        runner.wait_for_stage(lambda: False, lambda: None, .01,
+            stage='tracking_ack', stages=stages, snapshot=lambda: dict(goal_count=1))
+    assert stages[-1]['status'] == 'TIMEOUT'
+    assert stages[-1]['stage'] == 'tracking_ack'
+    assert stages[-1]['last_inputs'] == {'goal_count': 1}
+
+
+def test_successful_stage_is_recorded_without_an_extra_callback_step():
+    runner = importlib.import_module('run_vision_13_4')
+    stages = []
+    runner.wait_for_stage(lambda: True, lambda: pytest.fail('unnecessary callback'), .1,
+                          stage='already_ready', stages=stages)
+    assert stages[-1]['status'] == 'PASS'
+
+
+def test_cup_recognition_does_not_pass_from_a_detected_background_table():
+    runner = importlib.import_module('run_vision_13_4')
+    table = dict(boxes=[dict(class_id='60')])
+    result = runner.recognition_summary([table]*12, [dict(valid=True, class_id='60')]*6, '41')
+    assert result['frames'] == 12
+    assert result['detected_frames'] == 0 and result['valid_3d'] == 0
+    cup = dict(boxes=[dict(class_id='41')])
+    result = runner.recognition_summary([cup]*12, [dict(valid=True, class_id='41')]*6, '41')
+    assert result['detected_frames'] == 12 and result['valid_3d'] == 6
+
+
+def test_observer_preserves_diagnostic_timeline_not_only_aggregate_counts():
+    observer = importlib.import_module('vision_observer_13_4')
+    from std_msgs.msg import String
+    from collections import Counter
+    state = SimpleNamespace(invalid=Counter(), diagnostics=[])
+    observer.VisionObserver.on_status(state, String(data=json.dumps(dict(
+        status='TF_UNAVAILABLE', capture_ns=1234, detail='future extrapolation'))))
+    assert state.invalid['TF_UNAVAILABLE'] == 1
+    assert state.diagnostics[-1]['capture_ns'] == 1234
+    assert state.diagnostics[-1]['detail'] == 'future extrapolation'
+    assert state.diagnostics[-1]['wall'] > 0
+
+
 def test_offset_fixture_changes_physical_geometry_not_sensor_or_command_source(tmp_path):
     runner = importlib.import_module('run_vision_13_4')
     import xml.etree.ElementTree as ET
@@ -148,6 +191,20 @@ def test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_member
         process.wait(timeout=3.)
         unrelated.terminate()
         unrelated.wait(timeout=3.)
+
+
+def test_stack_capture_refuses_unrelated_process_before_launching_debugger(tmp_path):
+    runner = importlib.import_module('run_vision_13_4')
+    own = subprocess.Popen([sys.executable, '-c', 'import signal; signal.pause()'], start_new_session=True)
+    other = subprocess.Popen([sys.executable, '-c', 'import signal; signal.pause()'], start_new_session=True)
+    try:
+        with pytest.raises(ValueError, match='unrelated'):
+            runner.snapshot_owned_stacks(own, [other.pid], tmp_path)
+        assert other.poll() is None and not list(tmp_path.iterdir())
+    finally:
+        for child in (own, other):
+            child.terminate()
+            child.wait(timeout=3.)
 
 
 def test_gazebo_ruby_setproctitle_is_recognized_without_selecting_shell_wrapper():

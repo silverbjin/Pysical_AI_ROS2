@@ -30,6 +30,7 @@ class DetectionJob:
     calibration_id: str
     info_stamp: float
     receipt_wall: float
+    receipt_ros: float
 
 
 class ObjectDetector(Node):
@@ -70,10 +71,18 @@ class ObjectDetector(Node):
         self.get_logger().info(f'explicit detector backend={self.backend_name}, max_rate_hz={self.rate}')
         self.worker.start()  # last constructor operation; no fallible setup after start
 
-    def report(self, reason):
+    def report(self, reason, *, job=None, **details):
         if not self.stopping.is_set():
             msg = String()
-            msg.data = json.dumps({'backend': self.backend_name, 'status': reason, 'epoch': self.gate.epoch})
+            if job is not None:
+                now, wall, _ = self.observe_clock()
+                details.update(capture_ns=job.image.header.stamp.sec*1_000_000_000 +
+                               job.image.header.stamp.nanosec,
+                               receipt_ros_age_s=job.receipt_ros-job.stamp,
+                               ros_age_s=now-job.stamp, wall_age_s=wall-job.receipt_wall,
+                               artificial_delay_s=self.delay)
+            msg.data = json.dumps({'backend': self.backend_name, 'status': reason,
+                                   'epoch': self.gate.epoch, **details})
             self.status_pub.publish(msg)
 
     def set_input_enabled(self, request, response):
@@ -113,7 +122,7 @@ class ObjectDetector(Node):
         with self.lock:
             if not self.input_enabled:
                 return
-            _, _, epoch = self.observe_clock()
+            now, _, epoch = self.observe_clock()
             try:
                 self.cache.add_rgb(msg, epoch)
                 stamp = seconds(msg.header.stamp)
@@ -127,9 +136,10 @@ class ObjectDetector(Node):
                     self.report('CALIBRATION_MISMATCH')
                     return
                 image, receipt = self.cache.rgb[stamp]
-                job = DetectionJob(image, stamp, epoch, k.calibration_id, info_stamp, receipt)
+                job = DetectionJob(image, stamp, epoch, k.calibration_id, info_stamp, receipt, now)
                 if self.current(job):
                     self.slot.replace(job)
+                    self.report('QUEUED', job=job)
             except (ValueError, RuntimeError):
                 self.report('INVALID_IMAGE')
 
@@ -153,22 +163,26 @@ class ObjectDetector(Node):
             if job is None or not self.current(job):
                 continue
             last_start = time.monotonic()
+            timing = dict(queue_s=last_start-job.receipt_wall)
             try:
                 bgr = self.bridge.imgmsg_to_cv2(job.image, 'bgr8')
+                timing['conversion_s'] = time.monotonic()-last_start
                 if self.stopping.wait(self.delay):
                     break
                 if not self.current(job):
-                    self.report('EXPIRED_BEFORE_INFERENCE')
+                    self.report('EXPIRED_BEFORE_INFERENCE', job=job, **timing)
                     continue
+                inference_start = time.monotonic()
                 boxes = [v for v in self.backend.detect(bgr) if v.score >= self.confidence]
+                timing['inference_s'] = time.monotonic()-inference_start
                 with self.lock:
                     if self.current(job):
                         self.pub.publish(to_detection_array(boxes, job.image.header,
                                                             image_size=(job.image.width, job.image.height)))
                         self.last_stamp = job.stamp
-                        self.report('DETECTED' if boxes else 'EMPTY')
+                        self.report('DETECTED' if boxes else 'EMPTY', job=job, **timing)
                     elif not self.stopping.is_set():
-                        self.report('EXPIRED_AFTER_INFERENCE')
+                        self.report('EXPIRED_AFTER_INFERENCE', job=job, **timing)
             except Exception as exc:
                 self.get_logger().error(f'detector backend failed without fallback: {exc!r}')
                 self.report('BACKEND_ERROR')

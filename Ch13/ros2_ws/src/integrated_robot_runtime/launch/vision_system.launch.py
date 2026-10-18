@@ -37,6 +37,11 @@ def launch_nodes(context):
                                         launch_arguments=arguments.items())
 
     engine_arguments = {'vision_enabled': 'true'}
+    if values['engine'] == 'mujoco':
+        headless = LaunchConfiguration('mujoco_headless', default='true').perform(context).lower()
+        if headless not in ('true', 'false'):
+            raise ValueError('mujoco_headless must be an explicit boolean')
+        engine_arguments['mujoco_headless'] = headless
     override = 'world' if values['engine'] == 'gazebo' else 'model_path'
     if values[override]:
         engine_arguments[override] = values[override]
@@ -57,6 +62,6 @@ def launch_nodes(context):
 def generate_launch_description():
     defaults = dict(engine='mujoco', detector_backend='yolo', weights_path='',
                     tracking_enabled='false', processing_delay_s='0', use_sim_time='true',
-                    world='', model_path='', allow_camera_motion_test='false')
+                    world='', model_path='', allow_camera_motion_test='false', mujoco_headless='true')
     return LaunchDescription([*[DeclareLaunchArgument(k, default_value=v) for k, v in defaults.items()],
                               OpaqueFunction(function=launch_nodes)])

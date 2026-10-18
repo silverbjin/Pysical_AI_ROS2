@@ -59,7 +59,8 @@ def launch_nodes(context):
     description = ParameterValue(
         Command(
             ['xacro ', xacro_path, ' control_backend:=mujoco mujoco_model_path:=', model_path,
-             ' vision_enabled:=', str(vision).lower()]
+             ' vision_enabled:=', str(vision).lower(),
+             ' mujoco_headless:=', LaunchConfiguration('mujoco_headless').perform(context)]
         ),
         value_type=str,
     )
@@ -101,5 +102,6 @@ def launch_nodes(context):
 
 def generate_launch_description():
     return LaunchDescription([DeclareLaunchArgument('vision_enabled', default_value='false'),
+                              DeclareLaunchArgument('mujoco_headless', default_value='false'),
                               DeclareLaunchArgument('model_path', default_value=''),
                               OpaqueFunction(function=launch_nodes)])

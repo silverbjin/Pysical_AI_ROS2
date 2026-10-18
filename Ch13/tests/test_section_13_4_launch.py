@@ -7,8 +7,20 @@ from launch.actions import IncludeLaunchDescription
 from launch_ros.actions import Node
 import pytest
 import yaml
+import subprocess
+import xml.etree.ElementTree as ET
 
 SRC = Path(__file__).resolve().parents[1]/'ros2_ws/src'
+
+
+def test_headless_option_reaches_native_hardware_without_changing_joints():
+    path = SRC/'integrated_robot_description/urdf/robot_system.urdf.xacro'
+    for value in ('true', 'false'):
+        xml = subprocess.check_output(['xacro', str(path), 'control_backend:=mujoco',
+                                      'mujoco_headless:='+value], text=True)
+        root = ET.fromstring(xml)
+        assert root.find('./ros2_control/hardware/param[@name="headless"]').text == value
+        assert len(root.findall('./ros2_control/joint')) == 20
 
 
 def load(package, name):

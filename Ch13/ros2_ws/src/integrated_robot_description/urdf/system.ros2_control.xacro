@@ -8,12 +8,12 @@
     </joint>
   </xacro:macro>
 
-  <xacro:macro name="system_ros2_control" params="name backend mujoco_model_path">
+  <xacro:macro name="system_ros2_control" params="name backend mujoco_model_path mujoco_headless:=false">
     <ros2_control name="${name}" type="system">
       <hardware>
         <xacro:if value="${backend == 'mock'}"><plugin>mock_components/GenericSystem</plugin><param name="calculate_dynamics">false</param></xacro:if>
         <xacro:if value="${backend == 'gazebo'}"><plugin>gz_ros2_control/GazeboSimSystem</plugin></xacro:if>
-        <xacro:if value="${backend == 'mujoco'}"><plugin>mujoco_ros2_control/MujocoSystemInterface</plugin><param name="mujoco_model">${mujoco_model_path}</param></xacro:if>
+        <xacro:if value="${backend == 'mujoco'}"><plugin>mujoco_ros2_control/MujocoSystemInterface</plugin><param name="mujoco_model">${mujoco_model_path}</param><param name="headless">${str(mujoco_headless).lower()}</param></xacro:if>
       </hardware>
       <xacro:controlled_joint name="fr_hip_joint" initial="0" lower="-0.8" upper="0.8"/><xacro:controlled_joint name="fr_thigh_joint" initial="-0.5" lower="-1.0" upper="4.0"/><xacro:controlled_joint name="fr_calf_joint" initial="1.0" lower="-2.8" upper="2.8"/>
       <xacro:controlled_joint name="fl_hip_joint" initial="0" lower="-0.8" upper="0.8"/><xacro:controlled_joint name="fl_thigh_joint" initial="-0.5" lower="-1.0" upper="4.0"/><xacro:controlled_joint name="fl_calf_joint" initial="1.0" lower="-2.8" upper="2.8"/>

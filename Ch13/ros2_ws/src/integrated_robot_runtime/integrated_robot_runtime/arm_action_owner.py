@@ -3,6 +3,7 @@ from collections import deque
 from dataclasses import dataclass
 from threading import RLock
 import uuid
+import time
 
 from unique_identifier_msgs.msg import UUID
 
@@ -17,6 +18,7 @@ class PendingTrajectory:
     cancel_at: float | None = None
     cancel_sent: bool = False
     error: str = ''
+    result_future: object = None
 
 
 class ArmActionOwner:
@@ -26,6 +28,21 @@ class ArmActionOwner:
         self.pending = None
         self.known_ids = deque(maxlen=256)
         self.fault = ''
+        self.events = deque(maxlen=32)
+
+    def event(self, record, name, **details):
+        self.events.append(dict(uuid=record.identifier.hex(), event=name,
+                                wall=time.monotonic(), **details))
+
+    def snapshot(self):
+        with self.lock:
+            record = self.pending
+            return dict(pending_uuid=record.identifier.hex() if record else None,
+                        accepted=bool(record and record.handle and record.handle.accepted),
+                        handle_status=getattr(record.handle, 'status', None) if record else None,
+                        result_future_done=(record.result_future.done() if record and
+                                            record.result_future is not None else None),
+                        events=list(self.events))
 
     def send(self, goal, *, now, timeout):
         with self.lock:
@@ -35,6 +52,7 @@ class ArmActionOwner:
             record = PendingTrajectory(identifier, now + timeout)
             self.pending = record
             self.known_ids.append(identifier)  # BEFORE transport can expose controller status
+            self.event(record, 'sent')
             try:
                 future = self.client.send_goal_async(goal, goal_uuid=UUID(uuid=list(identifier)))
                 future.add_done_callback(lambda value: self._accepted(record, value))
@@ -44,6 +62,7 @@ class ArmActionOwner:
 
     def _unknown(self, record, exc):
         record.error = self.fault = str(exc)
+        self.event(record, 'transport_error', detail=str(exc))
         # A transport exception is not proof the motor never received the goal.
 
     def _finish(self, record):
@@ -55,12 +74,14 @@ class ArmActionOwner:
         with self.lock:
             try:
                 record.handle = future.result()
+                self.event(record, 'accepted' if record.handle.accepted else 'rejected')
                 if not record.handle.accepted:
                     record.error = 'trajectory rejected'
                     self._finish(record)
                     return
-                record.handle.get_result_async().add_done_callback(
-                    lambda value: self._result(record, value))
+                self.event(record, 'result_requested')
+                record.result_future = record.handle.get_result_async()
+                record.result_future.add_done_callback(lambda value: self._result(record, value))
                 if record.cancel_at is not None and not record.terminal:
                     self._cancel(record)
             except Exception as exc:
@@ -73,12 +94,14 @@ class ArmActionOwner:
                 if record.result.status not in (4, 5, 6):
                     raise RuntimeError('nonterminal action result')
                 self._finish(record)
+                self.event(record, 'terminal', status=record.result.status)
             except Exception as exc:
                 self._unknown(record, exc)
 
     def _cancel(self, record):
         if record.handle is not None and not record.cancel_sent:
             record.cancel_sent = True
+            self.event(record, 'cancel_requested')
             try:
                 record.handle.cancel_goal_async().add_done_callback(
                     lambda value: self._cancel_ack(record, value))
@@ -88,7 +111,8 @@ class ArmActionOwner:
     def _cancel_ack(self, record, future):
         with self.lock:
             try:
-                future.result()  # ACK alone does not imply terminal controller execution.
+                response = future.result()  # ACK alone does not imply terminal controller execution.
+                self.event(record, 'cancel_ack', return_code=getattr(response, 'return_code', None))
             except Exception as exc:
                 self._unknown(record, exc)
 

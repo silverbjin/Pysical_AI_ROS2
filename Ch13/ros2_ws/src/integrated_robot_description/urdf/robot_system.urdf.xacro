@@ -3,6 +3,7 @@
   <xacro:arg name="control_backend" default="mock"/>
   <xacro:arg name="controllers_file" default="config/controllers.yaml"/>
   <xacro:arg name="mujoco_model_path" default="mujoco/robot_system.xml"/>
+  <xacro:arg name="mujoco_headless" default="false"/>
   <xacro:arg name="vision_enabled" default="false"/>
 
   <xacro:include filename="materials.xacro"/>
@@ -41,7 +42,7 @@
   <xacro:if value="$(arg vision_enabled)">
     <xacro:vision_frames enabled="true"/>
   </xacro:if>
-  <xacro:system_ros2_control name="IntegratedRobotSystem" backend="${backend}" mujoco_model_path="$(arg mujoco_model_path)"/>
+  <xacro:system_ros2_control name="IntegratedRobotSystem" backend="${backend}" mujoco_model_path="$(arg mujoco_model_path)" mujoco_headless="$(arg mujoco_headless)"/>
 
   <xacro:if value="${backend == 'gazebo'}">
     <gazebo>

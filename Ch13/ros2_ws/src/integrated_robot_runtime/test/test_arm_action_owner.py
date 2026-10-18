@@ -33,15 +33,20 @@ def test_pending_acceptance_is_reserved_and_late_acceptance_is_canceled():
     owner = ArmActionOwner(transport)
     record = owner.send(object(), now=0., timeout=2.)
     assert owner.pending is record and transport.uuid in owner.known_ids
+    assert owner.snapshot()['pending_uuid'] == transport.uuid.hex()
+    assert owner.snapshot()['events'][-1]['event'] == 'sent'
     with pytest.raises(RuntimeError):
         owner.send(object(), now=.1, timeout=2.)
     owner.cancel(now=.1)
     transport.accept()
     assert transport.cancels == 1 and owner.pending is record
+    assert owner.snapshot()['result_future_done'] is False
     transport.cancel.set_result(SimpleNamespace(goals_canceling=[object()]))
     assert owner.pending is record  # cancel response is not terminal execution result
     transport.result.set_result(SimpleNamespace(status=5))
     assert owner.pending is None and record.terminal and record.result.status == 5
+    assert owner.snapshot()['events'][-1]['event'] == 'terminal'
+    assert owner.snapshot()['events'][-1]['uuid'] == transport.uuid.hex()
 
 
 def test_cancel_timeout_latches_fault_even_after_late_terminal_ack():

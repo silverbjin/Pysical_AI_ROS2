@@ -1,5 +1,6 @@
 """Real ROS delayed inference must retain capture time and reject expired jobs."""
 import time
+import json
 
 import numpy as np
 import pytest
@@ -57,6 +58,18 @@ def test_delayed_detector_capture_header_and_stale_completion(delay, should_publ
             while time.monotonic() < frame_deadline:
                 executor.spin_once(timeout_sec=min(.005, frame_deadline-time.monotonic()))
         assert bool(received) is should_publish, f'inputs={len(sent)}, status={diagnostics[-10:]}'
+        terminal = [json.loads(v) for v in diagnostics if json.loads(v)['status'] in
+                    ('DETECTED', 'EXPIRED_BEFORE_INFERENCE')]
+        assert terminal, diagnostics
+        trace = terminal[-1]
+        assert trace['capture_ns'] > 0
+        assert trace['receipt_ros_age_s'] >= 0
+        assert trace['queue_s'] >= 0 and trace['conversion_s'] >= 0
+        assert trace['wall_age_s'] >= delay-.02
+        assert trace['ros_age_s'] >= delay-.02
+        assert trace['artificial_delay_s'] == delay
+        if not should_publish:
+            assert trace['wall_age_s'] > .3 or trace['ros_age_s'] > .3
         if should_publish:
             result = received[-1]
             assert (result.header.stamp.sec, result.header.stamp.nanosec) in sent
