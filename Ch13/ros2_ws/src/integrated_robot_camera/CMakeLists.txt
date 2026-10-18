@@ -1,0 +1,32 @@
+cmake_minimum_required(VERSION 3.16)
+project(integrated_robot_camera)
+find_package(ament_cmake REQUIRED)
+find_package(mujoco_vendor REQUIRED)
+find_package(Threads REQUIRED)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+option(INTEGRATED_CAMERA_ENABLE_TSAN "Instrument mailbox core and its tests with TSAN" OFF)
+
+add_library(snapshot_mailbox SHARED src/snapshot_mailbox.cpp)
+target_include_directories(snapshot_mailbox PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_link_libraries(snapshot_mailbox PUBLIC mujoco::mujoco Threads::Threads)
+target_compile_options(snapshot_mailbox PRIVATE -Wall -Wextra -Wpedantic)
+if(INTEGRATED_CAMERA_ENABLE_TSAN)
+  target_compile_options(snapshot_mailbox PUBLIC -fsanitize=thread -g -fno-omit-frame-pointer)
+  target_link_options(snapshot_mailbox PUBLIC -fsanitize=thread)
+endif()
+install(TARGETS snapshot_mailbox EXPORT export_${PROJECT_NAME}
+  LIBRARY DESTINATION lib ARCHIVE DESTINATION lib RUNTIME DESTINATION bin)
+install(DIRECTORY include/ DESTINATION include)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(mujoco_vendor Threads)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(test_snapshot_mailbox test/test_snapshot_mailbox.cpp TIMEOUT 30)
+  target_include_directories(test_snapshot_mailbox PRIVATE include)
+  target_link_libraries(test_snapshot_mailbox snapshot_mailbox)
+endif()
+ament_package()

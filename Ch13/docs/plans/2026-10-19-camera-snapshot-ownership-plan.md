@@ -8,7 +8,7 @@
 
 **Tech Stack:** ROS 2 Jazzy, ament_cmake/C++17, MuJoCo3.3.7, pluginlib, rclcpp, GLFW/OpenGL EGL, gtest, pytest, colcon, 실제 MuJoCo/Gazebo.
 
-**Spec:** `Ch13/docs/specs/2026-10-19-camera-snapshot-ownership-design.md` — 사용자 승인. 현재 문서는 **구현 계획 검토 대기**이며 제품 코드/외부 복사는 아직 변경하지 않는다.
+**Spec:** `Ch13/docs/specs/2026-10-19-camera-snapshot-ownership-design.md` — 사용자 승인. **구현 계획 승인 / 네이티브 실행 중** (2026-10-19). 실제 구현 시작 HEAD는 `124061f32bc6492ac42a67fe43a7bb67ed245050`이다.
 
 ## Global Constraints
 
@@ -73,7 +73,7 @@ python -m colcon --log-base "$SNAPSHOT_LOG" build \
 source "$SNAPSHOT_INSTALL/setup.bash"
 ```
 
-현재 계획 단계에서는 위 명령을 실행하지 않는다. 각 시험 단계에 지정한 명령의 종료 코드0과 이름 있는 회귀의 실제 통과를 함께 확인한다.
+승인 후 각 시험 단계에서 명령의 종료 코드0과 이름 있는 회귀의 실제 통과를 함께 확인한다.
 
 ### Task 1: 두 mjData 버퍼와 결정적 소유권 시험
 
