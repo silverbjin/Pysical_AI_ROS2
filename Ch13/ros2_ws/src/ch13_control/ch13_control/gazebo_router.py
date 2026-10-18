@@ -22,7 +22,7 @@ class GazeboRouter(Node):
         self.create_subscription(JointState,'/ch13/command/actuators',self.command,10)
     def command(self,msg):
         try:
-            owner=sole_publisher_id(self.get_publishers_info_by_topic('/ch13/command/actuators'))
+            owner=sole_publisher_id(self.get_publishers_info_by_topic('/ch13/command/actuators'),expected_node='command_arbiter')
             if self.owner is not None and owner!=self.owner:raise ValueError('owner changed; restart router')
             stamp=seconds(msg.header.stamp);now=self.get_clock().now().nanoseconds*1e-9
             if stamp < self.last_stamp or stamp < now-.25 or stamp > now+.05:raise ValueError('stale/future target')

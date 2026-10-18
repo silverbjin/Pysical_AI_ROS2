@@ -9,6 +9,17 @@ def test_reset_has_no_deep_initial_penetration():
         # A narrow engine characterization check: initial impulses invalidate fixture alignment.
         assert all(c.dist > -.001 for c in r._data.contact)
 
+def test_snapshot_reports_measured_body_velocity_not_synthetic_zero():
+    import mujoco
+    with MujocoRuntime() as r:
+        j=mujoco.mj_name2id(r._model,mujoco.mjtObj.mjOBJ_JOINT,'base_free')
+        start=r._model.jnt_dofadr[j]
+        r._data.qvel[start:start+6]=[.1,.2,.3,.01,.02,.03]
+        mujoco.mj_forward(r._model,r._data)
+        s=r.snapshot()
+        np.testing.assert_allclose(s.base_linear_velocity,[.1,.2,.3],atol=1e-8)
+        np.testing.assert_allclose(s.base_angular_velocity,[.01,.02,.03],atol=1e-8)
+
 def test_hold_and_small_arm_motion_are_finite_and_stable():
     with MujocoRuntime() as r:
         r.reset(seed=42)

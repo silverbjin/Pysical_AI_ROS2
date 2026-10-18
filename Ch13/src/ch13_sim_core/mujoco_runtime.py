@@ -18,6 +18,8 @@ class PhysicsSnapshot:
     tool_position: np.ndarray
     left_contact: bool
     right_contact: bool
+    base_linear_velocity: np.ndarray
+    base_angular_velocity: np.ndarray
 
 class MujocoRuntime:
     def __init__(self, model_path=None):
@@ -74,8 +76,10 @@ class MujocoRuntime:
             for i,finger in enumerate(self._fingers):
                 if pair == {self._cube_geom,finger} and contact.dist <= .0001: contacts[i]=True
         quat=d.xquat[self._base].copy()
+        velocity=np.zeros(6)
+        mujoco.mj_objectVelocity(self._model,d,mujoco.mjtObj.mjOBJ_BODY,self._base,velocity,1)
         return PhysicsSnapshot(float(d.time),d.qpos[self._qadr].copy(),d.qvel[self._vadr].copy(),d.xpos[self._base].copy(),quat,
-            float(np.arccos(np.clip(1-2*(quat[1]**2+quat[2]**2),-1,1))),d.xpos[self._cube].copy(),d.site_xpos[self._tool].copy(),*contacts)
+            float(np.arccos(np.clip(1-2*(quat[1]**2+quat[2]**2),-1,1))),d.xpos[self._cube].copy(),d.site_xpos[self._tool].copy(),*contacts,velocity[3:].copy(),velocity[:3].copy())
 
     def render(self,path):
         from PIL import Image

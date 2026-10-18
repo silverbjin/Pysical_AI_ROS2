@@ -9,10 +9,11 @@ from builtin_interfaces.msg import Time
 
 def seconds(stamp): return stamp.sec+stamp.nanosec*1e-9
 def base_tilt(q):return math.acos(max(-1.,min(1.,1-2*(q.x*q.x+q.y*q.y))))
-def sole_publisher_id(endpoints):
+def sole_publisher_id(endpoints,expected_node=None):
     # Jazzy callback metadata has timestamps/sequence numbers, not publisher GID.
     # Fail closed on discovery ambiguity; derive identity from the graph endpoint.
     if len(endpoints)!=1:raise ValueError('requires exactly one publisher endpoint')
+    if expected_node is not None and endpoints[0].node_name!=expected_node:raise ValueError('unexpected command producer')
     return bytes(endpoints[0].endpoint_gid).hex()
 def time_msg(value):
     sec=int(value)
