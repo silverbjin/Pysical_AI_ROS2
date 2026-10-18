@@ -1,0 +1,53 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_enable_and_disable_ack_are_published_even_before_any_control_tick ____
+
+    def test_enable_and_disable_ack_are_published_even_before_any_control_tick():
+        # Characterizes the lost <200ms session: real ROS publisher, no timer tick
+        # or action server. Safety predicates are covered by the boundary tests below.
+        from rclpy.executors import SingleThreadedExecutor
+        rclpy.init(domain_id=148)
+        node, peer = ManipulationNode(), Node('tracking_ack_peer')
+        executor = SingleThreadedExecutor()
+        executor.add_node(peer)
+        states = []
+        sub = peer.create_subscription(String, '/architecture/visual_tracking',
+                                        lambda msg: states.append(json.loads(msg.data)), 10)
+        try:
+            deadline = time.monotonic()+1.
+            while node.count_subscribers('/architecture/visual_tracking') < 1 and time.monotonic() < deadline:
+                executor.spin_once(timeout_sec=.01)
+            tracking = node.tracking
+            tracking.joints.append((1, time.monotonic(), dict.fromkeys(ARM_NAMES, 0.), list(STAND)))
+            node.safe = True
+            with patch.object(tracking, 'conditions', return_value=dict.fromkeys(tracking.guard.CONDITIONS, True)):
+                response = tracking.toggle(SetBool.Request(data=True), SetBool.Response())
+            assert response.success
+            tracking.toggle(SetBool.Request(data=False), SetBool.Response())
+            deadline = time.monotonic()+.5
+            while len(states) < 2 and time.monotonic() < deadline:
+                executor.spin_once(timeout_sec=.01)
+            assert [v['enabled'] for v in states] == [True, False]
+            assert states[0]['event'] == 'enable_ack'
+>           assert states[0]['inputs']['target_capture_ns'] == 0
+                   ^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'inputs'
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:66: KeyError
+____ test_observer_keeps_leg_readiness_timeline_for_standing_gate_diagnosis ____
+
+    def test_observer_keeps_leg_readiness_timeline_for_standing_gate_diagnosis():
+        observer = importlib.import_module('vision_observer_13_4')
+        from std_msgs.msg import String
+        state = SimpleNamespace(legs={}, leg_states=[])
+        observer.VisionObserver.on_legs(state, String(data=json.dumps(dict(
+            active=True, ready=False, mode='STOP', max_timer_gap_s=.62))))
+>       assert state.leg_states[-1]['ready'] is False
+               ^^^^^^^^^^^^^^^^^^^^
+E       IndexError: list index out of range
+
+Ch13/tests/test_section_13_4_runner.py:65: IndexError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py::test_enable_and_disable_ack_are_published_even_before_any_control_tick
+FAILED Ch13/tests/test_section_13_4_runner.py::test_observer_keeps_leg_readiness_timeline_for_standing_gate_diagnosis
+2 failed, 27 deselected in 7.71s

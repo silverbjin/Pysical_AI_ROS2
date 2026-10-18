@@ -66,3 +66,19 @@ Ch07 `package.xml`은 `TODO: License declaration`이다. 원본에 대한 사용
 - Ultralytics/model의 AGPL-3.0 또는 별도 Enterprise 조건과 사진 권리는 배포 방식에 따라 별도 확인해야 한다. 본 저장소는 법적 허가를 보증하지 않는다. 모델·버스 원본·해당 주석 영상은 저장소에 넣지 않았다.
 - 저장소에 보존한 native RGB/depth/주석 영상은 Ch13의 자체 원시 형상·단색 fixture를 실제 엔진에서 렌더링한 결과다. 합성 정답 영상을 카메라 토픽으로 주입한 것이 아니다.
 - 실행 소스 목록/바이트 해시는 각 `source_snapshot.json`이다. 검증기가 생성한 build/install/log/cache/evidence는 소스 인벤토리에서 제외한다. 검증 코드와 최종 문서/evidence 커밋 SHA는 자기 참조를 피하기 위해 구분한다.
+
+## 13.4 후속 디버깅 자산
+
+- `Ch13/scripts/semantic_fixture_13_4.py`: 이 절에서 직접 작성한 속 빈 컵/손잡이/커피/
+  탁자 형상 생성 코드. 기존 Ch13의 월드·모델 카메라 설정을 보존하고 실제 native geometry를
+  추가한다. 앞 장 소스 복사나 사진 billboard가 아니다. 출발점은 이 저장소
+  `cbd967e26d7d47223a6f5adb965e323eb7aee1ff`, 구현 체크포인트는
+  `1833497b032c9896f1bf7c0e798abc71a8dbaae6`이다.
+- 새 컵 RGB/annotated/depth evidence는 위 자체 형상을 실제 엔진으로 렌더한 결과다.
+  외부 모델 가중치는 종전 고정 해시의 로컬 자산이며 Git에 추가하지 않는다.
+- 외부 MuJoCo 플러그인은 여전히 `c261f5552edf124d1000a23fb25b6c07cadeb807`,
+  수정/재빌드하지 않았다. Ch05–Ch12 소스도 수정하지 않는다.
+- `parent_debugger_13_4.py`는 이 절에서 작성한 일반 권한 자식 GDB 진단 도구이며
+  native 인수용 production launcher가 아니다. GDB 자체 소스는 복사하지 않았다.
+- 카메라 소유권 설계서에 외부 복사 예정 파일의 커밋·해시·Apache-2.0 출처를 기록했으나,
+  현재 단계에서는 외부 카메라 코드/라이선스 파일을 Ch13 패키지로 복사하지 않았다.

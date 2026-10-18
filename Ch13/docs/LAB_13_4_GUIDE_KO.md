@@ -105,6 +105,12 @@ ros2 launch integrated_robot_runtime vision_system.launch.py \
 
 통합 launch는 엔진 컨트롤러가 실제 active가 된 뒤 팔 stow → 측정 안전 확인 → 다리 기립 순서로 기동한다. 기존 13.3의 지연 데모 vision 노드를 중복 실행하지 않는다. `tracking_enabled=false`는 시선 추적을 끈다는 의미이지 시동 stow/기립까지 금지한다는 의미는 아니다. 이 lifecycle은 모터 Torque Off를 구현하지 않는다.
 
+13.4 통합 launch의 MuJoCo 기본값은 `mujoco_headless:=true`이다. 물리 엔진과
+eye-in-hand RGB-D 카메라는 계속 실행하고 큰 시뮬레이터 뷰어만 끈다.
+GUI 관찰이 필요하면 `mujoco_headless:=false`를 명시한다. 이 환경에서는 뷰어를
+켜면 이미지가 수신 시점부터 150–300ms 오래되어 지연 시험이 실패할 수 있었다.
+직접 실행하는 기존 description launch의 기본값은 이전처럼 뷰어 켜짐이다.
+
 | 데이터 | 토픽 / 계약 |
 |---|---|
 | RGB | `/camera/color/image_raw`, 320×240 RGB8/BGR8 |
@@ -122,7 +128,7 @@ ros2 launch integrated_robot_runtime vision_system.launch.py \
 역투영은 `X=(u-cx)d/fx`, `Y=(v-cy)d/fy`, `Z=d`이다. bbox 안 5×5 패치의 유효 depth 중앙값을 사용하며 최소 5개 표본, [0.1,5]m 범위와 MAD 제한을 확인한다. 행 패딩·endian·mm 변환을 검사한다. 임의의 미정렬 RGB와 depth를 합치지 않는다.
 
 - RGB-depth 시각 차이 ≤30ms, 입력 최대 ROS/벽시계 age 300ms, CameraInfo age ≤1s다.
-- 토픽 도착 순서는 보장되지 않는다. 탐지 결과가 먼저 오면 가장 최신 한 건만 원래 촬영/수신 기한 안에서 RGB-D를 기다린다. 기다렸다고 TTL을 연장하지 않는다.
+- 토픽 도착 순서는 보장되지 않는다. 탐지 후보 metadata는 RGB-D 캐시와 같은 최대 10건 안에서 원래 촬영/수신 기한 동안 기다린다. 가장 최신의 **완성된** RGB-D 후보 한 건만 처리 슬롯에 넣으며, 더 최신인 미완성 후보가 신선한 완성 후보를 지우지 않는다. 기다리거나 중복 수신했다고 TTL을 연장하지 않는다.
 - TF는 촬영 시각의 정확한 변환을 최대 100ms 기다린다. 실패 시 latest TF로 대체하지 않는다.
 - odom에서 대상별 LPF(tau=.2s)를 적용한다. 객체의 절대 pose나 파지 방향을 추정하는 것은 아니다. 공분산은 depth 표본 기반 휴리스틱이며 교정된 불확실성 보장이 아니다.
 - 시계 역행·보정 변경·TTL·대상 전환·모호한 후보는 유효성을 잃게 한다. last known 점의 header를 현재 시각으로 바꾸어 재발행하지 않는다.
@@ -143,6 +149,10 @@ ros2 service call /manipulation_node/set_visual_tracking std_srvs/srv/SetBool '{
 `arm_joint_1`, `arm_joint_5`만 영점 대비 ±.04rad, 목표 증분 ≤.02rad/200ms, 명령 간격 ≥200ms다. 나머지 네 축은 활성화 순간의 안전 측정값으로 고정한다. 작은 국소 Jacobian 제어이지 MoveIt/일반 IK/충돌 회피가 아니다. 실제 위치·속도 제한은 별도 측정으로 확인한다.
 
 팔 stow, PickObject, 시선 추적, 벤치마크는 manipulation_node의 같은 소유자를 거친다. 다른 노드에서 trajectory를 발행하지 않는다. 미확인 send와 cancel 중에도 예약을 유지하며 취소 응답만으로 해제하지 않는다. terminal 결과가 500ms 안에 확인되지 않으면 fault를 유지한다. 신선한 안전 입력과 미완료/외부 명령 부재를 확인한 뒤에만 다음 서비스를 사용한다. 자동 복구·자동 재시작은 없다.
+
+활성화 ACK는 주기 보고를 기다리지 않고 즉시 발행된다. 상태와 명령의
+`session_generation`, 명령 `goal_uuid`, 상태의 `owner` 진행 기록을 함께 확인한다.
+ACK 후 안전 조건을 잃으면 자동으로 다시 켜지지 않는다.
 
 ```bash
 ros2 service call /manipulation_node/recover_arm_ownership std_srvs/srv/Trigger '{}'
@@ -198,3 +208,11 @@ python Ch13/scripts/run_vision_13_4.py --engine gazebo --detector-backend color_
 - 추적 OFF/fault: 원인 입력을 먼저 복원하고 새 사용자 요청이 있을 때만 다시 선택한다. 불완전한 취소를 물리 정지나 Torque Off로 간주하지 않는다.
 - YOLO 빈 결과: 빨간 상자를 COCO 캔으로 가정하지 않는다. 빈 탐지와 추론 자체가 만료되어 결과를 발행하지 못한 경우를 구분한다.
 - 관성 루트/KDL·시뮬레이터 종료 경고: 원본 로그와 결과에 남긴다. 앞선 실행의 성공으로 현재 경고/실패를 덮지 않는다.
+
+## 추론 주기 비교 옵션 (2026-10-19)
+
+탐지 기본 상한은 10Hz이다. 명시적으로 `max_rate_hz:=15`를 launch에 전달하거나,
+검증 도구에 `--inference-rate-hz 15`를 지정해 승인된 15Hz 비교를 수행할 수 있다.
+0 초과 15 이하의 유한값만 허용한다. 이는 추론 시작 주기의 상한이지 처리량 보장이나
+실시간성 보장이 아니다. 촬영 시각 300ms, 팔 명령 5Hz 안전 기준은 그대로 적용된다.
+각 비교는 별도 evidence 디렉터리에 저장하고, 안전 정지는 실패로 기록한다.

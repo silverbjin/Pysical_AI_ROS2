@@ -72,7 +72,7 @@ Ch13/{tests,scripts,docs,evidence/section_13_4}/
 | /camera/aligned_depth_to_color/image_raw | sensor_msgs/Image | color에 정합된 32FC1 m 또는 16UC1 mm |
 | /camera/color/camera_info | sensor_msgs/CameraInfo | color와 같은 해상도·optical frame·보정 모델 |
 
-기본 해상도는 320×240, RGB-D 발행 목표는 15Hz, 추론 상한은 10Hz다. 실제 달성률과 추론 지연을 기록하며 hard realtime을 보장하지 않는다. RGB·depth는 같은 렌더 snapshot을 사용한다.
+기본 해상도는 320×240, RGB-D 발행 목표는 15Hz, 추론 기본 상한은 10Hz다. 2026-10-19 사용자 승인으로 명시적 `max_rate_hz` 선택 상한을 15Hz까지 허용한다. 기본값·300ms 안전 기준·팔 5Hz 상한은 유지한다. 실제 달성률과 추론 지연을 기록하며 hard realtime을 보장하지 않는다. RGB·depth는 같은 렌더 snapshot을 사용한다.
 
 프레임:
 

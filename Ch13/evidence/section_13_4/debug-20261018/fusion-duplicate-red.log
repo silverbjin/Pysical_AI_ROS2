@@ -1,0 +1,51 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_duplicate_during_fusion_does_not_queue_a_second_job_or_invalidate_result _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7780f1186ea0>
+
+    def test_duplicate_during_fusion_does_not_queue_a_second_job_or_invalidate_result(monkeypatch):
+        import integrated_robot_vision.vision_processor as module
+        entered, release = Event(), Event()
+        calculate = module.capture_observations
+    
+        def blocked(*args, **kwargs):
+            entered.set()
+            assert release.wait(timeout=.2)
+            return calculate(*args, **kwargs)
+    
+        monkeypatch.setattr(module, 'capture_observations', blocked)
+        rclpy.init(domain_id=147)
+        node, peer = VisionProcessor(), Node('duplicate_fusion_peer')
+        executor = SingleThreadedExecutor()
+        executor.add_node(node)
+        executor.add_node(peer)
+        states = []
+        sub = peer.create_subscription(TrackedTarget, '/vision/tracked_target', states.append, 10)
+        try:
+            transform = TransformStamped()
+            transform.header.frame_id, transform.child_frame_id = 'odom', 'camera_optical_frame'
+            transform.transform.rotation.w = 1.
+            node.tf_buffer.set_transform_static(transform, 'unit_test_only')
+            capture = peer.get_clock().now().nanoseconds/1e9
+            node.on_info(info(capture))
+            rgb, depth = images(capture, capture)
+            node.on_rgb(rgb)
+            node.on_depth(depth)
+            message = to_detection_array([Box2D(5., 5., 6., 6., 'fixture_red', 1.)], rgb.header)
+            node.on_detections(message)
+            assert entered.wait(timeout=.1)
+            node.on_detections(message)
+            release.set()
+            deadline = time.monotonic()+.12
+            while time.monotonic() < deadline:
+                executor.spin_once(timeout_sec=.005)
+>           assert states and all(v.valid for v in states), 'duplicate fusion invalidated a fresh accepted capture'
+E           AssertionError: duplicate fusion invalidated a fresh accepted capture
+E           assert ([integrated_robot_interfaces.msg.TrackedTarget(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=179234...ce=array([1.e-06, 0.e+00, 0.e+00, 0.e+00, 1.e-06, 0.e+00, 0.e+00, 0.e+00,\n       1.e-06]), valid=False, status='LOST')] and False)
+E            +  where False = all(<generator object test_duplicate_during_fusion_does_not_queue_a_second_job_or_invalidate_result.<locals>.<genexpr> at 0x7780f1252b00>)
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_fusion_reordering.py:53: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_fusion_reordering.py::test_duplicate_during_fusion_does_not_queue_a_second_job_or_invalidate_result
+1 failed, 2 deselected in 4.78s

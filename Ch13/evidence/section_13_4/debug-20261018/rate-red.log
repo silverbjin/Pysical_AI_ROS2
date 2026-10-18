@@ -1,0 +1,65 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_____ test_explicit_fifteen_hz_option_keeps_default_ten_and_single_worker ______
+
+    def test_explicit_fifteen_hz_option_keeps_default_ten_and_single_worker():
+        rclpy.init(domain_id=146)
+        nodes = []
+        try:
+            default = ObjectDetector(parameter_overrides=[Parameter('backend', value='color_fixture')])
+            nodes.append(default)
+            assert default.rate == 10.
+>           selected = ObjectDetector(parameter_overrides=[
+                Parameter('backend', value='color_fixture'), Parameter('max_rate_hz', value=15.)])
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_vision.object_detector.ObjectDetector object at 0x74e43e8e2bd0>
+
+    def __init__(self, *, parameter_overrides=None):
+        super().__init__('object_detector', parameter_overrides=parameter_overrides)
+        self.backend_name = self.declare_parameter('backend', 'yolo').value
+        weights = self.declare_parameter('weights_path', '').value
+        expected_sha = self.declare_parameter('weights_sha256', '').value
+        self.rate = self.declare_parameter('max_rate_hz', 10.).value
+        self.delay = self.declare_parameter('processing_delay_s', 0.).value
+        self.confidence = self.declare_parameter('confidence', .5).value
+        if (not all(math.isfinite(v) for v in (self.rate, self.delay, self.confidence))
+                or not 0 < self.rate <= 10 or self.delay < 0 or not .5 <= self.confidence <= 1):
+>           raise ValueError('rate in (0,10], nonnegative delay, confidence in [.5,1] required')
+E           ValueError: rate in (0,10], nonnegative delay, confidence in [.5,1] required
+
+Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/object_detector.py:47: ValueError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792348304.055374470] [object_detector]: explicit detector backend=color_fixture, max_rate_hz=10.0
+[WARN] [1792348304.056158370] [rcl.logging_rosout]: Publisher already registered for node name: 'object_detector'. If this is due to multiple nodes with the same name then all logs for the logger named 'object_detector' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+___ test_rate_option_is_forwarded_and_rejected_before_starting_native_engine ___
+
+    def test_rate_option_is_forwarded_and_rejected_before_starting_native_engine():
+        vision = load('integrated_robot_vision', 'vision.launch.py')
+        system = load('integrated_robot_runtime', 'vision_system.launch.py')
+        node = vision.launch_nodes(context(max_rate_hz='15'))[0]
+>       assert any(parameters.get('max_rate_hz') == 15. for parameters in node._Node__parameters
+                   if isinstance(parameters, dict))
+E       assert False
+E        +  where False = any(<generator object test_rate_option_is_forwarded_and_rejected_before_starting_native_engine.<locals>.<genexpr> at 0x74e45e42d2a0>)
+
+Ch13/tests/test_section_13_4_launch.py:58: AssertionError
+___ test_comparison_rate_reaches_launch_and_invalid_rate_never_starts_engine ___
+
+    def test_comparison_rate_reaches_launch_and_invalid_rate_never_starts_engine():
+        runner = importlib.import_module('run_vision_13_4')
+        args = argparse.Namespace(engine='mujoco', detector_backend='color_fixture',
+                                  weights_path='', scenario='tracking')
+>       assert 'max_rate_hz:=10.0' in runner.build_launch_command(args, 0.)
+E       AssertionError: assert 'max_rate_hz:=10.0' in ['ros2', 'launch', 'integrated_robot_runtime', 'vision_system.launch.py', 'engine:=mujoco', 'detector_backend:=color_fixture', ...]
+E        +  where ['ros2', 'launch', 'integrated_robot_runtime', 'vision_system.launch.py', 'engine:=mujoco', 'detector_backend:=color_fixture', ...] = <function build_launch_command at 0x74e43e76ba60>(Namespace(engine='mujoco', detector_backend='color_fixture', weights_path='', scenario='tracking'), 0.0)
+E        +    where <function build_launch_command at 0x74e43e76ba60> = <module 'run_vision_13_4' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_vision_13_4.py'>.build_launch_command
+
+Ch13/tests/test_section_13_4_runner.py:165: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py::test_explicit_fifteen_hz_option_keeps_default_ten_and_single_worker
+FAILED Ch13/tests/test_section_13_4_launch.py::test_rate_option_is_forwarded_and_rejected_before_starting_native_engine
+FAILED Ch13/tests/test_section_13_4_runner.py::test_comparison_rate_reaches_launch_and_invalid_rate_never_starts_engine
+3 failed in 9.55s

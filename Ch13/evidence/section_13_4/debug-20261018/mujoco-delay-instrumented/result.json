@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "run_id": "85961d25-463a-4d29-af7c-6987114bd396",
+  "expected_run_id": "85961d25-463a-4d29-af7c-6987114bd396",
+  "invocation_started_at": 1792332948.4900494,
+  "started_at": 1792332948.4900494,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "thirty_observations": false,
+    "geometry_rms": false,
+    "clean_shutdown": true
+  },
+  "errors": [
+    "RuntimeError('camera-motion benchmark stopped on safety gate: terminal cancellation acknowledgement timeout')"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/debug-20261018/mujoco-delay-instrumented",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 82902,
+      "sha256": "22bc117388da9fe05a84be12fa9254dbcbcf60d40a108b2d9f87f4d911efcf5c"
+    },
+    {
+      "path": "observations.json",
+      "size": 210672,
+      "sha256": "26885d297f79b1491cba4ca120c5d95750c9ba8649b0cbcb3a63aa2b1e94283e"
+    },
+    {
+      "path": "joints.npz",
+      "size": 90196,
+      "sha256": "d6338b11ae890338c906d623c4785cf41973a2b8d8072d149424d3ff1b74d896"
+    }
+  ],
+  "required_checks": [
+    "actual_camera_motion",
+    "clean_shutdown",
+    "delay_150ms",
+    "engine_alive",
+    "geometry_rms",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners",
+    "thirty_observations"
+  ],
+  "source_head": "cbd967e26d7d47223a6f5adb965e323eb7aee1ff",
+  "engine": "mujoco",
+  "detector_backend": "color_fixture",
+  "scenario": "delay",
+  "processing_delay_s": 0.15,
+  "processes": [
+    {
+      "pid": 3445,
+      "pgid": 3445,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.15",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=true"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "stages": [
+    {
+      "stage": "startup",
+      "started_monotonic": 340.855174598,
+      "status": "PASS",
+      "finished_monotonic": 365.838158732,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "robot model changed",
+          "goal_count": 0,
+          "reserved": true,
+          "outstanding": true,
+          "fault": "",
+          "generation": 1
+        },
+        "counts": {
+          "rgb": 29,
+          "depth": 47,
+          "info": 47
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "/manipulation_node/set_camera_motion_test:service_ready",
+      "started_monotonic": 365.868019615,
+      "status": "PASS",
+      "finished_monotonic": 365.868151094,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "robot model changed",
+          "goal_count": 0,
+          "reserved": true,
+          "outstanding": true,
+          "fault": "",
+          "generation": 1
+        },
+        "counts": {
+          "rgb": 29,
+          "depth": 47,
+          "info": 47
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "/manipulation_node/set_camera_motion_test:reply",
+      "started_monotonic": 365.868474734,
+      "status": "PASS",
+      "finished_monotonic": 365.8931957,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "robot model changed",
+          "goal_count": 0,
+          "reserved": true,
+          "outstanding": true,
+          "fault": "",
+          "generation": 1
+        },
+        "counts": {
+          "rgb": 29,
+          "depth": 47,
+          "info": 47
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "camera_motion_ack",
+      "started_monotonic": 365.897216239,
+      "status": "PASS",
+      "finished_monotonic": 365.928093229,
+      "last_inputs": {
+        "tracking": {
+          "enabled": true,
+          "mode": "camera_motion_test",
+          "reason": "enabled explicitly",
+          "goal_count": 1,
+          "reserved": true,
+          "outstanding": true,
+          "fault": "",
+          "generation": 2
+        },
+        "counts": {
+          "rgb": 30,
+          "depth": 48,
+          "info": 48
+        },
+        "command_count": 1
+      }
+    },
+    {
+      "stage": "thirty_unique_observations",
+      "started_monotonic": 365.928130066,
+      "status": "ERROR",
+      "finished_monotonic": 371.068677145,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "camera_motion_test",
+          "reason": "terminal cancellation acknowledgement timeout",
+          "goal_count": 14,
+          "reserved": true,
+          "outstanding": true,
+          "fault": "terminal cancellation acknowledgement timeout",
+          "generation": 9
+        },
+        "counts": {
+          "rgb": 41,
+          "depth": 70,
+          "info": 70
+        },
+        "command_count": 14
+      }
+    }
+  ],
+  "motion_enable": "Explicit stationary local mode: camera_motion_test",
+  "geometry": {
+    "valid_samples": 0,
+    "unique_captures": 0,
+    "rms_m": null,
+    "rms_limit_m": 0.05,
+    "required_samples": 30,
+    "unique_timestamps": true,
+    "latest_tf_diagnostic_rms_m": null,
+    "accepted": false
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 3445,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792333028.9068816
+}

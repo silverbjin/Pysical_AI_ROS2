@@ -1,0 +1,42 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_newer_unpaired_detection_cannot_discard_an_older_complete_fresh_capture _
+
+    def test_newer_unpaired_detection_cannot_discard_an_older_complete_fresh_capture():
+        rclpy.init(domain_id=147)
+        node, peer = VisionProcessor(), Node('complete_pair_peer')
+        executor = SingleThreadedExecutor()
+        executor.add_node(node)
+        executor.add_node(peer)
+        states = []
+        sub = peer.create_subscription(TrackedTarget, '/vision/tracked_target', states.append, 10)
+        try:
+            transform = TransformStamped()
+            transform.header.frame_id, transform.child_frame_id = 'odom', 'camera_optical_frame'
+            transform.transform.rotation.w = 1.
+            node.tf_buffer.set_transform_static(transform, 'unit_test_only')
+            capture = peer.get_clock().now().nanoseconds/1e9
+            node.on_info(info(capture))
+            a, ad = images(capture, capture)
+            b, bd = images(capture+.01, capture+.01)
+            boxes = [Box2D(5., 5., 6., 6., 'fixture_red', 1.)]
+            node.on_detections(to_detection_array(boxes, a.header))
+            node.on_detections(to_detection_array(boxes, b.header))
+            # B is newer but missing depth. A is now a complete, fresh RGB-D pair.
+            node.on_rgb(a)
+            node.on_depth(ad)
+            deadline = time.monotonic()+.18
+            while not any(v.valid and v.source_header.stamp == a.header.stamp for v in states):
+                if time.monotonic() >= deadline:
+                    break
+                executor.spin_once(timeout_sec=.005)
+>           assert any(v.valid and v.source_header.stamp == a.header.stamp for v in states), (
+                'a newer incomplete capture discarded the last usable RGB-D candidate')
+E               AssertionError: a newer incomplete capture discarded the last usable RGB-D candidate
+E               assert False
+E                +  where False = any(<generator object test_newer_unpaired_detection_cannot_discard_an_older_complete_fresh_capture.<locals>.<genexpr> at 0x7313fd854450>)
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_fusion_reordering.py:44: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_fusion_reordering.py::test_newer_unpaired_detection_cannot_discard_an_older_complete_fresh_capture
+1 failed, 1 deselected in 3.84s
