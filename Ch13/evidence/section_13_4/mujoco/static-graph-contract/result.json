@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "run_id": "e8c23ba1-1aee-403c-956e-e206b090c704",
+  "expected_run_id": "e8c23ba1-1aee-403c-956e-e206b090c704",
+  "invocation_started_at": 1792313935.714217,
+  "started_at": 1792313935.714217,
+  "status": "PASS",
+  "checks": {
+    "measured_startup": true,
+    "thirty_observations": true,
+    "geometry_rms": true,
+    "one_clock": true,
+    "one_odometry": true,
+    "single_tf_owners": true,
+    "sensor_contract": true,
+    "engine_alive": true,
+    "native_snapshot": true,
+    "clean_shutdown": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/mujoco/static-graph-contract",
+  "artifacts": [
+    {
+      "path": "observations.json",
+      "size": 75812,
+      "sha256": "164eb6ad372762ae906410677418d4e3b80cc07e68032e5a4e09703d0067596d"
+    },
+    {
+      "path": "joints.npz",
+      "size": 188918,
+      "sha256": "b0e77f831fd14f48d63e3817371a0c4970362e769a8aa75942e3519268d318e4"
+    },
+    {
+      "path": "rgb.png",
+      "size": 16950,
+      "sha256": "cb99833da79f6f8c4b35cab447f30baa6879284dfcdd7c2a349666cc6372e324"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "34f86abe65883a807a37ec217cad5174780c47284360706e5b1eb934d73c1e67"
+    },
+    {
+      "path": "annotated.png",
+      "size": 18047,
+      "sha256": "7022175dfd6b3c950142e95139cbe778b04667bd84a720a9dbf75f443e52eec4"
+    },
+    {
+      "path": "camera.json",
+      "size": 330,
+      "sha256": "20809c67f592cac9dd2a37e0c74d0e69a4a18f739f8f620e5bd8557ec8bc0fb9"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "engine_alive",
+    "geometry_rms",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners",
+    "thirty_observations"
+  ],
+  "engine": "mujoco",
+  "detector_backend": "color_fixture",
+  "scenario": "static",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 225166,
+      "pgid": 225166,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "geometry": {
+    "valid_samples": 30,
+    "rms_m": 0.0030239416144666347,
+    "latest_tf_diagnostic_rms_m": 0.009832502565627808,
+    "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+    "elapsed_wall_s": 20.707647701998212
+  },
+  "owners": {
+    "/clock": [
+      "mujoco_ros2_control_node"
+    ],
+    "/odom": [
+      "native_pose_adapter"
+    ],
+    "/camera/color/image_raw": [
+      "mujoco_ros2_control_node"
+    ],
+    "/tf": [
+      "robot_state_publisher",
+      "native_pose_adapter"
+    ],
+    "/tf_static": [
+      "robot_state_publisher"
+    ]
+  },
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 17.956980750001094
+  },
+  "tf_ownership_method": "graph+model-parent-contract inference; Jazzy does not expose packet GID",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.3.7",
+    "ultralytics": "8.3.221",
+    "torch": "2.5.1+cpu",
+    "opencv-python": "4.10.0.84"
+  },
+  "source_head": "adb74f2c456994bfbdf7a5580390acd88cedb9b6",
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 225166,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792313986.2193747
+}

@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "run_id": "311e1ab2-fafc-4ca5-abed-a6c2fa74ea10",
+  "expected_run_id": "311e1ab2-fafc-4ca5-abed-a6c2fa74ea10",
+  "invocation_started_at": 1792327869.6074848,
+  "started_at": 1792327869.6074848,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "clean_shutdown": true
+  },
+  "errors": [
+    "TimeoutError('native vision verification deadline exceeded')"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/safety_joints_mujoco/native",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 82751,
+      "sha256": "503fb82c8afe0b001c1390fc0ef30ac2941b90d1e7a871f64cce510cdd62b734"
+    },
+    {
+      "path": "offset_fixture.xml",
+      "size": 575,
+      "sha256": "f9be858d94d5beccc37d437af1972d09bb751e9d13ad8793b2cfd9f313e551c6"
+    },
+    {
+      "path": "observations.json",
+      "size": 191556,
+      "sha256": "bedcfadeb413a8de8d95ec7b25a75a0d3976f629a121b0ef41deb327c665a96d"
+    },
+    {
+      "path": "joints.npz",
+      "size": 227852,
+      "sha256": "325f6f1dd3d23e9309a2b965373e0ce437dfef6731673dd7751d396480b2cd00"
+    },
+    {
+      "path": "rgb.png",
+      "size": 17536,
+      "sha256": "36659415e3d2ee90ee8b28974362ccf7f02a398ec5ca8f22169349911c5e4ad6"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "caba55b51b52af81e4ce299b4c2ade19a5e05195e16fdf666145dd355770ea53"
+    },
+    {
+      "path": "annotated.png",
+      "size": 18660,
+      "sha256": "cb7d6eba0344bd8f046af619c10c0a775517143a86cf47622266231d61b2ee48"
+    },
+    {
+      "path": "camera.json",
+      "size": 1251,
+      "sha256": "5cf0de316fc5246cd7daa16e1a290db052a55b653d1b757a63d79aa5b3a0e223"
+    }
+  ],
+  "required_checks": [
+    "actual_tracking_goal",
+    "cancel_confirmed",
+    "clean_shutdown",
+    "engine_alive",
+    "fault_injected",
+    "input_loss_stop",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners"
+  ],
+  "source_head": "1b173e3b5dc7d996ad2a77b5bca5a57d07329cd0",
+  "engine": "mujoco",
+  "detector_backend": "color_fixture",
+  "scenario": "safety",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 8767,
+      "pgid": 8767,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false",
+        "model_path:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/safety_joints_mujoco/native/offset_fixture.xml"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "physical_fixture": {
+    "center": [
+      1.0,
+      0.02,
+      0.72
+    ],
+    "front_x": 0.98
+  },
+  "tracking_enable": "Explicit stationary local mode: tracking",
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 8767,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792327934.4343004
+}

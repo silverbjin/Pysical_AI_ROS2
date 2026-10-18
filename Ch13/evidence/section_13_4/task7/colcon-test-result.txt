@@ -1,0 +1,77 @@
+build13_4_final/integrated_robot_description/Testing/20261018-1214/Test.xml: 5 tests, 0 errors, 2 failures, 0 skipped
+- copyright
+  <<< failure message
+    -- run_test.py: invoking following command in '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_description':
+     - /opt/ros/jazzy/bin/ament_copyright --xunit-file /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_final/integrated_robot_description/test_results/integrated_robot_description/copyright.xunit.xml
+    launch/vision_sensors.launch.py: could not find copyright notice
+    1 errors, checked 4 files
+    -- run_test.py: return code 1
+    -- run_test.py: verify result file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_final/integrated_robot_description/test_results/integrated_robot_description/copyright.xunit.xml'
+  >>>
+- flake8
+  <<< failure message
+    -- run_test.py: invoking following command in '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_description':
+     - /opt/ros/jazzy/bin/ament_flake8 --xunit-file /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_final/integrated_robot_description/test_results/integrated_robot_description/flake8.xunit.xml
+            launch_arguments={'gz_args': ['-r -s ', '--headless-rendering ' if vision else '', world]}.items(),
+                                                                                                       ^
+                     parameters=[{'config_file': os.path.join(package_share, 'config', 'vision_bridge.yaml')}]),
+                                                                                                       ^
+    from launch.actions import TimerAction, DeclareLaunchArgument, OpaqueFunction
+    ^
+            nodes.append(Node(package='integrated_robot_vision', executable='native_camera_info_adapter',
+                                                                                                       ^
+    3     E501 line too long (107 > 99 characters)
+    1     I101 Imported names are in the wrong order. Should be DeclareLaunchArgument, OpaqueFunction, TimerAction
+    
+    ./launch/gazebo.launch.py:72:100: E501 line too long (107 > 99 characters)
+    
+    ./launch/gazebo.launch.py:128:100: E501 line too long (108 > 99 characters)
+    
+    ./launch/mujoco.launch.py:22:1: I101 Imported names are in the wrong order. Should be DeclareLaunchArgument, OpaqueFunction, TimerAction
+    
+    ./launch/mujoco.launch.py:96:100: E501 line too long (101 > 99 characters)
+    
+    
+    4 files checked
+    4 errors
+    
+    'E'-type errors: 3
+    'I'-type errors: 1
+    
+    Checked files:
+    
+    * ./launch/gazebo.launch.py
+    * ./launch/mujoco.launch.py
+    * ./launch/view_robot.launch.py
+    * ./launch/vision_sensors.launch.py
+    -- run_test.py: return code 1
+    -- run_test.py: verify result file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_final/integrated_robot_description/test_results/integrated_robot_description/flake8.xunit.xml'
+  >>>
+build13_4_final/integrated_robot_description/test_results/integrated_robot_description/copyright.xunit.xml: 4 tests, 0 errors, 1 failure, 0 skipped
+- integrated_robot_description.copyright launch/vision_sensors.launch.py
+  <<< failure message
+    could not find copyright notice
+  >>>
+build13_4_final/integrated_robot_description/test_results/integrated_robot_description/flake8.xunit.xml: 4 tests, 0 errors, 4 failures, 0 skipped
+- integrated_robot_description.flake8 E501 (./launch/gazebo.launch.py:72:100)
+  <<< failure message
+    line too long (107 > 99 characters):
+            launch_arguments={'gz_args': ['-r -s ', '--headless-rendering ' if vision else '', world]}.items(),
+  >>>
+- integrated_robot_description.flake8 E501 (./launch/gazebo.launch.py:128:100)
+  <<< failure message
+    line too long (108 > 99 characters):
+                     parameters=[{'config_file': os.path.join(package_share, 'config', 'vision_bridge.yaml')}]),
+  >>>
+- integrated_robot_description.flake8 I101 (./launch/mujoco.launch.py:22:1)
+  <<< failure message
+    Imported names are in the wrong order. Should be DeclareLaunchArgument, OpaqueFunction, TimerAction:
+    from launch.actions import TimerAction, DeclareLaunchArgument, OpaqueFunction
+  >>>
+- integrated_robot_description.flake8 E501 (./launch/mujoco.launch.py:96:100)
+  <<< failure message
+    line too long (101 > 99 characters):
+            nodes.append(Node(package='integrated_robot_vision', executable='native_camera_info_adapter',
+  >>>
+
+Summary: 99 tests, 0 errors, 7 failures, 0 skipped

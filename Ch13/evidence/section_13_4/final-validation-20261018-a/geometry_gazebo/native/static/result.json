@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "run_id": "c411c723-418d-4d0d-964b-a9b6ca1f6cc4",
+  "expected_run_id": "c411c723-418d-4d0d-964b-a9b6ca1f6cc4",
+  "invocation_started_at": 1792326938.3171864,
+  "started_at": 1792326938.3171864,
+  "status": "PASS",
+  "checks": {
+    "measured_startup": true,
+    "thirty_observations": true,
+    "geometry_rms": true,
+    "one_clock": true,
+    "one_odometry": true,
+    "sensor_contract": true,
+    "engine_alive": true,
+    "single_tf_owners": true,
+    "native_snapshot": true,
+    "clean_shutdown": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/geometry_gazebo/native/static",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 85150,
+      "sha256": "d790c67156484cc7b4a3070f7a9c71395a28c91f8d2d3883ba7754d43a840291"
+    },
+    {
+      "path": "observations.json",
+      "size": 140721,
+      "sha256": "c70e2a210cd0151e82a6c09f00a30ddd1eae7e5a0681a43609838be51a122425"
+    },
+    {
+      "path": "joints.npz",
+      "size": 71381,
+      "sha256": "af79cc3e670a5659f476b79504e87366252f79e4939343a863d11e6d113e1a95"
+    },
+    {
+      "path": "rgb.png",
+      "size": 2240,
+      "sha256": "f676faf24a4361882d8cdf85ca804f0e4147ab11ef73618ff22b0c0e42ecf143"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "c79b446552097a3fe3766ec1a0e1c84c3fa6718caab9f828f97bc8bcbd79547d"
+    },
+    {
+      "path": "annotated.png",
+      "size": 2904,
+      "sha256": "33ad936b1e217458c7d772d73754656837672b490824d354b92b7e1620f0fc8f"
+    },
+    {
+      "path": "camera.json",
+      "size": 1245,
+      "sha256": "78b36a45350111e73aa6fbc829d1f62f423ccbf8dfc7a5a453a406751f672e9a"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "engine_alive",
+    "geometry_rms",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners",
+    "thirty_observations"
+  ],
+  "source_head": "adb74f2c456994bfbdf7a5580390acd88cedb9b6",
+  "engine": "gazebo",
+  "detector_backend": "color_fixture",
+  "scenario": "static",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 3386,
+      "pgid": 3386,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "geometry": {
+    "valid_samples": 30,
+    "unique_captures": 30,
+    "rms_m": 0.00229446920563457,
+    "rms_limit_m": 0.03,
+    "required_samples": 30,
+    "unique_timestamps": true,
+    "latest_tf_diagnostic_rms_m": 0.0022944692221658273,
+    "accepted": true,
+    "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+    "elapsed_wall_s": 3.9584736880000264
+  },
+  "owners": {
+    "/clock": [
+      "ros_gz_bridge"
+    ],
+    "/odom": [
+      "native_pose_adapter"
+    ],
+    "/camera/color/image_raw": [
+      "ros_gz_bridge"
+    ],
+    "/tf": [
+      "robot_state_publisher",
+      "native_pose_adapter"
+    ],
+    "/tf_static": [
+      "robot_state_publisher"
+    ]
+  },
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 12.56251716600002
+  },
+  "tf_ownership_method": "graph+model-parent-contract inference; Jazzy does not expose packet GID",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.3.7",
+    "ultralytics": "8.3.221",
+    "torch": "2.5.1+cpu",
+    "opencv-python": "4.10.0.84"
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "gazebo_native_stop": {
+    "pids": [
+      3390,
+      3394
+    ],
+    "exited": true
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 3386,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792326990.8621004
+}

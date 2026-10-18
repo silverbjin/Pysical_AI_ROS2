@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "run_id": "da97e94e-aa01-4fa8-876f-b1ccf2b69afb",
+  "expected_run_id": "da97e94e-aa01-4fa8-876f-b1ccf2b69afb",
+  "invocation_started_at": 1792326784.1537497,
+  "started_at": 1792326784.1537497,
+  "status": "PASS",
+  "checks": {
+    "executed": true,
+    "verification": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/installed_paths",
+  "artifacts": [
+    {
+      "path": "command.log",
+      "size": 949,
+      "sha256": "be706b54ff6748795a9d5965e8f883f9b78676cf2b9abc7830b59a14640c6b99"
+    }
+  ],
+  "required_checks": [
+    "executed",
+    "verification"
+  ],
+  "batch_run_id": "30b8e523-d190-4e22-929e-f11cb14a1826",
+  "group": "installed_paths",
+  "command": [
+    "/home/jinho/ch13_vision_13_4_venv/bin/python",
+    "-c",
+    "import hashlib, importlib.util, json\nfrom pathlib import Path\nfrom ament_index_python.packages import get_package_share_directory\nprefix, repo = Path('/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_verify_30b8e523'), Path('/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2')\nrows = {}\nfor name in ('integrated_robot_runtime','integrated_robot_vision','integrated_robot_interfaces','integrated_robot_description'):\n    share = Path(get_package_share_directory(name)).resolve()\n    assert share.is_relative_to(prefix), (name, str(share))\n    rows[name] = str(share)\n    if name in ('integrated_robot_runtime','integrated_robot_vision'):\n        installed = Path(importlib.util.find_spec(name).origin).resolve().parent\n        assert installed.is_relative_to(prefix), str(installed)\n        source = repo/'Ch13/ros2_ws/src'/name/name\n        for path in source.glob('*.py'):\n            assert path.read_bytes() == (installed/path.name).read_bytes(), str(path)\n    if name == 'integrated_robot_description':\n        source = repo/'Ch13/ros2_ws/src'/name\n        for directory in ('launch','config','urdf','mujoco','worlds'):\n            for path in (source/directory).rglob('*'):\n                if path.is_file() and '__pycache__' not in path.parts:\n                    assert path.read_bytes() == (share/path.relative_to(source)).read_bytes(), str(path)\nprint(json.dumps(rows, indent=2))\n"
+  ],
+  "pid": 2113,
+  "returncode": 0,
+  "finished_at": 1792326785.4540439
+}

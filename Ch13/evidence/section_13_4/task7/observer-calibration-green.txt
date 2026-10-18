@@ -1,0 +1,35 @@
+.......F..                                                               [100%]
+=================================== FAILURES ===================================
+_ test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_members _
+
+    def test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_members():
+        runner = importlib.import_module('run_vision_13_4')
+        process = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(.2)'],
+                                   start_new_session=True)
+        unrelated = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(5)'],
+                                     start_new_session=True)
+        try:
+            with pytest.raises(ValueError):
+>               runner.wait_owned_members_exit(process, [unrelated.pid], timeout=.05)
+
+Ch13/tests/test_section_13_4_runner.py:129: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+process = <Popen: returncode: 0 args: ['/home/jinho/ch13_vision_13_4_venv/bin/python',...>
+members = [1359]
+
+    def wait_owned_members_exit(process, members, *, timeout=8.):
+        from probe_sensors_13_4 import live_group_pids
+        if not math.isfinite(timeout) or not 0 < timeout <= 10.:
+            raise ValueError('bounded native stop grace required')
+        for pid in members:
+            try:
+                snapshot = source_snapshot(Path(__file__).resolve().parents[2])
+>               (run.root/'source_snapshot.json').write_text(json.dumps(snapshot, indent=2)+'\n', encoding='utf-8')
+                 ^^^
+E               NameError: name 'run' is not defined
+
+Ch13/scripts/run_vision_13_4.py:58: NameError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_members
+1 failed, 9 passed in 37.18s

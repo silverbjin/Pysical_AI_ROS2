@@ -82,3 +82,20 @@ def test_malformed_batch_and_nested_geometry_residuals_cannot_continue(tmp_path)
     path = tmp_path/'result.json'
     path.write_text(json.dumps({'phases': {'static': 'FAIL'}, 'cleanup': []}))
     assert residual_pids(path) == [123]
+
+
+def test_native_artifact_bytes_survive_git_checkout_with_windows_line_endings(tmp_path):
+    subprocess.run(['git', 'init', '-q', str(tmp_path)], check=True)
+    attrs = Path(__file__).resolve().parents[1]/'evidence/section_13_4/.gitattributes'
+    (tmp_path/'.gitattributes').write_bytes(attrs.read_bytes())
+    expected = {'engine.log': b'native engine output\n', 'observations.json': b'{"actual":true}\n'}
+    for name, value in expected.items():
+        (tmp_path/name).write_bytes(value)
+    subprocess.run(['git', '-c', 'core.autocrlf=true', 'add', '.'], cwd=tmp_path, check=True)
+    subprocess.run(['git', '-c', 'user.name=Ch13 test', '-c', 'user.email=test@example.invalid',
+                    'commit', '-qm', 'temporary evidence fixture'], cwd=tmp_path, check=True)
+    restored = tmp_path/'restored'
+    subprocess.run(['git', '-c', 'core.autocrlf=true', 'checkout-index', '--all',
+                    '--prefix='+str(restored)+'/'], cwd=tmp_path, check=True)
+    for name, value in expected.items():
+        assert (restored/name).read_bytes() == value, 'checkout must not corrupt recorded artifact SHA-256'

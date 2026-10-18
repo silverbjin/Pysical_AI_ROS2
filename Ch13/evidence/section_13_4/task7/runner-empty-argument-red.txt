@@ -1,0 +1,16 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_fixture_launch_omits_empty_optional_weights_instead_of_invalid_ros_argument _
+
+    def test_fixture_launch_omits_empty_optional_weights_instead_of_invalid_ros_argument():
+        runner = importlib.import_module('run_vision_13_4')
+        args = argparse.Namespace(engine='mujoco', detector_backend='color_fixture',
+                                  weights_path='', scenario='static')
+>       command = runner.build_launch_command(args, 0.)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'build_launch_command'
+
+Ch13/tests/test_section_13_4_runner.py:44: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_fixture_launch_omits_empty_optional_weights_instead_of_invalid_ros_argument
+1 failed, 2 deselected in 2.30s

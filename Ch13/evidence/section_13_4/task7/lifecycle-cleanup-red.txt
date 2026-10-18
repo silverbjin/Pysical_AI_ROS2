@@ -1,0 +1,115 @@
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+_____ test_constructor_failure_closes_context_and_restores_sigint_handler ______
+
+    def test_constructor_failure_closes_context_and_restores_sigint_handler():
+        previous = signal.getsignal(signal.SIGINT)
+    
+        def fail_constructor():
+            raise RuntimeError('intentional node constructor failure')
+    
+        try:
+            with pytest.raises(RuntimeError, match='intentional'):
+                spin(fail_constructor)
+>           assert not rclpy.ok(), 'constructor failure leaked initialized ROS context'
+E           AssertionError: constructor failure leaked initialized ROS context
+E           assert not True
+E            +  where True = <function ok at 0x7bacc1551f80>()
+E            +    where <function ok at 0x7bacc1551f80> = rclpy.ok
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_runtime_cleanup.py:19: AssertionError
+___________ test_sigint_during_active_worker_exits_cleanly[detector] ___________
+
+kind = 'detector'
+
+    @pytest.mark.parametrize('kind', ['detector', 'fusion'])
+    def test_sigint_during_active_worker_exits_cleanly(kind):
+        code = textwrap.dedent('''
+            import time
+            from copy import deepcopy
+            import rclpy
+            from rclpy.parameter import Parameter
+            from rclpy.executors import SingleThreadedExecutor
+            from test_rgbd_cache import images, info
+            from vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithPose
+            class TaggedExecutor(SingleThreadedExecutor):
+                def spin(self):
+                    print('MAIN_SPIN', flush=True)
+                    return super().spin()
+            if KIND == 'detector':
+                import integrated_robot_vision.object_detector as module
+                Original = module.ObjectDetector
+                class Injected(Original):
+                    def __init__(self):
+                        super().__init__(parameter_overrides=[Parameter('backend', value='color_fixture')])
+                        original = self.backend.predict
+                        def slow(image):
+                            print('WORKER_INFLIGHT', flush=True)
+                            time.sleep(.15)
+                            return original(image)
+                        self.backend.predict = slow
+                        stamp = self.get_clock().now().nanoseconds/1e9
+                        rgb, depth = images(stamp, stamp)
+                        self.on_info(info(stamp))
+                        self.on_rgb(rgb)
+                module.ObjectDetector = Injected
+            else:
+                import integrated_robot_vision.vision_processor as module
+                original = module.lookup_capture_point
+                def slow(*args, **kwargs):
+                    print('WORKER_INFLIGHT', flush=True)
+                    time.sleep(.15)
+                    return original(*args, **kwargs)
+                module.lookup_capture_point = slow
+                Original = module.VisionProcessor
+                class Injected(Original):
+                    def __init__(self):
+                        super().__init__()
+                        stamp = self.get_clock().now().nanoseconds/1e9
+                        rgb, depth = images(stamp, stamp)
+                        self.on_info(info(stamp))
+                        self.on_rgb(rgb)
+                        self.on_depth(depth)
+                        message = Detection2DArray(header=deepcopy(rgb.header))
+                        detection = Detection2D()
+                        detection.bbox.center.position.x = detection.bbox.center.position.y = 5.
+                        detection.bbox.size_x = detection.bbox.size_y = 6.
+                        hypothesis = ObjectHypothesisWithPose()
+                        hypothesis.hypothesis.class_id, hypothesis.hypothesis.score = 'fixture_red', .9
+                        detection.results = [hypothesis]
+                        message.detections = [detection]
+                        self.on_detections(message)
+                module.VisionProcessor = Injected
+            module.SingleThreadedExecutor = TaggedExecutor
+            module.main()
+        ''').replace('KIND', repr(kind))
+        environment = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path), ROS_DOMAIN_ID='155')
+        process = subprocess.Popen([sys.executable, '-u', '-c', code], stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, text=True, env=environment,
+                                   start_new_session=True)
+        lines = []
+        try:
+            deadline = time.monotonic()+8.
+            while time.monotonic() < deadline and not all(
+                    any(marker in value for value in lines) for marker in ('MAIN_SPIN', 'WORKER_INFLIGHT')):
+                if select.select([process.stdout], [], [], .1)[0]:
+                    line = process.stdout.readline()
+                    if not line:
+                        break
+                    lines.append(line)
+>           assert all(any(marker in value for value in lines)
+                       for marker in ('MAIN_SPIN', 'WORKER_INFLIGHT')), ''.join(lines)
+E                      AssertionError: [INFO] [1792315130.730213493] [object_detector]: explicit detector backend=color_fixture, max_rate_hz=10.0
+E                        Traceback (most recent call last):
+E                          File "<string>", line 58, in <module>
+E                          File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/object_detector.py", line 174, in main
+E                            node = ObjectDetector()
+E                        
+E                      assert False
+E                       +  where False = all(<generator object test_sigint_during_active_worker_exits_cleanly.<locals>.<genexpr> at 0x7baca4191540>)
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_live_worker_shutdown.py:89: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_runtime_cleanup.py::test_constructor_failure_closes_context_and_restores_sigint_handler
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_live_worker_shutdown.py::test_sigint_during_active_worker_exits_cleanly[detector]
+2 failed, 1 passed in 20.85s

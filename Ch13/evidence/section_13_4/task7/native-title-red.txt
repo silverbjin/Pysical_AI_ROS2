@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_gazebo_ruby_setproctitle_is_recognized_without_selecting_shell_wrapper __
+
+    def test_gazebo_ruby_setproctitle_is_recognized_without_selecting_shell_wrapper():
+        runner = importlib.import_module('run_vision_13_4')
+>       assert runner.is_gazebo_command(b'gz sim -r -s --headless-rendering /world.sdf\0\0\0')
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'is_gazebo_command'
+
+Ch13/tests/test_section_13_4_runner.py:102: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_gazebo_ruby_setproctitle_is_recognized_without_selecting_shell_wrapper
+1 failed, 7 deselected in 2.63s

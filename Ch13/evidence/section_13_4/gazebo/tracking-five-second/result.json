@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "run_id": "d2fd25c2-e851-4c56-a664-4d147b53b4ef",
+  "expected_run_id": "d2fd25c2-e851-4c56-a664-4d147b53b4ef",
+  "invocation_started_at": 1792324872.438907,
+  "started_at": 1792324872.438907,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "clean_shutdown": true
+  },
+  "errors": [
+    "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'invalid/lost target', 'goal_count': 4, 'reserved': False, 'outstanding': False, 'fault': '', 'generation': 18}\")"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/gazebo/tracking-five-second",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 84490,
+      "sha256": "3560210f108e8d79d055710da4f5440129703592f0aab654f11c7acf6929420e"
+    },
+    {
+      "path": "offset_fixture.sdf",
+      "size": 1557,
+      "sha256": "1a37142262843d164a98073c58c0db9962394051af72435a859b7b88b30dcc37"
+    },
+    {
+      "path": "observations.json",
+      "size": 136240,
+      "sha256": "b01f037d90f35c30a28a0fc448f590361c9a84678acb97bcc344faf81d46ef97"
+    },
+    {
+      "path": "joints.npz",
+      "size": 90189,
+      "sha256": "7737c900fce27bdf58390c762e1c85173f436fd1603edd3ce94e8e7d1b490d95"
+    },
+    {
+      "path": "rgb.png",
+      "size": 2241,
+      "sha256": "5aa9b47692993e9d25f5ec7e04146c956e90abdfd1a258fb99c5fc3c392f395a"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "0d9efc9e7b0cc255eb63eb0e731a4afb2af291e95533dcc877a3c004741b6051"
+    },
+    {
+      "path": "annotated.png",
+      "size": 2924,
+      "sha256": "d6918bb1b4a0cc1c3c663e74a924f13894f26e22a48bd52111b9e0b3f4879cce"
+    },
+    {
+      "path": "camera.json",
+      "size": 1245,
+      "sha256": "c60d7faba9ac5deeadf14f34cfe188c2369f21e42bff545baedefb853b3c3869"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "command_rate",
+    "engine_alive",
+    "five_second_tracking",
+    "joint_limits",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "pixel_error_reduction",
+    "sensor_contract",
+    "single_tf_owners",
+    "velocity_limits"
+  ],
+  "source_head": "adb74f2c456994bfbdf7a5580390acd88cedb9b6",
+  "engine": "gazebo",
+  "detector_backend": "color_fixture",
+  "scenario": "tracking",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 2285,
+      "pgid": 2285,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false",
+        "world:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/gazebo/tracking-five-second/offset_fixture.sdf"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "physical_fixture": {
+    "center": [
+      1.0,
+      0.02,
+      0.72
+    ],
+    "front_x": 0.98
+  },
+  "tracking_enable": "Explicit stationary local mode: tracking",
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "gazebo_native_stop": {
+    "pids": [
+      2289,
+      2295
+    ],
+    "exited": true
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 2285,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792324922.7110763
+}

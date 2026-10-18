@@ -1,0 +1,28 @@
+........................................................................ [ 32%]
+...................F.................................................... [ 64%]
+........................................................................ [ 96%]
+.........                                                                [100%]
+=================================== FAILURES ===================================
+_____ test_child_death_fails_and_cleanup_never_signals_an_unrelated_group ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_child_death_fails_and_cle0')
+
+    def test_child_death_fails_and_cleanup_never_signals_an_unrelated_group(tmp_path):
+        runner = importlib.import_module('run_vision_13_4')
+        unrelated = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'],
+                                     start_new_session=True)
+        try:
+            args = argparse.Namespace(engine='mujoco', detector_backend='color_fixture', weights_path='',
+                scenario='static', output_dir=str(tmp_path), timeout=1., duration=1., processing_delay_s=None)
+            result = runner.run_trial(args, launch_command=[sys.executable, '-c', 'raise SystemExit(7)'])
+            assert result['status'] == 'FAIL'
+            assert result['cleanup'] and not result['cleanup'][0]['residual_live_pids']
+>           assert unrelated.poll() is None
+E           AssertionError: assert 0 is None
+E            +  where 0 = poll()
+E            +    where poll = <Popen: returncode: 0 args: ['/home/jinho/ch13_vision_13_4_venv/bin/python',...>.poll
+
+Ch13/tests/test_section_13_4_runner.py:90: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_child_death_fails_and_cleanup_never_signals_an_unrelated_group
+1 failed, 224 passed in 87.24s (0:01:27)

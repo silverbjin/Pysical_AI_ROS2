@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "run_id": "bb960866-ad14-4729-a4d9-7823c199d46b",
+  "expected_run_id": "bb960866-ad14-4729-a4d9-7823c199d46b",
+  "invocation_started_at": 1792327705.9880974,
+  "started_at": 1792327705.9880974,
+  "status": "FAIL",
+  "checks": {
+    "executed": false,
+    "verification": false
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/tracking_mujoco",
+  "artifacts": [
+    {
+      "path": "native/result.json",
+      "size": 3747,
+      "sha256": "40563d1f487b0a2e949722709e41581c3a20bf3ac56b85fd7f859a755843c12d"
+    },
+    {
+      "path": "command.log",
+      "size": 463,
+      "sha256": "66fb127f9ef50a039ebf65dfb971c3b01835a4ec5e57364da40b4a1a40a10a4a"
+    }
+  ],
+  "required_checks": [
+    "executed",
+    "verification"
+  ],
+  "batch_run_id": "30b8e523-d190-4e22-929e-f11cb14a1826",
+  "group": "tracking_mujoco",
+  "command": [
+    "/home/jinho/ch13_vision_13_4_venv/bin/python",
+    "Ch13/scripts/run_vision_13_4.py",
+    "--engine",
+    "mujoco",
+    "--scenario",
+    "tracking",
+    "--detector-backend",
+    "color_fixture",
+    "--output-dir",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/tracking_mujoco/native"
+  ],
+  "pid": 7590,
+  "returncode": 1,
+  "residual_live_pids": [],
+  "cleanup_confirmed": true,
+  "measurements": {
+    "tracking_metrics": {
+      "checks": {
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false
+      },
+      "elapsed_wall_s": 0.0,
+      "command_count": 0,
+      "reduction": null
+    },
+    "checks": {
+      "measured_startup": true,
+      "five_second_tracking": false,
+      "pixel_error_reduction": false,
+      "joint_limits": false,
+      "velocity_limits": false,
+      "command_rate": false,
+      "clean_shutdown": true
+    },
+    "errors": [
+      "RuntimeError('explicit mode request refused: tracking requires every safety gate and an unreserved arm: target_valid,target_fresh')"
+    ]
+  },
+  "finished_at": 1792327761.6994607
+}

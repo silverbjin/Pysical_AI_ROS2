@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_native_artifact_bytes_survive_git_checkout_with_windows_line_endings ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-2/test_native_artifact_bytes_sur0')
+
+    def test_native_artifact_bytes_survive_git_checkout_with_windows_line_endings(tmp_path):
+        subprocess.run(['git', 'init', '-q', str(tmp_path)], check=True)
+        attrs = Path(__file__).resolve().parents[1]/'evidence/section_13_4/.gitattributes'
+        (tmp_path/'.gitattributes').write_bytes(attrs.read_bytes())
+        expected = {'engine.log': b'native engine output\n', 'observations.json': b'{"actual":true}\n'}
+        for name, value in expected.items():
+            (tmp_path/name).write_bytes(value)
+        subprocess.run(['git', '-c', 'core.autocrlf=true', 'add', '.'], cwd=tmp_path, check=True)
+        subprocess.run(['git', '-c', 'user.name=Ch13 test', '-c', 'user.email=test@example.invalid',
+                        'commit', '-qm', 'temporary evidence fixture'], cwd=tmp_path, check=True)
+        restored = tmp_path/'restored'
+        subprocess.run(['git', '-c', 'core.autocrlf=true', 'checkout-index', '--all',
+                        '--prefix='+str(restored)+'/'], cwd=tmp_path, check=True)
+        for name, value in expected.items():
+>           assert (restored/name).read_bytes() == value, 'checkout must not corrupt recorded artifact SHA-256'
+E           AssertionError: checkout must not corrupt recorded artifact SHA-256
+E           assert b'native engine output\r\n' == b'native engine output\n'
+E             
+E             At index 20 diff: b'\r' != b'\n'
+E             Use -v to get more diff
+
+Ch13/tests/test_section_13_4_summary.py:101: AssertionError
+----------------------------- Captured stderr call -----------------------------
+warning: in the working copy of '.gitattributes', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'engine.log', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observations.json', LF will be replaced by CRLF the next time Git touches it
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_summary.py::test_native_artifact_bytes_survive_git_checkout_with_windows_line_endings
+1 failed, 10 deselected in 0.63s

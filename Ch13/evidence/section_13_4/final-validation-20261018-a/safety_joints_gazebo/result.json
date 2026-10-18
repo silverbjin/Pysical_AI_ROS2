@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "run_id": "1515609e-acfc-4251-91eb-c659d1d2c11e",
+  "expected_run_id": "1515609e-acfc-4251-91eb-c659d1d2c11e",
+  "invocation_started_at": 1792327306.740309,
+  "started_at": 1792327306.740309,
+  "status": "PASS",
+  "checks": {
+    "executed": true,
+    "verification": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/safety_joints_gazebo",
+  "artifacts": [
+    {
+      "path": "native/result.json",
+      "size": 4932,
+      "sha256": "a51a6d02adc2f23512d7ba24042bbd073ea6bccb410a389f537c614db3d8337d"
+    },
+    {
+      "path": "command.log",
+      "size": 451,
+      "sha256": "a29eac2935551b86487a70d790e6e32242e2c96927880ab96034f61336e1083b"
+    }
+  ],
+  "required_checks": [
+    "executed",
+    "verification"
+  ],
+  "batch_run_id": "30b8e523-d190-4e22-929e-f11cb14a1826",
+  "group": "safety_joints_gazebo",
+  "command": [
+    "/home/jinho/ch13_vision_13_4_venv/bin/python",
+    "Ch13/scripts/run_vision_13_4.py",
+    "--engine",
+    "gazebo",
+    "--scenario",
+    "safety",
+    "--detector-backend",
+    "color_fixture",
+    "--output-dir",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/safety_joints_gazebo/native",
+    "--fault",
+    "joints"
+  ],
+  "pid": 5741,
+  "returncode": 0,
+  "residual_live_pids": [],
+  "cleanup_confirmed": true,
+  "measurements": {
+    "fault": {
+      "kind": "joints",
+      "requested_monotonic": 797.509432626,
+      "scope": "joint_state_broadcaster only; consequently joint TF also becomes stale",
+      "effective_monotonic": 797.541094261,
+      "goal_stop_deadline_monotonic": 798.041094261,
+      "final_tracking": {
+        "enabled": false,
+        "mode": "tracking",
+        "reason": "invalid/lost target",
+        "goal_count": 2,
+        "reserved": false,
+        "outstanding": false,
+        "fault": "",
+        "generation": 11
+      }
+    },
+    "versions": {
+      "numpy": "1.26.4",
+      "mujoco": "3.3.7",
+      "ultralytics": "8.3.221",
+      "torch": "2.5.1+cpu",
+      "opencv-python": "4.10.0.84"
+    },
+    "checks": {
+      "measured_startup": true,
+      "single_tf_owners": true,
+      "actual_tracking_goal": true,
+      "fault_injected": true,
+      "input_loss_stop": true,
+      "cancel_confirmed": true,
+      "one_clock": true,
+      "one_odometry": true,
+      "sensor_contract": true,
+      "engine_alive": true,
+      "native_snapshot": true,
+      "clean_shutdown": true
+    },
+    "errors": []
+  },
+  "finished_at": 1792327364.701013
+}

@@ -1,0 +1,46 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_missing_weights_replaces_old_pass_before_any_engine_launch ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-40/test_missing_weights_replaces_0')
+
+    def test_missing_weights_replaces_old_pass_before_any_engine_launch(tmp_path):
+        (tmp_path/'result.json').write_text(json.dumps(dict(status='PASS', run_id='old')))
+        process = subprocess.run([sys.executable, str(SCRIPTS/'run_vision_13_4.py'),
+            '--engine', 'mujoco', '--detector-backend', 'yolo', '--weights-path', '/missing/weights.pt',
+            '--scenario', 'yolo', '--output-dir', str(tmp_path)], capture_output=True, text=True, timeout=8.)
+        assert process.returncode != 0
+        result = json.loads((tmp_path/'result.json').read_text())
+>       assert result['run_id'] != 'old' and result['status'] == 'FAIL'
+E       AssertionError: assert ('old' != 'old')
+
+Ch13/tests/test_section_13_4_runner.py:20: AssertionError
+_____ test_child_death_fails_and_cleanup_never_signals_an_unrelated_group ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-40/test_child_death_fails_and_cle0')
+
+    def test_child_death_fails_and_cleanup_never_signals_an_unrelated_group(tmp_path):
+>       runner = importlib.import_module('run_vision_13_4')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/tests/test_section_13_4_runner.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'run_vision_13_4', import_ = <function _gcd_import at 0x733c4e51c0e0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'run_vision_13_4'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_missing_weights_replaces_old_pass_before_any_engine_launch
+FAILED Ch13/tests/test_section_13_4_runner.py::test_child_death_fails_and_cleanup_never_signals_an_unrelated_group
+2 failed in 10.01s

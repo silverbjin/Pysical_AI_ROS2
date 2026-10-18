@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "run_id": "d6246c64-5bf5-4490-9590-4143079bbe1f",
+  "expected_run_id": "d6246c64-5bf5-4490-9590-4143079bbe1f",
+  "invocation_started_at": 1792324446.9066207,
+  "started_at": 1792324446.9066207,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "clean_shutdown": true
+  },
+  "errors": [
+    "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'invalid/lost target', 'goal_count': 1, 'reserved': False, 'outstanding': False, 'fault': '', 'generation': 52}\")"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/mujoco/tracking-five-second",
+  "artifacts": [
+    {
+      "path": "offset_fixture.xml",
+      "size": 565,
+      "sha256": "0ad5c826f617e2854752e6ce07f5b6905a2933f3bd5025bc1d44194b5dbbd28c"
+    },
+    {
+      "path": "observations.json",
+      "size": 109075,
+      "sha256": "6a5ce0f0cd2f9a86f4b3aa4221f1d472a1102df60eb34b0e3b1cca37aafe1e52"
+    },
+    {
+      "path": "joints.npz",
+      "size": 165604,
+      "sha256": "b62868c2855bd22536aa90a53ea630625436343586893a3eecf754c4dd0ca91a"
+    },
+    {
+      "path": "rgb.png",
+      "size": 17425,
+      "sha256": "d56d151a4e01860cd2d82dcba23286cde3b33e8888935968e54c7785d86f87fd"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "abf7e7ecd16ec51e7a4d4a1231ad484b53fe2aa1a48a3e80e2335e0deaa27111"
+    },
+    {
+      "path": "annotated.png",
+      "size": 18603,
+      "sha256": "1cfa2244797a625a61dae56e7710e87fd5a956b45fdb2b2ed5826de0394b4870"
+    },
+    {
+      "path": "camera.json",
+      "size": 1251,
+      "sha256": "5161c234c8ad74187cd4eb9f2c6c3e4507f062fe4c113b8a9add00afd0466481"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "command_rate",
+    "engine_alive",
+    "five_second_tracking",
+    "joint_limits",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "pixel_error_reduction",
+    "sensor_contract",
+    "single_tf_owners",
+    "velocity_limits"
+  ],
+  "engine": "mujoco",
+  "detector_backend": "color_fixture",
+  "scenario": "tracking",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 1643,
+      "pgid": 1643,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false",
+        "model_path:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/mujoco/tracking-five-second/offset_fixture.xml"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "physical_fixture": {
+    "center": [
+      1.0,
+      0.02,
+      0.72
+    ],
+    "front_x": 0.98
+  },
+  "tracking_enable": "Explicit stationary local mode: tracking",
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 1643,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792324474.134177
+}

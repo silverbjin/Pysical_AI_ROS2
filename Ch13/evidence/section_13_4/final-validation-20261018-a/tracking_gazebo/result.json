@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "run_id": "444d1868-9f20-4309-bf52-88bd2365b38e",
+  "expected_run_id": "444d1868-9f20-4309-bf52-88bd2365b38e",
+  "invocation_started_at": 1792327122.1236439,
+  "started_at": 1792327122.1236439,
+  "status": "FAIL",
+  "checks": {
+    "executed": false,
+    "verification": false
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/tracking_gazebo",
+  "artifacts": [
+    {
+      "path": "native/result.json",
+      "size": 4232,
+      "sha256": "80acd8606ae8dcb9b6b9bb54ecd630e3edc6c9b7725bf2159d5410d67751b67e"
+    },
+    {
+      "path": "command.log",
+      "size": 548,
+      "sha256": "d4c592aec64f95506ffefb7264f5b500256e37581f652940b122f28514a6a902"
+    }
+  ],
+  "required_checks": [
+    "executed",
+    "verification"
+  ],
+  "batch_run_id": "30b8e523-d190-4e22-929e-f11cb14a1826",
+  "group": "tracking_gazebo",
+  "command": [
+    "/home/jinho/ch13_vision_13_4_venv/bin/python",
+    "Ch13/scripts/run_vision_13_4.py",
+    "--engine",
+    "gazebo",
+    "--scenario",
+    "tracking",
+    "--detector-backend",
+    "color_fixture",
+    "--output-dir",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/tracking_gazebo/native"
+  ],
+  "pid": 4532,
+  "returncode": 1,
+  "residual_live_pids": [],
+  "cleanup_confirmed": true,
+  "measurements": {
+    "tracking_metrics": {
+      "checks": {
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": true,
+        "velocity_limits": true,
+        "command_rate": true
+      },
+      "elapsed_wall_s": 1.9826314659999298,
+      "command_count": 6,
+      "reduction": null,
+      "minimum_dispatch_interval_s": 0.2847148849999712,
+      "measured_max_speed_rad_s": 0.05334179958258466,
+      "measured_max_angle_rad": 0.02072190582135089
+    },
+    "checks": {
+      "measured_startup": true,
+      "five_second_tracking": false,
+      "pixel_error_reduction": false,
+      "joint_limits": true,
+      "velocity_limits": true,
+      "command_rate": true,
+      "clean_shutdown": true
+    },
+    "errors": [
+      "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'invalid/lost target', 'goal_count': 6, 'reserved': False, 'outstanding': False, 'fault': '', 'generation': 9}\")"
+    ]
+  },
+  "finished_at": 1792327183.5670118
+}
