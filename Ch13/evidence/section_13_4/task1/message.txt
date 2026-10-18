@@ -1,0 +1,25 @@
+# Position describes the visible depth surface, not a grasp pose.
+std_msgs/Header header
+	builtin_interfaces/Time stamp
+		int32 sec
+		uint32 nanosec
+	string frame_id
+std_msgs/Header source_header
+	builtin_interfaces/Time stamp
+		int32 sec
+		uint32 nanosec
+	string frame_id
+builtin_interfaces/Time processed_at
+	int32 sec
+	uint32 nanosec
+string track_id
+string class_id
+float32 score
+geometry_msgs/Point position
+	float64 x
+	float64 y
+	float64 z
+float64[9] covariance
+bool valid
+# TRACKED, LOST, INVALID, TF_UNAVAILABLE, RESET
+string status
