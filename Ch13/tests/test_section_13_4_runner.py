@@ -196,6 +196,18 @@ def test_snapshot_camera_ownership_rejects_a_duplicate_or_missing_sensor_writer(
     assert 'single_camera_owners' in runner.required_checks('static', engine='mujoco', camera_backend='snapshot')
 
 
+@pytest.mark.parametrize('topic', ['/overview/color', '/overview/depth',
+    '/overview/camera_info', '/eye_in_hand/color', '/eye_in_hand/depth',
+    '/eye_in_hand/camera_info'])
+def test_snapshot_ownership_rejects_hidden_auto_registered_camera(topic):
+    runner = importlib.import_module('run_vision_13_4')
+    owners = {name: ['one_writer'] for name in (
+        '/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+        '/native/camera_info', '/camera/color/camera_info')}
+    owners[topic] = ['legacy_auto_camera']
+    assert not runner.camera_publishers_unique(owners)
+
+
 def test_read_only_library_audit_uses_real_owned_mapping_and_rejects_unrelated_pid(tmp_path):
     import os
     from ament_index_python.packages import get_package_prefix

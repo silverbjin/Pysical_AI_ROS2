@@ -39,7 +39,7 @@ git log -1 --format=%H -- Ch12/src/quadruped_rl/ros_core.py
 | ROS 2 Jazzy `gz_ros2_control` | 설치된 Jazzy 패키지 | `GazeboSimSystem` |
 | MuJoCo Python | 3.3.7 | 독립 MJCF 로드/적분 증거 |
 
-외부 소스는 저장소에 복사하지 않고 `Ch13/ros2_ws/mujoco_ros2_control.repos`에서 커밋만 고정했다. 각 외부 프로젝트의 라이선스는 해당 원본 저장소를 따른다. 현재 상위 저장소에는 루트 라이선스 파일이 없으므로, Ch13 패키지의 `Apache-2.0` 메타데이터를 프로젝트 전체 라이선스 선언으로 확대 해석하지 않는다.
+기존 하드웨어 인터페이스는 `Ch13/ros2_ws/mujoco_ros2_control.repos`에서 커밋을 고정한다. 후속 승인된 카메라 파생본의 제한된 복사는 아래 소유권 패키지 명세를 따른다. 각 외부 프로젝트의 라이선스는 해당 원본 저장소를 따른다. 현재 상위 저장소에는 루트 라이선스 파일이 없으므로, Ch13 패키지의 `Apache-2.0` 메타데이터를 프로젝트 전체 라이선스 선언으로 확대 해석하지 않는다.
 
 ## 13.4 추가 명세
 
@@ -60,7 +60,7 @@ Ch07 `package.xml`은 `TODO: License declaration`이다. 원본에 대한 사용
 
 ### 13.4 외부 실행 자산
 
-- ROS/C++ 플러그인 소스는 고정 외부 workspace에서 빌드하며 수정·vendor 복사하지 않았다. MuJoCo free joint는 선속도가 world, 각속도가 local이라는 설치 버전 계약을 Ch13 adapter에서 처리한다.
+- 기존 ROS/C++ 하드웨어·pose 플러그인은 고정 외부 workspace에서 빌드한다. 외부 checkout은 수정하지 않는다. 카메라 파생본은 아래 소유권 패키지 명세의 예외다. MuJoCo free joint는 선속도가 world, 각속도가 local이라는 설치 버전 계약을 Ch13 adapter에서 처리한다.
 - Python 실행 버전은 `Ch13/requirements-vision-13-4.txt`와 각 실제 실행의 versions에 기록한다. CPU PyTorch 2.5.1/torchvision 0.20.1, Ultralytics 8.3.221, OpenCV 4.10.0.84를 사용했다.
 - `yolov8n.pt` 출처는 공식 assets v8.3.0이며 SHA-256은 `f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36`이다. `bus.jpg`는 공식 저장소 v8.3.221이며 `c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63`이다. URL·정확한 크기·권리 관련 원본 선언은 `Ch13/config/vision_assets.json`에 고정했다.
 - Ultralytics/model의 AGPL-3.0 또는 별도 Enterprise 조건과 사진 권리는 배포 방식에 따라 별도 확인해야 한다. 본 저장소는 법적 허가를 보증하지 않는다. 모델·버스 원본·해당 주석 영상은 저장소에 넣지 않았다.
@@ -80,5 +80,24 @@ Ch07 `package.xml`은 `TODO: License declaration`이다. 원본에 대한 사용
   수정/재빌드하지 않았다. Ch05–Ch12 소스도 수정하지 않는다.
 - `parent_debugger_13_4.py`는 이 절에서 작성한 일반 권한 자식 GDB 진단 도구이며
   native 인수용 production launcher가 아니다. GDB 자체 소스는 복사하지 않았다.
-- 카메라 소유권 설계서에 외부 복사 예정 파일의 커밋·해시·Apache-2.0 출처를 기록했으나,
-  현재 단계에서는 외부 카메라 코드/라이선스 파일을 Ch13 패키지로 복사하지 않았다.
+- 아래 소유권 패키지는 설계 및 구현 계획 승인 이후 추가한 제한적 파생본이다.
+
+## 13.4 카메라 snapshot 소유권 패키지
+
+`Ch13/ros2_ws/src/integrated_robot_camera`는 ament_cmake 독립 패키지다.
+원본은 ros-controls/mujoco_ros2_control의 고정 커밋
+`c261f5552edf124d1000a23fb25b6c07cadeb807`이며, 복사한 파일은 camera_plugin.cpp,
+camera_plugin.hpp, LICENSE 세 개뿐이다. 원본 경로·SHA-256·파생 경로·변경점은
+[패키지 명세](../ros2_ws/src/integrated_robot_camera/REUSE_MANIFEST.md)에 기록했다.
+NASA/United States Government 헤더와 Apache-2.0 원문을 보존했다.
+
+별도 class ID `integrated_robot_camera/SnapshotCameraPlugin`으로 원본을 덮어쓰지 않는다.
+두 mjData와 move-only render lease, epoch/reset, 보존되는 polled 요청과 worker 수명은
+Ch13 수정이며, mailbox/probe/회귀 테스트는 새로 작성했다. underlay base interface는
+복사하지 않고 기존 exported target을 사용한다. 설치 시 configure-time source manifest와
+실제 camera/mailbox 두 라이브러리 해시를 감사한다.
+
+추가 통합 수정은 Ch13 Xacro/launch에서 문서화된 `auto_register_cameras=false`를
+snapshot 비전 경로에만 전달한다. 별도 class ID를 인식하지 못하는 외부 legacy 자동 등록을
+끄기 위한 것으로 외부 소스를 바꾸지 않는다. 기존 upstream/vision=false 경로는 유지한다.
+Ch05–Ch12 소스를 추가로 복사하거나 수정하지 않았다.

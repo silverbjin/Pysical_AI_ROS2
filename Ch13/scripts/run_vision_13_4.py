@@ -222,10 +222,16 @@ def audit_camera_backend(process, expected_prefix: Path) -> dict:
     return dict(audit, **loaded, native_pid=candidates[0], installed_packages=installed)
 
 
+LEGACY_AUTO_CAMERA_TOPICS = tuple(
+    f'/{camera}/{stream}' for camera in ('overview', 'eye_in_hand')
+    for stream in ('color', 'depth', 'camera_info'))
+
+
 def camera_publishers_unique(owners):
     return all(len(owners.get(topic, [])) == 1 for topic in (
         '/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
-        '/native/camera_info', '/camera/color/camera_info'))
+        '/native/camera_info', '/camera/color/camera_info')) and not any(
+            owners.get(topic, []) for topic in LEGACY_AUTO_CAMERA_TOPICS)
 
 
 def required_checks(scenario, *, engine=None, camera_backend='upstream'):
@@ -533,7 +539,8 @@ def run_trial(args, *, launch_command=None):
             owners = {topic: [v.node_name for v in node.get_publishers_info_by_topic(topic)]
                       for topic in ('/clock', '/odom', '/camera/color/image_raw',
                                     '/camera/aligned_depth_to_color/image_raw', '/native/camera_info',
-                                    '/camera/color/camera_info', '/tf', '/tf_static')}
+                                    '/camera/color/camera_info', '/tf', '/tf_static')
+                      + LEGACY_AUTO_CAMERA_TOPICS}
             run.result['owners'] = owners
             if args.engine == 'mujoco' and backend == 'snapshot':
                 checks['single_camera_owners'] = camera_publishers_unique(owners)

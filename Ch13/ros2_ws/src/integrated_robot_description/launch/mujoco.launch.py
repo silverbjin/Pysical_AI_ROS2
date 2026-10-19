@@ -96,6 +96,8 @@ def launch_nodes(context):
         Command(
             ['xacro ', xacro_path, ' control_backend:=mujoco mujoco_model_path:=', model_path,
              ' vision_enabled:=', str(vision).lower(),
+             ' mujoco_auto_register_cameras:=',
+             str(not (vision and backend == 'snapshot')).lower(),
              ' mujoco_headless:=', LaunchConfiguration('mujoco_headless').perform(context)]
         ),
         value_type=str,

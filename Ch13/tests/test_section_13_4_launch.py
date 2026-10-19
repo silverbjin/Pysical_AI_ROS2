@@ -24,6 +24,26 @@ def test_headless_option_reaches_native_hardware_without_changing_joints():
         assert len(root.findall('./ros2_control/joint')) == 20
 
 
+@pytest.mark.parametrize('vision,backend,expected', [
+    ('true', 'snapshot', 'false'), ('true', 'upstream', 'true'),
+    ('false', 'snapshot', 'true'), ('false', 'upstream', 'true')])
+def test_snapshot_launch_disables_legacy_camera_auto_registration(
+        vision, backend, expected, monkeypatch):
+    module = load('integrated_robot_description', 'mujoco.launch.py')
+    monkeypatch.setattr(module, 'get_package_share_directory',
+                        lambda name: str(SRC/'integrated_robot_description'))
+    ctx = context(vision_enabled=vision, vision_camera_backend=backend,
+                  mujoco_headless='true')
+    node = module.launch_nodes(ctx)[0]
+    parameters = evaluate_parameters(ctx, node._Node__parameters)
+    description = next(p['robot_description'] for p in parameters
+                       if isinstance(p, dict) and 'robot_description' in p)
+    root = ET.fromstring(description)
+    value = root.find('./ros2_control/hardware/param[@name="auto_register_cameras"]')
+    assert value is not None and value.text == expected
+    assert len(root.findall('./ros2_control/joint')) == 20
+
+
 def load(package, name):
     spec = importlib.util.spec_from_file_location(name, SRC/package/'launch'/name)
     module = importlib.util.module_from_spec(spec)
