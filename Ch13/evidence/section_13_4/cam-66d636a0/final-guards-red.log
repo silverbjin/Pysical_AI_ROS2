@@ -1,0 +1,177 @@
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+___ test_geometry_never_starts_delay_after_unconfirmed_static_cleanup[None] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_geometry_never_starts_del0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x779a969c6630>
+cleanup = None
+
+    @pytest.mark.parametrize('cleanup', [None, [], [{'residual_live_pids': [123]}]])
+    def test_geometry_never_starts_delay_after_unconfirmed_static_cleanup(tmp_path, monkeypatch, cleanup):
+        runner = importlib.import_module('run_vision_13_4')
+        calls = []
+        def trial(args):
+            calls.append(args.scenario)
+            path = Path(args.output_dir)
+            path.mkdir(parents=True)
+            result = dict(status='FAIL')
+            if cleanup is not None:
+                result['cleanup'] = cleanup
+            (path/'result.json').write_text(json.dumps(result))
+            return result
+        monkeypatch.setattr(runner, 'run_trial', trial)
+        with pytest.raises(RuntimeError, match='cleanup'):
+            with runner.EvidenceRun(tmp_path/'geometry', {'static', 'delay'}) as overall:
+>               runner.run_geometry_trials(SimpleNamespace(), overall)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: module 'run_vision_13_4' has no attribute 'run_geometry_trials'
+
+Ch13/tests/test_section_13_4_runner.py:32: AttributeError
+_ test_geometry_never_starts_delay_after_unconfirmed_static_cleanup[cleanup1] __
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_geometry_never_starts_del1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x779a967176b0>
+cleanup = []
+
+    @pytest.mark.parametrize('cleanup', [None, [], [{'residual_live_pids': [123]}]])
+    def test_geometry_never_starts_delay_after_unconfirmed_static_cleanup(tmp_path, monkeypatch, cleanup):
+        runner = importlib.import_module('run_vision_13_4')
+        calls = []
+        def trial(args):
+            calls.append(args.scenario)
+            path = Path(args.output_dir)
+            path.mkdir(parents=True)
+            result = dict(status='FAIL')
+            if cleanup is not None:
+                result['cleanup'] = cleanup
+            (path/'result.json').write_text(json.dumps(result))
+            return result
+        monkeypatch.setattr(runner, 'run_trial', trial)
+        with pytest.raises(RuntimeError, match='cleanup'):
+            with runner.EvidenceRun(tmp_path/'geometry', {'static', 'delay'}) as overall:
+>               runner.run_geometry_trials(SimpleNamespace(), overall)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: module 'run_vision_13_4' has no attribute 'run_geometry_trials'
+
+Ch13/tests/test_section_13_4_runner.py:32: AttributeError
+_ test_geometry_never_starts_delay_after_unconfirmed_static_cleanup[cleanup2] __
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_geometry_never_starts_del2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x779a984c09b0>
+cleanup = [{'residual_live_pids': [123]}]
+
+    @pytest.mark.parametrize('cleanup', [None, [], [{'residual_live_pids': [123]}]])
+    def test_geometry_never_starts_delay_after_unconfirmed_static_cleanup(tmp_path, monkeypatch, cleanup):
+        runner = importlib.import_module('run_vision_13_4')
+        calls = []
+        def trial(args):
+            calls.append(args.scenario)
+            path = Path(args.output_dir)
+            path.mkdir(parents=True)
+            result = dict(status='FAIL')
+            if cleanup is not None:
+                result['cleanup'] = cleanup
+            (path/'result.json').write_text(json.dumps(result))
+            return result
+        monkeypatch.setattr(runner, 'run_trial', trial)
+        with pytest.raises(RuntimeError, match='cleanup'):
+            with runner.EvidenceRun(tmp_path/'geometry', {'static', 'delay'}) as overall:
+>               runner.run_geometry_trials(SimpleNamespace(), overall)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: module 'run_vision_13_4' has no attribute 'run_geometry_trials'
+
+Ch13/tests/test_section_13_4_runner.py:32: AttributeError
+___ test_batch_smoke_writes_annotation_inside_ignored_build_not_beside_input ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_batch_smoke_writes_annota0')
+
+    def test_batch_smoke_writes_annotation_inside_ignored_build_not_beside_input(tmp_path):
+        from types import SimpleNamespace
+        import verify_all_13_4 as batch
+        args = SimpleNamespace(weights='/read-only/assets/weights.pt', image='/read-only/assets/bus.jpg')
+        build = tmp_path/'build'
+>       command = batch.smoke_command(args, tmp_path/'evidence/result.json', build)
+                  ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_all_13_4' has no attribute 'smoke_command'
+
+Ch13/tests/test_section_13_4_summary.py:78: AttributeError
+_ test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown[native-value0] _
+
+kind = 'native', value = {'status': 'FAIL'}
+
+    @pytest.mark.parametrize('kind,value', [
+        ('native', {'status': 'FAIL'}), ('native', {'cleanup_confirmed': False}),
+        ('legacy', {'status': 'FAIL'}), ('legacy', {})])
+    def test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown(kind, value):
+        import verify_all_13_4 as batch
+        with pytest.raises(RuntimeError):
+>           batch.check_engine_continuation(kind, value)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'verify_all_13_4' has no attribute 'check_engine_continuation'
+
+Ch13/tests/test_section_13_4_summary.py:91: AttributeError
+_ test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown[native-value1] _
+
+kind = 'native', value = {'cleanup_confirmed': False}
+
+    @pytest.mark.parametrize('kind,value', [
+        ('native', {'status': 'FAIL'}), ('native', {'cleanup_confirmed': False}),
+        ('legacy', {'status': 'FAIL'}), ('legacy', {})])
+    def test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown(kind, value):
+        import verify_all_13_4 as batch
+        with pytest.raises(RuntimeError):
+>           batch.check_engine_continuation(kind, value)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'verify_all_13_4' has no attribute 'check_engine_continuation'
+
+Ch13/tests/test_section_13_4_summary.py:91: AttributeError
+_ test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown[legacy-value2] _
+
+kind = 'legacy', value = {'status': 'FAIL'}
+
+    @pytest.mark.parametrize('kind,value', [
+        ('native', {'status': 'FAIL'}), ('native', {'cleanup_confirmed': False}),
+        ('legacy', {'status': 'FAIL'}), ('legacy', {})])
+    def test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown(kind, value):
+        import verify_all_13_4 as batch
+        with pytest.raises(RuntimeError):
+>           batch.check_engine_continuation(kind, value)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'verify_all_13_4' has no attribute 'check_engine_continuation'
+
+Ch13/tests/test_section_13_4_summary.py:91: AttributeError
+_ test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown[legacy-value3] _
+
+kind = 'legacy', value = {}
+
+    @pytest.mark.parametrize('kind,value', [
+        ('native', {'status': 'FAIL'}), ('native', {'cleanup_confirmed': False}),
+        ('legacy', {'status': 'FAIL'}), ('legacy', {})])
+    def test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown(kind, value):
+        import verify_all_13_4 as batch
+        with pytest.raises(RuntimeError):
+>           batch.check_engine_continuation(kind, value)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'verify_all_13_4' has no attribute 'check_engine_continuation'
+
+Ch13/tests/test_section_13_4_summary.py:91: AttributeError
+__ test_batch_can_continue_only_after_explicit_clean_native_or_passed_legacy ___
+
+    def test_batch_can_continue_only_after_explicit_clean_native_or_passed_legacy():
+        import verify_all_13_4 as batch
+>       batch.check_engine_continuation('native', {'status': 'FAIL', 'cleanup_confirmed': True})
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_all_13_4' has no attribute 'check_engine_continuation'
+
+Ch13/tests/test_section_13_4_summary.py:96: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_geometry_never_starts_delay_after_unconfirmed_static_cleanup[None]
+FAILED Ch13/tests/test_section_13_4_runner.py::test_geometry_never_starts_delay_after_unconfirmed_static_cleanup[cleanup1]
+FAILED Ch13/tests/test_section_13_4_runner.py::test_geometry_never_starts_delay_after_unconfirmed_static_cleanup[cleanup2]
+FAILED Ch13/tests/test_section_13_4_summary.py::test_batch_smoke_writes_annotation_inside_ignored_build_not_beside_input
+FAILED Ch13/tests/test_section_13_4_summary.py::test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown[native-value0]
+FAILED Ch13/tests/test_section_13_4_summary.py::test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown[native-value1]
+FAILED Ch13/tests/test_section_13_4_summary.py::test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown[legacy-value2]
+FAILED Ch13/tests/test_section_13_4_summary.py::test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown[legacy-value3]
+FAILED Ch13/tests/test_section_13_4_summary.py::test_batch_can_continue_only_after_explicit_clean_native_or_passed_legacy
+9 failed, 41 deselected in 6.42s

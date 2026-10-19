@@ -24,3 +24,15 @@
 | p010.xml | integrated_robot_vision/pytest.xml |
 
 인터페이스 패키지는 별도 XML이 없으며 빌드 및 생성물/설치 일치를 별도로 확인했다.
+
+## 최종 자체 리뷰 이후
+
+- `final-guards-red.log`:9실패, `final-guards-green.log`:50통과.
+- `final-suite.log`/`final-pytest.xml`:전체285통과/120.29초.
+- `final-colcon.log`/`final-colcon-result.log`:5패키지,123건/오류0/실패0/skip0.
+- `final-installed.json`:최종5패키지 및 두 라이브러리 설치 감사.
+- `native-integrity.json`:새30회·258등록 artifact의 무결성 PASS, native 인수는 FAIL.
+- `evaluation2/summary.json`:기존 fail-closed 집계기를 사용한 사후 평가, 전체 FAIL.
+  새 물리 실행이 아니다. 최초 evaluation의 빈 로그 size0 오판은 보존했다.
+  `evaluation-red.log`/`evaluation-green.log`에서 원본 MuJoCo legacy PASS를 잘못
+  낮추지 않으며 Gazebo 종료/전체 인수 FAIL은 유지함을 확인한다.

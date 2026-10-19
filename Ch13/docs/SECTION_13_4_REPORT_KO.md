@@ -1,5 +1,13 @@
 # 13.4 변경·검증 보고서
 
+> 2026-10-20 최종 상태: 사용자 선택에 따라 **현재 실험 브랜치와 증거만 보존**한다.
+> snapshot 렌더 worker의 `glfwInit/CreateWindow/DestroyWindow` 호출은 설치된 GLFW의
+> main-thread-only 계약을 위반한다(P1/Important, 미해결). GL 시험·기하 측정의 일부 PASS는
+> 이 API 계약 준수나 배포 안전성을 입증하지 않는다. EGL 변경·추가 실측은 진행하지 않았다.
+> 전체 인수 FAIL이며 snapshot 사용을 권장하지 않는다. 아래 명령은 역사적 재현 절차이지
+> 인수 완료 권고가 아니다. main 병합과 13.5 재개는 보류한다.
+> [최종 보존 판정·근거](../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md)
+
 ## 2026-10-19 후속 진단 상태
 
 아래 기존 일괄 인수 기록은 역사적 결과로 보존한다. 최신 후속 진단은
@@ -180,3 +188,28 @@ LP_NUM_THREADS/OMP_NUM_THREADS/OPENBLAS_NUM_THREADS는 미설정 조건을 유�
 완료를 주장하지 않는다. TSAN은 WSL 시작 시 memory mapping 오류가 남아 일반
 race-free 검증으로 인정하지 않는다. 다음 개선은 별도 실행/액션 응답·시간 예산 설계가
 필요하며, 새 카메라의 정합성 수정이 그 지연을 모두 해결했다고 주장하지 않는다.
+
+### 최종 자체 리뷰·검증기 보강
+
+실제 엔진 소스 체크포인트는6828b82, native 측정 보존은cc17631이다. 이후 d6f33bf는
+검증기 경계만 보강했다. static cleanup 미확인 시 delay를 거부하고, legacy 실패 뒤
+다음 엔진을 막으며, smoke 주석은 weights 폴더가 아닌 ignored build에 남긴다.
+신규9회귀 RED → 관련50건 GREEN, 최종 전체 **285 PASS/120.29초**, 패키지 **123건/
+오류0/실패0/skip0**, 실제 설치 감사 PASS다. camera/runtime/model 소스는 native 실행
+이후 변경하지 않았다. 단위·설치 PASS를30회 native 전체 인수 PASS로 바꾸지 않는다.
+
+기존 fail-closed `summarize()`로 완료 증거를 평가한 최종 사후 집계는
+[evaluation2/summary.json](../evidence/section_13_4/cam-66d636a0/evaluation2/summary.json),
+run ID `4ec9b314-2421-489c-a9bb-13a2efd49da4`, **전체 FAIL**이다. 이것은 원본
+실행 결과/로그/해시를 감사한 파생 평가이지 새 엔진 실행이 아니다. 새 bus 단독 smoke는
+실행하지 않아 UNVERIFIED이며 native 컵 YOLO는 별도 PASS다.
+
+최초 evaluation은 빈 probe.log를 positive artifact로 넣어 EvidenceRun의 size>0
+계약을 위반했고 정상 MuJoCo legacy를 잘못 FAIL로 분류했다. 원본과 대조한 assertion
+RED 후 빈 파일은 긍정 증거로 등록하지 않도록 보정했다. 원래 빈 로그·최초 평가·RED는
+보존하고 새 evaluation2에서 MuJoCo legacy PASS 및 Gazebo native 종료 FAIL을
+확인했다. 수신/소유권/취소 제한을 완화한 재판정이 아니다.
+
+가이드·장/패키지 REUSE·자체 리뷰·원본 JUnit·계획 수행 기록을 함께 남긴다.
+별도 reviewer 없는 네이티브 작성자 자체 검토라는 한계가 있으며, 절 브랜치를 보존해
+push하되 main 병합이나13.5 준비 완료를 선언하지 않는다.

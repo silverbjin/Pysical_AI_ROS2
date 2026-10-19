@@ -1,5 +1,13 @@
 # 13.4 네이티브 자체 리뷰
 
+> 2026-10-20 최종 상태: 사용자 선택에 따라 **현재 실험 브랜치와 증거만 보존**한다.
+> snapshot 렌더 worker의 `glfwInit/CreateWindow/DestroyWindow` 호출은 설치된 GLFW의
+> main-thread-only 계약을 위반한다(P1/Important, 미해결). GL 시험·기하 측정의 일부 PASS는
+> 이 API 계약 준수나 배포 안전성을 입증하지 않는다. EGL 변경·추가 실측은 진행하지 않았다.
+> 전체 인수 FAIL이며 snapshot 사용을 권장하지 않는다. 아래 명령은 역사적 재현 절차이지
+> 인수 완료 권고가 아니다. main 병합과 13.5 재개는 보류한다.
+> [최종 보존 판정·근거](../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md)
+
 ## 2026-10-19 후속 리뷰 보충
 
 후속 timer 재진입, complete RGB-D 후보 덮어쓰기, 처리 중 중복 detection 결함은
@@ -63,3 +71,52 @@ Gazebo 종료 정지는 아직 해결됐다고 판단하지 않는다. 10/15Hz �
 - 원고의 자동 접근/운반 완료를 이 코드로 선언하지 않는다. 13.5는 새로운 설계와 유효 목표·실제 보행 능력의 별도 검증이 필요하다.
 
 기능에 영향 없는 추가 스타일/미세 최적화는 이번 리뷰에서 무리하게 확장하지 않았다. **독립 리뷰 부재와 위 중요 인수 미달은 남아 있다.**
+
+## 2026-10-20 snapshot 소유권 구현 자체 검토
+
+검토 범위: 승인된 camera snapshot 설계/계획의124061f 이후 변경,6828b82의 실제
+엔진 체크포인트와 cc17631의 실측 기록, 후속 실행기 가드. 서브에이전트 없이 작성자가
+검토했다. 독립적인 새 리뷰어보다 약한 검토이며 main 병합 준비 완료를 의미하지 않는다.
+
+| Review Focus | 근거 / 판단 |
+|---|---|
+| overwrite/rollback | 두 슬롯과 move-only lease, 같은 metadata 교환. 실제 readback barrier와 epoch 폐기 시험. ROS/DDS에 이미 발행된 패킷까지 회수한다는 보장은 아님 |
+| cleanup/init | lifecycle 직렬화·state atomic 교환·stop/wake·join 후 해제. GL 자원은 worker 소유이나 GLFW main-thread 계약 위반(P1)이 남아 API 정합성은 미달. driver 무한 정지의 강제 안전 중단도 보장하지 않음 |
+| mixed policy | disabled 미렌더, polled 병합/보존·취득 후 반복 방지, index/중복/비유한 time 거부. 단일 control producer와 외부 모델 수명 계약 필요 |
+| ABI/overlay | 별도 class ID, 실제 pluginlib 생성, source manifest, 실제 PID의 camera/mailbox 두 .so 경로·해시. 원본·설치 checkout은 불변 |
+| delay/result loss | 촬영300ms/TF100ms/팔5Hz 유지, terminal 결과 전 소유권 해제 금지. clean10/15Hz 각3회 실패와 일부 terminal timeout은 미해결로 남김 |
+
+중복 렌더링은 실제 로그/여섯 숨은 토픽 검사로 확인했고 snapshot 경로의 문서화된
+하드웨어 인자로 차단했다. upstream/vision=false·20관절/TF·명령 소유권은 유지했다.
+고유 촬영 기하·컵 YOLO 및 일부 손실 시험은 실제 엔진에서 확인했으나, 이것이 전체
+추적·파지·자율 보행 성공을 뜻하지 않는다. 상세30회 결과는 변경 보고서를 따른다.
+
+### 실행기 중요 지적과 단일 수정 패스
+
+1. `run_vision_13_4.py`의 geometry 루프가 static 종료/잔여 PID를 확인하지 않고
+   delay 엔진을 시작할 수 있었다. phase 결과를 먼저 보존하고 명시적인 empty residual
+   기록이 없으면 다음 엔진을 거부하도록 했다.
+2. `verify_all_13_4.py`는 native 분기만 종료 확인을 했고 legacy FAIL 뒤에도 다음
+   엔진을 진행했다. legacy 형식에는 별도 cleanup 증명이 없어 실패/미확인이면 중단한다.
+   이후 미실행 그룹은 UNVERIFIED이며 성공으로 채우지 않는다.
+3. 같은 batch의 smoke 주석 경로가 weights 부모 폴더였다. 읽기 전용 외부 입력을
+   변경하지 않도록 해당 batch의 ignored build/smoke_annotations로 옮겼다. 외부 사진을
+   evidence Git에 재배포하지 않으며 원래 결과의 경로·해시는 남는다.
+
+신규9회귀 RED를 실제 확인한 뒤 최소 수정했고 관련 runner/summary50건이 통과했다.
+최종 전체 소스·패키지·설치 검사는 별도 최종 로그를 따른다. 이 가드 수정은 실제 카메라/
+물리 모델이나 이전30회 결과를 바꾸지 않으며 문서만 작성한 뒤 native 성공을 주장하지 않는다.
+
+### 판단을 분리한 범위와 최종 평가
+
+- Gazebo driver/bridge 종료 및 액션/실행 지연의 추가 구조 변경은 승인된 snapshot 범위
+  밖이다. 해결됐다고 선언하지 않고 전체13.4 FAIL/13.5 보류라는 비용을 명시한다.
+- GUI/실로봇/PPO 적재 보행/MoveIt/물리 파지/Nav2는 이번 승인 계획의 대상이 아니며
+  UNVERIFIED다. 임의의 외부 모델·해상도·악의적 DDS writer에 대한 인증도 아니다.
+- 최신 TSAN 실행은 WSL memory mapping 제약으로 미검증이다. 초기9 core case의
+  단일 실행 성공을 현재 전체 코드의 race-free 판정으로 확대하지 않는다.
+
+**전체13.4 병합 준비: 아니오.** 데이터 소유권과 명시적 backend 선택은 시험했지만
+GLFW 스레드 계약 위반과 연속 추적·일부 종료 인수 미달이 남는다. 전체 승격 또는13.5
+진행 전에 API 정합성·시간 예산/액션 응답 설계와 새 실제 실행 검증이 필요하다.
+사용자 선택에 따라 현재는 수정 없이 증거만 보존한다. 추가 사소한 지적의 보류 목록은 없다.

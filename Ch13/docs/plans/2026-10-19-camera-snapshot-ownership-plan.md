@@ -1,5 +1,13 @@
 # Ch13 카메라 snapshot 소유권 Implementation Plan
 
+> 2026-10-20 최종 상태: 사용자 선택에 따라 **현재 실험 브랜치와 증거만 보존**한다.
+> snapshot 렌더 worker의 `glfwInit/CreateWindow/DestroyWindow` 호출은 설치된 GLFW의
+> main-thread-only 계약을 위반한다(P1/Important, 미해결). GL 시험·기하 측정의 일부 PASS는
+> 이 API 계약 준수나 배포 안전성을 입증하지 않는다. EGL 변경·추가 실측은 진행하지 않았다.
+> 전체 인수 FAIL이며 snapshot 사용을 권장하지 않는다. 아래 명령은 역사적 재현 절차이지
+> 인수 완료 권고가 아니다. main 병합과 13.5 재개는 보류한다.
+> [최종 보존 판정·근거](../../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. 사용자는 네이티브 실행을 선택했다. 서브에이전트/별도 리뷰 에이전트를 호출하지 않는다.
 
 **Goal:** Ch13 전용 MuJoCo 카메라 플러그인에서 촬영 snapshot의 생산자/렌더러 소유권을 분리하고, 실제 엔진으로 시각 정합·안전·설치 재현성을 검증한다.
@@ -9,6 +17,15 @@
 **Tech Stack:** ROS 2 Jazzy, ament_cmake/C++17, MuJoCo3.3.7, pluginlib, rclcpp, GLFW/OpenGL EGL, gtest, pytest, colcon, 실제 MuJoCo/Gazebo.
 
 **Spec:** `Ch13/docs/specs/2026-10-19-camera-snapshot-ownership-design.md` — 사용자 승인. **구현 계획 승인 / 네이티브 실행 중** (2026-10-19). 실제 구현 시작 HEAD는 `124061f32bc6492ac42a67fe43a7bb67ed245050`이다.
+
+## 실행 기록 갱신 (2026-10-20)
+
+체크박스는 해당 절차의 수행 완료이며 native 인수 PASS를 뜻하지 않는다.
+Task1~4 구현/회귀 및 Task5의30회 실제 엔진 측정·무결성258 artifact 감사를 완료했다.
+clean10Hz3회/15Hz3회 추적은 모두 FAIL이므로 기본값은 upstream을 유지했다.
+Gazebo 일부 종료 및 액션 미달도 보존하며13.4 전체 FAIL/13.5 보류다.
+세부 실측과 작업 중 판단·비용은 변경/리뷰 보고서와 새 evidence를 따른다.
+하단 승인 전 절차 문구는 계획 당시 문맥으로 보존한다.
 
 ## Global Constraints
 
@@ -81,7 +98,7 @@ source "$SNAPSHOT_INSTALL/setup.bash"
 
 **Interfaces:** namespace는 `integrated_robot_camera`. `SnapshotMailbox(const mjModel*, size_t camera_count)`는 모델을 소유하지 않는다. `ClockObservation observe_time(double sim_time)`은 metadata 락 아래 시각을 관측하고 `{uint64_t epoch; bool rollback;}`를 반환하며 역행 때 이전 pending을 폐기한다. `bool submit(const mjModel*, const mjData*, const std::vector<size_t>&, uint64_t observed_epoch)`은 stop 또는 관측 이후 epoch 변경 시 false다. `std::optional<RenderLease> wait_take()`는 stop 시 nullopt, `bool is_current(uint64_t epoch) const`는 발행 전 유효성 검사, `void reset_epoch()`는 pending/이전 시각 기준 폐기, `void request_stop()`은 제출 차단과 대기 해제다. mailbox의 copy/move는 금지한다. move-only `RenderLease`의 `data() -> const mjData*`, `stamp_seconds() -> double`, `sequence()/epoch() -> uint64_t`, `camera_indices() -> const std::vector<size_t>&`는 lease 동안 불변이다. lease 파괴로 render 사용을 해제하며 동시 consumer/동시 lease 취득은 logic_error다. 외부 모델은 mailbox보다 오래 살아야 하고 두 복사 버퍼/선택 목록은 mailbox가 소유한다.
 
-- [ ] **1. 실패 시험 작성:** `ConsumerLeaseSurvivesProducerOverwrite`에서 작은 실제 MuJoCo 모델·mjData를 생성하고 첫 lease의 pointer/geom_xpos/time/선택을 저장한다. promise/future barrier로 consumer를 보류한 채 다른 스레드에서 frame2/3을 submit한다. 첫 lease는 불변이며 다음 lease는 frame3이어야 한다. fixture는 slide 관절1개·geom1개·카메라2개로 만들고, qpos 변경 뒤 mj_forward를 실행해 실제 시각화 상태를 바꾼다. 복사 범위가 축소된 `mjv_copyData`의 계약에 맞춰 geom_xpos/time을 검사하며 qpos 전체 복사를 가정하지 않는다. `StopWakesIdleConsumer`, `StopRejectsSubmitWhileLeaseRemainsValid`, `RejectsSecondConsumerOrOutstandingLease`도 작성한다.
+- [x] **1. 실패 시험 작성:** `ConsumerLeaseSurvivesProducerOverwrite`에서 작은 실제 MuJoCo 모델·mjData를 생성하고 첫 lease의 pointer/geom_xpos/time/선택을 저장한다. promise/future barrier로 consumer를 보류한 채 다른 스레드에서 frame2/3을 submit한다. 첫 lease는 불변이며 다음 lease는 frame3이어야 한다. fixture는 slide 관절1개·geom1개·카메라2개로 만들고, qpos 변경 뒤 mj_forward를 실행해 실제 시각화 상태를 바꾼다. 복사 범위가 축소된 `mjv_copyData`의 계약에 맞춰 geom_xpos/time을 검사하며 qpos 전체 복사를 가정하지 않는다. `StopWakesIdleConsumer`, `StopRejectsSubmitWhileLeaseRemainsValid`, `RejectsSecondConsumerOrOutstandingLease`도 작성한다.
 
   핵심 assertion은 다음과 같다. frame2/3 제출·barrier 조율은 fixture가 실제 다른 스레드에서 수행한다.
 
@@ -98,11 +115,11 @@ source "$SNAPSHOT_INSTALL/setup.bash"
   EXPECT_DOUBLE_EQ(latest->stamp_seconds(), 3.0);
   EXPECT_EQ(latest->camera_indices(), (std::vector<size_t>{1}));
   ```
-- [ ] **2. RED 확인:** 새 core target의 build/test를 실행해 API 미구현으로 실패함을 보존한다. 구문/환경 오류와 요구된 소유권 실패를 구별한다. 테스트가 정의되기 전에 소유권 구현을 작성하지 않는다.
-- [ ] **3. 최소 구현:** RAII mjData2개를 사전 할당하고 upstream과 같은 `mjv_copyData`로 pending만 갱신한다. 짧은 mutex에서 포인터/metadata를 교환하고 lease 동안 render를 재사용하지 않는다. observe_time은 due 판단 전에 호출하며 반환 epoch를 submit에 전달한다. 비유한/음수 시각, index 범위 초과·중복 선택·모델 포인터 불일치는 invalid_argument로 거부한다.
-- [ ] **4. GREEN·경계 확인:** `RollbackDropsPendingAndInvalidatesOldLeaseEpoch`, `ResetBetweenObserveAndSubmitRejectsOldGeneration`, `SameTimeDoesNotResetEpoch`, `RejectsInvalidTimeAndCameraSelection`, `OnlyTwoDataBuffersAreReused`를 포함해 gtest를 실행한다. 렌더 보류 중 producer 완료를 barrier로 확인하며 render/join까지 mutex를 늘리지 않는다. core의 TSAN 전용 CMake 옵션 `INTEGRATED_CAMERA_ENABLE_TSAN=ON`을 별도 build에서 시험한다. 실행 제약은 UNVERIFIED로 보존하고 일반 GREEN과 혼동하지 않는다.
+- [x] **2. RED 확인:** 새 core target의 build/test를 실행해 API 미구현으로 실패함을 보존한다. 구문/환경 오류와 요구된 소유권 실패를 구별한다. 테스트가 정의되기 전에 소유권 구현을 작성하지 않는다.
+- [x] **3. 최소 구현:** RAII mjData2개를 사전 할당하고 upstream과 같은 `mjv_copyData`로 pending만 갱신한다. 짧은 mutex에서 포인터/metadata를 교환하고 lease 동안 render를 재사용하지 않는다. observe_time은 due 판단 전에 호출하며 반환 epoch를 submit에 전달한다. 비유한/음수 시각, index 범위 초과·중복 선택·모델 포인터 불일치는 invalid_argument로 거부한다.
+- [x] **4. GREEN·경계 확인:** `RollbackDropsPendingAndInvalidatesOldLeaseEpoch`, `ResetBetweenObserveAndSubmitRejectsOldGeneration`, `SameTimeDoesNotResetEpoch`, `RejectsInvalidTimeAndCameraSelection`, `OnlyTwoDataBuffersAreReused`를 포함해 gtest를 실행한다. 렌더 보류 중 producer 완료를 barrier로 확인하며 render/join까지 mutex를 늘리지 않는다. core의 TSAN 전용 CMake 옵션 `INTEGRATED_CAMERA_ENABLE_TSAN=ON`을 별도 build에서 시험한다. 실행 제약은 UNVERIFIED로 보존하고 일반 GREEN과 혼동하지 않는다.
   실행: `"$SNAPSHOT_BUILD/integrated_robot_camera/test_snapshot_mailbox" --gtest_output=xml:"$SNAPSHOT_EVIDENCE/mailbox-green.xml"`. 모든 이름 있는 시험이 통과해야 한다. sanitizer build는 별도 prefix에서 core target만 빌드하며, 계측하지 않은 외부 MuJoCo/GL 라이브러리까지 race-free라고 주장하지 않는다.
-- [ ] **5. 검토·commit:** 소유권·락 순서·두 버퍼/유계 메모리를 네이티브 자체 검토하고 `feat(ch13): add bounded camera snapshot mailbox`로 checkpoint한다.
+- [x] **5. 검토·commit:** 소유권·락 순서·두 버퍼/유계 메모리를 네이티브 자체 검토하고 `feat(ch13): add bounded camera snapshot mailbox`로 checkpoint한다.
 
 ### Task 2: 출처를 보존한 플러그인·실제 ROS/GL 계약
 
@@ -110,7 +127,7 @@ source "$SNAPSHOT_INSTALL/setup.bash"
 
 **Interfaces:** `SnapshotCameraPlugin : MuJoCoROS2ControlPluginBase`의 원래 `init(rclcpp::Node::SharedPtr,const mjModel*,mjData*) -> bool`, `update(const mjModel*,mjData*) -> void`, `cleanup() -> void`를 유지한다. `on_reset(mjData*) -> void`는 Task1의 reset_epoch로 이전 작업을 무효화하며 라이브 데이터를 렌더하지 않는다. producer는 mailbox, worker는 RenderLease만 사용한다. `camera_plugin_probe`는 고정 class ID를 실제 `pluginlib::ClassLoader`로 createSharedInstance하고 getClassLibraryPath로 조회한 절대 library 경로 한 줄만 stdout에 출력한다. 성공0, 예외/비가용 시 비0이며 init/GL은 호출하지 않는다.
 
-- [ ] **1. 출처·실패 시험 준비:** main agent가 고정 원본2파일을 전체 읽고 설계서 해시·LICENSE·NOTICE유무를 확인한다. 원본저작권을보존해허용된파일만Ch13으로복사하고원본해시를명세한다. 새로운CameraPlugin type으로rename하되이시점의소유권경로는아직고치지않는다. `FrameHeadersMatchAcquiredSnapshot`, `DisabledCameraNeverRenders`, `PolledRequestsCoalesceWithLatestSnapshot`, `CleanupDuringInitializationAndRender` 및 실제class등록/생성시험을작성한다.
+- [x] **1. 출처·실패 시험 준비:** main agent가 고정 원본2파일을 전체 읽고 설계서 해시·LICENSE·NOTICE유무를 확인한다. 원본저작권을보존해허용된파일만Ch13으로복사하고원본해시를명세한다. 새로운CameraPlugin type으로rename하되이시점의소유권경로는아직고치지않는다. `FrameHeadersMatchAcquiredSnapshot`, `DisabledCameraNeverRenders`, `PolledRequestsCoalesceWithLatestSnapshot`, `CleanupDuringInitializationAndRender` 및 실제class등록/생성시험을작성한다.
 
   `FrameHeadersMatchAcquiredSnapshot`은 실제 GL에서 취득 시각1.0의 렌더를 보류하고 producer가2.0을 제출하게 한 뒤 다음을 검사한다. 둘 다 완료 시각으로 stamp를 바꾸면 실패해야 한다.
 
@@ -122,11 +139,11 @@ source "$SNAPSHOT_INSTALL/setup.bash"
   EXPECT_EQ(rgb.width, 320u);
   EXPECT_EQ(rgb.height, 240u);
   ```
-- [ ] **2. RED 확인:** 새 등록/헤더 일치/종료회귀를 실행해 빠진새기능과기존경로의실패를기록한다. 원본파생본이이미통과하는항목은baseline으로표시하고새수정의RED라고주장하지않는다.
-- [ ] **3. 최소 연결:** 공유 render_pending을 worker가 직접 읽거나 지우는 경로를 제거한다. 생산자 선택/poll 요청은 metadata 락으로 보호하고 frame 선택 목록을 mailbox로 전달한다. plugin 선택 락과 mailbox 락은 동시에 보유하지 않는다. worker는 lease의 data/time/선택만으로 scene·RGB·depth·Info를 생성하고 publish 직전 epoch/stop을 검사한다. stamp를 now로 교체하지 않는다. GLContext는 worker가 생성/파괴하며 RAII 해제로 부분 초기화 실패도 안전하게 한다.
-- [ ] **4. GREEN·native library 확인:** 실제GLContext를사용한센서header/해상도/부호/깊이단위시험을실행한다. GL미지원은실패또는명시적UNVERIFIED이며가짜영상으로대체하지않는다. busy종료시험은workerbarrier해제전해제가일어나지않고,해제후join이완료됨을확인한다. `cleanup`두번·실패후destructor·잘못된카메라설정·rollback직후발행폐기도검사한다. probe는새Ch13 .so를가리키고원본class도여전히가용해야한다.
+- [x] **2. RED 확인:** 새 등록/헤더 일치/종료회귀를 실행해 빠진새기능과기존경로의실패를기록한다. 원본파생본이이미통과하는항목은baseline으로표시하고새수정의RED라고주장하지않는다.
+- [x] **3. 최소 연결:** 공유 render_pending을 worker가 직접 읽거나 지우는 경로를 제거한다. 생산자 선택/poll 요청은 metadata 락으로 보호하고 frame 선택 목록을 mailbox로 전달한다. plugin 선택 락과 mailbox 락은 동시에 보유하지 않는다. worker는 lease의 data/time/선택만으로 scene·RGB·depth·Info를 생성하고 publish 직전 epoch/stop을 검사한다. stamp를 now로 교체하지 않는다. GLContext는 worker가 생성/파괴하며 RAII 해제로 부분 초기화 실패도 안전하게 한다.
+- [x] **4. GREEN·native library 확인:** 실제GLContext를사용한센서header/해상도/부호/깊이단위시험을실행한다. GL미지원은실패또는명시적UNVERIFIED이며가짜영상으로대체하지않는다. busy종료시험은workerbarrier해제전해제가일어나지않고,해제후join이완료됨을확인한다. `cleanup`두번·실패후destructor·잘못된카메라설정·rollback직후발행폐기도검사한다. probe는새Ch13 .so를가리키고원본class도여전히가용해야한다.
   실행: `python -m colcon --log-base "$SNAPSHOT_LOG" test --build-base "$SNAPSHOT_BUILD" --install-base "$SNAPSHOT_INSTALL" --packages-select integrated_robot_camera --executor sequential`, 이후 `python -m colcon test-result --test-result-base "$SNAPSHOT_BUILD" --verbose`. 새 C++ 시험 실행 수가 0이 아니고 오류/실패0이어야 한다. 부분 초기화 시험은 실제 잘못된 모델/카메라 설정으로 실패 후 update/cleanup을 호출하고, 렌더 진행 중 stop은 core barrier 시험과 실제 GL 종료 시험으로 각각 검사한다.
-- [ ] **5. 검토·commit:** 원본diff/Apache표기·복사범위·플러그인기본생성/해제·락없이렌더링을자체검토하고 `feat(ch13): add snapshot-owned MuJoCo camera plugin`으로checkpoint한다. 외부gitstatus불변도기록한다.
+- [x] **5. 검토·commit:** 원본diff/Apache표기·복사범위·플러그인기본생성/해제·락없이렌더링을자체검토하고 `feat(ch13): add snapshot-owned MuJoCo camera plugin`으로checkpoint한다. 외부gitstatus불변도기록한다.
 
 ### Task 3: 명시적 backend와 엔진 시작 전 실패
 
@@ -134,7 +151,7 @@ source "$SNAPSHOT_INSTALL/setup.bash"
 
 **Interfaces:** `camera_plugin_config(share, vision, backend='upstream') -> str` 확장. `probe_snapshot_plugin(expected_prefix: Path) -> dict`를mujoco.launch.py에두고, active camera package의libexec/probe를실행해library절대경로/파일존재/선택prefix내부·SHA256을검사한다. 공유되는미설치scripts를launch에서import하지않는다. launch인자 `vision_camera_backend`는upstream/snapshot만허용하며이단계기본upstream이다. vision=false는기존legacy파일을그대로쓴다.
 
-- [ ] **1. 실패 시험:** snapshot선택의새YAML `eye_camera.type`만새class이고 native_pose/토픽/15Hz가원래와동일함을검사한다. `unknown backend`, 누락된probe/library, 다른prefixlibrary는engineaction생성전에실패해야한다. vision=false양backend는legacy와같고, Gazebo에는MuJoCo전용인자를넘기지않는시험을추가한다.
+- [x] **1. 실패 시험:** snapshot선택의새YAML `eye_camera.type`만새class이고 native_pose/토픽/15Hz가원래와동일함을검사한다. `unknown backend`, 누락된probe/library, 다른prefixlibrary는engineaction생성전에실패해야한다. vision=false양backend는legacy와같고, Gazebo에는MuJoCo전용인자를넘기지않는시험을추가한다.
 
   `test_snapshot_backend_changes_only_camera_class`의 핵심 assertion:
 
@@ -144,11 +161,11 @@ source "$SNAPSHOT_INSTALL/setup.bash"
   expected = dict(upstream['eye_camera'], type=snapshot['eye_camera']['type'])
   assert snapshot['eye_camera'] == expected
   ```
-- [ ] **2. RED 확인:** 실제launch entities를구성하는기존pytest방식으로새시험을실행해전달/사전검사부재를보존한다.
-- [ ] **3. 최소 구현:** snapshot선택때만새packageprefix/probe를확인하고설정파일을선택한다. 결함을숨기는fallback은없다. combined launch는값검증후MuJoCo include에전달한다. `vision_camera_backend`와무관한관절/컨트롤러/TF/CameraInfo adapter는바꾸지않는다.
-- [ ] **4. GREEN·실제 동적로딩 검사:** Task2의설치probe로정상prefix를검증하고다른expected_prefix를줘실제라이브러리오선택을거부하는지검사한다. 누락경로시험은빈임시prefix로수행하며외부/설치라이브러리를이동·삭제하지않는다. 기존13.2/13.3 launch·20관절·headless/rate회귀도실행한다.
+- [x] **2. RED 확인:** 실제launch entities를구성하는기존pytest방식으로새시험을실행해전달/사전검사부재를보존한다.
+- [x] **3. 최소 구현:** snapshot선택때만새packageprefix/probe를확인하고설정파일을선택한다. 결함을숨기는fallback은없다. combined launch는값검증후MuJoCo include에전달한다. `vision_camera_backend`와무관한관절/컨트롤러/TF/CameraInfo adapter는바꾸지않는다.
+- [x] **4. GREEN·실제 동적로딩 검사:** Task2의설치probe로정상prefix를검증하고다른expected_prefix를줘실제라이브러리오선택을거부하는지검사한다. 누락경로시험은빈임시prefix로수행하며외부/설치라이브러리를이동·삭제하지않는다. 기존13.2/13.3 launch·20관절·headless/rate회귀도실행한다.
   실행: `python -m pytest Ch13/tests/test_section_13_4_launch.py Ch13/tests/test_section_13_2_model.py Ch13/tests/test_section_13_2_mujoco.py -q`. 새 backend 검사와 기존 모델/launch 시험이 모두 통과해야 한다.
-- [ ] **5. 검토·commit:** 설치후 launch만으로 실행가능하고 저장소scripts 경로에 의존하지 않는지 확인한 뒤 `feat(ch13): select and preflight camera backend explicitly`로checkpoint한다.
+- [x] **5. 검토·commit:** 설치후 launch만으로 실행가능하고 저장소scripts 경로에 의존하지 않는지 확인한 뒤 `feat(ch13): select and preflight camera backend explicitly`로checkpoint한다.
 
 ### Task 4: 5패키지·실제 loaded library를 포함한 evidence
 
@@ -156,7 +173,7 @@ source "$SNAPSHOT_INSTALL/setup.bash"
 
 **Interfaces:** runner CLI `--vision-camera-backend upstream|snapshot`(이 단계 기본 upstream). `audit_camera_backend(process, expected_prefix: Path) -> dict`는 runner가 직접 생성한 launch PGID의 MuJoCo control process만 확인한다. `/proc/PID/maps`의 실제 새 .so 경로/해시와 초기화 class ID 로그를 사전 probe와 대조한다. 반환 키는 `class_id`, `library_path`, `library_sha256`, `native_pid`, `package_prefix`다. `required_checks(scenario, *, engine=None, camera_backend='upstream') -> set[str]`로 확장하여 engine=mujoco/backend=snapshot일 때만 `camera_backend_loaded`를 추가한다. 기존 호출·historical upstream/Gazebo 결과의 필수 검사 집합은 소급 변경하지 않는다.
 
-- [ ] **1. 실패 시험:** 새camera .cpp를바꾸면source_snapshot해시가달라져야한다. 전체검증build/install감사에5번째패키지·XML·LICENSE·source해시·실제.so해시가있어야한다. backend미기록,다른prefix.so,소유하지않은PID는통과시키지않는다. mock의호출횟수만검사하지말고실제짧은자식과현재/probe라이브러리경로를사용한다.
+- [x] **1. 실패 시험:** 새camera .cpp를바꾸면source_snapshot해시가달라져야한다. 전체검증build/install감사에5번째패키지·XML·LICENSE·source해시·실제.so해시가있어야한다. backend미기록,다른prefix.so,소유하지않은PID는통과시키지않는다. mock의호출횟수만검사하지말고실제짧은자식과현재/probe라이브러리경로를사용한다.
 
   `test_snapshot_result_requires_loaded_library`의 핵심 assertion:
 
@@ -169,11 +186,11 @@ source "$SNAPSHOT_INSTALL/setup.bash"
   ```
 
   위 result fixture는 새로운 실행 UUID와 실제 임시 artifact 해시를 갖고, 나머지 기존 필수 검사는 모두 true여야 한다. stale UUID 때문에 우연히 실패한 시험을 loaded-library 회귀로 세지 않는다.
-- [ ] **2. RED 확인:** 위누락조건과CLI전달시험을실행해현재4패키지가정과loaded-library검사부재를확인한다.
-- [ ] **3. 최소 구현:** source inventory의camera디렉터리와새패키지build선택/설치감사·실행backend기록을추가한다. artifact와backend메타데이터를기존EvidenceRun의원본해시계약에포함한다. 새라이브러리감사는읽기전용이며다른PID에신호를보내지않는다. 상위일괄runner의backend/rate인자도하위명령에명시전달한다.
-- [ ] **4. GREEN·설치 감사:** 새prefix에5패키지를처음부터build하고sourcepytest전체·colcon test/test-result를실행한다. venv콘솔shebang·Python/share원본바이트·C++원본해시와.so실제로드를확인한다. 원본plugin과새plugin의중복eye카메라publisher가없어야한다. 기존실패result와새UUID를섞어PASS하지않는회귀도통과해야한다.
+- [x] **2. RED 확인:** 위누락조건과CLI전달시험을실행해현재4패키지가정과loaded-library검사부재를확인한다.
+- [x] **3. 최소 구현:** source inventory의camera디렉터리와새패키지build선택/설치감사·실행backend기록을추가한다. artifact와backend메타데이터를기존EvidenceRun의원본해시계약에포함한다. 새라이브러리감사는읽기전용이며다른PID에신호를보내지않는다. 상위일괄runner의backend/rate인자도하위명령에명시전달한다.
+- [x] **4. GREEN·설치 감사:** 새prefix에5패키지를처음부터build하고sourcepytest전체·colcon test/test-result를실행한다. venv콘솔shebang·Python/share원본바이트·C++원본해시와.so실제로드를확인한다. 원본plugin과새plugin의중복eye카메라publisher가없어야한다. 기존실패result와새UUID를섞어PASS하지않는회귀도통과해야한다.
   전체 소스 시험 명령: `python -m pytest Ch13/tests Ch13/ros2_ws/src/integrated_robot_vision/test Ch13/ros2_ws/src/integrated_robot_runtime/test -q`. 패키지 시험은 Task2 명령의 packages-select 제한을 제거해 5개 모두 실행한다. 이전254/101건을 새 실행 결과로 복사하지 말고 실제 새 개수·실패·skip을 기록한다.
-- [ ] **5. 검토·commit:** 새코드체크포인트를만들고그후의native실행에는설치일치감사를첨부한다. 메시지 `test(ch13): audit five-package camera provenance and native loading`.
+- [x] **5. 검토·commit:** 새코드체크포인트를만들고그후의native실행에는설치일치감사를첨부한다. 메시지 `test(ch13): audit five-package camera provenance and native loading`.
 
 ### Task 5: 실제 엔진 인수와 기본값 전환 판정
 
@@ -181,11 +198,11 @@ source "$SNAPSHOT_INSTALL/setup.bash"
 
 **Interfaces:** Task3의명시적backend, Task4의runner와native provenance를사용한다. engine별/scenario별/반복별별도디렉터리. 종료미확인/잔여PID면다음engine을시작하지않는다. 성능시험과build/대량pytest는동시에실행하지않는다.
 
-- [ ] **1. baseline·비교 기록:** 고정source/설치감사후실제MuJoCo를upstream와snapshot으로각각실행한다. 같은10Hz기본·15Hz명시선택을기록하고환경/renderer를같이보존한다. driver 스레드수·기한을실패뒤몰래조정하거나안전정지후자동재활성화하지않는다.
-- [ ] **2. 기하·인식 인수:** snapshot으로 static30 고유 촬영(RMS≤.03m), delay150ms+실측 카메라 운동30 고유 촬영(RMS≤.05m)을 기존 기준 그대로 검사한다. 자체 형상 cup YOLO는 기존 최소 신선 결과10/유효 cup3D5 기준이며 정적 fixture와 의미 인식을 구별한다. native RGB/depth/Info/관절/TF/loaded.so·원본 로그를 보존한다.
-- [ ] **3. 추적·안전 인수:** `--scenario tracking --detector-backend color_fixture --vision-camera-backend snapshot --inference-rate-hz 10` 및15로각각독립3회실행한다. 모두기존5초·픽셀20%감소·각도.04rad/속도.1rad/s/명령5Hz·단일소유권·정상종료검사를적용한다. safety는images/tf/joints를각각실제목표/ACK후주입하고새명령중단·cancel terminal을검사한다. 하나라도미달이면그조건은FAIL이며앞선성공으로채우지않는다.
-- [ ] **4. 기존 기능·전체 상태:** 실제Gazebo의geometry/yolo/tracking/safety와두엔진13.3회귀를순차실행한다. 기존GZ종료/bridge미달은별도FAIL로남기며이작업에서해당구현을수정하지않는다. GUI·실로봇·PPO이동·물리파지는UNVERIFIED다.
-- [ ] **5. 기본값 판정·회귀·commit:** MuJoCo snapshot의필수국소인수·10Hz3회·기존MuJoCo/launch회귀가통과한뒤에만 vision=true경로의최종기본을snapshot으로전환한다. 15Hz미달은따로명시하고전체13.4/Gazebo성공으로승격하지않는다. 기본전환에대한기존pytest를먼저실패확인하고최소변경후전체시험·새기본값의실제MuJoCo기하/추적을다시검증한다. 국소인수미달이면upstream기본을유지하고개발중명시선택으로문서화한다. 실측판정과코드를checkpoint하며실패를고쳤다는commit제목은쓰지않는다.
+- [x] **1. baseline·비교 기록:** 고정source/설치감사후실제MuJoCo를upstream와snapshot으로각각실행한다. 같은10Hz기본·15Hz명시선택을기록하고환경/renderer를같이보존한다. driver 스레드수·기한을실패뒤몰래조정하거나안전정지후자동재활성화하지않는다.
+- [x] **2. 기하·인식 인수:** snapshot으로 static30 고유 촬영(RMS≤.03m), delay150ms+실측 카메라 운동30 고유 촬영(RMS≤.05m)을 기존 기준 그대로 검사한다. 자체 형상 cup YOLO는 기존 최소 신선 결과10/유효 cup3D5 기준이며 정적 fixture와 의미 인식을 구별한다. native RGB/depth/Info/관절/TF/loaded.so·원본 로그를 보존한다.
+- [x] **3. 추적·안전 인수:** `--scenario tracking --detector-backend color_fixture --vision-camera-backend snapshot --inference-rate-hz 10` 및15로각각독립3회실행한다. 모두기존5초·픽셀20%감소·각도.04rad/속도.1rad/s/명령5Hz·단일소유권·정상종료검사를적용한다. safety는images/tf/joints를각각실제목표/ACK후주입하고새명령중단·cancel terminal을검사한다. 하나라도미달이면그조건은FAIL이며앞선성공으로채우지않는다.
+- [x] **4. 기존 기능·전체 상태:** 실제Gazebo의geometry/yolo/tracking/safety와두엔진13.3회귀를순차실행한다. 기존GZ종료/bridge미달은별도FAIL로남기며이작업에서해당구현을수정하지않는다. GUI·실로봇·PPO이동·물리파지는UNVERIFIED다.
+- [x] **5. 기본값 판정·회귀·commit:** MuJoCo snapshot의필수국소인수·10Hz3회·기존MuJoCo/launch회귀가통과한뒤에만 vision=true경로의최종기본을snapshot으로전환한다. 15Hz미달은따로명시하고전체13.4/Gazebo성공으로승격하지않는다. 기본전환에대한기존pytest를먼저실패확인하고최소변경후전체시험·새기본값의실제MuJoCo기하/추적을다시검증한다. 국소인수미달이면upstream기본을유지하고개발중명시선택으로문서화한다. 실측판정과코드를checkpoint하며실패를고쳤다는commit제목은쓰지않는다.
 
 ### Task 6: 재현 가이드·네이티브 자체 리뷰·push
 

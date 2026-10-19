@@ -1,5 +1,13 @@
 # 13.4 통합 시각 정보 처리 실습
 
+> 2026-10-20 최종 상태: 사용자 선택에 따라 **현재 실험 브랜치와 증거만 보존**한다.
+> snapshot 렌더 worker의 `glfwInit/CreateWindow/DestroyWindow` 호출은 설치된 GLFW의
+> main-thread-only 계약을 위반한다(P1/Important, 미해결). GL 시험·기하 측정의 일부 PASS는
+> 이 API 계약 준수나 배포 안전성을 입증하지 않는다. EGL 변경·추가 실측은 진행하지 않았다.
+> 전체 인수 FAIL이며 snapshot 사용을 권장하지 않는다. 아래 명령은 역사적 재현 절차이지
+> 인수 완료 권고가 아니다. main 병합과 13.5 재개는 보류한다.
+> [최종 보존 판정·근거](../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md)
+
 이 실습은 **실제 엔진 RGB-D → 탐지 → 촬영 시각 TF → odom 좌표의 목표**를 연결한다. 팔 추적은 기립 상태의 두 관절에 한정한 명시적 선택 기능이다. Nav2, 학습 보행, MoveIt, 물리 파지나 일반적인 충돌 회피 제어기는 포함하지 않는다. 원고의 “이동 중 항상 정확한 절대 좌표”를 보장하는 예제가 아니다.
 
 현재 구현 범위와 실제 성공·실패는 [변경 보고서](SECTION_13_4_REPORT_KO.md), 각 실행의 `result.json`과 `summary.json`을 함께 확인한다. fixture 기하 시험과 YOLO 의미 인식은 별개다. 작은 빨간 상자는 COCO 객체로 인식되지 않을 수 있으며, 이때 fixture 검출로 몰래 대체하지 않는다.
@@ -44,9 +52,9 @@ git -C src/mujoco_ros2_control rev-parse HEAD
 cd "$CH13_ROOT"
 ```
 
-이 예제에 필요하지 않은 선택적 LiDAR 플러그인의 설치 경고와 필수 CameraPlugin/FreeJointStatePublisherPlugin 빌드 성공을 구분한다. 외부 플러그인 소스는 Ch13으로 복사하거나 수정하지 않는다.
+이 예제에 필요하지 않은 선택적 LiDAR 플러그인의 설치 경고와 필수 CameraPlugin/FreeJointStatePublisherPlugin 빌드 성공을 구분한다. 외부 checkout은 수정하지 않는다. 승인된 snapshot 카메라 파생본만 Ch13 별도 패키지에 제한적으로 복사했으며 [출처 명세](REUSE_MANIFEST.md)를 따른다.
 
-## 2. Ch13 네 패키지 독립 빌드
+## 2. Ch13 다섯 패키지 독립 빌드
 
 새 터미널에서는 위 경로 변수와 venv를 다시 설정한다. ROS → 외부 MuJoCo → 해당 Ch13 설치본 순서이며, Ch13은 빌드한 뒤에만 source한다.
 
@@ -55,10 +63,10 @@ source /opt/ros/jazzy/setup.bash
 source "$HOME/ch13_mujoco_ws/install/setup.bash"
 source "$CH13_VENV/bin/activate"
 cd Ch13/ros2_ws
-python /usr/bin/colcon --log-base log13_4 build \
+python -m colcon --log-base log13_4 build --base-paths src \
   --build-base build13_4 --install-base install13_4 \
   --packages-select integrated_robot_interfaces integrated_robot_vision \
-                    integrated_robot_description integrated_robot_runtime \
+                    integrated_robot_description integrated_robot_runtime integrated_robot_camera \
   --cmake-args -DPython3_EXECUTABLE="$CH13_VENV/bin/python"
 source install13_4/setup.bash
 cd "$CH13_ROOT"
@@ -66,6 +74,52 @@ ros2 interface show integrated_robot_interfaces/msg/TrackedTarget
 ```
 
 최종 검증기는 매 실행마다 UUID가 다른 새 build/install/log 경로를 사용한다. 예전 `build13_1`이나 다른 장의 패키지는 필요하지 않으며 자동 삭제하지 않는다.
+
+### 2.1 snapshot 카메라 명시 선택과 설치 감사
+
+`vision_camera_backend:=snapshot`은 두 mjData 버퍼의 소유권을 분리한 Ch13 전용
+카메라다. `upstream`은 비교용 기존 구현이며, 최종 국소 인수를 통과하기 전에는
+기본값을 바꾸지 않는다. 이 선택은 Gazebo 센서 구현을 바꾸지 않는다.
+
+```bash
+python Ch13/scripts/verify_all_13_4.py \
+  --audit-install-prefix Ch13/ros2_ws/install13_4
+ros2 run integrated_robot_camera camera_plugin_probe
+ros2 launch integrated_robot_runtime vision_system.launch.py \
+  engine:=mujoco detector_backend:=color_fixture \
+  vision_camera_backend:=snapshot tracking_enabled:=false
+```
+
+감사는 다섯 패키지의 source/share·Python 실행 환경·configure-time C++ source manifest·
+실제 probe·camera/mailbox 두 라이브러리 경로와 해시를 검사한다. probe 단독 성공은
+엔진이 해당 .so를 사용했다는 증거는 아니다. native 검증기는 자체 엔진 PID의 실제
+매핑과 class ID까지 기록한다. 누락/경로 불일치이면 시작 전에 실패하며 자동 fallback은 없다.
+
+snapshot 비전 경로는 `auto_register_cameras=false`를 전달한다. 별도 class ID를 기존
+underlay가 인식하지 못해 원본 카메라를 추가 렌더링하는 것을 막기 위함이다. 정상 로그에
+`SnapshotCameraPlugin initialized`는 있어야 하며 원본 CameraPlugin 자동 등록은 없어야 한다.
+검증기는 `/overview/*`, `/eye_in_hand/*`의 숨은 기본 발행자도 검사한다.
+
+한 시험씩 실행하고 `result.json`의 cleanup/정상 종료를 확인한 뒤 다음 시험을 시작한다.
+새 output 디렉터리를 사용하며, 촬영300ms·TF100ms·팔5Hz 기준을 늘려 통과시키지 않는다.
+
+```bash
+python Ch13/scripts/run_vision_13_4.py --engine mujoco --scenario static \
+  --detector-backend color_fixture --vision-camera-backend snapshot \
+  --output-dir /tmp/ch13-snapshot-static-new
+# 위 실행이 완전히 종료된 뒤 delay, yolo, tracking, safety를 각각 새 output으로 실행한다.
+# 추론 기본10Hz, 비교 실험은 --inference-rate-hz 15를 명시한다.
+```
+
+라이브러리나 Xacro 변경 후에는 재빌드와 설치 감사를 반복한다. 예전 overlay가 먼저 잡히면
+새 셸에서 ROS → 고정 외부 underlay → venv → 원하는 Ch13 설치만 순서대로 source한다.
+잔여 엔진이 있으면 다음 엔진을 띄우지 말고 자체 소유 프로세스의 종료 기록부터 확인한다.
+
+geometry CLI도 static의 cleanup 기록이 없거나 잔여 PID가 있으면 delay를 시작하지 않는다.
+일괄 검증기는 기존13.3 회귀의 실행/종료가 FAIL 또는 미확인이면 다음 엔진을 시작하지
+않는다. 중단된 뒤 그룹이 UNVERIFIED로 남는 것은 정상적인 fail-closed 동작이다.
+다음 실행 전에 임의 PID를 종료하지 말고 소유권과 로그를 확인한다. batch smoke의
+제3자 사진 주석은 weights 폴더가 아닌 해당 batch의 ignored build 경로에 남는다.
 
 ## 3. 명시적 모델 준비와 단독 YOLO 시험
 
