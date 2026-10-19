@@ -9,6 +9,8 @@
 #include <thread>
 #include <vector>
 #include "snapshot_camera_plugin.hpp"
+#include "egl_call_audit.hpp"
+#include "egl_render_context.hpp"
 
 using namespace std::chrono_literals;
 using integrated_robot_camera::SnapshotCameraPlugin;
@@ -50,6 +52,7 @@ struct ReadbackBarrier
 extern "C" void mjr_readPixels(unsigned char * rgb, float * depth, mjrRect viewport,
   const mjrContext * context)
 {
+  egl_audit::record("readback");
   {
     std::unique_lock<std::mutex> lock(readback.mutex);
     ++readback.calls;
@@ -63,6 +66,22 @@ extern "C" void mjr_readPixels(unsigned char * rgb, float * depth, mjrRect viewp
   static const auto native = reinterpret_cast<ReadPixels>(dlsym(RTLD_NEXT, "mjr_readPixels"));
   if (!native) {std::abort();}
   native(rgb, depth, viewport, context);
+}
+
+extern "C" void mjr_makeContext(const mjModel * model, mjrContext * context, int scale)
+{
+  egl_audit::record("make_mjr");
+  egl_audit::native<decltype(&mjr_makeContext)>("mjr_makeContext")(model, context, scale);
+}
+extern "C" void mjr_freeContext(mjrContext * context)
+{
+  egl_audit::record("free_mjr");
+  egl_audit::native<decltype(&mjr_freeContext)>("mjr_freeContext")(context);
+}
+extern "C" void mjr_render(mjrRect viewport, mjvScene * scene, const mjrContext * context)
+{
+  egl_audit::record("render");
+  egl_audit::native<decltype(&mjr_render)>("mjr_render")(viewport, scene, context);
 }
 
 namespace
@@ -194,6 +213,69 @@ TEST_F(CameraTest, FrameHeadersMatchAcquiredSnapshot)
   ASSERT_GT(red, 10u);
   EXPECT_GT(sum_u / red, 160.);  // positive model X projects right
   EXPECT_LT(sum_v / red, 120.);  // positive model Y projects up after vertical flip
+}
+
+TEST_F(CameraTest, WorkerUsesEglWithoutGlfw)
+{
+  egl_audit::clear_events();
+  ASSERT_TRUE(start());
+  ASSERT_TRUE(until([&] {return node->count_subscribers("/eye_camera/eye/color") > 0;}));
+  frame(1.);
+  ASSERT_TRUE(until([&] {return !rgb.empty() && !depth.empty();}));
+  plugin.cleanup();
+  EXPECT_EQ(egl_audit::glfw_calls.load(), 0);
+}
+
+TEST_F(CameraTest, WorkerDoesNotTerminateSharedDisplay)
+{
+  egl_audit::clear_events();
+  ASSERT_TRUE(start());
+  plugin.cleanup();
+  EXPECT_EQ(egl_audit::terminate_calls.load(), 0);
+  EXPECT_EQ(egl_audit::contexts.load(), 0);
+  EXPECT_EQ(egl_audit::surfaces.load(), 0);
+  ASSERT_FALSE(egl_audit::events.empty());
+  const auto worker = egl_audit::events.front().second;
+  EXPECT_NE(worker, std::this_thread::get_id());
+  for (const auto & event : egl_audit::events) {EXPECT_EQ(event.second, worker) << event.first;}
+}
+
+TEST_F(CameraTest, PeerContextSurvivesPluginCleanup)
+{
+  std::promise<bool> ready;
+  auto initialized = ready.get_future();
+  std::promise<void> finish;
+  auto stopping = finish.get_future();
+  auto peer = std::async(std::launch::async, [&] {
+    integrated_robot_camera::EglRenderContext context;
+    const bool ok = context.initialize();
+    const auto display = eglGetCurrentDisplay();
+    const auto current = eglGetCurrentContext();
+    const auto surface = eglGetCurrentSurface(EGL_DRAW);
+    ready.set_value(ok);
+    stopping.wait();
+    if (ok) {
+      EXPECT_TRUE(eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT));
+      EXPECT_TRUE(eglMakeCurrent(display, surface, surface, current));
+      EXPECT_NE(glGetString(GL_RENDERER), nullptr);
+    }
+  });
+  const bool peer_ready = initialized.get();
+  bool started = false;
+  if (peer_ready) {
+    started = start();
+    if (started) {
+      frame(1.);
+      EXPECT_TRUE(until([&] {return !rgb.empty();}));
+      plugin.cleanup();
+    }
+  }
+  finish.set_value();
+  peer.get();
+  EXPECT_TRUE(peer_ready);
+  EXPECT_TRUE(started);
+  EXPECT_EQ(egl_audit::contexts.load(), 0);
+  EXPECT_EQ(egl_audit::surfaces.load(), 0);
 }
 
 TEST_F(CameraTest, DisabledCameraNeverRenders)
