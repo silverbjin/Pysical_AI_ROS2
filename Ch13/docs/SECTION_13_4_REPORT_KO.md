@@ -102,3 +102,81 @@ exec 단독 실행에는 clock bridge -11 종료도 남았다. 따라서 전체 
 남은 주요 인수 미달은 MuJoCo 지연 경로의 처리량, 두 엔진의 연속 5초 추적, native 물체의 YOLO 인식, 일부 손실 시험의 활성화 기한 및 간헐적 Gazebo 종료다. 입력 age/TF 기한을 늘리거나 invalid 목표를 유효로 유지해 통과시키지 않았다. 후속 개선은 촬영→수신→작업→TF 도착 지연을 먼저 계측하고 실제 새 실행으로 재검증해야 한다. 고정 외부 렌더러 소스를 수정하거나 범위를 바꾸는 선택은 별도 판단이 필요하다. 13.5는 이 상태를 자동 보행 준비 완료로 간주해 시작하지 않았다.
 
 단계별 재현은 [가이드](LAB_13_4_GUIDE_KO.md), 출처·커밋·Git blob 해시와 권리 미확정 사항은 [REUSE_MANIFEST](REUSE_MANIFEST.md), 소유권/실패 모드 검토는 [자체 리뷰](SECTION_13_4_REVIEW_KO.md)를 따른다. 13.5의 자동 보행 접근 구현은 이 보고서에서 완료했다고 주장하지 않는다.
+
+## 후속: 승인된 snapshot 카메라 소유권 구현
+
+2026-10-19~20 진행 기록. 앞 표의 과거 원본 판정은 그대로 유지한다.
+구현 계획 시작점은124061f이며 Task1~4는 a7ab923까지 커밋했다. 전원 강제 종료 후
+저장된 테스트를 확인하고 일반 사용자 WSL에서 재개했다. 서브에이전트·관리자 권한은 쓰지 않았다.
+
+새 `integrated_robot_camera`는 고정 외부 CameraPlugin의 허용된 cpp/hpp/LICENSE만
+출처·NASA/United States Government 헤더와 함께 복사한 별도 파생본이다. 원본 class ID를
+덮어쓰지 않고 `integrated_robot_camera/SnapshotCameraPlugin`을 사용한다.
+control_data를 두 mjData 중 pending에만 복사하고, 단일 렌더러는 move-only lease로
+교환한 데이터·촬영 시각·sequence·epoch·선택 목록을 읽는다. 최신 pending 하나와
+유계 polled 요청 목록을 유지하며 GL/ROS 발행/join은 metadata 락 밖에서 수행한다.
+부분 초기화·중복 cleanup·reset·polled/disabled·동적 로딩은 실제 C++/GL 회귀로 검사했다.
+
+추가 통합 원인: underlay는 원본 class ID만 카메라 명시 설정으로 인식하므로 새 class를
+선택해도 원본 카메라를5Hz로 자동 등록했다. 주요 네 센서 토픽은 겹치지 않아 기존 검사가
+이를 놓쳤다. 6828b82에서는 Ch13 하드웨어 인자 `auto_register_cameras=false`를
+snapshot 비전 경로에만 전달하고 숨은 기본 토픽 여섯 개의 부재도 검사한다. 외부 원본,
+upstream/vision=false의 의미,20관절·TF·명령 소유권·320×240·300ms·팔5Hz는 유지했다.
+
+### 새 검증 체크포인트
+
+- 중복 등록 회귀 RED10건 → launch/runner GREEN40건.
+- 수정 후 소스276건 PASS/130.76초,5패키지 빌드 PASS/1분27초.
+-5패키지 시험123건/오류0/실패0/skip0. 최초155집계는 예전 XML 사본32건이 섞인 것으로
+  새 시험 개수로 세지 않는다. 사본을 집계 범위 밖으로 옮긴 뒤123건을 재확인했다.
+- fresh5패키지 설치 감사는 Python/share 바이트·venv console interpreter·configure-time
+  C++ source manifest·실제 camera/mailbox 라이브러리 경로와 해시를 검사한다.
+- 새 native 묶음은 `cam-66d636a0`이며 [복구/원인 기록](../evidence/section_13_4/cam-66d636a0/RESTART_KO.md),
+  [실행 조건](../evidence/section_13_4/cam-66d636a0/CONDITIONS.md), matrix/개별 result를 함께 확인한다.
+  실제 로드 검사는 자체 MuJoCo PID/exe/PGID와 두 .so의 `/proc/PID/maps`까지 확인한다.
+- 기존 `cam-edfdbd00`은 중복 렌더 발견 후 의도적으로 중단한 수정 전 묶음이다.
+  그 static/cup PASS를 수정 후 최종 인수로 재사용하지 않는다.
+
+### 실제 인수 결과와 한계
+
+새 snapshot 정적 기하는30고유 촬영/RMS.003131286248m/7.41초 PASS다. 숨은6토픽은
+모두 발행자0이며 정상 종료·잔여PID0이다. 지연+실측 카메라 운동도30개/RMS.002476064182m/
+22.04초로 기하 기준은 충족했으나 소유 액션의 terminal 확인 실패 때문에 전체 FAIL이다.
+컵 YOLO는 신선 검출14개·유효3D8개 PASS다.10/15Hz 추적 반복과 upstream 비교는
+안전 신선도 게이트에서 중단됐다. 일부 추적과 예상 밖 CPU 지속 진단 명령이 겹쳐 성능 비교
+혼입 요인을 기록했고, 자체 세션을 종료한 뒤 별도 clean cohort로 재시험한다.
+
+이미지/TF 손실 시험은 실제 추적 목표 뒤 고장을 주입해 명령 중단·취소·정상 종료 PASS다.
+관절 손실은 실제 주입·명령 중단은 확인했으나 취소 terminal 미확인 및 runtime 종료 오류로 FAIL이다.
+서버 상태 토픽의 성공/취소 상태를 결과 응답으로 대신하지 않고 fail-closed 소유권을 유지한다.
+이는 native 카메라 snapshot 소유권 문제와 별도 액션/실행 지연 미달이다.
+
+첫 묶음23회는10 PASS/13 FAIL, clean7회는1 PASS/6 FAIL이다. 두 묶음 모두 종료 후
+잔여 엔진0을 확인했다. 새30회 원본258개 artifact 해시/개별 판정의 무결성은
+`native-integrity.json`에서 PASS지만, **native 인수 자체는 FAIL**이다. 무결성 감사 성공을
+엔진 성공으로 승격하지 않았다. 일부 초기 추적에 섞인 진단 부하는 제거했고, clean 추적도
+10Hz3회/15Hz3회 모두 실패했다.10Hz는 target_fresh,15Hz는 invalid/lost target으로
+중단했다.5초 추적을 충족하지 못했으며 불충분한 측정의 false 제한 플래그를 실제 각도/속도
+초과가 관측됐다는 뜻으로 해석하지 않는다.
+
+| 기능 | MuJoCo snapshot | Gazebo native |
+|---|---|---|
+| 정적 기하 | PASS,30개/RMS.003131286m | PASS |
+|150ms+카메라 운동 | 최초 기하 PASS/종료 FAIL; clean 전체 PASS,30개/RMS.002587833m/14.51초 | PASS |
+| 실제 컵 YOLO | PASS,14신선 검출/8유효3D | PASS,139검출/117유효3D |
+|5초 연속 추적 | clean10Hz3회·15Hz3회 모두 FAIL | FAIL,target_fresh |
+| images 손실 | PASS | FAIL,취소 terminal/종료 |
+| TF 손실 | PASS | PASS |
+| joints 손실 | FAIL,취소 terminal/종료 | PASS |
+| 기존13.3 | PASS | 기능/runtime PASS이나 native SIGTERM/exit-15로 전체 FAIL |
+
+두 엔진 모두 일부 액션 종료 응답/실행 지연이 남아 있다. 원본13.3 Gazebo result의
+status/runtime_shutdown만 보면 PASS지만 engine.log의 SIGTERM 승격을 새 감독자가
+검출해 전체 FAIL로 판정했다. 이 원본도 고쳐 쓰지 않았다. renderer는 실제 GLFW
+llvmpipe(LLVM20.1.2,256bits)였으며256은 SIMD 폭이지 스레드 수가 아니다.
+LP_NUM_THREADS/OMP_NUM_THREADS/OPENBLAS_NUM_THREADS는 미설정 조건을 유지했다.
+
+기본 backend는 upstream을 유지한다. 전체13.4/PPO/MoveIt/물리 파지/실로봇/13.5 준비
+완료를 주장하지 않는다. TSAN은 WSL 시작 시 memory mapping 오류가 남아 일반
+race-free 검증으로 인정하지 않는다. 다음 개선은 별도 실행/액션 응답·시간 예산 설계가
+필요하며, 새 카메라의 정합성 수정이 그 지연을 모두 해결했다고 주장하지 않는다.

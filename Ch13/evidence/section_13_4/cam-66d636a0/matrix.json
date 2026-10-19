@@ -1,0 +1,983 @@
+{
+  "batch_run_id": "66d636a0-ef69-466b-b16f-7b95ca1bd6ac",
+  "source_head": "6828b82fd13c97dba3fc935325a741e583a830aa",
+  "status": "FAIL",
+  "scope": "Native trials only; not whole section PASS",
+  "conditions": {
+    "ROS_DOMAIN_ID": "157",
+    "MUJOCO_GL": "egl",
+    "LP_NUM_THREADS": null,
+    "OMP_NUM_THREADS": null,
+    "OPENBLAS_NUM_THREADS": null
+  },
+  "cases": {
+    "ms": {
+      "engine": "mujoco",
+      "scenario": "static",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "18d69103-1244-4dd2-b47c-3f8ff86e1c25",
+      "cleanup": [
+        {
+          "pid": 1610,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "thirty_observations": true,
+        "geometry_rms": true,
+        "single_camera_owners": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "single_tf_owners": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": {
+        "valid_samples": 30,
+        "unique_captures": 30,
+        "rms_m": 0.003131286248479413,
+        "rms_limit_m": 0.03,
+        "required_samples": 30,
+        "unique_timestamps": true,
+        "latest_tf_diagnostic_rms_m": 0.0031306929197734007,
+        "accepted": true,
+        "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+        "elapsed_wall_s": 7.412771236000026
+      },
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "md": {
+      "engine": "mujoco",
+      "scenario": "delay",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "055d1679-3ca0-4600-9373-342ef3a9dde8",
+      "cleanup": [
+        {
+          "pid": 1927,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "own trajectory terminal cancellation not confirmed"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "thirty_observations": true,
+        "geometry_rms": true,
+        "actual_camera_motion": true,
+        "delay_150ms": true,
+        "single_camera_owners": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "single_tf_owners": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": {
+        "valid_samples": 30,
+        "unique_captures": 30,
+        "rms_m": 0.002476064181926364,
+        "rms_limit_m": 0.05,
+        "required_samples": 30,
+        "unique_timestamps": true,
+        "latest_tf_diagnostic_rms_m": 0.011991029138103819,
+        "accepted": true,
+        "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+        "elapsed_wall_s": 22.03903577199992
+      },
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "my": {
+      "engine": "mujoco",
+      "scenario": "yolo",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "d4dafc26-1bca-4864-952a-bf012861f114",
+      "cleanup": [
+        {
+          "pid": 2248,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "actual_inference_frames": true,
+        "recognition": true,
+        "valid_3d_detections": true,
+        "single_camera_owners": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "single_tf_owners": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": {
+        "frames": 14,
+        "detected_frames": 14,
+        "valid_3d": 8,
+        "expected_class": "41",
+        "coverage": 1.0,
+        "note": "Actual native camera and YOLO; no fallback"
+      },
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m10a": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 10,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "0f5aff13-8be0-40ed-81c1-503b4ff6a59b",
+      "cleanup": [
+        {
+          "pid": 2583,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'safety gate lost: target_fresh', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 93, 'session_generation': 92, 'event': 'disabled', 'emitted_monotonic': 1007.502492639, 'owner': {'pending_uuid': 'ceaf228ebe71483a9f5408eb7a1dac5f', 'accepted': True, 'handle_status': 2, 'result_future_done': False, 'events': [{'uuid': 'b777ac29b7c64e479bba364bd35cecf3', 'event': 'sent', 'wall': 993.24650893}, {'uuid': 'b777ac29b7c64e479bba364bd35cecf3', 'event': 'accepted', 'wall': 993.263133231}, {'uuid': 'b777ac29b7c64e479bba364bd35cecf3', 'event': 'result_requested', 'wall': 993.263137539}, {'uuid': 'b777ac29b7c64e479bba364bd35cecf3', 'event': 'terminal', 'wall': 995.396541545, 'status': 4}, {'uuid': 'ceaf228ebe71483a9f5408eb7a1dac5f', 'event': 'sent', 'wall': 1007.352842581}, {'uuid': 'ceaf228ebe71483a9f5408eb7a1dac5f', 'event': 'accepted', 'wall': 1007.380921732}, {'uuid': 'ceaf228ebe71483a9f5408eb7a1dac5f', 'event': 'result_requested', 'wall': 1007.380925582}, {'uuid': 'ceaf228ebe71483a9f5408eb7a1dac5f', 'event': 'cancel_requested', 'wall': 1007.497416047}]}, 'inputs': {'ros_now_ns': 25911999999, 'target_capture_ns': 25605999999, 'target_received_wall': 1007.392697875, 'joint_capture_ns': 25895999999, 'joint_received_wall': 1007.496865589, 'leg_positions': [-0.008329072798770407, -0.4854968039748488, 1.0526243354008356, 0.008330600339901694, -0.4854939873545645, 1.0526207724266607, -0.005350693970944995, -0.48882364087414215, 1.037931447288214, 0.005349181309218273, -0.4888214191380522, 1.0379291630407146], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 502, 'max_timer_gap_s': 0.29987706600002184, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 1007.3949482}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.34629056000005676,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m10b": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 10,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "144c68b4-936a-4f73-b761-818502942cf8",
+      "cleanup": [
+        {
+          "pid": 2899,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking stopped before fault/trial: {'enabled': False, 'mode': 'tracking', 'reason': 'input expired or clock changed during servo computation', 'goal_count': 0, 'reserved': False, 'outstanding': False, 'fault': '', 'generation': 109, 'session_generation': 108, 'event': 'disabled', 'emitted_monotonic': 1101.155837988, 'owner': {'pending_uuid': None, 'accepted': False, 'handle_status': None, 'result_future_done': None, 'events': [{'uuid': 'cbc617b4c10746ab9ff53a8baadec621', 'event': 'sent', 'wall': 1078.081761836}, {'uuid': 'cbc617b4c10746ab9ff53a8baadec621', 'event': 'accepted', 'wall': 1078.114285537}, {'uuid': 'cbc617b4c10746ab9ff53a8baadec621', 'event': 'result_requested', 'wall': 1078.114291129}, {'uuid': 'cbc617b4c10746ab9ff53a8baadec621', 'event': 'terminal', 'wall': 1080.128329453, 'status': 4}]}, 'inputs': {'ros_now_ns': 51988000000, 'target_capture_ns': 51672000000, 'target_received_wall': 1100.970708712, 'joint_capture_ns': 51926000000, 'joint_received_wall': 1101.037432332, 'leg_positions': [-0.008330866843668214, -0.48549237904217585, 1.0526563750202313, 0.008330866843669767, -0.48549237904216713, 1.052656375020222, -0.005348974420994938, -0.48874747779533784, 1.0379382928395915, 0.005348974420995188, -0.48874747779537153, 1.037938292839583], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 766, 'max_timer_gap_s': 0.13797594000016034, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 1100.923478284}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.1573229249997894,
+        "command_count": 0,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m10c": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 10,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "604732e8-cc35-404c-8987-07370a7a5524",
+      "cleanup": [
+        {
+          "pid": 3216,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError('explicit mode request refused: tracking requires every safety gate and an unreserved arm: target_fresh')"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.0,
+        "command_count": 0,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m15a": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 15,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "5b2cfc11-82d7-466b-b910-99e220917aed",
+      "cleanup": [
+        {
+          "pid": 3533,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking stopped before fault/trial: {'enabled': False, 'mode': 'tracking', 'reason': 'safety gate lost: target_fresh', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 87, 'session_generation': 86, 'event': 'disabled', 'emitted_monotonic': 1239.218851093, 'owner': {'pending_uuid': 'c28ff4a280e049daa9c16948ece7e0c8', 'accepted': False, 'handle_status': None, 'result_future_done': None, 'events': [{'uuid': '4a2f9b74bd464044a3ed187483dff351', 'event': 'sent', 'wall': 1223.998219583}, {'uuid': '4a2f9b74bd464044a3ed187483dff351', 'event': 'accepted', 'wall': 1224.220973628}, {'uuid': '4a2f9b74bd464044a3ed187483dff351', 'event': 'result_requested', 'wall': 1224.220978486}, {'uuid': '4a2f9b74bd464044a3ed187483dff351', 'event': 'terminal', 'wall': 1226.213160084, 'status': 4}, {'uuid': 'c28ff4a280e049daa9c16948ece7e0c8', 'event': 'sent', 'wall': 1239.208983542}]}, 'inputs': {'ros_now_ns': 26413999999, 'target_capture_ns': 26063999999, 'target_received_wall': 1239.020155699, 'joint_capture_ns': 26329999999, 'joint_received_wall': 1239.218470493, 'leg_positions': [-0.008331170836628049, -0.4854751595971998, 1.0526665269651954, 0.008331170836625332, -0.4854751595971749, 1.052666526965207, -0.005348677052510978, -0.48876160844432653, 1.037929874914477, 0.005348677052518123, -0.48876160844429645, 1.0379298749144785], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 563, 'max_timer_gap_s': 0.3635341609999614, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 1238.988500355}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.21391875300014362,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m15b": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 15,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "443d54b3-400e-48a2-8a0b-8d95eb2c3272",
+      "cleanup": [
+        {
+          "pid": 3851,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking stopped before fault/trial: {'enabled': False, 'mode': 'tracking', 'reason': 'safety gate lost: target_fresh', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 38, 'session_generation': 37, 'event': 'disabled', 'emitted_monotonic': 1306.258950676, 'owner': {'pending_uuid': '1064221879e44cf0bba6d507cad562ce', 'accepted': False, 'handle_status': None, 'result_future_done': None, 'events': [{'uuid': '8ab322e5180a4d1ea3c53dda73547842', 'event': 'sent', 'wall': 1293.396960925}, {'uuid': '8ab322e5180a4d1ea3c53dda73547842', 'event': 'accepted', 'wall': 1293.403580817}, {'uuid': '8ab322e5180a4d1ea3c53dda73547842', 'event': 'result_requested', 'wall': 1293.403585034}, {'uuid': '8ab322e5180a4d1ea3c53dda73547842', 'event': 'terminal', 'wall': 1295.495471553, 'status': 4}, {'uuid': '1064221879e44cf0bba6d507cad562ce', 'event': 'sent', 'wall': 1306.255110118}]}, 'inputs': {'ros_now_ns': 24313999999, 'target_capture_ns': 23997999999, 'target_received_wall': 1306.114500685, 'joint_capture_ns': 24279999999, 'joint_received_wall': 1306.257467968, 'leg_positions': [-0.008331698009291516, -0.4854456365309579, 1.0526839323219688, 0.008331698009293405, -0.48544563653097134, 1.0526839323219692, -0.005348167479113004, -0.4887858352075907, 1.0379154420548709, 0.005348167479110624, -0.48878583520758456, 1.037915442054873], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 474, 'max_timer_gap_s': 0.14855711599989263, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 1306.168441296}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.15849552500003483,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m15c": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 15,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "19eefeca-f24b-4fd1-9478-6e290d8af570",
+      "cleanup": [
+        {
+          "pid": 4171,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'safety gate lost: target_fresh', 'goal_count': 4, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 44, 'session_generation': 43, 'event': 'disabled', 'emitted_monotonic': 1369.029988533, 'owner': {'pending_uuid': '7206ca462d704783af4c2386d85622f8', 'accepted': False, 'handle_status': None, 'result_future_done': None, 'events': [{'uuid': '4ba2758666a04c53871f1f05e6233780', 'event': 'sent', 'wall': 1354.505665035}, {'uuid': '4ba2758666a04c53871f1f05e6233780', 'event': 'accepted', 'wall': 1354.513295735}, {'uuid': '4ba2758666a04c53871f1f05e6233780', 'event': 'result_requested', 'wall': 1354.513300502}, {'uuid': '4ba2758666a04c53871f1f05e6233780', 'event': 'terminal', 'wall': 1356.524849067, 'status': 4}, {'uuid': 'bfa44518d21541eabca3ae9aa0d27a31', 'event': 'sent', 'wall': 1368.017564062}, {'uuid': 'bfa44518d21541eabca3ae9aa0d27a31', 'event': 'accepted', 'wall': 1368.06876714}, {'uuid': 'bfa44518d21541eabca3ae9aa0d27a31', 'event': 'result_requested', 'wall': 1368.068771081}, {'uuid': 'bfa44518d21541eabca3ae9aa0d27a31', 'event': 'terminal', 'wall': 1368.347563988, 'status': 4}, {'uuid': '20cf97522cf34c90b94e73d5be15e839', 'event': 'sent', 'wall': 1368.422433842}, {'uuid': '20cf97522cf34c90b94e73d5be15e839', 'event': 'accepted', 'wall': 1368.434400376}, {'uuid': '20cf97522cf34c90b94e73d5be15e839', 'event': 'result_requested', 'wall': 1368.434403859}, {'uuid': '20cf97522cf34c90b94e73d5be15e839', 'event': 'terminal', 'wall': 1368.628591545, 'status': 4}, {'uuid': '5428750538ce4301a0e0374c3fd9f841', 'event': 'sent', 'wall': 1368.702947149}, {'uuid': '5428750538ce4301a0e0374c3fd9f841', 'event': 'accepted', 'wall': 1368.749340659}, {'uuid': '5428750538ce4301a0e0374c3fd9f841', 'event': 'result_requested', 'wall': 1368.749344326}, {'uuid': '5428750538ce4301a0e0374c3fd9f841', 'event': 'terminal', 'wall': 1368.959934296, 'status': 4}, {'uuid': '7206ca462d704783af4c2386d85622f8', 'event': 'sent', 'wall': 1369.021225382}]}, 'inputs': {'ros_now_ns': 24027999999, 'target_capture_ns': 23709999999, 'target_received_wall': 1368.846917723, 'joint_capture_ns': 23985999999, 'joint_received_wall': 1369.029591158, 'leg_positions': [-0.008333935252869568, -0.4854759125539963, 1.05269776175233, 0.008334963857018214, -0.48547708697964853, 1.0527017139668775, -0.005345177001217936, -0.48874902495211264, 1.037894321180513, 0.0053456661652050725, -0.48875027355405226, 1.0378984264849427], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 569, 'max_timer_gap_s': 0.2555815309999616, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 1369.028614908}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": true,
+        "velocity_limits": true,
+        "command_rate": true,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": true,
+          "velocity_limits": true,
+          "command_rate": true
+        },
+        "elapsed_wall_s": 1.1739262959999905,
+        "command_count": 4,
+        "reduction": null,
+        "minimum_dispatch_interval_s": 0.28339961599999697,
+        "measured_max_speed_rad_s": 0.056233824752056544,
+        "measured_max_angle_rad": 0.019263328723942687
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "mu10": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "upstream",
+      "rate_hz": 10,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "a3a2f0c8-9769-4216-b4f3-658dd5498426",
+      "cleanup": [
+        {
+          "pid": 4488,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'safety gate lost: target_fresh', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 40, 'session_generation': 39, 'event': 'disabled', 'emitted_monotonic': 1420.512747414, 'owner': {'pending_uuid': '1ecc4ac4db7a4830a762ca66182790ae', 'accepted': False, 'handle_status': None, 'result_future_done': None, 'events': [{'uuid': '9329cf3fff4347ec95d6eec8920c3ea1', 'event': 'sent', 'wall': 1417.044419362}, {'uuid': '9329cf3fff4347ec95d6eec8920c3ea1', 'event': 'accepted', 'wall': 1417.058861905}, {'uuid': '9329cf3fff4347ec95d6eec8920c3ea1', 'event': 'result_requested', 'wall': 1417.058865755}, {'uuid': '9329cf3fff4347ec95d6eec8920c3ea1', 'event': 'terminal', 'wall': 1419.052781136, 'status': 4}, {'uuid': '1ecc4ac4db7a4830a762ca66182790ae', 'event': 'sent', 'wall': 1420.505896338}]}, 'inputs': {'ros_now_ns': 16570000000, 'target_capture_ns': 16266000000, 'target_received_wall': 1420.396021916, 'joint_capture_ns': 16530000000, 'joint_received_wall': 1420.510603513, 'leg_positions': [-0.009693499882196631, -0.47551389380445874, 1.0766868623032957, 0.0096934998821987, -0.4755138938044715, 1.0766868623032912, -0.005384080645486325, -0.48113432245690096, 1.0505463665427999, 0.005384080645484922, -0.48113432245690146, 1.0505463665427945], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 57, 'max_timer_gap_s': 0.34574505199998384, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 1420.343768613}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.2733083059999899,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "mu15": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "upstream",
+      "rate_hz": 15,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "076a73ee-9cc4-4b5e-bbf8-65245201cdd3",
+      "cleanup": [
+        {
+          "pid": 4796,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking stopped before fault/trial: {'enabled': False, 'mode': 'tracking', 'reason': 'input expired or clock changed during servo computation', 'goal_count': 0, 'reserved': False, 'outstanding': False, 'fault': '', 'generation': 19, 'session_generation': 18, 'event': 'disabled', 'emitted_monotonic': 1471.379656595, 'owner': {'pending_uuid': None, 'accepted': False, 'handle_status': None, 'result_future_done': None, 'events': [{'uuid': '180024be28bc4868be745f765620aa2c', 'event': 'sent', 'wall': 1467.966997347}, {'uuid': '180024be28bc4868be745f765620aa2c', 'event': 'accepted', 'wall': 1467.974261564}, {'uuid': '180024be28bc4868be745f765620aa2c', 'event': 'result_requested', 'wall': 1467.974265414}, {'uuid': '180024be28bc4868be745f765620aa2c', 'event': 'terminal', 'wall': 1469.99417893, 'status': 4}]}, 'inputs': {'ros_now_ns': 15408000000, 'target_capture_ns': 15090000000, 'target_received_wall': 1471.239128379, 'joint_capture_ns': 15336000000, 'joint_received_wall': 1471.336032976, 'leg_positions': [-0.009767563759917216, -0.4742482423436795, 1.0805729971242928, 0.009767563759917561, -0.4742482423436855, 1.0805729971242926, -0.005410366285914786, -0.4793487298561152, 1.0528261852176897, 0.005410366285914134, -0.479348729856111, 1.0528261852176886], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 53, 'max_timer_gap_s': 0.09751720500003103, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 1471.171387076}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.20356949400002122,
+        "command_count": 0,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "msi": {
+      "engine": "mujoco",
+      "scenario": "safety",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": "images",
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "96b7bb61-05bf-423b-b326-f75616bdf466",
+      "cleanup": [
+        {
+          "pid": 5100,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "single_tf_owners": true,
+        "actual_tracking_goal": true,
+        "fault_injected": true,
+        "input_loss_stop": true,
+        "cancel_confirmed": true,
+        "single_camera_owners": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "mst": {
+      "engine": "mujoco",
+      "scenario": "safety",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": "tf",
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "5012c5a7-699f-4634-be4a-af0bc902b8c8",
+      "cleanup": [
+        {
+          "pid": 5422,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "single_tf_owners": true,
+        "actual_tracking_goal": true,
+        "fault_injected": true,
+        "input_loss_stop": true,
+        "cancel_confirmed": true,
+        "single_camera_owners": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "msj": {
+      "engine": "mujoco",
+      "scenario": "safety",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": "joints",
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "e2350c42-3144-4df4-8b54-cab4ed7170f9",
+      "cleanup": [
+        {
+          "pid": 5742,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "own trajectory terminal cancellation not confirmed",
+        "native/runtime exception; inspect system.log"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "single_tf_owners": true,
+        "actual_tracking_goal": true,
+        "fault_injected": true,
+        "input_loss_stop": true,
+        "cancel_confirmed": false,
+        "single_camera_owners": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "native_snapshot": true,
+        "clean_shutdown": false
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "ml": {
+      "engine": "mujoco",
+      "scenario": "legacy",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": null,
+      "cleanup": null,
+      "errors": null,
+      "checks": null,
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": "PASS",
+      "remaining_native_processes": []
+    },
+    "gs": {
+      "engine": "gazebo",
+      "scenario": "static",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "5ad5b707-4238-4524-95e7-8643512482ee",
+      "cleanup": [
+        {
+          "pid": 6642,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "thirty_observations": true,
+        "geometry_rms": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "single_tf_owners": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": {
+        "valid_samples": 30,
+        "unique_captures": 30,
+        "rms_m": 0.0022930217722618314,
+        "rms_limit_m": 0.03,
+        "required_samples": 30,
+        "unique_timestamps": true,
+        "latest_tf_diagnostic_rms_m": 0.0022930217722610495,
+        "accepted": true,
+        "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+        "elapsed_wall_s": 4.552467621000005
+      },
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "gd": {
+      "engine": "gazebo",
+      "scenario": "delay",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "57572cae-0bbf-4843-98f1-75497a9348dc",
+      "cleanup": [
+        {
+          "pid": 7307,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "thirty_observations": true,
+        "geometry_rms": true,
+        "actual_camera_motion": true,
+        "delay_150ms": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "single_tf_owners": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": {
+        "valid_samples": 30,
+        "unique_captures": 30,
+        "rms_m": 0.0018424865037815687,
+        "rms_limit_m": 0.05,
+        "required_samples": 30,
+        "unique_timestamps": true,
+        "latest_tf_diagnostic_rms_m": 0.008575412612097396,
+        "accepted": true,
+        "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+        "elapsed_wall_s": 6.999486328000103
+      },
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "gy": {
+      "engine": "gazebo",
+      "scenario": "yolo",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "10ac5b84-8283-4ed6-b375-e87f0cec3fb0",
+      "cleanup": [
+        {
+          "pid": 7958,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "actual_inference_frames": true,
+        "recognition": true,
+        "valid_3d_detections": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "single_tf_owners": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": {
+        "frames": 139,
+        "detected_frames": 139,
+        "valid_3d": 117,
+        "expected_class": "41",
+        "coverage": 1.0,
+        "note": "Actual native camera and YOLO; no fallback"
+      },
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "gt": {
+      "engine": "gazebo",
+      "scenario": "tracking",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "9f7658b3-4e81-450b-8521-597f7d9f68e8",
+      "cleanup": [
+        {
+          "pid": 8365,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'safety gate lost: target_fresh', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 3, 'session_generation': 2, 'event': 'disabled', 'emitted_monotonic': 1999.126492085, 'owner': {'pending_uuid': 'f152a38a66c6494aa97c2cb4a34e022a', 'accepted': True, 'handle_status': 2, 'result_future_done': False, 'events': [{'uuid': '4450cb744a734ccd98161e1b822d6f69', 'event': 'sent', 'wall': 1995.170709096}, {'uuid': '4450cb744a734ccd98161e1b822d6f69', 'event': 'accepted', 'wall': 1995.178050312}, {'uuid': '4450cb744a734ccd98161e1b822d6f69', 'event': 'result_requested', 'wall': 1995.178054896}, {'uuid': '4450cb744a734ccd98161e1b822d6f69', 'event': 'terminal', 'wall': 1997.733241276, 'status': 4}, {'uuid': 'f152a38a66c6494aa97c2cb4a34e022a', 'event': 'sent', 'wall': 1998.935280189}, {'uuid': 'f152a38a66c6494aa97c2cb4a34e022a', 'event': 'accepted', 'wall': 1998.955084222}, {'uuid': 'f152a38a66c6494aa97c2cb4a34e022a', 'event': 'result_requested', 'wall': 1998.955088622}, {'uuid': 'f152a38a66c6494aa97c2cb4a34e022a', 'event': 'cancel_requested', 'wall': 1999.126270985}]}, 'inputs': {'ros_now_ns': 7682000000, 'target_capture_ns': 7394000000, 'target_received_wall': 1998.82551944, 'joint_capture_ns': 7678000000, 'joint_received_wall': 1999.122671969, 'leg_positions': [-7.094669203055714e-12, -0.49999999999318695, 1.0000000001770706, 7.0958724304493515e-12, -0.4999999999931857, 1.0000000001770784, -5.488668991752903e-12, -0.4999999999948143, 1.0000000001493248, 5.4876291702637626e-12, -0.49999999999481387, 1.0000000001493112], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 43, 'max_timer_gap_s': 0.5490269479998915, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 1999.02027847}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.3104887439999402,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "gsi": {
+      "engine": "gazebo",
+      "scenario": "safety",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": "images",
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "ed9ec22e-1c82-498c-bb68-d55cf9d093bf",
+      "cleanup": [
+        {
+          "pid": 8752,
+          "forced_cleanup": true,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "own trajectory terminal cancellation not confirmed",
+        "native/runtime exception; inspect system.log"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "single_tf_owners": true,
+        "actual_tracking_goal": true,
+        "fault_injected": true,
+        "input_loss_stop": true,
+        "cancel_confirmed": false,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "native_snapshot": true,
+        "clean_shutdown": false
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "gst": {
+      "engine": "gazebo",
+      "scenario": "safety",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": "tf",
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "df864a23-70b7-48aa-b65a-5bb8e2210da2",
+      "cleanup": [
+        {
+          "pid": 9159,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "single_tf_owners": true,
+        "actual_tracking_goal": true,
+        "fault_injected": true,
+        "input_loss_stop": true,
+        "cancel_confirmed": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "gsj": {
+      "engine": "gazebo",
+      "scenario": "safety",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": "joints",
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "8f6831b1-43d2-4b6b-921e-ad82bc323f20",
+      "cleanup": [
+        {
+          "pid": 9550,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "single_tf_owners": true,
+        "actual_tracking_goal": true,
+        "fault_injected": true,
+        "input_loss_stop": true,
+        "cancel_confirmed": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "gl": {
+      "engine": "gazebo",
+      "scenario": "legacy",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 0,
+      "run_id": null,
+      "cleanup": null,
+      "errors": null,
+      "checks": null,
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": "PASS",
+      "remaining_native_processes": []
+    }
+  },
+  "remaining_native_processes": [],
+  "finished_at": 1792422671.3387628
+}

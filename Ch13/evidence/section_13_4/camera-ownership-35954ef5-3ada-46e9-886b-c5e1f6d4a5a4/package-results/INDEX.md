@@ -15,6 +15,7 @@ Windows checkout 경로 길이를 줄이기 위해 파일명만 단축했다. XM
 | 008.xml | integrated_robot_description/test_results/integrated_robot_description/xmllint.xunit.xml |
 | 009.xml | integrated_robot_runtime/pytest.xml |
 | 010.xml | integrated_robot_vision/pytest.xml |
+| 011.xml | Task4 final full source pytest, 266 passed /113.10s |
 
 integrated_robot_interfaces에는 이 실행에서 별도의 시험 XML이 없다. 5패키지 빌드와
 설치 감사는 별도로 검증했으며, 인터페이스 생성물이 소스 시험에서 실제 사용된다.
