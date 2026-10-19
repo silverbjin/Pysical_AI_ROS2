@@ -1,9 +1,10 @@
 # 13.4 EGL 전용 카메라·종단 지연 계측 설계
 
 2026-10-20(Asia/Seoul). 기준 HEAD e580702391c959f1e3debb7bdff4caa4238c9389.
-상태: **사용자 방향 확정 / 서면 설계 검토 대기 / 새 구현 미착수**.
+상태: **사용자 방향·서면 설계 승인 / 구현 계획 검토 대기 / 새 구현 미착수**.
 사용자는 EGL 전용 카메라와 종단 계측을 첫 수정 단위로 확정했다.
-이 설계서 검토 후 구현 계획을 작성하며 실행 방식은 기존 네이티브 단일 작업자를 유지한다.
+사용자가 서면 설계를 승인하여 [구현 계획](../plans/2026-10-20-egl-camera-latency-plan.md)을 작성했다.
+계획 검토 후 실행 방식은 기존 네이티브 단일 작업자를 유지한다.
 기존 실험 브랜치·원본 실패 증거는 보존한다. 과거의 보존 전용 판정은 역사적 상태다.
 
 ## 1. 의도와 완료의 의미
@@ -92,6 +93,7 @@ UUID를 사용한다. 기존 토픽·이미지·Detection2DArray·TrackedTarget 
 | local_epoch | 해당 producer의 reset 구간. 없는 단계는 null이며 다른 노드 epoch와 같다고 가정하지 않음 |
 | native_sequence | 카메라 lease sequence. native 기록에만 직접 존재 |
 | times_ns, outcome | 단계 발생 monotonic ns와 처리/폐기/실패 사유 |
+| ros_now_ns | 촬영 ROS age를 계산하기 위한 해당 경계의 ROS now. monotonic과 별도 보관 |
 
 C++은 CLOCK_MONOTONIC을 명시 사용한다. Python은 monotonic_ns의 clock 구현을
 기록하고 같은 base임을 검증한다. 같은 boot/clock이 아니면 프로세스 간 차이를 계산하지 않는다.
