@@ -234,6 +234,20 @@ def native_trial_command(args, engine, scenario, output, fault=None):
     return command
 
 
+def smoke_command(args, result_path, build):
+    return [sys.executable, 'Ch13/scripts/verify_yolo_13_4.py',
+            '--weights', args.weights, '--image', args.image, '--output', str(result_path),
+            '--annotation-dir', str(Path(build)/'smoke_annotations')]
+
+
+def check_engine_continuation(kind, value):
+    if kind == 'native' and not value.get('cleanup_confirmed', False):
+        raise RuntimeError('Native cleanup unconfirmed; refusing to start another engine')
+    if kind == 'legacy' and value.get('status') != 'PASS':
+        # Legacy has no separate owned cleanup schema. Failure cannot prove exit.
+        raise RuntimeError('Legacy verification/exit unconfirmed; refusing another engine')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output-dir')
@@ -269,8 +283,7 @@ def main():
         results[key] = value
         (output/'summary.json').write_text(json.dumps(summarize(results, batch), indent=2)+'\n', encoding='utf-8')
         print(key+': '+value['status'], flush=True)
-        if kind == 'native' and not value.get('cleanup_confirmed', False):
-            raise RuntimeError('Native cleanup unconfirmed; refusing to start another engine')
+        check_engine_continuation(kind, value)
         return value['status'] == 'PASS'
 
     try:
@@ -290,9 +303,7 @@ def main():
         execute('colcon_result', [sys.executable, '/usr/bin/colcon', 'test-result',
             '--test-result-base', str(build), '--verbose'], 'colcon_result', cwd=ws)
         smoke = output/'yolo_smoke/native/result.json'
-        execute('yolo_smoke', [sys.executable, 'Ch13/scripts/verify_yolo_13_4.py',
-            '--weights', args.weights, '--image', args.image, '--output', str(smoke),
-            '--annotation-dir', str(Path(args.weights).resolve().parent/'smoke_annotations')], 'smoke', smoke)
+        execute('yolo_smoke', smoke_command(args, smoke, build), 'smoke', smoke)
         for engine in ('gazebo', 'mujoco'):
             for scenario, fault in [('geometry', None), ('yolo', None), ('tracking', None),
                                     ('safety', 'images'), ('safety', 'tf'), ('safety', 'joints')]:

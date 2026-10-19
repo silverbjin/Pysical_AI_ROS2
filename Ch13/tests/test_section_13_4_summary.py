@@ -70,6 +70,33 @@ def test_batch_native_command_forwards_explicit_backend_and_rate():
         assert command[command.index('--engine')+1] == engine
 
 
+def test_batch_smoke_writes_annotation_inside_ignored_build_not_beside_input(tmp_path):
+    from types import SimpleNamespace
+    import verify_all_13_4 as batch
+    args = SimpleNamespace(weights='/read-only/assets/weights.pt', image='/read-only/assets/bus.jpg')
+    build = tmp_path/'build'
+    command = batch.smoke_command(args, tmp_path/'evidence/result.json', build)
+    annotation = Path(command[command.index('--annotation-dir')+1])
+    assert annotation.is_relative_to(build)
+    assert str(annotation) != str(Path(args.weights).parent/'smoke_annotations')
+    assert command[command.index('--weights')+1] == args.weights
+
+
+@pytest.mark.parametrize('kind,value', [
+    ('native', {'status': 'FAIL'}), ('native', {'cleanup_confirmed': False}),
+    ('legacy', {'status': 'FAIL'}), ('legacy', {})])
+def test_batch_refuses_next_engine_when_native_cleanup_or_legacy_result_unknown(kind, value):
+    import verify_all_13_4 as batch
+    with pytest.raises(RuntimeError):
+        batch.check_engine_continuation(kind, value)
+
+
+def test_batch_can_continue_only_after_explicit_clean_native_or_passed_legacy():
+    import verify_all_13_4 as batch
+    batch.check_engine_continuation('native', {'status': 'FAIL', 'cleanup_confirmed': True})
+    batch.check_engine_continuation('legacy', {'status': 'PASS'})
+
+
 @pytest.mark.parametrize('damage', ['old_batch', 'missing', 'error', 'false', 'corrupt', 'old_time'])
 def test_false_pass_or_missing_core_group_fails(tmp_path, damage):
     batch = str(uuid.uuid4())

@@ -13,6 +13,29 @@ SCRIPTS = Path(__file__).resolve().parents[1]/'scripts'
 sys.path.insert(0, str(SCRIPTS))
 
 
+@pytest.mark.parametrize('cleanup', [None, [], [{'residual_live_pids': [123]}]])
+def test_geometry_never_starts_delay_after_unconfirmed_static_cleanup(tmp_path, monkeypatch, cleanup):
+    runner = importlib.import_module('run_vision_13_4')
+    calls = []
+    def trial(args):
+        calls.append(args.scenario)
+        path = Path(args.output_dir)
+        path.mkdir(parents=True)
+        result = dict(status='FAIL')
+        if cleanup is not None:
+            result['cleanup'] = cleanup
+        (path/'result.json').write_text(json.dumps(result))
+        return result
+    monkeypatch.setattr(runner, 'run_trial', trial)
+    with pytest.raises(RuntimeError, match='cleanup'):
+        with runner.EvidenceRun(tmp_path/'geometry', {'static', 'delay'}) as overall:
+            runner.run_geometry_trials(SimpleNamespace(), overall)
+    assert calls == ['static']
+    result = json.loads((tmp_path/'geometry/result.json').read_text())
+    assert result['phases'] == {'static': 'FAIL'}
+    assert result['status'] == 'FAIL'
+
+
 def test_timeout_records_the_specific_failed_stage_and_last_inputs():
     runner = importlib.import_module('run_vision_13_4')
     stages = []

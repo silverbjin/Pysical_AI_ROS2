@@ -653,6 +653,21 @@ def run_trial(args, *, launch_command=None):
     return run.result
 
 
+def run_geometry_trials(args, overall):
+    phases = {}
+    for scenario in ('static', 'delay'):
+        trial = copy(args)
+        trial.scenario, trial.output_dir = scenario, str(overall.root/scenario)
+        phases[scenario] = run_trial(trial)
+        overall.artifact(Path(trial.output_dir)/'result.json')
+        overall.result['phases'] = {key: value['status'] for key, value in phases.items()}
+        overall.save()
+        cleanup = phases[scenario].get('cleanup')
+        if not cleanup or any(item.get('residual_live_pids') != [] for item in cleanup):
+            raise RuntimeError('Owned cleanup unconfirmed; refusing another geometry engine')
+    return phases
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--engine', choices=('gazebo', 'mujoco'), required=True)
@@ -674,13 +689,7 @@ def main():
     args.scenario = args.scenario or ('geometry' if args.detector_backend == 'color_fixture' else 'yolo')
     if args.scenario == 'geometry':
         with EvidenceRun(args.output_dir, {'static', 'delay'}) as overall:
-            phases = {}
-            for scenario in ('static', 'delay'):
-                trial = copy(args)
-                trial.scenario, trial.output_dir = scenario, str(overall.root/scenario)
-                phases[scenario] = run_trial(trial)
-                overall.artifact(Path(trial.output_dir)/'result.json')
-            overall.result['phases'] = {key: value['status'] for key, value in phases.items()}
+            phases = run_geometry_trials(args, overall)
             try:
                 overall.finish({key: value['status'] == 'PASS' for key, value in phases.items()})
             except RuntimeError:
