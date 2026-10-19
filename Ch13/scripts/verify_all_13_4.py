@@ -13,7 +13,10 @@ import sys
 import time
 import uuid
 
-from verify_vision_13_4 import EvidenceRun, source_snapshot, verdict
+from verify_vision_13_4 import EvidenceRun, source_snapshot, verdict, file_digest
+
+PACKAGES = ('integrated_robot_interfaces', 'integrated_robot_vision',
+            'integrated_robot_description', 'integrated_robot_runtime', 'integrated_robot_camera')
 
 CORE_GROUPS = frozenset({'build', 'pytest', 'colcon', 'colcon_result', 'installed_paths'} |
     {f'{kind}_{engine}' for engine in ('gazebo', 'mujoco') for kind in (
@@ -66,7 +69,7 @@ def residual_pids(path):
 
 
 def run_command(group, command, *, output, batch_run_id, cwd, kind='command', env=None,
-                result_path=None):
+                result_path=None, camera_backend='upstream'):
     """Own this fresh command; never accept an older result or a zero-test run."""
     run = EvidenceRun(output, {'executed', 'verification'})
     with run:
@@ -104,13 +107,20 @@ def run_command(group, command, *, output, batch_run_id, cwd, kind='command', en
                 value = json.loads(path.read_text(encoding='utf-8'))
                 if kind == 'native':
                     from run_vision_13_4 import required_checks
+                    engine = group.rsplit('_', 1)[-1]
                     required = ({'static', 'delay'} if group.startswith('geometry_') else
                         required_checks('safety' if group.startswith('safety_') else
-                                        'tracking' if group.startswith('tracking_') else 'yolo'))
+                                        'tracking' if group.startswith('tracking_') else 'yolo',
+                                        engine=engine, camera_backend=camera_backend))
                     run.result['residual_live_pids'] = residual_pids(path)
                     run.result['cleanup_confirmed'] = not run.result['residual_live_pids']
                     valid = (value['started_at'] >= run.result['started_at'] and
                         run.result['cleanup_confirmed'] and verdict(value, required) == 'PASS')
+                    if group.startswith('geometry_'):
+                        for phase in ('static', 'delay'):
+                            child = json.loads((path.parent/phase/'result.json').read_text())
+                            valid = valid and verdict(child, required_checks(phase, engine=engine,
+                                camera_backend=camera_backend)) == 'PASS'
                 elif kind == 'smoke':
                     required = {'actual_yolo', 'bus_class_5', 'weights_hash_verified',
                                 'image_hash_verified', 'sdk_autoinstall_disabled'}
@@ -156,14 +166,88 @@ def environment(underlay, install=None):
     return result
 
 
+def audit_installed_paths(prefix, repo):
+    """Compare installed bytes and generated C++ build manifest with this source."""
+    import importlib.util
+    from ament_index_python.packages import get_package_share_directory, get_package_prefix
+    prefix, repo = Path(prefix).resolve(), Path(repo).resolve()
+    rows = {}
+    for name in PACKAGES:
+        share = Path(get_package_share_directory(name)).resolve()
+        package_prefix = Path(get_package_prefix(name)).resolve()
+        if not share.is_relative_to(prefix) or not package_prefix.is_relative_to(prefix):
+            raise RuntimeError('stale installed package prefix: '+name)
+        source = repo/'Ch13/ros2_ws/src'/name
+        row = rows[name] = dict(share=str(share))
+        if name in ('integrated_robot_runtime', 'integrated_robot_vision'):
+            installed = Path(importlib.util.find_spec(name).origin).resolve().parent
+            if not installed.is_relative_to(prefix):
+                raise RuntimeError('stale Python module: '+name)
+            for path in (source/name).glob('*.py'):
+                if path.read_bytes() != (installed/path.name).read_bytes():
+                    raise RuntimeError('installed Python bytes differ: '+str(path))
+            for executable in (package_prefix/'lib'/name).iterdir():
+                if executable.is_file() and executable.read_bytes().startswith(b'#!'):
+                    if executable.read_bytes().splitlines()[0] != ('#!'+sys.executable).encode():
+                        raise RuntimeError('console interpreter does not match venv: '+str(executable))
+            row['python_source_verified'] = True
+        for directory in (('launch', 'config', 'urdf', 'mujoco', 'worlds')
+                          if name == 'integrated_robot_description' else
+                          ('launch', 'config') if name in ('integrated_robot_runtime', 'integrated_robot_vision') else ()):
+            for path in (source/directory).rglob('*'):
+                if path.is_file() and '__pycache__' not in path.parts:
+                    if path.read_bytes() != (share/path.relative_to(source)).read_bytes():
+                        raise RuntimeError('installed share bytes differ: '+str(path))
+        if name == 'integrated_robot_camera':
+            hashes = json.loads((share/'source_manifest.json').read_text())
+            for relative, digest in hashes.items():
+                path = (source/relative).resolve(strict=True)
+                if not path.is_relative_to(source.resolve()) or file_digest(path) != digest:
+                    raise RuntimeError('C++ source differs from configured build: '+relative)
+            for required in ('src/snapshot_camera_plugin.cpp', 'src/snapshot_mailbox.cpp',
+                             'integrated_robot_camera_plugins.xml', 'LICENSE'):
+                if required not in hashes:
+                    raise RuntimeError('camera build source manifest incomplete')
+            for filename in ('LICENSE', 'integrated_robot_camera_plugins.xml', 'REUSE_MANIFEST.md'):
+                if (source/filename).read_bytes() != (share/filename).read_bytes():
+                    raise RuntimeError('installed camera metadata differs: '+filename)
+            from run_vision_13_4 import camera_launch_module
+            row.update(camera_launch_module().probe_snapshot_plugin(package_prefix))
+            mailbox = package_prefix/'lib/libsnapshot_mailbox.so'
+            if not mailbox.resolve(strict=True).is_relative_to(package_prefix):
+                raise RuntimeError('mailbox library resolves outside package prefix')
+            row.update(mailbox_library_path=str(mailbox.resolve(strict=True)),
+                       mailbox_library_sha256=file_digest(mailbox))
+            row.update(source_hashes=hashes, license_verified=True, plugin_xml_verified=True)
+    return rows
+
+
+def native_trial_command(args, engine, scenario, output, fault=None):
+    command = [sys.executable, 'Ch13/scripts/run_vision_13_4.py', '--engine', engine,
+        '--scenario', scenario, '--detector-backend', 'yolo' if scenario == 'yolo' else 'color_fixture',
+        '--output-dir', str(output), '--vision-camera-backend', args.vision_camera_backend,
+        '--inference-rate-hz', str(args.inference_rate_hz)]
+    if scenario == 'yolo':
+        command += ['--weights-path', args.weights]
+    if fault:
+        command += ['--fault', fault]
+    return command
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output-dir')
     parser.add_argument('--weights', default='')
     parser.add_argument('--image', default='')
     parser.add_argument('--mujoco-underlay', default='/home/jinho/ch13_mujoco_ws/install/setup.bash')
+    parser.add_argument('--vision-camera-backend', choices=('upstream', 'snapshot'), default='upstream')
+    parser.add_argument('--inference-rate-hz', type=float, default=10.)
+    parser.add_argument('--audit-install-prefix')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
+    if args.audit_install_prefix:
+        print(json.dumps(audit_installed_paths(args.audit_install_prefix, repo), indent=2))
+        return 0
     batch = str(uuid.uuid4())
     output = Path(args.output_dir or repo/'Ch13/evidence/section_13_4'/('final-'+batch)).resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -175,13 +259,13 @@ def main():
     suffix = '13_4_verify_'+batch[:8]
     build, install, logs = [ws/(name+suffix) for name in ('build', 'install', 'log')]
     base = [sys.executable, '/usr/bin/colcon', '--log-base', str(logs)]
-    packages = ['--packages-select', 'integrated_robot_interfaces', 'integrated_robot_vision',
-                'integrated_robot_description', 'integrated_robot_runtime']
+    packages = ['--packages-select', *PACKAGES]
     env = None
 
     def execute(key, command, kind='command', result_path=None, cwd=repo):
         value = run_command(key, command, output=output/key, batch_run_id=batch, cwd=cwd,
-                            env=env, kind=kind, result_path=result_path)
+                            env=env, kind=kind, result_path=result_path,
+                            camera_backend=args.vision_camera_backend)
         results[key] = value
         (output/'summary.json').write_text(json.dumps(summarize(results, batch), indent=2)+'\n', encoding='utf-8')
         print(key+': '+value['status'], flush=True)
@@ -196,30 +280,8 @@ def main():
         if not built:
             return 1
         env = environment(Path(args.mujoco_underlay), install)
-        path_code = '''import hashlib, importlib.util, json
-from pathlib import Path
-from ament_index_python.packages import get_package_share_directory
-prefix, repo = Path(PREFIX), Path(REPO)
-rows = {}
-for name in ('integrated_robot_runtime','integrated_robot_vision','integrated_robot_interfaces','integrated_robot_description'):
-    share = Path(get_package_share_directory(name)).resolve()
-    assert share.is_relative_to(prefix), (name, str(share))
-    rows[name] = str(share)
-    if name in ('integrated_robot_runtime','integrated_robot_vision'):
-        installed = Path(importlib.util.find_spec(name).origin).resolve().parent
-        assert installed.is_relative_to(prefix), str(installed)
-        source = repo/'Ch13/ros2_ws/src'/name/name
-        for path in source.glob('*.py'):
-            assert path.read_bytes() == (installed/path.name).read_bytes(), str(path)
-    if name == 'integrated_robot_description':
-        source = repo/'Ch13/ros2_ws/src'/name
-        for directory in ('launch','config','urdf','mujoco','worlds'):
-            for path in (source/directory).rglob('*'):
-                if path.is_file() and '__pycache__' not in path.parts:
-                    assert path.read_bytes() == (share/path.relative_to(source)).read_bytes(), str(path)
-print(json.dumps(rows, indent=2))
-'''.replace('PREFIX', repr(str(install))).replace('REPO', repr(str(repo)))
-        execute('installed_paths', [sys.executable, '-c', path_code])
+        execute('installed_paths', [sys.executable, str(Path(__file__).resolve()),
+                                   '--audit-install-prefix', str(install)])
         execute('pytest', [sys.executable, '-m', 'pytest', 'Ch13/tests',
             'Ch13/ros2_ws/src/integrated_robot_vision/test',
             'Ch13/ros2_ws/src/integrated_robot_runtime/test', '-q'], 'pytest')
@@ -236,13 +298,7 @@ print(json.dumps(rows, indent=2))
                                     ('safety', 'images'), ('safety', 'tf'), ('safety', 'joints')]:
                 key = (scenario+('_'+fault if fault else '')+'_'+engine)
                 native = output/key/'native'
-                command = [sys.executable, 'Ch13/scripts/run_vision_13_4.py', '--engine', engine,
-                    '--scenario', scenario, '--detector-backend', 'yolo' if scenario == 'yolo' else 'color_fixture',
-                    '--output-dir', str(native)]
-                if scenario == 'yolo':
-                    command += ['--weights-path', args.weights]
-                if fault:
-                    command += ['--fault', fault]
+                command = native_trial_command(args, engine, scenario, native, fault)
                 execute(key, command, 'native', native/'result.json')
             native = output/('legacy_'+engine)/'native'
             execute('legacy_'+engine, [sys.executable, 'Ch13/scripts/run_architecture_13_3.py',

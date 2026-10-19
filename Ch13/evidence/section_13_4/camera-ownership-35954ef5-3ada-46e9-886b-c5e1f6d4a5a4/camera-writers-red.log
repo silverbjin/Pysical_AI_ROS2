@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_snapshot_camera_ownership_rejects_a_duplicate_or_missing_sensor_writer __
+
+    def test_snapshot_camera_ownership_rejects_a_duplicate_or_missing_sensor_writer():
+        runner = importlib.import_module('run_vision_13_4')
+        topics = ('/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+                  '/native/camera_info', '/camera/color/camera_info')
+        owners = {topic: ['one_sensor_writer'] for topic in topics}
+>       assert runner.camera_publishers_unique(owners)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'camera_publishers_unique'
+
+Ch13/tests/test_section_13_4_runner.py:191: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_snapshot_camera_ownership_rejects_a_duplicate_or_missing_sensor_writer
+1 failed, 20 deselected in 0.61s

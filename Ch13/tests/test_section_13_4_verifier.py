@@ -32,6 +32,18 @@ def test_source_snapshot_hashes_dirty_code_but_not_previous_build_outputs(tmp_pa
     assert source_snapshot(tmp_path)['files'] != first['files']
 
 
+def test_camera_cpp_is_in_source_inventory_and_changes_its_hash(tmp_path):
+    from verify_vision_13_4 import source_snapshot
+    source = tmp_path/'Ch13/ros2_ws/src/integrated_robot_camera/src/snapshot_camera_plugin.cpp'
+    source.parent.mkdir(parents=True)
+    source.write_text('first camera source')
+    key = source.relative_to(tmp_path).as_posix()
+    first = source_snapshot(tmp_path)
+    assert first['files'][key] == hashlib.sha256(source.read_bytes()).hexdigest()
+    source.write_text('changed camera source')
+    assert source_snapshot(tmp_path)['files'][key] != first['files'][key]
+
+
 def test_tracking_metrics_require_real_duration_commands_and_error_reduction():
     from verify_vision_13_4 import tracking_summary
     commands = [dict(goal_uuid=str(i), joint_names=['arm_joint_'+str(j) for j in range(1, 7)],
@@ -81,6 +93,43 @@ def completed(tmp_path):
 
 def test_complete_current_evidence_passes(tmp_path):
     assert verdict(completed(tmp_path), {'sensor', 'geometry'}) == 'PASS'
+
+
+def test_snapshot_result_requires_loaded_library(tmp_path):
+    from run_vision_13_4 import required_checks
+    required = required_checks('tracking', engine='mujoco', camera_backend='snapshot')
+    assert 'camera_backend_loaded' in required
+    assert 'camera_backend_loaded' not in required_checks('tracking')
+    assert 'camera_backend_loaded' not in required_checks('tracking', engine='gazebo')
+    value = completed(tmp_path)
+    value['checks'] = {key: True for key in required - {'camera_backend_loaded'}}
+    assert verdict(value, required) == 'FAIL'
+    value['checks']['camera_backend_loaded'] = True
+    assert verdict(value, required) == 'FAIL'  # truthy check alone cannot invent backend provenance
+
+
+def test_snapshot_metadata_must_match_its_hashed_artifact_and_prefix(tmp_path):
+    import os
+    value = completed(tmp_path)
+    required = {'camera_backend_loaded'}
+    value.update(engine='mujoco', vision_camera_backend='snapshot', checks={'camera_backend_loaded': True})
+    prefix = tmp_path/'package'
+    audit = dict(class_id='integrated_robot_camera/SnapshotCameraPlugin', native_pid=os.getpid(),
+        package_prefix=str(prefix), library_path=str(prefix/'lib/libsnapshot_camera_plugin.so'),
+        library_sha256='a'*64)
+    path = tmp_path/'camera_backend.json'
+    path.write_text(json.dumps(audit))  # verifier contract fixture, not native evidence
+    value['camera_backend_audit'] = audit
+    value['artifacts'].append(dict(path=path.name, size=path.stat().st_size,
+                                  sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+    assert verdict(value, required) == 'PASS'
+    for field, bad in [('native_pid', 0), ('class_id', 'upstream'),
+                       ('package_prefix', '/unrelated/prefix'), ('library_sha256', 'broken')]:
+        damaged = deepcopy(value)
+        damaged['camera_backend_audit'][field] = bad
+        assert verdict(damaged, required) == 'FAIL'
+    value['vision_camera_backend'] = 'upstream'
+    assert verdict(value, required) == 'FAIL'
 
 
 @pytest.mark.parametrize('defect', ['missing', 'false', 'not_bool', 'errors', 'running', 'old_id',

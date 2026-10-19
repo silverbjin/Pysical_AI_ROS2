@@ -78,3 +78,30 @@ GLFW 전역 terminate는 호스트의 다른 창을 파괴할 수 있어 호출�
   backend 기본은 upstream이며 자동 fallback이나 기본 전환은 없다.
 - probe는 설치된 libexec/class loader를 실제 실행한다. launch는 저장소 scripts를
   import하지 않는다. Ch13의 완전한5패키지 fresh 설치 감사는 다음 Task4에서 수행한다.
+
+## Task4
+
+- 새 prefix `Ch13/ros2_ws/{build,install,log}13_4_snapshot_full_35954ef5`에5패키지
+  처음부터 build PASS /4분41초. 이전 Ch13 overlay를 빌드 underlay로 source하지 않았다.
+- `provenance-red.log`:7건 실패/55건 통과. 카메라 source inventory·명시적 backend
+  전달·실제 로딩/설치 감사 부재를 확인했다. `camera-writers-red.log`는 중복/누락
+  sensor writer 검사 부재, `mailbox-library-red.log`는 core .so 감사 부재를 확인한다.
+- 설치 감사는 Python/share 원본 바이트, venv console interpreter, C++ configure-time
+  `source_manifest.json`, plugin XML/LICENSE, 실제 probe 경로와 두 .so 해시를 검증한다.
+  최종 결과: `five-package-final-installed-audit.json`.
+- 첫 전체 시험의1실패는 source pytest의 conftest가 source import를 앞세워 발생했다.
+  설치 검사를 완화하지 않고, source import 거부를 명시적으로 확인한 뒤 별도 Python
+  프로세스에서 실제 설치 감사를 실행하도록 시험을 바로잡았다.
+- package 첫 실패: flake8 규칙4건(I100,C408,E501×2)과 실패한 CTest harness를 합쳐
+  집계5건. `five-package-result.log` 보존. import 순서/사전 literal/줄바꿈을 고치고
+  description을 다시 설치했다. lint 억제 없음.
+- 최종 소스: **266 PASS /92.89초**, `task4-core-audit-pytest.log`.
+  최종 패키지: **123건/오류0/실패0/skip0**, `five-package-final-result.log`.
+  새 prefix의 원본 JUnit은 `package-results/`에 보존한다.
+- snapshot 실행에는 별도 필수 검사 `camera_backend_loaded`와 `single_camera_owners`를
+  적용한다. 실제 MuJoCo PID/exe/PGID, `/proc/PID/maps`의 camera+mailbox 라이브러리와
+  초기화 class ID 및5패키지 설치 일치를 기록한다. audit JSON도 artifact 해시에 포함한다.
+  historical upstream/Gazebo의 필수 검사 집합은 소급 변경하지 않았다.
+- 새 판정 함수의 실제 짧은 자식 프로세스는 진짜 .so를 매핑한다. 다른 PGID는 거부하고
+  Python loader를 native MuJoCo라고 인정하지 않는다. **통합 엔진 PID에서의 최종
+  인수는 아직 다음 Task5 대상**이다. 기본 backend는 여전히 upstream.

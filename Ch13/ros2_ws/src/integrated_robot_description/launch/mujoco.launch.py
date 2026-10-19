@@ -15,8 +15,8 @@
 import hashlib
 import os
 from pathlib import Path
-import tempfile
 import subprocess
+import tempfile
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from launch import LaunchDescription
@@ -70,9 +70,12 @@ def probe_snapshot_plugin(expected_prefix: Path) -> dict:
     library = library.resolve()
     if prefix != Path(expected_prefix).resolve() or not library.is_relative_to(prefix):
         raise RuntimeError('snapshot camera library does not match expected package prefix')
-    return dict(class_id='integrated_robot_camera/SnapshotCameraPlugin',
-                library_path=str(library), library_sha256=hashlib.sha256(library.read_bytes()).hexdigest(),
-                package_prefix=str(prefix))
+    return {
+        'class_id': 'integrated_robot_camera/SnapshotCameraPlugin',
+        'library_path': str(library),
+        'library_sha256': hashlib.sha256(library.read_bytes()).hexdigest(),
+        'package_prefix': str(prefix),
+    }
 
 
 def launch_nodes(context):
@@ -135,7 +138,8 @@ def launch_nodes(context):
 
 def generate_launch_description():
     return LaunchDescription([DeclareLaunchArgument('vision_enabled', default_value='false'),
-                              DeclareLaunchArgument('vision_camera_backend', default_value='upstream'),
+                              DeclareLaunchArgument(
+                                  'vision_camera_backend', default_value='upstream'),
                               DeclareLaunchArgument('mujoco_headless', default_value='false'),
                               DeclareLaunchArgument('model_path', default_value=''),
                               OpaqueFunction(function=launch_nodes)])

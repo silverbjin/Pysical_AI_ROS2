@@ -171,6 +171,62 @@ def test_comparison_rate_reaches_launch_and_invalid_rate_never_starts_engine():
             runner.build_launch_command(args, 0.)
 
 
+def test_snapshot_backend_reaches_only_mujoco_launch_and_invalid_choice_is_rejected():
+    runner = importlib.import_module('run_vision_13_4')
+    args = argparse.Namespace(engine='mujoco', detector_backend='color_fixture',
+        weights_path='', scenario='tracking', vision_camera_backend='snapshot')
+    assert 'vision_camera_backend:=snapshot' in runner.build_launch_command(args, 0.)
+    args.engine = 'gazebo'
+    assert not any(v.startswith('vision_camera_backend:=') for v in runner.build_launch_command(args, 0.))
+    args.vision_camera_backend = 'typo'
+    with pytest.raises(ValueError):
+        runner.build_launch_command(args, 0.)
+
+
+def test_snapshot_camera_ownership_rejects_a_duplicate_or_missing_sensor_writer():
+    runner = importlib.import_module('run_vision_13_4')
+    topics = ('/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+              '/native/camera_info', '/camera/color/camera_info')
+    owners = {topic: ['one_sensor_writer'] for topic in topics}
+    assert runner.camera_publishers_unique(owners)
+    owners[topics[0]].append('second_eye_plugin')
+    assert not runner.camera_publishers_unique(owners)
+    owners[topics[0]] = []
+    assert not runner.camera_publishers_unique(owners)
+    assert 'single_camera_owners' in runner.required_checks('static', engine='mujoco', camera_backend='snapshot')
+
+
+def test_read_only_library_audit_uses_real_owned_mapping_and_rejects_unrelated_pid(tmp_path):
+    import os
+    from ament_index_python.packages import get_package_prefix
+    runner = importlib.import_module('run_vision_13_4')
+    prefix = Path(get_package_prefix('integrated_robot_camera'))
+    library = prefix/'lib/libsnapshot_camera_plugin.so'
+    code = 'import ctypes,signal; ctypes.CDLL('+repr(str(library))+'); print("loaded",flush=True); signal.pause()'
+    own = subprocess.Popen([sys.executable, '-c', code], start_new_session=True,
+                           stdout=subprocess.PIPE, text=True)
+    other = subprocess.Popen([sys.executable, '-c', 'import signal; signal.pause()'], start_new_session=True)
+    try:
+        assert own.stdout.readline().strip() == 'loaded'
+        loaded = runner.mapped_camera_library(own.pid, own.pid, library)
+        assert loaded['library_path'] == str(library.resolve())
+        assert len(loaded['library_sha256']) == 64
+        assert loaded['mailbox_library_path'] == str((prefix/'lib/libsnapshot_mailbox.so').resolve())
+        assert len(loaded['mailbox_library_sha256']) == 64
+        with pytest.raises(ValueError, match='unrelated'):
+            runner.mapped_camera_library(other.pid, own.pid, library)
+        # A Python loader is not the native MuJoCo control process, even with the .so mapped.
+        own.ch13_system_log = tmp_path/'system.log'
+        own.ch13_system_log.write_text('integrated_robot_camera/SnapshotCameraPlugin initialized\n')
+        with pytest.raises(RuntimeError, match='native'):
+            runner.audit_camera_backend(own, prefix)
+        assert other.poll() is None and os.getpgid(other.pid) != own.pid
+    finally:
+        for child in (own, other):
+            child.terminate()
+            child.wait(timeout=3.)
+
+
 def test_jazzy_dict_message_info_records_actual_tf_publisher_identity():
     observer = importlib.import_module('vision_observer_13_4')
     state = SimpleNamespace(tf_owners={}, tf_parents={}, tf_metadata_fields=set())

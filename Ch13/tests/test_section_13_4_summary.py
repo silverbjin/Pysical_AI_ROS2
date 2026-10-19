@@ -37,6 +37,39 @@ def test_fixture_does_not_imply_yolo_or_tracking_success(tmp_path):
     assert summarize({'yolo_smoke': results['yolo_smoke']}, batch)['status'] == 'FAIL'
 
 
+def test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity():
+    from ament_index_python.packages import get_package_prefix
+    from verify_all_13_4 import audit_installed_paths
+    prefix = Path(get_package_prefix('integrated_robot_camera')).parent
+    repo = Path(__file__).resolve().parents[2]
+    # conftest intentionally puts source modules first. Do not weaken the audit
+    # to accept that; execute the installed audit in a fresh interpreter instead.
+    with pytest.raises(RuntimeError, match='stale Python module'):
+        audit_installed_paths(prefix, repo)
+    rows = json.loads(subprocess.check_output([sys.executable,
+        str(repo/'Ch13/scripts/verify_all_13_4.py'), '--audit-install-prefix', str(prefix)],
+        text=True, timeout=30.))
+    assert set(rows) == {'integrated_robot_camera', 'integrated_robot_description',
+                         'integrated_robot_interfaces', 'integrated_robot_runtime', 'integrated_robot_vision'}
+    camera = rows['integrated_robot_camera']
+    assert camera['source_hashes']['src/snapshot_camera_plugin.cpp'] == hashlib.sha256(
+        (repo/'Ch13/ros2_ws/src/integrated_robot_camera/src/snapshot_camera_plugin.cpp').read_bytes()).hexdigest()
+    assert len(camera['library_sha256']) == 64
+    assert Path(camera['library_path']).is_relative_to(prefix)
+    assert camera['license_verified'] and camera['plugin_xml_verified']
+
+
+def test_batch_native_command_forwards_explicit_backend_and_rate():
+    from types import SimpleNamespace
+    from verify_all_13_4 import native_trial_command
+    args = SimpleNamespace(weights='/local/weights.pt', vision_camera_backend='snapshot', inference_rate_hz=15.)
+    for engine in ('mujoco', 'gazebo'):
+        command = native_trial_command(args, engine, 'tracking', Path('/tmp/native-proof'))
+        assert command[command.index('--vision-camera-backend')+1] == 'snapshot'
+        assert command[command.index('--inference-rate-hz')+1] == '15.0'
+        assert command[command.index('--engine')+1] == engine
+
+
 @pytest.mark.parametrize('damage', ['old_batch', 'missing', 'error', 'false', 'corrupt', 'old_time'])
 def test_false_pass_or_missing_core_group_fails(tmp_path, damage):
     batch = str(uuid.uuid4())

@@ -43,6 +43,22 @@ target_link_libraries(camera_plugin_probe PRIVATE
 install(TARGETS camera_plugin_probe DESTINATION lib/${PROJECT_NAME})
 install(FILES LICENSE REUSE_MANIFEST.md DESTINATION share/${PROJECT_NAME})
 
+# Generated build-time provenance, not a claim that an unbuilt source tree ran.
+file(GLOB_RECURSE camera_inputs CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+  include/*.hpp src/*.cpp src/*.hpp test/*.cpp)
+list(APPEND camera_inputs CMakeLists.txt package.xml integrated_robot_camera_plugins.xml LICENSE REUSE_MANIFEST.md)
+list(SORT camera_inputs)
+set(camera_manifest "{\n")
+foreach(input IN LISTS camera_inputs)
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${input}")
+  file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/${input}" input_hash)
+  string(APPEND camera_manifest "  \"${input}\": \"${input_hash}\",\n")
+endforeach()
+string(REGEX REPLACE ",\n$" "\n" camera_manifest "${camera_manifest}")
+string(APPEND camera_manifest "}\n")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/source_manifest.json" "${camera_manifest}")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/source_manifest.json" DESTINATION share/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   ament_add_gtest(test_snapshot_mailbox test/test_snapshot_mailbox.cpp TIMEOUT 30)

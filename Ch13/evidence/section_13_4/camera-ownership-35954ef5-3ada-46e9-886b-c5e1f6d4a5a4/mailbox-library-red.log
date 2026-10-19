@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_read_only_library_audit_uses_real_owned_mapping_and_rejects_unrelated_pid _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-2/test_read_only_library_audit_u0')
+
+    def test_read_only_library_audit_uses_real_owned_mapping_and_rejects_unrelated_pid(tmp_path):
+        import os
+        from ament_index_python.packages import get_package_prefix
+        runner = importlib.import_module('run_vision_13_4')
+        prefix = Path(get_package_prefix('integrated_robot_camera'))
+        library = prefix/'lib/libsnapshot_camera_plugin.so'
+        code = 'import ctypes,signal; ctypes.CDLL('+repr(str(library))+'); print("loaded",flush=True); signal.pause()'
+        own = subprocess.Popen([sys.executable, '-c', code], start_new_session=True,
+                               stdout=subprocess.PIPE, text=True)
+        other = subprocess.Popen([sys.executable, '-c', 'import signal; signal.pause()'], start_new_session=True)
+        try:
+            assert own.stdout.readline().strip() == 'loaded'
+            loaded = runner.mapped_camera_library(own.pid, own.pid, library)
+            assert loaded['library_path'] == str(library.resolve())
+            assert len(loaded['library_sha256']) == 64
+>           assert loaded['mailbox_library_path'] == str((prefix/'lib/libsnapshot_mailbox.so').resolve())
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'mailbox_library_path'
+
+Ch13/tests/test_section_13_4_runner.py:214: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_read_only_library_audit_uses_real_owned_mapping_and_rejects_unrelated_pid
+1 failed, 20 deselected in 2.71s

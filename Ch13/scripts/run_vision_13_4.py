@@ -3,6 +3,7 @@
 import argparse
 from copy import copy
 import importlib.metadata
+import importlib.util
 import json
 import math
 import os
@@ -14,7 +15,7 @@ from threading import Event
 import time
 import xml.etree.ElementTree as ET
 
-from verify_vision_13_4 import EvidenceRun, rms_error, geometry_summary, tf_contract_single_owners, tracking_summary, source_snapshot
+from verify_vision_13_4 import EvidenceRun, rms_error, geometry_summary, tf_contract_single_owners, tracking_summary, source_snapshot, file_digest
 
 
 COMMON = {'one_clock', 'one_odometry', 'single_tf_owners', 'sensor_contract',
@@ -155,7 +156,84 @@ def owned_gazebo_members(process):
     return found
 
 
-def required_checks(scenario):
+def camera_launch_module():
+    from ament_index_python.packages import get_package_share_directory
+    path = Path(get_package_share_directory('integrated_robot_description'))/'launch/mujoco.launch.py'
+    spec = importlib.util.spec_from_file_location('_ch13_installed_camera_launch', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def mapped_camera_library(pid, owned_pgid, expected_library):
+    """Read only an owned group's mappings; no attach, signals or policy changes."""
+    if os.getpgid(pid) != owned_pgid:
+        raise ValueError('refuse library audit of unrelated process')
+    expected = Path(expected_library).resolve(strict=True)
+    expected_core = (expected.parent/'libsnapshot_mailbox.so').resolve(strict=True)
+    if not expected_core.is_relative_to(expected.parent):
+        raise RuntimeError('mailbox library resolves outside selected camera package')
+    mapped = {expected.name: set(), expected_core.name: set()}
+    for line in (Path('/proc')/str(pid)/'maps').read_text().splitlines():
+        fields = line.split(maxsplit=5)
+        if len(fields) == 6 and any(name in fields[5] for name in mapped):
+            path = Path(fields[5])
+            if not path.is_absolute() or not path.is_file():
+                raise RuntimeError('mapped camera library missing or deleted')
+            resolved = path.resolve()
+            if resolved.name in mapped:
+                mapped[resolved.name].add(resolved)
+    if mapped[expected.name] != {expected} or mapped[expected_core.name] != {expected_core}:
+        raise RuntimeError('native mapped camera library does not match selected probe')
+    if os.getpgid(pid) != owned_pgid:
+        raise ValueError('owned process changed group during library audit')
+    return dict(library_path=str(expected), library_sha256=file_digest(expected),
+                mailbox_library_path=str(expected_core), mailbox_library_sha256=file_digest(expected_core))
+
+
+def audit_camera_backend(process, expected_prefix: Path) -> dict:
+    from ament_index_python.packages import get_package_prefix
+    from probe_sensors_13_4 import live_group_pids
+    if process.poll() is not None or os.getpgid(process.pid) != process.pid:
+        raise RuntimeError('native launch group is not live and independently owned')
+    audit = camera_launch_module().probe_snapshot_plugin(Path(expected_prefix))
+    expected_native = (Path(get_package_prefix('mujoco_ros2_control'))/
+                       'lib/mujoco_ros2_control/ros2_control_node').resolve(strict=True)
+    candidates = []
+    for pid in live_group_pids(process.pid):
+        try:
+            if (Path('/proc')/str(pid)/'exe').resolve(strict=True) == expected_native:
+                candidates.append(pid)
+        except OSError:
+            continue
+    if len(candidates) != 1:
+        raise RuntimeError('exactly one owned native MuJoCo control process is required')
+    loaded = mapped_camera_library(candidates[0], process.pid, audit['library_path'])
+    if loaded['library_sha256'] != audit['library_sha256']:
+        raise RuntimeError('native camera binary changed after probe')
+    log = Path(process.ch13_system_log).read_text(encoding='utf-8')
+    if 'integrated_robot_camera/SnapshotCameraPlugin initialized' not in log:
+        raise RuntimeError('native camera initialization class ID was not observed')
+    from verify_all_13_4 import audit_installed_paths
+    installed = audit_installed_paths(Path(expected_prefix).resolve().parent,
+                                      Path(__file__).resolve().parents[2])
+    if loaded['mailbox_library_sha256'] != installed['integrated_robot_camera']['mailbox_library_sha256']:
+        raise RuntimeError('native mailbox binary differs from installed audit')
+    return dict(audit, **loaded, native_pid=candidates[0], installed_packages=installed)
+
+
+def camera_publishers_unique(owners):
+    return all(len(owners.get(topic, [])) == 1 for topic in (
+        '/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+        '/native/camera_info', '/camera/color/camera_info'))
+
+
+def required_checks(scenario, *, engine=None, camera_backend='upstream'):
+    extra = {'camera_backend_loaded', 'single_camera_owners'} if engine == 'mujoco' and camera_backend == 'snapshot' else set()
+    return _scenario_checks(scenario) | extra
+
+
+def _scenario_checks(scenario):
     if scenario in ('static', 'delay'):
         return COMMON | {'thirty_observations', 'geometry_rms'} | (
             {'actual_camera_motion', 'delay_150ms'} if scenario == 'delay' else set())
@@ -173,6 +251,9 @@ def build_launch_command(args, delay):
     rate = float(getattr(args, 'inference_rate_hz', 10.))
     if not math.isfinite(rate) or not 0 < rate <= 15:
         raise ValueError('inference rate must be finite and in (0,15]')
+    backend = getattr(args, 'vision_camera_backend', 'upstream')
+    if backend not in ('upstream', 'snapshot'):
+        raise ValueError('vision camera backend must be upstream or snapshot')
     command = ['ros2', 'launch', 'integrated_robot_runtime', 'vision_system.launch.py',
         'engine:='+args.engine, 'detector_backend:='+args.detector_backend,
         'processing_delay_s:='+str(delay), 'tracking_enabled:=false', 'max_rate_hz:='+str(rate),
@@ -181,12 +262,14 @@ def build_launch_command(args, delay):
         command.append('weights_path:='+args.weights_path)
     if args.engine == 'mujoco':
         command.append('mujoco_headless:='+str(getattr(args, 'mujoco_headless', True)).lower())
+        command.append('vision_camera_backend:='+backend)
     return command
 
 
 def run_trial(args, *, launch_command=None):
     """launch_command is a process-boundary test seam, never exposed as a CLI option."""
-    required = required_checks(args.scenario)
+    backend = getattr(args, 'vision_camera_backend', 'upstream')
+    required = required_checks(args.scenario, engine=args.engine, camera_backend=backend)
     run = EvidenceRun(args.output_dir, required)
     process = log = node = None
     content = ''
@@ -196,6 +279,7 @@ def run_trial(args, *, launch_command=None):
     tracking_started, initial_errors, command_start = None, [], 0
     with run:
         try:
+            run.result.update(engine=args.engine, vision_camera_backend=backend)
             if args.detector_backend == 'yolo':
                 weights = Path(args.weights_path)
                 if not weights.is_absolute() or not weights.is_file():
@@ -248,6 +332,7 @@ def run_trial(args, *, launch_command=None):
                 run.result['physical_fixture'] = dict(center=[1., fixture_y, .72], front_x=.98)
             log = (run.root/'system.log').open('w', encoding='utf-8')
             process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            process.ch13_system_log = run.root/'system.log'
             run.result['processes'].append(dict(pid=process.pid, pgid=process.pid, command=command,
                                                 start_new_session=True))
             run.save()
@@ -300,6 +385,15 @@ def run_trial(args, *, launch_command=None):
 
             until(lambda: node.startup.get('status') == 'READY' and node.standing(), args.timeout, 'startup')
             checks['measured_startup'] = True
+            if args.engine == 'mujoco' and backend == 'snapshot':
+                from ament_index_python.packages import get_package_prefix
+                audit = audit_camera_backend(process, Path(get_package_prefix('integrated_robot_camera')))
+                path = run.root/'camera_backend.json'
+                path.write_text(json.dumps(audit, indent=2)+'\n', encoding='utf-8')
+                run.artifact(path)
+                run.result['camera_backend_audit'] = audit
+                checks['camera_backend_loaded'] = True
+                run.save()
             if args.scenario == 'delay':
                 run.result['motion_enable'] = toggle('/manipulation_node/set_camera_motion_test', True)
                 until(lambda: node.tracking.get('enabled') and node.tracking.get('mode') == 'camera_motion_test',
@@ -437,8 +531,12 @@ def run_trial(args, *, launch_command=None):
                     run.result['fault']['goal_stop_deadline_monotonic'] = cutoff
                     run.result['fault']['final_tracking'] = node.tracking
             owners = {topic: [v.node_name for v in node.get_publishers_info_by_topic(topic)]
-                      for topic in ('/clock', '/odom', '/camera/color/image_raw', '/tf', '/tf_static')}
+                      for topic in ('/clock', '/odom', '/camera/color/image_raw',
+                                    '/camera/aligned_depth_to_color/image_raw', '/native/camera_info',
+                                    '/camera/color/camera_info', '/tf', '/tf_static')}
             run.result['owners'] = owners
+            if args.engine == 'mujoco' and backend == 'snapshot':
+                checks['single_camera_owners'] = camera_publishers_unique(owners)
             images = node.latest_images
             checks.update(one_clock=len(owners['/clock']) == 1, one_odometry=len(owners['/odom']) == 1,
                 sensor_contract=all(k in images and images[k].header.frame_id == 'camera_optical_frame'
@@ -564,6 +662,7 @@ def main():
     parser.add_argument('--duration', type=float, default=20.)
     parser.add_argument('--processing-delay-s', type=float)
     parser.add_argument('--inference-rate-hz', type=float, default=10.)
+    parser.add_argument('--vision-camera-backend', choices=('upstream', 'snapshot'), default='upstream')
     args = parser.parse_args()
     args.scenario = args.scenario or ('geometry' if args.detector_backend == 'color_fixture' else 'yolo')
     if args.scenario == 'geometry':

@@ -18,7 +18,7 @@ def source_snapshot(repo):
     repo = Path(repo).resolve()
     roots = [repo/'Ch13/scripts', repo/'Ch13/tests'] + [repo/'Ch13/ros2_ws/src'/name for name in (
         'integrated_robot_description', 'integrated_robot_interfaces',
-        'integrated_robot_runtime', 'integrated_robot_vision')]
+        'integrated_robot_runtime', 'integrated_robot_vision', 'integrated_robot_camera')]
     files = {}
     for root in roots:
         for path in sorted(root.rglob('*')):
@@ -168,6 +168,23 @@ def verdict(result: dict, required: set[str]) -> str:
             if (not path.is_relative_to(root) or not path.is_file() or artifact['size'] <= 0
                     or path.stat().st_size != artifact['size']
                     or file_digest(path) != artifact['sha256']):
+                return 'FAIL'
+        if 'camera_backend_loaded' in required:
+            audit = result['camera_backend_audit']
+            prefix, library = Path(audit['package_prefix']), Path(audit['library_path'])
+            if (result['engine'] != 'mujoco' or result['vision_camera_backend'] != 'snapshot'
+                    or audit['class_id'] != 'integrated_robot_camera/SnapshotCameraPlugin'
+                    or type(audit['native_pid']) is not int or audit['native_pid'] <= 0
+                    or not prefix.is_absolute() or not library.is_absolute()
+                    or not library.resolve().is_relative_to(prefix.resolve())
+                    or len(audit['library_sha256']) != 64
+                    or any(v not in '0123456789abcdef' for v in audit['library_sha256'])):
+                return 'FAIL'
+            # Historical verification uses the hashed observation, not a live PID
+            # or a possibly removed install prefix. Execution audits live /proc.
+            if not any(v['path'] == 'camera_backend.json' for v in result['artifacts']):
+                return 'FAIL'
+            if json.loads((root/'camera_backend.json').read_text()) != audit:
                 return 'FAIL'
         return 'PASS'
     except (KeyError, TypeError, ValueError, OSError, OverflowError):
