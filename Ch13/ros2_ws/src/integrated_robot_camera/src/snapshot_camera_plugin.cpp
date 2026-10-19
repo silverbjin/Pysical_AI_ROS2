@@ -36,11 +36,21 @@ bool SnapshotCameraPlugin::init(rclcpp::Node::SharedPtr node, const mjModel* mod
   mj_model_ = model;
   try {
     auto state = std::make_shared<SelectionState>();
+    const std::string prefix = "mujoco_plugins." + node_->get_sub_namespace() + ".";
+    if (!node_->has_parameter(prefix + "trace_enabled")) {
+      node_->declare_parameter(prefix + "trace_enabled", false);
+    }
+    if (!node_->has_parameter(prefix + "trace_run_id")) {
+      node_->declare_parameter(prefix + "trace_run_id", "");
+    }
+    trace_ = std::make_unique<CameraTrace>(node_,
+      node_->get_parameter(prefix + "trace_enabled").as_bool(),
+      node_->get_parameter(prefix + "trace_run_id").as_string());
     if (!register_cameras(state)) {
       close();
       return false;
     }
-    state->mailbox = std::make_shared<SnapshotMailbox>(model, cameras_.size());
+    state->mailbox = std::make_shared<SnapshotMailbox>(model, cameras_.size(), trace_->enabled());
     state->selected.reserve(cameras_.size());
     state->selected_polls.reserve(cameras_.size());
     state->stopped = false;
@@ -301,6 +311,7 @@ void SnapshotCameraPlugin::close()
     rendering_thread_.join();
   }
   cameras_.clear();
+  trace_.reset();
   node_.reset();
   mj_model_ = nullptr;
 }
@@ -384,14 +395,28 @@ void SnapshotCameraPlugin::update_cameras(const std::shared_ptr<SelectionState> 
 void SnapshotCameraPlugin::render_and_publish_camera(CameraData & camera, const rclcpp::Time & stamp,
   const SnapshotMailbox::RenderLease & lease, const std::shared_ptr<SelectionState> & state)
 {
+  const bool tracing = trace_->enabled();
+  std::array<uint64_t, native_trace_keys.size()> times{};
+  const auto mark = [&](size_t index) {
+    if (tracing) {times[index] = monotonic_nanoseconds();}
+  };
+  if (tracing) {
+    times[0] = lease.timing().submit_start_ns;
+    times[1] = lease.timing().submit_end_ns;
+    times[2] = lease.timing().acquire_ns;
+  }
   // Step 1: Render the scene and copy images to relevant camera data containers.
   // Render scene
+  mark(3);
   mjv_updateScene(mj_model_, const_cast<mjData *>(lease.data()), &mjv_opt_, NULL,
     &camera.mjv_cam, mjCAT_ALL, &mjv_scn_);
+  mark(4);
   mjr_render(camera.viewport, &mjv_scn_, &mjr_con_);
+  mark(5);
 
   // Copy image into relevant buffers
   mjr_readPixels(camera.image_buffer.data(), camera.depth_buffer.data(), camera.viewport, &mjr_con_);
+  mark(6);
 
   // Step 2: Adjust the images and copy depth data.
   // Fix non-linear depth buffer and flip it vertically (OpenGL's origin is the bottom left)
@@ -421,9 +446,33 @@ void SnapshotCameraPlugin::render_and_publish_camera(CameraData & camera, const 
   camera.depth_image.header.stamp = stamp;
   camera.camera_info.header.stamp = stamp;
 
+  bool complete = true;
+  mark(7);
   if (state->mailbox->is_current(lease.epoch())) {camera.image_pub->publish(camera.image);}
+  else {complete = false;}
+  mark(8);
+  mark(9);
   if (state->mailbox->is_current(lease.epoch())) {camera.depth_image_pub->publish(camera.depth_image);}
+  else {complete = false;}
+  mark(10);
+  mark(11);
   if (state->mailbox->is_current(lease.epoch())) {camera.camera_info_pub->publish(camera.camera_info);}
+  else {complete = false;}
+  mark(12);
+  if (tracing) {
+    // All allocations and ROS trace failures are isolated AFTER the original publications.
+    try {
+      NativeFrameTrace frame;
+      frame.source_frame = camera.frame_name;
+      frame.capture_ns = stamp.nanoseconds();
+      frame.local_epoch = lease.epoch();
+      frame.native_sequence = lease.sequence();
+      frame.ros_now_ns = node_->now().nanoseconds();
+      frame.outcome = complete ? "PUBLISHED" : "EPOCH_INVALIDATED";
+      for (size_t i = 0; i < times.size(); ++i) {frame.times_ns.emplace(native_trace_keys[i], times[i]);}
+      trace_->publish(frame);
+    } catch (...) {trace_->record_error();}
+  }
 }
 
 }  // namespace integrated_robot_camera

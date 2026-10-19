@@ -32,6 +32,7 @@
 
 #include "sensor_msgs/image_encodings.hpp"
 #include "integrated_robot_camera/snapshot_mailbox.hpp"
+#include "camera_trace.hpp"
 
 #include <dlfcn.h>
 
@@ -219,6 +220,7 @@ private:
 
   // Camera processing thread and objects for syncing
   std::thread rendering_thread_;
+  std::unique_ptr<CameraTrace> trace_;  // constructed before worker, destroyed after join
 
 };
 

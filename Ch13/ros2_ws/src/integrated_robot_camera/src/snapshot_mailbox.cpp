@@ -6,6 +6,7 @@
 #include <new>
 #include <stdexcept>
 #include <utility>
+#include <time.h>
 
 namespace integrated_robot_camera
 {
@@ -19,8 +20,15 @@ void validate_time(double time)
 }
 }  // namespace
 
-SnapshotMailbox::SnapshotMailbox(const mjModel * model, size_t camera_count)
-: model_(model), camera_count_(camera_count)
+uint64_t monotonic_nanoseconds() noexcept
+{
+  timespec now{};
+  if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) {return 0;}
+  return static_cast<uint64_t>(now.tv_sec) * 1000000000ULL + now.tv_nsec;
+}
+
+SnapshotMailbox::SnapshotMailbox(const mjModel * model, size_t camera_count, bool trace_enabled)
+: model_(model), camera_count_(camera_count), trace_enabled_(trace_enabled)
 {
   if (!model || camera_count > static_cast<size_t>(model->ncam)) {
     throw std::invalid_argument("invalid snapshot model or camera count");
@@ -58,6 +66,7 @@ bool SnapshotMailbox::submit(const mjModel * model, const mjData * data,
   const std::vector<size_t> & cameras, uint64_t observed_epoch,
   const std::vector<size_t> & retain_until_acquired)
 {
+  const auto submit_start = trace_enabled_ ? monotonic_nanoseconds() : 0;
   if (model != model_ || !data) {
     throw std::invalid_argument("snapshot model mismatch or null data");
   }
@@ -104,6 +113,7 @@ bool SnapshotMailbox::submit(const mjModel * model, const mjData * data,
         slot.cameras.push_back(id);
       }
     }
+    slot.timing = {submit_start, trace_enabled_ ? monotonic_nanoseconds() : 0, 0};
     pending_ = true;
   }
   ready_.notify_one();
@@ -125,6 +135,7 @@ std::optional<SnapshotMailbox::RenderLease> SnapshotMailbox::wait_take()
   std::swap(pending_index_, render_index_);
   pending_ = false;
   render_in_use_ = true;
+  slots_[render_index_].timing.acquire_ns = trace_enabled_ ? monotonic_nanoseconds() : 0;
   return RenderLease(this, &slots_[render_index_]);
 }
 

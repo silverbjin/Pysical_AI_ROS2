@@ -33,3 +33,7 @@ context/surface는 worker 소유, 공유 display 연결은 프로세스 수명�
 per-camera cleanup의 eglTerminate는 다른 사용자를 무효화할 수 있어 호출하지 않는다.
 egl_call_audit.hpp와 새 EGL 시험은 테스트 실행 파일의 실제 API 관측/실패 주입이며
 제품에 시험 전용 override나 가짜 렌더러를 추가하지 않는다.
+
+camera_trace.hpp/.cpp와 FrameTiming 계측은 Ch13 신규 작성 코드다.
+CLOCK_MONOTONIC metadata는 기존 두 slot에 붙이며 producer는 JSON/ROS/file 작업을 하지 않는다.
+선택 진단은 worker에서 BEST_EFFORT/VOLATILE depth32, 최대4096byte/20000attempt로 제한한다.
