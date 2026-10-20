@@ -44,7 +44,7 @@
 |---|---|---|
 | 원격 소스 구조·패키지 메타데이터·진입점 | **REVIEWED** | GitHub `main`의 실제 파일 읽기 |
 | 타이머/카운터/종료 제어 흐름 | **REVIEWED** | 소스 정적 추적; 실행 값 아님 |
-| `python3 -m compileall` | **NOT_RUN** | Python 구문 검증 미실시 |
+| `python3 -m compileall` | **PASS (offline)** | 원격 blob SHA 동일한 `battery_node.py`를 Python 3.13.5에서 컴파일 검증; ROS 2와 별개 |
 | `colcon build --symlink-install` | **NOT_RUN** | ROS 2 Jazzy·colcon 없음 |
 | `ros2 run`, `ros2 node list`, 로그 주기 | **NOT_RUN** | ROS 그래프 구동 환경 없음 |
 | 모의 배터리 10회 감소·exit 0 | **NOT_RUN** | 실제 실행과 종료 코드 확인 필요 |
@@ -70,3 +70,9 @@ echo "exit_code=$?"
 ```
 
 **ACCEPT:** 구문 검사 exit 0, 세 패키지 빌드 exit 0, 모든 실행파일 등록, 1Hz 노드 카운트/Heartbeat 3회 이상, 가상 배터리 잔량 90→0% 열 번 출력 후 **자체 exit 0**, 종료 후 `/battery_monitor` 소멸. 터미널 출력·ROS 버전·Commit SHA를 Evidence로 남겨 판정해야 한다. 이 실행 검증 전에는 **수정 완료 ≠ 실행 검증 완료**다.
+
+## 6. 별도 오프라인 검증 (2026-10-20)
+
+수정된 `battery_node.py`의 GitHub blob SHA는 `6085cfd347235dd7af20de4b8fc9d3f58fb05a54`. 별도 Debian 13/Python 3.13.5 실행 공간에 복사한 동일 파일의 `git hash-object` 결과가 **정확히 일치**하는 것을 확인한 뒤 `python3 -m compileall -q` 실행에 성공했다(`PY_COMPILE_PASS`).
+
+ROS 의존성을 대체하는 임시 fake `rclpy.Node`/timer/logger 하네스에서 `timer_callback()`을 10회 호출해 100→0, `finished=True`, timer cancel, 로그 등급 **정상 3/주의 4/위험 3회**를 검사했다(`BATTERY_CALLBACK_PASS`). 이는 **실제 ROS 2 spin, 1Hz 타이밍, DDS, 종료 코드 검증이 아니며**, 실습 가이드의 Jazzy Acceptance를 대체하지 않는다. 임시 모의 하네스는 GitHub 저장소에 보존되지 않았으므로 독립 재실행을 요구하는 정식 CI 증거로 간주하지 않는다.
