@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_snapshot_reports_measured_body_velocity_not_synthetic_zero ________
+
+    def test_snapshot_reports_measured_body_velocity_not_synthetic_zero():
+        import mujoco
+        with MujocoRuntime() as r:
+            j=mujoco.mj_name2id(r._model,mujoco.mjtObj.mjOBJ_JOINT,'base_free')
+            start=r._model.jnt_dofadr[j]
+            r._data.qvel[start:start+6]=[.1,.2,.3,.01,.02,.03]
+            mujoco.mj_forward(r._model,r._data)
+            s=r.snapshot()
+>           np.testing.assert_allclose(s.base_linear_velocity,[.1,.2,.3],atol=1e-8)
+                                       ^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'PhysicsSnapshot' object has no attribute 'base_linear_velocity'
+
+Ch13/tests/test_mujoco_runtime.py:20: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_mujoco_runtime.py::test_snapshot_reports_measured_body_velocity_not_synthetic_zero
+1 failed, 4 deselected in 0.48s

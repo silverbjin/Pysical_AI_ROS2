@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_reset_has_no_deep_initial_penetration __________________
+
+    def test_reset_has_no_deep_initial_penetration():
+        with MujocoRuntime() as r:
+            # A narrow engine characterization check: initial impulses invalidate fixture alignment.
+>           assert all(c.dist > -.001 for c in r._data.contact)
+E           assert False
+E            +  where False = all(<generator object test_reset_has_no_deep_initial_penetration.<locals>.<genexpr> at 0x721e8619bb90>)
+
+Ch13/tests/test_mujoco_runtime.py:10: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_mujoco_runtime.py::test_reset_has_no_deep_initial_penetration
+1 failed, 3 deselected in 0.48s
