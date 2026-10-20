@@ -1,86 +1,55 @@
-# SECTION 1.7 — Twist 발행과 ROS 2 의존성 코드 리뷰 보고서
+# SECTION 1.7 — package.xml, setup.py, rosdep 의존성 관리 리뷰
 
-- 작성: 2026-10-20 KST / 저장소 `silverbjin/Pysical_AI_ROS2`
-- 기준 `main`: `f5aed1d250563efc298e717559497db3b4f205c7`
-- 작업 브랜치: `feat/ch01-section-1-7`
-- 상태: **STATIC_REVIEW_COMPLETE / FIXES_APPLIED / ROS_RUNTIME_NOT_VERIFIED**
-- 분류 근거: `Ch01/ref/my_first_package/cmd_publisher_node.py`의 “1.7절 실습” 및 “1.7절 의존성 관리” 주석.
+- 작성: 2026-10-20 KST
+- 기준 main: `f5aed1d250563efc298e717559497db3b4f205c7`
+- 브랜치: `feat/ch01-section-1-7`
+- 원고 범위: 1.7.1 `package.xml` → 1.7.2 `rosdep` → 1.7.3 `setup.py`, `data_files`, `console_scripts`.
+- 상태: **MANUSCRIPT_ALIGNED / STATIC_REVIEWED / ROS_RUNTIME_NOT_RUN**.
 
-## 1. 소스·기능 계약
+## 1. 실습 대상 파일 매핑
 
-| 대상 | 원래 코드 | 검토 결과 |
+| 원고 항목 | 저장소의 실제 파일 | 확인 내용 |
 |---|---|---|
-| `Ch01/ref/my_first_package/cmd_publisher_node.py` | `rclpy.Node`, `geometry_msgs.msg.Twist`, `create_publisher(Twist,'cmd_vel',10)`, 0.5초 타이머 | 2Hz Twist 발행 구조는 적합 |
-| `Ch01/ref/setup.py` | `cmd_publisher = my_first_package.cmd_publisher_node:main` | 진입점과 `main()` 정의가 일치 |
-| `Ch01/ref/package.xml` | `rclpy`, `geometry_msgs`, `sensor_msgs` | 실제 import 의존성 `rclpy`·`geometry_msgs`는 선언됨. `sensor_msgs`는 현재 미사용 |
-| `Ch01/ref/setup.cfg` | **부재** | `ros2 run` 표준 실행파일 설치 경로 불확실 → 파일 추가 |
-| `cmd_vel` 토픽 | 상대 이름, 네임스페이스 없으면 `/cmd_vel` | 실제 로봇의 속도 명령과 충돌 가능. 실습에서는 이름 변경 권고 |
+| ROS 의존성 명세 | `Ch01/robot_ws/src/my_robot_controller/package.xml` | `ament_python`, `rclpy`, `std_msgs`, 테스트 의존성 |
+| ament_python 설치 | `Ch01/robot_ws/src/my_robot_controller/setup.py` | 패키지 등록 resource, `package.xml` 설치, `test_node` entry point |
+| 스크립트 경로 | `Ch01/robot_ws/src/my_robot_controller/setup.cfg` | `lib/my_robot_controller` 설치 위치 |
+| 실제 Python import | `Ch01/robot_ws/src/my_robot_controller/my_robot_controller/simple_controller.py` | `rclpy`와 `Node` import, `std_msgs` 직접 미사용 |
+| 보조 패키지 | `Ch01/ref/{package.xml,setup.py,setup.cfg}` | `my_first_package`의 `rclpy`·`geometry_msgs` 의존성과 executable (`simple_node`, `cmd_publisher`) |
+| 원고의 가상 `my_ai_robot_pkg` | **저장소에 없음** | OpenCV/NumPy/launch/config 설명을 위한 예제 스니펫일 뿐 실제 패키지가 아님 |
 
-`Twist`는 3차원 선속도·3차원 각속도 벡터이며 이 예제는 `linear.x`와 `angular.z`만 사용한다. 이 노드는 속도 명령의 **송신**까지만 담당한다. 실제 이동, 로봇 구동기, 피드백, 폐루프 제어 및 안전 정지를 증명하지 않는다.
+## 2. 문제 발견 및 변경/권고
 
-## 2. 결함 분석 및 수정
-
-| ID | 심각도 | 근거/영향 | 처리 |
+| ID | 중요도 | 관찰 | 해결 및 판정 |
 |---|---|---|---|
-| 17-01 | High | 기존 코드가 기본 `linear.x=0.2m/s`, `angular.z=0.5rad/s`를 무기한 발행. 실물 로봇이 `/cmd_vel`을 구독하면 의도치 않은 구동 위험 | **수정:** 기본 0/0, 10회 발행 후 정지·자체 종료; 실제 이동 시연은 명시적인 ROS 파라미터로만 허용 |
-| 17-02 | High | 기존 코드 Ctrl+C에서 즉시 노드 파괴하며 마지막 정지 `Twist()`를 발행하지 않음 | **개선:** 횟수 완료 및 정상 종료 시 정지 명령 발행; **DDS 수신/물리 정지를 보장하지 않음** |
-| 17-03 | High | `ref/setup.cfg` 미존재, 기본 진입점 설치 경로가 `ros2 run` 기대 경로와 다를 수 있음 | **수정:** `[develop]/[install]`의 `lib/my_first_package` 경로 추가 (1.6 브랜치와 동일한 내용) |
-| 17-04 | Medium | 송신 횟수에 제한이 없고 외부 파라미터로 속도·횟수를 조정할 수 없음 | **수정:** `linear_x`, `angular_z`, `publish_count` 추가; 비유한 속도/0 이하 횟수 거부 |
-| 17-05 | Medium | 기본 `cmd_vel`이 모의·실제 로봇의 제어 토픽과 충돌 가능 | **가이드:** `-r cmd_vel:=/ch01_demo/cmd_vel` 로 격리하여 관찰 |
-| 17-06 | Low | `sensor_msgs` 미사용 의존성 및 `setup.py` placeholder maintainer·라이선스 | **OPEN:** 불필요 의존성 정리, 저작권자 메타데이터 확정 권고 |
+| 17-01 | High | 이전 리뷰에서 Twist 발행을 **1.7절 중심 실습**으로 설정했으나 원고는 패키징·의존성 관리 절 | **수정:** `my_robot_controller` 기준 `rosdep`·`package.xml`·`setup.py` 실습으로 전면 교체 |
+| 17-02 | Medium | 원고의 `my_ai_robot_pkg`와 OpenCV·NumPy·launch·config 구조가 실제 Ch01 구현처럼 오해될 수 있음 | **문서화:** 교육용 스니펫으로 구분, 임의 디렉터리 생성·빌드 PASS 주장 금지 |
+| 17-03 | Medium | 원고의 `rosdep install --from-paths src --ignore-src -r -y`는 의존성 전체를 대상으로 하므로 대규모 `examples` 트리에서 불필요한 설치 증가 | **가이드:** 세 개 핵심 패키지와 별도 workspace 기준으로 실행 |
+| 17-04 | Medium | `std_msgs`가 manifest에 선언되었으나 `SimpleController`는 현재 import하지 않음 | **OPEN:** 다음 절에서 사용할 의존성인지 교육 목적 설명·정리 |
+| 17-05 | Medium | `my_robot_controller`의 setup.py·package.xml에 설명·라이선스 TODO가 있음 | **OPEN:** 저작권자의 라이선스 판단 뒤 manifest 확정. 임의 Apache 표기 금지 |
+| 17-06 | High | `Ch01/ref`에 `setup.cfg`가 없어 별도 예제의 `ros2 run` 설치 위치 불일치 가능 | **이미 보완됨:** 이 브랜치에 `Ch01/ref/setup.cfg` 추가. 주교재 `my_robot_controller`는 원래 갖춤 |
+| 17-07 | Medium | 원고의 `glob('launch/*.launch.py')`/`glob('config/*.yaml')`는 `my_ai_robot_pkg` 가상 예시이며 실제 `my_robot_controller`에는 launch/config가 없음 | **문서화:** 없는 자산의 설치 테스트는 할 수 없음. 실제 디렉터리 생성 후 data_files에 연결하고 테스트해야 함 |
+| 17-08 | Medium | `setup.py`의 `install_requires=['setuptools']`만으로 ROS 2의 apt/rclpy 종속성이 해결된다고 생각할 위험 | **교정:** ROS 의존성은 `package.xml`과 rosdep, Python 설치 메타데이터는 setup.py가 맡음 |
+| 17-09 | Low | 원고에서 `--ignore-src`·`--from-paths` 옵션은 맞지만 최초 rosdep 초기화 설명 부족 | **가이드:** `rosdep update`/초기화 실패 진단 추가 |
 
-**중요한 의도적 동작 변경:** 원본의 무한·비영 속도 송신에서 **기본 정지 + 2Hz × 10회 + 정지 송신 + 프로세스 종료**로 바뀌었다. 교재의 수치 예시 `0.2m/s, 0.5rad/s`는 `--ros-args -p linear_x:=0.2 -p angular_z:=0.5`로 재현한다.
+## 3. 이전 브랜치의 비원고 코드 변경 정리
 
-정지 `Twist()`를 송신하더라도, DDS 연결 상태·수신 주기·컨트롤러 타임아웃·로봇 구동기 구현에 따라 정지가 지연되거나 누락될 수 있다. **실물 로봇에서 하드웨어 안전 정지/워치독을 대체하지 않는다.** 실습의 권장 경로는 오직 모의 토픽 에코 확인이다.
+기존 1.7 브랜치에 포함되었던 `cmd_publisher_node.py`의 유한 발행/정지 동작 수정은 **원고 1.7의 필수 구현이 아니므로 원래 main 동작으로 복원**했다. 해당 Twist 예제는 책의 현재 1.7에서 직접 실습하지 않는다. 실제 로봇 구동에 연결할 때는 원본의 무한 비영 속도 발행을 금지하고, 격리된 토픽에서만 시험하도록 별도 안전 개선을 계획해야 한다. **이번 PR에는 변경된 안전 동작이 포함되어 있다고 주장하지 않는다.**
 
-## 3. 변경 파일
+1.7 브랜치에 남긴 원본 코드 외 변경은 `Ch01/ref/setup.cfg`와 **두 문서**이며, `main`이나 1.6 주교재 코드에는 영향을 주지 않는다.
 
-- `Ch01/ref/my_first_package/cmd_publisher_node.py`: ROS 파라미터, 유한 값 검증, 유한 발행, best-effort zero Twist, 종료 정리
-- `Ch01/ref/setup.cfg`: ROS 2 entry point 설치 위치 (1.6 브랜치에도 동일한 파일이 추가됨)
-- `Ch01/docs/SECTION_1_7_REPORT_KO.md` 및 `LAB_1_7_GUIDE_KO.md` 추가
+## 4. 검증 상태
 
-다른 장과의 인터페이스 공유, 기존 ROS 프로젝트의 `/cmd_vel` 계약 변경은 수행하지 않았다. 각 절 브랜치는 동일한 `main`에서 독립적으로 시작하므로, 1.6 먼저 병합한 후 1.7 PR을 검토하면 된다.
+| 검사 | 판정 |
+|---|---|
+| `package.xml`와 `setup.py`의 패키지 이름·실행파일 교차 검토 | **REVIEWED** |
+| `setup.cfg` 및 `resource` 등록 경로 확인 | **REVIEWED** |
+| `rosdep` 의존성 실질 설치/해결 | **NOT_RUN** |
+| `colcon build --symlink-install` | **NOT_RUN** |
+| `ros2 run my_robot_controller test_node` 및 `ros2 pkg executables` | **NOT_RUN** |
+| OpenCV·NumPy·launch/config 가상 패키지 설치 | **OUT_OF_SCOPE / NOT_IMPLEMENTED** |
 
-## 4. 검증 현황 (Ch12 증거 구분 방식)
+리뷰 환경에 ROS 2 및 colcon이 없으므로 PASS를 추측하지 않았다. 공식 Jazzy 문서 [패키지 생성](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Creating-Your-First-ROS2-Package.html)의 ament_python 기본 패키지 구조와 비교했다.
 
-| 검증 | 상태 | 근거 |
-|---|---|---|
-| `Twist` import·ROS 패키지 의존성·entry point 정적 추적 | **REVIEWED** | 원격 소스·메타데이터 읽기 |
-| 2Hz timer, 기본 0/0, 카운트/정지 호출 경로 | **REVIEWED** | 수정 코드 정적 리뷰 |
-| `compileall` | **PASS (offline)** | 원격 blob SHA와 일치하는 수정 파일을 Python 3.13.5에서 구문 컴파일 |
-| Jazzy `colcon build` | **NOT_RUN** | 현재 환경에는 `ros2` 및 `colcon` 없음 |
-| 실제 DDS `/ch01_demo/cmd_vel` 발행/수신 | **NOT_RUN** | ROS 그래프 실행 환경 없음 |
-| 카운트 10회·마지막 zero Twist·자동 exit 0 | **NOT_RUN** | ROS2 런타임 검증 필요 |
-| 하드웨어 안전성 및 워치독 | **OUT_OF_SCOPE** | 센서/모터/안전컨트롤러 부재 |
+## 5. Acceptance
 
-호스트는 Debian 13 / Python 3.13으로 ROS 2 Jazzy 실습 조건과 다르다. **실제 테스트 PASS를 보고하지 않는다**. Ch12 테스트 수치와 별개로 Ch01에 대한 신규 실행 증거가 필요하다.
-
-## 5. 재현 및 최종 ACCEPT
-
-[LAB_1_7_GUIDE_KO.md](LAB_1_7_GUIDE_KO.md)에 따라 작업 브랜치를 체크아웃하고 독립 워크스페이스를 생성한다.
-
-```bash
-source /opt/ros/jazzy/setup.bash
-cd ~/ch01_lab_17
-python3 -m compileall -q src/my_first_package
-colcon build --symlink-install --packages-select my_first_package
-source install/setup.bash
-# 터미널 A: ros2 topic echo /ch01_demo/cmd_vel
-ros2 run my_first_package cmd_publisher --ros-args \
-  -r cmd_vel:=/ch01_demo/cmd_vel \
-  -p linear_x:=0.2 -p angular_z:=0.5 -p publish_count:=10
-echo "exit_code=$?"
-```
-
-**ACCEPT:** 패키지 빌드 성공, `ros2 pkg executables`의 `cmd_publisher` 노출, remap된 토픽의 `geometry_msgs/msg/Twist` 확인, 약 0.5초 주기로 비영 `linear.x`와 `angular.z` 10회·종료시 zero 명령 관찰 및 자체 종료 코드 0, 기본 실행에서는 비영 속도 명령이 전혀 없어야 한다. ROS 그래프 타이밍상 종료 zero 수신 확인이 불안정하면 **미통과로 기록**하고 추후 확인한다. 로그와 로봇 미연결 상태를 증거로 남긴다.
-
-## 6. 별도 오프라인 검증 (2026-10-20)
-
-원격 `cmd_publisher_node.py`의 Git blob SHA는 `b16e8b5e745affc460da47d8929c0220c00f6366`. 별도 Debian 13/Python 3.13.5 공간의 검사 파일에 대해 `git hash-object`가 **동일한 SHA**를 반환했고 `python3 -m compileall -q`가 성공했다(`PY_COMPILE_PASS`).
-
-ROS 의존성을 가짜 `Node`/`Publisher`/`Twist` 객체로 대체한 **오프라인 콜백 테스트** 결과:
-- `TWIST_DEFAULT_PASS`: 기본 속도 0/0, 10번 발행 후 정지 `Twist` 추가, `finished`·timer 취소.
-- `TWIST_OVERRIDE_PASS`: 파라미터 0.2m/s·0.5rad/s·횟수 3 → 비영 메시지 3회와 마지막 zero 메시지 1회.
-- `TWIST_PARAM_VALIDATION_PASS`: NaN 속도 및 0회 카운트에 대해 `ValueError` 확인.
-
-하네스는 GitHub에 보존하지 않은 일시 검증 코드이므로 독립 CI 증거는 아니다. fake 객체는 ROS 2의 파라미터 서비스·Executor·DDS 전송을 모사하지 않으며, 실제 `ros2 run` 성공·2Hz 실시간 전송·종료 zero 수신을 증명하지 않는다. 실습 Acceptance의 ROS 항목은 여전히 **NOT_RUN**이다.
+[LAB_1_7_GUIDE_KO.md](LAB_1_7_GUIDE_KO.md)를 Ubuntu 24.04/Jazzy에서 실행한다. **ACCEPT:** rosdep 종속성 해결, `my_robot_controller` 선택 빌드, `test_node` 등록·실행, `package.xml`의 `rclpy` 의존성과 setup.py entry point 설명, 패키지 공유 파일 경로 탐색. **NOT_RUN**은 실제 로그 확보 전 유지한다. PR은 사용자가 독립적으로 생성한다.
