@@ -1,66 +1,76 @@
 #!/usr/bin/env python3
+"""카운트다운 액션 클라이언트: 결과/거절/서버 부재에서 모두 종료한다."""
 import rclpy
-from rclpy.node import Node
 from rclpy.action import ActionClient
+from rclpy.node import Node
 from my_robot_interfaces.action import CountUntil
+
 
 class CountUntilClient(Node):
     def __init__(self):
         super().__init__('count_until_client')
         self._action_client = ActionClient(self, CountUntil, 'count_until')
+        self.finished = False
+        self.success = False
 
     def send_goal(self, target, period):
-        goal_msg = CountUntil.Goal()
-        goal_msg.target_number = target
-        goal_msg.period = period
-
-        self.get_logger().info('Waiting for action server...')
-        self._action_client.wait_for_server()
-
-        # 1. 비동기로 목표 전송
+        goal_msg = CountUntil.Goal(target_number=target, period=period)
+        self.get_logger().info('Waiting for action server (up to 5 s)...')
+        if not self._action_client.wait_for_server(timeout_sec=5.0):
+            self.get_logger().error('Action server unavailable')
+            self.finished = True
+            return
         self.get_logger().info('Sending goal...')
-        self._send_goal_future = self._action_client.send_goal_async(
-            goal_msg, 
-            feedback_callback=self.feedback_callback
-        )
-        
-        # 2. 서버가 목표를 수락했는지 확인하는 콜백 등록
-        self._send_goal_future.add_done_callback(self.goal_response_callback)
+        future = self._action_client.send_goal_async(
+            goal_msg, feedback_callback=self.feedback_callback)
+        future.add_done_callback(self.goal_response_callback)
 
     def goal_response_callback(self, future):
-        """서버의 수락/거절 응답 처리"""
-        goal_handle = future.result()
-        
-        if not goal_handle.accepted:
-            self.get_logger().info('Goal rejected :(')
+        try:
+            goal_handle = future.result()
+        except Exception as exc:
+            self.get_logger().error(f'Goal request failed: {exc}')
+            self.finished = True
             return
-
+        if not goal_handle.accepted:
+            self.get_logger().warn('Goal rejected')
+            self.finished = True
+            return
         self.get_logger().info('Goal accepted! Waiting for result...')
-        
-        # 3. 최종 결과를 기다리는 콜백 등록
-        self._get_result_future = goal_handle.get_result_async()
-        self._get_result_future.add_done_callback(self.get_result_callback)
+        future = goal_handle.get_result_async()
+        future.add_done_callback(self.get_result_callback)
 
     def feedback_callback(self, feedback_msg):
-        """작업 중간에 오는 피드백 처리"""
-        number = feedback_msg.feedback.current_number
-        self.get_logger().info(f'>>> Feedback received: {number}')
+        self.get_logger().info(
+            f'>>> Feedback received: {feedback_msg.feedback.current_number}')
 
     def get_result_callback(self, future):
-        """최종 결과 처리"""
-        result = future.result().result
-        self.get_logger().info(f'Result received: {result.reached_number}')
-        # 작업이 끝났으므로 노드 종료 (선택사항)
-        rclpy.shutdown()
+        try:
+            wrapped = future.result()
+            self.get_logger().info(
+                f'Result received: {wrapped.result.reached_number}, status={wrapped.status}')
+            from action_msgs.msg import GoalStatus
+            self.success = wrapped.status == GoalStatus.STATUS_SUCCEEDED
+        except Exception as exc:
+            self.get_logger().error(f'Failed to receive result: {exc}')
+        finally:
+            self.finished = True
+
 
 def main(args=None):
     rclpy.init(args=args)
     node = CountUntilClient()
-    
-    # 목표: 5까지 0.5초 간격으로 세라
-    node.send_goal(5, 0.5)
-    
-    rclpy.spin(node)
+    try:
+        node.send_goal(5, 0.5)
+        while rclpy.ok() and not node.finished:
+            rclpy.spin_once(node, timeout_sec=0.1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
