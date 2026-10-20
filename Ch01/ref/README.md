@@ -4,6 +4,9 @@ Ubuntu 24.04 / ROS 2 Jazzy / Python 3.12 / colcon 기준. 이 `ref/` 디렉터�
 
 ```bash
 git clone https://github.com/silverbjin/Pysical_AI_ROS2.git ~/Pysical_AI_ROS2
+cd ~/Pysical_AI_ROS2
+git fetch origin
+git switch --track origin/feat/ch01-section-1-6
 source /opt/ros/jazzy/setup.bash
 mkdir -p ~/ch01_ref_ws/src
 cp -a ~/Pysical_AI_ROS2/Ch01/ref ~/ch01_ref_ws/src/my_first_package
