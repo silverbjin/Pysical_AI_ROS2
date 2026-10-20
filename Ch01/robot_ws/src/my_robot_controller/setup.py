@@ -14,8 +14,8 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='jinho',
-    maintainer_email='jinho@todo.todo',
-    description='TODO: Package description',
+    maintainer_email='silverbjin@gmail.com',
+    description='ROS 2 Jazzy 입문용 타이머 및 Heartbeat 로깅 노드',
     license='TODO: License declaration',
     extras_require={
         'test': [
