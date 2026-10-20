@@ -42,19 +42,25 @@
 
 ## 4. PR 및 검증 계획
 
-기존 사용자 정책에 맞게 자동 PR은 생성하지 않았다. `1.1 → 1.2 → 1.3 → 1.4 → 1.5 → 1.6 → 1.7` 순서로 변경 범위를 검토한다. 1.6과 1.7에서 공통 `Ch01/ref/setup.cfg`가 추가된 이력이 있어 PR 간 파일 중복을 확인한다. `Ch01/README.md`는 1.6 브랜치에 포함되어 앞선 절들의 병합 전에는 모든 상대 링크가 동작하지 않을 수 있다.
+기존 원고·실습 문서 PR #22~#28은 이번 작업 중 `main`에 병합된 것을 확인했다(`94264bee4b53ce4c9676011b98e72368b1e40690`). 이번 **새 코드 변경은 아직 main에 병합하지 않았다**. 이를 위해 해당 main을 부모로 한 통합 브랜치 `fix/ch01-static-review-validated`를 Push했으며, 기존 1.1~1.7절 브랜치도 유지한다. 충돌 없는 하나의 신규 코드 검토 PR을 사용자가 직접 만들 수 있다. **자동 PR은 생성하지 않았다.**
 
 Jazzy 통합 단계에서 다음을 수행한다.
 
 ```bash
+# 먼저 저장소 루트에서 정적 회귀 검증
 source /opt/ros/jazzy/setup.bash
 python3 -m unittest discover -s Ch01/tests -p 'test_*.py' -v
 python3 -m compileall -q Ch01/robot_ws/src/my_robot_controller
-colcon build --symlink-install --base-paths Ch01/robot_ws/src/my_robot_controller
-# 또는 절별 실습 전용 워크스페이스에 패키지를 복사하여 빌드
+
+# 빌드 산출물이 저장소 루트에 생기지 않도록 독립 워크스페이스 사용
+mkdir -p "$HOME/ch01_verify_ws/src"
+cp -a Ch01/robot_ws/src/my_robot_controller "$HOME/ch01_verify_ws/src/"
+cd "$HOME/ch01_verify_ws"
+colcon build --symlink-install --packages-select my_robot_controller
+source install/setup.bash
 ros2 run my_robot_controller test_node
 ```
 
-※ 마지막 명령은 해당 패키지를 빌드한 `install/setup.bash`를 소싱한 셸에서만 수행한다. `colcon build`는 패키지를 복사한 전용 워크스페이스 루트에서 실행하는 편이 안전하다. 실제 ROS 환경에서 명령 종료 코드와 로그를 확인하기 전까지 실행 Acceptance는 **BLOCKED/NOT_RUN**이다.
+※ 실제 Jazzy 24.04 환경에서 실행할 때만 수행한다. 기존 `$HOME/ch01_verify_ws`가 있다면 새 실습 경로를 사용하고, 원본을 덮어쓰지 않는다. 실제 ROS 환경에서 명령 종료 코드와 로그를 확인하기 전까지 실행 Acceptance는 **BLOCKED/NOT_RUN**이다.
 
 **열린 결정 사항:** 주교재 `my_robot_controller`의 `license`가 여전히 TODO이다. 소유자의 라이선스 확정 없이는 임의로 라이선스를 지정하지 않는다. 보조 `Ch01/ref`의 무제한 비영 `cmd_vel` 발행 코드는 실제 로봇과 연결해 실행하지 않는다.
