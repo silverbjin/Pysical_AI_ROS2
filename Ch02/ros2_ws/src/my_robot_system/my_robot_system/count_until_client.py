@@ -37,8 +37,12 @@ class CountUntilClient(Node):
             self.finished = True
             return
         self.get_logger().info('Goal accepted! Waiting for result...')
-        future = goal_handle.get_result_async()
-        future.add_done_callback(self.get_result_callback)
+        try:
+            future = goal_handle.get_result_async()
+            future.add_done_callback(self.get_result_callback)
+        except Exception as exc:
+            self.get_logger().error(f'Failed to request result: {exc}')
+            self.finished = True
 
     def feedback_callback(self, feedback_msg):
         self.get_logger().info(
@@ -65,12 +69,14 @@ def main(args=None):
         while rclpy.ok() and not node.finished:
             rclpy.spin_once(node, timeout_sec=0.1)
     except KeyboardInterrupt:
-        pass
+        return 130
     finally:
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
+    # 서비스 부재·목표 거절·ABORTED를 성공 종료로 보고하지 않는다.
+    return 0 if node.success else 1
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())
