@@ -1,19 +1,17 @@
-# ROS 2 Study Companion - Part 1
+# Ch01 ROS 2 ê¸°ì´ˆ íŒ¨í‚¤ì§€: my_first_package
 
-ÀÌ ÀúÀå¼Ò´Â **"ROS 2¿Í AI·Î ¹è¿ì´Â ·Îº¿ °øÇĞ ½ÇÀü °¡ÀÌµå"** 1ÀåÀÇ ½Ç½À ÄÚµå¸¦ ´ã°í ÀÖ½À´Ï´Ù. 
-Ubuntu 24.04¿Í ROS 2 Jazzy È¯°æ¿¡¼­ ½Ã¹Ä·¹ÀÌ¼Ç ±â¹İ ÇÁ·ÎÁ§Æ®¸¦ ¼öÇàÇÏ±â À§ÇÑ ±âÃÊ ÆĞÅ°ÁöÀÔ´Ï´Ù.
+Ubuntu 24.04 / ROS 2 Jazzy / Python 3.12 / colcon ê¸°ì¤€. ì´ `ref/` ë””ë ‰í„°ë¦¬ ìì²´ê°€ `ament_python` íŒ¨í‚¤ì§€ ë£¨íŠ¸ë‹¤. ì €ì¥ì†Œ ì „ì²´ë¥¼ ì›Œí¬ìŠ¤í˜ì´ìŠ¤ `src/`ì— ë„£ì§€ ë§ê³  `ref/`ë§Œ íŒ¨í‚¤ì§€ëª…ìœ¼ë¡œ ë³µì‚¬í•œë‹¤.
 
-## ? È¯°æ ¿ä±¸»çÇ×
-- **OS:** Ubuntu 24.04 LTS (Noble Numbat)
-- **ROS 2:** Jazzy Jalisco
-- **Language:** Python 3.12+
-- **Build System:** colcon
+```bash
+git clone https://github.com/silverbjin/Pysical_AI_ROS2.git ~/Pysical_AI_ROS2
+source /opt/ros/jazzy/setup.bash
+mkdir -p ~/ch01_ref_ws/src
+cp -a ~/Pysical_AI_ROS2/Ch01/ref ~/ch01_ref_ws/src/my_first_package
+cd ~/ch01_ref_ws
+colcon build --symlink-install --packages-select my_first_package
+source install/setup.bash
+ros2 pkg executables my_first_package
+ros2 run my_first_package simple_node
+```
 
-## ? ¼³Ä¡ ¹× ºôµå ¹æ¹ı
-
-1. **¿öÅ©½ºÆäÀÌ½º »ı¼º ¹× ¼Ò½º ´Ù¿î·Îµå**
-   ```bash
-   mkdir -p ~/ros2_ws/src
-   cd ~/ros2_ws/src
-   # ÀÌ ÀúÀå¼Ò¸¦ clone ÇÏ°Å³ª ÆĞÅ°Áö Æú´õ¸¦ º¹»çÇÕ´Ï´Ù.
-   git clone <your-repository-url>
+`simple_node`ëŠ” [1.6 ì‹¤ìŠµ](../docs/LAB_1_6_GUIDE_KO.md), `cmd_publisher`ëŠ” [1.7 ì‹¤ìŠµ](../docs/LAB_1_7_GUIDE_KO.md)ì„ ë”°ë¥¸ë‹¤. ì›ë³¸ READMEì˜ ë¯¸ì™„ì„± ì €ì¥ì†Œ URL ë° ëª…ë ¹ì„ ìˆ˜ì •í–ˆìœ¼ë©° `setup.cfg`ì— ROS 2 ì‹¤í–‰íŒŒì¼ ì„¤ì¹˜ ê²½ë¡œë¥¼ ì¶”ê°€í–ˆë‹¤. ë‘ ì‹¤ìŠµì€ ì‹¤ì œ Jazzy í™˜ê²½ì—ì„œ ë³„ë„ ê²€ì¦ì´ í•„ìš”í•˜ë‹¤.
