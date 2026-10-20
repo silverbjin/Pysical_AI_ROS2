@@ -1,14 +1,19 @@
 # 13.4 변경·검증 보고서
 
-> 2026-10-20 최종 상태: 사용자 선택에 따라 **현재 실험 브랜치와 증거만 보존**한다.
-> snapshot 렌더 worker의 `glfwInit/CreateWindow/DestroyWindow` 호출은 설치된 GLFW의
-> main-thread-only 계약을 위반한다(P1/Important, 미해결). GL 시험·기하 측정의 일부 PASS는
-> 이 API 계약 준수나 배포 안전성을 입증하지 않는다. EGL 변경·추가 실측은 진행하지 않았다.
-> 전체 인수 FAIL이며 snapshot 사용을 권장하지 않는다. 아래 명령은 역사적 재현 절차이지
-> 인수 완료 권고가 아니다. main 병합과 13.5 재개는 보류한다.
-> [최종 보존 판정·근거](../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md)
+> 2026-10-21 갱신: 승인된 EGL 전용 카메라와 촬영별 종단 계측을 구현·실측했다.
+> worker의 GLFW 호출 결함은 제거했지만 **전체13.4 인수는 FAIL**이다.
+> 실제13.4 시험20회는12 PASS/8 FAIL이며13.3 회귀는 MuJoCo PASS/Gazebo FAIL이다.
+> 연속 추적·취소 완료·일부 정상 종료 미달을 유지한다. snapshot은 명시적 실험 옵션이며
+> upstream 기본값·300ms·팔5Hz는 불변이다. main 병합·13.5 재개·배포 준비를 선언하지 않는다.
+> [새 결과·원인·한계](SECTION_13_4_EGL_TRACE_RESULTS_KO.md),
+> [이전 보존 판정(역사)](../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md).
 
 ## 2026-10-19 후속 진단 상태
+
+최신 승인 수정/실측은 [EGL·종단 계측 결과](SECTION_13_4_EGL_TRACE_RESULTS_KO.md)다.
+변경 체크포인트는194b730(EGL),8788fb6(native 계측),2ff7d56(Python 계측),
+09b0574(인자/분석/증거),9f182b0(22회 원본 보존)이다. 아래 이전 결과는 덮어쓰지 않는다.
+이번 수정에서 Ch05~Ch12·고정 외부 c261f55·driver는 변경하지 않았다.
 
 아래 기존 일괄 인수 기록은 역사적 결과로 보존한다. 최신 후속 진단은
 `SECTION_13_4_DEBUG_KO.md`와 `evidence/section_13_4/debug-20261018`에 있다.

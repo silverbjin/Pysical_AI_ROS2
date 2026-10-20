@@ -101,3 +101,16 @@ Ch13 수정이며, mailbox/probe/회귀 테스트는 새로 작성했다. underl
 snapshot 비전 경로에만 전달한다. 별도 class ID를 인식하지 못하는 외부 legacy 자동 등록을
 끄기 위한 것으로 외부 소스를 바꾸지 않는다. 기존 upstream/vision=false 경로는 유지한다.
 Ch05–Ch12 소스를 추가로 복사하거나 수정하지 않았다.
+
+## 13.4 EGL·종단 계측 갱신 (2026-10-21)
+
+기준은 승인 계획 시작0ff4063f75e2f551aee09349e7fe9454792beea2이며,
+실측 런타임 소스는09b057465da50ffcf892c30e2e8f7e9f516ab953에 고정했다.
+egl_render_context.hpp/.cpp는 앞서 복사한 c261f55의 EGL 경로를 RAII로 분리한 파생본이며
+NASA/United States Government 저작권·Apache-2.0을 보존한다. 새 제3자 소스 복사는 없다.
+camera_trace/trace.py/latency_trace_13_4.py·계측 hook·회귀 시험은 Ch13 신규 구현이다.
+외부 checkout과 underlay는 clean 고정 커밋 그대로이고 Ch05~Ch12는 수정하지 않았다.
+`opengl` rosdep 의존성은 검증된 Ubuntu에서 libgl1-mesa-dev→libglvnd-dev→libegl-dev를 포함한다.
+계측은 진단 전용이며 upstream 카메라 기본값·장착 모델·명령 소유권·기한을 바꾸지 않는다.
+[원본/파생 기록과 실제 시험](SECTION_13_4_EGL_TRACE_RESULTS_KO.md),
+[패키지 상세 출처](../ros2_ws/src/integrated_robot_camera/REUSE_MANIFEST.md)를 참조한다.

@@ -1,14 +1,49 @@
 # 13.4 네이티브 자체 리뷰
 
-> 2026-10-20 최종 상태: 사용자 선택에 따라 **현재 실험 브랜치와 증거만 보존**한다.
-> snapshot 렌더 worker의 `glfwInit/CreateWindow/DestroyWindow` 호출은 설치된 GLFW의
-> main-thread-only 계약을 위반한다(P1/Important, 미해결). GL 시험·기하 측정의 일부 PASS는
-> 이 API 계약 준수나 배포 안전성을 입증하지 않는다. EGL 변경·추가 실측은 진행하지 않았다.
-> 전체 인수 FAIL이며 snapshot 사용을 권장하지 않는다. 아래 명령은 역사적 재현 절차이지
-> 인수 완료 권고가 아니다. main 병합과 13.5 재개는 보류한다.
-> [최종 보존 판정·근거](../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md)
+> 2026-10-21 갱신: 승인된 EGL 전용 카메라와 촬영별 종단 계측을 구현·실측했다.
+> worker의 GLFW 호출 결함은 제거했지만 **전체13.4 인수는 FAIL**이다.
+> 실제13.4 시험20회는12 PASS/8 FAIL이며13.3 회귀는 MuJoCo PASS/Gazebo FAIL이다.
+> 연속 추적·취소 완료·일부 정상 종료 미달을 유지한다. snapshot은 명시적 실험 옵션이며
+> upstream 기본값·300ms·팔5Hz는 불변이다. main 병합·13.5 재개·배포 준비를 선언하지 않는다.
+> [새 결과·원인·한계](SECTION_13_4_EGL_TRACE_RESULTS_KO.md),
+> [이전 보존 판정(역사)](../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md).
 
-## 2026-10-19 후속 리뷰 보충
+## 2026-10-21 EGL·계측 자체 리뷰
+
+검토 범위는 승인 계획 시작0ff4063..실측09b0574와 증거9f182b0이다.
+작성자가 EGL/trace 구현·detector/fusion/tracking/launch/runner 변경을 읽고,
+실제 EGL 시험·원본 결과·234개 해시 감사와 대조했다. 독립 리뷰로 표현하지 않는다.
+
+| 승인된 Review Focus | 확인 | 판단 |
+|---|---|---|
+| 공유 display의 peer/reinit | egl_render_context와 실제 peer context·실패 경계 회귀 | private 자원만 worker에서 정리, eglTerminate0, 한 display 연결 비용 명시 |
+| render lease reset/overwrite | mailbox timing과 실제 GL readback barrier | 취득 stamp/sequence/timing 보존, invalidated publication은 종단 연결 제외 |
+| rollback/중복 stamp/도착 역전 | decoder/analyzer·상충 event·다른 boot/clock 시험 | exact key만 연결, epoch는 로컬, 관측기 수신 시각으로 대체하지 않음 |
+| consumer 없음/상한/UTF-8/오류 | actual DDS·rcl QoS·4096byte/20000attempts·transport 거부 회귀 | 제어 TTL/소유권 불변, unknown coverage PARTIAL, hard realtime 보장 아님 |
+| launch exit0와 내부 실패 | m15c/GZ tf/tracking/legacy 원본과 fail-closed runner | 취소 미확인/SIGTERM을 FAIL로 보존, 진단 성공으로 승격하지 않음 |
+
+새 계측 구현에서 추가로 확정한 Critical/Important 코드 결함은 없다.
+하지만 **제품 인수의 Important 미달은 남는다**: 지속 추적 갱신 공백, 실제 액션 취소 완료
+미확인, Gazebo/runtime 정상 종료. 이 변경은 이를 해결한 배포용 브랜치가 아니다.
+후속 candidate 제출/거부·액션 result·종료 수명 수정은 별도 설계 범위로 남긴다.
+trace 손실과 제출되지 않은 후보를 구분하지 못하는 관측 한계를 숨기지 않았다.
+새 Minor 지적 보류 목록은 없다. 이 판단 역시 작성자의 자체 검토라는 한계를 가진다.
+
+### 작업 중 판단과 비용
+
+1. 기존 승인 절 checkout 재사용: 추가 파일시스템 격리가 약하다(Ch13 경계 감사로 보완).
+2. 사용자 지정 네이티브 자체 리뷰: 새로운 독립 검토자의 시각이 없다.
+3. 시험 hpp까지 CMake manifest 포함: 시험 helper 변경 뒤에도 재빌드가 필요하다.
+4. 발견된 graph depth 대신 실제 rcl publisher QoS 검사: Linux/rcl ABI에 의존하는 시험이다.
+5. 과거 boot UUID는 구문 검증, 분석 시 clock domain 대조: 단일 record만으로 동일 시계가 증명되지 않는다.
+6. node 파괴 전 trace close 추가: 외부의 잘못된 종료 순서에서는 늦은 진단이 누락될 수 있다.
+7. publisher 전체 totals unknown이면 PARTIAL 유지: 연결 구간이 있어도 전체 계측 PASS를 선언하지 못한다.
+
+22회 실측 후 런타임·모델·시험 소스는 수정하지 않았다. 문서·evidence만 갱신한다.
+[최신 결과와 남은 실패](SECTION_13_4_EGL_TRACE_RESULTS_KO.md)를 현재 판정으로 사용하고,
+아래 표·지적은 당시 소스에 대한 역사적 리뷰로 읽는다.
+
+## 이전 후속 리뷰 기록
 
 후속 timer 재진입, complete RGB-D 후보 덮어쓰기, 처리 중 중복 detection 결함은
 실패 회귀를 먼저 재현한 뒤 수정했다. 15Hz 선택은 사용자 승인된 기본값 불변 옵션이다.

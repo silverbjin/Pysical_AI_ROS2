@@ -125,3 +125,12 @@ MuJoCo PASS/Gazebo FAIL(runtime mission_commander와 native engine에 SIGTERM �
 각 trace의 발생 시각과 관측기 수신 시각을 구분한다. PARTIAL은 제품 PASS가 아니다.
 Gazebo에는 native 카메라 내부 trace가 없어 해당 경계는 UNVERIFIED다.
 과거 실패 증거를 EGL 성공으로 재명명하지 않는다. 13.5는 보류한다.
+
+## Task6: 최종 회귀와 인계
+
+`task6-final-pytest.log/xml`:345 PASS/154.42s. `task6-final-result.log`:182 tests,
+errors/failures/skips0. `task6-final-installed.json`:다섯 패키지·소스/설치·두 .so 일치.
+`task6-results/index.json`:덮어쓰기 전 raw JUnit12개/원래 경로/크기/SHA 보존.
+최종 추가 감사는 기존22회/234개 native artifact와 문서 로컬 링크33개를 다시 검증했다.
+제품 인수는 여전히 FAIL이며 독립 리뷰가 아닌 작성자 자체 검토다.
+상세 변경·원인·미검증·다음 범위는`Ch13/docs/SECTION_13_4_EGL_TRACE_RESULTS_KO.md`를 따른다.

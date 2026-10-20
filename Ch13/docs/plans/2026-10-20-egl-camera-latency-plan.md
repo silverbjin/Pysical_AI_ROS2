@@ -8,7 +8,7 @@
 
 **Tech Stack:** ROS2 Jazzy, MuJoCo3.3.7, C++17/EGL/OpenGL, rclcpp/rclpy, Python3.12, gtest/pytest/colcon, 실제 MuJoCo/Gazebo.
 
-**Spec:** [사용자 승인 설계](../specs/2026-10-20-egl-camera-latency-design.md). 방향·서면 설계·구현 계획을 사용자 승인받았다. **네이티브 구현·검증 진행 중**. 계획 작성 기준 HEAD는656bb06fe0aa0569f63d27e9b4092b4a0d436ca1, 실제 구현 시작 HEAD는0ff4063f75e2f551aee09349e7fe9454792beea2다.
+**Spec:** [사용자 승인 설계](../specs/2026-10-20-egl-camera-latency-design.md). 방향·서면 설계·구현 계획을 사용자 승인받았다. **구현·22회 실제 검증 수행 / 전체13.4 인수 FAIL**. [최신 결과](../SECTION_13_4_EGL_TRACE_RESULTS_KO.md). 절 브랜치 보존·push 외 main/13.5는 보류한다. 계획 작성 기준 HEAD는656bb06fe0aa0569f63d27e9b4092b4a0d436ca1, 실제 구현 시작 HEAD는0ff4063f75e2f551aee09349e7fe9454792beea2다.
 
 ## Global Constraints
 

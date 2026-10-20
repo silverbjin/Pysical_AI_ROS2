@@ -1,12 +1,12 @@
 # 13.4 통합 시각 정보 처리 실습
 
-> 2026-10-20 최종 상태: 사용자 선택에 따라 **현재 실험 브랜치와 증거만 보존**한다.
-> snapshot 렌더 worker의 `glfwInit/CreateWindow/DestroyWindow` 호출은 설치된 GLFW의
-> main-thread-only 계약을 위반한다(P1/Important, 미해결). GL 시험·기하 측정의 일부 PASS는
-> 이 API 계약 준수나 배포 안전성을 입증하지 않는다. EGL 변경·추가 실측은 진행하지 않았다.
-> 전체 인수 FAIL이며 snapshot 사용을 권장하지 않는다. 아래 명령은 역사적 재현 절차이지
-> 인수 완료 권고가 아니다. main 병합과 13.5 재개는 보류한다.
-> [최종 보존 판정·근거](../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md)
+> 2026-10-21 갱신: 승인된 EGL 전용 카메라와 촬영별 종단 계측을 구현·실측했다.
+> worker의 GLFW 호출 결함은 제거했지만 **전체13.4 인수는 FAIL**이다.
+> 실제13.4 시험20회는12 PASS/8 FAIL이며13.3 회귀는 MuJoCo PASS/Gazebo FAIL이다.
+> 연속 추적·취소 완료·일부 정상 종료 미달을 유지한다. snapshot은 명시적 실험 옵션이며
+> upstream 기본값·300ms·팔5Hz는 불변이다. main 병합·13.5 재개·배포 준비를 선언하지 않는다.
+> [새 결과·원인·한계](SECTION_13_4_EGL_TRACE_RESULTS_KO.md),
+> [이전 보존 판정(역사)](../evidence/section_13_4/cam-66d636a0/RETENTION_KO.md).
 
 이 실습은 **실제 엔진 RGB-D → 탐지 → 촬영 시각 TF → odom 좌표의 목표**를 연결한다. 팔 추적은 기립 상태의 두 관절에 한정한 명시적 선택 기능이다. Nav2, 학습 보행, MoveIt, 물리 파지나 일반적인 충돌 회피 제어기는 포함하지 않는다. 원고의 “이동 중 항상 정확한 절대 좌표”를 보장하는 예제가 아니다.
 
@@ -26,7 +26,8 @@ sudo apt install -y python3-venv python3-colcon-common-extensions python3-vcstoo
   ros-jazzy-xacro ros-jazzy-robot-state-publisher ros-jazzy-vision-msgs \
   ros-jazzy-cv-bridge ros-jazzy-tf2-geometry-msgs ros-jazzy-message-filters \
   ros-jazzy-ros-gz-sim ros-jazzy-ros-gz-bridge ros-jazzy-gz-ros2-control \
-  ros-jazzy-ros2-control ros-jazzy-ros2-controllers ros-jazzy-mujoco-vendor libglfw3-dev
+  ros-jazzy-ros2-control ros-jazzy-ros2-controllers ros-jazzy-mujoco-vendor libglfw3-dev \
+  libegl-dev libopengl-dev
 python3 -m venv --system-site-packages "$CH13_VENV"
 source "$CH13_VENV/bin/activate"
 python -m pip install torch==2.5.1 torchvision==0.20.1 \
@@ -270,3 +271,46 @@ python Ch13/scripts/run_vision_13_4.py --engine gazebo --detector-backend color_
 0 초과 15 이하의 유한값만 허용한다. 이는 추론 시작 주기의 상한이지 처리량 보장이나
 실시간성 보장이 아니다. 촬영 시각 300ms, 팔 명령 5Hz 안전 기준은 그대로 적용된다.
 각 비교는 별도 evidence 디렉터리에 저장하고, 안전 정지는 실패로 기록한다.
+
+## 9. 승인된 EGL snapshot·진단 계측 재현 (2026-10-21)
+
+먼저 위 절차로 Ch13의 다섯 패키지를 빌드하고 **새 설치본 하나만** source한다.
+기존 카메라/엔진은 종료·잔여 없음이 확인된 상태에서 시작한다. snapshot은 기본값이
+아니며, 자동 fallback하지 않는다. EGL 초기화 실패는 실행 실패다. OpenGL 개발 의존성은
+검증된 Ubuntu의 opengl rosdep 경로에도 포함되지만 위 설치 예에는 EGL을 명시했다.
+
+수동 관찰 예(팔 추적을 자동 활성화하지 않음):
+
+```bash
+export CH13_TRACE_RUN="$(python -c 'import uuid; print(uuid.uuid4())')"
+ros2 launch integrated_robot_runtime vision_system.launch.py \
+  engine:=mujoco detector_backend:=color_fixture mujoco_headless:=true \
+  vision_camera_backend:=snapshot trace_enabled:=true trace_run_id:="$CH13_TRACE_RUN"
+```
+
+이 수동 launch만으로 파일 evidence가 자동 생성되지는 않는다. 종료 후 잔여를 확인하고,
+다음 자동 시험으로 관측·소스/설치 감사·원본 파일·해시를 함께 기록한다.
+
+```bash
+export CH13_EGL_OUTPUT="$(mktemp -d)"
+python Ch13/scripts/run_vision_13_4.py --engine mujoco --scenario static \
+  --detector-backend color_fixture --vision-camera-backend snapshot \
+  --trace-enabled --output-dir "$CH13_EGL_OUTPUT/static"
+python -m json.tool "$CH13_EGL_OUTPUT/static/trace_summary.json"
+```
+
+runner는 각 호출의 새 EvidenceRun UUID를 trace에 전달한다. 기존 출력 폴더를 재사용하지
+않는다. `result.json`은 제품 검사, `trace_summary.json`은 진단, `system.log`는 실제 종료와
+producer별 totals다. `trace.jsonl`에는 발생 시각과 observer 수신 시각을 별도로 보존한다.
+정적 OFF 비교는 `--trace-enabled`를 빼고 새 폴더를 쓴다. 지연은 `--scenario delay
+--processing-delay-s .15`, 추적은 `--scenario tracking --inference-rate-hz 10` 또는15를
+별도 호출로 사용한다. 수신 후/촬영 후300ms·TF100ms·팔5Hz는 변경하지 않는다.
+
+`PARTIAL`은 받은 exact-capture 구간만 관측했다는 뜻이며 전체 유실0이나 성공 보장이 아니다.
+상충/다른 boot/다른 clock/불완전 publication은 종단 합산하지 않는다. native render/readback은
+API 구간이고 DDS·스케줄링·callback 잔여 시간과 구분한다. ROS 시간과 monotonic을 섞지 않는다.
+Gazebo의 native 내부는 UNVERIFIED로 남는다. source provenance/소유 PID/EGL 로그가 없으면
+snapshot native 분석도 인정하지 않는다. 실패 뒤 자동 재시도·재활성화하지 않는다.
+
+[실제22회 결과와 다음 수정 경계](SECTION_13_4_EGL_TRACE_RESULTS_KO.md)를 먼저 읽는다.
+현재 연속 추적·취소·일부 종료가 미달이므로 이 절차는 배포·파지·13.5 진행 권고가 아니다.
