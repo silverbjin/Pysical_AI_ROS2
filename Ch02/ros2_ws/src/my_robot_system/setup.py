@@ -34,6 +34,7 @@ setup(
             'turtle_pose_sub = my_robot_system.turtle_pose_subscriber:main', # 추가
             'turtle_spawn_client = my_robot_system.turtle_spawn_client:main', # 추가
             'add_two_ints_server = my_robot_system.add_two_ints_server:main', # 추가
+            'compute_rectangle_area_server = my_robot_system.compute_rectangle_area_server:main',
             'hw_status_publisher = my_robot_system.hw_status_publisher:main', # 추가
             'count_until_server = my_robot_system.count_until_server:main', # 추가
             'count_until_client = my_robot_system.count_until_client:main', # 추가
