@@ -13,6 +13,10 @@ EGLDisplay 한 연결은 다른 context를 무효화하지 않도록 프로세�
 
 고정 소스 `09b057465da50ffcf892c30e2e8f7e9f516ab953`,
 증거 체크포인트 `9f182b04b0e853d100c96ee95bfe17780b429fab`.
+문서 체크포인트 `4b0a69ac286182f74957fed6d2c280f64efc1aec`의 절 브랜치 push는
+non-fast-forward로 거절됐다. 확인된 원격은`91c02156fdcb50eac1de58d412ac95e7f8d34149`로,
+main 병합·Ch11 및 이전 Ch13 패키지 추가 등165파일 변경을 포함한다.
+원격 덮어쓰기·자동 병합/재배치는 하지 않았다. 새 브랜치 게시 또는 통합 방향은 사용자 결정 대기다.
 [원본 색인](../evidence/section_13_4/egl-424240ff/INDEX.md),
 [22회 수행·해시 감사](../evidence/section_13_4/egl-424240ff/task5-audit.log),
 [실제 환경](../evidence/section_13_4/egl-424240ff/native-environment.json).

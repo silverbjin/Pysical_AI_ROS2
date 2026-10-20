@@ -1,0 +1,11 @@
+source /opt/ros/jazzy/setup.bash
+source /home/jinho/ch13_mujoco_ws/install/setup.bash
+source /home/jinho/ch13_vision_13_4_venv/bin/activate
+export CH13_ROOT="$PWD"
+export CH13_EGL_RUN="424240ff-0bfe-4a4b-92d4-93f6a78d49b8"
+export CH13_EGL_BUILD="$CH13_ROOT/Ch13/ros2_ws/build13_4_egl_$CH13_EGL_RUN"
+export CH13_EGL_INSTALL="$CH13_ROOT/Ch13/ros2_ws/install13_4_egl_$CH13_EGL_RUN"
+export CH13_EGL_LOG="$CH13_ROOT/Ch13/ros2_ws/log13_4_egl_$CH13_EGL_RUN"
+export CH13_EGL_EVIDENCE="$CH13_ROOT/Ch13/evidence/section_13_4/egl-424240ff"
+export ROS_DOMAIN_ID=157
+export MUJOCO_GL=egl
