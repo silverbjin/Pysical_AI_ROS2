@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 import rclpy
 from rclpy.node import Node
 from turtlesim.msg import Pose  # Turtlesim 전용 위치 메시지 타입
@@ -15,8 +16,9 @@ class TurtlePoseSubscriber(Node):
             self.listener_callback,
             10)
         
-        # 사용하지 않는 변수 경고를 방지하기 위한 더미 코드 (선택사항)
-        self.subscription 
+        # 약 60Hz 수신 데이터를 2Hz 이내로 로깅하여 콘솔 폭주를 방지한다.
+        self._last_log_time = -float("inf")
+        self._log_period = 0.5
 
         self.get_logger().info('Turtle Pose Subscriber Started')
 
@@ -27,7 +29,13 @@ class TurtlePoseSubscriber(Node):
         """
         # 수신된 위치 정보를 로그로 출력
         # msg.x, msg.y, msg.theta 등은 turtlesim/msg/Pose 정의를 따른다.
-        self.get_logger().info(f'Received Pose: X={msg.x:.2f}, Y={msg.y:.2f}, Theta={msg.theta:.2f}')
+        now = time.monotonic()
+        if now - self._last_log_time < self._log_period:
+            return
+        self._last_log_time = now
+        self.get_logger().info(
+            f'Received Pose: X={msg.x:.2f}, Y={msg.y:.2f}, Theta={msg.theta:.2f}'
+        )
         
         # [실무 팁] 
         # 서브스크라이버 콜백 함수는 최대한 가볍게 유지해야 한다.
