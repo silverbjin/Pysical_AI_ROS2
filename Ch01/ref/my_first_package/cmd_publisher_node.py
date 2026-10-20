@@ -1,33 +1,33 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-# 1.7ì ˆ ì˜ì¡´ì„± ê´€ë¦¬: Twist ë©”ì‹œì§€ íƒ€ì…ì„ ê°€ì ¸ì˜´ (ë¡œë´‡ ì†ë„ ì œì–´ìš© í‘œì¤€)
+# 1.7Àı ÀÇÁ¸¼º °ü¸®: Twist ¸Ş½ÃÁö Å¸ÀÔÀ» °¡Á®¿È (·Îº¿ ¼Óµµ Á¦¾î¿ë Ç¥ÁØ)
 from geometry_msgs.msg import Twist
 
 class CmdPublisherNode(Node):
     """
-    1.7ì ˆ ì‹¤ìŠµ: ì‹œë®¬ë ˆì´ì…˜ í™˜ê²½ì˜ ë¡œë´‡ì—ê²Œ ì†ë„ ëª…ë ¹(Twist)ì„ ë°œí–‰í•˜ëŠ” ë…¸ë“œ
+    1.7Àı ½Ç½À: ½Ã¹Ä·¹ÀÌ¼Ç È¯°æÀÇ ·Îº¿¿¡°Ô ¼Óµµ ¸í·É(Twist)À» ¹ßÇàÇÏ´Â ³ëµå
     """
     def __init__(self):
         super().__init__('cmd_publisher_node')
         
-        # 'cmd_vel' í† í”½ìœ¼ë¡œ Twist ë©”ì‹œì§€ë¥¼ ë°œí–‰í•˜ëŠ” Publisher ìƒì„±
-        # 10ì€ í(Queue) ì‚¬ì´ì¦ˆë¥¼ ì˜ë¯¸í•¨
+        # 'cmd_vel' ÅäÇÈÀ¸·Î Twist ¸Ş½ÃÁö¸¦ ¹ßÇàÇÏ´Â Publisher »ı¼º
+        # 10Àº Å¥(Queue) »çÀÌÁî¸¦ ÀÇ¹ÌÇÔ
         self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
         
-        # 0.5ì´ˆë§ˆë‹¤ ì‹¤í–‰ (2Hz)
+        # 0.5ÃÊ¸¶´Ù ½ÇÇà (2Hz)
         self.timer = self.create_timer(0.5, self.publish_velocity)
-        self.get_logger().info('ì†ë„ ëª…ë ¹ ë°œí–‰ì„ ì‹œì‘í•©ë‹ˆë‹¤.')
+        self.get_logger().info('¼Óµµ ¸í·É ¹ßÇàÀ» ½ÃÀÛÇÕ´Ï´Ù.')
 
     def publish_velocity(self):
         msg = Twist()
-        # ì„ ì†ë„ xì¶• ë°©í–¥ìœ¼ë¡œ 0.2m/s (ì „ì§„)
+        # ¼±¼Óµµ xÃà ¹æÇâÀ¸·Î 0.2m/s (ÀüÁø)
         msg.linear.x = 0.2
-        # ê°ì†ë„ zì¶• ë°©í–¥ìœ¼ë¡œ 0.5rad/s (ì¢ŒíšŒì „)
+        # °¢¼Óµµ zÃà ¹æÇâÀ¸·Î 0.5rad/s (ÁÂÈ¸Àü)
         msg.angular.z = 0.5
         
         self.publisher_.publish(msg)
-        self.get_logger().info(f'ëª…ë ¹ ì†¡ì‹ : v={msg.linear.x}, w={msg.angular.z}')
+        self.get_logger().info(f'¸í·É ¼Û½Å: v={msg.linear.x}, w={msg.angular.z}')
 
 def main(args=None):
     rclpy.init(args=args)
