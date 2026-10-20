@@ -22,10 +22,20 @@ class QosCompareSubscriber(Node):
         )
         self.subscription = self.create_subscription(
             String, 'video_stream', self.on_message, qos)
+        self.received_count = 0
+        self.monitor_timer = self.create_timer(3.0, self.warn_if_no_frames)
         self.get_logger().info(f'Subscribing to video_stream with reliability={mode}')
 
     def on_message(self, msg):
+        self.received_count += 1
         self.get_logger().info(f'Received frame: {msg.data}')
+
+    def warn_if_no_frames(self):
+        # 미수신 원인은 QoS 외에도 publisher 미기동일 수 있으므로 단정 금지.
+        if self.received_count == 0:
+            self.get_logger().warn(
+                'No frames received: check publisher, topic type and offered/requested QoS.'
+            )
 
 
 def main(args=None):
