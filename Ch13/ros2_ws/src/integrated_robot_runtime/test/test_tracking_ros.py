@@ -301,3 +301,65 @@ def test_camera_motion_benchmark_requires_explicit_test_opt_in():
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
+
+def test_trace_failure_does_not_renew_or_disable_target(monkeypatch):
+    rclpy.init(domain_id=148)
+    node = ManipulationNode(parameter_overrides=[
+        Parameter('trace_enabled', value=True),
+        Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+    try:
+        tracking = node.tracking
+        assert hasattr(tracking, 'trace'), 'missing isolated tracking trace hook'
+        def fail(_):
+            raise RuntimeError('diagnostic transport failure')
+        monkeypatch.setattr(tracking.trace.publisher, 'publish', fail)
+        target = TrackedTarget(valid=True, status='TRACKED', track_id='one', class_id='fixture', score=.9)
+        target.header.frame_id, target.source_header.frame_id = 'odom', 'camera_optical_frame'
+        target.header.stamp = target.source_header.stamp = node.get_clock().now().to_msg()
+        target.position.x = .9
+        tracking.on_target(target)
+        received = tracking.target_at
+        token = tracking.guard.enable(dict.fromkeys(tracking.guard.CONDITIONS, True))
+        tracking.on_target(target)  # same capture must not renew receipt TTL
+        assert tracking.target_at == received and tracking.target is target
+        assert tracking.guard.enabled and tracking.guard.generation == token
+        assert tracking.trace.stats['errors'] >= 1
+        assert node.arm_owner.pending is None
+        tracking.guard.disable('test end')
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+def test_trace_serialization_runs_outside_control_lock(monkeypatch):
+    rclpy.init(domain_id=148)
+    node = ManipulationNode(parameter_overrides=[
+        Parameter('trace_enabled', value=True),
+        Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+    observed = []
+    try:
+        assert hasattr(node.tracking, 'trace'), 'missing control trace hook'
+        original = node.tracking.trace.emit
+        def checked(*args, **kwargs):
+            # RLock.acquire on another thread detects ownership, including nested calls.
+            acquired = []
+            def probe():
+                locked = node.lock.acquire(timeout=.05)
+                acquired.append(locked)
+                if locked:
+                    node.lock.release()
+            probe_thread = threading.Thread(target=probe)
+            probe_thread.start()
+            probe_thread.join(timeout=.2)
+            assert acquired == [True], 'trace serialization ran under control lock'
+            observed.append(kwargs)
+            return original(*args, **kwargs)
+        monkeypatch.setattr(node.tracking.trace, 'emit', checked)
+        node.tracking.tick()
+        assert observed and observed[-1]['capture_ns'] is None
+        assert observed[-1]['times_ns']['decision'] > 0
+        assert node.arm_owner.pending is None
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()

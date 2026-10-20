@@ -1,5 +1,6 @@
 """Capture-time TF fusion. Never substitute a latest transform on failure."""
 from copy import deepcopy
+from collections import OrderedDict
 import json
 from threading import Event, RLock, Thread
 import time
@@ -25,6 +26,7 @@ from .contracts import Box2D, Observation, vector
 from .freshness import ClockGate, LatestSlot
 from .geometry import decode_depth, deproject, sample_depth, validate_depth_range
 from .tracker import TrackManager
+from .trace import TracePublisher
 
 
 def lookup_capture_point(buffer, point: np.ndarray, source_frame: str, stamp_msg,
@@ -42,12 +44,16 @@ def lookup_capture_point(buffer, point: np.ndarray, source_frame: str, stamp_msg
     return result
 
 
-def capture_observations(bundle, boxes, buffer, *, still_valid, depth_range=(.1, 5.)):
+def capture_observations(bundle, boxes, buffer, *, still_valid, depth_range=(.1, 5.), trace_times=None):
     if not still_valid():
         return []
     image = bundle.depth
+    if trace_times is not None:
+        trace_times['depth_start'] = time.monotonic_ns()
     depth = decode_depth(bytes(image.data), image.encoding, image.width, image.height,
                          image.step, bool(image.is_bigendian))
+    if trace_times is not None:
+        trace_times['depth_end'] = time.monotonic_ns()
     observations = []
     for box in boxes:
         if box.score < .5 or not still_valid():
@@ -55,8 +61,13 @@ def capture_observations(bundle, boxes, buffer, *, still_valid, depth_range=(.1,
         bounds = dict(min_depth_m=depth_range[0], max_depth_m=depth_range[1])
         d, mad = sample_depth(depth, box, **bounds)
         point = deproject(box.cx, box.cy, d, bundle.intrinsics, **bounds)
+        if trace_times is not None:
+            trace_times['depth_end'] = time.monotonic_ns()
+            trace_times.setdefault('tf_start', time.monotonic_ns())
         transformed = lookup_capture_point(buffer, point, bundle.intrinsics.frame_id,
                                             bundle.rgb.header.stamp)
+        if trace_times is not None:
+            trace_times['tf_end'] = time.monotonic_ns()
         if not still_valid():
             return []
         # Isotropic depth-sample heuristic is rotation invariant, not a
@@ -84,6 +95,10 @@ class VisionProcessor(Node):
             raise ValueError('known filter mode and alpha in (0,1] required')
         self.lock, self.stopping = RLock(), Event()
         self.gate, self.cache, self.slot = ClockGate(), RGBDCache(), LatestSlot()
+        self.trace = TracePublisher(self, '/vision/fusion_trace',
+            enabled=self.declare_parameter('trace_enabled', False).value,
+            run_id=self.declare_parameter('trace_run_id', '').value)
+        self.trace_receipts = {kind: OrderedDict() for kind in ('rgb', 'depth', 'detection')}
         self.tracker = TrackManager(tau=tau, alpha=alpha if filter_mode == 'fixed_alpha' else None)
         self.last_source_header, self.last_published_state = None, None
         self.last_epoch, self.last_stamp = -1, 0.
@@ -137,6 +152,8 @@ class VisionProcessor(Node):
                     self.tf_buffer.clear()
                 self.cache.clear(epoch)
                 self.pending_detections.clear()
+                for receipts in self.trace_receipts.values():
+                    receipts.clear()
                 self.slot.take(0)
                 self.last_stamp, self.last_epoch = 0., epoch
                 self.last_submitted_ns = 0
@@ -165,19 +182,23 @@ class VisionProcessor(Node):
             self.try_pending(now, wall, epoch)
 
     def on_rgb(self, msg):
+        received_ns = time.monotonic_ns() if self.trace.enabled else None
         with self.lock:
             now, wall, epoch = self.observe_clock()
             try:
                 self.cache.add_rgb(msg, epoch)
+                self.remember_trace('rgb', msg.header.stamp, received_ns)
             except ValueError:
                 self.report('INVALID_RGB')
             self.try_pending(now, wall, epoch)
 
     def on_depth(self, msg):
+        received_ns = time.monotonic_ns() if self.trace.enabled else None
         with self.lock:
             now, wall, epoch = self.observe_clock()
             try:
                 self.cache.add_depth(msg, epoch)
+                self.remember_trace('depth', msg.header.stamp, received_ns)
             except ValueError:
                 self.report('INVALID_DEPTH')
             self.try_pending(now, wall, epoch)
@@ -190,6 +211,7 @@ class VisionProcessor(Node):
                     and self.gate.valid(bundle.stamp, bundle.epoch, now, wall, bundle.receipt_wall))
 
     def on_detections(self, msg):
+        received_ns = time.monotonic_ns() if self.trace.enabled else None
         with self.lock:
             now, wall, epoch = self.observe_clock()
             boxes = []
@@ -208,6 +230,7 @@ class VisionProcessor(Node):
                         box = detection.bbox
                         boxes.append(Box2D(box.center.position.x, box.center.position.y,
                                            box.size_x, box.size_y, best.class_id, best.score))
+                self.remember_trace('detection', msg.header.stamp, received_ns)
                 self.pending_detections[key] = (deepcopy(msg.header), boxes, epoch, wall)
                 while len(self.pending_detections) > 10:  # same bound as the RGB-D cache
                     del self.pending_detections[min(self.pending_detections)]
@@ -220,6 +243,17 @@ class VisionProcessor(Node):
         with self.lock:
             return (self.pending_detections[max(self.pending_detections)]
                     if self.pending_detections else None)
+
+    def remember_trace(self, kind, stamp, received_ns):
+        # Scalar metadata only, same ten-capture bound as the existing cache.
+        if received_ns is None:
+            return
+        receipts = self.trace_receipts[kind]
+        key = nanoseconds(stamp)
+        receipts[key] = received_ns
+        receipts.move_to_end(key)
+        while len(receipts) > 10:
+            receipts.popitem(last=False)
 
     def try_pending(self, now, wall, epoch):
         """Newest COMPLETE capture wins; an unpaired newer one cannot erase it.
@@ -242,7 +276,16 @@ class VisionProcessor(Node):
                 for previous in list(self.pending_detections):
                     if previous <= key:
                         del self.pending_detections[previous]
-                self.slot.replace((bundle, boxes))
+                trace_times = None
+                if self.trace.enabled:
+                    trace_times = dict(bundle_select=time.monotonic_ns())
+                    for kind, source_stamp in [('rgb', bundle.rgb.header.stamp),
+                                              ('depth', bundle.depth.header.stamp),
+                                              ('detection', header.stamp)]:
+                        received = self.trace_receipts[kind].get(nanoseconds(source_stamp))
+                        if received is not None:
+                            trace_times[kind+'_receive'] = received
+                self.slot.replace((bundle, boxes, trace_times))
                 self.last_submitted_ns = key
                 return
         if expired and not self.pending_detections:
@@ -253,35 +296,54 @@ class VisionProcessor(Node):
             item = self.slot.take(.1)
             if item is None:
                 continue
-            bundle, boxes = item
+            bundle, boxes, trace_times = item
+            if trace_times is not None:
+                trace_times['work_take'] = time.monotonic_ns()
+            outcome, ros_now_ns = 'WORKER_ERROR', None
             try:
                 observations = capture_observations(bundle, boxes, self.tf_buffer,
                                                      still_valid=lambda: self.current(bundle),
-                                                     depth_range=self.depth_range)
+                                                     depth_range=self.depth_range,
+                                                     trace_times=trace_times)
                 with self.lock:
                     if self.current(bundle):
-                        self.publish_observations(observations, bundle)
+                        self.publish_observations(observations, bundle, trace_times=trace_times)
+                        outcome = ('PUBLISHED' if trace_times is not None and
+                                   'publish_end' in trace_times and self.tracker.estimate is not None
+                                   and self.tracker.estimate.valid else 'NO_TARGET')
+                        if trace_times is not None:
+                            ros_now_ns = self.get_clock().now().nanoseconds
                         self.last_stamp = bundle.stamp
                     elif not self.stopping.is_set():
+                        outcome = 'EMPTY_OR_EXPIRED'
                         self.report('EMPTY_OR_EXPIRED')
             except TransformException as exc:
+                outcome = 'TF_UNAVAILABLE'
                 self.report('TF_UNAVAILABLE', detail=str(exc),
                             capture_ns=nanoseconds(bundle.rgb.header.stamp),
                             source_frame=bundle.intrinsics.frame_id, target_frame='odom',
                             ros_age_s=self.get_clock().now().nanoseconds/1e9-bundle.stamp)
             except ValueError:
+                outcome = 'INVALID_DEPTH_OR_GEOMETRY'
                 self.report('INVALID_DEPTH_OR_GEOMETRY')
             except Exception as exc:
                 self.get_logger().error(f'fusion worker failed: {exc!r}')
                 self.report('WORKER_ERROR')
+            finally:
+                if trace_times is not None:
+                    self.trace.emit('fusion', source_frame=bundle.rgb.header.frame_id,
+                        capture_ns=nanoseconds(bundle.rgb.header.stamp), local_epoch=bundle.epoch,
+                        times_ns=trace_times, outcome=outcome,
+                        ros_now_ns=ros_now_ns if ros_now_ns is not None else self.get_clock().now().nanoseconds)
 
-    def publish_observations(self, observations, bundle):
+    def publish_observations(self, observations, bundle, *, trace_times=None):
         now, wall, _ = self.observe_clock()
         estimate = self.tracker.update(observations, now, wall)
-        self.publish_track(estimate, bundle.rgb.header if estimate is not None and estimate.valid else None)
+        self.publish_track(estimate, bundle.rgb.header if estimate is not None and estimate.valid else None,
+                           trace_times=trace_times)
         self.report('TRACKED' if estimate is not None and estimate.valid else 'TARGET_INVALID')
 
-    def publish_track(self, estimate, source_header=None):
+    def publish_track(self, estimate, source_header=None, *, trace_times=None):
         if estimate is None or self.stopping.is_set():
             return
         key = (estimate.track_id, estimate.stamp, estimate.valid, estimate.status)
@@ -310,7 +372,11 @@ class VisionProcessor(Node):
             filtered = PointStamped()
             filtered.header, filtered.point = deepcopy(tracked.header), deepcopy(tracked.position)
             self.filtered_pub.publish(filtered)
+        if trace_times is not None:
+            trace_times['publish_start'] = time.monotonic_ns()
         self.tracked_pub.publish(tracked)
+        if trace_times is not None:
+            trace_times['publish_end'] = time.monotonic_ns()
         self.last_published_state = key
 
     def destroy_node(self):
@@ -320,6 +386,7 @@ class VisionProcessor(Node):
         self.worker.join(timeout=2)
         if self.worker.is_alive():
             raise RuntimeError('fusion worker failed to stop before ROS destruction')
+        self.trace.close()
         return super().destroy_node()
 
 

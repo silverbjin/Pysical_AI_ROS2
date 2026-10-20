@@ -20,6 +20,7 @@ from vision_msgs.msg import Detection2DArray
 from .cache import RGBDCache, seconds
 from .detectors import ColorFixtureBackend, YoloBackend, to_detection_array
 from .freshness import ClockGate, LatestSlot
+from .trace import TracePublisher
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,7 @@ class DetectionJob:
     info_stamp: float
     receipt_wall: float
     receipt_ros: float
+    trace_times: object = None
 
 
 class ObjectDetector(Node):
@@ -56,6 +58,9 @@ class ObjectDetector(Node):
         self.bridge = CvBridge()
         self.lock, self.stopping = RLock(), Event()
         self.gate, self.cache, self.slot = ClockGate(), RGBDCache(), LatestSlot()
+        self.trace = TracePublisher(self, '/vision/detector_trace',
+            enabled=self.declare_parameter('trace_enabled', False).value,
+            run_id=self.declare_parameter('trace_run_id', '').value)
         self.last_epoch, self.last_stamp = -1, 0.
         self.input_enabled = True
         self.input_service = self.create_service(SetBool, '~/set_input_enabled', self.set_input_enabled)
@@ -119,6 +124,7 @@ class ObjectDetector(Node):
                 self.slot.take(0)
 
     def on_rgb(self, msg):
+        received_ns = time.monotonic_ns() if self.trace.enabled else None
         with self.lock:
             if not self.input_enabled:
                 return
@@ -136,7 +142,10 @@ class ObjectDetector(Node):
                     self.report('CALIBRATION_MISMATCH')
                     return
                 image, receipt = self.cache.rgb[stamp]
-                job = DetectionJob(image, stamp, epoch, k.calibration_id, info_stamp, receipt, now)
+                trace_times = (dict(rgb_receive=received_ns, slot_put=time.monotonic_ns())
+                               if self.trace.enabled else None)
+                job = DetectionJob(image, stamp, epoch, k.calibration_id, info_stamp, receipt, now,
+                                   trace_times)
                 if self.current(job):
                     self.slot.replace(job)
                     self.report('QUEUED', job=job)
@@ -160,32 +169,67 @@ class ObjectDetector(Node):
             if self.stopping.wait(max(0., last_start + 1/self.rate - time.monotonic())):
                 break
             job = self.slot.take(.1)
-            if job is None or not self.current(job):
+            if job is None:
+                continue
+            trace_times = dict(job.trace_times or {})
+            if self.trace.enabled:
+                trace_times['work_take'] = time.monotonic_ns()
+            if not self.current(job):
+                if self.trace.enabled:
+                    self.trace.emit('detector', source_frame=job.image.header.frame_id,
+                        capture_ns=job.image.header.stamp.sec*1_000_000_000+job.image.header.stamp.nanosec,
+                        local_epoch=job.epoch, times_ns=trace_times, outcome='STALE_AT_TAKE',
+                        ros_now_ns=self.get_clock().now().nanoseconds)
                 continue
             last_start = time.monotonic()
             timing = dict(queue_s=last_start-job.receipt_wall)
+            outcome, ros_now_ns = 'BACKEND_ERROR', None
             try:
+                if self.trace.enabled:
+                    trace_times['convert_start'] = time.monotonic_ns()
                 bgr = self.bridge.imgmsg_to_cv2(job.image, 'bgr8')
+                if self.trace.enabled:
+                    trace_times['convert_end'] = time.monotonic_ns()
                 timing['conversion_s'] = time.monotonic()-last_start
                 if self.stopping.wait(self.delay):
+                    outcome = 'STOPPED'
                     break
                 if not self.current(job):
+                    outcome = 'EXPIRED_BEFORE_INFERENCE'
                     self.report('EXPIRED_BEFORE_INFERENCE', job=job, **timing)
                     continue
                 inference_start = time.monotonic()
+                if self.trace.enabled:
+                    trace_times['inference_start'] = time.monotonic_ns()
                 boxes = [v for v in self.backend.detect(bgr) if v.score >= self.confidence]
+                if self.trace.enabled:
+                    trace_times['inference_end'] = time.monotonic_ns()
                 timing['inference_s'] = time.monotonic()-inference_start
                 with self.lock:
                     if self.current(job):
-                        self.pub.publish(to_detection_array(boxes, job.image.header,
-                                                            image_size=(job.image.width, job.image.height)))
+                        message = to_detection_array(boxes, job.image.header,
+                            image_size=(job.image.width, job.image.height))
+                        if self.trace.enabled:
+                            trace_times['publish_start'] = time.monotonic_ns()
+                        self.pub.publish(message)
+                        if self.trace.enabled:
+                            trace_times['publish_end'] = time.monotonic_ns()
+                            ros_now_ns = self.get_clock().now().nanoseconds
+                        outcome = 'PUBLISHED'
                         self.last_stamp = job.stamp
                         self.report('DETECTED' if boxes else 'EMPTY', job=job, **timing)
                     elif not self.stopping.is_set():
+                        outcome = 'EXPIRED_AFTER_INFERENCE'
                         self.report('EXPIRED_AFTER_INFERENCE', job=job, **timing)
             except Exception as exc:
                 self.get_logger().error(f'detector backend failed without fallback: {exc!r}')
                 self.report('BACKEND_ERROR')
+            finally:
+                if self.trace.enabled:
+                    self.trace.emit('detector', source_frame=job.image.header.frame_id,
+                        capture_ns=job.image.header.stamp.sec*1_000_000_000+job.image.header.stamp.nanosec,
+                        local_epoch=job.epoch, times_ns=trace_times, outcome=outcome,
+                        ros_now_ns=ros_now_ns if ros_now_ns is not None else self.get_clock().now().nanoseconds)
 
     def destroy_node(self):
         with self.lock:
@@ -194,6 +238,7 @@ class ObjectDetector(Node):
         self.worker.join(timeout=5)
         if self.worker.is_alive():
             raise RuntimeError('inference worker did not stop before ROS destruction')
+        self.trace.close()
         return super().destroy_node()
 
 

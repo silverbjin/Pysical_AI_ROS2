@@ -19,6 +19,62 @@ from integrated_robot_vision.object_detector import ObjectDetector
 from test_rgbd_cache import info, stamp
 
 
+def test_trace_keeps_capture_and_occurrence_time():
+    rclpy.init(domain_id=146)
+    detector, peer, executor = None, None, SingleThreadedExecutor()
+    try:
+        detector = ObjectDetector(parameter_overrides=[
+            Parameter('backend', value='color_fixture'),
+            Parameter('trace_enabled', value=True),
+            Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+        peer = Node('trace_detector_peer')
+        executor.add_node(detector)
+        executor.add_node(peer)
+        traces, payloads, detections, sent = [], [], [], set()
+        def received_trace(message):
+            payloads.append(message.data)
+            traces.append(json.loads(message.data))
+        sub = peer.create_subscription(String, '/vision/detector_trace',
+                                         received_trace, qos_profile_sensor_data)
+        detected = peer.create_subscription(Detection2DArray, '/vision/detections',
+                                             detections.append, qos_profile_sensor_data)
+        image = np.zeros((80, 100, 3), np.uint8)
+        image[10:30, 20:40, 2] = 255
+        deadline = time.monotonic()+1.
+        while time.monotonic() < deadline and not traces:
+            t = peer.get_clock().now().nanoseconds/1e9
+            calibration = info(t)
+            calibration.width, calibration.height = 100, 80
+            detector.on_info(calibration)
+            rgb = stamp(Image(), t)
+            rgb.width, rgb.height, rgb.step, rgb.encoding = 100, 80, 300, 'bgr8'
+            rgb.data = image.tobytes()
+            sent.add(rgb.header.stamp.sec*1_000_000_000+rgb.header.stamp.nanosec)
+            detector.on_rgb(rgb)
+            end = time.monotonic()+.04
+            while time.monotonic() < end:
+                executor.spin_once(timeout_sec=.005)
+        assert detections, 'original real ROS detection missing'
+        assert traces, 'missing capture-linked detector trace'
+        assert all(len(payload.encode('utf-8')) <= 4096 for payload in payloads)
+        published = next(v for v in traces if v['outcome'] == 'PUBLISHED')
+        assert published['source_frame'] == 'camera_optical_frame'
+        assert published['capture_ns'] in sent
+        assert published['ros_now_ns'] >= published['capture_ns']
+        keys = ('rgb_receive', 'slot_put', 'work_take', 'convert_start', 'convert_end',
+                'inference_start', 'inference_end', 'publish_start', 'publish_end')
+        times = [published['times_ns'][k] for k in keys]
+        assert times == sorted(times) and times[0] > 0
+        assert detector.gate.max_age == .3
+    finally:
+        executor.shutdown(timeout_sec=2.)
+        if detector is not None:
+            detector.destroy_node()
+        if peer is not None:
+            peer.destroy_node()
+        rclpy.try_shutdown()
+
+
 def test_explicit_fifteen_hz_option_keeps_default_ten_and_single_worker():
     rclpy.init(domain_id=146)
     nodes = []
@@ -41,12 +97,15 @@ def test_explicit_fifteen_hz_option_keeps_default_ten_and_single_worker():
 
 
 @pytest.mark.parametrize('delay,should_publish', [(.15, True), (.35, False)])
-def test_delayed_detector_capture_header_and_stale_completion(delay, should_publish):
+@pytest.mark.parametrize('trace_enabled', [False, True])
+def test_delayed_detector_capture_header_and_stale_completion(delay, should_publish, trace_enabled):
     rclpy.init(domain_id=146)
     detector, stimulus, executor = None, None, SingleThreadedExecutor()
     try:
         detector = ObjectDetector(parameter_overrides=[
             Parameter('backend', value='color_fixture'),
+            Parameter('trace_enabled', value=trace_enabled),
+            Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8'),
             Parameter('processing_delay_s', value=delay)])
         stimulus = Node('detector_input_fixture')
         executor.add_node(detector)
