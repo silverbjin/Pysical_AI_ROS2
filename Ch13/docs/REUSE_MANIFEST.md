@@ -1,5 +1,11 @@
 # Ch13 13.2 재사용·출처 명세
 
+13.3 추가: `integrated_robot_interfaces`, `integrated_robot_runtime`, 검증기와 정책
+테스트는 새로 작성했다. 13.2 모델/launch 재사용 기준 커밋은
+`8d7d7e0b6003845ad7e6ef77420cf35e16758202`이며 원본 파일을 직접 호출한다.
+Ch05~Ch12 코드의 추가 복사는 없다. ROS 2 rclpy/message_filters는 설치된 외부
+의존성으로 사용하며 그 소스를 패키지에 복사하지 않는다.
+
 ## 기준점
 
 - 구현 시작 기준: `1451f54a64374f2ff150a39429cc89e9e3b07696`
