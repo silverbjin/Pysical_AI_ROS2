@@ -2,7 +2,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import Command, LaunchConfiguration
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 # [해결책] 거대 XML(URDF) 문자열 파싱 오류를 방지하기 위한 클래스 임포트
 from launch_ros.parameter_descriptions import ParameterValue
@@ -12,7 +12,7 @@ def generate_launch_description():
     pkg_share = get_package_share_directory('my_robot_description')
     
     # 3장에서 만든 xacro 파일 경로 (자신의 파일명에 맞게 수정)
-    urdf_file = os.path.join(pkg_share, 'urdf', 'robot.urdf.xacro')
+    urdf_file = PathJoinSubstitution([pkg_share, 'urdf', LaunchConfiguration('model')])
     
     # 2. Xacro를 URDF로 변환하는 커맨드 생성
     # Command 함수는 실행 시점에 xacro 명령어를 수행하여 XML 문자열을 얻어낸다.
@@ -55,6 +55,8 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        DeclareLaunchArgument('model', default_value='two_dof_arm.urdf',
+                              description='URDF or Xacro filename in the package urdf directory'),
         robot_state_publisher_node,
         joint_state_publisher_gui_node,
         rviz_node
