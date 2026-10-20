@@ -1,0 +1,25 @@
+.............F....                                                       [100%]
+=================================== FAILURES ===================================
+_________________ test_cpp_real_ros_trace_is_decoded_by_python _________________
+
+    def test_cpp_real_ros_trace_is_decoded_by_python():
+        import os
+        build = os.environ.get('CH13_EGL_BUILD')
+        assert build, 'run with the explicitly selected fresh build prefix'
+        executable = Path(build)/'integrated_robot_camera/test_camera_trace'
+        result = subprocess.run([str(executable),
+            '--gtest_filter=TraceTest.TraceEscapesStringsAndCapsUtf8Bytes', '--gtest_output='],
+            capture_output=True, text=True, timeout=20.)
+        assert result.returncode == 0, result.stdout+result.stderr
+        payloads = [line.removeprefix('CAMERA_TRACE_CONTRACT ') for line in result.stdout.splitlines()
+                    if line.startswith('CAMERA_TRACE_CONTRACT ')]
+>       assert len(payloads) == 1, 'C++ actual ROS publisher/subscriber contract record missing'
+E       AssertionError: C++ actual ROS publisher/subscriber contract record missing
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+Ch13/tests/test_section_13_4_trace.py:178: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/trace-prebuild-contract.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_trace.py::test_cpp_real_ros_trace_is_decoded_by_python
+1 failed, 17 passed in 9.59s

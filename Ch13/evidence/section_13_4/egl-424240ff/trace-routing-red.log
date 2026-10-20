@@ -1,0 +1,51 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_trace_arguments_reach_only_requested_nodes ________________
+
+    def test_trace_arguments_reach_only_requested_nodes():
+        run = '424240ff-0bfe-4a4b-92d4-93f6a78d49b8'
+        ctx = context(trace_enabled='true', trace_run_id=run, vision_camera_backend='snapshot')
+        vision = load('integrated_robot_vision', 'vision.launch.py')
+        for node in vision.launch_nodes(ctx):
+            parameters = evaluate_parameters(ctx, node._Node__parameters)
+>           assert any(v.get('trace_enabled') is True and v.get('trace_run_id') == run
+                       for v in parameters if isinstance(v, dict)), 'missing explicit trace parameters'
+E           AssertionError: missing explicit trace parameters
+E           assert False
+E            +  where False = any(<generator object test_trace_arguments_reach_only_requested_nodes.<locals>.<genexpr> at 0x70910b1c6dc0>)
+
+Ch13/tests/test_section_13_4_launch.py:69: AssertionError
+_________ test_trace_config_is_snapshot_only_and_does_not_edit_source __________
+
+    def test_trace_config_is_snapshot_only_and_does_not_edit_source():
+        module = load('integrated_robot_description', 'mujoco.launch.py')
+        share = SRC/'integrated_robot_description'
+        source = share/'config/controllers.yaml'
+        run = '424240ff-0bfe-4a4b-92d4-93f6a78d49b8'
+        for backend in ('snapshot', 'upstream'):
+            plugin = Path(module.camera_plugin_config(share, True, backend))
+            before = plugin.read_bytes()
+            options = {'trace_enabled': True, 'trace_run_id': run}
+>           merged = yaml.safe_load(Path(module.materialize_controller_config(
+                source, plugin, trace_options=options)).read_text())
+E           TypeError: materialize_controller_config() got an unexpected keyword argument 'trace_options'
+
+Ch13/tests/test_section_13_4_launch.py:97: TypeError
+___________ test_trace_cli_launch_uses_trial_uuid_and_is_default_off ___________
+
+    def test_trace_cli_launch_uses_trial_uuid_and_is_default_off():
+        runner = importlib.import_module('run_vision_13_4')
+        args = argparse.Namespace(engine='mujoco', detector_backend='color_fixture',
+            weights_path='', scenario='static', trace_enabled=True,
+            trace_run_id='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')
+        command = runner.build_launch_command(args, 0.)
+>       assert 'trace_enabled:=true' in command
+E       AssertionError: assert 'trace_enabled:=true' in ['ros2', 'launch', 'integrated_robot_runtime', 'vision_system.launch.py', 'engine:=mujoco', 'detector_backend:=color_fixture', ...]
+
+Ch13/tests/test_section_13_4_runner.py:22: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/trace-routing-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_launch.py::test_trace_arguments_reach_only_requested_nodes
+FAILED Ch13/tests/test_section_13_4_launch.py::test_trace_config_is_snapshot_only_and_does_not_edit_source
+FAILED Ch13/tests/test_section_13_4_runner.py::test_trace_cli_launch_uses_trial_uuid_and_is_default_off
+3 failed in 4.69s

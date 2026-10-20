@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="6.391" timestamp="2026-10-20T09:16:14.648239+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_tracking_ros" name="test_default_off_exclusive_session_and_disable_cancels_without_successor[compute_expiry]" time="3.431"><failure message="assert (1792455379786387381 - 1792455379780238078) &gt; 300000000">stop = 'compute_expiry'
+
+    @pytest.mark.parametrize('stop', ['operator', 'loss', 'lifecycle', 'foreign', 'shutdown', 'camera_motion',
+                                     'compute_expiry'])
+    def test_default_off_exclusive_session_and_disable_cancels_without_successor(stop):
+        rclpy.init(domain_id=148)
+        node, peer, executor, thread = None, None, None, None
+        stopping = threading.Event()
+        try:
+            node = ManipulationNode(parameter_overrides=[
+                Parameter('allow_camera_motion_test', value=stop == 'camera_motion'),
+                Parameter('trace_enabled', value=stop == 'compute_expiry'),
+                Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+            peer = Node('tracking_action_peer')
+            assert hasattr(node, 'tracking'), 'missing runtime tracking integration'
+            goals, cancellations, commands, goal_ids = [], [], [], []
+    
+            def execute(handle):
+                goals.append(handle.request)
+                goal_ids.append(bytes(handle.goal_id.uuid).hex())
+                deadline = time.monotonic()+2.
+                while time.monotonic() &lt; deadline and not handle.is_cancel_requested:
+                    time.sleep(.005)
+                if handle.is_cancel_requested:
+                    cancellations.append(True)
+                    handle.canceled()
+                else:
+                    handle.succeed()
+                return FollowJointTrajectory.Result(error_code=0)
+    
+            server = ActionServer(peer, FollowJointTrajectory,
+                                  '/arm_trajectory_controller/follow_joint_trajectory', execute,
+                                  cancel_callback=lambda _: CancelResponse.ACCEPT,
+                                  callback_group=node.group)
+            audit = peer.create_subscription(String, '/architecture/arm_command',
+                                              lambda m: commands.append(json.loads(m.data)), 10)
+            from rclpy.qos import qos_profile_sensor_data
+            traces = []
+            trace_sub = peer.create_subscription(String, '/architecture/tracking_trace',
+                lambda m: traces.append(json.loads(m.data)), qos_profile_sensor_data)
+            executor = DrainingExecutor(num_threads=6)
+            executor.add_node(node)
+            executor.add_node(peer)
+            def spin():
+                while not stopping.is_set():
+                    executor.spin_once(timeout_sec=.01)
+    
+            thread = threading.Thread(target=spin)
+            thread.start()
+            path = '/manipulation_node/set_camera_motion_test' if stop == 'camera_motion' else (
+                '/manipulation_node/set_visual_tracking')
+            toggle = peer.create_client(SetBool, path)
+            stow = peer.create_client(Trigger, '/manipulation_node/stow')
+            assert toggle.wait_for_service(timeout_sec=3)
+            time.sleep(.1)
+            assert goals == []
+            assert commands == []
+            rejected = toggle.call_async(SetBool.Request(data=True))
+            wait(rejected.done)
+            assert not rejected.result().success  # inactive and missing all inputs
+            pkg = Path(__file__).resolve().parents[2] / 'integrated_robot_description'
+            xml = subprocess.run(['xacro', str(pkg/'urdf/robot_system.urdf.xacro'),
+                                  'vision_enabled:=true'], check=True, capture_output=True, text=True).stdout
+            node.tracking.on_model(String(data=xml))
+            transform = TransformStamped()
+            transform.header.frame_id, transform.child_frame_id = 'base_link', 'odom'
+            transform.transform.rotation.w = 1.
+            node.tracking.buffer.set_transform_static(transform, 'boundary-test-only')
+            node.on_activate(None)
+            node.safe = True  # This boundary test bypasses physical stow; engine test must not.
+            info = CameraInfo(width=320, height=240, distortion_model='plumb_bob')
+            info.header.frame_id = 'camera_optical_frame'
+            info.k = [277., 0., 160., 0., 277., 120., 0., 0., 1.]
+            info.r = [1., 0., 0., 0., 1., 0., 0., 0., 1.]
+            info.header.stamp = node.get_clock().now().to_msg()
+            node.tracking.on_info(info)
+            node.tracking.on_legs(String(data=json.dumps(dict(active=True, ready=True, mode='STAND'))))
+            joints = JointState(name=list(ARM_NAMES+LEG_NAMES), position=[0.]*6+list(STAND))
+            joints.header.stamp = node.get_clock().now().to_msg()
+            node.on_joints(joints)
+            target = TrackedTarget(valid=True, status='TRACKED', track_id='one', class_id='fixture', score=.9)
+            target.header.frame_id, target.source_header.frame_id = 'odom', 'camera_optical_frame'
+            target.header.stamp = target.source_header.stamp = node.get_clock().now().to_msg()
+            target.position.x, target.position.y, target.position.z = .90, .02, .35
+            node.tracking.on_target(target)
+            if stop == 'compute_expiry':
+                calculate = node.tracking.current_goal
+    
+                def delayed_calculation(now, wall):
+                    values = calculate(now, wall)
+                    time.sleep(.31)  # real elapsed computation, not a mocked motor publisher
+                    return values
+    
+                node.tracking.current_goal = delayed_calculation
+            enabled = toggle.call_async(SetBool.Request(data=True))
+            wait(enabled.done)
+            assert enabled.result().success, enabled.result().message
+            if stop == 'compute_expiry':
+                time.sleep(.6)
+                assert goals == [] and commands == []
+                assert not node.tracking.guard.enabled
+                wait(lambda: any(v['outcome'] == 'GATE_LOST' for v in traces))
+                lost = next(v for v in traces if v['outcome'] == 'GATE_LOST')
+&gt;               assert lost['ros_now_ns']-lost['capture_ns'] &gt; 300_000_000
+E               assert (1792455379786387381 - 1792455379780238078) &gt; 300000000
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:223: AssertionError</failure></testcase></testsuite></testsuites>

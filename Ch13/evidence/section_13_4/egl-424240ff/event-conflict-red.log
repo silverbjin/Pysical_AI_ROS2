@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_conflicting_event_never_chooses_the_first_arrival ____________
+
+    def test_conflicting_event_never_chooses_the_first_arrival():
+        value = rows()
+        conflict = deepcopy(value[0])
+        conflict['record']['local_epoch'] += 1
+        value.append(conflict)  # same producer/event ID, different snapshot epoch
+        result = analyze_trace(value, expected_run_id=RUN, require_native=True)
+>       assert 'native_to_dispatch' not in result['segments']
+E       AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}
+
+Ch13/tests/test_section_13_4_trace.py:75: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/event-conflict-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_trace.py::test_conflicting_event_never_chooses_the_first_arrival
+1 failed in 4.01s

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite
+  name="integrated_robot_description.flake8"
+  tests="5"
+  errors="0"
+  failures="5"
+  time="0.969"
+>
+  <testcase
+    name="I100 (./launch/mujoco.launch.py:27:1)"
+    classname="integrated_robot_description.flake8"
+  >
+      <failure message="Import statements are in the wrong order. 'from integrated_robot_vision.trace import trace_options' should be before 'from launch_ros.parameter_descriptions import ParameterValue':&#10;from integrated_robot_vision.trace import trace_options as validate_trace_options&#10;"/>
+  </testcase>
+  <testcase
+    name="C408 (./launch/mujoco.launch.py:39:48)"
+    classname="integrated_robot_description.flake8"
+  >
+      <failure message="Unnecessary dict call - rewrite as a literal.:&#10;            options = validate_trace_options(**dict(enabled=trace_options['trace_enabled'],&#10;"/>
+  </testcase>
+  <testcase
+    name="E128 (./launch/mujoco.launch.py:40:52)"
+    classname="integrated_robot_description.flake8"
+  >
+      <failure message="continuation line under-indented for visual indent:&#10;                                                   run_id=trace_options['trace_run_id']))&#10;"/>
+  </testcase>
+  <testcase
+    name="E501 (./launch/mujoco.launch.py:94:100)"
+    classname="integrated_robot_description.flake8"
+  >
+      <failure message="line too long (106 &gt; 99 characters):&#10;    trace = validate_trace_options(LaunchConfiguration('trace_enabled', default='false').perform(context),&#10;"/>
+  </testcase>
+  <testcase
+    name="E128 (./launch/mujoco.launch.py:95:35)"
+    classname="integrated_robot_description.flake8"
+  >
+      <failure message="continuation line under-indented for visual indent:&#10;                                  LaunchConfiguration('trace_run_id', default='').perform(context))&#10;"/>
+  </testcase>
+  <system-out>Checked files:
+* ./launch/gazebo.launch.py
+* ./launch/mujoco.launch.py
+* ./launch/view_robot.launch.py
+* ./launch/vision_sensors.launch.py</system-out>
+</testsuite>

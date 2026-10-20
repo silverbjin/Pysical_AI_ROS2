@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.926" timestamp="2026-10-20T09:30:31.956485+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_section_13_4_trace" name="test_gate_loss_without_source_retains_unknown_age_not_fake_zero" time="0.001"><failure message="assert 0 == 1&#10; +  where 0 = len([])">def test_gate_loss_without_source_retains_unknown_age_not_fake_zero():
+        value = record('tracking', capture=None)
+        value.update(source_frame='', outcome='GATE_LOST')
+        value['times_ns'] = dict(decision=100, gate_lost=200)
+        result = analyze_trace([dict(received_ns=1000, record=value)],
+                               expected_run_id=RUN, require_native=False)
+&gt;       assert len(result['gate_losses']) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+Ch13/tests/test_section_13_4_trace.py:122: AssertionError</failure></testcase></testsuite></testsuites>

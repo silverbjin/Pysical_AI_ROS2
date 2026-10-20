@@ -1,0 +1,59 @@
+Starting >>> integrated_robot_interfaces
+Starting >>> integrated_robot_camera
+--- stderr: integrated_robot_camera
+-- GLOB mismatch!
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp: In member function ‘virtual void {anonymous}::MailboxTest_AcquiredTimingSurvivesOverwriteAndReset_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:64:47: error: no matching function for call to ‘integrated_robot_camera::SnapshotMailbox::SnapshotMailbox(std::unique_ptr<mjModel_, void (*)(mjModel_*)>::pointer, int, bool)’
+   64 |   SnapshotMailbox mailbox(model.get(), 2, true);
+      |                                               ^
+In file included from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:14:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:61:12: note: candidate: ‘integrated_robot_camera::SnapshotMailbox::SnapshotMailbox(const mjModel*, size_t)’
+   61 |   explicit SnapshotMailbox(const mjModel * model, size_t camera_count);
+      |            ^~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:61:12: note:   candidate expects 2 arguments, 3 provided
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:68:30: error: ‘class integrated_robot_camera::SnapshotMailbox::RenderLease’ has no member named ‘timing’
+   68 |   const auto timing = lease->timing();
+      |                              ^~~~~~
+In file included from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:72,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:2:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:84:20: error: ‘class integrated_robot_camera::SnapshotMailbox::RenderLease’ has no member named ‘timing’
+   84 |   EXPECT_EQ(lease->timing().submit_start_ns, timing.submit_start_ns);
+      |                    ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:85:20: error: ‘class integrated_robot_camera::SnapshotMailbox::RenderLease’ has no member named ‘timing’
+   85 |   EXPECT_EQ(lease->timing().submit_end_ns, timing.submit_end_ns);
+      |                    ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:86:20: error: ‘class integrated_robot_camera::SnapshotMailbox::RenderLease’ has no member named ‘timing’
+   86 |   EXPECT_EQ(lease->timing().acquire_ns, timing.acquire_ns);
+      |                    ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:90:20: error: ‘class integrated_robot_camera::SnapshotMailbox::RenderLease’ has no member named ‘timing’
+   90 |   EXPECT_GT(fresh->timing().submit_start_ns, timing.acquire_ns);
+      |                    ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp: In member function ‘virtual void {anonymous}::MailboxTest_DisabledTimingIsZero_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:98:20: error: ‘class integrated_robot_camera::SnapshotMailbox::RenderLease’ has no member named ‘timing’
+   98 |   EXPECT_EQ(lease->timing().submit_start_ns, 0u);
+      |                    ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_camera_trace.cpp:5:10: fatal error: camera_trace.hpp: No such file or directory
+    5 | #include "camera_trace.hpp"
+      |          ^~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:99:20: error: ‘class integrated_robot_camera::SnapshotMailbox::RenderLease’ has no member named ‘timing’
+   99 |   EXPECT_EQ(lease->timing().submit_end_ns, 0u);
+      |                    ^~~~~~
+compilation terminated.
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:100:20: error: ‘class integrated_robot_camera::SnapshotMailbox::RenderLease’ has no member named ‘timing’
+  100 |   EXPECT_EQ(lease->timing().acquire_ns, 0u);
+      |                    ^~~~~~
+gmake[2]: *** [CMakeFiles/test_camera_trace.dir/build.make:76: CMakeFiles/test_camera_trace.dir/test/test_camera_trace.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:250: CMakeFiles/test_camera_trace.dir/all] Error 2
+gmake[1]: *** Waiting for unfinished jobs....
+gmake[2]: *** [CMakeFiles/test_snapshot_mailbox.dir/build.make:76: CMakeFiles/test_snapshot_mailbox.dir/test/test_snapshot_mailbox.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:278: CMakeFiles/test_snapshot_mailbox.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< integrated_robot_camera [21.3s, exited with code 2]
+Aborted  <<< integrated_robot_interfaces [21.8s]
+
+Summary: 0 packages finished [23.4s]
+  1 package failed: integrated_robot_camera
+  1 package aborted: integrated_robot_interfaces
+  1 package had stderr output: integrated_robot_camera
+  3 packages not processed

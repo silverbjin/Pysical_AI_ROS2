@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="3.314" timestamp="2026-10-20T09:26:25.688515+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_section_13_4_launch" name="test_trace_arguments_reach_only_requested_nodes" time="0.297"><failure message="AttributeError: 'str' object has no attribute 'text'">def test_trace_arguments_reach_only_requested_nodes():
+        run = '424240ff-0bfe-4a4b-92d4-93f6a78d49b8'
+        ctx = context(trace_enabled='true', trace_run_id=run, vision_camera_backend='snapshot')
+        vision = load('integrated_robot_vision', 'vision.launch.py')
+        for node in vision.launch_nodes(ctx):
+            parameters = evaluate_parameters(ctx, node._Node__parameters)
+            assert any(v.get('trace_enabled') is True and v.get('trace_run_id') == run
+                       for v in parameters if isinstance(v, dict)), 'missing explicit trace parameters'
+        system = load('integrated_robot_runtime', 'vision_system.launch.py')
+        actions = system.launch_nodes(ctx)
+        for action in actions:
+            assert dict(action.launch_arguments)['trace_run_id'] == run
+        gazebo = system.launch_nodes(context(engine='gazebo', trace_enabled='true', trace_run_id=run))
+        assert 'trace_enabled' not in dict(gazebo[0].launch_arguments)
+        for arguments in ({'trace_enabled': 'maybe'}, {'trace_enabled': 'true', 'trace_run_id': ''}):
+            with pytest.raises(ValueError):
+                system.launch_nodes(context(**arguments))
+        architecture = load('integrated_robot_runtime', 'architecture.launch.py')
+        nodes = [v for v in architecture.launch_nodes(ctx) if isinstance(v, Node)]
+        for node in nodes:
+            parameters = evaluate_parameters(ctx, node._Node__parameters)
+            tracing = [v for v in parameters if isinstance(v, dict) and 'trace_enabled' in v]
+&gt;           assert bool(tracing) is (node.node_executable[0].text == 'manipulation_node')
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'str' object has no attribute 'text'
+
+Ch13/tests/test_section_13_4_launch.py:85: AttributeError</failure></testcase><testcase classname="Ch13.tests.test_section_13_4_launch" name="test_trace_config_is_snapshot_only_and_does_not_edit_source" time="0.058" /><testcase classname="Ch13.tests.test_section_13_4_runner" name="test_trace_cli_launch_uses_trial_uuid_and_is_default_off" time="0.027" /></testsuite></testsuites>

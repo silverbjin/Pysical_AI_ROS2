@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="3.261" timestamp="2026-10-20T09:48:17.612404+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_section_13_4_trace" name="test_incomplete_publication_or_impossible_fusion_causality_never_joins[native_partial]" time="0.001"><failure message="AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}">damage = 'native_partial'
+
+    @pytest.mark.parametrize('damage', ['native_partial', 'fusion_before_tf', 'fusion_before_receive'])
+    def test_incomplete_publication_or_impossible_fusion_causality_never_joins(damage):
+        value = rows()
+        if damage == 'native_partial':
+            value[0]['record']['outcome'] = 'EPOCH_INVALIDATED'
+        elif damage == 'fusion_before_tf':
+            value[2]['record']['times_ns']['tf_end'] = 600
+        else:
+            value[2]['record']['times_ns']['rgb_receive'] = 600
+        result = analyze_trace(value, expected_run_id=RUN, require_native=True)
+&gt;       assert 'native_to_dispatch' not in result['segments']
+E       AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}
+
+Ch13/tests/test_section_13_4_trace.py:110: AssertionError</failure></testcase><testcase classname="Ch13.tests.test_section_13_4_trace" name="test_incomplete_publication_or_impossible_fusion_causality_never_joins[fusion_before_tf]" time="0.001"><failure message="AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}">damage = 'fusion_before_tf'
+
+    @pytest.mark.parametrize('damage', ['native_partial', 'fusion_before_tf', 'fusion_before_receive'])
+    def test_incomplete_publication_or_impossible_fusion_causality_never_joins(damage):
+        value = rows()
+        if damage == 'native_partial':
+            value[0]['record']['outcome'] = 'EPOCH_INVALIDATED'
+        elif damage == 'fusion_before_tf':
+            value[2]['record']['times_ns']['tf_end'] = 600
+        else:
+            value[2]['record']['times_ns']['rgb_receive'] = 600
+        result = analyze_trace(value, expected_run_id=RUN, require_native=True)
+&gt;       assert 'native_to_dispatch' not in result['segments']
+E       AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}
+
+Ch13/tests/test_section_13_4_trace.py:110: AssertionError</failure></testcase><testcase classname="Ch13.tests.test_section_13_4_trace" name="test_incomplete_publication_or_impossible_fusion_causality_never_joins[fusion_before_receive]" time="0.001"><failure message="AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}">damage = 'fusion_before_receive'
+
+    @pytest.mark.parametrize('damage', ['native_partial', 'fusion_before_tf', 'fusion_before_receive'])
+    def test_incomplete_publication_or_impossible_fusion_causality_never_joins(damage):
+        value = rows()
+        if damage == 'native_partial':
+            value[0]['record']['outcome'] = 'EPOCH_INVALIDATED'
+        elif damage == 'fusion_before_tf':
+            value[2]['record']['times_ns']['tf_end'] = 600
+        else:
+            value[2]['record']['times_ns']['rgb_receive'] = 600
+        result = analyze_trace(value, expected_run_id=RUN, require_native=True)
+&gt;       assert 'native_to_dispatch' not in result['segments']
+E       AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}
+
+Ch13/tests/test_section_13_4_trace.py:110: AssertionError</failure></testcase></testsuite></testsuites>

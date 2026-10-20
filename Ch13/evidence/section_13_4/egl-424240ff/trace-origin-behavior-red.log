@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_native_trace_requires_the_audited_live_pid_and_boot ___________
+
+    def test_native_trace_requires_the_audited_live_pid_and_boot():
+        import run_vision_13_4 as runner
+        value = rows()
+        proof = dict(egl_renderer=['unit contract, not a native run'], library_sha256='a'*64,
+                     mailbox_library_sha256='b'*64, native_pid=1, boot_id=BOOT)
+        assert runner.native_trace_origin_verified(value, proof)
+        wrong = deepcopy(value)
+        wrong[0]['record']['pid'] = 999
+>       assert not runner.native_trace_origin_verified(wrong, proof)
+E       AssertionError: assert not True
+E        +  where True = <function native_trace_origin_verified at 0x71451839f7e0>([{'received_ns': 1000, 'record': {'boot_id': '11111111-1111-4111-8111-111111111111', 'capture_ns': 1000000000, 'clock_...111-4111-8111-111111111111', 'capture_ns': 1000000000, 'clock_id': 'linux/CLOCK_MONOTONIC', 'event_sequence': 1, ...}}], {'boot_id': '11111111-1111-4111-8111-111111111111', 'egl_renderer': ['unit contract, not a native run'], 'library_sha2...aaaaaaaaaaaaaaaaaa', 'mailbox_library_sha256': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', ...})
+E        +    where <function native_trace_origin_verified at 0x71451839f7e0> = <module 'run_vision_13_4' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_vision_13_4.py'>.native_trace_origin_verified
+
+Ch13/tests/test_section_13_4_trace.py:146: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/trace-origin-behavior-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_trace.py::test_native_trace_requires_the_audited_live_pid_and_boot
+1 failed in 3.90s

@@ -1,0 +1,37 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_tracking_trace_closes_before_context_shutdown ______________
+
+    def test_tracking_trace_closes_before_context_shutdown():
+        import sys
+        code = '''
+    import rclpy
+    from rclpy.parameter import Parameter
+    from integrated_robot_runtime.manipulation import ManipulationNode
+    rclpy.init(domain_id=149)
+    node = ManipulationNode(parameter_overrides=[
+        Parameter('trace_enabled', value=True),
+        Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+    node.tracking.tick()
+    node.destroy_node()
+    rclpy.shutdown()
+    '''
+        result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True, timeout=15.)
+        assert result.returncode == 0, result.stdout+result.stderr
+        output = result.stdout+result.stderr
+        assert output.count('trace_totals') == 1
+>       assert 'context is invalid' not in output, output
+E       AssertionError: [INFO] [1792455435.095231814] [manipulation_node]: trace_totals {"attempted": 1, "dropped": 0, "emitted": 1, "errors": 0, "oversize": 0, "producer_id": "7512dbdf-a2f0-4195-b168-51eddc830826", "run_id": "424240ff-0bfe-4a4b-92d4-93f6a78d49b8", "topic": "/architecture/tracking_trace"}
+E         Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+E         
+E       assert 'context is invalid' not in '[INFO] [179...sher.c:423\n'
+E         
+E         'context is invalid' is contained here:
+E           blisher's context is invalid, at ./src/rcl/publisher.c:423
+E         ?           ++++++++++++++++++
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:396: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/trace-shutdown-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py::test_tracking_trace_closes_before_context_shutdown
+1 failed in 8.02s

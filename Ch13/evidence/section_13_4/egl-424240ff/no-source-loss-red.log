@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_gate_loss_without_source_retains_unknown_age_not_fake_zero ________
+
+    def test_gate_loss_without_source_retains_unknown_age_not_fake_zero():
+        value = record('tracking', capture=None)
+        value.update(source_frame='', outcome='GATE_LOST')
+        value['times_ns'] = dict(decision=100, gate_lost=200)
+        result = analyze_trace([dict(received_ns=1000, record=value)],
+                               expected_run_id=RUN, require_native=False)
+>       assert len(result['gate_losses']) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+Ch13/tests/test_section_13_4_trace.py:122: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/no-source-loss-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_trace.py::test_gate_loss_without_source_retains_unknown_age_not_fake_zero
+1 failed in 2.94s
