@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_source_inventory_prunes_virtualenv_and_generated_output _________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-12/test_source_inventory_prunes_v0')
+
+    def test_source_inventory_prunes_virtualenv_and_generated_output(tmp_path):
+        for name in ['src/contract.py','.venv/lib/huge.py','evidence/raw.log','ros2_ws/build13_1/cache.py']:
+            p=tmp_path/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text('content')
+>       assert set(module.source_inventory(tmp_path))=={'src/contract.py'}
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_all' has no attribute 'source_inventory'
+
+Ch13/tests/test_verification_summary.py:17: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_verification_summary.py::test_source_inventory_prunes_virtualenv_and_generated_output
+1 failed, 1 deselected in 0.46s

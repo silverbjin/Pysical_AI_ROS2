@@ -2,6 +2,8 @@
 
 작성일: 2026-10-16. ROS 2 Jazzy / Gazebo Harmonic / Ubuntu 24.04 / Windows 11 WSL2 기준.
 
+2026-10-18: 다른 장의 Gazebo가 실행된 환경에서 통신 공간 공유로 인한 기립 이상을 재현했다. 실행 스크립트는 이제 `GZ_PARTITION` 미지정 시 실행마다 독립 partition을 자동 생성한다. 원인·이전 evidence 비교·실행 검증은 [환경 충돌 디버깅 보고서](FIGURE_11_2_ENVIRONMENT_DEBUG_20261018_KO.md)를 참조한다.
+
 2026-10-17 기립 불안정 재발: 활성 FSM이 과거 코드로 되돌아간 것을 복구했다. 실행 스크립트는 이제 빌드 후 그림 회귀 검사 8개가 통과해야 Gazebo를 시작한다. 원인과 반복 실행 결과는 [재디버깅 보고서](FIGURE_11_2_REDEBUG_REPORT_KO.md)를 참조한다.
 
 ## 1. 무엇을 실행하는가?
@@ -59,7 +61,9 @@ bash Ch11/scripts/run_figure_11_2.sh
 ros2 launch my_quadruped_bot SLAM_simulation.launch.py
 ```
 
-이미 다른 장이나 Ch11 시뮬레이션이 실행 중이면 먼저 그 세션을 정상 종료한다. 동일한 로봇·브리지·EKF를 두 번 실행하지 않는다. 새 터미널에서의 실험 격리가 필요하면 모든 실험 터미널에 동일한 별도 `ROS_DOMAIN_ID`와 `GZ_PARTITION`을 설정한다.
+동일한 ROS domain에서 다른 로봇·브리지·EKF가 실행 중이면 먼저 그 세션을 정상 종료한다. 다른 장과 동시에 실험하려면 실험별로 `ROS_DOMAIN_ID`와 `GZ_PARTITION`을 모두 분리하고, 같은 실험에 참여하는 터미널끼리는 같은 값을 사용한다.
+
+스크립트는 `GZ_PARTITION`이 없으면 `ch11_figure_11_2_<UID>_<PID>`를 export하고 실제 값을 출력한다. 외부 `gz topic`·`gz service` 도구로 Ch11을 조사할 때는 출력된 값을 해당 터미널에도 export한다. ROS 진단 터미널은 같은 `ROS_DOMAIN_ID`를 사용한다. 이미 지정된 `GZ_PARTITION`은 존중하므로, 다른 장과 공유하는 값이 남아 있다면 `unset GZ_PARTITION` 후 실행한다. `ROS_DOMAIN_ID`만으로 Gazebo 통신이 분리되지는 않는다. 두 Ch11 인스턴스를 동시에 실행하려면 ROS domain도 분리해야 한다.
 
 직접 빌드·실행하려면:
 
