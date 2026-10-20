@@ -34,12 +34,15 @@
 cd ~/Pysical_AI_ROS2/Ch02/ros2_ws
 source /opt/ros/jazzy/setup.bash
 python3 -m compileall -q src/my_robot_system/my_robot_system/joint_sensor_node.py
-colcon build --symlink-install --packages-select my_robot_system --packages-skip-by-dep my_robot_interfaces
+colcon build --symlink-install --packages-up-to my_robot_system
 source install/setup.bash
 timeout 5s ros2 run my_robot_system joint_sensor
 ```
 
-> 위 timeout 종료코드 124는 의도적인 시간 제한 종료일 수 있다. `--packages-skip-by-dep`는 의존성이 이미 설치된 환경에서만 유효하므로 일반 검증은 `colcon build --symlink-install`을 권장한다.
+> 위 timeout 종료코드 124는 의도적인 시간 제한 종료일 수 있다. 의존성까지 빌드하려면 `--packages-up-to`를 사용한다.
+
+
+> **선행 병합**: 현재 main의 `my_robot_interfaces`는 2.6 액션 정의까지 빌드하지만 `action_msgs` 의존성이 누락되어 있다. 이 절만 단독 PR 체크아웃해 전체 `colcon build`를 실행하면 빌드가 차단될 수 있다. **2.5절 PR을 먼저 main에 병합한 후** 이 절 실습을 검증하라. 2.3절의 `my_robot_system` 실행 의존성 정리도 적용하면 재현성이 높아진다.
 
 ## 4. 완료 기준·잔여 위험
 
