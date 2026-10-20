@@ -60,6 +60,8 @@ def main(args=None):
         )
     except Exception as e:
         client_node.get_logger().error(f'Service call failed: {e}')
+        # console_scripts는 sys.exit(main())을 사용하므로 실패를 성공으로 숨기지 않는다.
+        raise SystemExit(1)
     
     finally:
         # 정상·타임아웃·중복 소환 실패 모두 자원을 회수한다.
