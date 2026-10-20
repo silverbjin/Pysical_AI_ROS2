@@ -3,6 +3,13 @@ import rclpy
 from rclpy.node import Node
 import random  # 센서 값을 임의로 만들기 위한 라이브러리
 
+def advance_sensor_state(angle, battery_level, noise, joint_limit=1.57):
+    """가상 관절각과 배터리값을 결정론적으로 갱신한다 (실제 센서 아님)."""
+    next_angle = max(-joint_limit, min(joint_limit, angle + noise))
+    next_battery = max(0.0, min(100.0, battery_level - 0.1))
+    return next_angle, next_battery
+
+
 # Node 클래스를 상속받아 나만의 노드 클래스를 정의한다.
 class JointSensorNode(Node):
     def __init__(self):
@@ -29,8 +36,9 @@ class JointSensorNode(Node):
         """
         # 가상의 센서 데이터 생성 (랜덤 값)
         noise = random.uniform(-0.1, 0.1)
-        self.joint_angle += noise
-        self.battery_level = max(0.0, self.battery_level - 0.1)  # 0% 미만으로 내려가지 않도록 포화
+        self.joint_angle, self.battery_level = advance_sensor_state(
+            self.joint_angle, self.battery_level, noise
+        )
         
         # 로그 출력: 단순 print()가 아닌 ROS 2 로거를 사용해야 시간 정보 등이 함께 기록된다.
         self.get_logger().info(
