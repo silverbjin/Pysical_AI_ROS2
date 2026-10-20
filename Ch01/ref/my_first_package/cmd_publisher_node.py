@@ -1,44 +1,84 @@
 #!/usr/bin/env python3
+"""êµìœ¡ìš© Twist ë°œí–‰ ë…¸ë“œ: ê¸°ë³¸ ì†ë„ 0, ì œí•œëœ ë°˜ë³µ, ì •ì§€ ëª…ë ¹."""
+import math
+
 import rclpy
-from rclpy.node import Node
-# 1.7Àı ÀÇÁ¸¼º °ü¸®: Twist ¸Ş½ÃÁö Å¸ÀÔÀ» °¡Á®¿È (·Îº¿ ¼Óµµ Á¦¾î¿ë Ç¥ÁØ)
 from geometry_msgs.msg import Twist
+from rclpy.node import Node
+
 
 class CmdPublisherNode(Node):
-    """
-    1.7Àı ½Ç½À: ½Ã¹Ä·¹ÀÌ¼Ç È¯°æÀÇ ·Îº¿¿¡°Ô ¼Óµµ ¸í·É(Twist)À» ¹ßÇàÇÏ´Â ³ëµå
-    """
+    """1.7ì ˆ: 2 Hzë¡œ ì†ë„ ëª…ë ¹ì„ ë°œí–‰í•˜ëŠ” ì œí•œ ì‹œê°„ ì…ë¬¸ ì˜ˆì œ."""
+
     def __init__(self):
         super().__init__('cmd_publisher_node')
-        
-        # 'cmd_vel' ÅäÇÈÀ¸·Î Twist ¸Ş½ÃÁö¸¦ ¹ßÇàÇÏ´Â Publisher »ı¼º
-        # 10Àº Å¥(Queue) »çÀÌÁî¸¦ ÀÇ¹ÌÇÔ
+
+        # ê¸°ë³¸ê°’ì€ ì •ì§€. ì›€ì§ì„ ì‹œì—°ì€ ROS ë§¤ê°œë³€ìˆ˜ë¡œ ëª…ì‹œì ìœ¼ë¡œ ìš”ì²­í•œë‹¤.
+        self.declare_parameter('linear_x', 0.0)
+        self.declare_parameter('angular_z', 0.0)
+        self.declare_parameter('publish_count', 10)
+
+        self.linear_x = float(self.get_parameter('linear_x').value)
+        self.angular_z = float(self.get_parameter('angular_z').value)
+        self.max_publish_count = int(self.get_parameter('publish_count').value)
+        if not math.isfinite(self.linear_x) or not math.isfinite(self.angular_z):
+            raise ValueError('linear_xì™€ angular_zëŠ” ìœ í•œí•œ ìˆ«ìì—¬ì•¼ í•©ë‹ˆë‹¤.')
+        if self.max_publish_count <= 0:
+            raise ValueError('publish_countëŠ” 1 ì´ìƒì˜ ì •ìˆ˜ì—¬ì•¼ í•©ë‹ˆë‹¤.')
+
         self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
-        
-        # 0.5ÃÊ¸¶´Ù ½ÇÇà (2Hz)
+        self.publish_count = 0
+        self.finished = False
         self.timer = self.create_timer(0.5, self.publish_velocity)
-        self.get_logger().info('¼Óµµ ¸í·É ¹ßÇàÀ» ½ÃÀÛÇÕ´Ï´Ù.')
+        self.get_logger().info(
+            f'Twist ë°œí–‰ ì‹œì‘: v={self.linear_x}, w={self.angular_z}, '
+            f'íšŸìˆ˜={self.max_publish_count}'
+        )
 
     def publish_velocity(self):
+        if self.finished:
+            return
+
         msg = Twist()
-        # ¼±¼Óµµ xÃà ¹æÇâÀ¸·Î 0.2m/s (ÀüÁø)
-        msg.linear.x = 0.2
-        # °¢¼Óµµ zÃà ¹æÇâÀ¸·Î 0.5rad/s (ÁÂÈ¸Àü)
-        msg.angular.z = 0.5
-        
+        msg.linear.x = self.linear_x
+        msg.angular.z = self.angular_z
         self.publisher_.publish(msg)
-        self.get_logger().info(f'¸í·É ¼Û½Å: v={msg.linear.x}, w={msg.angular.z}')
+        self.publish_count += 1
+        self.get_logger().info(
+            f'ëª…ë ¹ ì†¡ì‹  {self.publish_count}/{self.max_publish_count}: '
+            f'v={msg.linear.x}, w={msg.angular.z}'
+        )
+
+        if self.publish_count >= self.max_publish_count:
+            self.publish_stop()
+            self.timer.cancel()
+            self.finished = True
+            self.get_logger().info('ë°œí–‰ íšŸìˆ˜ ì™„ë£Œ: ì •ì§€ ëª…ë ¹ì„ ì „ì†¡í–ˆìŠµë‹ˆë‹¤.')
+
+    def publish_stop(self):
+        # DDS ì „ì†¡ì˜ ì‹¤ì œ ìˆ˜ì‹ ì„ ë³´ì¥í•˜ì§€ëŠ” ì•ŠëŠ”ë‹¤.
+        self.publisher_.publish(Twist())
+
 
 def main(args=None):
     rclpy.init(args=args)
-    node = CmdPublisherNode()
+    node = None
     try:
-        rclpy.spin(node)
+        node = CmdPublisherNode()
+        while rclpy.ok() and not node.finished:
+            rclpy.spin_once(node, timeout_sec=0.2)
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        if node is not None:
+            if rclpy.ok():
+                node.publish_stop()
+                # ì¢…ë£Œ ì§ì „ DDS í†µì‹ ì„ ì§„í–‰í•  ì§§ì€ ê¸°íšŒë¥¼ ì œê³µí•œë‹¤.
+                rclpy.spin_once(node, timeout_sec=0.1)
+            node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
