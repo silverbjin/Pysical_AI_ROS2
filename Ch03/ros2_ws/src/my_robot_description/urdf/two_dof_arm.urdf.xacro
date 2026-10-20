@@ -94,7 +94,8 @@
   <gazebo>
     <plugin filename="gz-sim-joint-state-publisher-system"
             name="gz::sim::systems::JointStatePublisher">
-      <update_rate>1000</update_rate> 
+      <!-- 센서 측정값 관찰 실습용 50 Hz. 제어 물리 step(1ms)과 별도임. -->
+      <update_rate>50</update_rate> 
       <joint_name>joint1</joint_name>
       <joint_name>joint2</joint_name>
     </plugin>
