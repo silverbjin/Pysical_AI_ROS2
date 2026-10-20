@@ -47,7 +47,7 @@
 |---|---|---|
 | `Twist` import·ROS 패키지 의존성·entry point 정적 추적 | **REVIEWED** | 원격 소스·메타데이터 읽기 |
 | 2Hz timer, 기본 0/0, 카운트/정지 호출 경로 | **REVIEWED** | 수정 코드 정적 리뷰 |
-| `compileall` | **NOT_RUN** | 수정 코드 컴파일 실행 로그 없음 |
+| `compileall` | **PASS (offline)** | 원격 blob SHA와 일치하는 수정 파일을 Python 3.13.5에서 구문 컴파일 |
 | Jazzy `colcon build` | **NOT_RUN** | 현재 환경에는 `ros2` 및 `colcon` 없음 |
 | 실제 DDS `/ch01_demo/cmd_vel` 발행/수신 | **NOT_RUN** | ROS 그래프 실행 환경 없음 |
 | 카운트 10회·마지막 zero Twist·자동 exit 0 | **NOT_RUN** | ROS2 런타임 검증 필요 |
@@ -73,3 +73,14 @@ echo "exit_code=$?"
 ```
 
 **ACCEPT:** 패키지 빌드 성공, `ros2 pkg executables`의 `cmd_publisher` 노출, remap된 토픽의 `geometry_msgs/msg/Twist` 확인, 약 0.5초 주기로 비영 `linear.x`와 `angular.z` 10회·종료시 zero 명령 관찰 및 자체 종료 코드 0, 기본 실행에서는 비영 속도 명령이 전혀 없어야 한다. ROS 그래프 타이밍상 종료 zero 수신 확인이 불안정하면 **미통과로 기록**하고 추후 확인한다. 로그와 로봇 미연결 상태를 증거로 남긴다.
+
+## 6. 별도 오프라인 검증 (2026-10-20)
+
+원격 `cmd_publisher_node.py`의 Git blob SHA는 `b16e8b5e745affc460da47d8929c0220c00f6366`. 별도 Debian 13/Python 3.13.5 공간의 검사 파일에 대해 `git hash-object`가 **동일한 SHA**를 반환했고 `python3 -m compileall -q`가 성공했다(`PY_COMPILE_PASS`).
+
+ROS 의존성을 가짜 `Node`/`Publisher`/`Twist` 객체로 대체한 **오프라인 콜백 테스트** 결과:
+- `TWIST_DEFAULT_PASS`: 기본 속도 0/0, 10번 발행 후 정지 `Twist` 추가, `finished`·timer 취소.
+- `TWIST_OVERRIDE_PASS`: 파라미터 0.2m/s·0.5rad/s·횟수 3 → 비영 메시지 3회와 마지막 zero 메시지 1회.
+- `TWIST_PARAM_VALIDATION_PASS`: NaN 속도 및 0회 카운트에 대해 `ValueError` 확인.
+
+하네스는 GitHub에 보존하지 않은 일시 검증 코드이므로 독립 CI 증거는 아니다. fake 객체는 ROS 2의 파라미터 서비스·Executor·DDS 전송을 모사하지 않으며, 실제 `ros2 run` 성공·2Hz 실시간 전송·종료 zero 수신을 증명하지 않는다. 실습 Acceptance의 ROS 항목은 여전히 **NOT_RUN**이다.
