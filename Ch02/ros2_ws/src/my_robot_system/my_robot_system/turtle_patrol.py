@@ -42,11 +42,16 @@ class TurtlePatrolNode(Node):
 
     def wait_for_servers(self):
         """필수 서비스와 액션 서버가 준비될 때까지 기다린다."""
-        while not self.pen_client.wait_for_service(timeout_sec=1.0):
+        for _ in range(5):
+            if self.pen_client.wait_for_service(timeout_sec=1.0):
+                break
             self.get_logger().warn('Waiting for SetPen service...')
-        
+        else:
+            raise TimeoutError('SetPen service unavailable after 5 s')
+
         self.get_logger().info('Waiting for RotateAbsolute action server...')
-        self.rotate_client.wait_for_server()
+        if not self.rotate_client.wait_for_server(timeout_sec=5.0):
+            raise TimeoutError('RotateAbsolute action server unavailable after 5 s')
         self.get_logger().info('All systems ready.')
 
     def pose_callback(self, msg):
@@ -113,16 +118,24 @@ class TurtlePatrolNode(Node):
         # Turtlesim의 각도는 -pi ~ pi 범위를 가지므로 정규화가 필요할 수 있으나,
         # RotateAbsolute 액션이 알아서 최단 경로로 처리해준다.
         target_theta = self.current_pose.theta + (math.pi / 2)
-        goal_msg.theta = target_theta
+        goal_msg.theta = math.atan2(math.sin(target_theta), math.cos(target_theta))
         
         send_goal_future = self.rotate_client.send_goal_async(goal_msg)
         send_goal_future.add_done_callback(self.goal_response_callback)
 
     def goal_response_callback(self, future):
         """액션 서버가 목표를 수락했는지 확인"""
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.get_logger().info('Rotation rejected :(')
+        try:
+            goal_handle = future.result()
+            if not goal_handle.accepted:
+                self.get_logger().error('Rotation goal rejected')
+                self.state = 'IDLE'
+                self.stop_robot()
+                return
+        except Exception as exc:
+            self.get_logger().error(f'Rotation goal failed: {exc}')
+            self.state = 'IDLE'
+            self.stop_robot()
             return
 
         # 결과(회전 완료)를 기다림
@@ -131,21 +144,35 @@ class TurtlePatrolNode(Node):
 
     def get_result_callback(self, future):
         """[Action Result] 회전이 완료되면 호출됨"""
-        self.get_logger().info("Rotation Completed.")
-        
-        # 회전이 끝났으므로 다시 직진 상태로 복귀
+        from action_msgs.msg import GoalStatus
+        try:
+            wrapped = future.result()
+            if wrapped.status != GoalStatus.STATUS_SUCCEEDED:
+                self.get_logger().error(f'Rotation did not succeed (status={wrapped.status})')
+                self.state = 'IDLE'
+                self.stop_robot()
+                return
+        except Exception as exc:
+            self.get_logger().error(f'Rotation result failed: {exc}')
+            self.state = 'IDLE'
+            self.stop_robot()
+            return
+        self.get_logger().info('Rotation Completed.')
         self.start_forward_motion()
 
 def main(args=None):
     rclpy.init(args=args)
-    node = TurtlePatrolNode()
+    node = None
     try:
+        node = TurtlePatrolNode()
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        if node is not None:
+            node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
