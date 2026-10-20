@@ -1,78 +1,64 @@
-# SECTION 1.6 — 기본 ROS 2 노드 코드 리뷰 보고서
+# SECTION 1.6 — Python 3.12 첫 번째 ROS 2 노드 코드 리뷰
 
-- 작성: 2026-10-20 KST / 저장소 `silverbjin/Pysical_AI_ROS2`
-- 기준 `main`: `f5aed1d250563efc298e717559497db3b4f205c7`
+- 작성: 2026-10-20 KST
+- 기준 main: `f5aed1d250563efc298e717559497db3b4f205c7`
 - 작업 브랜치: `feat/ch01-section-1-6`
-- 상태: **STATIC_REVIEW_COMPLETE / FIXES_APPLIED / ROS_RUNTIME_NOT_VERIFIED**
-- 분류: `simple_node.py` 주석의 “1.6절”을 따름. `my_robot_controller` 및 `robot_monitor`는 절 번호가 없는 **보조 예제**다.
+- 원고 1.6.1~1.6.4: `SimpleController` 클래스, 타이머, OOP, `rclpy.spin`, `test_node`.
+- 판정: **MANUSCRIPT_ALIGNED / STATIC_REVIEWED / ROS2_RUNTIME_NOT_RUN**.
 
-## 1. 실제 파일·계약
+## 1. 주교재와 저장소 코드의 정확한 연결
 
-| 소스 및 진입점 | 기대 동작 |
-|---|---|
-| `ref/my_first_package/simple_node.py` → `simple_node` | 이름 `/simple_node`, 1초 주기 INFO·증가 카운터 |
-| `robot_ws/src/my_robot_controller/my_robot_controller/simple_controller.py` → `test_node` | 이름 `/my_robot_node`, 1초 주기 Heartbeat **로그만 출력**, 토픽 발행 없음 |
-| `robot_ws/src/robot_monitor/robot_monitor/battery_node.py` → `battery_node` | 이름 `/battery_monitor`, 초기 가상 배터리 100%, 1초마다 10%p 감소, 0%에서 종료 |
-| `setup.py`/`package.xml`/`setup.cfg` | ament_python 빌드 및 `ros2 run` 진입점 등록 |
-
-실제 로봇 제어, 배터리 센서 수신, Gazebo, MuJoCo는 해당 소스에 없다.
-
-## 2. 발견 사항과 조치
-
-| ID | 중요도 | 근거 및 실행에 미치는 영향 | 결과 |
-|---|---|---|---|
-| 16-01 | High | `Ch01/ref`에 `setup.cfg`가 빠져 ROS 2 표준 `lib/my_first_package` 스크립트 배치가 불확실하고 `ros2 run`이 실패할 수 있음 | **수정**: 설치·개발 실행 경로 추가 |
-| 16-02 | Medium | `ref/README.md`가 미완성 `git clone <your-repository-url>`에서 끝나 재현 불가능 | **수정**: 패키지 별도 복사·빌드·실행 순서 기재 |
-| 16-03 | Medium | 배터리 노드는 0%에서 타이머만 cancel하고 `rclpy.spin()`은 남아 자동 종료되지 않음 | **수정**: `finished` 플래그+`spin_once` 루프로 완료 후 종료 |
-| 16-04 | Medium | `battery_node`는 내부 숫자를 조작하며 실제 `/battery_state` 토픽을 읽지 않음 | **문서화/로그 수정**: 모의 배터리임을 명확히 표시 |
-| 16-05 | Medium | `robot_ws/src/examples`의 외부 ROS 예제 다수로 전체 빌드 시 의도 밖 의존성·시간 증가 | **가이드**: 3개 패키지만 고립 복사·선택 빌드 |
-| 16-06 | Low | `my_robot_controller`·`robot_monitor`의 메타데이터에 TODO 라이선스/설명이 남아 있고 기능 테스트가 없음 | **OPEN**: 저작권자 결정 필요, 테스트 후속 |
-
-`ref/setup.py`의 `simple_node`와 `cmd_publisher` 진입점, `my_robot_controller/setup.py`의 `test_node`, `robot_monitor/setup.py`의 `battery_node` 정의와 Python의 `main` 함수를 대응 확인했다. 세 노드 모두 정상 종료 시 자원 정리 경로를 가진다. 새 배터리 종료 루프의 시간·신호 동작은 실제 ROS 환경에서 확인해야 한다.
-
-## 3. 변경 목록
-
-- `Ch01/ref/setup.cfg` 신규
-- `Ch01/ref/README.md` 수정
-- `Ch01/robot_ws/src/robot_monitor/robot_monitor/battery_node.py` 수정
-- `Ch01/README.md` 신규 색인
-- 이 보고서 및 `LAB_1_6_GUIDE_KO.md` 신규
-
-## 4. 검증 구분 (Ch12 방식 준용)
-
-| 검사 | 판정 | Evidence |
+| 원고 항목 | 실제 기준 파일·심볼 | 분석 |
 |---|---|---|
-| 원격 소스 구조·패키지 메타데이터·진입점 | **REVIEWED** | GitHub `main`의 실제 파일 읽기 |
-| 타이머/카운터/종료 제어 흐름 | **REVIEWED** | 소스 정적 추적; 실행 값 아님 |
-| `python3 -m compileall` | **PASS (offline)** | 원격 blob SHA 동일한 `battery_node.py`를 Python 3.13.5에서 컴파일 검증; ROS 2와 별개 |
-| `colcon build --symlink-install` | **NOT_RUN** | ROS 2 Jazzy·colcon 없음 |
-| `ros2 run`, `ros2 node list`, 로그 주기 | **NOT_RUN** | ROS 그래프 구동 환경 없음 |
-| 모의 배터리 10회 감소·exit 0 | **NOT_RUN** | 실제 실행과 종료 코드 확인 필요 |
-| `colcon test`/CI/독립 리뷰 | **NOT_RUN** | 기능 테스트 로그 없음 |
+| 1.6.1 SimpleController | `Ch01/robot_ws/src/my_robot_controller/my_robot_controller/simple_controller.py` | `Node` 상속, 이름 `my_robot_node`, 1.0초 타이머 |
+| 1.6.3 console_scripts | `Ch01/robot_ws/src/my_robot_controller/setup.py` | `test_node = my_robot_controller.simple_controller:main` |
+| 빌드 타입·의존성 | `Ch01/robot_ws/src/my_robot_controller/package.xml` | `ament_python`, `rclpy`, `std_msgs` |
+| 실행파일 설치 디렉터리 | `Ch01/robot_ws/src/my_robot_controller/setup.cfg` | `lib/my_robot_controller` 설정 존재 |
+| 보조 예제(원고 본문 아님) | `Ch01/ref/my_first_package/simple_node.py`, `robot_ws/src/robot_monitor` | 기존 리뷰에서 주 대상으로 삼았으나 **이번에는 부록**으로 명시 |
 
-리뷰 실행 환경은 Debian 13 / Python 3.13이며 `ros2` 및 `colcon` 명령이 설치되어 있지 않았다. 따라서 **실행 PASS·자동 테스트 PASS를 주장하지 않는다.**
+원고의 `Count: N` 메시지와 실제 코드의 `Heartbeat: N`은 다르다. **실습의 기대 출력은 저장소 실제 코드인 `Heartbeat: N`을 기준으로 한다.** 원고 1.6.4에 인쇄된 실행 예시도 Heartbeat이므로 결과 예시와 일치한다.
+
+## 2. 정적 코드 리뷰
+
+| ID | 우선 | 관찰 | 판정·개선 |
+|---|---|---|---|
+| 16-01 | High | 이전 리뷰의 주대상을 `ref/simple_node.py`로 오인 | **문서 수정:** `my_robot_controller/simple_controller.py`를 핵심으로 변경 |
+| 16-02 | High | 원고 `source install/setup.` 오탈자 | **가이드 수정:** `source install/setup.bash` 사용 |
+| 16-03 | Medium | 원고 생성 초기 `simple_controller` vs 실제 최종 `test_node` | **가이드 수정:** `test_node` 실행 및 `ros2 pkg executables`로 확인 |
+| 16-04 | Medium | 원고 1.6.1 메시지 `Count`와 실제 `Heartbeat` 상이 | **정정:** 실행 로그는 실제 source 문자열로 제시 |
+| 16-05 | Low | `std_msgs` 의존성이 선언되지만 `simple_controller.py`에서는 import하지 않음 | 학습용 명시 의존성. 후속 정리 가능 |
+| 16-06 | Medium | 실제 `rclpy.shutdown()`의 예외·중복 종료 동작을 Jazzy에서 검증하지 않음 | 종료 후 stack trace·exit code 실측 필요. 필요 시 `rclpy.try_shutdown()` 패턴 검토 |
+| 16-07 | Medium | 타이머 콜백 INFO는 토픽 송신이 아님 | `create_publisher()`가 없어 `ros2 topic echo`로 Heartbeat은 수신 불가; 로깅과 publish 구분 |
+
+## 3. 기존 브랜치에 포함된 보조 수정과 스코프
+
+이 브랜치는 앞선 검토에서 `Ch01/ref/setup.cfg` 누락 수정, `ref/README.md` 재현 절차 보강, `robot_monitor/battery_node.py` 0% 이후 프로세스 종료 수정이 이미 들어 있다. **이번 1.6절 원고에서 핵심 구현으로 요구한 변경이 아니라 이전부터 포함된 보조 실습 수정이다.** PR 검토 시 별도 판단할 수 있도록 명시한다. `my_robot_controller/simple_controller.py` 자체는 원고와 핵심 흐름이 일치하므로 불필요한 재구현 없이 유지했다.
+
+## 4. 검증 매트릭스
+
+| 검증 항목 | 상태 | 비고 |
+|---|---|---|
+| `Node` 상속, logger, 타이머, `spin`, entry point 소스 대응 | **REVIEWED** | 실제 Python 소스·setup.py 열람 |
+| `test_node` 이름, 로그 `Heartbeat` 확인 | **REVIEWED** | 소스 문자열 기준; 실행값 아님 |
+| 기본 노드 Python 컴파일 | **NOT_RUN** | 대상 수정 없이 정적 확인 |
+| `colcon build --packages-select my_robot_controller` | **NOT_RUN** | ROS 2/colcon 미설치 |
+| `ros2 run my_robot_controller test_node`, `ros2 node list` | **NOT_RUN** | Jazzy executor/DDS 없음 |
+| 실제 1Hz 로그 3회, 종료 후 Node 소멸 | **NOT_RUN** | 수동·자동 Acceptance 필요 |
+
+과거 보조 가상 배터리 오프라인 검사 기록은 실 ROS 2 실행 증거가 아니며 1.6 주교재 노드의 검증 합격으로 전용하지 않는다.
 
 ## 5. 재현 및 Acceptance
 
-[LAB_1_6_GUIDE_KO.md](LAB_1_6_GUIDE_KO.md)의 독립 워크스페이스를 먼저 만든 뒤:
-
 ```bash
 source /opt/ros/jazzy/setup.bash
+mkdir -p ~/ch01_lab_16/src
+cp -a ~/Pysical_AI_ROS2/Ch01/robot_ws/src/my_robot_controller ~/ch01_lab_16/src/
 cd ~/ch01_lab_16
-python3 -m compileall -q src/my_first_package src/my_robot_controller src/robot_monitor
-colcon build --symlink-install --packages-select my_first_package my_robot_controller robot_monitor
+python3 -m compileall -q src/my_robot_controller
+colcon build --symlink-install --packages-select my_robot_controller
 source install/setup.bash
-ros2 pkg executables my_first_package
 ros2 pkg executables my_robot_controller
-ros2 pkg executables robot_monitor
-ros2 run robot_monitor battery_node
-echo "exit_code=$?"
+ros2 run my_robot_controller test_node
 ```
 
-**ACCEPT:** 구문 검사 exit 0, 세 패키지 빌드 exit 0, 모든 실행파일 등록, 1Hz 노드 카운트/Heartbeat 3회 이상, 가상 배터리 잔량 90→0% 열 번 출력 후 **자체 exit 0**, 종료 후 `/battery_monitor` 소멸. 터미널 출력·ROS 버전·Commit SHA를 Evidence로 남겨 판정해야 한다. 이 실행 검증 전에는 **수정 완료 ≠ 실행 검증 완료**다.
-
-## 6. 별도 오프라인 검증 (2026-10-20)
-
-수정된 `battery_node.py`의 GitHub blob SHA는 `6085cfd347235dd7af20de4b8fc9d3f58fb05a54`. 별도 Debian 13/Python 3.13.5 실행 공간에 복사한 동일 파일의 `git hash-object` 결과가 **정확히 일치**하는 것을 확인한 뒤 `python3 -m compileall -q` 실행에 성공했다(`PY_COMPILE_PASS`).
-
-ROS 의존성을 대체하는 임시 fake `rclpy.Node`/timer/logger 하네스에서 `timer_callback()`을 10회 호출해 100→0, `finished=True`, timer cancel, 로그 등급 **정상 3/주의 4/위험 3회**를 검사했다(`BATTERY_CALLBACK_PASS`). 이는 **실제 ROS 2 spin, 1Hz 타이밍, DDS, 종료 코드 검증이 아니며**, 실습 가이드의 Jazzy Acceptance를 대체하지 않는다. 임시 모의 하네스는 GitHub 저장소에 보존되지 않았으므로 독립 재실행을 요구하는 정식 CI 증거로 간주하지 않는다.
+**ACCEPT:** 생성된 entry point가 `test_node`로 보이고, `/my_robot_node` 그래프 노드 확인, `Heartbeat: 1`, 2, 3 이상 1Hz 근사 로그 출력, Ctrl+C 후 정상 자원 해제. 상세 실습은 [LAB_1_6_GUIDE_KO.md](LAB_1_6_GUIDE_KO.md). **실측 로그 없으면 판정 NOT_RUN 유지.**
