@@ -16,6 +16,7 @@ import time
 import xml.etree.ElementTree as ET
 
 from verify_vision_13_4 import EvidenceRun, rms_error, geometry_summary, tf_contract_single_owners, tracking_summary, source_snapshot, file_digest
+from integrated_robot_vision.trace import trace_options
 
 
 COMMON = {'one_clock', 'one_odometry', 'single_tf_owners', 'sensor_contract',
@@ -214,17 +215,39 @@ def audit_camera_backend(process, expected_prefix: Path) -> dict:
     log = Path(process.ch13_system_log).read_text(encoding='utf-8')
     if 'integrated_robot_camera/SnapshotCameraPlugin initialized' not in log:
         raise RuntimeError('native camera initialization class ID was not observed')
+    renderer_lines = [line.split('Snapshot renderer EGL:', 1)[1].strip()
+                      for line in log.splitlines() if 'Snapshot renderer EGL:' in line]
+    if not renderer_lines:
+        raise RuntimeError('actual snapshot EGL renderer initialization was not observed')
     from verify_all_13_4 import audit_installed_paths
     installed = audit_installed_paths(Path(expected_prefix).resolve().parent,
                                       Path(__file__).resolve().parents[2])
     if loaded['mailbox_library_sha256'] != installed['integrated_robot_camera']['mailbox_library_sha256']:
         raise RuntimeError('native mailbox binary differs from installed audit')
-    return dict(audit, **loaded, native_pid=candidates[0], installed_packages=installed)
+    return dict(audit, **loaded, native_pid=candidates[0], installed_packages=installed,
+                egl_renderer=renderer_lines,
+                boot_id=Path('/proc/sys/kernel/random/boot_id').read_text().strip())
 
 
 LEGACY_AUTO_CAMERA_TOPICS = tuple(
     f'/{camera}/{stream}' for camera in ('overview', 'eye_in_hand')
     for stream in ('color', 'depth', 'camera_info'))
+
+
+def native_trace_origin_verified(records, proof):
+    """Bind trace metadata to the live audited native process; never signal it."""
+    if (not isinstance(proof, dict) or not proof.get('egl_renderer')
+            or not proof.get('library_sha256') or not proof.get('mailbox_library_sha256')
+            or type(proof.get('native_pid')) is not int or proof['native_pid'] <= 0
+            or not proof.get('boot_id')):
+        return False
+    try:
+        cameras = [row['record'] for row in records if row['record']['stage'] == 'camera']
+        return bool(cameras) and all(value['pid'] == proof['native_pid'] and
+            value['boot_id'] == proof['boot_id'] and value['clock_id'] == 'linux/CLOCK_MONOTONIC'
+            for value in cameras)
+    except (KeyError, TypeError):
+        return False
 
 
 def camera_publishers_unique(owners):
@@ -254,6 +277,7 @@ def _scenario_checks(scenario):
 
 
 def build_launch_command(args, delay):
+    trace = trace_options(getattr(args, 'trace_enabled', False), getattr(args, 'trace_run_id', ''))
     rate = float(getattr(args, 'inference_rate_hz', 10.))
     if not math.isfinite(rate) or not 0 < rate <= 15:
         raise ValueError('inference rate must be finite and in (0,15]')
@@ -266,6 +290,8 @@ def build_launch_command(args, delay):
         'allow_camera_motion_test:='+str(args.scenario == 'delay').lower()]
     if args.weights_path:
         command.append('weights_path:='+args.weights_path)
+    if trace['trace_enabled']:
+        command += ['trace_enabled:=true', 'trace_run_id:='+trace['trace_run_id']]
     if args.engine == 'mujoco':
         command.append('mujoco_headless:='+str(getattr(args, 'mujoco_headless', True)).lower())
         command.append('vision_camera_backend:='+backend)
@@ -277,6 +303,8 @@ def run_trial(args, *, launch_command=None):
     backend = getattr(args, 'vision_camera_backend', 'upstream')
     required = required_checks(args.scenario, engine=args.engine, camera_backend=backend)
     run = EvidenceRun(args.output_dir, required)
+    args = copy(args)
+    args.trace_run_id = run.run_id if getattr(args, 'trace_enabled', False) else ''
     process = log = node = None
     content = ''
     initialized, checks, cleanup = False, {}, []
@@ -308,14 +336,16 @@ def run_trial(args, *, launch_command=None):
             rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
             initialized = True
             previous_signal = signal.signal(signal.SIGINT, lambda *_: stopping.set())
-            node = VisionObserver(run.root)
+            trace = trace_options(getattr(args, 'trace_enabled', False), args.trace_run_id)
+            node = VisionObserver(run.root, **trace)
             os.environ['GZ_PARTITION'] = 'ch13_vision_'+run.run_id
             os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
             delay = .15 if args.scenario == 'delay' else 0.
             if args.processing_delay_s is not None:
                 delay = args.processing_delay_s
             run.result.update(engine=args.engine, detector_backend=args.detector_backend,
-                              scenario=args.scenario, processing_delay_s=delay, processes=[])
+                              scenario=args.scenario, processing_delay_s=delay, processes=[],
+                              trace_enabled=trace['trace_enabled'], trace_run_id=args.trace_run_id)
             command = launch_command or build_launch_command(args, delay)
             run.result['inference_rate_hz'] = float(getattr(args, 'inference_rate_hz', 10.))
             fixture_y = 0.
@@ -632,13 +662,37 @@ def run_trial(args, *, launch_command=None):
                 checks['clean_shutdown'] = checks['clean_shutdown'] and (
                     stop.get('returncode') == 0 and 'data: true' in stop.get('stdout', ''))
             if node is not None:
+                if getattr(args, 'trace_enabled', False):
+                    try:
+                        # Bounded drain of diagnostic callbacks after our engine
+                        # has exited; never wait for trace to control the robot.
+                        for _ in range(128):
+                            rclpy.spin_once(node, timeout_sec=0.)
+                        native = args.engine == 'mujoco' and backend == 'snapshot'
+                        summary = node.save_trace(require_native=native)
+                        proof = run.result.get('camera_backend_audit', {})
+                        if native and not native_trace_origin_verified(node.trace_collector.records, proof):
+                            summary.update(analysis_status='UNVERIFIED', native_boundary='UNVERIFIED',
+                                           segments={})
+                            summary['errors'].append(
+                                'actual EGL/owned PID/boot/library evidence missing or mismatched')
+                            (run.root/'trace_summary.json').write_text(
+                                json.dumps(summary, indent=2)+'\n', encoding='utf-8')
+                        run.result['trace_analysis'] = summary
+                    except Exception as exc:
+                        # Diagnostic success/failure is separate from native
+                        # physics, terminal action and clean shutdown verdicts.
+                        run.result['trace_analysis'] = dict(analysis_status='UNVERIFIED',
+                            errors=[repr(exc)])
                 node.destroy_node()
             if initialized:
                 rclpy.try_shutdown()
             if previous_signal is not None:
                 signal.signal(signal.SIGINT, previous_signal)
             run.result['cleanup'] = cleanup
-            names = ['observations.json', 'joints.npz']
+            names = ['observations.json', 'joints.npz', 'system.log']
+            if getattr(args, 'trace_enabled', False):
+                names += ['trace.jsonl', 'trace_summary.json']
             names += [v['path'] for v in run.result.get('shutdown_stacks', [])]
             if node is not None and node.saved_frame:
                 names += ['rgb.png', 'depth.npy', 'annotated.png', 'camera.json']
@@ -685,6 +739,7 @@ def main():
     parser.add_argument('--processing-delay-s', type=float)
     parser.add_argument('--inference-rate-hz', type=float, default=10.)
     parser.add_argument('--vision-camera-backend', choices=('upstream', 'snapshot'), default='upstream')
+    parser.add_argument('--trace-enabled', action='store_true')
     args = parser.parse_args()
     args.scenario = args.scenario or ('geometry' if args.detector_backend == 'color_fixture' else 'yolo')
     if args.scenario == 'geometry':

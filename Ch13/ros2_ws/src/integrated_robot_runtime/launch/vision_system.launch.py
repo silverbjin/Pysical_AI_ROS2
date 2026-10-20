@@ -8,9 +8,14 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, Opaq
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from integrated_robot_vision.trace import trace_options
 
 
 def launch_nodes(context):
+    trace = trace_options(LaunchConfiguration('trace_enabled', default='false').perform(context),
+                          LaunchConfiguration('trace_run_id', default='').perform(context))
+    trace_arguments = dict(trace_enabled=str(trace['trace_enabled']).lower(),
+                           trace_run_id=trace['trace_run_id'])
     values = {key: LaunchConfiguration(key).perform(context) for key in (
         'engine', 'detector_backend', 'weights_path', 'tracking_enabled',
         'processing_delay_s', 'use_sim_time', 'world', 'model_path', 'allow_camera_motion_test')}
@@ -50,6 +55,8 @@ def launch_nodes(context):
             raise ValueError('mujoco_headless must be an explicit boolean')
         engine_arguments['mujoco_headless'] = headless
         engine_arguments['vision_camera_backend'] = camera_backend
+        if camera_backend == 'snapshot':
+            engine_arguments.update(trace_arguments)
     override = 'world' if values['engine'] == 'gazebo' else 'model_path'
     if values[override]:
         engine_arguments[override] = values[override]
@@ -57,10 +64,12 @@ def launch_nodes(context):
                include('integrated_robot_runtime', 'architecture.launch.py',
                        {'use_sim_time': 'true', 'include_demo_vision': 'false',
                         'wait_for_controllers': 'true',
-                        'allow_camera_motion_test': values['allow_camera_motion_test']}),
+                        'allow_camera_motion_test': values['allow_camera_motion_test'],
+                        **trace_arguments}),
                include('integrated_robot_vision', 'vision.launch.py',
-                       {k: values[k] for k in ('detector_backend', 'weights_path',
-                                              'processing_delay_s', 'use_sim_time', 'max_rate_hz')})]
+                       {**{k: values[k] for k in ('detector_backend', 'weights_path',
+                                                'processing_delay_s', 'use_sim_time', 'max_rate_hz')},
+                        **trace_arguments})]
     if values['tracking_enabled'].lower() == 'true':
         actions.append(Node(package='integrated_robot_runtime', executable='tracking_requester',
                             output='screen', parameters=[{'use_sim_time': True}]))
@@ -71,6 +80,7 @@ def generate_launch_description():
     defaults = dict(engine='mujoco', detector_backend='yolo', weights_path='',
                     tracking_enabled='false', processing_delay_s='0', use_sim_time='true',
                     world='', model_path='', allow_camera_motion_test='false', mujoco_headless='true',
-                    max_rate_hz='10', vision_camera_backend='upstream')
+                    max_rate_hz='10', vision_camera_backend='upstream',
+                    trace_enabled='false', trace_run_id='')
     return LaunchDescription([*[DeclareLaunchArgument(k, default_value=v) for k, v in defaults.items()],
                               OpaqueFunction(function=launch_nodes)])

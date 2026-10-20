@@ -6,6 +6,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from integrated_robot_vision.trace import trace_options
 
 
 def launch_nodes(context):
@@ -22,7 +23,9 @@ def launch_nodes(context):
         raise ValueError('finite nonnegative inference delay required')
     if not math.isfinite(rate) or not 0 < rate <= 15:
         raise ValueError('max_rate_hz must be finite and in (0,15]')
-    shared = {'use_sim_time': clock == 'true'}
+    trace = trace_options(LaunchConfiguration('trace_enabled', default='false').perform(context),
+                          LaunchConfiguration('trace_run_id', default='').perform(context))
+    shared = {'use_sim_time': clock == 'true', **trace}
     return [Node(package='integrated_robot_vision', executable='object_detector', output='screen',
                  parameters=[shared, {'backend': backend, 'weights_path': weights,
                                       'processing_delay_s': delay, 'max_rate_hz': rate}]),
@@ -37,4 +40,6 @@ def generate_launch_description():
         DeclareLaunchArgument('processing_delay_s', default_value='0'),
         DeclareLaunchArgument('max_rate_hz', default_value='10'),
         DeclareLaunchArgument('use_sim_time', default_value='true'),
+        DeclareLaunchArgument('trace_enabled', default_value='false'),
+        DeclareLaunchArgument('trace_run_id', default_value=''),
         OpaqueFunction(function=launch_nodes)])

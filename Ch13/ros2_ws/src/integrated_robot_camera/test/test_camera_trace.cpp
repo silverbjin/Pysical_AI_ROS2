@@ -5,6 +5,7 @@
 #include <dlfcn.h>
 #include <optional>
 #include <cstring>
+#include <iostream>
 #include <rcl/publisher.h>
 #include <rcl/error_handling.h>
 #include "camera_trace.hpp"
@@ -81,6 +82,9 @@ TEST_F(TraceTest, TraceEscapesStringsAndCapsUtf8Bytes)
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_FALSE(received.empty());
+  // The actual ROS-received C++ wire record is consumed by the Python contract
+  // test. This is test output only, not an installed product/debug control API.
+  std::cout << "CAMERA_TRACE_CONTRACT " << received << std::endl;
   EXPECT_NE(received.find("cam\\\"\\\\\\n한글"), std::string::npos);
   EXPECT_NE(received.find("\"clock_id\":\"linux/CLOCK_MONOTONIC\""), std::string::npos);
   EXPECT_NE(received.find("\"capture_ns\":1234567890"), std::string::npos);

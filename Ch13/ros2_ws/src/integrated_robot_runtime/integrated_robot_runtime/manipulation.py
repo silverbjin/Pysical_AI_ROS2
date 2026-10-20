@@ -84,6 +84,14 @@ class ManipulationNode(LifecycleNode):
     def shutdown_ready(self):
         return self.arm_owner.pending is None
 
+    def destroy_node(self):
+        # The executor's existing ownership drain remains authoritative. Emit
+        # diagnostics while the node/context logger is still alive, not later
+        # from Context.on_shutdown after ROS has already invalidated rosout.
+        if hasattr(self, 'tracking'):
+            self.tracking.trace.close()
+        return super().destroy_node()
+
     def stow(self, request, response):
         with self.lock:
             if not self.enabled or self.busy or not self.tracking.guard.arm_available:

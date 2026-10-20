@@ -123,12 +123,24 @@ class TrackingSupport:
             return self._on_target(message)
         received_ns = time.monotonic_ns()
         with self.node.lock:
+            was_enabled = self.guard.enabled
+            previous, previous_receive = self.target, self.target_trace_receive_ns
             self._on_target(message, received_ns=received_ns)
             source = message.source_header
+            times, outcome = {'target_receive': received_ns}, (
+                'TARGET_RECEIVED' if message.valid else 'TARGET_INVALID')
+            if was_enabled and not self.guard.enabled:
+                # Immediate callback invalidation may happen before any timer
+                # tick. Keep the last valid session input's receipt/capture;
+                # the invalidation message must not renew that receipt age.
+                source = previous.source_header if previous is not None else source
+                times = dict(decision=received_ns, gate_lost=time.monotonic_ns())
+                if previous_receive is not None:
+                    times['target_receive'] = previous_receive
+                outcome = 'GATE_LOST'
             fields = dict(source_frame=source.frame_id,
                 capture_ns=source.stamp.sec*1_000_000_000+source.stamp.nanosec,
-                local_epoch=self.trace_epoch, times_ns={'target_receive': received_ns},
-                outcome='TARGET_RECEIVED' if message.valid else 'TARGET_INVALID',
+                local_epoch=self.trace_epoch, times_ns=times, outcome=outcome,
                 ros_now_ns=self.node.get_clock().now().nanoseconds)
         self.trace.emit('tracking', **fields)
 
@@ -425,4 +437,5 @@ class TrackingSupport:
             if trace_state is not None and was_enabled and not self.guard.enabled:
                 # Observed gate-loss boundary after the original decision/cancel path.
                 trace_state['times_ns']['gate_lost'] = time.monotonic_ns()
+                trace_state['ros_now_ns'] = node.get_clock().now().nanoseconds
                 trace_state['outcome'] = 'GATE_LOST'

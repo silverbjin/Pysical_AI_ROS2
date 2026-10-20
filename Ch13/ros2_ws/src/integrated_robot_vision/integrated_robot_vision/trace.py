@@ -43,6 +43,21 @@ def _integer(value, minimum=0, *, nullable=False):
         raise ValueError('bounded nonnegative integer required')
 
 
+def trace_options(enabled, run_id):
+    """Validate launch/runner configuration before creating any engine or node."""
+    if isinstance(enabled, str):
+        if enabled.lower() not in ('true', 'false'):
+            raise ValueError('trace_enabled must be an explicit boolean')
+        enabled = enabled.lower() == 'true'
+    elif type(enabled) is not bool:
+        raise ValueError('trace_enabled must be an explicit boolean')
+    if not isinstance(run_id, str):
+        raise ValueError('trace_run_id must be a string')
+    if enabled:
+        _uuid(run_id)
+    return dict(trace_enabled=enabled, trace_run_id=run_id)
+
+
 def validate_record(value: dict) -> dict:
     if not isinstance(value, dict) or set(value) != FIELDS:
         raise ValueError('trace schema1 fields required')
@@ -85,6 +100,10 @@ def validate_record(value: dict) -> dict:
             raise ValueError('negative stage duration')
     else:
         pairs = [('bundle_select', 'work_take'), ('work_take', 'depth_start'),
+                 ('rgb_receive', 'bundle_select'), ('depth_receive', 'bundle_select'),
+                 ('detection_receive', 'bundle_select'), ('depth_start', 'tf_start'),
+                 ('depth_end', 'tf_end'), ('tf_end', 'publish_start'),
+                 ('depth_end', 'publish_start'),
                  ('depth_start', 'depth_end'), ('tf_start', 'tf_end'),
                  ('publish_start', 'publish_end'), ('target_receive', 'decision'),
                  ('decision', 'dispatch'), ('decision', 'gate_lost')]

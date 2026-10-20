@@ -231,6 +231,8 @@ def native_trial_command(args, engine, scenario, output, fault=None):
         command += ['--weights-path', args.weights]
     if fault:
         command += ['--fault', fault]
+    if getattr(args, 'trace_enabled', False):
+        command.append('--trace-enabled')
     return command
 
 
@@ -257,6 +259,7 @@ def main():
     parser.add_argument('--vision-camera-backend', choices=('upstream', 'snapshot'), default='upstream')
     parser.add_argument('--inference-rate-hz', type=float, default=10.)
     parser.add_argument('--audit-install-prefix')
+    parser.add_argument('--trace-enabled', action='store_true')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     if args.audit_install_prefix:

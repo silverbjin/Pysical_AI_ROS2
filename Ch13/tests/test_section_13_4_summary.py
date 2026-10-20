@@ -70,6 +70,16 @@ def test_batch_native_command_forwards_explicit_backend_and_rate():
         assert command[command.index('--engine')+1] == engine
 
 
+def test_batch_trace_flag_is_explicit_and_does_not_change_required_groups():
+    from types import SimpleNamespace
+    from verify_all_13_4 import native_trial_command
+    args = SimpleNamespace(weights='', vision_camera_backend='snapshot', inference_rate_hz=10.,
+                           trace_enabled=True)
+    assert '--trace-enabled' in native_trial_command(args, 'mujoco', 'static', Path('/tmp/trace'))
+    args.trace_enabled = False
+    assert '--trace-enabled' not in native_trial_command(args, 'gazebo', 'tracking', Path('/tmp/trace'))
+
+
 def test_batch_smoke_writes_annotation_inside_ignored_build_not_beside_input(tmp_path):
     from types import SimpleNamespace
     import verify_all_13_4 as batch

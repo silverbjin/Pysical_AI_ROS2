@@ -6,6 +6,7 @@ from launch import LaunchContext
 from launch.actions import IncludeLaunchDescription
 from launch_ros.actions import Node
 from launch_ros.utilities import evaluate_parameters
+from launch.utilities import normalize_to_list_of_substitutions, perform_substitutions
 import pytest
 import yaml
 import subprocess
@@ -58,6 +59,50 @@ def context(**overrides):
         world='', model_path='', allow_camera_motion_test='false'))
     ctx.launch_configurations.update(overrides)
     return ctx
+
+
+def test_trace_arguments_reach_only_requested_nodes():
+    run = '424240ff-0bfe-4a4b-92d4-93f6a78d49b8'
+    ctx = context(trace_enabled='true', trace_run_id=run, vision_camera_backend='snapshot')
+    vision = load('integrated_robot_vision', 'vision.launch.py')
+    for node in vision.launch_nodes(ctx):
+        parameters = evaluate_parameters(ctx, node._Node__parameters)
+        assert any(v.get('trace_enabled') is True and v.get('trace_run_id') == run
+                   for v in parameters if isinstance(v, dict)), 'missing explicit trace parameters'
+    system = load('integrated_robot_runtime', 'vision_system.launch.py')
+    actions = system.launch_nodes(ctx)
+    for action in actions:
+        assert dict(action.launch_arguments)['trace_run_id'] == run
+    gazebo = system.launch_nodes(context(engine='gazebo', trace_enabled='true', trace_run_id=run))
+    assert 'trace_enabled' not in dict(gazebo[0].launch_arguments)
+    for arguments in ({'trace_enabled': 'maybe'}, {'trace_enabled': 'true', 'trace_run_id': ''}):
+        with pytest.raises(ValueError):
+            system.launch_nodes(context(**arguments))
+    architecture = load('integrated_robot_runtime', 'architecture.launch.py')
+    nodes = [v for v in architecture.launch_nodes(ctx) if isinstance(v, Node)]
+    for node in nodes:
+        parameters = evaluate_parameters(ctx, node._Node__parameters)
+        tracing = [v for v in parameters if isinstance(v, dict) and 'trace_enabled' in v]
+        executable = perform_substitutions(ctx, normalize_to_list_of_substitutions(node.node_executable))
+        assert bool(tracing) is (executable == 'manipulation_node')
+
+
+def test_trace_config_is_snapshot_only_and_does_not_edit_source():
+    module = load('integrated_robot_description', 'mujoco.launch.py')
+    share = SRC/'integrated_robot_description'
+    source = share/'config/controllers.yaml'
+    run = '424240ff-0bfe-4a4b-92d4-93f6a78d49b8'
+    for backend in ('snapshot', 'upstream'):
+        plugin = Path(module.camera_plugin_config(share, True, backend))
+        before = plugin.read_bytes()
+        options = {'trace_enabled': True, 'trace_run_id': run}
+        merged = yaml.safe_load(Path(module.materialize_controller_config(
+            source, plugin, trace_options=options)).read_text())
+        eye = merged['/**']['ros__parameters']['mujoco_plugins']['eye_camera']
+        assert ('trace_run_id' in eye) is (backend == 'snapshot')
+        if backend == 'snapshot':
+            assert eye['trace_enabled'] is True and eye['trace_run_id'] == run
+        assert plugin.read_bytes() == before
 
 
 def test_observation_launch_contains_two_nodes_and_requires_explicit_backend_assets():
