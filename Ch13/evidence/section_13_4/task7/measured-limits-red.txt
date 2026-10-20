@@ -1,0 +1,32 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___ test_tracking_metrics_require_real_duration_commands_and_error_reduction ___
+
+    def test_tracking_metrics_require_real_duration_commands_and_error_reduction():
+        from verify_vision_13_4 import tracking_summary
+        commands = [dict(goal_uuid=str(i), joint_names=['arm_joint_'+str(j) for j in range(1, 7)],
+                         positions=[.01, 0., 0., 0., .01, 0.], measured_positions=[0.]*6,
+                         activation_reference=[0.]*6, dispatched_monotonic=10.+i*.21,
+                         horizon_s=.2) for i in range(25)]
+>       value = tracking_summary(commands, [10., 11., 9.], [6., 7., 8.], elapsed=5.2,
+                                 measured_velocities=np.zeros((10, 6)), measured_positions=np.zeros((10, 6)))
+E       TypeError: tracking_summary() got an unexpected keyword argument 'measured_velocities'
+
+Ch13/tests/test_section_13_4_verifier.py:41: TypeError
+_ test_tracking_measured_overspeed_or_excursion_cannot_hide_behind_safe_commands _
+
+    def test_tracking_measured_overspeed_or_excursion_cannot_hide_behind_safe_commands():
+        from verify_vision_13_4 import tracking_summary
+        commands = [dict(goal_uuid=str(i), joint_names=['arm_joint_'+str(j) for j in range(1, 7)],
+                         positions=[0.]*6, measured_positions=[0.]*6, activation_reference=[0.]*6,
+                         dispatched_monotonic=10.+i*.21, horizon_s=.2) for i in range(25)]
+        kwargs = dict(elapsed=5.2, measured_velocities=np.zeros((10, 6)), measured_positions=np.zeros((10, 6)))
+>       assert all(tracking_summary(commands, [10.]*3, [5.]*3, **kwargs)['checks'].values())
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: tracking_summary() got an unexpected keyword argument 'measured_velocities'
+
+Ch13/tests/test_section_13_4_verifier.py:64: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_verifier.py::test_tracking_metrics_require_real_duration_commands_and_error_reduction
+FAILED Ch13/tests/test_section_13_4_verifier.py::test_tracking_measured_overspeed_or_excursion_cannot_hide_behind_safe_commands
+2 failed, 23 deselected in 0.39s

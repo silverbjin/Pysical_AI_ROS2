@@ -1,0 +1,67 @@
+1791- *  bundle, if present.  This can be disabled with the @ref
+1792- *  GLFW_COCOA_CHDIR_RESOURCES init hint.
+1793- *
+1794- *  @remark @x11 This function will set the `LC_CTYPE` category of the
+1795- *  application locale according to the current environment if that category is
+1796- *  still "C".  This is because the "C" locale breaks Unicode text input.
+1797- *
+1798- *  @thread_safety This function must only be called from the main thread.
+1799- *
+1800- *  @sa @ref intro_init
+1801- *  @sa @ref glfwTerminate
+1802- *
+1803- *  @since Added in version 1.0.
+1804- *
+1805- *  @ingroup init
+1806- */
+1807:GLFWAPI int glfwInit(void);
+1808-
+1809-/*! @brief Terminates the GLFW library.
+1810- *
+--
+2685- *
+2686- *  @remark @wayland A full screen window will not attempt to change the mode,
+2687- *  no matter what the requested size or refresh rate.
+2688- *
+2689- *  @remark @wayland Screensaver inhibition requires the idle-inhibit protocol
+2690- *  to be implemented in the user's compositor.
+2691- *
+2692- *  @thread_safety This function must only be called from the main thread.
+2693- *
+2694- *  @sa @ref window_creation
+2695- *  @sa @ref glfwDestroyWindow
+2696- *
+2697- *  @since Added in version 3.0.  Replaces `glfwOpenWindow`.
+2698- *
+2699- *  @ingroup window
+2700- */
+2701:GLFWAPI GLFWwindow* glfwCreateWindow(int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* share);
+2702-
+2703-/*! @brief Destroys the specified window and its context.
+2704- *
+--
+2714- *  GLFW_PLATFORM_ERROR.
+2715- *
+2716- *  @note The context of the specified window must not be current on any other
+2717- *  thread when this function is called.
+2718- *
+2719- *  @reentrancy This function must not be called from a callback.
+2720- *
+2721- *  @thread_safety This function must only be called from the main thread.
+2722- *
+2723- *  @sa @ref window_creation
+2724- *  @sa @ref glfwCreateWindow
+2725- *
+2726- *  @since Added in version 3.0.  Replaces `glfwCloseWindow`.
+2727- *
+2728- *  @ingroup window
+2729- */
+2730:GLFWAPI void glfwDestroyWindow(GLFWwindow* window);
+2731-
+2732-/*! @brief Checks the close flag of the specified window.
+2733- *
+50:    rendering_thread_ = std::thread(&SnapshotCameraPlugin::update_loop, this, state, std::move(ready));
+412:void SnapshotCameraPlugin::update_loop(std::shared_ptr<SelectionState> state, std::promise<bool> ready)
+430:      if (window) {glfwDestroyWindow(window);}
+435:    if (glfwInit()) {
+437:      window = glfwCreateWindow(1, 1, "", nullptr, nullptr);

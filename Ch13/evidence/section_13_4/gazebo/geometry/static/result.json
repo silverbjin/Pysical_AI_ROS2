@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "run_id": "5083b1b6-99bd-4709-a422-21e040e845e9",
+  "expected_run_id": "5083b1b6-99bd-4709-a422-21e040e845e9",
+  "invocation_started_at": 1792314158.7424233,
+  "started_at": 1792314158.7424233,
+  "status": "PASS",
+  "checks": {
+    "measured_startup": true,
+    "thirty_observations": true,
+    "geometry_rms": true,
+    "one_clock": true,
+    "one_odometry": true,
+    "single_tf_owners": true,
+    "sensor_contract": true,
+    "engine_alive": true,
+    "native_snapshot": true,
+    "clean_shutdown": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/gazebo/geometry/static",
+  "artifacts": [
+    {
+      "path": "observations.json",
+      "size": 51526,
+      "sha256": "fcdf510d6d22655dffddd002b0c6ab6650f4c4304426f5c9692f7b10e4ed009b"
+    },
+    {
+      "path": "joints.npz",
+      "size": 118888,
+      "sha256": "c5c8dc44c6448393d3c40d55a758313aa0d27e9b25a1ae1b8ffa191d4b825da2"
+    },
+    {
+      "path": "rgb.png",
+      "size": 2240,
+      "sha256": "f676faf24a4361882d8cdf85ca804f0e4147ab11ef73618ff22b0c0e42ecf143"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "3ca22349ed8722b4a0e81a813d45bbe3e9ae26c19718d917f1cfac265ec20a7f"
+    },
+    {
+      "path": "annotated.png",
+      "size": 2904,
+      "sha256": "33ad936b1e217458c7d772d73754656837672b490824d354b92b7e1620f0fc8f"
+    },
+    {
+      "path": "camera.json",
+      "size": 327,
+      "sha256": "bb69be2bd9fd4069b172075313288367ee09161912f73fd465f3a8100bd1924a"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "engine_alive",
+    "geometry_rms",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners",
+    "thirty_observations"
+  ],
+  "engine": "gazebo",
+  "detector_backend": "color_fixture",
+  "scenario": "static",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 227529,
+      "pgid": 227529,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "geometry": {
+    "valid_samples": 30,
+    "rms_m": 0.002293021611845146,
+    "latest_tf_diagnostic_rms_m": 0.00229302161184512,
+    "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+    "elapsed_wall_s": 4.067474030001904
+  },
+  "owners": {
+    "/clock": [
+      "ros_gz_bridge"
+    ],
+    "/odom": [
+      "native_pose_adapter"
+    ],
+    "/camera/color/image_raw": [
+      "ros_gz_bridge"
+    ],
+    "/tf": [
+      "robot_state_publisher",
+      "native_pose_adapter"
+    ],
+    "/tf_static": [
+      "robot_state_publisher"
+    ]
+  },
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 15.770028186001582
+  },
+  "tf_ownership_method": "graph+model-parent-contract inference; Jazzy does not expose packet GID",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.3.7",
+    "ultralytics": "8.3.221",
+    "torch": "2.5.1+cpu",
+    "opencv-python": "4.10.0.84"
+  },
+  "source_head": "adb74f2c456994bfbdf7a5580390acd88cedb9b6",
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 227529,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792314200.3550584
+}

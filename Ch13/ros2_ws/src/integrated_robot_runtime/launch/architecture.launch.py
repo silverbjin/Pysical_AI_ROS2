@@ -1,6 +1,7 @@
 """Launch separate runtime processes against an already running section 13.2 engine."""
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -13,11 +14,18 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         DeclareLaunchArgument('processing_delay_s', default_value='0.2'),
+        DeclareLaunchArgument('include_demo_vision', default_value='true'),
+        DeclareLaunchArgument('wait_for_controllers', default_value='false'),
+        DeclareLaunchArgument('allow_camera_motion_test', default_value='false'),
         *[Node(package='integrated_robot_runtime', executable=name,
-               output='screen', parameters=[clock])
+               output='screen', parameters=([clock, {'allow_camera_motion_test': ParameterValue(
+                   LaunchConfiguration('allow_camera_motion_test'), value_type=bool)}]
+                   if name == 'manipulation_node' else [clock]))
           for name in ('locomotion_node', 'manipulation_node', 'mission_commander')],
         Node(package='integrated_robot_runtime', executable='vision_processor',
-             output='screen', parameters=[clock, delay]),
+             output='screen', parameters=[clock, delay],
+             condition=IfCondition(LaunchConfiguration('include_demo_vision'))),
         Node(package='integrated_robot_runtime', executable='state_manager',
-             output='screen', parameters=[clock]),
+             output='screen', parameters=[clock, {'wait_for_controllers': ParameterValue(
+                 LaunchConfiguration('wait_for_controllers'), value_type=bool)}]),
     ])

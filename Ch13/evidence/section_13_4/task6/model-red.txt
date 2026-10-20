@@ -1,0 +1,45 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_malformed_model_is_not_ready_without_escaping_the_ros_callback ______
+
+    def test_malformed_model_is_not_ready_without_escaping_the_ros_callback():
+        rclpy.init(domain_id=148)
+        node = ManipulationNode()
+        try:
+>           node.tracking.on_model(String(data='<robot'))
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_runtime/integrated_robot_runtime/tracking_support.py:82: in on_model
+    self.chain = KinematicChain.from_urdf(message.data)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/kinematics.py:42: in from_urdf
+    tree = ET.fromstring(xml_text)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+text = '<robot'
+parser = <xml.etree.ElementTree.XMLParser object at 0x77f934299a80>
+
+    def XML(text, parser=None):
+        """Parse XML document from string constant.
+    
+        This function can be used to embed "XML Literals" in Python code.
+    
+        *text* is a string containing XML data, *parser* is an
+        optional parser instance, defaulting to the standard XMLParser.
+    
+        Returns an Element instance.
+    
+        """
+        if not parser:
+            parser = XMLParser(target=TreeBuilder())
+        parser.feed(text)
+>       return parser.close()
+               ^^^^^^^^^^^^^^
+E       xml.etree.ElementTree.ParseError: unclosed token: line 1, column 0
+
+/usr/lib/python3.12/xml/etree/ElementTree.py:1336: ParseError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py::test_malformed_model_is_not_ready_without_escaping_the_ros_callback
+1 failed, 5 deselected in 2.20s

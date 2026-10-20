@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "run_id": "fe38f1c6-8f4f-4b58-8744-7ea0332cc45b",
+  "expected_run_id": "fe38f1c6-8f4f-4b58-8744-7ea0332cc45b",
+  "invocation_started_at": 1792324923.936455,
+  "started_at": 1792324923.936455,
+  "status": "PASS",
+  "checks": {
+    "measured_startup": true,
+    "single_tf_owners": true,
+    "actual_tracking_goal": true,
+    "fault_injected": true,
+    "input_loss_stop": true,
+    "cancel_confirmed": true,
+    "one_clock": true,
+    "one_odometry": true,
+    "sensor_contract": true,
+    "engine_alive": true,
+    "native_snapshot": true,
+    "clean_shutdown": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/gazebo/safety-images",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 84490,
+      "sha256": "3560210f108e8d79d055710da4f5440129703592f0aab654f11c7acf6929420e"
+    },
+    {
+      "path": "offset_fixture.sdf",
+      "size": 1557,
+      "sha256": "1a37142262843d164a98073c58c0db9962394051af72435a859b7b88b30dcc37"
+    },
+    {
+      "path": "observations.json",
+      "size": 115313,
+      "sha256": "c891ae8e5f50342a35223125439ae979922caf9248d377e83bd0fd8b3cca7627"
+    },
+    {
+      "path": "joints.npz",
+      "size": 133281,
+      "sha256": "8d153a6783a1bba9a9513da3d1a51ea09c4e16cdccf9cc91527cb70f78b59269"
+    },
+    {
+      "path": "rgb.png",
+      "size": 2241,
+      "sha256": "b0b98adf291469c109d11383e594df9653a742cda56731a9941f020ef62f8b70"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "8f7ead76fbb2ea22c577cec461470c925543e81d655011d620a9eebb558f1d30"
+    },
+    {
+      "path": "annotated.png",
+      "size": 2924,
+      "sha256": "e1c99efb18a8bf43012f03b4067db37b380a4962d989a3c0cb4587fe37e3fd53"
+    },
+    {
+      "path": "camera.json",
+      "size": 1245,
+      "sha256": "7ababa6ef7ccd1aa97c6a38e3e5f5ad9c485dbec714436cc7ad47e42b0d58f10"
+    }
+  ],
+  "required_checks": [
+    "actual_tracking_goal",
+    "cancel_confirmed",
+    "clean_shutdown",
+    "engine_alive",
+    "fault_injected",
+    "input_loss_stop",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners"
+  ],
+  "source_head": "adb74f2c456994bfbdf7a5580390acd88cedb9b6",
+  "engine": "gazebo",
+  "detector_backend": "color_fixture",
+  "scenario": "safety",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 2669,
+      "pgid": 2669,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false",
+        "world:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/gazebo/safety-images/offset_fixture.sdf"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "physical_fixture": {
+    "center": [
+      1.0,
+      0.02,
+      0.72
+    ],
+    "front_x": 0.98
+  },
+  "tracking_enable": "Explicit stationary local mode: tracking",
+  "fault": {
+    "kind": "images",
+    "requested_monotonic": 970.697775843,
+    "reply": "Image ingress paused",
+    "scope": "detector consumer ingress; native camera remains publishing",
+    "effective_monotonic": 970.71137516,
+    "goal_stop_deadline_monotonic": 971.21137516,
+    "final_tracking": {
+      "enabled": false,
+      "mode": "tracking",
+      "reason": "invalid/lost target",
+      "goal_count": 1,
+      "reserved": false,
+      "outstanding": false,
+      "fault": "",
+      "generation": 19
+    }
+  },
+  "owners": {
+    "/clock": [
+      "ros_gz_bridge"
+    ],
+    "/odom": [
+      "native_pose_adapter"
+    ],
+    "/camera/color/image_raw": [
+      "ros_gz_bridge"
+    ],
+    "/tf": [
+      "robot_state_publisher",
+      "native_pose_adapter"
+    ],
+    "/tf_static": [
+      "robot_state_publisher"
+    ]
+  },
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 15.675534696
+  },
+  "tf_ownership_method": "graph+model-parent-contract inference; Jazzy does not expose packet GID",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.3.7",
+    "ultralytics": "8.3.221",
+    "torch": "2.5.1+cpu",
+    "opencv-python": "4.10.0.84"
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "gazebo_native_stop": {
+    "pids": [
+      2673,
+      2679
+    ],
+    "exited": true
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 2669,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792324975.7076957
+}

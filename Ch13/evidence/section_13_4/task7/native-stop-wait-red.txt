@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_members _
+
+    def test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_members():
+        runner = importlib.import_module('run_vision_13_4')
+        process = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(.2)'],
+                                   start_new_session=True)
+        unrelated = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(5)'],
+                                     start_new_session=True)
+        try:
+            with pytest.raises(ValueError):
+>               runner.wait_owned_members_exit(process, [unrelated.pid], timeout=.05)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: module 'run_vision_13_4' has no attribute 'wait_owned_members_exit'
+
+Ch13/tests/test_section_13_4_runner.py:89: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_members
+1 failed, 6 deselected in 3.66s

@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "run_id": "0cf52f0a-1a12-4a6a-9115-be89cf3c9061",
+  "expected_run_id": "0cf52f0a-1a12-4a6a-9115-be89cf3c9061",
+  "invocation_started_at": 1792334361.5270836,
+  "started_at": 1792334361.5270836,
+  "status": "PASS",
+  "checks": {
+    "measured_startup": true,
+    "actual_inference_frames": true,
+    "recognition": true,
+    "valid_3d_detections": true,
+    "one_clock": true,
+    "one_odometry": true,
+    "sensor_contract": true,
+    "engine_alive": true,
+    "single_tf_owners": true,
+    "native_snapshot": true,
+    "clean_shutdown": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/debug-20261018/gazebo-yolo-cup",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 83777,
+      "sha256": "965cb4c79aa9beb774d9faa04f1868d1bda57b299a9411ef155bc6dd7ac1de84"
+    },
+    {
+      "path": "semantic_cup.sdf",
+      "size": 40721,
+      "sha256": "ec8a3ea6954f80e1c778d0c513602b301e53d8592966ad0f81c589d1980ca5d0"
+    },
+    {
+      "path": "observations.json",
+      "size": 541252,
+      "sha256": "0b1497726c08bfa891c30157d2d047376378028157c16b0b8891868264757b2e"
+    },
+    {
+      "path": "joints.npz",
+      "size": 173348,
+      "sha256": "62cfd950be2842580a904a0ad38a65fca62994d91f9ca6ab8dd0958991334d6c"
+    },
+    {
+      "path": "rgb.png",
+      "size": 5044,
+      "sha256": "dd965204cc3306483531a443fe00ec2613013b7241e3f5810d123c4c3c3ad85f"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "95f9772d152495081873976fe10bc0d057102e507e4bdc026e5a013fd7520a17"
+    },
+    {
+      "path": "annotated.png",
+      "size": 5923,
+      "sha256": "c6a48e14f4c7342a6563d89d98183e4cfc927a6a196e9193bc0ba22b57e9bd96"
+    },
+    {
+      "path": "camera.json",
+      "size": 1247,
+      "sha256": "4b5cff199497c1516d5f1b4089a5bc9bcc38c960f0c353af6a97b2f1c5d9db78"
+    }
+  ],
+  "required_checks": [
+    "actual_inference_frames",
+    "clean_shutdown",
+    "engine_alive",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "recognition",
+    "sensor_contract",
+    "single_tf_owners",
+    "valid_3d_detections"
+  ],
+  "source_head": "cbd967e26d7d47223a6f5adb965e323eb7aee1ff",
+  "engine": "gazebo",
+  "detector_backend": "yolo",
+  "scenario": "yolo",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 1352,
+      "pgid": 1352,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=yolo",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false",
+        "weights_path:=/home/jinho/ch13_vision_13_4_assets/yolov8n.pt",
+        "world:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/debug-20261018/gazebo-yolo-cup/semantic_cup.sdf"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "semantic_fixture": {
+    "kind": "authored_geometry_cup",
+    "expected_class": "41",
+    "note": "Static hollow mug/handle and coffee on table; not a photo billboard or grasp test"
+  },
+  "stages": [
+    {
+      "stage": "startup",
+      "started_monotonic": 237.151217732,
+      "status": "PASS",
+      "finished_monotonic": 275.917881269,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "invalid/lost target",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 7,
+          "session_generation": null,
+          "event": "heartbeat",
+          "emitted_monotonic": 275.900238277,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "events": [
+              {
+                "uuid": "db2033080e5248e49d8770dac92aa7b8",
+                "event": "sent",
+                "wall": 270.987829852
+              },
+              {
+                "uuid": "db2033080e5248e49d8770dac92aa7b8",
+                "event": "accepted",
+                "wall": 270.994045352
+              },
+              {
+                "uuid": "db2033080e5248e49d8770dac92aa7b8",
+                "event": "result_requested",
+                "wall": 270.994049852
+              },
+              {
+                "uuid": "db2033080e5248e49d8770dac92aa7b8",
+                "event": "terminal",
+                "wall": 275.614770494,
+                "status": 4
+              }
+            ]
+          }
+        },
+        "counts": {
+          "info": 116,
+          "rgb": 114,
+          "depth": 86,
+          "detection_frames": 70,
+          "raw_targets": 13,
+          "valid_tracks": 13,
+          "invalid_tracks": 6
+        },
+        "command_count": 0
+      }
+    }
+  ],
+  "recognition": {
+    "frames": 107,
+    "detected_frames": 107,
+    "valid_3d": 82,
+    "expected_class": "41",
+    "coverage": 1.0,
+    "note": "Actual native camera and YOLO; no fallback"
+  },
+  "owners": {
+    "/clock": [
+      "ros_gz_bridge"
+    ],
+    "/odom": [
+      "native_pose_adapter"
+    ],
+    "/camera/color/image_raw": [
+      "ros_gz_bridge"
+    ],
+    "/tf": [
+      "robot_state_publisher",
+      "native_pose_adapter"
+    ],
+    "/tf_static": [
+      "robot_state_publisher"
+    ]
+  },
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 23.193063208000012
+  },
+  "tf_ownership_method": "graph+model-parent-contract inference; Jazzy does not expose packet GID",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.3.7",
+    "ultralytics": "8.3.221",
+    "torch": "2.5.1+cpu",
+    "opencv-python": "4.10.0.84"
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "gazebo_native_stop": {
+    "pids": [
+      1356,
+      1362
+    ],
+    "exited": true
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 1352,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792334458.191482
+}

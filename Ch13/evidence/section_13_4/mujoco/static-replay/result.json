@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "run_id": "561e7f45-5d95-426e-95b9-cfd5f1cf45b4",
+  "expected_run_id": "561e7f45-5d95-426e-95b9-cfd5f1cf45b4",
+  "invocation_started_at": 1792313507.7896829,
+  "started_at": 1792313507.7896829,
+  "status": "FAIL",
+  "checks": {
+    "clean_shutdown": true
+  },
+  "errors": [
+    "AttributeError(\"'dict' object has no attribute 'publisher_gid'\")",
+    "native/runtime exception; inspect system.log"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/mujoco/static-replay",
+  "artifacts": [
+    {
+      "path": "observations.json",
+      "size": 128,
+      "sha256": "c5fa58ca3292d24b0c91922853408040c7ec033c03cfe34a5f52006767b94ae5"
+    },
+    {
+      "path": "joints.npz",
+      "size": 768,
+      "sha256": "2f6d25b8aeedc8f0aded4788f94b19fde8c292e19c8188bc236c4f2454f71cb0"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "engine_alive",
+    "geometry_rms",
+    "measured_startup",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners",
+    "thirty_observations"
+  ],
+  "engine": "mujoco",
+  "detector_backend": "color_fixture",
+  "scenario": "static",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 220979,
+      "pgid": 220979,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 220979,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792313523.3064237
+}

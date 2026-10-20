@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="5.397" timestamp="2026-10-18T23:21:19.336327+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_section_13_4_launch" name="test_headless_option_reaches_native_hardware_without_changing_joints" time="1.082"><failure message="AssertionError: assert 'True' == 'true'&#10;  &#10;  - true&#10;  ? ^&#10;  + True&#10;  ? ^">def test_headless_option_reaches_native_hardware_without_changing_joints():
+        path = SRC/'integrated_robot_description/urdf/robot_system.urdf.xacro'
+        for value in ('true', 'false'):
+            xml = subprocess.check_output(['xacro', str(path), 'control_backend:=mujoco',
+                                          'mujoco_headless:='+value], text=True)
+            root = ET.fromstring(xml)
+&gt;           assert root.find('./ros2_control/hardware/param[@name="headless"]').text == value
+E           AssertionError: assert 'True' == 'true'
+E             
+E             - true
+E             ? ^
+E             + True
+E             ? ^
+
+Ch13/tests/test_section_13_4_launch.py:22: AssertionError</failure></testcase><testcase classname="Ch13.tests.test_section_13_4_launch" name="test_observation_launch_contains_two_nodes_and_requires_explicit_backend_assets" time="0.094" /><testcase classname="Ch13.tests.test_section_13_4_launch" name="test_system_launch_includes_one_engine_runtime_and_vision_default_observation_only" time="0.211" /><testcase classname="Ch13.tests.test_section_13_4_launch" name="test_legacy_mujoco_explicit_camera_config_keeps_eye_disabled" time="0.068" /></testsuite></testsuites>

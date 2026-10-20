@@ -1,0 +1,47 @@
+[ 50%] Built target gtest_main
+[ 50%] Built target snapshot_mailbox
+[ 75%] Built target gtest
+[ 87%] Building CXX object CMakeFiles/test_snapshot_mailbox.dir/test/test_snapshot_mailbox.cpp.o
+In file included from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest-printers.h:122,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest-matchers.h:49,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/internal/gtest-death-test-internal.h:47,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest-death-test.h:43,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:65,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:2:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp: In member function ‘virtual void {anonymous}::MailboxTest_PendingPolledSelectionSurvivesStreamingOverwriteUntilAcquired_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:229:29: error: no matching function for call to ‘integrated_robot_camera::SnapshotMailbox::submit(std::unique_ptr<mjModel_, void (*)(mjModel_*)>::pointer, std::unique_ptr<mjData_, void (*)(mjData_*)>::pointer, <brace-enclosed initializer list>, uint64_t, <brace-enclosed initializer list>)’
+  229 |   ASSERT_TRUE(mailbox.submit(model.get(), input.get(), {0, 1},
+      |               ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  230 |     mailbox.observe_time(2.).epoch, {1}));
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:14:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:67:8: note: candidate: ‘bool integrated_robot_camera::SnapshotMailbox::submit(const mjModel*, const mjData*, const std::vector<long unsigned int>&, uint64_t)’
+   67 |   bool submit(const mjModel * model, const mjData * data,
+      |        ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:67:8: note:   candidate expects 4 arguments, 5 provided
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp: In member function ‘virtual void {anonymous}::MailboxTest_RetainedCameraMustBeSelectedAndResetDropsUnconsumedPoll_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:249:30: error: no matching function for call to ‘integrated_robot_camera::SnapshotMailbox::submit(std::unique_ptr<mjModel_, void (*)(mjModel_*)>::pointer, std::unique_ptr<mjData_, void (*)(mjData_*)>::pointer, <brace-enclosed initializer list>, const long unsigned int&, <brace-enclosed initializer list>)’
+  249 |   EXPECT_THROW(mailbox.submit(model.get(), input.get(), {0}, epoch, {1}),
+      |                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:67:8: note: candidate: ‘bool integrated_robot_camera::SnapshotMailbox::submit(const mjModel*, const mjData*, const std::vector<long unsigned int>&, uint64_t)’
+   67 |   bool submit(const mjModel * model, const mjData * data,
+      |        ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:67:8: note:   candidate expects 4 arguments, 5 provided
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:251:30: error: no matching function for call to ‘integrated_robot_camera::SnapshotMailbox::submit(std::unique_ptr<mjModel_, void (*)(mjModel_*)>::pointer, std::unique_ptr<mjData_, void (*)(mjData_*)>::pointer, <brace-enclosed initializer list>, const long unsigned int&, <brace-enclosed initializer list>)’
+  251 |   EXPECT_THROW(mailbox.submit(model.get(), input.get(), {0}, epoch, {0, 0}),
+      |                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:67:8: note: candidate: ‘bool integrated_robot_camera::SnapshotMailbox::submit(const mjModel*, const mjData*, const std::vector<long unsigned int>&, uint64_t)’
+   67 |   bool submit(const mjModel * model, const mjData * data,
+      |        ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:67:8: note:   candidate expects 4 arguments, 5 provided
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_mailbox.cpp:253:29: error: no matching function for call to ‘integrated_robot_camera::SnapshotMailbox::submit(std::unique_ptr<mjModel_, void (*)(mjModel_*)>::pointer, std::unique_ptr<mjData_, void (*)(mjData_*)>::pointer, <brace-enclosed initializer list>, const long unsigned int&, <brace-enclosed initializer list>)’
+  253 |   ASSERT_TRUE(mailbox.submit(model.get(), input.get(), {1}, epoch, {1}));
+      |               ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:67:8: note: candidate: ‘bool integrated_robot_camera::SnapshotMailbox::submit(const mjModel*, const mjData*, const std::vector<long unsigned int>&, uint64_t)’
+   67 |   bool submit(const mjModel * model, const mjData * data,
+      |        ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:67:8: note:   candidate expects 4 arguments, 5 provided
+gmake[3]: *** [CMakeFiles/test_snapshot_mailbox.dir/build.make:76: CMakeFiles/test_snapshot_mailbox.dir/test/test_snapshot_mailbox.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:245: CMakeFiles/test_snapshot_mailbox.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:252: CMakeFiles/test_snapshot_mailbox.dir/rule] Error 2
+gmake: *** [Makefile:244: test_snapshot_mailbox] Error 2

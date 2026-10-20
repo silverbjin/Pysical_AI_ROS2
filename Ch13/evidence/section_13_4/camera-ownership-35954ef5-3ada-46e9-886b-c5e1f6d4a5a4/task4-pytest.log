@@ -1,0 +1,44 @@
+........................................................................ [ 27%]
+........................................................F............... [ 54%]
+........................................................................ [ 81%]
+..................................................                       [100%]
+=================================== FAILURES ===================================
+_ test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity _
+
+    def test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity():
+        from ament_index_python.packages import get_package_prefix
+        from verify_all_13_4 import audit_installed_paths
+        prefix = Path(get_package_prefix('integrated_robot_camera')).parent
+        repo = Path(__file__).resolve().parents[2]
+>       rows = audit_installed_paths(prefix, repo)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/tests/test_section_13_4_summary.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+prefix = PosixPath('/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_snapshot_full_35954ef5')
+repo = PosixPath('/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2')
+
+    def audit_installed_paths(prefix, repo):
+        """Compare installed bytes and generated C++ build manifest with this source."""
+        import importlib.util
+        from ament_index_python.packages import get_package_share_directory, get_package_prefix
+        prefix, repo = Path(prefix).resolve(), Path(repo).resolve()
+        rows = {}
+        for name in PACKAGES:
+            share = Path(get_package_share_directory(name)).resolve()
+            package_prefix = Path(get_package_prefix(name)).resolve()
+            if not share.is_relative_to(prefix) or not package_prefix.is_relative_to(prefix):
+                raise RuntimeError('stale installed package prefix: '+name)
+            source = repo/'Ch13/ros2_ws/src'/name
+            row = rows[name] = dict(share=str(share))
+            if name in ('integrated_robot_runtime', 'integrated_robot_vision'):
+                installed = Path(importlib.util.find_spec(name).origin).resolve().parent
+                if not installed.is_relative_to(prefix):
+>                   raise RuntimeError('stale Python module: '+name)
+E                   RuntimeError: stale Python module: integrated_robot_vision
+
+Ch13/scripts/verify_all_13_4.py:185: RuntimeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_summary.py::test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity
+1 failed, 265 passed in 108.92s (0:01:48)

@@ -1,0 +1,64 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________________ test_non_normalized_capture_stamp_fails_closed ________________
+
+    def test_non_normalized_capture_stamp_fails_closed():
+        cache = populated()
+        wrong = deepcopy(images()[0].header.stamp)
+        wrong.nanosec = 1_000_000_001
+>       assert cache.match(wrong, 'camera_optical_frame', 0) is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py:162: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/cache.py:125: in match
+    capture_ns = nanoseconds(stamp) if hasattr(stamp, 'sec') else None
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+stamp = builtin_interfaces.msg.Time(sec=1, nanosec=1000000001)
+
+    def nanoseconds(stamp):
+        if not 0 <= stamp.nanosec < 1_000_000_000:
+>           raise ValueError('normalized ROS stamp required')
+E           ValueError: normalized ROS stamp required
+
+Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/cache.py:22: ValueError
+___ test_small_clock_rollback_clears_dynamic_tf_but_keeps_static_extrinsics ____
+
+    def test_small_clock_rollback_clears_dynamic_tf_but_keeps_static_extrinsics():
+        from rclpy.parameter import Parameter
+        from rclpy.time import Time
+        rclpy.init(domain_id=148)
+        node = None
+        try:
+            node = VisionProcessor()
+            assert node.set_parameters([Parameter('use_sim_time', value=True)])[0].successful
+            node.get_clock().set_ros_time_override(Time(seconds=2.))
+            node.observe_clock()
+            dynamic = TransformStamped()
+            dynamic.header.frame_id, dynamic.child_frame_id = 'odom', 'old_epoch_frame'
+            dynamic.header.stamp = Time(seconds=1.95).to_msg()
+            dynamic.transform.rotation.w = 1.
+            static = TransformStamped()
+            static.header.frame_id, static.child_frame_id = 'odom', 'fixed_sensor_mount'
+            static.transform.rotation.w = 1.
+            node.tf_buffer.set_transform(dynamic, 'old_epoch')
+            node.tf_buffer.set_transform_static(static, 'physical_extrinsic')
+            assert node.tf_buffer.can_transform('odom', 'old_epoch_frame', Time(seconds=1.95))
+            node.get_clock().set_ros_time_override(Time(seconds=1.9))
+            node.observe_clock()
+>           assert not node.tf_buffer.can_transform('odom', 'old_epoch_frame', Time(seconds=1.95))
+E           AssertionError: assert not 1
+E            +  where 1 = can_transform('odom', 'old_epoch_frame', Time(nanoseconds=1950000000, clock_type=SYSTEM_TIME))
+E            +    where can_transform = <tf2_ros.buffer.Buffer object at 0x7d6c6f91be50>.can_transform
+E            +      where <tf2_ros.buffer.Buffer object at 0x7d6c6f91be50> = <integrated_robot_vision.vision_processor.VisionProcessor object at 0x7d6c6f966bd0>.tf_buffer
+E            +    and   Time(nanoseconds=1950000000, clock_type=SYSTEM_TIME) = <class 'rclpy.time.Time'>(seconds=1.95)
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_target_messages.py:117: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1792309357.492168676] [tf2_buffer]: Detected jump back in time. Clearing tf buffer.
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py::test_non_normalized_capture_stamp_fails_closed
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_target_messages.py::test_small_clock_rollback_clears_dynamic_tf_but_keeps_static_extrinsics
+2 failed in 2.41s

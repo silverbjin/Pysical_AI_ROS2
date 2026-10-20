@@ -1,0 +1,68 @@
+.....FFFF                                                                [100%]
+=================================== FAILURES ===================================
+_______________ test_snapshot_backend_changes_only_camera_class ________________
+
+    def test_snapshot_backend_changes_only_camera_class():
+        module = load('integrated_robot_description', 'mujoco.launch.py')
+        share = SRC/'integrated_robot_description'
+        def plugins(backend):
+            path = module.camera_plugin_config(share, True, backend)
+            return yaml.safe_load(Path(path).read_text())['/**']['ros__parameters']['mujoco_plugins']
+>       upstream, snapshot = plugins('upstream'), plugins('snapshot')
+                             ^^^^^^^^^^^^^^^^^^^
+
+Ch13/tests/test_section_13_4_launch.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+backend = 'upstream'
+
+    def plugins(backend):
+>       path = module.camera_plugin_config(share, True, backend)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: camera_plugin_config() takes 2 positional arguments but 3 were given
+
+Ch13/tests/test_section_13_4_launch.py:106: TypeError
+_ test_camera_backend_forwarded_only_to_mujoco_and_unknown_fails_before_include _
+
+    def test_camera_backend_forwarded_only_to_mujoco_and_unknown_fails_before_include():
+        module = load('integrated_robot_runtime', 'vision_system.launch.py')
+        for engine in ('mujoco', 'gazebo'):
+            actions = module.launch_nodes(context(engine=engine, vision_camera_backend='snapshot'))
+            arguments = dict(actions[0].launch_arguments)
+            if engine == 'mujoco':
+>               assert arguments['vision_camera_backend'] == 'snapshot'
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               KeyError: 'vision_camera_backend'
+
+Ch13/tests/test_section_13_4_launch.py:125: KeyError
+__ test_actual_snapshot_probe_accepts_active_prefix_and_rejects_other_prefix ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_snapshot_probe_acc0')
+
+    def test_actual_snapshot_probe_accepts_active_prefix_and_rejects_other_prefix(tmp_path):
+        from ament_index_python.packages import get_package_prefix
+        import hashlib
+        module = load('integrated_robot_description', 'mujoco.launch.py')
+        prefix = Path(get_package_prefix('integrated_robot_camera'))
+>       audit = module.probe_snapshot_plugin(prefix)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'mujoco.launch.py' has no attribute 'probe_snapshot_plugin'
+
+Ch13/tests/test_section_13_4_launch.py:137: AttributeError
+____________ test_missing_probe_and_library_fail_before_native_node ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_missing_probe_and_library0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7d11f52302f0>
+
+    def test_missing_probe_and_library_fail_before_native_node(tmp_path, monkeypatch):
+        module = load('integrated_robot_description', 'mujoco.launch.py')
+>       monkeypatch.setattr(module, 'get_package_prefix', lambda name: str(tmp_path))
+E       AttributeError: <module 'mujoco.launch.py' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_description/launch/mujoco.launch.py'> has no attribute 'get_package_prefix'
+
+Ch13/tests/test_section_13_4_launch.py:149: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_launch.py::test_snapshot_backend_changes_only_camera_class
+FAILED Ch13/tests/test_section_13_4_launch.py::test_camera_backend_forwarded_only_to_mujoco_and_unknown_fails_before_include
+FAILED Ch13/tests/test_section_13_4_launch.py::test_actual_snapshot_probe_accepts_active_prefix_and_rejects_other_prefix
+FAILED Ch13/tests/test_section_13_4_launch.py::test_missing_probe_and_library_fail_before_native_node
+4 failed, 5 passed in 7.26s

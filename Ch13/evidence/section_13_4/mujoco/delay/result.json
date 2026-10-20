@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "run_id": "2d425e87-1194-4189-9a03-88e8db5c13bc",
+  "expected_run_id": "2d425e87-1194-4189-9a03-88e8db5c13bc",
+  "invocation_started_at": 1792314040.238481,
+  "started_at": 1792314040.238481,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "clean_shutdown": true
+  },
+  "errors": [
+    "TimeoutError('native vision verification deadline exceeded')"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/mujoco/delay",
+  "artifacts": [
+    {
+      "path": "observations.json",
+      "size": 1021439,
+      "sha256": "1e8498f0285ddd596a67aecc10cfcbc69c81ca03f5561c2bf6f73ebf6cc233f9"
+    },
+    {
+      "path": "joints.npz",
+      "size": 532299,
+      "sha256": "bf48fdc5a1c278dd3bdecbde6c270859c6856891030479c8361ad9727203c162"
+    },
+    {
+      "path": "rgb.png",
+      "size": 17676,
+      "sha256": "043f8312b6412b2dc15003fd700c5aceeeb50e2d3094236c5ebc616dc1231792"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "f539bcc45d0ed96a9643823c991b5abdcfcb2c82b5c2d5fd6d7d1017569d22f1"
+    },
+    {
+      "path": "annotated.png",
+      "size": 18886,
+      "sha256": "43ca37273c896eabd1f47e8338d4d3b5b8e46c8286b0f09b19ab1284ea1cda5b"
+    },
+    {
+      "path": "camera.json",
+      "size": 330,
+      "sha256": "5211a7e6f49d87def2957181ff546f116ad81b531b367ed97447c83677c71227"
+    }
+  ],
+  "required_checks": [
+    "actual_camera_motion",
+    "clean_shutdown",
+    "delay_150ms",
+    "engine_alive",
+    "geometry_rms",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners",
+    "thirty_observations"
+  ],
+  "engine": "mujoco",
+  "detector_backend": "color_fixture",
+  "scenario": "delay",
+  "processing_delay_s": 0.15,
+  "processes": [
+    {
+      "pid": 226294,
+      "pgid": 226294,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.15",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=true"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "motion_enable": "Explicit stationary local mode: camera_motion_test",
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 226294,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792314129.8451982
+}

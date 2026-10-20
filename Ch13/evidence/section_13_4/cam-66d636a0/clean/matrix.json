@@ -1,0 +1,348 @@
+{
+  "batch_run_id": "9e46415e-8589-4d4a-8032-cd31ac2d8599",
+  "source_head": "6828b82fd13c97dba3fc935325a741e583a830aa",
+  "status": "FAIL",
+  "scope": "Native trials only; not whole section PASS",
+  "conditions": {
+    "ROS_DOMAIN_ID": "157",
+    "MUJOCO_GL": "egl",
+    "LP_NUM_THREADS": null,
+    "OMP_NUM_THREADS": null,
+    "OPENBLAS_NUM_THREADS": null
+  },
+  "cases": {
+    "md": {
+      "engine": "mujoco",
+      "scenario": "delay",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "PASS",
+      "returncode": 0,
+      "run_id": "c683c75e-04aa-458a-8486-1496f2f6e140",
+      "cleanup": [
+        {
+          "pid": 10291,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "thirty_observations": true,
+        "geometry_rms": true,
+        "actual_camera_motion": true,
+        "delay_150ms": true,
+        "single_camera_owners": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "single_tf_owners": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": {
+        "valid_samples": 30,
+        "unique_captures": 30,
+        "rms_m": 0.002587833099879706,
+        "rms_limit_m": 0.05,
+        "required_samples": 30,
+        "unique_timestamps": true,
+        "latest_tf_diagnostic_rms_m": 0.012879077915711253,
+        "accepted": true,
+        "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+        "elapsed_wall_s": 14.507948513999963
+      },
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m10a": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 10,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "78c47113-3c19-4b7b-b50b-aca6956fe731",
+      "cleanup": [
+        {
+          "pid": 10609,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'safety gate lost: target_fresh', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 17, 'session_generation': 16, 'event': 'disabled', 'emitted_monotonic': 2407.088651226, 'owner': {'pending_uuid': '985975c5b5524e879402546e760d7dd7', 'accepted': True, 'handle_status': 2, 'result_future_done': False, 'events': [{'uuid': '84c2659f2ce647f0aa9aed12eb7fa065', 'event': 'sent', 'wall': 2397.27099098}, {'uuid': '84c2659f2ce647f0aa9aed12eb7fa065', 'event': 'accepted', 'wall': 2397.281699388}, {'uuid': '84c2659f2ce647f0aa9aed12eb7fa065', 'event': 'result_requested', 'wall': 2397.281703513}, {'uuid': '84c2659f2ce647f0aa9aed12eb7fa065', 'event': 'terminal', 'wall': 2399.274896237, 'status': 4}, {'uuid': '985975c5b5524e879402546e760d7dd7', 'event': 'sent', 'wall': 2406.938643587}, {'uuid': '985975c5b5524e879402546e760d7dd7', 'event': 'accepted', 'wall': 2406.957216353}, {'uuid': '985975c5b5524e879402546e760d7dd7', 'event': 'result_requested', 'wall': 2406.95722002}, {'uuid': '985975c5b5524e879402546e760d7dd7', 'event': 'cancel_requested', 'wall': 2407.088387043}]}, 'inputs': {'ros_now_ns': 19046000000, 'target_capture_ns': 18740000000, 'target_received_wall': 2406.945279428, 'joint_capture_ns': 19042000000, 'joint_received_wall': 2407.076407859, 'leg_positions': [-0.00833231815057404, -0.48532910840582927, 1.0527231903435614, 0.00833392351882435, -0.4853261744239264, 1.0527194576425314, -0.00534784128937656, -0.4889618896886186, 1.037849302200021, 0.005346303467944706, -0.4889595656619606, 1.0378468875002689], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 377, 'max_timer_gap_s': 0.06691547299988088, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 2407.054156051}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.3084518199998456,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m10b": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 10,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "ea144fa5-6e31-4444-95ff-a4f3f84c083a",
+      "cleanup": [
+        {
+          "pid": 10923,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'safety gate lost: target_fresh', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 31, 'session_generation': 30, 'event': 'disabled', 'emitted_monotonic': 2459.737573559, 'owner': {'pending_uuid': '068884018978496a82d9f07c0ced1497', 'accepted': True, 'handle_status': 2, 'result_future_done': False, 'events': [{'uuid': '034dbfa2aaa04ebc94a5439b25eab6f6', 'event': 'sent', 'wall': 2450.231636717}, {'uuid': '034dbfa2aaa04ebc94a5439b25eab6f6', 'event': 'accepted', 'wall': 2450.246577833}, {'uuid': '034dbfa2aaa04ebc94a5439b25eab6f6', 'event': 'result_requested', 'wall': 2450.246581683}, {'uuid': '034dbfa2aaa04ebc94a5439b25eab6f6', 'event': 'terminal', 'wall': 2452.303110022, 'status': 4}, {'uuid': '068884018978496a82d9f07c0ced1497', 'event': 'sent', 'wall': 2459.657756736}, {'uuid': '068884018978496a82d9f07c0ced1497', 'event': 'accepted', 'wall': 2459.666899569}, {'uuid': '068884018978496a82d9f07c0ced1497', 'event': 'result_requested', 'wall': 2459.666902044}, {'uuid': '068884018978496a82d9f07c0ced1497', 'event': 'cancel_requested', 'wall': 2459.737290493}]}, 'inputs': {'ros_now_ns': 22407999999, 'target_capture_ns': 22103999999, 'target_received_wall': 2459.596611495, 'joint_capture_ns': 22391999999, 'joint_received_wall': 2459.722348643, 'leg_positions': [-0.008334400276565788, -0.48524614553323697, 1.0527594766176112, 0.008334839442063178, -0.4852446794211022, 1.052758098496269, -0.005346794239908154, -0.4889583968146475, 1.037865528305188, 0.005345063805557886, -0.48895745758106174, 1.0378651592192185], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 352, 'max_timer_gap_s': 0.07355672299991056, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 2459.532322546}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.2636881460002769,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m10c": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 10,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "0906429a-0def-4527-99d0-825ec3b0b369",
+      "cleanup": [
+        {
+          "pid": 11241,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'safety gate lost: target_fresh', 'goal_count': 2, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 39, 'session_generation': 38, 'event': 'disabled', 'emitted_monotonic': 2514.928765432, 'owner': {'pending_uuid': 'b9d6aef0bb5343bcbd4493a81a7374bb', 'accepted': True, 'handle_status': 2, 'result_future_done': False, 'events': [{'uuid': '1c8c48339b7c49719c7cc91f38777d08', 'event': 'sent', 'wall': 2503.688124128}, {'uuid': '1c8c48339b7c49719c7cc91f38777d08', 'event': 'accepted', 'wall': 2503.700698961}, {'uuid': '1c8c48339b7c49719c7cc91f38777d08', 'event': 'result_requested', 'wall': 2503.700704186}, {'uuid': '1c8c48339b7c49719c7cc91f38777d08', 'event': 'terminal', 'wall': 2505.750347625, 'status': 4}, {'uuid': 'a27dd43290e94c168f98a21379b999bf', 'event': 'sent', 'wall': 2514.430017099}, {'uuid': 'a27dd43290e94c168f98a21379b999bf', 'event': 'accepted', 'wall': 2514.461155349}, {'uuid': 'a27dd43290e94c168f98a21379b999bf', 'event': 'result_requested', 'wall': 2514.461159015}, {'uuid': 'a27dd43290e94c168f98a21379b999bf', 'event': 'terminal', 'wall': 2514.693806903, 'status': 4}, {'uuid': 'b9d6aef0bb5343bcbd4493a81a7374bb', 'event': 'sent', 'wall': 2514.734288919}, {'uuid': 'b9d6aef0bb5343bcbd4493a81a7374bb', 'event': 'accepted', 'wall': 2514.746646502}, {'uuid': 'b9d6aef0bb5343bcbd4493a81a7374bb', 'event': 'result_requested', 'wall': 2514.746650169}, {'uuid': 'b9d6aef0bb5343bcbd4493a81a7374bb', 'event': 'cancel_requested', 'wall': 2514.92851729}]}, 'inputs': {'ros_now_ns': 24745999999, 'target_capture_ns': 24443999999, 'target_received_wall': 2514.736953394, 'joint_capture_ns': 24735999999, 'joint_received_wall': 2514.922269199, 'leg_positions': [-0.008332795318918142, -0.4854041344143716, 1.052762652387685, 0.008334548683600502, -0.48540490924343255, 1.052766188718314, -0.005346996531250395, -0.4887987583900246, 1.037840760824357, 0.005345630705267715, -0.4888001113277731, 1.0378454321590724], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 423, 'max_timer_gap_s': 0.3282834440001352, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 2514.781532451}}\")",
+        "own trajectory terminal cancellation not confirmed",
+        "native/runtime exception; inspect system.log"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": true,
+        "velocity_limits": true,
+        "command_rate": true,
+        "clean_shutdown": false
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": true,
+          "velocity_limits": true,
+          "command_rate": true
+        },
+        "elapsed_wall_s": 1.6645512290001534,
+        "command_count": 2,
+        "reduction": null,
+        "minimum_dispatch_interval_s": 0.32042770299995027,
+        "measured_max_speed_rad_s": 0.060313396431852684,
+        "measured_max_angle_rad": 0.014929475601825568
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m15a": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 15,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "51dfa16b-ac9e-4429-8d63-b6259ff31537",
+      "cleanup": [
+        {
+          "pid": 11577,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'invalid/lost target', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 37, 'session_generation': 36, 'event': 'disabled', 'emitted_monotonic': 2574.879708739, 'owner': {'pending_uuid': '5e7902e9d6b545b1922981a8fa7f2868', 'accepted': True, 'handle_status': 2, 'result_future_done': False, 'events': [{'uuid': '8c164ba632104f259f5c28580f8f369a', 'event': 'sent', 'wall': 2562.35346629}, {'uuid': '8c164ba632104f259f5c28580f8f369a', 'event': 'accepted', 'wall': 2562.367236456}, {'uuid': '8c164ba632104f259f5c28580f8f369a', 'event': 'result_requested', 'wall': 2562.367240398}, {'uuid': '8c164ba632104f259f5c28580f8f369a', 'event': 'terminal', 'wall': 2564.361124197, 'status': 4}, {'uuid': '5e7902e9d6b545b1922981a8fa7f2868', 'event': 'sent', 'wall': 2574.823067815}, {'uuid': '5e7902e9d6b545b1922981a8fa7f2868', 'event': 'accepted', 'wall': 2574.873927689}, {'uuid': '5e7902e9d6b545b1922981a8fa7f2868', 'event': 'result_requested', 'wall': 2574.873931722}, {'uuid': '5e7902e9d6b545b1922981a8fa7f2868', 'event': 'cancel_requested', 'wall': 2574.879440155}]}, 'inputs': {'ros_now_ns': 21965999999, 'target_capture_ns': 0, 'target_received_wall': 2574.741719883, 'joint_capture_ns': 21907999999, 'joint_received_wall': 2574.838058064, 'leg_positions': [-0.008331846752552984, -0.4854373759114929, 1.0526888023577443, 0.008331846752552679, -0.4854373759114955, 1.0526888023577492, -0.005348024986985534, -0.48879261365951526, 1.037911403696065, 0.005348024986985802, -0.488792613659502, 1.0379114036960662], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 463, 'max_timer_gap_s': 0.3424928770000406, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 2574.741330208}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.24984308700004476,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m15b": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 15,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "f04947e6-9c6a-4f78-9d35-f2a875d1e288",
+      "cleanup": [
+        {
+          "pid": 11895,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'invalid/lost target', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 33, 'session_generation': 32, 'event': 'disabled', 'emitted_monotonic': 2637.186288987, 'owner': {'pending_uuid': '9e27681b31bf494a9ca50273bc10504a', 'accepted': True, 'handle_status': 2, 'result_future_done': False, 'events': [{'uuid': 'c09e8c3fa0de47038cfe31da01314fa6', 'event': 'sent', 'wall': 2624.755172979}, {'uuid': 'c09e8c3fa0de47038cfe31da01314fa6', 'event': 'accepted', 'wall': 2624.768333012}, {'uuid': 'c09e8c3fa0de47038cfe31da01314fa6', 'event': 'result_requested', 'wall': 2624.76833842}, {'uuid': 'c09e8c3fa0de47038cfe31da01314fa6', 'event': 'terminal', 'wall': 2626.819106885, 'status': 4}, {'uuid': '9e27681b31bf494a9ca50273bc10504a', 'event': 'sent', 'wall': 2637.093309106}, {'uuid': '9e27681b31bf494a9ca50273bc10504a', 'event': 'accepted', 'wall': 2637.100459289}, {'uuid': '9e27681b31bf494a9ca50273bc10504a', 'event': 'result_requested', 'wall': 2637.100463139}, {'uuid': '9e27681b31bf494a9ca50273bc10504a', 'event': 'cancel_requested', 'wall': 2637.186088329}]}, 'inputs': {'ros_now_ns': 24541999999, 'target_capture_ns': 0, 'target_received_wall': 2637.016409115, 'joint_capture_ns': 24533999999, 'joint_received_wall': 2637.185049379, 'leg_positions': [-0.00833038449195353, -0.48542894477970133, 1.0526509227013525, 0.008331232279329186, -0.48542689438379705, 1.0526488947362258, -0.005350150638395583, -0.4888274196327441, 1.037947806821338, 0.005348049008505134, -0.48882603340818, 1.0379470836682498], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 468, 'max_timer_gap_s': 0.3450279190001311, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 2637.095157656}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.21521847900021385,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m15c": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 15,
+      "fault": null,
+      "status": "FAIL",
+      "returncode": 1,
+      "run_id": "ecbcda1e-29d6-4fdf-8c6b-d62c725eb388",
+      "cleanup": [
+        {
+          "pid": 12209,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "errors": [
+        "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'invalid/lost target', 'goal_count': 1, 'reserved': True, 'outstanding': True, 'fault': '', 'generation': 9, 'session_generation': 8, 'event': 'disabled', 'emitted_monotonic': 2693.35022331, 'owner': {'pending_uuid': 'bf0d20d5628c480a8e7ebd6ea0e3ab92', 'accepted': True, 'handle_status': 2, 'result_future_done': False, 'events': [{'uuid': '534ccaf984d14e698123fe4dfa2c0a90', 'event': 'sent', 'wall': 2684.001284606}, {'uuid': '534ccaf984d14e698123fe4dfa2c0a90', 'event': 'accepted', 'wall': 2684.006356981}, {'uuid': '534ccaf984d14e698123fe4dfa2c0a90', 'event': 'result_requested', 'wall': 2684.006361197}, {'uuid': '534ccaf984d14e698123fe4dfa2c0a90', 'event': 'terminal', 'wall': 2686.011103188, 'status': 4}, {'uuid': 'bf0d20d5628c480a8e7ebd6ea0e3ab92', 'event': 'sent', 'wall': 2693.275860836}, {'uuid': 'bf0d20d5628c480a8e7ebd6ea0e3ab92', 'event': 'accepted', 'wall': 2693.280139378}, {'uuid': 'bf0d20d5628c480a8e7ebd6ea0e3ab92', 'event': 'result_requested', 'wall': 2693.280142219}, {'uuid': 'bf0d20d5628c480a8e7ebd6ea0e3ab92', 'event': 'cancel_requested', 'wall': 2693.349701268}]}, 'inputs': {'ros_now_ns': 22599999999, 'target_capture_ns': 0, 'target_received_wall': 2693.128189505, 'joint_capture_ns': 22597999999, 'joint_received_wall': 2693.339298018, 'leg_positions': [-0.008334622838498427, -0.485235199510057, 1.052765603722992, 0.008335137421546884, -0.4852335659688239, 1.0527640629824633, -0.005346715646625079, -0.4889694641293357, 1.0378599742147652, 0.0053448085073162215, -0.48896841014702686, 1.0378595479756818], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 346, 'max_timer_gap_s': 0.06844062400023176, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 2693.152577147}}\")"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "five_second_tracking": false,
+        "pixel_error_reduction": false,
+        "joint_limits": false,
+        "velocity_limits": false,
+        "command_rate": false,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": null,
+      "tracking_metrics": {
+        "checks": {
+          "five_second_tracking": false,
+          "pixel_error_reduction": false,
+          "joint_limits": false,
+          "velocity_limits": false,
+          "command_rate": false
+        },
+        "elapsed_wall_s": 0.23009231200012437,
+        "command_count": 1,
+        "reduction": null
+      },
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    }
+  },
+  "remaining_native_processes": [],
+  "finished_at": 1792423137.7347317
+}

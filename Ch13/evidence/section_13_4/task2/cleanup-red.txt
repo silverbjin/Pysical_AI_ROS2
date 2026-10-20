@@ -1,0 +1,26 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_cleanup_kills_own_descendant_after_parent_exits _____________
+
+    def test_cleanup_kills_own_descendant_after_parent_exits():
+        path = Path(__file__).resolve().parents[1] / 'scripts/probe_sensors_13_4.py'
+        spec = importlib.util.spec_from_file_location('sensor_probe', path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        child_code = ('import os,signal,time; '
+                      'signal.signal(signal.SIGTERM,signal.SIG_IGN); '
+                      'print(os.getpid(),flush=True); time.sleep(60)')
+        parent_code = f'import subprocess,sys; subprocess.Popen([sys.executable,"-c",{child_code!r}])'
+        process = subprocess.Popen([sys.executable, '-c', parent_code], start_new_session=True,
+                                   stdout=subprocess.PIPE, text=True)
+        try:
+            child_pid = int(process.stdout.readline())
+            process.wait(timeout=3)
+>           report = module.stop_owned_group(process, grace_s=.2)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'sensor_probe' has no attribute 'stop_owned_group'
+
+Ch13/tests/test_section_13_4_processes.py:24: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_processes.py::test_cleanup_kills_own_descendant_after_parent_exits
+1 failed in 2.26s

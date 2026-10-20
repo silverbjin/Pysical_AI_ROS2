@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "run_id": "d75f6f36-fcd9-4801-9758-5c4d29e3b000",
+  "expected_run_id": "d75f6f36-fcd9-4801-9758-5c4d29e3b000",
+  "invocation_started_at": 1792313435.196599,
+  "started_at": 1792313435.196599,
+  "status": "FAIL",
+  "checks": {
+    "clean_shutdown": true
+  },
+  "errors": [
+    "RuntimeError('owned engine/launch process died: 1')"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/mujoco/static",
+  "artifacts": [
+    {
+      "path": "observations.json",
+      "size": 110,
+      "sha256": "1e3c036cefd984e6d41312170a8ebba4bdedebb699f0b3c88f217d4a1bd66190"
+    },
+    {
+      "path": "joints.npz",
+      "size": 768,
+      "sha256": "2f6d25b8aeedc8f0aded4788f94b19fde8c292e19c8188bc236c4f2454f71cb0"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "engine_alive",
+    "geometry_rms",
+    "measured_startup",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners",
+    "thirty_observations"
+  ],
+  "engine": "mujoco",
+  "detector_backend": "color_fixture",
+  "scenario": "static",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 219999,
+      "pgid": 219999,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "weights_path:=",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "launch_returncode": 1,
+  "cleanup": [
+    {
+      "pid": 219999,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792313438.5906007
+}

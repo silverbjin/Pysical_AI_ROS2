@@ -1,0 +1,21 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_system_launch_includes_one_engine_runtime_and_vision_default_observation_only _
+
+    def test_system_launch_includes_one_engine_runtime_and_vision_default_observation_only():
+        module = load('integrated_robot_runtime', 'vision_system.launch.py')
+        actions = module.launch_nodes(context())
+        assert len(actions) == 3 and all(isinstance(v, IncludeLaunchDescription) for v in actions)
+        requested = module.launch_nodes(context(tracking_enabled='true'))
+        assert len(requested) == 4 and isinstance(requested[-1], Node)
+        with pytest.raises(ValueError):
+            module.launch_nodes(context(engine='both'))
+        with pytest.raises(ValueError):
+            module.launch_nodes(context(use_sim_time='false'))
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/tests/test_section_13_4_launch.py:52: Failed
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_launch.py::test_system_launch_includes_one_engine_runtime_and_vision_default_observation_only
+1 failed, 2 passed in 8.21s

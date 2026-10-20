@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "run_id": "90bbd6e1-8f6b-46a8-aee2-fc874ecdb00c",
+  "expected_run_id": "90bbd6e1-8f6b-46a8-aee2-fc874ecdb00c",
+  "invocation_started_at": 1792314200.393886,
+  "started_at": 1792314200.393886,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "thirty_observations": true,
+    "geometry_rms": true,
+    "actual_camera_motion": true,
+    "delay_150ms": true,
+    "one_clock": true,
+    "one_odometry": true,
+    "single_tf_owners": true,
+    "sensor_contract": true,
+    "engine_alive": true,
+    "native_snapshot": true,
+    "clean_shutdown": false
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/gazebo/geometry/delay",
+  "artifacts": [
+    {
+      "path": "observations.json",
+      "size": 122469,
+      "sha256": "52e07d76e0d8d744f60b91a1da75b9e95dbad39d1fb322f3f2dbaaa1485023d9"
+    },
+    {
+      "path": "joints.npz",
+      "size": 77795,
+      "sha256": "0bfad1ff7fc2f04659ddf8313125bcb45cfaa4a607704bce03aa192d5707282c"
+    },
+    {
+      "path": "rgb.png",
+      "size": 2240,
+      "sha256": "f676faf24a4361882d8cdf85ca804f0e4147ab11ef73618ff22b0c0e42ecf143"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "3ca22349ed8722b4a0e81a813d45bbe3e9ae26c19718d917f1cfac265ec20a7f"
+    },
+    {
+      "path": "annotated.png",
+      "size": 2904,
+      "sha256": "33ad936b1e217458c7d772d73754656837672b490824d354b92b7e1620f0fc8f"
+    },
+    {
+      "path": "camera.json",
+      "size": 327,
+      "sha256": "a588daee51ae019f76cc738e88554c2f0e78e2b5727494df1652465a7c9c2a46"
+    }
+  ],
+  "required_checks": [
+    "actual_camera_motion",
+    "clean_shutdown",
+    "delay_150ms",
+    "engine_alive",
+    "geometry_rms",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners",
+    "thirty_observations"
+  ],
+  "engine": "gazebo",
+  "detector_backend": "color_fixture",
+  "scenario": "delay",
+  "processing_delay_s": 0.15,
+  "processes": [
+    {
+      "pid": 228113,
+      "pgid": 228113,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.15",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=true"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "motion_enable": "Explicit stationary local mode: camera_motion_test",
+  "geometry": {
+    "valid_samples": 30,
+    "rms_m": 0.0018423475325221375,
+    "latest_tf_diagnostic_rms_m": 0.008198928045243572,
+    "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+    "elapsed_wall_s": 6.0547067309998965
+  },
+  "motion": {
+    "measured_q1_peak_to_peak_rad": 0.050097101959273596,
+    "nominal_amplitude_rad": 0.03,
+    "nominal_period_sim_s": 2.0,
+    "measured_trace": "joints.npz; this is camera motion, NOT PPO walking"
+  },
+  "owners": {
+    "/clock": [
+      "ros_gz_bridge"
+    ],
+    "/odom": [
+      "native_pose_adapter"
+    ],
+    "/camera/color/image_raw": [
+      "ros_gz_bridge"
+    ],
+    "/tf": [
+      "robot_state_publisher",
+      "native_pose_adapter"
+    ],
+    "/tf_static": [
+      "robot_state_publisher"
+    ]
+  },
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 16.202649574002862
+  },
+  "tf_ownership_method": "graph+model-parent-contract inference; Jazzy does not expose packet GID",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.3.7",
+    "ultralytics": "8.3.221",
+    "torch": "2.5.1+cpu",
+    "opencv-python": "4.10.0.84"
+  },
+  "source_head": "adb74f2c456994bfbdf7a5580390acd88cedb9b6",
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 228113,
+      "forced_cleanup": true,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792314246.720051
+}

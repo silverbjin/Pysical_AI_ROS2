@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "run_id": "c04c446e-9beb-4a68-9484-9e04b21da557",
+  "expected_run_id": "c04c446e-9beb-4a68-9484-9e04b21da557",
+  "invocation_started_at": 1792327183.738735,
+  "started_at": 1792327183.738735,
+  "status": "FAIL",
+  "checks": {
+    "executed": false,
+    "verification": false
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/safety_images_gazebo",
+  "artifacts": [
+    {
+      "path": "native/result.json",
+      "size": 4961,
+      "sha256": "5d235c85585391968e4cb3e7ebfcb4e84d49bd04c57c53c1944f100c58cc2193"
+    },
+    {
+      "path": "command.log",
+      "size": 452,
+      "sha256": "7df752eaa73661d6eaa651f742f210d7dac0bdec3e252104414f79db8ac2ce56"
+    }
+  ],
+  "required_checks": [
+    "executed",
+    "verification"
+  ],
+  "batch_run_id": "30b8e523-d190-4e22-929e-f11cb14a1826",
+  "group": "safety_images_gazebo",
+  "command": [
+    "/home/jinho/ch13_vision_13_4_venv/bin/python",
+    "Ch13/scripts/run_vision_13_4.py",
+    "--engine",
+    "gazebo",
+    "--scenario",
+    "safety",
+    "--detector-backend",
+    "color_fixture",
+    "--output-dir",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/safety_images_gazebo/native",
+    "--fault",
+    "images"
+  ],
+  "pid": 4968,
+  "returncode": 1,
+  "residual_live_pids": [],
+  "cleanup_confirmed": true,
+  "measurements": {
+    "fault": {
+      "kind": "images",
+      "requested_monotonic": 676.956048617,
+      "reply": "Image ingress paused",
+      "scope": "detector consumer ingress; native camera remains publishing",
+      "effective_monotonic": 677.013280466,
+      "goal_stop_deadline_monotonic": 677.513280466,
+      "final_tracking": {
+        "enabled": false,
+        "mode": "tracking",
+        "reason": "invalid/lost target",
+        "goal_count": 2,
+        "reserved": false,
+        "outstanding": false,
+        "fault": "",
+        "generation": 8
+      }
+    },
+    "versions": {
+      "numpy": "1.26.4",
+      "mujoco": "3.3.7",
+      "ultralytics": "8.3.221",
+      "torch": "2.5.1+cpu",
+      "opencv-python": "4.10.0.84"
+    },
+    "checks": {
+      "measured_startup": true,
+      "single_tf_owners": true,
+      "actual_tracking_goal": true,
+      "fault_injected": true,
+      "input_loss_stop": true,
+      "cancel_confirmed": true,
+      "one_clock": true,
+      "one_odometry": true,
+      "sensor_contract": true,
+      "engine_alive": true,
+      "native_snapshot": true,
+      "clean_shutdown": false
+    },
+    "errors": []
+  },
+  "finished_at": 1792327254.276991
+}

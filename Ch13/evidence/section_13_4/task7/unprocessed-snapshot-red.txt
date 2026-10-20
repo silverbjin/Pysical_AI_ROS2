@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_unprocessed_native_snapshot_never_claims_a_detection ___________
+
+    def test_unprocessed_native_snapshot_never_claims_a_detection():
+        observer = importlib.import_module('vision_observer_13_4')
+        from sensor_msgs.msg import Image
+        image = Image()
+        seen = []
+        bundle = object()
+        state = SimpleNamespace(cache=SimpleNamespace(rgb={1.: (image, 0.)},
+            match=lambda stamp, frame, epoch: bundle),
+            save_frame=lambda value, box, **kw: seen.append((value, box, kw)))
+>       assert observer.VisionObserver.save_latest_frame(state)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'VisionObserver' has no attribute 'save_latest_frame'
+
+Ch13/tests/test_section_13_4_runner.py:65: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_unprocessed_native_snapshot_never_claims_a_detection
+1 failed, 10 deselected in 4.65s

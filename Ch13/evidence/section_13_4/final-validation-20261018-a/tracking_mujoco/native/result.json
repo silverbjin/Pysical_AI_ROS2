@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "run_id": "cdd895a9-f5a1-48e6-aa32-bffb84562417",
+  "expected_run_id": "cdd895a9-f5a1-48e6-aa32-bffb84562417",
+  "invocation_started_at": 1792327707.5016804,
+  "started_at": 1792327707.5016804,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "five_second_tracking": false,
+    "pixel_error_reduction": false,
+    "joint_limits": false,
+    "velocity_limits": false,
+    "command_rate": false,
+    "clean_shutdown": true
+  },
+  "errors": [
+    "RuntimeError('explicit mode request refused: tracking requires every safety gate and an unreserved arm: target_valid,target_fresh')"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/tracking_mujoco/native",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 82751,
+      "sha256": "503fb82c8afe0b001c1390fc0ef30ac2941b90d1e7a871f64cce510cdd62b734"
+    },
+    {
+      "path": "offset_fixture.xml",
+      "size": 575,
+      "sha256": "f9be858d94d5beccc37d437af1972d09bb751e9d13ad8793b2cfd9f313e551c6"
+    },
+    {
+      "path": "observations.json",
+      "size": 116076,
+      "sha256": "3ed87082227c4aa6b86bb0b5834fbc6d9cc69e7b7b4a55430fff4f347a7467af"
+    },
+    {
+      "path": "joints.npz",
+      "size": 155897,
+      "sha256": "5e24554aba18767681d47e5e0944a119b16535d91c4621b1267bbe1b01f3b59f"
+    },
+    {
+      "path": "rgb.png",
+      "size": 17178,
+      "sha256": "59b0bb1322e4ece59c82701694212af209d9a6deacf40504f51032f371a6b48f"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "ad1ea72cd3be26a1ec142c6ccad43fdeafa64abba2f9c5563d4a67cba70e14ea"
+    },
+    {
+      "path": "annotated.png",
+      "size": 18358,
+      "sha256": "5da8ffcb47dd3073ae32852c39a8e27737425f4d2b17e732461bb0aa43c06bac"
+    },
+    {
+      "path": "camera.json",
+      "size": 1251,
+      "sha256": "2e4aa73551bc439e83e3da03ad2ba0f21a07e8613f250ca0c5094d6d257c70ee"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "command_rate",
+    "engine_alive",
+    "five_second_tracking",
+    "joint_limits",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "pixel_error_reduction",
+    "sensor_contract",
+    "single_tf_owners",
+    "velocity_limits"
+  ],
+  "source_head": "1b173e3b5dc7d996ad2a77b5bca5a57d07329cd0",
+  "engine": "mujoco",
+  "detector_backend": "color_fixture",
+  "scenario": "tracking",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 7610,
+      "pgid": 7610,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false",
+        "model_path:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/tracking_mujoco/native/offset_fixture.xml"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "physical_fixture": {
+    "center": [
+      1.0,
+      0.02,
+      0.72
+    ],
+    "front_x": 0.98
+  },
+  "tracking_metrics": {
+    "checks": {
+      "five_second_tracking": false,
+      "pixel_error_reduction": false,
+      "joint_limits": false,
+      "velocity_limits": false,
+      "command_rate": false
+    },
+    "elapsed_wall_s": 0.0,
+    "command_count": 0,
+    "reduction": null
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 7610,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792327761.4258087
+}

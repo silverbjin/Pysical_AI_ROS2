@@ -1,0 +1,125 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_default_off_exclusive_session_and_disable_cancels_without_successor[shutdown] _
+
+stop = 'shutdown'
+
+    @pytest.mark.parametrize('stop', ['operator', 'loss', 'lifecycle', 'foreign', 'shutdown'])
+    def test_default_off_exclusive_session_and_disable_cancels_without_successor(stop):
+        rclpy.init(domain_id=148)
+        node, peer, executor, thread = None, None, None, None
+        try:
+            node, peer = ManipulationNode(), Node('tracking_action_peer')
+            assert hasattr(node, 'tracking'), 'missing runtime tracking integration'
+            goals, cancellations = [], []
+    
+            def execute(handle):
+                goals.append(handle.request)
+                deadline = time.monotonic()+2.
+                while time.monotonic() < deadline and not handle.is_cancel_requested:
+                    time.sleep(.005)
+                if handle.is_cancel_requested:
+                    cancellations.append(True)
+                    handle.canceled()
+                else:
+                    handle.succeed()
+                return FollowJointTrajectory.Result(error_code=0)
+    
+            server = ActionServer(peer, FollowJointTrajectory,
+                                  '/arm_trajectory_controller/follow_joint_trajectory', execute,
+                                  cancel_callback=lambda _: CancelResponse.ACCEPT,
+                                  callback_group=node.group)
+            executor = DrainingExecutor(num_threads=6)
+            executor.add_node(node)
+            executor.add_node(peer)
+            thread = threading.Thread(target=executor.spin)
+            thread.start()
+            toggle = peer.create_client(SetBool, '/manipulation_node/set_visual_tracking')
+            stow = peer.create_client(Trigger, '/manipulation_node/stow')
+            assert toggle.wait_for_service(timeout_sec=3)
+            time.sleep(.1)
+            assert goals == []
+            rejected = toggle.call_async(SetBool.Request(data=True))
+            wait(rejected.done)
+            assert not rejected.result().success  # inactive and missing all inputs
+            pkg = Path(__file__).resolve().parents[2] / 'integrated_robot_description'
+            xml = subprocess.run(['xacro', str(pkg/'urdf/robot_system.urdf.xacro'),
+                                  'vision_enabled:=true'], check=True, capture_output=True, text=True).stdout
+            node.tracking.on_model(String(data=xml))
+            transform = TransformStamped()
+            transform.header.frame_id, transform.child_frame_id = 'base_link', 'odom'
+            transform.transform.rotation.w = 1.
+            node.tracking.buffer.set_transform_static(transform, 'boundary-test-only')
+            node.on_activate(None)
+            node.safe = True  # This boundary test bypasses physical stow; engine test must not.
+            info = CameraInfo(width=320, height=240, distortion_model='plumb_bob')
+            info.header.frame_id = 'camera_optical_frame'
+            info.k = [277., 0., 160., 0., 277., 120., 0., 0., 1.]
+            info.r = [1., 0., 0., 0., 1., 0., 0., 0., 1.]
+            info.header.stamp = node.get_clock().now().to_msg()
+            node.tracking.on_info(info)
+            node.tracking.on_legs(String(data=json.dumps(dict(active=True, ready=True, mode='STAND'))))
+            joints = JointState(name=list(ARM_NAMES+LEG_NAMES), position=[0.]*6+list(STAND))
+            joints.header.stamp = node.get_clock().now().to_msg()
+            node.on_joints(joints)
+            target = TrackedTarget(valid=True, status='TRACKED', track_id='one', class_id='fixture', score=.9)
+            target.header.frame_id, target.source_header.frame_id = 'odom', 'camera_optical_frame'
+            target.header.stamp = target.source_header.stamp = node.get_clock().now().to_msg()
+            target.position.x, target.position.y, target.position.z = .90, .02, .35
+            node.tracking.on_target(target)
+            enabled = toggle.call_async(SetBool.Request(data=True))
+            wait(enabled.done)
+            assert enabled.result().success, enabled.result().message
+            wait(lambda: bool(goals))
+            assert goals[0].trajectory.joint_names == list(ARM_NAMES)
+            assert max(abs(v) for v in goals[0].trajectory.points[0].positions) <= .04
+            blocked = stow.call_async(Trigger.Request())
+            wait(blocked.done)
+            assert not blocked.result().success
+            pick = PickObject.Goal(object_name='fixture', dry_run=True)
+            pick.target_pose.header.frame_id = 'base_link'
+            pick.target_pose.header.stamp = node.get_clock().now().to_msg()
+            pick.target_pose.pose.orientation.w = 1.
+            assert node.accept_goal(pick).name == 'REJECT'
+            if stop == 'operator':
+                disabled = toggle.call_async(SetBool.Request(data=False))
+                wait(disabled.done)
+                assert disabled.result().success
+            elif stop == 'loss':
+                target.valid, target.status = False, 'LOST'  # identical last capture stamp
+                node.tracking.on_target(target)
+            elif stop == 'lifecycle':
+                node.on_deactivate(None)
+            elif stop == 'shutdown':
+>               node.begin_shutdown()
+                ^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'ManipulationNode' object has no attribute 'begin_shutdown'. Did you mean: 'on_shutdown'?
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:124: AttributeError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792311654.489720943] [manipulation_node]: Pick rejected: inactive, unsafe, or busy; age_s=0.000020
+=============================== warnings summary ===============================
+test/test_tracking_ros.py::test_default_off_exclusive_session_and_disable_cancels_without_successor[shutdown]
+  Warning: Exception in thread Thread-1 (spin)
+  
+  Traceback (most recent call last):
+    File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+      self.run()
+    File "/usr/lib/python3.12/threading.py", line 1010, in run
+      self._target(*self._args, **self._kwargs)
+    File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 359, in spin
+      self._spin_once_impl()
+    File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 1002, in _spin_once_impl
+      self._executor.submit(handler)
+    File "/usr/lib/python3.12/concurrent/futures/thread.py", line 170, in submit
+      raise RuntimeError('cannot schedule new futures after shutdown')
+  RuntimeError: cannot schedule new futures after shutdown
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py::test_default_off_exclusive_session_and_disable_cancels_without_successor[shutdown]
+1 failed, 6 deselected, 1 warning in 5.05s
+sys:1: RuntimeWarning: coroutine 'Executor._make_handler.<locals>.handler' was never awaited

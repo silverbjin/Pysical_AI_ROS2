@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_exact_ros_capture_stamps_do_not_alias_at_unix_epoch ___________
+
+    def test_exact_ros_capture_stamps_do_not_alias_at_unix_epoch():
+        cache = RGBDCache()
+        calibration = info()
+        calibration.header.stamp.sec, calibration.header.stamp.nanosec = 1_792_300_000, 100
+        rgb, depth = images(1., 1.)
+        for msg in (rgb, depth):
+            msg.header.stamp.sec, msg.header.stamp.nanosec = 1_792_300_000, 100
+        cache.add_info(calibration, 0)
+        cache.add_rgb(rgb, 0)
+        cache.add_depth(depth, 0)
+>       assert cache.match(rgb.header.stamp, 'camera_optical_frame', 0) is not None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py:152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_vision.cache.RGBDCache object at 0x76d2059f9ac0>
+stamp = builtin_interfaces.msg.Time(sec=1792300000, nanosec=100)
+frame_id = 'camera_optical_frame', epoch = 0
+
+    def match(self, stamp: float, frame_id: str, epoch: int):
+        with self.lock:
+>           if epoch != self.epoch or not math.isfinite(stamp) or stamp <= 0:
+                                          ^^^^^^^^^^^^^^^^^^^^
+E           TypeError: must be real number, not Time
+
+Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/cache.py:119: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py::test_exact_ros_capture_stamps_do_not_alias_at_unix_epoch
+1 failed in 1.28s

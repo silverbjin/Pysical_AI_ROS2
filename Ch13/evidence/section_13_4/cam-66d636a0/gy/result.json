@@ -1,0 +1,281 @@
+{
+  "schema_version": 1,
+  "run_id": "10ac5b84-8283-4ed6-b375-e87f0cec3fb0",
+  "expected_run_id": "10ac5b84-8283-4ed6-b375-e87f0cec3fb0",
+  "invocation_started_at": 1792422222.4868443,
+  "started_at": 1792422222.4868443,
+  "status": "PASS",
+  "checks": {
+    "measured_startup": true,
+    "actual_inference_frames": true,
+    "recognition": true,
+    "valid_3d_detections": true,
+    "one_clock": true,
+    "one_odometry": true,
+    "sensor_contract": true,
+    "engine_alive": true,
+    "single_tf_owners": true,
+    "native_snapshot": true,
+    "clean_shutdown": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/cam-66d636a0/gy",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 85354,
+      "sha256": "bd7347053db7326cac15db0b46f3be987fbf6894d7431690f39c39900757aa22"
+    },
+    {
+      "path": "semantic_cup.sdf",
+      "size": 40721,
+      "sha256": "ec8a3ea6954f80e1c778d0c513602b301e53d8592966ad0f81c589d1980ca5d0"
+    },
+    {
+      "path": "observations.json",
+      "size": 675456,
+      "sha256": "017ea0b1b6c71eb0cebaaf0305fa3acf71d27abe0224d2da932a194668ef24ee"
+    },
+    {
+      "path": "joints.npz",
+      "size": 260397,
+      "sha256": "50c5d760aa61b14f46d3dcafd4fb1352b7936f3cf13660a197cddda79b9cef4f"
+    },
+    {
+      "path": "rgb.png",
+      "size": 5041,
+      "sha256": "b59a1c5bce7097aec6385af67b707d4e6c9ed3a9d47d4390a5825a14f2531a83"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "098a8e871743aadcefda6308a1943fe99907dab5379131d87d110736bf14d48f"
+    },
+    {
+      "path": "annotated.png",
+      "size": 5921,
+      "sha256": "531b0a8024fca1f173d4a994b03b6994f1903261ef58636e5b26de660e4ad2e7"
+    },
+    {
+      "path": "camera.json",
+      "size": 1248,
+      "sha256": "e86f083c1f9d774d29df138382873393296746addcaa28abaa3a563e79458a22"
+    }
+  ],
+  "required_checks": [
+    "actual_inference_frames",
+    "clean_shutdown",
+    "engine_alive",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "recognition",
+    "sensor_contract",
+    "single_tf_owners",
+    "valid_3d_detections"
+  ],
+  "engine": "gazebo",
+  "vision_camera_backend": "upstream",
+  "source_head": "6828b82fd13c97dba3fc935325a741e583a830aa",
+  "detector_backend": "yolo",
+  "scenario": "yolo",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 7958,
+      "pgid": 7958,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=yolo",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "max_rate_hz:=10.0",
+        "allow_camera_motion_test:=false",
+        "weights_path:=/home/jinho/ch13_vision_13_4_assets/yolov8n.pt",
+        "world:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/cam-66d636a0/gy/semantic_cup.sdf"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "inference_rate_hz": 10.0,
+  "semantic_fixture": {
+    "kind": "authored_geometry_cup",
+    "expected_class": "41",
+    "note": "Static hollow mug/handle and coffee on table; not a photo billboard or grasp test"
+  },
+  "stages": [
+    {
+      "stage": "startup",
+      "started_monotonic": 1880.62229634,
+      "status": "PASS",
+      "finished_monotonic": 1916.776853252,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "invalid/lost target",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 23,
+          "session_generation": null,
+          "event": "disabled",
+          "emitted_monotonic": 1916.746653761,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "events": [
+              {
+                "uuid": "75b649d1617c4f8e92ad6d699f9f5baf",
+                "event": "sent",
+                "wall": 1913.277317163
+              },
+              {
+                "uuid": "75b649d1617c4f8e92ad6d699f9f5baf",
+                "event": "accepted",
+                "wall": 1913.293618704
+              },
+              {
+                "uuid": "75b649d1617c4f8e92ad6d699f9f5baf",
+                "event": "result_requested",
+                "wall": 1913.293624663
+              },
+              {
+                "uuid": "75b649d1617c4f8e92ad6d699f9f5baf",
+                "event": "terminal",
+                "wall": 1916.589641139,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 6582000000,
+            "target_capture_ns": 0,
+            "target_received_wall": 1916.476107941,
+            "joint_capture_ns": 6578000000,
+            "joint_received_wall": 1916.741335261,
+            "leg_positions": [
+              -6.790505723904431e-12,
+              -0.49999999999347805,
+              1.0000000001694735,
+              6.790505025504112e-12,
+              -0.49999999999347805,
+              1.0000000001694735,
+              -5.2518234965381156e-12,
+              -0.49999999999503536,
+              1.0000000001429004,
+              5.251823616094812e-12,
+              -0.4999999999950353,
+              1.0000000001429004
+            ],
+            "leg_status": {
+              "active": false,
+              "mode": "STOP",
+              "ready": true,
+              "command_count": 0,
+              "max_timer_gap_s": 0.11231733099998564,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1916.395284434
+          }
+        },
+        "counts": {
+          "info": 100,
+          "rgb": 100,
+          "depth": 84,
+          "detection_frames": 63,
+          "raw_targets": 51,
+          "valid_tracks": 51,
+          "invalid_tracks": 22
+        },
+        "command_count": 0
+      }
+    }
+  ],
+  "recognition": {
+    "frames": 139,
+    "detected_frames": 139,
+    "valid_3d": 117,
+    "expected_class": "41",
+    "coverage": 1.0,
+    "note": "Actual native camera and YOLO; no fallback"
+  },
+  "owners": {
+    "/clock": [
+      "ros_gz_bridge"
+    ],
+    "/odom": [
+      "native_pose_adapter"
+    ],
+    "/camera/color/image_raw": [
+      "ros_gz_bridge"
+    ],
+    "/camera/aligned_depth_to_color/image_raw": [
+      "ros_gz_bridge"
+    ],
+    "/native/camera_info": [],
+    "/camera/color/camera_info": [
+      "ros_gz_bridge"
+    ],
+    "/tf": [
+      "robot_state_publisher",
+      "native_pose_adapter"
+    ],
+    "/tf_static": [
+      "robot_state_publisher"
+    ],
+    "/overview/color": [],
+    "/overview/depth": [],
+    "/overview/camera_info": [],
+    "/eye_in_hand/color": [],
+    "/eye_in_hand/depth": [],
+    "/eye_in_hand/camera_info": []
+  },
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 18.268105214999878
+  },
+  "tf_ownership_method": "graph+model-parent-contract inference; Jazzy does not expose packet GID",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.3.7",
+    "ultralytics": "8.3.221",
+    "torch": "2.5.1+cpu",
+    "opencv-python": "4.10.0.84"
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "gazebo_native_stop": {
+    "pids": [
+      7962,
+      7970
+    ],
+    "exited": true
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 7958,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792422315.0093563
+}

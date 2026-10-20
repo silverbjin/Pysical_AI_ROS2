@@ -1,0 +1,38 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_jazzy_dict_message_info_records_actual_tf_publisher_identity _______
+
+    def test_jazzy_dict_message_info_records_actual_tf_publisher_identity():
+        observer = importlib.import_module('vision_observer_13_4')
+        state = SimpleNamespace(tf_owners={})
+        message = SimpleNamespace(transforms=[SimpleNamespace(child_frame_id='base_footprint')])
+>       observer.VisionObserver.on_tf(state, message, {'publisher_gid': bytes(range(16))})
+
+Ch13/tests/test_section_13_4_runner.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(tf_owners={'base_footprint': set()})
+message = namespace(transforms=[namespace(child_frame_id='base_footprint')])
+info = {'publisher_gid': b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f'}
+
+    def on_tf(self, message, info):
+        for value in message.transforms:
+>           self.tf_owners.setdefault(value.child_frame_id, set()).add(bytes(info.publisher_gid).hex())
+                                                                             ^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'dict' object has no attribute 'publisher_gid'
+
+Ch13/scripts/vision_observer_13_4.py:173: AttributeError
+__ test_launch_internal_child_sigkill_is_not_clean_even_if_parent_exits_zero ___
+
+    def test_launch_internal_child_sigkill_is_not_clean_even_if_parent_exits_zero():
+        runner = importlib.import_module('run_vision_13_4')
+        cleanup = [dict(forced_cleanup=False, residual_live_pids=[])]
+>       assert runner.clean_shutdown(cleanup, 0, 'all own children finished cleanly')
+               ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'clean_shutdown'
+
+Ch13/tests/test_section_13_4_runner.py:67: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_jazzy_dict_message_info_records_actual_tf_publisher_identity
+FAILED Ch13/tests/test_section_13_4_runner.py::test_launch_internal_child_sigkill_is_not_clean_even_if_parent_exits_zero
+2 failed, 3 deselected in 3.13s

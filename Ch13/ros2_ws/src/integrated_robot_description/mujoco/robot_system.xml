@@ -29,7 +29,15 @@
                 <body name="arm_link_4" pos="0 0 .16"><joint name="arm_joint_4" axis="1 0 0" range="-3.14159 3.14159"/><geom type="capsule" fromto="0 0 0 0 0 .10" size=".028" mass=".28" rgba=".95 .42 .08 1"/>
                   <body name="arm_link_5" pos="0 0 .10"><joint name="arm_joint_5" axis="0 1 0" range="-1.5708 1.5708"/><geom type="capsule" fromto="0 0 0 0 0 .08" size=".025" mass=".20" rgba=".95 .42 .08 1"/>
                     <body name="arm_link_6" pos="0 0 .08"><joint name="arm_joint_6" axis="0 0 1" range="-3.14159 3.14159"/><geom type="capsule" fromto="0 0 0 0 0 .06" size=".022" mass=".15" rgba=".95 .42 .08 1"/>
-                      <body name="camera_link" pos=".03 0 .03" quat=".7071068 0 -.7071068 0"><geom type="box" size=".01 .025 .01" mass=".05" rgba=".08 .09 .10 1"/></body>
+                      <body name="camera_link" pos=".03 0 .03" quat=".7071067811865476 0 -.7071067811865476 0">
+                        <geom type="box" size=".01 .025 .01" mass=".05" rgba=".08 .09 .10 1"/>
+                        <body name="camera_sensor_frame" euler="0 2.0943951023931953 0">
+                          <!-- URDF fixed-axis Rz(yaw)Ry(pitch)Rx(roll), not MJCF intrinsic xyz. -->
+                          <body name="camera_optical_frame" quat=".5 -.5 .5 -.5">
+                            <camera name="eye_in_hand" quat="0 1 0 0" fovy="46.82644889274108" resolution="320 240"/>
+                          </body>
+                        </body>
+                      </body>
                       <body name="arm_tool0" pos="0 0 .06"><geom type="sphere" size=".015" mass=".03" rgba=".05 .3 .7 1"/>
                         <body name="gripper_base_link"><geom type="box" pos="0 0 .02" size=".05 .03 .02" mass=".16"/>
                           <body name="gripper_left_finger" pos="0 .025 .04"><joint name="gripper_left_joint" type="slide" axis="0 1 0" range="0 .03"/><geom type="box" pos="0 0 .04" size=".009 .009 .04" mass=".06"/></body>

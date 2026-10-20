@@ -1,0 +1,281 @@
+{
+  "batch_run_id": "edfdbd00-7970-4073-8664-8c8902614b99",
+  "scope": "Native trials only, not complete section acceptance",
+  "source_head": "a7ab923f58d640e65db6e1f9276024db96f3e421",
+  "status": "STOPPED",
+  "conditions": {
+    "ROS_DOMAIN_ID": "157",
+    "MUJOCO_GL": "egl",
+    "LP_NUM_THREADS": null,
+    "OMP_NUM_THREADS": null,
+    "OPENBLAS_NUM_THREADS": null
+  },
+  "cases": {
+    "ms": {
+      "engine": "mujoco",
+      "scenario": "static",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "status": "PASS",
+      "run_id": "ebe58280-644b-4c1f-8ae2-dcb4984f34d4",
+      "cleanup": [
+        {
+          "pid": 1374,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ]
+    },
+    "md": {
+      "engine": "mujoco",
+      "scenario": "delay",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "FAIL",
+      "cleanup": [
+        {
+          "pid": 1401,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "returncode": 1,
+      "run_id": "a153a571-6368-4fb3-b244-122ed4e24e79",
+      "errors": [
+        "TimeoutError('native vision verification deadline exceeded: thirty_unique_observations')",
+        "own trajectory terminal cancellation not confirmed",
+        "native/runtime exception; inspect system.log"
+      ],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "thirty_observations": false,
+        "geometry_rms": true,
+        "clean_shutdown": false
+      },
+      "geometry": {
+        "valid_samples": 21,
+        "unique_captures": 21,
+        "rms_m": 0.0024376210588013007,
+        "rms_limit_m": 0.05,
+        "required_samples": 30,
+        "unique_timestamps": true,
+        "latest_tf_diagnostic_rms_m": 0.013805582545697902,
+        "accepted": false
+      },
+      "recognition": null,
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "my": {
+      "engine": "mujoco",
+      "scenario": "yolo",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "PASS",
+      "cleanup": [
+        {
+          "pid": 1730,
+          "forced_cleanup": false,
+          "residual_live_pids": []
+        }
+      ],
+      "returncode": 0,
+      "run_id": "f97c41b3-61db-4117-af60-865f967fc7ce",
+      "errors": [],
+      "checks": {
+        "measured_startup": true,
+        "camera_backend_loaded": true,
+        "actual_inference_frames": true,
+        "recognition": true,
+        "valid_3d_detections": true,
+        "single_camera_owners": true,
+        "one_clock": true,
+        "one_odometry": true,
+        "sensor_contract": true,
+        "engine_alive": true,
+        "single_tf_owners": true,
+        "native_snapshot": true,
+        "clean_shutdown": true
+      },
+      "geometry": null,
+      "recognition": {
+        "frames": 16,
+        "detected_frames": 16,
+        "valid_3d": 16,
+        "expected_class": "41",
+        "coverage": 1.0,
+        "note": "Actual native camera and YOLO; no fallback"
+      },
+      "tracking_metrics": null,
+      "runtime_shutdown": null,
+      "remaining_native_processes": []
+    },
+    "m10a": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "m10b": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "m10c": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "m15a": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 15.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "m15b": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 15.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "m15c": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "snapshot",
+      "rate_hz": 15.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "mu10": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "mu15": {
+      "engine": "mujoco",
+      "scenario": "tracking",
+      "backend": "upstream",
+      "rate_hz": 15.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "msi": {
+      "engine": "mujoco",
+      "scenario": "safety",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": "images",
+      "status": "UNVERIFIED"
+    },
+    "mst": {
+      "engine": "mujoco",
+      "scenario": "safety",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": "tf",
+      "status": "UNVERIFIED"
+    },
+    "msj": {
+      "engine": "mujoco",
+      "scenario": "safety",
+      "backend": "snapshot",
+      "rate_hz": 10.0,
+      "fault": "joints",
+      "status": "UNVERIFIED"
+    },
+    "ml": {
+      "engine": "mujoco",
+      "scenario": "legacy",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "gs": {
+      "engine": "gazebo",
+      "scenario": "static",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "gd": {
+      "engine": "gazebo",
+      "scenario": "delay",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "gy": {
+      "engine": "gazebo",
+      "scenario": "yolo",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "gt": {
+      "engine": "gazebo",
+      "scenario": "tracking",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    },
+    "gsi": {
+      "engine": "gazebo",
+      "scenario": "safety",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": "images",
+      "status": "UNVERIFIED"
+    },
+    "gst": {
+      "engine": "gazebo",
+      "scenario": "safety",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": "tf",
+      "status": "UNVERIFIED"
+    },
+    "gsj": {
+      "engine": "gazebo",
+      "scenario": "safety",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": "joints",
+      "status": "UNVERIFIED"
+    },
+    "gl": {
+      "engine": "gazebo",
+      "scenario": "legacy",
+      "backend": "upstream",
+      "rate_hz": 10.0,
+      "fault": null,
+      "status": "UNVERIFIED"
+    }
+  },
+  "supervisor_error": "KeyboardInterrupt()",
+  "remaining_native_processes": [],
+  "finished_at": 1792378852.5642936
+}

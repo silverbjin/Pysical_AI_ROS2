@@ -1,0 +1,755 @@
+{
+  "schema_version": 1,
+  "run_id": "076a73ee-9cc4-4b5e-bbf8-65245201cdd3",
+  "expected_run_id": "076a73ee-9cc4-4b5e-bbf8-65245201cdd3",
+  "invocation_started_at": 1792421751.8082523,
+  "started_at": 1792421751.8082523,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "five_second_tracking": false,
+    "pixel_error_reduction": false,
+    "joint_limits": false,
+    "velocity_limits": false,
+    "command_rate": false,
+    "clean_shutdown": true
+  },
+  "errors": [
+    "RuntimeError(\"tracking stopped before fault/trial: {'enabled': False, 'mode': 'tracking', 'reason': 'input expired or clock changed during servo computation', 'goal_count': 0, 'reserved': False, 'outstanding': False, 'fault': '', 'generation': 19, 'session_generation': 18, 'event': 'disabled', 'emitted_monotonic': 1471.379656595, 'owner': {'pending_uuid': None, 'accepted': False, 'handle_status': None, 'result_future_done': None, 'events': [{'uuid': '180024be28bc4868be745f765620aa2c', 'event': 'sent', 'wall': 1467.966997347}, {'uuid': '180024be28bc4868be745f765620aa2c', 'event': 'accepted', 'wall': 1467.974261564}, {'uuid': '180024be28bc4868be745f765620aa2c', 'event': 'result_requested', 'wall': 1467.974265414}, {'uuid': '180024be28bc4868be745f765620aa2c', 'event': 'terminal', 'wall': 1469.99417893, 'status': 4}]}, 'inputs': {'ros_now_ns': 15408000000, 'target_capture_ns': 15090000000, 'target_received_wall': 1471.239128379, 'joint_capture_ns': 15336000000, 'joint_received_wall': 1471.336032976, 'leg_positions': [-0.009767563759917216, -0.4742482423436795, 1.0805729971242928, 0.009767563759917561, -0.4742482423436855, 1.0805729971242926, -0.005410366285914786, -0.4793487298561152, 1.0528261852176897, 0.005410366285914134, -0.479348729856111, 1.0528261852176886], 'leg_status': {'active': True, 'mode': 'STAND', 'ready': True, 'command_count': 53, 'max_timer_gap_s': 0.09751720500003103, 'policy': 'stand_reference_not_ppo'}, 'leg_status_received_wall': 1471.171387076}}\")"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/cam-66d636a0/mu15",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 85308,
+      "sha256": "7fb5c780bdc6a22d186cd96974484fea3a4fcd2f1049a1f787d6404abb48a0e8"
+    },
+    {
+      "path": "offset_fixture.xml",
+      "size": 582,
+      "sha256": "5bae524ae827ffb8a27f86bfcd330ee7e9b51a1eb35eaa932cfd94fc58dddff3"
+    },
+    {
+      "path": "observations.json",
+      "size": 267333,
+      "sha256": "779a8c7b3aaf054565592c8e8499b0c29d42d3c09d6480450756e3b5d5a647db"
+    },
+    {
+      "path": "joints.npz",
+      "size": 66591,
+      "sha256": "826ff82124b91248bd3b8811cf5559a4cc33055109886adb0ce42f89d8669be0"
+    },
+    {
+      "path": "rgb.png",
+      "size": 16828,
+      "sha256": "96b50197b3b6c4f19766907c452d16b8413bd68be18b3d89852ea7a2a597a2f6"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "b403e4f054ebadaf427202752040f0b2954120b83a3159a27943f76f4fcacdd9"
+    },
+    {
+      "path": "annotated.png",
+      "size": 17896,
+      "sha256": "0f689a0fa85d1e6662ca097572eae45d0ea48384581588bc00a0040bb0b70a8e"
+    },
+    {
+      "path": "camera.json",
+      "size": 1251,
+      "sha256": "e63f407f91c81d6a4f283594fcd5ddf1086cd95e389a9c172896650d103cc066"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "command_rate",
+    "engine_alive",
+    "five_second_tracking",
+    "joint_limits",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "pixel_error_reduction",
+    "sensor_contract",
+    "single_tf_owners",
+    "velocity_limits"
+  ],
+  "engine": "mujoco",
+  "vision_camera_backend": "upstream",
+  "source_head": "6828b82fd13c97dba3fc935325a741e583a830aa",
+  "detector_backend": "color_fixture",
+  "scenario": "tracking",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 4796,
+      "pgid": 4796,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "max_rate_hz:=15.0",
+        "allow_camera_motion_test:=false",
+        "mujoco_headless:=true",
+        "vision_camera_backend:=upstream",
+        "model_path:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/cam-66d636a0/mu15/offset_fixture.xml"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "inference_rate_hz": 15.0,
+  "physical_fixture": {
+    "center": [
+      1.0,
+      0.02,
+      0.72
+    ],
+    "front_x": 0.98
+  },
+  "stages": [
+    {
+      "stage": "startup",
+      "started_monotonic": 1448.50792967,
+      "status": "PASS",
+      "finished_monotonic": 1470.184389106,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "invalid/lost target",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 14,
+          "session_generation": null,
+          "event": "disabled",
+          "emitted_monotonic": 1470.109020311,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "events": [
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "sent",
+                "wall": 1467.966997347
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "accepted",
+                "wall": 1467.974261564
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "result_requested",
+                "wall": 1467.974265414
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "terminal",
+                "wall": 1469.99417893,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 14142000000,
+            "target_capture_ns": 0,
+            "target_received_wall": 1469.849599964,
+            "joint_capture_ns": 14138000000,
+            "joint_received_wall": 1470.099848602,
+            "leg_positions": [
+              -0.00833131829544542,
+              -0.4868577925210497,
+              1.0818591401951518,
+              0.008331318295445788,
+              -0.48685779252105676,
+              1.0818591401951523,
+              -0.005714002237671391,
+              -0.49271298225052995,
+              1.0723165433921924,
+              0.005714002237670792,
+              -0.4927129822505245,
+              1.0723165433921915
+            ],
+            "leg_status": {
+              "active": false,
+              "mode": "STOP",
+              "ready": true,
+              "command_count": 0,
+              "max_timer_gap_s": 0.09751720500003103,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1469.977131495
+          }
+        },
+        "counts": {
+          "rgb": 108,
+          "depth": 158,
+          "info": 158,
+          "detection_frames": 103,
+          "raw_targets": 34,
+          "valid_tracks": 34,
+          "invalid_tracks": 13
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "fresh_target",
+      "started_monotonic": 1471.187321585,
+      "status": "PASS",
+      "finished_monotonic": 1471.224866237,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "invalid/lost target",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 17,
+          "session_generation": null,
+          "event": "disabled",
+          "emitted_monotonic": 1471.157606183,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "events": [
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "sent",
+                "wall": 1467.966997347
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "accepted",
+                "wall": 1467.974261564
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "result_requested",
+                "wall": 1467.974265414
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "terminal",
+                "wall": 1469.99417893,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 15184000000,
+            "target_capture_ns": 0,
+            "target_received_wall": 1470.969398373,
+            "joint_capture_ns": 15178000000,
+            "joint_received_wall": 1471.1543038,
+            "leg_positions": [
+              -0.009753990831048926,
+              -0.473695443987361,
+              1.0840747868249347,
+              0.009753990831049648,
+              -0.47369544398736707,
+              1.0840747868249347,
+              -0.0054885713850065755,
+              -0.4782188702836103,
+              1.0559993736120734,
+              0.005488571385005741,
+              -0.47821887028360593,
+              1.0559993736120725
+            ],
+            "leg_status": {
+              "active": true,
+              "mode": "STAND",
+              "ready": true,
+              "command_count": 44,
+              "max_timer_gap_s": 0.09751720500003103,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1470.988277583
+          }
+        },
+        "counts": {
+          "rgb": 115,
+          "depth": 171,
+          "info": 171,
+          "detection_frames": 113,
+          "raw_targets": 41,
+          "valid_tracks": 41,
+          "invalid_tracks": 16
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "/manipulation_node/set_visual_tracking:service_ready",
+      "started_monotonic": 1471.27784554,
+      "status": "PASS",
+      "finished_monotonic": 1471.277956365,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "invalid/lost target",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 17,
+          "session_generation": null,
+          "event": "disabled",
+          "emitted_monotonic": 1471.157606183,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "events": [
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "sent",
+                "wall": 1467.966997347
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "accepted",
+                "wall": 1467.974261564
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "result_requested",
+                "wall": 1467.974265414
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "terminal",
+                "wall": 1469.99417893,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 15184000000,
+            "target_capture_ns": 0,
+            "target_received_wall": 1470.969398373,
+            "joint_capture_ns": 15178000000,
+            "joint_received_wall": 1471.1543038,
+            "leg_positions": [
+              -0.009753990831048926,
+              -0.473695443987361,
+              1.0840747868249347,
+              0.009753990831049648,
+              -0.47369544398736707,
+              1.0840747868249347,
+              -0.0054885713850065755,
+              -0.4782188702836103,
+              1.0559993736120734,
+              0.005488571385005741,
+              -0.47821887028360593,
+              1.0559993736120725
+            ],
+            "leg_status": {
+              "active": true,
+              "mode": "STAND",
+              "ready": true,
+              "command_count": 44,
+              "max_timer_gap_s": 0.09751720500003103,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1470.988277583
+          }
+        },
+        "counts": {
+          "rgb": 115,
+          "depth": 171,
+          "info": 171,
+          "detection_frames": 113,
+          "raw_targets": 41,
+          "valid_tracks": 41,
+          "invalid_tracks": 16
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "/manipulation_node/set_visual_tracking:reply",
+      "started_monotonic": 1471.27816564,
+      "status": "PASS",
+      "finished_monotonic": 1471.338787651,
+      "last_inputs": {
+        "tracking": {
+          "enabled": true,
+          "mode": "tracking",
+          "reason": "enabled explicitly",
+          "goal_count": 0,
+          "reserved": true,
+          "outstanding": false,
+          "fault": "",
+          "generation": 18,
+          "session_generation": 18,
+          "event": "enable_ack",
+          "emitted_monotonic": 1471.328439401,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "events": [
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "sent",
+                "wall": 1467.966997347
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "accepted",
+                "wall": 1467.974261564
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "result_requested",
+                "wall": 1467.974265414
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "terminal",
+                "wall": 1469.99417893,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 15338000000,
+            "target_capture_ns": 15090000000,
+            "target_received_wall": 1471.239128379,
+            "joint_capture_ns": 15314000000,
+            "joint_received_wall": 1471.326621009,
+            "leg_positions": [
+              -0.009769534312348086,
+              -0.4740942292400179,
+              1.0810979543990349,
+              0.009769534312348472,
+              -0.47409422924002387,
+              1.0810979543990349,
+              -0.0054172379935081925,
+              -0.47905995098316567,
+              1.0531421472332307,
+              0.005417237993507525,
+              -0.47905995098316134,
+              1.0531421472332296
+            ],
+            "leg_status": {
+              "active": true,
+              "mode": "STAND",
+              "ready": true,
+              "command_count": 53,
+              "max_timer_gap_s": 0.09751720500003103,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1471.171387076
+          }
+        },
+        "counts": {
+          "rgb": 116,
+          "depth": 172,
+          "info": 172,
+          "detection_frames": 113,
+          "raw_targets": 41,
+          "valid_tracks": 41,
+          "invalid_tracks": 16
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "tracking_ack",
+      "started_monotonic": 1471.346088993,
+      "status": "PASS",
+      "finished_monotonic": 1471.346156735,
+      "last_inputs": {
+        "tracking": {
+          "enabled": true,
+          "mode": "tracking",
+          "reason": "enabled explicitly",
+          "goal_count": 0,
+          "reserved": true,
+          "outstanding": false,
+          "fault": "",
+          "generation": 18,
+          "session_generation": 18,
+          "event": "enable_ack",
+          "emitted_monotonic": 1471.328439401,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "events": [
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "sent",
+                "wall": 1467.966997347
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "accepted",
+                "wall": 1467.974261564
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "result_requested",
+                "wall": 1467.974265414
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "terminal",
+                "wall": 1469.99417893,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 15338000000,
+            "target_capture_ns": 15090000000,
+            "target_received_wall": 1471.239128379,
+            "joint_capture_ns": 15314000000,
+            "joint_received_wall": 1471.326621009,
+            "leg_positions": [
+              -0.009769534312348086,
+              -0.4740942292400179,
+              1.0810979543990349,
+              0.009769534312348472,
+              -0.47409422924002387,
+              1.0810979543990349,
+              -0.0054172379935081925,
+              -0.47905995098316567,
+              1.0531421472332307,
+              0.005417237993507525,
+              -0.47905995098316134,
+              1.0531421472332296
+            ],
+            "leg_status": {
+              "active": true,
+              "mode": "STAND",
+              "ready": true,
+              "command_count": 53,
+              "max_timer_gap_s": 0.09751720500003103,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1471.171387076
+          }
+        },
+        "counts": {
+          "rgb": 116,
+          "depth": 172,
+          "info": 172,
+          "detection_frames": 113,
+          "raw_targets": 41,
+          "valid_tracks": 41,
+          "invalid_tracks": 16
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "first_tracking_command",
+      "started_monotonic": 1471.346174335,
+      "status": "ERROR",
+      "finished_monotonic": 1471.386745729,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "input expired or clock changed during servo computation",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 19,
+          "session_generation": 18,
+          "event": "disabled",
+          "emitted_monotonic": 1471.379656595,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "events": [
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "sent",
+                "wall": 1467.966997347
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "accepted",
+                "wall": 1467.974261564
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "result_requested",
+                "wall": 1467.974265414
+              },
+              {
+                "uuid": "180024be28bc4868be745f765620aa2c",
+                "event": "terminal",
+                "wall": 1469.99417893,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 15408000000,
+            "target_capture_ns": 15090000000,
+            "target_received_wall": 1471.239128379,
+            "joint_capture_ns": 15336000000,
+            "joint_received_wall": 1471.336032976,
+            "leg_positions": [
+              -0.009767563759917216,
+              -0.4742482423436795,
+              1.0805729971242928,
+              0.009767563759917561,
+              -0.4742482423436855,
+              1.0805729971242926,
+              -0.005410366285914786,
+              -0.4793487298561152,
+              1.0528261852176897,
+              0.005410366285914134,
+              -0.479348729856111,
+              1.0528261852176886
+            ],
+            "leg_status": {
+              "active": true,
+              "mode": "STAND",
+              "ready": true,
+              "command_count": 53,
+              "max_timer_gap_s": 0.09751720500003103,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1471.171387076
+          }
+        },
+        "counts": {
+          "rgb": 117,
+          "depth": 173,
+          "info": 173,
+          "detection_frames": 113,
+          "raw_targets": 41,
+          "valid_tracks": 41,
+          "invalid_tracks": 17
+        },
+        "command_count": 0
+      }
+    }
+  ],
+  "tracking_enable": "Explicit stationary local mode: tracking",
+  "tracking_session": {
+    "requested_monotonic": 1471.224880812,
+    "acknowledgement": {
+      "wall": 1471.338524293,
+      "enabled": true,
+      "mode": "tracking",
+      "reason": "enabled explicitly",
+      "goal_count": 0,
+      "reserved": true,
+      "outstanding": false,
+      "fault": "",
+      "generation": 18,
+      "session_generation": 18,
+      "event": "enable_ack",
+      "emitted_monotonic": 1471.328439401,
+      "owner": {
+        "pending_uuid": null,
+        "accepted": false,
+        "handle_status": null,
+        "result_future_done": null,
+        "events": [
+          {
+            "uuid": "180024be28bc4868be745f765620aa2c",
+            "event": "sent",
+            "wall": 1467.966997347
+          },
+          {
+            "uuid": "180024be28bc4868be745f765620aa2c",
+            "event": "accepted",
+            "wall": 1467.974261564
+          },
+          {
+            "uuid": "180024be28bc4868be745f765620aa2c",
+            "event": "result_requested",
+            "wall": 1467.974265414
+          },
+          {
+            "uuid": "180024be28bc4868be745f765620aa2c",
+            "event": "terminal",
+            "wall": 1469.99417893,
+            "status": 4
+          }
+        ]
+      },
+      "inputs": {
+        "ros_now_ns": 15338000000,
+        "target_capture_ns": 15090000000,
+        "target_received_wall": 1471.239128379,
+        "joint_capture_ns": 15314000000,
+        "joint_received_wall": 1471.326621009,
+        "leg_positions": [
+          -0.009769534312348086,
+          -0.4740942292400179,
+          1.0810979543990349,
+          0.009769534312348472,
+          -0.47409422924002387,
+          1.0810979543990349,
+          -0.0054172379935081925,
+          -0.47905995098316567,
+          1.0531421472332307,
+          0.005417237993507525,
+          -0.47905995098316134,
+          1.0531421472332296
+        ],
+        "leg_status": {
+          "active": true,
+          "mode": "STAND",
+          "ready": true,
+          "command_count": 53,
+          "max_timer_gap_s": 0.09751720500003103,
+          "policy": "stand_reference_not_ppo"
+        },
+        "leg_status_received_wall": 1471.171387076
+      }
+    }
+  },
+  "tracking_metrics": {
+    "checks": {
+      "five_second_tracking": false,
+      "pixel_error_reduction": false,
+      "joint_limits": false,
+      "velocity_limits": false,
+      "command_rate": false
+    },
+    "elapsed_wall_s": 0.20356949400002122,
+    "command_count": 0,
+    "reduction": null
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 4796,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792421803.529006
+}

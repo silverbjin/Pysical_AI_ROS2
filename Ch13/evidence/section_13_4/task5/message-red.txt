@@ -1,0 +1,26 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_stamped_track_filter_and_steady_watchdog_preserve_last_capture_time ___
+
+    def test_stamped_track_filter_and_steady_watchdog_preserve_last_capture_time():
+        rclpy.init(domain_id=147)
+        node, observer, executor = None, None, make_executor()
+        try:
+            node, observer = VisionProcessor(), Node('target_message_observer')
+            executor.add_node(node)
+            executor.add_node(observer)
+            tracks, filtered = [], []
+            subs = [observer.create_subscription(TrackedTarget, '/vision/tracked_target', tracks.append, 10),
+                    observer.create_subscription(PointStamped, '/vision/target_filtered', filtered.append, 10)]
+            deadline = time.monotonic() + 1
+            while time.monotonic() < deadline and not observer.count_publishers('/vision/tracked_target'):
+                executor.spin_once(timeout_sec=.01)
+>           assert observer.count_publishers('/vision/tracked_target') == 1
+E           AssertionError: assert 0 == 1
+E            +  where 0 = count_publishers('/vision/tracked_target')
+E            +    where count_publishers = <rclpy.node.Node object at 0x771ce7842e10>.count_publishers
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_target_messages.py:40: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_target_messages.py::test_stamped_track_filter_and_steady_watchdog_preserve_last_capture_time
+1 failed in 4.10s

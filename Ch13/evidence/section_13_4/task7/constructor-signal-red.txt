@@ -1,0 +1,252 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_sigint_during_active_worker_exits_cleanly[constructor-detector] _____
+
+kind = 'detector', stage = 'constructor'
+
+    @pytest.mark.parametrize('kind', ['detector', 'fusion'])
+    @pytest.mark.parametrize('stage', ['worker', 'constructor'])
+    def test_sigint_during_active_worker_exits_cleanly(kind, stage):
+        code = textwrap.dedent('''
+            import time
+            from copy import deepcopy
+            import rclpy
+            from rclpy.parameter import Parameter
+            from rclpy.executors import SingleThreadedExecutor
+            from test_rgbd_cache import images, info
+            from vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithPose
+            class TaggedExecutor(SingleThreadedExecutor):
+                def spin(self):
+                    print('MAIN_SPIN', flush=True)
+                    return super().spin()
+                def spin_once(self, *args, **kwargs):
+                    if not getattr(self, 'marked', False):
+                        print('MAIN_SPIN', flush=True)
+                        self.marked = True
+                    return super().spin_once(*args, **kwargs)
+            if KIND == 'detector':
+                import integrated_robot_vision.object_detector as module
+                Original = module.ObjectDetector
+                class Injected(Original):
+                    def __init__(self):
+                        super().__init__(parameter_overrides=[Parameter('backend', value='color_fixture')])
+                        if STAGE == 'constructor':
+                            print('CONSTRUCTOR_ACTIVE', flush=True)
+                            time.sleep(.15)
+                        original = self.backend.detect
+                        def slow(image):
+                            print('WORKER_INFLIGHT', flush=True)
+                            time.sleep(.15)
+                            return original(image)
+                        self.backend.detect = slow
+                        stamp = self.get_clock().now().nanoseconds/1e9
+                        rgb, depth = images(stamp, stamp)
+                        self.on_info(info(stamp))
+                        self.on_rgb(rgb)
+                module.ObjectDetector = Injected
+            else:
+                import integrated_robot_vision.vision_processor as module
+                original = module.lookup_capture_point
+                def slow(*args, **kwargs):
+                    print('WORKER_INFLIGHT', flush=True)
+                    time.sleep(.15)
+                    return original(*args, **kwargs)
+                module.lookup_capture_point = slow
+                Original = module.VisionProcessor
+                class Injected(Original):
+                    def __init__(self):
+                        super().__init__()
+                        if STAGE == 'constructor':
+                            print('CONSTRUCTOR_ACTIVE', flush=True)
+                            time.sleep(.15)
+                        stamp = self.get_clock().now().nanoseconds/1e9
+                        rgb, depth = images(stamp, stamp)
+                        self.on_info(info(stamp))
+                        self.on_rgb(rgb)
+                        self.on_depth(depth)
+                        message = Detection2DArray(header=deepcopy(rgb.header))
+                        detection = Detection2D()
+                        detection.bbox.center.position.x = detection.bbox.center.position.y = 5.
+                        detection.bbox.size_x = detection.bbox.size_y = 6.
+                        hypothesis = ObjectHypothesisWithPose()
+                        hypothesis.hypothesis.class_id, hypothesis.hypothesis.score = 'fixture_red', .9
+                        detection.results = [hypothesis]
+                        message.detections = [detection]
+                        self.on_detections(message)
+                module.VisionProcessor = Injected
+            module.SingleThreadedExecutor = TaggedExecutor
+            module.main()
+        ''').replace('KIND', repr(kind)).replace('STAGE', repr(stage))
+        environment = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path), ROS_DOMAIN_ID='155')
+        process = subprocess.Popen([sys.executable, '-u', '-c', code], stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, text=True, env=environment,
+                                   start_new_session=True)
+        lines = []
+        try:
+            markers = ('CONSTRUCTOR_ACTIVE',) if stage == 'constructor' else ('MAIN_SPIN', 'WORKER_INFLIGHT')
+            deadline = time.monotonic()+8.
+            while time.monotonic() < deadline and not all(
+                    marker in ''.join(lines) for marker in markers):
+                if select.select([process.stdout], [], [], .1)[0]:
+                    line = os.read(process.stdout.fileno(), 4096).decode('utf-8', errors='replace')
+                    if not line:
+                        break
+                    lines.append(line)
+            assert all(marker in ''.join(lines) for marker in markers), ''.join(lines)
+            process.send_signal(signal.SIGINT)
+>           remainder, _ = process.communicate(timeout=5.)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_live_worker_shutdown.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/subprocess.py:1209: in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/subprocess.py:2116: in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Popen: returncode: -9 args: ['/home/jinho/ch13_vision_13_4_venv/bin/python'...>
+endtime = 28295.567070523, orig_timeout = 5.0, stdout_seq = []
+stderr_seq = None, skip_check_and_raise = False
+
+    def _check_timeout(self, endtime, orig_timeout, stdout_seq, stderr_seq,
+                       skip_check_and_raise=False):
+        """Convenience for checking if a timeout has expired."""
+        if endtime is None:
+            return
+        if skip_check_and_raise or _time() > endtime:
+>           raise TimeoutExpired(
+                    self.args, orig_timeout,
+                    output=b''.join(stdout_seq) if stdout_seq else None,
+                    stderr=b''.join(stderr_seq) if stderr_seq else None)
+E           subprocess.TimeoutExpired: Command '['/home/jinho/ch13_vision_13_4_venv/bin/python', '-u', '-c', "\nimport time\nfrom copy import deepcopy\nimport rclpy\nfrom rclpy.parameter import Parameter\nfrom rclpy.executors import SingleThreadedExecutor\nfrom test_rgbd_cache import images, info\nfrom vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithPose\nclass TaggedExecutor(SingleThreadedExecutor):\n    def spin(self):\n        print('MAIN_SPIN', flush=True)\n        return super().spin()\n    def spin_once(self, *args, **kwargs):\n        if not getattr(self, 'marked', False):\n            print('MAIN_SPIN', flush=True)\n            self.marked = True\n        return super().spin_once(*args, **kwargs)\nif 'detector' == 'detector':\n    import integrated_robot_vision.object_detector as module\n    Original = module.ObjectDetector\n    class Injected(Original):\n        def __init__(self):\n            super().__init__(parameter_overrides=[Parameter('backend', value='color_fixture')])\n            if 'constructor' == 'constructor':\n                print('CONSTRUCTOR_ACTIVE', flush=True)\n                time.sleep(.15)\n            original = self.backend.detect\n            def slow(image):\n                print('WORKER_INFLIGHT', flush=True)\n                time.sleep(.15)\n                return original(image)\n            self.backend.detect = slow\n            stamp = self.get_clock().now().nanoseconds/1e9\n            rgb, depth = images(stamp, stamp)\n            self.on_info(info(stamp))\n            self.on_rgb(rgb)\n    module.ObjectDetector = Injected\nelse:\n    import integrated_robot_vision.vision_processor as module\n    original = module.lookup_capture_point\n    def slow(*args, **kwargs):\n        print('WORKER_INFLIGHT', flush=True)\n        time.sleep(.15)\n        return original(*args, **kwargs)\n    module.lookup_capture_point = slow\n    Original = module.VisionProcessor\n    class Injected(Original):\n        def __init__(self):\n            super().__init__()\n            if 'constructor' == 'constructor':\n                print('CONSTRUCTOR_ACTIVE', flush=True)\n                time.sleep(.15)\n            stamp = self.get_clock().now().nanoseconds/1e9\n            rgb, depth = images(stamp, stamp)\n            self.on_info(info(stamp))\n            self.on_rgb(rgb)\n            self.on_depth(depth)\n            message = Detection2DArray(header=deepcopy(rgb.header))\n            detection = Detection2D()\n            detection.bbox.center.position.x = detection.bbox.center.position.y = 5.\n            detection.bbox.size_x = detection.bbox.size_y = 6.\n            hypothesis = ObjectHypothesisWithPose()\n            hypothesis.hypothesis.class_id, hypothesis.hypothesis.score = 'fixture_red', .9\n            detection.results = [hypothesis]\n            message.detections = [detection]\n            self.on_detections(message)\n    module.VisionProcessor = Injected\nmodule.SingleThreadedExecutor = TaggedExecutor\nmodule.main()\n"]' timed out after 5.0 seconds
+
+/usr/lib/python3.12/subprocess.py:1253: TimeoutExpired
+______ test_sigint_during_active_worker_exits_cleanly[constructor-fusion] ______
+
+kind = 'fusion', stage = 'constructor'
+
+    @pytest.mark.parametrize('kind', ['detector', 'fusion'])
+    @pytest.mark.parametrize('stage', ['worker', 'constructor'])
+    def test_sigint_during_active_worker_exits_cleanly(kind, stage):
+        code = textwrap.dedent('''
+            import time
+            from copy import deepcopy
+            import rclpy
+            from rclpy.parameter import Parameter
+            from rclpy.executors import SingleThreadedExecutor
+            from test_rgbd_cache import images, info
+            from vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithPose
+            class TaggedExecutor(SingleThreadedExecutor):
+                def spin(self):
+                    print('MAIN_SPIN', flush=True)
+                    return super().spin()
+                def spin_once(self, *args, **kwargs):
+                    if not getattr(self, 'marked', False):
+                        print('MAIN_SPIN', flush=True)
+                        self.marked = True
+                    return super().spin_once(*args, **kwargs)
+            if KIND == 'detector':
+                import integrated_robot_vision.object_detector as module
+                Original = module.ObjectDetector
+                class Injected(Original):
+                    def __init__(self):
+                        super().__init__(parameter_overrides=[Parameter('backend', value='color_fixture')])
+                        if STAGE == 'constructor':
+                            print('CONSTRUCTOR_ACTIVE', flush=True)
+                            time.sleep(.15)
+                        original = self.backend.detect
+                        def slow(image):
+                            print('WORKER_INFLIGHT', flush=True)
+                            time.sleep(.15)
+                            return original(image)
+                        self.backend.detect = slow
+                        stamp = self.get_clock().now().nanoseconds/1e9
+                        rgb, depth = images(stamp, stamp)
+                        self.on_info(info(stamp))
+                        self.on_rgb(rgb)
+                module.ObjectDetector = Injected
+            else:
+                import integrated_robot_vision.vision_processor as module
+                original = module.lookup_capture_point
+                def slow(*args, **kwargs):
+                    print('WORKER_INFLIGHT', flush=True)
+                    time.sleep(.15)
+                    return original(*args, **kwargs)
+                module.lookup_capture_point = slow
+                Original = module.VisionProcessor
+                class Injected(Original):
+                    def __init__(self):
+                        super().__init__()
+                        if STAGE == 'constructor':
+                            print('CONSTRUCTOR_ACTIVE', flush=True)
+                            time.sleep(.15)
+                        stamp = self.get_clock().now().nanoseconds/1e9
+                        rgb, depth = images(stamp, stamp)
+                        self.on_info(info(stamp))
+                        self.on_rgb(rgb)
+                        self.on_depth(depth)
+                        message = Detection2DArray(header=deepcopy(rgb.header))
+                        detection = Detection2D()
+                        detection.bbox.center.position.x = detection.bbox.center.position.y = 5.
+                        detection.bbox.size_x = detection.bbox.size_y = 6.
+                        hypothesis = ObjectHypothesisWithPose()
+                        hypothesis.hypothesis.class_id, hypothesis.hypothesis.score = 'fixture_red', .9
+                        detection.results = [hypothesis]
+                        message.detections = [detection]
+                        self.on_detections(message)
+                module.VisionProcessor = Injected
+            module.SingleThreadedExecutor = TaggedExecutor
+            module.main()
+        ''').replace('KIND', repr(kind)).replace('STAGE', repr(stage))
+        environment = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path), ROS_DOMAIN_ID='155')
+        process = subprocess.Popen([sys.executable, '-u', '-c', code], stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, text=True, env=environment,
+                                   start_new_session=True)
+        lines = []
+        try:
+            markers = ('CONSTRUCTOR_ACTIVE',) if stage == 'constructor' else ('MAIN_SPIN', 'WORKER_INFLIGHT')
+            deadline = time.monotonic()+8.
+            while time.monotonic() < deadline and not all(
+                    marker in ''.join(lines) for marker in markers):
+                if select.select([process.stdout], [], [], .1)[0]:
+                    line = os.read(process.stdout.fileno(), 4096).decode('utf-8', errors='replace')
+                    if not line:
+                        break
+                    lines.append(line)
+            assert all(marker in ''.join(lines) for marker in markers), ''.join(lines)
+            process.send_signal(signal.SIGINT)
+>           remainder, _ = process.communicate(timeout=5.)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_live_worker_shutdown.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/subprocess.py:1209: in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/subprocess.py:2116: in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Popen: returncode: -9 args: ['/home/jinho/ch13_vision_13_4_venv/bin/python'...>
+endtime = 28304.684518646, orig_timeout = 5.0, stdout_seq = []
+stderr_seq = None, skip_check_and_raise = False
+
+    def _check_timeout(self, endtime, orig_timeout, stdout_seq, stderr_seq,
+                       skip_check_and_raise=False):
+        """Convenience for checking if a timeout has expired."""
+        if endtime is None:
+            return
+        if skip_check_and_raise or _time() > endtime:
+>           raise TimeoutExpired(
+                    self.args, orig_timeout,
+                    output=b''.join(stdout_seq) if stdout_seq else None,
+                    stderr=b''.join(stderr_seq) if stderr_seq else None)
+E           subprocess.TimeoutExpired: Command '['/home/jinho/ch13_vision_13_4_venv/bin/python', '-u', '-c', "\nimport time\nfrom copy import deepcopy\nimport rclpy\nfrom rclpy.parameter import Parameter\nfrom rclpy.executors import SingleThreadedExecutor\nfrom test_rgbd_cache import images, info\nfrom vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithPose\nclass TaggedExecutor(SingleThreadedExecutor):\n    def spin(self):\n        print('MAIN_SPIN', flush=True)\n        return super().spin()\n    def spin_once(self, *args, **kwargs):\n        if not getattr(self, 'marked', False):\n            print('MAIN_SPIN', flush=True)\n            self.marked = True\n        return super().spin_once(*args, **kwargs)\nif 'fusion' == 'detector':\n    import integrated_robot_vision.object_detector as module\n    Original = module.ObjectDetector\n    class Injected(Original):\n        def __init__(self):\n            super().__init__(parameter_overrides=[Parameter('backend', value='color_fixture')])\n            if 'constructor' == 'constructor':\n                print('CONSTRUCTOR_ACTIVE', flush=True)\n                time.sleep(.15)\n            original = self.backend.detect\n            def slow(image):\n                print('WORKER_INFLIGHT', flush=True)\n                time.sleep(.15)\n                return original(image)\n            self.backend.detect = slow\n            stamp = self.get_clock().now().nanoseconds/1e9\n            rgb, depth = images(stamp, stamp)\n            self.on_info(info(stamp))\n            self.on_rgb(rgb)\n    module.ObjectDetector = Injected\nelse:\n    import integrated_robot_vision.vision_processor as module\n    original = module.lookup_capture_point\n    def slow(*args, **kwargs):\n        print('WORKER_INFLIGHT', flush=True)\n        time.sleep(.15)\n        return original(*args, **kwargs)\n    module.lookup_capture_point = slow\n    Original = module.VisionProcessor\n    class Injected(Original):\n        def __init__(self):\n            super().__init__()\n            if 'constructor' == 'constructor':\n                print('CONSTRUCTOR_ACTIVE', flush=True)\n                time.sleep(.15)\n            stamp = self.get_clock().now().nanoseconds/1e9\n            rgb, depth = images(stamp, stamp)\n            self.on_info(info(stamp))\n            self.on_rgb(rgb)\n            self.on_depth(depth)\n            message = Detection2DArray(header=deepcopy(rgb.header))\n            detection = Detection2D()\n            detection.bbox.center.position.x = detection.bbox.center.position.y = 5.\n            detection.bbox.size_x = detection.bbox.size_y = 6.\n            hypothesis = ObjectHypothesisWithPose()\n            hypothesis.hypothesis.class_id, hypothesis.hypothesis.score = 'fixture_red', .9\n            detection.results = [hypothesis]\n            message.detections = [detection]\n            self.on_detections(message)\n    module.VisionProcessor = Injected\nmodule.SingleThreadedExecutor = TaggedExecutor\nmodule.main()\n"]' timed out after 5.0 seconds
+
+/usr/lib/python3.12/subprocess.py:1253: TimeoutExpired
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_live_worker_shutdown.py::test_sigint_during_active_worker_exits_cleanly[constructor-detector]
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_live_worker_shutdown.py::test_sigint_during_active_worker_exits_cleanly[constructor-fusion]
+2 failed, 2 deselected in 21.81s

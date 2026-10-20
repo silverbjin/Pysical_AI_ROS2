@@ -1,0 +1,46 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_parent_debugger_propagates_native_exit_not_debugger_exit _________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_parent_debugger_propagate0')
+
+    def test_parent_debugger_propagates_native_exit_not_debugger_exit(tmp_path):
+        log = tmp_path/'parent-gdb.log'
+        result = subprocess.run([sys.executable, str(SCRIPT), '--log', str(log), '--',
+            sys.executable, '-c', 'raise SystemExit(7)'], capture_output=True, text=True, timeout=10.)
+>       assert result.returncode == 7, result.stderr
+E       AssertionError: /home/jinho/ch13_vision_13_4_venv/bin/python: can't open file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/parent_debugger_13_4.py': [Errno 2] No such file or directory
+E         
+E       assert 2 == 7
+E        +  where 2 = CompletedProcess(args=['/home/jinho/ch13_vision_13_4_venv/bin/python', '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-...1919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/parent_debugger_13_4.py': [Errno 2] No such file or directory\n").returncode
+
+Ch13/tests/test_parent_debugger_13_4.py:15: AssertionError
+___ test_parent_debugger_collects_stack_then_forwards_shutdown_to_own_child ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_parent_debugger_collects_0')
+
+    def test_parent_debugger_collects_stack_then_forwards_shutdown_to_own_child(tmp_path):
+        log = tmp_path/'parent-gdb.log'
+        child = ('import signal, os; '
+                 'signal.signal(signal.SIGINT, lambda *_: os._exit(0)); '
+                 'print("DEBUG_CHILD_READY", flush=True); signal.pause()')
+        process = subprocess.Popen([sys.executable, str(SCRIPT), '--log', str(log), '--',
+            sys.executable, '-c', child], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            deadline = time.monotonic()+8.
+            while time.monotonic() < deadline and process.poll() is None:
+                if log.exists() and 'DEBUG_CHILD_READY' in log.read_text():
+                    break
+                time.sleep(.02)
+>           assert log.exists() and 'DEBUG_CHILD_READY' in log.read_text(), process.communicate(timeout=2.)
+E           AssertionError: ('', "/home/jinho/ch13_vision_13_4_venv/bin/python: can't open file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6...1919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/parent_debugger_13_4.py': [Errno 2] No such file or directory
+E             ")
+E           assert (False)
+E            +  where False = exists()
+E            +    where exists = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_parent_debugger_collects_0/parent-gdb.log').exists
+
+Ch13/tests/test_parent_debugger_13_4.py:33: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_parent_debugger_13_4.py::test_parent_debugger_propagates_native_exit_not_debugger_exit
+FAILED Ch13/tests/test_parent_debugger_13_4.py::test_parent_debugger_collects_stack_then_forwards_shutdown_to_own_child
+2 failed in 0.41s

@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_jazzy_without_gid_records_parents_but_requires_graph_and_model_ownership_contract _
+
+    def test_jazzy_without_gid_records_parents_but_requires_graph_and_model_ownership_contract():
+        observer = importlib.import_module('vision_observer_13_4')
+        state = SimpleNamespace(tf_owners={}, tf_parents={}, tf_metadata_fields=set())
+        message = SimpleNamespace(transforms=[SimpleNamespace(child_frame_id='base_footprint',
+                                  header=SimpleNamespace(frame_id='odom'))])
+>       observer.VisionObserver.on_tf(state, message, dict(source_timestamp=1, received_timestamp=2))
+
+Ch13/tests/test_section_13_4_runner.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(tf_owners={}, tf_parents={}, tf_metadata_fields=set())
+message = namespace(transforms=[namespace(child_frame_id='base_footprint', header=namespace(frame_id='odom'))])
+info = {'received_timestamp': 2, 'source_timestamp': 1}
+
+    def on_tf(self, message, info):
+        gid = info.get('publisher_gid') if isinstance(info, dict) else getattr(info, 'publisher_gid', None)
+        if gid is None or not bytes(gid):
+>           raise ValueError('actual TF publisher identity unavailable')
+E           ValueError: actual TF publisher identity unavailable
+
+Ch13/scripts/vision_observer_13_4.py:174: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_jazzy_without_gid_records_parents_but_requires_graph_and_model_ownership_contract
+1 failed, 5 deselected in 3.15s

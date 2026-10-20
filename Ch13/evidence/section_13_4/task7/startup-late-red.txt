@@ -1,0 +1,62 @@
+..FF                                                                     [100%]
+=================================== FAILURES ===================================
+________ test_late_enable_success_after_timeout_is_explicitly_disabled _________
+
+    def test_late_enable_success_after_timeout_is_explicitly_disabled():
+        rclpy.init(domain_id=152)
+        node, peer, executor = TrackingRequester(), Node('late_request_peer'), SingleThreadedExecutor()
+        calls = []
+        try:
+            def toggle(request, response):
+                calls.append(request.data)
+                response.success = True
+                return response
+    
+            service = peer.create_service(SetBool, '/manipulation_node/set_visual_tracking', toggle)
+            executor.add_node(node)
+            executor.add_node(peer)
+            assert node.client.wait_for_service(timeout_sec=2.)
+            node.report(False, 'request deadline exceeded')
+            future = Future()
+            future.set_result(SetBool.Response(success=True, message='late acceptance'))
+            node.response(future)
+            end = time.monotonic()+.3
+            while time.monotonic() < end:
+                executor.spin_once(timeout_sec=.01)
+>           assert calls == [False] and not node.success
+E           assert ([] == [False]
+E             
+E             Right contains one more item: False
+E             Use -v to get more diff)
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_requester.py:82: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[ERROR] [1792312432.687083001] [tracking_requester]: request deadline exceeded
+_______ test_controller_gate_keeps_spinning_and_requires_all_four_active _______
+
+    def test_controller_gate_keeps_spinning_and_requires_all_four_active():
+        rclpy.init(domain_id=153)
+        node, peer, executor = StateManager(), Node('controller_gate_peer'), SingleThreadedExecutor()
+        requests = []
+        try:
+            names = ['joint_state_broadcaster', 'leg_position_controller',
+                     'arm_trajectory_controller', 'gripper_position_controller']
+    
+            def listing(request, response):
+                requests.append(True)
+                response.controller = [ControllerState(name=name, state=(
+                    'inactive' if len(requests) == 1 and name == names[-1] else 'active')) for name in names]
+                return response
+    
+            service = peer.create_service(ListControllers, '/controller_manager/list_controllers', listing)
+            executor.add_node(node)
+            executor.add_node(peer)
+>           node.wait_controllers(timeout=3.)
+            ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'StateManager' object has no attribute 'wait_controllers'
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_startup_gate.py:28: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_requester.py::test_late_enable_success_after_timeout_is_explicitly_disabled
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_startup_gate.py::test_controller_gate_keeps_spinning_and_requires_all_four_active
+2 failed, 2 passed in 4.21s

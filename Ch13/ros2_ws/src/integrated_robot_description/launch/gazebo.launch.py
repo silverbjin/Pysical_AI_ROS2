@@ -19,7 +19,7 @@ import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.actions import IncludeLaunchDescription
 from launch.actions import RegisterEventHandler
 from launch.actions import TimerAction
@@ -42,9 +42,11 @@ def materialize_controller_config(source):
     return str(target)
 
 
-def generate_launch_description():
+def launch_nodes(context):
     package_share = get_package_share_directory('integrated_robot_description')
-    world = LaunchConfiguration('world')
+    vision = LaunchConfiguration('vision_enabled').perform(context).lower() == 'true'
+    world = LaunchConfiguration('world').perform(context) or os.path.join(
+        package_share, 'worlds', 'vision_fixture.sdf' if vision else 'empty.sdf')
     xacro_path = os.path.join(package_share, 'urdf', 'robot_system.urdf.xacro')
     controllers = materialize_controller_config(
         os.path.join(package_share, 'config', 'controllers.yaml')
@@ -56,6 +58,7 @@ def generate_launch_description():
                 xacro_path,
                 ' control_backend:=gazebo controllers_file:=',
                 controllers,
+                ' vision_enabled:=', str(vision).lower(),
             ]
         ),
         value_type=str,
@@ -66,7 +69,8 @@ def generate_launch_description():
                 get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py'
             )
         ),
-        launch_arguments={'gz_args': ['-r -s ', world]}.items(),
+        launch_arguments={
+            'gz_args': ['-r -s ', '--headless-rendering ' if vision else '', world]}.items(),
     )
     state_publisher = Node(
         package='robot_state_publisher',
@@ -112,15 +116,27 @@ def generate_launch_description():
             on_exit=[TimerAction(period=2.0, actions=spawners)],
         )
     )
-    return LaunchDescription(
-        [
-            DeclareLaunchArgument(
-                'world', default_value=os.path.join(package_share, 'worlds', 'empty.sdf')
-            ),
+    nodes = [
             gazebo,
             state_publisher,
             clock_bridge,
             spawn_robot,
             start_controllers,
         ]
-    )
+    if vision:
+        nodes.extend([
+            Node(package='ros_gz_bridge', executable='parameter_bridge',
+                 parameters=[{'config_file': os.path.join(
+                     package_share, 'config', 'vision_bridge.yaml')}]),
+            Node(package='integrated_robot_vision', executable='native_pose_adapter',
+                 parameters=[{'engine': 'gazebo', 'use_sim_time': True}]),
+        ])
+    return nodes
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        DeclareLaunchArgument('vision_enabled', default_value='false'),
+        DeclareLaunchArgument('world', default_value=''),
+        OpaqueFunction(function=launch_nodes),
+    ])

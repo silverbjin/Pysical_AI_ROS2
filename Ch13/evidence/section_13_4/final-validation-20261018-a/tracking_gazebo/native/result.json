@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "run_id": "f877d96c-d29d-43a3-bb86-27080c33bd54",
+  "expected_run_id": "f877d96c-d29d-43a3-bb86-27080c33bd54",
+  "invocation_started_at": 1792327123.3982496,
+  "started_at": 1792327123.3982496,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "five_second_tracking": false,
+    "pixel_error_reduction": false,
+    "joint_limits": true,
+    "velocity_limits": true,
+    "command_rate": true,
+    "clean_shutdown": true
+  },
+  "errors": [
+    "RuntimeError(\"tracking latched OFF before five seconds: {'enabled': False, 'mode': 'tracking', 'reason': 'invalid/lost target', 'goal_count': 6, 'reserved': False, 'outstanding': False, 'fault': '', 'generation': 9}\")"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/tracking_gazebo/native",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 82705,
+      "sha256": "4205f3840bbbafad676db7f57bb80391dc30cf0953571a01afabce0d19a9a5ab"
+    },
+    {
+      "path": "offset_fixture.sdf",
+      "size": 1557,
+      "sha256": "1a37142262843d164a98073c58c0db9962394051af72435a859b7b88b30dcc37"
+    },
+    {
+      "path": "observations.json",
+      "size": 172056,
+      "sha256": "30dbbc0d305b6ac44c869f15f8c3757cfec751a1061f61bc4ebc3fe7e33bfca1"
+    },
+    {
+      "path": "joints.npz",
+      "size": 183305,
+      "sha256": "596869228bdf2cf688a9e81778920a40dcda81a6dfb4f72c3f6b028c66c0fb89"
+    },
+    {
+      "path": "rgb.png",
+      "size": 2241,
+      "sha256": "5aa9b47692993e9d25f5ec7e04146c956e90abdfd1a258fb99c5fc3c392f395a"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "81f10e7d714c94234ae5eb5c25a03a135f02ae845164376c26cceeac7adb90d0"
+    },
+    {
+      "path": "annotated.png",
+      "size": 2924,
+      "sha256": "d6918bb1b4a0cc1c3c663e74a924f13894f26e22a48bd52111b9e0b3f4879cce"
+    },
+    {
+      "path": "camera.json",
+      "size": 1248,
+      "sha256": "81d59e67c0210874e4b1935212a43865d96c29167bd07666feb7f0c1961cc6e8"
+    }
+  ],
+  "required_checks": [
+    "clean_shutdown",
+    "command_rate",
+    "engine_alive",
+    "five_second_tracking",
+    "joint_limits",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "pixel_error_reduction",
+    "sensor_contract",
+    "single_tf_owners",
+    "velocity_limits"
+  ],
+  "source_head": "1b173e3b5dc7d996ad2a77b5bca5a57d07329cd0",
+  "engine": "gazebo",
+  "detector_backend": "color_fixture",
+  "scenario": "tracking",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 4554,
+      "pgid": 4554,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false",
+        "world:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/final-validation-20261018-a/tracking_gazebo/native/offset_fixture.sdf"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "physical_fixture": {
+    "center": [
+      1.0,
+      0.02,
+      0.72
+    ],
+    "front_x": 0.98
+  },
+  "tracking_enable": "Explicit stationary local mode: tracking",
+  "tracking_metrics": {
+    "checks": {
+      "five_second_tracking": false,
+      "pixel_error_reduction": false,
+      "joint_limits": true,
+      "velocity_limits": true,
+      "command_rate": true
+    },
+    "elapsed_wall_s": 1.9826314659999298,
+    "command_count": 6,
+    "reduction": null,
+    "minimum_dispatch_interval_s": 0.2847148849999712,
+    "measured_max_speed_rad_s": 0.05334179958258466,
+    "measured_max_angle_rad": 0.02072190582135089
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "gazebo_native_stop": {
+    "pids": [
+      4558,
+      4564
+    ],
+    "exited": true
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 4554,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792327183.3300726
+}

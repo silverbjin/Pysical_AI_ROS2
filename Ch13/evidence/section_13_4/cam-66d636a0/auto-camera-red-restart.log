@@ -1,0 +1,228 @@
+FFFFFFFFFF                                                               [100%]
+=================================== FAILURES ===================================
+_ test_snapshot_launch_disables_legacy_camera_auto_registration[true-snapshot-false] _
+
+vision = 'true', backend = 'snapshot', expected = 'false'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x781ab9212810>
+
+    @pytest.mark.parametrize('vision,backend,expected', [
+        ('true', 'snapshot', 'false'), ('true', 'upstream', 'true'),
+        ('false', 'snapshot', 'true'), ('false', 'upstream', 'true')])
+    def test_snapshot_launch_disables_legacy_camera_auto_registration(
+            vision, backend, expected, monkeypatch):
+        module = load('integrated_robot_description', 'mujoco.launch.py')
+        monkeypatch.setattr(module, 'get_package_share_directory',
+                            lambda name: str(SRC/'integrated_robot_description'))
+        ctx = context(vision_enabled=vision, vision_camera_backend=backend,
+                      mujoco_headless='true')
+        node = module.launch_nodes(ctx)[0]
+        parameters = evaluate_parameters(ctx, node._Node__parameters)
+        description = next(p['robot_description'] for p in parameters
+                           if isinstance(p, dict) and 'robot_description' in p)
+        root = ET.fromstring(description)
+        value = root.find('./ros2_control/hardware/param[@name="auto_register_cameras"]')
+>       assert value is not None and value.text == expected
+E       assert (None is not None)
+
+Ch13/tests/test_section_13_4_launch.py:43: AssertionError
+_ test_snapshot_launch_disables_legacy_camera_auto_registration[true-upstream-true] _
+
+vision = 'true', backend = 'upstream', expected = 'true'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x781ab391fa70>
+
+    @pytest.mark.parametrize('vision,backend,expected', [
+        ('true', 'snapshot', 'false'), ('true', 'upstream', 'true'),
+        ('false', 'snapshot', 'true'), ('false', 'upstream', 'true')])
+    def test_snapshot_launch_disables_legacy_camera_auto_registration(
+            vision, backend, expected, monkeypatch):
+        module = load('integrated_robot_description', 'mujoco.launch.py')
+        monkeypatch.setattr(module, 'get_package_share_directory',
+                            lambda name: str(SRC/'integrated_robot_description'))
+        ctx = context(vision_enabled=vision, vision_camera_backend=backend,
+                      mujoco_headless='true')
+        node = module.launch_nodes(ctx)[0]
+        parameters = evaluate_parameters(ctx, node._Node__parameters)
+        description = next(p['robot_description'] for p in parameters
+                           if isinstance(p, dict) and 'robot_description' in p)
+        root = ET.fromstring(description)
+        value = root.find('./ros2_control/hardware/param[@name="auto_register_cameras"]')
+>       assert value is not None and value.text == expected
+E       assert (None is not None)
+
+Ch13/tests/test_section_13_4_launch.py:43: AssertionError
+_ test_snapshot_launch_disables_legacy_camera_auto_registration[false-snapshot-true] _
+
+vision = 'false', backend = 'snapshot', expected = 'true'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x781ab3937590>
+
+    @pytest.mark.parametrize('vision,backend,expected', [
+        ('true', 'snapshot', 'false'), ('true', 'upstream', 'true'),
+        ('false', 'snapshot', 'true'), ('false', 'upstream', 'true')])
+    def test_snapshot_launch_disables_legacy_camera_auto_registration(
+            vision, backend, expected, monkeypatch):
+        module = load('integrated_robot_description', 'mujoco.launch.py')
+        monkeypatch.setattr(module, 'get_package_share_directory',
+                            lambda name: str(SRC/'integrated_robot_description'))
+        ctx = context(vision_enabled=vision, vision_camera_backend=backend,
+                      mujoco_headless='true')
+        node = module.launch_nodes(ctx)[0]
+        parameters = evaluate_parameters(ctx, node._Node__parameters)
+        description = next(p['robot_description'] for p in parameters
+                           if isinstance(p, dict) and 'robot_description' in p)
+        root = ET.fromstring(description)
+        value = root.find('./ros2_control/hardware/param[@name="auto_register_cameras"]')
+>       assert value is not None and value.text == expected
+E       assert (None is not None)
+
+Ch13/tests/test_section_13_4_launch.py:43: AssertionError
+_ test_snapshot_launch_disables_legacy_camera_auto_registration[false-upstream-true] _
+
+vision = 'false', backend = 'upstream', expected = 'true'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x781ab37e3770>
+
+    @pytest.mark.parametrize('vision,backend,expected', [
+        ('true', 'snapshot', 'false'), ('true', 'upstream', 'true'),
+        ('false', 'snapshot', 'true'), ('false', 'upstream', 'true')])
+    def test_snapshot_launch_disables_legacy_camera_auto_registration(
+            vision, backend, expected, monkeypatch):
+        module = load('integrated_robot_description', 'mujoco.launch.py')
+        monkeypatch.setattr(module, 'get_package_share_directory',
+                            lambda name: str(SRC/'integrated_robot_description'))
+        ctx = context(vision_enabled=vision, vision_camera_backend=backend,
+                      mujoco_headless='true')
+        node = module.launch_nodes(ctx)[0]
+        parameters = evaluate_parameters(ctx, node._Node__parameters)
+        description = next(p['robot_description'] for p in parameters
+                           if isinstance(p, dict) and 'robot_description' in p)
+        root = ET.fromstring(description)
+        value = root.find('./ros2_control/hardware/param[@name="auto_register_cameras"]')
+>       assert value is not None and value.text == expected
+E       assert (None is not None)
+
+Ch13/tests/test_section_13_4_launch.py:43: AssertionError
+_ test_snapshot_ownership_rejects_hidden_auto_registered_camera[/overview/color] _
+
+topic = '/overview/color'
+
+    @pytest.mark.parametrize('topic', ['/overview/color', '/overview/depth',
+        '/overview/camera_info', '/eye_in_hand/color', '/eye_in_hand/depth',
+        '/eye_in_hand/camera_info'])
+    def test_snapshot_ownership_rejects_hidden_auto_registered_camera(topic):
+        runner = importlib.import_module('run_vision_13_4')
+        owners = {name: ['one_writer'] for name in (
+            '/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+            '/native/camera_info', '/camera/color/camera_info')}
+        owners[topic] = ['legacy_auto_camera']
+>       assert not runner.camera_publishers_unique(owners)
+E       AssertionError: assert not True
+E        +  where True = <function camera_publishers_unique at 0x781ab3a8b4c0>({'/camera/aligned_depth_to_color/image_raw': ['one_writer'], '/camera/color/camera_info': ['one_writer'], '/camera/color/image_raw': ['one_writer'], '/native/camera_info': ['one_writer'], ...})
+E        +    where <function camera_publishers_unique at 0x781ab3a8b4c0> = <module 'run_vision_13_4' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_vision_13_4.py'>.camera_publishers_unique
+
+Ch13/tests/test_section_13_4_runner.py:208: AssertionError
+_ test_snapshot_ownership_rejects_hidden_auto_registered_camera[/overview/depth] _
+
+topic = '/overview/depth'
+
+    @pytest.mark.parametrize('topic', ['/overview/color', '/overview/depth',
+        '/overview/camera_info', '/eye_in_hand/color', '/eye_in_hand/depth',
+        '/eye_in_hand/camera_info'])
+    def test_snapshot_ownership_rejects_hidden_auto_registered_camera(topic):
+        runner = importlib.import_module('run_vision_13_4')
+        owners = {name: ['one_writer'] for name in (
+            '/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+            '/native/camera_info', '/camera/color/camera_info')}
+        owners[topic] = ['legacy_auto_camera']
+>       assert not runner.camera_publishers_unique(owners)
+E       AssertionError: assert not True
+E        +  where True = <function camera_publishers_unique at 0x781ab3a8b4c0>({'/camera/aligned_depth_to_color/image_raw': ['one_writer'], '/camera/color/camera_info': ['one_writer'], '/camera/color/image_raw': ['one_writer'], '/native/camera_info': ['one_writer'], ...})
+E        +    where <function camera_publishers_unique at 0x781ab3a8b4c0> = <module 'run_vision_13_4' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_vision_13_4.py'>.camera_publishers_unique
+
+Ch13/tests/test_section_13_4_runner.py:208: AssertionError
+_ test_snapshot_ownership_rejects_hidden_auto_registered_camera[/overview/camera_info] _
+
+topic = '/overview/camera_info'
+
+    @pytest.mark.parametrize('topic', ['/overview/color', '/overview/depth',
+        '/overview/camera_info', '/eye_in_hand/color', '/eye_in_hand/depth',
+        '/eye_in_hand/camera_info'])
+    def test_snapshot_ownership_rejects_hidden_auto_registered_camera(topic):
+        runner = importlib.import_module('run_vision_13_4')
+        owners = {name: ['one_writer'] for name in (
+            '/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+            '/native/camera_info', '/camera/color/camera_info')}
+        owners[topic] = ['legacy_auto_camera']
+>       assert not runner.camera_publishers_unique(owners)
+E       AssertionError: assert not True
+E        +  where True = <function camera_publishers_unique at 0x781ab3a8b4c0>({'/camera/aligned_depth_to_color/image_raw': ['one_writer'], '/camera/color/camera_info': ['one_writer'], '/camera/color/image_raw': ['one_writer'], '/native/camera_info': ['one_writer'], ...})
+E        +    where <function camera_publishers_unique at 0x781ab3a8b4c0> = <module 'run_vision_13_4' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_vision_13_4.py'>.camera_publishers_unique
+
+Ch13/tests/test_section_13_4_runner.py:208: AssertionError
+_ test_snapshot_ownership_rejects_hidden_auto_registered_camera[/eye_in_hand/color] _
+
+topic = '/eye_in_hand/color'
+
+    @pytest.mark.parametrize('topic', ['/overview/color', '/overview/depth',
+        '/overview/camera_info', '/eye_in_hand/color', '/eye_in_hand/depth',
+        '/eye_in_hand/camera_info'])
+    def test_snapshot_ownership_rejects_hidden_auto_registered_camera(topic):
+        runner = importlib.import_module('run_vision_13_4')
+        owners = {name: ['one_writer'] for name in (
+            '/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+            '/native/camera_info', '/camera/color/camera_info')}
+        owners[topic] = ['legacy_auto_camera']
+>       assert not runner.camera_publishers_unique(owners)
+E       AssertionError: assert not True
+E        +  where True = <function camera_publishers_unique at 0x781ab3a8b4c0>({'/camera/aligned_depth_to_color/image_raw': ['one_writer'], '/camera/color/camera_info': ['one_writer'], '/camera/color/image_raw': ['one_writer'], '/eye_in_hand/color': ['legacy_auto_camera'], ...})
+E        +    where <function camera_publishers_unique at 0x781ab3a8b4c0> = <module 'run_vision_13_4' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_vision_13_4.py'>.camera_publishers_unique
+
+Ch13/tests/test_section_13_4_runner.py:208: AssertionError
+_ test_snapshot_ownership_rejects_hidden_auto_registered_camera[/eye_in_hand/depth] _
+
+topic = '/eye_in_hand/depth'
+
+    @pytest.mark.parametrize('topic', ['/overview/color', '/overview/depth',
+        '/overview/camera_info', '/eye_in_hand/color', '/eye_in_hand/depth',
+        '/eye_in_hand/camera_info'])
+    def test_snapshot_ownership_rejects_hidden_auto_registered_camera(topic):
+        runner = importlib.import_module('run_vision_13_4')
+        owners = {name: ['one_writer'] for name in (
+            '/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+            '/native/camera_info', '/camera/color/camera_info')}
+        owners[topic] = ['legacy_auto_camera']
+>       assert not runner.camera_publishers_unique(owners)
+E       AssertionError: assert not True
+E        +  where True = <function camera_publishers_unique at 0x781ab3a8b4c0>({'/camera/aligned_depth_to_color/image_raw': ['one_writer'], '/camera/color/camera_info': ['one_writer'], '/camera/color/image_raw': ['one_writer'], '/eye_in_hand/depth': ['legacy_auto_camera'], ...})
+E        +    where <function camera_publishers_unique at 0x781ab3a8b4c0> = <module 'run_vision_13_4' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_vision_13_4.py'>.camera_publishers_unique
+
+Ch13/tests/test_section_13_4_runner.py:208: AssertionError
+_ test_snapshot_ownership_rejects_hidden_auto_registered_camera[/eye_in_hand/camera_info] _
+
+topic = '/eye_in_hand/camera_info'
+
+    @pytest.mark.parametrize('topic', ['/overview/color', '/overview/depth',
+        '/overview/camera_info', '/eye_in_hand/color', '/eye_in_hand/depth',
+        '/eye_in_hand/camera_info'])
+    def test_snapshot_ownership_rejects_hidden_auto_registered_camera(topic):
+        runner = importlib.import_module('run_vision_13_4')
+        owners = {name: ['one_writer'] for name in (
+            '/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+            '/native/camera_info', '/camera/color/camera_info')}
+        owners[topic] = ['legacy_auto_camera']
+>       assert not runner.camera_publishers_unique(owners)
+E       AssertionError: assert not True
+E        +  where True = <function camera_publishers_unique at 0x781ab3a8b4c0>({'/camera/aligned_depth_to_color/image_raw': ['one_writer'], '/camera/color/camera_info': ['one_writer'], '/camera/color/image_raw': ['one_writer'], '/eye_in_hand/camera_info': ['legacy_auto_camera'], ...})
+E        +    where <function camera_publishers_unique at 0x781ab3a8b4c0> = <module 'run_vision_13_4' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_vision_13_4.py'>.camera_publishers_unique
+
+Ch13/tests/test_section_13_4_runner.py:208: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_launch.py::test_snapshot_launch_disables_legacy_camera_auto_registration[true-snapshot-false]
+FAILED Ch13/tests/test_section_13_4_launch.py::test_snapshot_launch_disables_legacy_camera_auto_registration[true-upstream-true]
+FAILED Ch13/tests/test_section_13_4_launch.py::test_snapshot_launch_disables_legacy_camera_auto_registration[false-snapshot-true]
+FAILED Ch13/tests/test_section_13_4_launch.py::test_snapshot_launch_disables_legacy_camera_auto_registration[false-upstream-true]
+FAILED Ch13/tests/test_section_13_4_runner.py::test_snapshot_ownership_rejects_hidden_auto_registered_camera[/overview/color]
+FAILED Ch13/tests/test_section_13_4_runner.py::test_snapshot_ownership_rejects_hidden_auto_registered_camera[/overview/depth]
+FAILED Ch13/tests/test_section_13_4_runner.py::test_snapshot_ownership_rejects_hidden_auto_registered_camera[/overview/camera_info]
+FAILED Ch13/tests/test_section_13_4_runner.py::test_snapshot_ownership_rejects_hidden_auto_registered_camera[/eye_in_hand/color]
+FAILED Ch13/tests/test_section_13_4_runner.py::test_snapshot_ownership_rejects_hidden_auto_registered_camera[/eye_in_hand/depth]
+FAILED Ch13/tests/test_section_13_4_runner.py::test_snapshot_ownership_rejects_hidden_auto_registered_camera[/eye_in_hand/camera_info]
+10 failed, 30 deselected in 14.38s

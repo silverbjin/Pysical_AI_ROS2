@@ -19,5 +19,6 @@ setup(
         'state_manager = integrated_robot_runtime.state_manager:main',
         'vision_processor = integrated_robot_runtime.vision:main',
         'mission_commander = integrated_robot_runtime.mission:main',
+        'tracking_requester = integrated_robot_runtime.tracking_requester:main',
     ]},
 )

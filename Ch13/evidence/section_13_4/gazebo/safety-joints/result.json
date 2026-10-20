@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "run_id": "9507ad0f-6019-49ee-9feb-9b44033b50af",
+  "expected_run_id": "9507ad0f-6019-49ee-9feb-9b44033b50af",
+  "invocation_started_at": 1792325029.1819754,
+  "started_at": 1792325029.1819754,
+  "status": "FAIL",
+  "checks": {
+    "measured_startup": true,
+    "clean_shutdown": true
+  },
+  "errors": [
+    "TimeoutError('native vision verification deadline exceeded')"
+  ],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/gazebo/safety-joints",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 84490,
+      "sha256": "3560210f108e8d79d055710da4f5440129703592f0aab654f11c7acf6929420e"
+    },
+    {
+      "path": "offset_fixture.sdf",
+      "size": 1557,
+      "sha256": "1a37142262843d164a98073c58c0db9962394051af72435a859b7b88b30dcc37"
+    },
+    {
+      "path": "observations.json",
+      "size": 155297,
+      "sha256": "d3e72a651f86521c58c1dd2d40fef111d13976a0468973d5019afc144024f4f2"
+    },
+    {
+      "path": "joints.npz",
+      "size": 137386,
+      "sha256": "0526e04d0d689cb1046bcd3be0b43ec08f78c67390e5fcd13c387da70e1295c2"
+    },
+    {
+      "path": "rgb.png",
+      "size": 2241,
+      "sha256": "1c37e4c5e582f07aaab3675968af0679438cb0b62a298c171e2c298b6b4f1a59"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "057ee18b55879cf23124331e91ada62f5400062483c7ed89e3d7bdac8c667ec2"
+    },
+    {
+      "path": "annotated.png",
+      "size": 2924,
+      "sha256": "16503c7cd48cb64109af60dcc090c937f41796adf62c9e12cb1b8fbc7ada7b4a"
+    },
+    {
+      "path": "camera.json",
+      "size": 1245,
+      "sha256": "3397c3bfc6b30d3a504cdf5764bfb826a3fc7cd5c1dd1f06d51ad53602f37a84"
+    }
+  ],
+  "required_checks": [
+    "actual_tracking_goal",
+    "cancel_confirmed",
+    "clean_shutdown",
+    "engine_alive",
+    "fault_injected",
+    "input_loss_stop",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_tf_owners"
+  ],
+  "source_head": "adb74f2c456994bfbdf7a5580390acd88cedb9b6",
+  "engine": "gazebo",
+  "detector_backend": "color_fixture",
+  "scenario": "safety",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 3686,
+      "pgid": 3686,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "allow_camera_motion_test:=false",
+        "world:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/gazebo/safety-joints/offset_fixture.sdf"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "physical_fixture": {
+    "center": [
+      1.0,
+      0.02,
+      0.72
+    ],
+    "front_x": 0.98
+  },
+  "tracking_enable": "Explicit stationary local mode: tracking",
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "gazebo_native_stop": {
+    "pids": [
+      3692,
+      3698
+    ],
+    "exited": true
+  },
+  "launch_returncode": 0,
+  "cleanup": [
+    {
+      "pid": 3686,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792325080.544338
+}

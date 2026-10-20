@@ -1,0 +1,101 @@
+...F........FFF............................F                             [100%]
+=================================== FAILURES ===================================
+______ test_unrectified_or_malformed_calibration_invalidates_cache[model] ______
+
+change = 'model'
+
+    @pytest.mark.parametrize('change', ['distortion', 'model', 'rotation', 'k', 'p', 'roi', 'binning', 'nan'])
+    def test_unrectified_or_malformed_calibration_invalidates_cache(change):
+        cache = populated()
+        msg = info()
+        if change == 'distortion':
+            msg.d[0] = .1
+        elif change == 'model':
+            msg.distortion_model = 'equidistant'
+        elif change == 'rotation':
+            msg.r = [0.] * 9
+        elif change == 'k':
+            msg.k[1] = .1
+        elif change == 'p':
+            msg.p[3] = .1
+        elif change == 'roi':
+            msg.roi.width = 5
+        elif change == 'binning':
+            msg.binning_x = 2
+        else:
+            msg.k[0] = float('nan')
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py:97: Failed
+__ test_malformed_rgb_replacement_cannot_expose_cached_valid_frame[encoding] ___
+
+change = 'encoding'
+
+    @pytest.mark.parametrize('change', ['encoding', 'step', 'payload'])
+    def test_malformed_rgb_replacement_cannot_expose_cached_valid_frame(change):
+        cache = populated()
+        msg = images()[0]
+        if change == 'encoding':
+            msg.encoding = 'mono8'
+        elif change == 'step':
+            msg.step = 29
+        else:
+            msg.data = bytes(299)
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py:137: Failed
+____ test_malformed_rgb_replacement_cannot_expose_cached_valid_frame[step] _____
+
+change = 'step'
+
+    @pytest.mark.parametrize('change', ['encoding', 'step', 'payload'])
+    def test_malformed_rgb_replacement_cannot_expose_cached_valid_frame(change):
+        cache = populated()
+        msg = images()[0]
+        if change == 'encoding':
+            msg.encoding = 'mono8'
+        elif change == 'step':
+            msg.step = 29
+        else:
+            msg.data = bytes(299)
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py:137: Failed
+___ test_malformed_rgb_replacement_cannot_expose_cached_valid_frame[payload] ___
+
+change = 'payload'
+
+    @pytest.mark.parametrize('change', ['encoding', 'step', 'payload'])
+    def test_malformed_rgb_replacement_cannot_expose_cached_valid_frame(change):
+        cache = populated()
+        msg = images()[0]
+        if change == 'encoding':
+            msg.encoding = 'mono8'
+        elif change == 'step':
+            msg.step = 29
+        else:
+            msg.data = bytes(299)
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py:137: Failed
+___ test_configurable_depth_range_rejects_invalid_bounds_and_outside_samples ___
+
+    def test_configurable_depth_range_rejects_invalid_bounds_and_outside_samples():
+        depth = np.full((7, 7), .8)
+        box = Box2D(3, 3, 5, 5, 'x', .9)
+>       assert sample_depth(depth, box, min_depth_m=.5, max_depth_m=1.) == (.8, 0.)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: sample_depth() got an unexpected keyword argument 'min_depth_m'
+
+Ch13/tests/test_section_13_4_geometry.py:107: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py::test_unrectified_or_malformed_calibration_invalidates_cache[model]
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py::test_malformed_rgb_replacement_cannot_expose_cached_valid_frame[encoding]
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py::test_malformed_rgb_replacement_cannot_expose_cached_valid_frame[step]
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py::test_malformed_rgb_replacement_cannot_expose_cached_valid_frame[payload]
+FAILED Ch13/tests/test_section_13_4_geometry.py::test_configurable_depth_range_rejects_invalid_bounds_and_outside_samples
+5 failed, 39 passed in 2.62s

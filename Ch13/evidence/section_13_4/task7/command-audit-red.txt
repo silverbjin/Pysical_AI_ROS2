@@ -1,0 +1,109 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_default_off_exclusive_session_and_disable_cancels_without_successor[operator] _
+
+stop = 'operator'
+
+    @pytest.mark.parametrize('stop', ['operator', 'loss', 'lifecycle', 'foreign', 'shutdown', 'camera_motion'])
+    def test_default_off_exclusive_session_and_disable_cancels_without_successor(stop):
+        rclpy.init(domain_id=148)
+        node, peer, executor, thread = None, None, None, None
+        stopping = threading.Event()
+        try:
+            node = ManipulationNode(parameter_overrides=[
+                Parameter('allow_camera_motion_test', value=stop == 'camera_motion')])
+            peer = Node('tracking_action_peer')
+            assert hasattr(node, 'tracking'), 'missing runtime tracking integration'
+            goals, cancellations, commands, goal_ids = [], [], [], []
+    
+            def execute(handle):
+                goals.append(handle.request)
+                goal_ids.append(bytes(handle.goal_id.uuid).hex())
+                deadline = time.monotonic()+2.
+                while time.monotonic() < deadline and not handle.is_cancel_requested:
+                    time.sleep(.005)
+                if handle.is_cancel_requested:
+                    cancellations.append(True)
+                    handle.canceled()
+                else:
+                    handle.succeed()
+                return FollowJointTrajectory.Result(error_code=0)
+    
+            server = ActionServer(peer, FollowJointTrajectory,
+                                  '/arm_trajectory_controller/follow_joint_trajectory', execute,
+                                  cancel_callback=lambda _: CancelResponse.ACCEPT,
+                                  callback_group=node.group)
+            audit = peer.create_subscription(String, '/architecture/arm_command',
+                                              lambda m: commands.append(json.loads(m.data)), 10)
+            executor = DrainingExecutor(num_threads=6)
+            executor.add_node(node)
+            executor.add_node(peer)
+            def spin():
+                while not stopping.is_set():
+                    executor.spin_once(timeout_sec=.01)
+    
+            thread = threading.Thread(target=spin)
+            thread.start()
+            path = '/manipulation_node/set_camera_motion_test' if stop == 'camera_motion' else (
+                '/manipulation_node/set_visual_tracking')
+            toggle = peer.create_client(SetBool, path)
+            stow = peer.create_client(Trigger, '/manipulation_node/stow')
+            assert toggle.wait_for_service(timeout_sec=3)
+            time.sleep(.1)
+            assert goals == []
+            assert commands == []
+            rejected = toggle.call_async(SetBool.Request(data=True))
+            wait(rejected.done)
+            assert not rejected.result().success  # inactive and missing all inputs
+            pkg = Path(__file__).resolve().parents[2] / 'integrated_robot_description'
+            xml = subprocess.run(['xacro', str(pkg/'urdf/robot_system.urdf.xacro'),
+                                  'vision_enabled:=true'], check=True, capture_output=True, text=True).stdout
+            node.tracking.on_model(String(data=xml))
+            transform = TransformStamped()
+            transform.header.frame_id, transform.child_frame_id = 'base_link', 'odom'
+            transform.transform.rotation.w = 1.
+            node.tracking.buffer.set_transform_static(transform, 'boundary-test-only')
+            node.on_activate(None)
+            node.safe = True  # This boundary test bypasses physical stow; engine test must not.
+            info = CameraInfo(width=320, height=240, distortion_model='plumb_bob')
+            info.header.frame_id = 'camera_optical_frame'
+            info.k = [277., 0., 160., 0., 277., 120., 0., 0., 1.]
+            info.r = [1., 0., 0., 0., 1., 0., 0., 0., 1.]
+            info.header.stamp = node.get_clock().now().to_msg()
+            node.tracking.on_info(info)
+            node.tracking.on_legs(String(data=json.dumps(dict(active=True, ready=True, mode='STAND'))))
+            joints = JointState(name=list(ARM_NAMES+LEG_NAMES), position=[0.]*6+list(STAND))
+            joints.header.stamp = node.get_clock().now().to_msg()
+            node.on_joints(joints)
+            target = TrackedTarget(valid=True, status='TRACKED', track_id='one', class_id='fixture', score=.9)
+            target.header.frame_id, target.source_header.frame_id = 'odom', 'camera_optical_frame'
+            target.header.stamp = target.source_header.stamp = node.get_clock().now().to_msg()
+            target.position.x, target.position.y, target.position.z = .90, .02, .35
+            node.tracking.on_target(target)
+            enabled = toggle.call_async(SetBool.Request(data=True))
+            wait(enabled.done)
+            assert enabled.result().success, enabled.result().message
+            wait(lambda: bool(goals))
+>           wait(lambda: bool(commands))
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+predicate = <function test_default_off_exclusive_session_and_disable_cancels_without_successor.<locals>.<lambda> at 0x7ade5438fec0>
+timeout = 3.0
+
+    def wait(predicate, timeout=3.):
+        deadline = time.monotonic()+timeout
+        while time.monotonic() < deadline:
+            if predicate():
+                return
+            time.sleep(.005)
+>       assert predicate(), 'ROS boundary condition did not arrive'
+E       AssertionError: ROS boundary condition did not arrive
+E       assert False
+E        +  where False = <function test_default_off_exclusive_session_and_disable_cancels_without_successor.<locals>.<lambda> at 0x7ade5438fec0>()
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:35: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py::test_default_off_exclusive_session_and_disable_cancels_without_successor[operator]
+1 failed, 8 deselected in 14.21s

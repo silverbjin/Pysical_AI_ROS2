@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_mujoco_vision_config_keeps_one_native_parameter_file ___________
+
+    def test_mujoco_vision_config_keeps_one_native_parameter_file():
+        import importlib.util
+        import yaml
+        spec = importlib.util.spec_from_file_location('mujoco_launch', PKG / 'launch/mujoco.launch.py')
+        launch = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(launch)
+>       path = launch.materialize_controller_config(PKG / 'config/controllers.yaml',
+                                                    PKG / 'config/mujoco_vision_plugins.yaml')
+E       TypeError: materialize_controller_config() takes 1 positional argument but 2 were given
+
+Ch13/tests/test_section_13_4_camera_model.py:113: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_camera_model.py::test_mujoco_vision_config_keeps_one_native_parameter_file
+1 failed in 1.07s

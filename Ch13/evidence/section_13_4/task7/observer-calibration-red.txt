@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_observer_preserves_full_calibration_and_measured_velocity ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-2/test_observer_preserves_full_c0')
+
+    def test_observer_preserves_full_calibration_and_measured_velocity(tmp_path):
+        from sensor_msgs.msg import CameraInfo, JointState
+        from rclpy.time import Time
+        observer = importlib.import_module('vision_observer_13_4')
+        state = SimpleNamespace(counts=__import__('collections').Counter(), latest_images={},
+            cache=__import__('integrated_robot_vision.cache', fromlist=['RGBDCache']).RGBDCache(),
+            invalid=__import__('collections').Counter(), calibrations={}, joints=[], joint_velocities=[])
+        info = CameraInfo(width=320, height=240, distortion_model='plumb_bob')
+        info.header.frame_id = 'camera_optical_frame'
+        info.header.stamp = Time(seconds=1.).to_msg()
+        info.k = [277., 0., 160., 0., 277., 120., 0., 0., 1.]
+        info.r = [1., 0., 0., 0., 1., 0., 0., 0., 1.]
+        observer.VisionObserver.on_info(state, info)
+>       assert state.calibrations[1.]['k'] == list(info.k)
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 1.0
+
+Ch13/tests/test_section_13_4_runner.py:47: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_observer_preserves_full_calibration_and_measured_velocity
+1 failed, 9 deselected in 3.86s

@@ -1,0 +1,65 @@
+Ch13/ros2_ws/build13_4_snapshot_full_35954ef5/integrated_robot_description/Testing/20261019-0233/Test.xml: 5 tests, 0 errors, 1 failure, 0 skipped
+- flake8
+  <<< failure message
+    -- run_test.py: invoking following command in '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_description':
+     - /opt/ros/jazzy/bin/ament_flake8 --xunit-file /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_full_35954ef5/integrated_robot_description/test_results/integrated_robot_description/flake8.xunit.xml
+    import subprocess
+    ^
+        return dict(class_id='integrated_robot_camera/SnapshotCameraPlugin',
+               ^
+                    library_path=str(library), library_sha256=hashlib.sha256(library.read_bytes()).hexdigest(),
+                                                                                                       ^
+                                  DeclareLaunchArgument('vision_camera_backend', default_value='upstream'),
+                                                                                                       ^
+    1     C408 Unnecessary dict call - rewrite as a literal.
+    2     E501 line too long (107 > 99 characters)
+    1     I100 Import statements are in the wrong order. 'import subprocess' should be before 'import tempfile'
+    
+    ./launch/mujoco.launch.py:19:1: I100 Import statements are in the wrong order. 'import subprocess' should be before 'import tempfile'
+    
+    ./launch/mujoco.launch.py:73:12: C408 Unnecessary dict call - rewrite as a literal.
+    
+    ./launch/mujoco.launch.py:74:100: E501 line too long (107 > 99 characters)
+    
+    ./launch/mujoco.launch.py:138:100: E501 line too long (103 > 99 characters)
+    
+    
+    4 files checked
+    4 errors
+    
+    'C'-type errors: 1
+    'E'-type errors: 2
+    'I'-type errors: 1
+    
+    Checked files:
+    
+    * ./launch/gazebo.launch.py
+    * ./launch/mujoco.launch.py
+    * ./launch/view_robot.launch.py
+    * ./launch/vision_sensors.launch.py
+    -- run_test.py: return code 1
+    -- run_test.py: verify result file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_snapshot_full_35954ef5/integrated_robot_description/test_results/integrated_robot_description/flake8.xunit.xml'
+  >>>
+Ch13/ros2_ws/build13_4_snapshot_full_35954ef5/integrated_robot_description/test_results/integrated_robot_description/flake8.xunit.xml: 4 tests, 0 errors, 4 failures, 0 skipped
+- integrated_robot_description.flake8 I100 (./launch/mujoco.launch.py:19:1)
+  <<< failure message
+    Import statements are in the wrong order. 'import subprocess' should be before 'import tempfile':
+    import subprocess
+  >>>
+- integrated_robot_description.flake8 C408 (./launch/mujoco.launch.py:73:12)
+  <<< failure message
+    Unnecessary dict call - rewrite as a literal.:
+        return dict(class_id='integrated_robot_camera/SnapshotCameraPlugin',
+  >>>
+- integrated_robot_description.flake8 E501 (./launch/mujoco.launch.py:74:100)
+  <<< failure message
+    line too long (107 > 99 characters):
+                    library_path=str(library), library_sha256=hashlib.sha256(library.read_bytes()).hexdigest(),
+  >>>
+- integrated_robot_description.flake8 E501 (./launch/mujoco.launch.py:138:100)
+  <<< failure message
+    line too long (103 > 99 characters):
+                                  DeclareLaunchArgument('vision_camera_backend', default_value='upstream'),
+  >>>
+
+Summary: 126 tests, 0 errors, 5 failures, 0 skipped

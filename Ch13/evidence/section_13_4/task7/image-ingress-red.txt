@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_explicit_image_ingress_pause_discards_inflight_result_without_stopping_camera _
+
+    def test_explicit_image_ingress_pause_discards_inflight_result_without_stopping_camera():
+        rclpy.init(domain_id=146)
+        detector, peer, executor = None, None, SingleThreadedExecutor()
+        started, release = Event(), Event()
+        try:
+            detector = ObjectDetector(parameter_overrides=[Parameter('backend', value='color_fixture')])
+            peer = Node('image_ingress_pause_peer')
+            executor.add_node(detector)
+            executor.add_node(peer)
+            received = []
+            sub = peer.create_subscription(Detection2DArray, '/vision/detections', received.append,
+                                           qos_profile_sensor_data)
+            toggle = peer.create_client(SetBool, '/object_detector/set_input_enabled')
+>           assert toggle.wait_for_service(timeout_sec=1.)
+E           assert False
+E            +  where False = wait_for_service(timeout_sec=1.0)
+E            +    where wait_for_service = <rclpy.client.Client object at 0x712db35a97c0>.wait_for_service
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py:92: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792323778.621965761] [object_detector]: explicit detector backend=color_fixture, max_rate_hz=10.0
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py::test_explicit_image_ingress_pause_discards_inflight_result_without_stopping_camera
+1 failed, 2 deselected in 5.27s

@@ -1,0 +1,79 @@
+FFF.........F                                                            [100%]
+=================================== FAILURES ===================================
+_ test_observation_launch_contains_two_nodes_and_requires_explicit_backend_assets _
+
+    def test_observation_launch_contains_two_nodes_and_requires_explicit_backend_assets():
+>       module = load('integrated_robot_vision', 'vision.launch.py')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/tests/test_section_13_4_launch.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/tests/test_section_13_4_launch.py:17: in load
+    spec.loader.exec_module(module)
+<frozen importlib._bootstrap_external>:991: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1128: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7e70b58676e0>
+path = '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_vision/launch/vision.launch.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_vision/launch/vision.launch.py'
+
+<frozen importlib._bootstrap_external>:1186: FileNotFoundError
+_ test_system_launch_includes_one_engine_runtime_and_vision_default_observation_only _
+
+    def test_system_launch_includes_one_engine_runtime_and_vision_default_observation_only():
+>       module = load('integrated_robot_runtime', 'vision_system.launch.py')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/tests/test_section_13_4_launch.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/tests/test_section_13_4_launch.py:17: in load
+    spec.loader.exec_module(module)
+<frozen importlib._bootstrap_external>:991: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1128: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7e70b00e2d20>
+path = '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_runtime/launch/vision_system.launch.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_runtime/launch/vision_system.launch.py'
+
+<frozen importlib._bootstrap_external>:1186: FileNotFoundError
+_________ test_legacy_mujoco_explicit_camera_config_keeps_eye_disabled _________
+
+    def test_legacy_mujoco_explicit_camera_config_keeps_eye_disabled():
+        module = load('integrated_robot_description', 'mujoco.launch.py')
+        share = SRC/'integrated_robot_description'
+>       config = module.camera_plugin_config(share, vision=False)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'mujoco.launch.py' has no attribute 'camera_plugin_config'
+
+Ch13/tests/test_section_13_4_launch.py:57: AttributeError
+_______ test_native_mujoco_velocity_is_expressed_in_odometry_child_frame _______
+
+    def test_native_mujoco_velocity_is_expressed_in_odometry_child_frame():
+        from builtin_interfaces.msg import Time
+        from geometry_msgs.msg import Pose, Twist
+        from integrated_robot_vision.native_pose import make_odometry
+        pose, twist = Pose(), Twist()
+        pose.orientation.z = pose.orientation.w = math.sqrt(.5)
+        twist.linear.x = 1.  # free-joint qvel translation is WORLD, angular is BODY
+        twist.angular.x, twist.angular.y, twist.angular.z = .2, .3, .4
+>       odom = make_odometry(pose, twist, Time(sec=1), twist_convention='mujoco_free')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: make_odometry() got an unexpected keyword argument 'twist_convention'
+
+Ch13/tests/test_section_13_4_camera_model.py:137: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_launch.py::test_observation_launch_contains_two_nodes_and_requires_explicit_backend_assets
+FAILED Ch13/tests/test_section_13_4_launch.py::test_system_launch_includes_one_engine_runtime_and_vision_default_observation_only
+FAILED Ch13/tests/test_section_13_4_launch.py::test_legacy_mujoco_explicit_camera_config_keeps_eye_disabled
+FAILED Ch13/tests/test_section_13_4_camera_model.py::test_native_mujoco_velocity_is_expressed_in_odometry_child_frame
+4 failed, 9 passed in 8.36s
