@@ -42,7 +42,7 @@ ros2 launch manipulation_basics manipulation_system.launch.py
 터미널 B:
 ~~~bash
 ros2 topic echo /joint_states --once
-ros2 topic echo /robot_description --once
+ros2 topic echo /robot_description --qos-durability transient_local --once
 ros2 param get /robot_state_publisher use_sim_time
 ros2 param get /rviz2 use_sim_time
 ros2 run tf2_ros tf2_echo base_link link4
