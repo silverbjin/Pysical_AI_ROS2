@@ -55,6 +55,17 @@ class ScanGateTests(unittest.TestCase):
         self.gate.check(10_000_000_000, 10_000_000_000, q)
         self.assertEqual(self.gate.check(1_000_000_000, 1_000_000_000, q), 'accepted')
 
+    def test_malformed_stamp_and_absent_orientation_fail_closed(self):
+        q = (0, 0, 0, 1)
+        self.assertEqual(self.gate.check(1_000_000_000, 1_000_000_000, q), 'accepted')
+        previous = self.gate.last_now_ns
+        for stamp, now in ((1.1, 1_100_000_000), (1_100_000_000, float('nan')),
+                           (None, 1_100_000_000), (1_100_000_000, -1)):
+            self.assertEqual(self.gate.check(stamp, now, q), 'stamp')
+        self.assertEqual(self.gate.last_now_ns, previous)
+        self.assertEqual(self.gate.check(1_200_000_000, 1_200_000_000, None), 'orientation')
+        self.assertEqual(self.gate.check(1_200_000_000, 1_200_000_000, q), 'accepted')
+
     def test_bad_parameters_rejected(self):
         for kwargs in ({'max_tilt_degrees': -1}, {'max_tilt_degrees': 181},
                        {'min_interval': -1}, {'max_age': 0}, {'max_age': math.nan}):
