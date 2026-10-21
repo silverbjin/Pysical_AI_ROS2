@@ -83,6 +83,7 @@ def generate_launch_description():
             '/world/empty/model/my_robot/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
             # [해설] @: "gazebo 토픽(/world/empty/model/my_robot/joint_state)은 ROS에서는 sensor_msgs/msg/JointState 타입입니다"
             # [해설] [: "Gazebo의 gz.msgs.Model 타입을 ROS의 sensor_msgs/msg/JointState 타입으로 변환"
+            '/model/my_robot/joint1/cmd_pos@std_msgs/msg/Float64]gz.msgs.Double',  # joint1 ROS->Gazebo bridge
             '/model/my_robot/joint2/cmd_pos@std_msgs/msg/Float64]gz.msgs.Double',  # 제어 명령을 ROS에서 받아서 Gazebo로 전달 (단방향)
         ],
         remappings=[
@@ -90,6 +91,7 @@ def generate_launch_description():
             '/world/empty/model/my_robot/joint_state',  # Gazebo에서 발행하는 실제 joint_states 토픽
             '/joint_states', # ROS에서 RSP가 구독하는 토픽으로 remap (중요! RSP가 이 토픽을 구독해야 TF broadcasting이 제대로 작동)
         ),
+        ('/model/my_robot/joint1/cmd_pos', '/joint1/cmd_pos'),
         ('/model/my_robot/joint2/cmd_pos', '/joint2/cmd_pos'),
     ],
         output='screen'
