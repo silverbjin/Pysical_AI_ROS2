@@ -1,5 +1,7 @@
 # LAB_7_4_GUIDE_KO — 7.4절 OpenCV 기반 물체 인식 알고리즘 구현
 
+> **2026-10-21 코드 수정 반영 안내:** `ros2 run vision_basics object_detector --ros-args -p min_contour_area:=500.0`으로 시작합니다. `/camera/target_pixel`은 `PointStamped`이나 x/y는 pixel이고 z는 면적(pixel²)이므로 3D 좌표로 사용하지 않습니다. 수정 범위와 정적 테스트는 [SECTION_7_4_FIX_TEST_REPORT_KO.md](SECTION_7_4_FIX_TEST_REPORT_KO.md)를 참조하세요. 본 가이드에 과거의 `BLOCKED`·미등록 안내가 있다면 **수정 전 리뷰 기록**이며, 현재의 ROS 빌드·실행 성공을 의미하지 않습니다.
+
 > 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
 > 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 (2026-10-20) · 상태: **BLOCKED — 검출 로직은 존재, 메시지/등록 계약 불일치**
 > 실제 실행 검증: **미수행**. 아래 코드는 교재 실습 절차 및 실행 후 검증 기준이며, 출력 사례를 실측 결과로 제시하지 않는다.
