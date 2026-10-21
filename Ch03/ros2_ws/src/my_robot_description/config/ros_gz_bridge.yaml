@@ -1,11 +1,7 @@
 # ros_gz_bridge 설정 파일
 
-# 1. ROS -> Gazebo (명령 전달): cmd_vel 예제용 (본 로봇에는 cmd_vel 구동 플러그인이 없음)
-- ros_topic_name: "/model/my_robot/cmd_vel"
-  gz_topic_name: "/model/my_robot/cmd_vel"
-  ros_type_name: "geometry_msgs/msg/Twist"
-  gz_type_name: "gz.msgs.Twist"
-  direction: ROS_TO_GZ  # 기호 ']' 와 동일
+# 주의: 이 2-DOF 팔에는 cmd_vel 입력을 처리하는 구동 시스템이 없다.
+# /model/my_robot/cmd_vel 브리지는 학습용 명세 예시이므로 활성화하지 않는다.
 
 # 2. Gazebo -> ROS (센서 및 상태 수신): joint_states
 - ros_topic_name: "/joint_states"

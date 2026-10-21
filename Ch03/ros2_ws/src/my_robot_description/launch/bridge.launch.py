@@ -13,6 +13,7 @@ def generate_launch_description():
     bridge_node = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
+        name='ch03_parameter_bridge',
         parameters=[{
             'config_file': bridge_config_file,
         }],
