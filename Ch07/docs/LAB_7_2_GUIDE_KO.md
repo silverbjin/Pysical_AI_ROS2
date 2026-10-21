@@ -1,5 +1,7 @@
 # LAB_7_2_GUIDE_KO — 7.2절 Gazebo Harmonic 카메라 센서 설정 및 데이터 수신
 
+> **2026-10-21 코드 수정 반영 안내:** 추가된 실습 진입점: `ros2 launch vision_basics camera_lab.launch.py`. 이후 `gz topic -l`, `ros2 topic list -t`, `ros2 topic hz /camera/image_raw`를 확인하십시오. RGB/depth 실제 발행 토픽은 아직 검증되지 않았으며 bridge remap 수정이 필요할 수 있습니다. 수정 범위와 정적 테스트는 [SECTION_7_2_FIX_TEST_REPORT_KO.md](SECTION_7_2_FIX_TEST_REPORT_KO.md)를 참조하세요. 본 가이드에 과거의 `BLOCKED`·미등록 안내가 있다면 **수정 전 리뷰 기록**이며, 현재의 ROS 빌드·실행 성공을 의미하지 않습니다.
+
 > 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
 > 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 (2026-10-20) · 상태: **BLOCKED — 센서 구성과 실행 경로 불충분**
 > 실제 실행 검증: **미수행**. 아래 코드는 교재 실습 절차 및 실행 후 검증 기준이며, 출력 사례를 실측 결과로 제시하지 않는다.
