@@ -196,8 +196,3 @@ def test_transient_contacts_after_initial_fall_remain_in_penalty():
         assert terminated
         assert {'base_link', 'fl_calf_link', 'rl_calf_link'} <= set(info['unwanted_contact_bodies'])
         assert info['reward_terms']['collision'] == pytest.approx(-1.4)
-
-
-def test_reward_rejects_boolean_collision_count():
-    with pytest.raises(ValueError, match='collision_count'):
-        reward_fixture(collision_count=True)

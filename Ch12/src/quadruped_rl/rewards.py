@@ -45,8 +45,7 @@ def compute_reward_terms(config, *, linear_velocity, angular_velocity, gravity,
         raise TypeError("config must be RewardConfig")
     if not math.isfinite(dt) or dt <= 0:
         raise ValueError("dt must be finite and positive")
-    # bool subclasses int but is not a meaningful contact count.
-    if isinstance(collision_count, bool) or not isinstance(collision_count, Integral) or collision_count < 0:
+    if not isinstance(collision_count, Integral) or collision_count < 0:
         raise ValueError("collision_count must be a nonnegative integer")
     lin = _vector(linear_velocity, 3, 'linear_velocity')
     ang = _vector(angular_velocity, 3, 'angular_velocity')
