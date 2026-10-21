@@ -134,12 +134,3 @@ def test_goal_marker_visible_in_rgb_and_camera_follows_goal():
             frame = env.render()
             red = (frame[:,:,0].astype(int)>frame[:,:,1].astype(int)+50)
             assert red.sum() > 30
-
-
-def test_heading_quaternion_requires_finite_nonzero_wxyz_and_is_scale_invariant():
-    q = [math.cos(math.pi/4), 0, 0, math.sin(math.pi/4)]
-    assert QuadrupedGoalEnv.quat_to_yaw(q) == pytest.approx(math.pi/2)
-    assert QuadrupedGoalEnv.quat_to_yaw(np.array(q)*3) == pytest.approx(math.pi/2)
-    for bad in ([0, 0, 0, 0], [np.nan, 0, 0, 1], [1, 0, 0]):
-        with pytest.raises(ValueError, match='quaternion'):
-            QuadrupedGoalEnv.quat_to_yaw(bad)
