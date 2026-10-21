@@ -65,8 +65,8 @@ def inspect_tree(package: Path, strict: bool = False) -> dict:
                 vals["hip_mass"] + vals["thigh_mass"] + vals["calf_mass"] + 0.10
             )
             test("nominal_total_mass_12kg", abs(mass - 12.0) < 1e-9, f"mass={mass}")
-        test("four_leg_macro_calls", len(re.findall(r"<xacro:leg\\s+prefix=", robot_text)) == 4)
-        test("twelve_bridge_commands", len(re.findall(r"^\\s*direction:\\s*ROS_TO_GZ\\s*$", bridge_text, re.M)) == 12)
+        test("four_leg_macro_calls", len(re.findall(r"<xacro:leg\s+prefix=", robot_text)) == 4)
+        test("twelve_bridge_commands", len(re.findall(r"^\s*direction:\s*ROS_TO_GZ\s*$", bridge_text, re.M)) == 12)
         for kind in ("hip", "thigh", "calf"):
             test(f"leg_joint:{kind}", f'name="${{prefix}}_{kind}_joint"' in leg.read_text(encoding="utf-8"))
 
