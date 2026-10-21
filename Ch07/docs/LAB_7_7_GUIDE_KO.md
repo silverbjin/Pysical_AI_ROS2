@@ -1,5 +1,7 @@
 # LAB_7_7_GUIDE_KO — 7.7절 인식 기반 pick-and-place 전체 파이프라인 구축
 
+> **2026-10-21 코드 수정 반영 안내:** `ros2 run vision_basics mission_controller --ros-args -p use_sim_time:=true`의 기본 동작은 목표 검증 후 HOLD이며 실제 운동은 **기본적으로 차단**됩니다. 시뮬레이터·충돌·독립 grasp 검증을 확인하기 전 `enable_motion:=true`로 변경하지 마십시오. 수정 범위와 정적 테스트는 [SECTION_7_7_FIX_TEST_REPORT_KO.md](SECTION_7_7_FIX_TEST_REPORT_KO.md)를 참조하세요. 본 가이드에 과거의 `BLOCKED`·미등록 안내가 있다면 **수정 전 리뷰 기록**이며, 현재의 ROS 빌드·실행 성공을 의미하지 않습니다.
+
 > 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
 > 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 (2026-10-20)
 > 판정: **BLOCKED — 인식·좌표변환·미션 간 계약 단절**
