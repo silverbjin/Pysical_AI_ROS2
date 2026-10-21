@@ -19,6 +19,8 @@ setup(
         # 특정 확장자(*.urdf, *.xacro, *.yaml 등)만 명시적으로 타겟팅합니다.
         # =========================================================================
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
+        (os.path.join('share', package_name, 'assets'), glob('assets/*.xml')),
+        (os.path.join('share', package_name, 'urdf'), glob('urdf/*.xml')),
         (os.path.join('share', package_name, 'urdf'), glob('urdf/*.urdf') + glob('urdf/*.xacro')),
         (os.path.join('share', package_name, 'meshes'), glob('meshes/*')),
         (os.path.join('share', package_name, 'worlds'), glob('worlds/*.sdf')),
