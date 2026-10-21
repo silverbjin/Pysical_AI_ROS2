@@ -1,5 +1,7 @@
 # SECTION_7_3_REPORT_KO — cv_bridge를 활용한 ROS 2와 OpenCV 통합
 
+> **2026-10-21 후속 수정 안내:** 이 문서는 **2026-10-20 수정 전 코드의 리뷰 기준선**입니다. 최신 코드 수정·원격 정적 테스트 결과는 [SECTION_7_3_FIX_TEST_REPORT_KO.md](SECTION_7_3_FIX_TEST_REPORT_KO.md)를 참고하십시오. 신규 코드의 ROS 빌드·시뮬레이터·물리 파지 성공은 여전히 미검증입니다.
+
 > 기준일: 2026-10-20 (KST) · 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 · 기준 브랜치: main
 > 원고: 사용자가 첨부한 「7장. 물체 인식 및 조작」의 7.3절
 > 판정: **BLOCKED — 변환 코드는 있으나 실습 결선 미완성**
