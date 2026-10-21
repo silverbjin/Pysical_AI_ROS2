@@ -33,6 +33,10 @@ ros2 lifecycle get /slam_toolbox
 ros2 topic info /scan/slam -v
 ros2 topic echo /map --once
 ros2 run tf2_ros tf2_echo map odom
+# 터미널 D: 천천히 키보드 제어 (보행 중 충돌 관찰)
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p speed:=0.05 -p turn:=0.15 -p stamped:=false
+# 제어가 끝나면 아래 명령으로 명시적으로 정지
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist '{linear: {x: 0.0}, angular: {z: 0.0}}'
 # 충분한 특징을 관찰한 뒤 지도 저장
 bash Ch11/scripts/save_slam_map.sh "$HOME/Pysical_AI_maps/section_11_5"
 ~~~
