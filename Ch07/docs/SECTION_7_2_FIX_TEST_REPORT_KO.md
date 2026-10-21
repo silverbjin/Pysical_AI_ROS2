@@ -11,6 +11,8 @@
 2. my_robot.urdf.xacro에 카메라 Xacro 연결
 3. Sensors plugin 포함 ch07_camera_lab.sdf 추가
 4. camera_lab.launch.py와 RGB/depth/CameraInfo bridge 구성
+5. world SDF에 광원·바닥을 인라인 정의하여 외부 모델 리소스 의존 제거
+6. 공식 ros_gz_bridge override_frame_id를 사용해 광학 프레임 명시
 
 **공통 변경:** 모든 7.1~7.7 절 브랜치는 `vision_basics/setup.py`에 이미 존재하는 5개 실행 엔트리와 `package.xml`의 직접 의존성 목록을 반영함. 단, 신규 `coord_transformer` 엔트리는 7.5절 브랜치에서만 등록. 공통 파일은 브랜치 간 중복 변경이므로 PR 순차 병합 시 충돌 여부 확인.
 
@@ -30,7 +32,7 @@
 | 검증 항목 | 실제 검사 | 결과 |
 |---|---|---|
 | 원격 GitHub 파일 직접 읽기 | feat/ch07-section-7-2의 변경된 blob를 재조회하여 문자열/인터페이스/보호 조건 비교 | **PASS** |
-| ROS 미사용 정적 계약 검사 | 이 절의 진입점·파일 존재·핵심 로직·메시지 타입·가드에 대한 **8개 assertion** 실행 | **8/8 PASS** |
+| ROS 미사용 정적 계약 검사 | 이 절의 진입점·파일 존재·핵심 로직·메시지 타입·가드에 대한 **10개 assertion** 실행 | **10/10 PASS** |
 | 저장소 내 회귀 테스트 추가 | `test/test_section_7_2_static.py`를 원격 브랜치에 추가 | **작성·Push 완료, 저장소 checkout에서 pytest 실행은 NOT_RUN** |
 
 | ROS 2 Jazzy `colcon build` | 현재 도구 실행 환경에 ROS 2가 설치되지 않음 | **NOT_RUN** |
