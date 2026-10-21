@@ -1,3 +1,5 @@
+> 2026-10-21 Ch04용 `joint_position_cli`를 새로 구현했다. 이제 `joint1` 관절을 원고대로 제어할 수 있다. 터미널 A에서 Ch03의 `my_robot_description sim_sync.launch.py`(또는 4.6절 PR 반영 후 `my_robot_tf sim_sync_ch04.launch.py`)로 Gazebo를 실행한 뒤, 터미널 B에서 **`ros2 launch my_robot_tf joint_control_ch04.launch.py`**를 실행한다. `joint1` 전용 브리지와 제어 발행자가 함께 뜬다. 기존 Ch03 `joint_control_cli`는 `joint2` 비교 실습용이다. 아래의 이전 경로 설명은 레거시 비교 목적이다.
+
 # 4.7절 실습 가이드: Gazebo 2축 로봇팔 위치 제어
 
 **실습 범위:** Ch04 원고의 목표는 `joint1`이지만, 현재 repo에서 재사용 가능한 실행 코드는 **Ch03의 `joint2`** 제어기다. 이 차이를 숨기지 않고 `joint2` 제어 실험으로 진행한다.

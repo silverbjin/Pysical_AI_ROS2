@@ -32,6 +32,7 @@ setup(
             'static_tf_broadcaster = my_robot_tf.static_tf_broadcaster:main',
             'dynamic_tf_broadcaster = my_robot_tf.dynamic_tf_broadcaster:main', # 추가
             'tf_listener = my_robot_tf.tf_listener:main', # 추가
+            'joint_position_cli = my_robot_tf.joint_position_cli:main',
         ],
     },
 )
