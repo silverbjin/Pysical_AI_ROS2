@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 class GaitConfig:
@@ -19,7 +20,11 @@ GAIT_LIBRARY = {
 
 class GeneralizedGaitPlanner:
     def __init__(self, initial_gait='trot'):
-        self.current_gait = GAIT_LIBRARY[initial_gait]
+        if initial_gait not in GAIT_LIBRARY:
+            raise ValueError(f'Unknown gait: {initial_gait}')
+        source = GAIT_LIBRARY[initial_gait]
+        self.current_gait = GaitConfig(source.name, source.duty_factor,
+                                      source.offsets.copy(), source.frequency)
         self.next_gait = None  
         self.current_time = 0.0
         self.cycle_completed = False  # [추가] 주기 완료 여부를 저장할 플래그
@@ -27,25 +32,30 @@ class GeneralizedGaitPlanner:
     def set_gait(self, gait_name):
         """ 실시간으로 보행 패턴 전환을 예약한다 """
         if gait_name in GAIT_LIBRARY:
-            self.next_gait = GAIT_LIBRARY[gait_name]
-        else:
-            print(f"Warning: Unknown gait {gait_name}")
+            src = GAIT_LIBRARY[gait_name]
+            self.next_gait = GaitConfig(src.name, src.duty_factor,
+                                        src.offsets.copy(), src.frequency)
+            return True
+        return False
  
     def update(self, dt):
         """ 시간을 누적하고 주기가 끝나는 시점에 안전하게 보행을 전이한다 """
+        if not math.isfinite(dt) or dt < 0.0:
+            raise ValueError('dt must be finite and nonnegative')
         self.current_time += dt
         self.cycle_completed = False  # 매 스텝마다 플래그 초기화
         
         # 사이클이 초기화되는 시점에 변경 적용
         T_current = 1.0 / self.current_gait.frequency
         if self.current_time >= T_current:
-            self.current_time -= T_current 
+            self.current_time %= T_current
             self.cycle_completed = True  # 한 주기가 성공적으로 완료됨을 기록
             
             # 대기 중인 다음 보행 패턴이 있다면 이때 스위칭
             if self.next_gait is not None:
                 self.current_gait = self.next_gait
                 self.next_gait = None
+                self.current_time %= (1.0 / self.current_gait.frequency)
 
     def is_cycle_completed(self):
         """ [추가] FSM 노드에서 현재 보행 주기가 완료되었는지 확인할 수 있는 인터페이스 """
