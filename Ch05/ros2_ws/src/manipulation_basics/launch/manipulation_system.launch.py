@@ -1,151 +1,86 @@
+"""Start the Ch05 Gazebo arm and controllers with checked sequencing."""
+
 import os
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, RegisterEventHandler, TimerAction
+from launch.actions import EmitEvent, IncludeLaunchDescription, LogError, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
+from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.event_handlers import OnProcessExit, OnProcessStart
+from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
-import xacro
-# 추가: PathJoinSubstitution을 쓰면 경로 합치기가 더 깔끔하다.
-from launch.substitutions import PathJoinSubstitution 
 from launch_ros.substitutions import FindPackageShare
+import xacro
+
+
+def _after_exit(event, next_action, step_name):
+    """Proceed only if the completed Gazebo/spawner process exited successfully."""
+    if event.returncode == 0:
+        return [next_action]
+    reason = f'{step_name} failed (returncode={event.returncode}); stopping launch'
+    return [LogError(msg=reason), EmitEvent(event=Shutdown(reason=reason))]
 
 
 def generate_launch_description():
-    # 1. 패키지 경로 설정 (컨텍스트 일관성 유지)
-    # 독자의 실습 환경에 따라 패키지명이 다를 수 있음을 본문에 명시해야 합니다.
-    pkg_manipulation = get_package_share_directory('manipulation_basics')
-    pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
+    pkg = get_package_share_directory('manipulation_basics')
+    pkg_gazebo = get_package_share_directory('ros_gz_sim')
+    robot_urdf = xacro.process_file(os.path.join(pkg, 'urdf', 'robot.urdf.xacro')).toxml()
 
-    # 2. URDF 파일 파싱 (Xacro -> XML 변환)
-    xacro_file = os.path.join(pkg_manipulation, 'urdf', 'robot.urdf.xacro')
-    doc = xacro.parse(open(xacro_file))
-    xacro.process_doc(doc)
-    robot_description = {'robot_description': doc.toxml()}
-
-    # 3. Gazebo 시뮬레이터 실행 (Harmonic 빈 월드 로드)
-    # -r 옵션은 물리 엔진을 즉시 Start(Run) 상태로 만듭니다.
     gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
+        PythonLaunchDescriptionSource(os.path.join(pkg_gazebo, 'launch', 'gz_sim.launch.py')),
         launch_arguments={'gz_args': '-r empty.sdf'}.items(),
     )
-
-    # 4. Robot State Publisher 노드 (tf 및 로봇 트리 구조 발행)
-    node_robot_state_publisher = Node(
+    robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
-        parameters=[robot_description, {'use_sim_time': True}] # 물리 엔진 시간 동기화 필수
+        parameters=[{'robot_description': robot_urdf, 'use_sim_time': True}],
     )
-
-    # 5. Gazebo에 로봇 모델 소환 (Spawn)
-    spawn_entity = Node(
-        package='ros_gz_sim',
-        executable='create',
-        arguments=['-topic', 'robot_description',
-                   '-name', 'physical_ai_robot',
-                   '-z', '0.05'], # 바닥 묻힘 방지를 위해 미세하게 띄움
-        output='screen'
-    )
-
-    # 6. 컨트롤러 스포너 (Controller Spawner) 정의
-    # 6-1. Joint State Broadcaster (관절 상태를 /joint_states 토픽으로 복고)
-    joint_state_broadcaster_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=['joint_state_broadcaster'],
-        output='screen'
-    )
-
-    # 6-2. Arm Controller (5.2.1에서 설정한 joint1~4 position 제어기 구동)
-    arm_controller_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=['arm_controller'],
-        output='screen'
-    )
-    
-    # # -----------------------------------------------------------------
-    # # [치명적 오류 수정] 순차적 이벤트 핸들링 아키텍처 리팩토링
-    # # -----------------------------------------------------------------
-    # # 로봇 소환 프로세스(create)가 종료(Exit)되면 -> 첫 번째 컨트롤러(Joint State) 스포너 실행
-    # delayed_joint_broad_spawner = RegisterEventHandler(
-    #     event_handler=OnProcessExit(
-    #         target_action=spawn_entity,
-    #         on_exit=[joint_state_broadcaster_spawner],
-    #     )
-    # )
-
-    # # [수정 포인트]: joint_state_broadcaster가 종료되는 것이 아니라, 
-    # # '실행 시작(OnProcessStart)'된 후 물리 엔진 안착을 위해 2초의 여유(TimerAction)를 두고 
-    # # arm_controller를 로드해야 데드락(락업 현상)이 발생하지 않습니다.
-    # delayed_arm_controller_spawner = RegisterEventHandler(
-    #     event_handler=OnProcessStart(
-    #         target_action=joint_state_broadcaster_spawner,
-    #         on_exit=[
-    #             TimerAction(
-    #                 period=2.0,
-    #                 actions=[arm_controller_spawner],
-    #             )
-    #         ],
-    #     )
-    # )
-    
-    # 6-3. 실행 순서 제어 (이벤트 핸들러)
-    # 로봇이 소환 완료(Exit)되면 -> Joint State Broadcaster 실행
-    delayed_joint_broad_spawner = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=spawn_entity,
-            on_exit=[joint_state_broadcaster_spawner],
-        )
-    )
-
-    # [교체 및 수정 완료] 
-    # Joint State Broadcaster가 실행 시작(Start)되면 -> 2초 대기(TimerAction) 후 arm_controller 제어기 로드
-    delayed_arm_controller_spawner = RegisterEventHandler(
-        event_handler=OnProcessStart(
-            target_action=joint_state_broadcaster_spawner,
-            on_start=[  # 기존 on_exit에서 on_start로 문법 오류 수정
-                TimerAction(
-                    period=2.0,
-                    actions=[arm_controller_spawner],
-                )
-            ],
-        )
-    )
-
-    # 7. Bridge 설정 (ROS 2 <-> Gazebo Harmonic 간 글로벌 Clock 동기화)
-    bridge = Node(
+    clock_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
-        output='screen'
-    )
-    
-    # --- [추가된 부분 시작] ---
-    # RViz 설정 파일 경로 찾기
-    rviz_config_file = PathJoinSubstitution(
-        [FindPackageShare("manipulation_basics"), "rviz", "manipulation.rviz"]
-    )
-
-    # RViz2 노드 실행
-    node_rviz = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
         output='screen',
-        arguments=['-d', rviz_config_file], # -d 옵션으로 설정 파일 로드
-        parameters=[{'use_sim_time': True}] # 시뮬레이션 시간 동기화 필수!
-    )    
-    # --- [추가된 부분 끝] ---
-
+    )
+    spawn = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=['-topic', 'robot_description', '-name', 'physical_ai_robot', '-z', '0.05'],
+        output='screen',
+    )
+    common = ['--controller-manager', '/controller_manager',
+              '--controller-manager-timeout', '30', '--switch-timeout', '30']
+    jsb = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster', *common],
+        output='screen',
+    )
+    arm = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['arm_controller', *common],
+        output='screen',
+    )
+    # OnProcessExit fires on success AND failure: never continue after a failure.
+    after_spawn = RegisterEventHandler(
+        OnProcessExit(target_action=spawn,
+                      on_exit=lambda event, context: _after_exit(event, jsb, 'Gazebo create')),
+    )
+    # A completed spawner with exit code zero is a stronger readiness gate than
+    # sleeping 2 seconds after the spawner process starts.
+    after_jsb = RegisterEventHandler(
+        OnProcessExit(target_action=jsb,
+                      on_exit=lambda event, context: _after_exit(event, arm, 'JSB spawner')),
+    )
+    rviz_file = PathJoinSubstitution(
+        [FindPackageShare('manipulation_basics'), 'rviz', 'manipulation.rviz'],
+    )
+    rviz = Node(package='rviz2', executable='rviz2', name='rviz2',
+                arguments=['-d', rviz_file], parameters=[{'use_sim_time': True}],
+                output='screen')
     return LaunchDescription([
-        gazebo,
-        node_robot_state_publisher,
-        spawn_entity,
-        bridge, # 5.2절에서 만든 브리지 노드
-        delayed_joint_broad_spawner,
-        delayed_arm_controller_spawner,
-        node_rviz,     # 리턴 리스트에 RViz 노드 추가
+        gazebo, robot_state_publisher, clock_bridge, after_spawn, after_jsb,
+        spawn, rviz,
     ])
