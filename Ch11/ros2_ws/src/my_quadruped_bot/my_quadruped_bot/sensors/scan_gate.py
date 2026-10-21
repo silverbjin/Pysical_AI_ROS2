@@ -25,18 +25,16 @@ class ScanGate:
 
     def check(self, stamp_ns, now_ns, quaternion):
         """Return accepted, stamp, stale, future, orientation, tilt or interval."""
-        # Reject malformed acquisition/clock times before mutating gate state.
-        if (not isinstance(stamp_ns, int) or not isinstance(now_ns, int)
-                or stamp_ns <= 0 or now_ns <= 0):
-            return 'stamp'
         if self.last_now_ns is not None and now_ns < self.last_now_ns:
             self.last_accepted_ns = None
         self.last_now_ns = now_ns
+        if stamp_ns <= 0 or now_ns <= 0:
+            return 'stamp'
         if now_ns - stamp_ns > self.max_age_ns:
             return 'stale'
         if stamp_ns - now_ns > self.future_ns:
             return 'future'
-        if quaternion is None or len(quaternion) != 4 or not all(math.isfinite(v) for v in quaternion):
+        if len(quaternion) != 4 or not all(math.isfinite(v) for v in quaternion):
             return 'orientation'
         norm = math.sqrt(sum(v*v for v in quaternion))
         if abs(norm - 1.0) > 0.05:
