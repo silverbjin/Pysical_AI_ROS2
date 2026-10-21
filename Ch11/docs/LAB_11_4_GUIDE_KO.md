@@ -33,6 +33,10 @@ ros2 topic echo /ekf_lab/raw --once
 ros2 topic echo /ekf_lab/filtered --once
 ros2 topic echo /odom --once
 ros2 run tf2_ros tf2_echo odom base_footprint
+# 천천히 이동시켜 비교하려면 별도 터미널에서 명령 전송
+ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist '{linear: {x: 0.05}, angular: {z: 0.0}}'
+# 짧게 관찰 후 Ctrl+C 및 명시적 0 명령
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist '{linear: {x: 0.0}, angular: {z: 0.0}}'
 # 별도 A/B 실험: B 종료 후 use_acceleration:=true로 재실행
 ~~~
 
