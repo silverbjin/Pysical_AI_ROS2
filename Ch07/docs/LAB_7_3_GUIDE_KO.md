@@ -1,5 +1,7 @@
 # LAB_7_3_GUIDE_KO — 7.3절 cv_bridge를 활용한 ROS 2와 OpenCV 통합
 
+> **2026-10-21 코드 수정 반영 안내:** `ros2 run vision_basics vision_processor`는 GUI 기본 OFF입니다. 디스플레이가 준비된 경우에만 `--ros-args -p show_gui:=true`를 사용하십시오. 수정 범위와 정적 테스트는 [SECTION_7_3_FIX_TEST_REPORT_KO.md](SECTION_7_3_FIX_TEST_REPORT_KO.md)를 참조하세요. 본 가이드에 과거의 `BLOCKED`·미등록 안내가 있다면 **수정 전 리뷰 기록**이며, 현재의 ROS 빌드·실행 성공을 의미하지 않습니다.
+
 > 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
 > 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 (2026-10-20) · 상태: **BLOCKED — 변환 코드는 있으나 실습 결선 미완성**
 > 실제 실행 검증: **미수행**. 아래 코드는 교재 실습 절차 및 실행 후 검증 기준이며, 출력 사례를 실측 결과로 제시하지 않는다.
