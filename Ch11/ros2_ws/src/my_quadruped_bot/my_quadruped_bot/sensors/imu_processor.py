@@ -29,13 +29,6 @@ class ImuProcessor(Node):
             'input orientation ignored, dt from header.stamp')
 
     def imu_callback(self, msg):
-        # The teaching filter assumes gyro and gravity are expressed in base_link.
-        # A different mount frame requires an explicit transform, not silent fusion.
-        if msg.header.frame_id != 'base_link':
-            self.get_logger().warning(
-                'Unexpected IMU frame; expected base_link. Sample dropped.',
-                throttle_duration_sec=5.0)
-            return
         # -1 means that this measurement is not provided by the driver.
         if (msg.angular_velocity_covariance[0] == -1.0 or
                 msg.linear_acceleration_covariance[0] == -1.0):
