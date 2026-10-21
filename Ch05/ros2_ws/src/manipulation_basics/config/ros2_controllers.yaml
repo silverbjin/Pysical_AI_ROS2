@@ -1,37 +1,17 @@
 controller_manager:
   ros__parameters:
-    update_rate: 100  # Hz (제어 루프 주기, 10ms)
-
-    # 관절 상태를 퍼블리시하는 브로드캐스터 (필수)
+    update_rate: 100
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
-
-    # 로봇 팔 제어기 (위치 기반 궤적 제어)
     arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
-    # 그리퍼(집게) 제어기
-    gripper_controller:
-      type: position_controllers/GripperActionController
-
 arm_controller:
   ros__parameters:
-    joints:
-      - joint1
-      - joint2
-      - joint3
-      - joint4
-    command_interfaces:
-      - position
-    state_interfaces:
-      - position
-      - velocity
-    
-    # 궤적 실행 시 허용 오차 설정
+    joints: [joint1, joint2, joint3, joint4]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
     allow_partial_joints_goal: false
-    open_loop_control: true
-    allow_integration_in_goal_trajectories: true
-
-gripper_controller:
-  ros__parameters:
-    joint: gripper_joint
+    interpolate_from_desired_state: false
+    allow_integration_in_goal_trajectories: false
+    interpolation_method: splines
