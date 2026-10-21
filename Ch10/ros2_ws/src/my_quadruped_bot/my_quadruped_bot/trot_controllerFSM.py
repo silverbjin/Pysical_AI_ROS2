@@ -20,7 +20,6 @@ from geometry_msgs.msg import Twist, TransformStamped, Quaternion
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
 from tf2_ros import TransformBroadcaster
-from my_robot_interfaces.srv import SetGait
 
 def euler_to_quaternion(roll, pitch, yaw) -> Quaternion:
     """Euler 각도를 Quaternion 메시지로 변환하는 헬퍼 함수"""
@@ -51,7 +50,6 @@ class TrotController:
         self.target_height = 0.25 # 0.30    
         self.current_height = self.idle_height
         self.step_frequency = 2.0
-        self.manual_gait_name = None  # None means speed-based automatic gait selection
         
         self.cmd_vel = {'x': 0.0, 'y': 0.0, 'yaw': 0.0}
         self.last_non_zero_vel = {'x': 0.0, 'y': 0.0, 'yaw': 0.0}
@@ -132,7 +130,7 @@ class TrotController:
             # -----------------------------------------------------------
             # [수정] 히스테리시스(Hysteresis)를 적용한 보행 패턴 전이 예약
             # -----------------------------------------------------------
-            if cmd_active and self.manual_gait_name is None:
+            if cmd_active:
                 if vel_norm < 0.08:
                     self.gait_planner.set_gait('crawl')  # 확실한 저속 구간에서만 크롤 변환
                 elif vel_norm > 0.12:
@@ -230,7 +228,6 @@ class TrotControllerNode(Node):
         self.get_logger().info("4족 보행 로봇 Trot Controller FSM 노드 시작!")
         
         self.controller = TrotController()
-        self.gait_service = self.create_service(SetGait, 'set_gait', self.set_gait_callback)
         
         self.sub_cmd = self.create_subscription(
             Twist,
@@ -296,20 +293,6 @@ class TrotControllerNode(Node):
         # self.timer = self.create_timer(self.dt, self.control_loop)
         self.get_logger().info("TrotControllerFSM initialized with Odometry, TF, LPF, and Dynamic Params.")
         
-    def set_gait_callback(self, request, response):
-        if request.gait_name == 'auto':
-            self.controller.manual_gait_name = None
-            response.success = True
-            response.message = 'Automatic gait selection restored'
-            return response
-        accepted = self.controller.gait_planner.set_gait(request.gait_name)
-        if accepted:
-            self.controller.manual_gait_name = request.gait_name
-        response.success = bool(accepted)
-        response.message = ('Queued gait transition at next cycle boundary'
-                            if accepted else 'Unsupported gait')
-        return response
-
     def cmd_vel_callback(self, msg: Twist):
         # self.controller.update_command(msg)
         """목표 속도 수신 (LPF 적용을 위해 target에만 저장)"""
