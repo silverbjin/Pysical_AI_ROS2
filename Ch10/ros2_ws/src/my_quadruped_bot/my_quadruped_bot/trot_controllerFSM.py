@@ -66,7 +66,7 @@ class TrotController:
         lx = 0.25        
         # 기본 0.15m에서 4cm(0.04m) 바깥으로 벌림 (총 0.19m)
         # 튜닝하기 편하도록 패딩 변수를 더하는 형태로 작성했습니다.
-        ly = 0.15 # URDF hip origin ±0.10m plus ±0.05m thigh hinge offset
+        ly = 0.15 + 0.04
         
         return {
             'FL': np.array([ lx,  ly, -height]),
@@ -145,7 +145,7 @@ class TrotController:
             
             # 기존 교재의 주파수 기반 스탠스 타임 계산 보완
             current_freq = self.gait_planner.current_gait.frequency
-            stance_time = self.gait_planner.current_gait.duty_factor / current_freq            
+            stance_time = 1.0 / (2.0 * current_freq)            
             # self.gait_planner.update(dt)
             # leg_states = self.gait_planner.get_leg_states()
             # stance_time = 1.0 / (2.0 * self.step_frequency)
@@ -203,10 +203,10 @@ class TrotController:
         
         # 각 다리별 고관절(Hip Joint)의 물리적 오프셋 딕셔너리
         hip_offsets = {
-            'FL': ( 0.25,  0.10),
-            'FR': ( 0.25, -0.10),
-            'RL': (-0.25,  0.10),
-            'RR': (-0.25, -0.10)
+            'FL': ( 0.25,  0.15),
+            'FR': ( 0.25, -0.15),
+            'RL': (-0.25,  0.15),
+            'RR': (-0.25, -0.15)
         }
         
         # 바디 중심 기준 좌표에서 고관절 오프셋을 제거하여 '다리 중심 로컬 좌표'로 변환
@@ -266,8 +266,6 @@ class TrotControllerNode(Node):
         self.target_vel_x = 0.0
         self.target_vel_y = 0.0
         self.target_omega_z = 0.0
-        self.last_cmd_stamp = self.get_clock().now()
-        self.cmd_timeout_sec = 0.5
         
         self.current_vel_x = 0.0
         self.current_vel_y = 0.0
@@ -298,10 +296,9 @@ class TrotControllerNode(Node):
     def cmd_vel_callback(self, msg: Twist):
         # self.controller.update_command(msg)
         """목표 속도 수신 (LPF 적용을 위해 target에만 저장)"""
-        self.target_vel_x = max(-0.25, min(0.25, float(msg.linear.x)))
-        self.target_vel_y = max(-0.15, min(0.15, float(msg.linear.y)))
-        self.target_omega_z = max(-0.5, min(0.5, float(msg.angular.z)))
-        self.last_cmd_stamp = self.get_clock().now()
+        self.target_vel_x = msg.linear.x
+        self.target_vel_y = msg.linear.y
+        self.target_omega_z = msg.angular.z
 
     def apply_low_pass_filter(self):
         """속도 명령 스무딩 (Gait Transition 시 급격한 위상 변화 및 물리엔진 충돌 방지)"""
@@ -319,12 +316,6 @@ class TrotControllerNode(Node):
         dt_sec = (current_time - self.last_time).nanoseconds / 1e9
         self.last_time = current_time
         
-        # Stale command watchdog: brake to zero rather than replay a lost command.
-        age = (current_time - self.last_cmd_stamp).nanoseconds / 1e9
-        if age < 0 or age > self.cmd_timeout_sec:
-            self.target_vel_x = 0.0
-            self.target_vel_y = 0.0
-            self.target_omega_z = 0.0
         # 1. 속도 스무딩 (LPF 적용)
         self.apply_low_pass_filter()
         
@@ -409,14 +400,6 @@ class TrotControllerNode(Node):
 
     def parameters_callback(self, params):
         """동적 파라미터 변경 시 호출되는 콜백"""
-        # Reject the entire batch before changing any controller state.
-        for param in params:
-            if param.name == 'gait_period' and not (0.05 <= param.value <= 4.0):
-                return SetParametersResult(successful=False, reason='gait_period must be 0.05..4.0 seconds')
-            if param.name == 'step_height' and not (0.0 <= param.value <= 0.12):
-                return SetParametersResult(successful=False, reason='step_height must be 0.0..0.12 metres')
-            if param.name == 'lpf_alpha' and not (0.0 <= param.value <= 1.0):
-                return SetParametersResult(successful=False, reason='lpf_alpha must be 0.0..1.0')
         for param in params:
             if param.name == 'lpf_alpha':
                 if 0.0 <= param.value <= 1.0:
