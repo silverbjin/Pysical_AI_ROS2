@@ -79,6 +79,7 @@
     <origin xyz="0 0 ${base_height}" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
     <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+    <dynamics damping="0.1" friction="0.05"/>
   </joint>
 
   <xacro:arm_link_macro name="link2" color_name="yellow" r="1" g="1" b="0"/>
@@ -89,6 +90,7 @@
     <origin xyz="0 0 ${link_len}" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-1.57" upper="1.57" effort="100" velocity="1.0"/>
+    <dynamics damping="0.1" friction="0.05"/>
   </joint>
 
   <gazebo>
@@ -110,8 +112,8 @@
       <d_gain>10.0</d_gain>
       <i_max>1</i_max>
       <i_min>-1</i_min>
-      <cmd_max>1000</cmd_max>
-      <cmd_min>-1000</cmd_min>
+      <cmd_max>100</cmd_max>
+      <cmd_min>-100</cmd_min>
       
       <initial_position>0.0</initial_position>
     </plugin>
