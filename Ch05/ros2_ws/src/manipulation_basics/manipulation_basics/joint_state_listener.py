@@ -1,52 +1,51 @@
+"""Monitor the configured Ch05 joint with safe JointState indexing."""
+
+import math
+import time
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
-import math
+
+from manipulation_basics.joint_state_validation import extract_joint_measurement
+
 
 class JointStateListener(Node):
+    """Log validated joint measurements at a bounded rate."""
+
     def __init__(self):
         super().__init__('joint_state_listener')
-        
-        # 1. 서브스크라이버 생성
-        # 토픽: /joint_states
-        # 메시지 타입: JointState
-        # QoS Profile: 10 (일반적인 센서 데이터용)
+        self.declare_parameter('target_joint', 'joint2')
+        self.declare_parameter('log_period_sec', 0.5)
+        self.target_joint = self.get_parameter('target_joint').value
+        self.log_period = float(self.get_parameter('log_period_sec').value)
+        if self.log_period <= 0:
+            raise ValueError('log_period_sec must be positive')
+        self._last_log = -float('inf')
+        self._last_warn = -float('inf')
         self.subscription = self.create_subscription(
-            JointState,
-            '/joint_states',
-            self.listener_callback,
-            10
-        )
-        self.subscription  # prevent unused variable warning
-
-        # 모니터링할 타겟 관절 이름
-        self.target_joint = 'joint2'
-        
-        self.get_logger().info(f'Listening to joint states... Monitoring: {self.target_joint}')
+            JointState, '/joint_states', self.listener_callback, 10)
+        self.get_logger().info(f'Monitoring: {self.target_joint}')
 
     def listener_callback(self, msg):
-        # 2. 데이터 파싱
-        # msg.name 리스트에서 'joint2'가 몇 번째 인덱스인지 찾는다.
-        try:
-            index = msg.name.index(self.target_joint)
-        except ValueError:
-            # 타겟 관절이 메시지에 없으면 무시
+        now = time.monotonic()
+        result = extract_joint_measurement(
+            msg.name, msg.position, msg.velocity, self.target_joint)
+        if result is None:
+            if now - self._last_warn >= 5.0:
+                self.get_logger().warning('Joint missing or invalid position')
+                self._last_warn = now
             return
-
-        # 3. 해당 인덱스의 위치(Position)와 속도(Velocity) 추출
-        current_pos = msg.position[index]
-        current_vel = msg.velocity[index] if msg.velocity else 0.0
-        
-        # 라디안을 알기 쉬운 '도(Degree)'로 변환
-        current_pos_deg = math.degrees(current_pos)
-
-        # 4. 결과 출력
-        # f-string을 이용해 소수점 둘째 자리까지 깔끔하게 출력
+        if now - self._last_log < self.log_period:
+            return
+        position, velocity = result
+        velocity_text = (f'{velocity:.4f} rad/s' if velocity is not None
+                         else 'N/A (not reported)')
         self.get_logger().info(
-            f'Joint: {self.target_joint} | '
-            f'Pos: {current_pos:.4f} rad ({current_pos_deg:.2f} deg) | '
-            f'Vel: {current_vel:.4f} rad/s'
-        )
+            f'Joint: {self.target_joint} | Pos: {position:.4f} rad '
+            f'({math.degrees(position):.2f} deg) | Vel: {velocity_text}')
+        self._last_log = now
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -58,6 +57,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
