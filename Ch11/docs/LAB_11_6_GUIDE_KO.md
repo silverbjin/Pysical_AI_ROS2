@@ -32,6 +32,9 @@ ros2 launch my_quadruped_bot slam_optimized.launch.py profile:=balanced
 ros2 topic hz /scan_stabilized
 ros2 topic info /scan_stabilized -v
 ros2 lifecycle get /slam_toolbox
+# 별도 터미널: 매우 낮은 속도로 특징을 관찰, 종료 시 명시적 정지
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p speed:=0.05 -p turn:=0.15 -p stamped:=false
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist '{linear: {x: 0.0}, angular: {z: 0.0}}'
 # B를 종료한 뒤 wide_search로 같은 이동 시나리오 반복
 ros2 launch my_quadruped_bot slam_optimized.launch.py profile:=wide_search
 ~~~
