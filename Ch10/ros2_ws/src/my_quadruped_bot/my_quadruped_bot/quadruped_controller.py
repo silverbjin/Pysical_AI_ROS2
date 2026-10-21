@@ -81,7 +81,7 @@ class QuadrupedController(Node):
         """
         # [Step 1] 보행 위상(Phase) 업데이트
         # 현재 시간에 따른 각 다리의 스윙(Swing)/스탠스(Stance) 상태와 진행률(0~1) 반환
-        self.gait_planner.update(self.dt)\n        leg_phases = self.gait_planner.get_leg_states()
+        leg_phases = self.gait_planner.update(self.dt)
         
         joint_msg = JointState()
         joint_msg.header.stamp = self.get_clock().now().to_msg()
@@ -94,17 +94,12 @@ class QuadrupedController(Node):
             
             # Step 2: 현재 속도 명령과 다리 위상을 기반으로 발끝의 3D 목표 좌표(X, Y, Z) 생성
             target_x, target_y, target_z = self.traj_generator.generate(
-                leg_id=leg, phase=phase, is_swing=is_swing, velocity=self.current_velocity,\n                T_cycle=self.gait_planner.T_cycle, duty_factor=self.gait_planner.duty_factor
+                leg_id=leg, phase=phase, is_swing=is_swing, velocity=self.current_velocity
             )
             
             # Step 3: 생성된 3D 좌표를 IK 솔버에 넣어 관절 각도(q1, q2, q3) 도출
             is_right = self.is_right_leg_map[leg]
-            # Trajectory targets are body-frame; the IK origin is each leg's hip-roll joint.
-            hip_x = 0.25 if leg[0] == 'F' else -0.25
-            hip_y = -0.10 if is_right else 0.10
-            joint_angles = self.ik_solver.solve(
-                target_x - hip_x, target_y - hip_y, target_z, is_right_leg=is_right
-            )
+            joint_angles = self.ik_solver.solve(target_x, target_y, target_z, is_right_leg=is_right)
             
             # 예외 처리: 작업 공간을 벗어나 IK 해를 찾지 못한 경우 방어적 코드
             if joint_angles is None:
