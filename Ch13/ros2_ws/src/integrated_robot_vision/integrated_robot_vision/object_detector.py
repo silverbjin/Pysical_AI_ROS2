@@ -6,12 +6,12 @@ from pathlib import Path
 from threading import Event, RLock, Thread
 import time
 
+import cv2
 from cv_bridge import CvBridge
 import rclpy
 from rclpy.clock import Clock, ClockType
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import String
 from std_srvs.srv import SetBool
@@ -55,6 +55,11 @@ class ObjectDetector(Node):
             self.backend = ColorFixtureBackend()
         else:
             raise ValueError('backend must be yolo or color_fixture; no fallback')
+        # This executable owns one inference worker. Tiny320x240 connected
+        # components must not recruit the default eight-way OpenCV pool while
+        # the engine renders and control/TF processes compete for the same CPUs.
+        # Configure after optional Ultralytics initialization, before any jobs.
+        cv2.setNumThreads(1)
         self.bridge = CvBridge()
         self.lock, self.stopping = RLock(), Event()
         self.gate, self.cache, self.slot = ClockGate(), RGBDCache(), LatestSlot()
@@ -63,20 +68,21 @@ class ObjectDetector(Node):
             run_id=self.declare_parameter('trace_run_id', '').value)
         self.last_epoch, self.last_stamp = -1, 0.
         self.input_enabled = True
+        self.input_events = 0
         self.input_service = self.create_service(SetBool, '~/set_input_enabled', self.set_input_enabled)
-        self.pub = self.create_publisher(Detection2DArray, '/vision/detections', qos_profile_sensor_data)
+        self.pub = self.create_publisher(Detection2DArray, '/vision/detections', 5)
         self.status_pub = self.create_publisher(String, '/vision/detector_status', 10)
         self.rgb_sub = self.create_subscription(Image, '/camera/color/image_raw', self.on_rgb,
-                                                 qos_profile_sensor_data)
+                                                 5)
         self.info_sub = self.create_subscription(CameraInfo, '/camera/color/camera_info', self.on_info,
-                                                  qos_profile_sensor_data)
+                                                  5)
         self.steady_clock = Clock(clock_type=ClockType.STEADY_TIME)
         self.watchdog = self.create_timer(.05, self.observe_clock, clock=self.steady_clock)
         self.worker = Thread(target=self.work, name='detector-inference', daemon=False)
         self.get_logger().info(f'explicit detector backend={self.backend_name}, max_rate_hz={self.rate}')
         self.worker.start()  # last constructor operation; no fallible setup after start
 
-    def report(self, reason, *, job=None, **details):
+    def report(self, status, *, job=None, **details):
         if not self.stopping.is_set():
             msg = String()
             if job is not None:
@@ -86,7 +92,7 @@ class ObjectDetector(Node):
                                receipt_ros_age_s=job.receipt_ros-job.stamp,
                                ros_age_s=now-job.stamp, wall_age_s=wall-job.receipt_wall,
                                artificial_delay_s=self.delay)
-            msg.data = json.dumps({'backend': self.backend_name, 'status': reason,
+            msg.data = json.dumps({'backend': self.backend_name, 'status': status,
                                    'epoch': self.gate.epoch, **details})
             self.status_pub.publish(msg)
 
@@ -126,7 +132,9 @@ class ObjectDetector(Node):
     def on_rgb(self, msg):
         received_ns = time.monotonic_ns() if self.trace.enabled else None
         with self.lock:
+            self.input_event(msg, 'INPUT_RECEIVED', received_ns=received_ns)
             if not self.input_enabled:
+                self.input_event(msg, 'INPUT_REJECTED', reason='INPUT_PAUSED')
                 return
             now, _, epoch = self.observe_clock()
             try:
@@ -135,32 +143,63 @@ class ObjectDetector(Node):
                 candidates = [s for s in self.cache.info if -.03 <= stamp-s <= 1.]
                 if not candidates:
                     self.report('NO_FRESH_CALIBRATION')
+                    self.input_event(msg, 'INPUT_REJECTED', reason='NO_FRESH_CALIBRATION')
                     return
                 info_stamp = min(candidates, key=lambda s: (abs(stamp-s), s))
                 k = self.cache.info[info_stamp]
                 if msg.header.frame_id != k.frame_id or (msg.width, msg.height) != (k.width, k.height):
                     self.report('CALIBRATION_MISMATCH')
+                    self.input_event(msg, 'INPUT_REJECTED', reason='CALIBRATION_MISMATCH')
                     return
                 image, receipt = self.cache.rgb[stamp]
                 trace_times = (dict(rgb_receive=received_ns, slot_put=time.monotonic_ns())
                                if self.trace.enabled else None)
                 job = DetectionJob(image, stamp, epoch, k.calibration_id, info_stamp, receipt, now,
                                    trace_times)
-                if self.current(job):
+                reason = self.invalid_reason(job)
+                if reason is None:
                     self.slot.replace(job)
                     self.report('QUEUED', job=job)
+                else:
+                    self.input_event(msg, 'INPUT_REJECTED', reason=reason)
             except (ValueError, RuntimeError):
                 self.report('INVALID_IMAGE')
+                self.input_event(msg, 'INPUT_REJECTED', reason='INVALID_IMAGE')
+
+    def input_event(self, image, status, **details):
+        """Bounded capture-linked evidence, including frames never put in a slot."""
+        if not self.trace.enabled or self.input_events >= 20000:
+            return
+        self.input_events += 1
+        self.report(status, run_id=self.trace.run_id, sequence=self.input_events,
+                    capture_ns=image.header.stamp.sec*1_000_000_000+image.header.stamp.nanosec,
+                    source_frame=image.header.frame_id, monotonic_ns=time.monotonic_ns(),
+                    ros_now_ns=self.get_clock().now().nanoseconds, **details)
 
     def current(self, job):
+        return self.invalid_reason(job) is None
+
+    def invalid_reason(self, job):
         with self.lock:
             now, wall, epoch = self.observe_clock()
             cached = self.cache.rgb.get(job.stamp)
-            return (self.input_enabled and not self.stopping.is_set() and job.epoch == epoch
-                    and job.calibration_id == self.cache.calibration_id
-                    and cached is not None and cached[0] is job.image
-                    and job.stamp > self.last_stamp and -.03 <= now-job.info_stamp <= 1.
-                    and self.gate.valid(job.stamp, job.epoch, now, wall, job.receipt_wall))
+            if not self.input_enabled or self.stopping.is_set():
+                return 'INPUT_PAUSED_OR_STOPPING'
+            if job.epoch != epoch:
+                return 'EPOCH_CHANGED'
+            if job.calibration_id != self.cache.calibration_id:
+                return 'CALIBRATION_CHANGED'
+            if cached is None or cached[0] is not job.image:
+                return 'FRAME_EVICTED'
+            if job.stamp <= self.last_stamp:
+                return 'OLD_CAPTURE'
+            if not -.03 <= now-job.info_stamp <= 1.:
+                return 'CALIBRATION_AGE'
+            if now-job.stamp < -self.gate.future_slop:
+                return 'FUTURE_CAPTURE'
+            if not self.gate.valid(job.stamp, job.epoch, now, wall, job.receipt_wall):
+                return 'CLOCK_OR_CAPTURE_AGE'
+            return None
 
     def work(self):
         last_start = 0.

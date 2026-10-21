@@ -114,3 +114,35 @@ camera_trace/trace.py/latency_trace_13_4.py·계측 hook·회귀 시험은 Ch13 
 계측은 진단 전용이며 upstream 카메라 기본값·장착 모델·명령 소유권·기한을 바꾸지 않는다.
 [원본/파생 기록과 실제 시험](SECTION_13_4_EGL_TRACE_RESULTS_KO.md),
 [패키지 상세 출처](../ros2_ws/src/integrated_robot_camera/REUSE_MANIFEST.md)를 참조한다.
+
+## 13.4 종단 인수 보완 (2026-10-21)
+
+이번 보완은 Ch13 내부 Python 노드·시험 실행기·비전 장면·테스트 변경이다.
+Ch05~Ch12, 외부 checkout, underlay 및 기존 카메라 파생 C++ 구현은 수정하지 않았다.
+새 제3자 소스 파일을 복사하지 않았다.
+이 문장은 초기 입력·계측 보완 시점의 기록이다. 이후 서버 경쟁 재현으로 추가한
+controller 최소 파생본은 아래 별도 항목을 따른다.
+
+`completion-f8c0bed5/action_boundary.c`는 설치된 Jazzy RCL API를 실제 함수로 전달하는
+Ch13 신규 진단 코드다. 설치 헤더를 include/link하며 외부 구현 파일을 복사하거나
+교체하지 않는다. shared object와 LD_PRELOAD는 명시적 소유 진단 실행에만 사용했다.
+최종 인수의 환경·설치 해시와 이 진단 실행은 별도로 기록한다.
+`action_boundary_result_only.c`는 앞선 result4경계 버전의 정확한 원본 바이트를 보존한다
+(SHA256 `4eb3907d027a30a6a61cc811780a5846eb512944abf3f5370be3ef0027b29b61`).
+`action_boundary.c`의 후속 goal4경계 추가본은 새 compile 로그의 해시로 구분한다.
+`arm_transport.py` 및 실제 ROS 격리·수명 회귀는 Ch13 신규 작성으로 외부 구현 복사는 없다.
+
+`clock_load_probe.py`, `render_probe.py`, `gazebo_parent_probe.py`, `collect_final.py`와
+실행 workflow도 Ch13 작성 코드다. 고정된 원래 EGL workflow는 출처 경로를 남겨
+재사용하며 원본 evidence 파일은 덮어쓰지 않는다. 사용한 ROS/Gazebo API와
+소스 대조·한계는 [종단 인수 보고서](SECTION_13_4_COMPLETION_RESULTS_KO.md)에 기록한다.
+
+## 13.4 controller 완료·취소 경쟁 파생본
+
+`integrated_robot_controller`의 [상세 출처](../ros2_ws/src/integrated_robot_controller/REUSE_MANIFEST.md)와
+[고정 원본 SHA256](../ros2_ws/src/integrated_robot_controller/UPSTREAM_SOURCES.json)을 참조한다.
+JTC4.42.1 cpp/hpp2개와 realtime_tools3.13.0 header1개만 복사했다.
+Apache-2.0/BSD-3-Clause 저작권·라이선스를 보존하고 Ch13 namespace/plugin ID로 분리했다.
+외부 checkout/underlay 원본은 수정·재설치하지 않았다. trajectory·파라미터 구현은 설치된
+공개 API/라이브러리로 재사용하며 복사하지 않는다. C++ 경쟁 재현·유계 프로토콜 worker·
+설치/실제 매핑 감사와 회귀는 Ch13 작성 코드다. 비전 외 경로의 기본 controller는 유지한다.

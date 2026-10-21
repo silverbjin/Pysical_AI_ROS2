@@ -1,5 +1,8 @@
 # 13.4 통합 시각 정보 처리 실습
 
+> 종단 보완의 최신 판정은 [종단 인수 보고서](SECTION_13_4_COMPLETION_RESULTS_KO.md),
+> 재현 절차는 이 문서10절을 확인한다. 아래20회 FAIL 요약은 이전 EGL 동결본의 기록이다.
+
 > 2026-10-21 갱신: 승인된 EGL 전용 카메라와 촬영별 종단 계측을 구현·실측했다.
 > worker의 GLFW 호출 결함은 제거했지만 **전체13.4 인수는 FAIL**이다.
 > 실제13.4 시험20회는12 PASS/8 FAIL이며13.3 회귀는 MuJoCo PASS/Gazebo FAIL이다.
@@ -55,7 +58,7 @@ cd "$CH13_ROOT"
 
 이 예제에 필요하지 않은 선택적 LiDAR 플러그인의 설치 경고와 필수 CameraPlugin/FreeJointStatePublisherPlugin 빌드 성공을 구분한다. 외부 checkout은 수정하지 않는다. 승인된 snapshot 카메라 파생본만 Ch13 별도 패키지에 제한적으로 복사했으며 [출처 명세](REUSE_MANIFEST.md)를 따른다.
 
-## 2. Ch13 다섯 패키지 독립 빌드
+## 2. Ch13 여섯 패키지 독립 빌드
 
 새 터미널에서는 위 경로 변수와 venv를 다시 설정한다. ROS → 외부 MuJoCo → 해당 Ch13 설치본 순서이며, Ch13은 빌드한 뒤에만 source한다.
 
@@ -68,6 +71,7 @@ python -m colcon --log-base log13_4 build --base-paths src \
   --build-base build13_4 --install-base install13_4 \
   --packages-select integrated_robot_interfaces integrated_robot_vision \
                     integrated_robot_description integrated_robot_runtime integrated_robot_camera \
+                    integrated_robot_controller \
   --cmake-args -DPython3_EXECUTABLE="$CH13_VENV/bin/python"
 source install13_4/setup.bash
 cd "$CH13_ROOT"
@@ -91,7 +95,7 @@ ros2 launch integrated_robot_runtime vision_system.launch.py \
   vision_camera_backend:=snapshot tracking_enabled:=false
 ```
 
-감사는 다섯 패키지의 source/share·Python 실행 환경·configure-time C++ source manifest·
+감사는 여섯 패키지의 source/share·Python 실행 환경·configure-time C++ source manifest·
 실제 probe·camera/mailbox 두 라이브러리 경로와 해시를 검사한다. probe 단독 성공은
 엔진이 해당 .so를 사용했다는 증거는 아니다. native 검증기는 자체 엔진 PID의 실제
 매핑과 class ID까지 기록한다. 누락/경로 불일치이면 시작 전에 실패하며 자동 fallback은 없다.
@@ -255,7 +259,13 @@ python Ch13/scripts/run_vision_13_4.py --engine gazebo --detector-backend color_
 
 ## 8. 종료와 문제 해결
 
-일반 사용은 통합 launch 터미널에서 Ctrl+C로 종료한다. 자동 시험은 먼저 새 명령을 끄고 terminal 취소를 기다린 뒤 ROS 노드와 해당 엔진만 종료한다. Gazebo server stop ACK와 실제 프로세스 종료를 구분한다. 강제 종료는 해당 실행의 FAIL이다. 잔존 PID 또는 종료 미확인이 있으면 다음 엔진을 시작하지 않는다. 무관한 프로세스를 일괄 종료하거나 WSL을 재시작하지 않는다.
+재현·인수에는 아래 관리 실행기를 사용한다. 이 실행기는 먼저 시선 추적을 끄고 실제
+terminal 결과를 확인하며, 소유 runtime의 명령 수신·콜백·worker 종료를 기다린 뒤
+엔진을 종료한다. Gazebo는 pause 요청 후 실제 stats.paused=true를 확인하고 server
+stop ACK와 native 프로세스 종료를 각각 확인한다. 통합 launch에 Ctrl+C를 한 번 보내는
+일괄 신호만으로는 이 순서를 보장하지 않는다. 개별 터미널로 실행했다면 runtime을 먼저
+끝내고 엔진을 종료한다. 강제 종료는 해당 실행의 FAIL이다. 잔존 PID 또는 종료 미확인이
+있으면 다음 엔진을 시작하지 않는다. 무관한 프로세스를 일괄 종료하거나 WSL을 재시작하지 않는다.
 
 - `NO_FRESH_ALIGNED_PAIR`: frame/해상도/정렬/시각 차이와 RGB·depth·Info 수신을 확인한다. 최신 TF로 우회하지 않는다.
 - `EXPIRED_*`: 추가 처리 지연뿐 아니라 렌더링·수신·추론·스케줄링 시간을 포함한다. CPU 스레드 예산과 실제 주기를 확인한다. 10Hz/15Hz/50Hz는 상한 또는 목표이지 hard realtime 보장이 아니다.
@@ -274,7 +284,7 @@ python Ch13/scripts/run_vision_13_4.py --engine gazebo --detector-backend color_
 
 ## 9. 승인된 EGL snapshot·진단 계측 재현 (2026-10-21)
 
-먼저 위 절차로 Ch13의 다섯 패키지를 빌드하고 **새 설치본 하나만** source한다.
+먼저 위 절차로 Ch13의 여섯 패키지를 빌드하고 **새 설치본 하나만** source한다.
 기존 카메라/엔진은 종료·잔여 없음이 확인된 상태에서 시작한다. snapshot은 기본값이
 아니며, 자동 fallback하지 않는다. EGL 초기화 실패는 실행 실패다. OpenGL 개발 의존성은
 검증된 Ubuntu의 opengl rosdep 경로에도 포함되지만 위 설치 예에는 EGL을 명시했다.
@@ -313,4 +323,61 @@ Gazebo의 native 내부는 UNVERIFIED로 남는다. source provenance/소유 PID
 snapshot native 분석도 인정하지 않는다. 실패 뒤 자동 재시도·재활성화하지 않는다.
 
 [실제22회 결과와 다음 수정 경계](SECTION_13_4_EGL_TRACE_RESULTS_KO.md)를 먼저 읽는다.
-현재 연속 추적·취소·일부 종료가 미달이므로 이 절차는 배포·파지·13.5 진행 권고가 아니다.
+당시 연속 추적·취소·일부 종료가 미달이었다. 이번 최신 판정은10절의 종단 인수 보고서를
+확인한다. 이 절차만으로 배포·물리 파지·13.5 완료를 판단하지 않는다.
+
+## 10. 종단 인수 보완 경로
+
+이번 보완의 현재 판정은 [종단 인수 보고서](SECTION_13_4_COMPLETION_RESULTS_KO.md)와
+해당 실행 `result.json`을 확인한다. 앞 절의 과거20회 결과는 원본 실패를 보존한 기록이다.
+
+1. 최신 Ch13 소스로6개 패키지를 빌드하고 **그 설치본 하나만** source한다.
+2. `/camera/color/image_raw`, aligned depth, CameraInfo와 detections의 QoS를 확인한다.
+   이 경로의 탐지기/fusion은 reliable·유계 큐를 요청하므로 실제 카메라를 연결할 때도
+   발행자의 호환 여부를 확인해야 한다. best-effort만 발행하는 외부 센서 연결은 별도 설정·검증 대상이다.
+3. 먼저 `static`, 다음 `delay`, `tracking`, 실제 컵 `yolo`, 세 종류 `safety`를 각각
+   새 output으로 실행한다. 한 엔진의 cleanup과 정상 종료를 확인한 다음 엔진을 시작한다.
+4. 추적 시험은 움직이기 전에 고유 촬영3개의 픽셀 기준값을 실제 확보한다.
+   `tracking_baseline.command_count=0`과 기준 측정 시각이 enable 요청 이전인지 확인한다.
+5. 종료에서는 `runtime_stop.confirmed`, Gazebo의 `gazebo_quiescence.confirmed`와
+   `gazebo_native_stop.exited`, `checks.clean_shutdown`, 최종 residual을 함께 확인한다.
+   runtime 대기는 좀비가 아니라 부모의 자식 회수 완료를 뜻한다. 종료 상태를 다음 신호와
+   경쟁해 읽으면 Python pidfd watcher가255를 보고할 수 있다. 이 메시지를 무시하지 말고
+   실제 자식 회수·launch의 정상 종료 로그·최종 판정을 모두 확인한다.
+
+예를 들어 저장소 루트의 WSL 터미널에서 환경과 이번 설치본을 source한 후 실행한다.
+
+```bash
+CH13_VISION_RUN=$(python -c 'import uuid; print(uuid.uuid4())')
+python Ch13/scripts/run_vision_13_4.py --engine mujoco --scenario tracking \
+  --detector-backend color_fixture --vision-camera-backend snapshot --trace-enabled \
+  --output-dir "/tmp/ch13-tracking-$CH13_VISION_RUN"
+```
+
+실제 컵 시험은 `--scenario yolo --detector-backend yolo --semantic-fixture cup`과
+고정 자산의 절대 `--weights-path`를 사용한다. 빨간 fixture 탐지로 바꾸지 않는다.
+15Hz 비교는 `--inference-rate-hz 15`를 명시하며 기본은10Hz다.
+
+MuJoCo Ch13 비전 장면의 그림자 맵은512로 제한했다. RGB-D 출력은320×240이며
+물리·카메라 내부 파라미터는 그대로다. 보행·manipulation의 입력/시계/제어는 단일
+실행기로 처리한다. manipulation의 긴 stow/PickObject 프로토콜 대기만 동시에1건인
+worker에 넘기고 비동기로 결과를 기다린다. 상위 mission 노드는 기존 실행기를 유지한다.
+이것은 실시간 우선순위 보장이 아니다.
+탐지 실행기는 OpenCV의 계산 pool을1thread로 제한한다. 이 프로세스 내부 설정이며
+사용자 전체 환경이나 엔진 렌더 스레드를 변경하지 않는다.
+팔 액션의 실제 수락/결과 수신은 저부하 별도 노드와 단일 실행 스레드가 처리한다.
+`manipulation_node_arm_transport`는 관절·TF 명령의 추가 소유자가 아니라 통신 수명 소유자다.
+기존 ArmActionOwner의 UUID별 `terminal`을 확인하며 status/cancel ACK만으로 완료로 세지 않는다.
+종료는 새 명령 차단→취소/실제 결과 drain→callback/수신기 종료→ROS context→엔진 순서다.
+서보 계산은 입력 snapshot으로 잠금 밖에서 실행하고, 발행 직전 원래 표본의 age와
+세션 generation을 다시 확인한다. 새 입력으로 만료된 계산의 시간을 갱신하지 않는다.
+정적 기구학 정보는 모델 수명에 한 번 준비하며, robot_description이 바뀌면 새 모델을 만든다.
+비전 경로는 별도 `integrated_robot_controller/JointTrajectoryController`를 사용한다.
+이 파생 패키지는 JTC4.42.1·realtime_tools3.13.0의 공개 API를 요구하며 다른 버전에서는
+호환성을 자동 가정하지 않고 빌드를 거절한다. 외부 원본은 바꾸지 않는다.
+`checks.controller_backend_loaded`와 `controller_backend_audit`에서 실제 엔진 PID/PGID,
+라이브러리 경로·해시를 확인한다. vision=false13.2/13.3은 기존 controller를 사용한다.
+
+`CANDIDATE`와 탐지기 `INPUT_RECEIVED`/`INPUT_REJECTED`는 촬영별 진단이다.
+WAIT_RGB·WAIT_DEPTH·대기열 덮어쓰기·만료·worker 결과를 연결해 확인하되,
+진단 유실/상한 때문에 기록이 없다는 사실만으로 callback 미실행이라고 판단하지 않는다.

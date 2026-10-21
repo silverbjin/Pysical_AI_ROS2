@@ -52,6 +52,25 @@ def test_projection_jacobian_matches_independent_native_camera_and_signs(chain):
     assert np.linalg.matrix_rank(jacobian) == 2
 
 
+@pytest.mark.parametrize('positions', [(.01,-.02,.03,-.01,.02,.04),
+                                      (-.02,.01,-.03,.02,-.01,-.02)])
+def test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose(chain, positions):
+    q = dict(zip(ARM,positions))
+    pose, axes = chain.camera_kinematics(q)
+    assert pose.shape == (4,4) and set(axes) == set(ARM)
+    target = np.array([.90,.02,.35])
+    pixel = project_target(chain,q,target,K)
+    np.testing.assert_allclose(pixel,native_pixel(q,target),atol=1e-6)
+    columns=[]
+    for name in ('arm_joint_1','arm_joint_5'):
+        plus,minus=q.copy(),q.copy()
+        plus[name]+=1e-5
+        minus[name]-=1e-5
+        columns.append((native_pixel(plus,target)-native_pixel(minus,target))/2e-5)
+    np.testing.assert_allclose(projection_jacobian(chain,q,target,K),
+                               np.column_stack(columns),atol=1e-5)
+
+
 def test_step_reduces_pixel_error_and_only_two_named_joints_change(chain):
     q = dict.fromkeys(ARM, 0.)
     q['arm_joint_2'], q['arm_joint_3'] = .01, -.01

@@ -13,7 +13,7 @@ from rclpy.clock import Clock, ClockType
 from rclpy.duration import Duration
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import QoSProfile
 from rclpy.time import Time
 from sensor_msgs.msg import CameraInfo, Image
 from std_msgs.msg import String
@@ -104,17 +104,22 @@ class VisionProcessor(Node):
         self.last_epoch, self.last_stamp = -1, 0.
         self.last_submitted_ns = 0
         self.pending_detections = {}
+        self.candidate_events = 0
         self.tf_buffer = Buffer(node=self)
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.raw_pub = self.create_publisher(PointStamped, '/vision/target_raw', 10)
         self.filtered_pub = self.create_publisher(PointStamped, '/vision/target_filtered', 10)
         self.tracked_pub = self.create_publisher(TrackedTarget, '/vision/tracked_target', 10)
         self.status_pub = self.create_publisher(String, '/vision/status', 10)
+        # A complete capture needs all streams. Best-effort independent image
+        # loss is not equivalent to intentionally selecting the newest bundle.
+        # Keep transport bounded; ClockGate still rejects anything over300ms.
+        capture_qos = QoSProfile(depth=5)
         self.subscriptions_owned = [
-            self.create_subscription(Image, '/camera/color/image_raw', self.on_rgb, qos_profile_sensor_data),
-            self.create_subscription(Image, '/camera/aligned_depth_to_color/image_raw', self.on_depth, qos_profile_sensor_data),
-            self.create_subscription(CameraInfo, '/camera/color/camera_info', self.on_info, qos_profile_sensor_data),
-            self.create_subscription(Detection2DArray, '/vision/detections', self.on_detections, qos_profile_sensor_data),
+            self.create_subscription(Image, '/camera/color/image_raw', self.on_rgb, capture_qos),
+            self.create_subscription(Image, '/camera/aligned_depth_to_color/image_raw', self.on_depth, capture_qos),
+            self.create_subscription(CameraInfo, '/camera/color/camera_info', self.on_info, capture_qos),
+            self.create_subscription(Detection2DArray, '/vision/detections', self.on_detections, capture_qos),
         ]
         self.steady_clock = Clock(clock_type=ClockType.STEADY_TIME)
         self.watchdog = self.create_timer(.05, self.poll, clock=self.steady_clock)
@@ -140,6 +145,21 @@ class VisionProcessor(Node):
                 else:
                     estimate = self.tracker.invalidate(status)
                 self.publish_track(estimate)
+
+    def candidate_event(self, header, event, **details):
+        """Bounded ingress/selection evidence, including jobs never submitted.
+
+        Diagnostic only: it cannot renew a receipt, target or control lease.
+        The existing status observer preserves these records with the trial UUID.
+        """
+        if not self.trace.enabled or self.candidate_events >= 20000:
+            return
+        self.candidate_events += 1
+        self.report('CANDIDATE', run_id=self.trace.run_id,
+                    sequence=self.candidate_events, event=event,
+                    capture_ns=nanoseconds(header.stamp), source_frame=header.frame_id,
+                    monotonic_ns=time.monotonic_ns(),
+                    ros_now_ns=self.get_clock().now().nanoseconds, **details)
 
     def observe_clock(self):
         with self.lock:
@@ -173,6 +193,7 @@ class VisionProcessor(Node):
             previous = self.cache.calibration_id
             try:
                 self.cache.add_info(msg, epoch)
+                self.candidate_event(msg.header, 'INFO_RECEIVED')
             except ValueError:
                 self.report('INVALID_CALIBRATION')
             if previous != self.cache.calibration_id:
@@ -188,6 +209,7 @@ class VisionProcessor(Node):
             try:
                 self.cache.add_rgb(msg, epoch)
                 self.remember_trace('rgb', msg.header.stamp, received_ns)
+                self.candidate_event(msg.header, 'RGB_RECEIVED')
             except ValueError:
                 self.report('INVALID_RGB')
             self.try_pending(now, wall, epoch)
@@ -199,6 +221,7 @@ class VisionProcessor(Node):
             try:
                 self.cache.add_depth(msg, epoch)
                 self.remember_trace('depth', msg.header.stamp, received_ns)
+                self.candidate_event(msg.header, 'DEPTH_RECEIVED')
             except ValueError:
                 self.report('INVALID_DEPTH')
             self.try_pending(now, wall, epoch)
@@ -220,7 +243,9 @@ class VisionProcessor(Node):
                     raise ValueError('positive capture time and canonical optical frame required')
                 stamp = seconds(msg.header.stamp)
                 key = nanoseconds(msg.header.stamp)
+                self.candidate_event(msg.header, 'DETECTION_RECEIVED')
                 if stamp <= self.last_stamp or key <= self.last_submitted_ns or key in self.pending_detections:
+                    self.candidate_event(msg.header, 'OLD_OR_DUPLICATE')
                     return  # old/duplicate inference never invalidates or renews a newer track
                 for detection in msg.detections[:32]:
                     if not detection.results:
@@ -233,7 +258,8 @@ class VisionProcessor(Node):
                 self.remember_trace('detection', msg.header.stamp, received_ns)
                 self.pending_detections[key] = (deepcopy(msg.header), boxes, epoch, wall)
                 while len(self.pending_detections) > 10:  # same bound as the RGB-D cache
-                    del self.pending_detections[min(self.pending_detections)]
+                    removed = self.pending_detections.pop(min(self.pending_detections))
+                    self.candidate_event(removed[0], 'CAPACITY_EVICTED')
                 self.try_pending(now, wall, epoch)
             except (ValueError, RuntimeError, TypeError):
                 self.report('INVALID_DETECTION')
@@ -267,14 +293,25 @@ class VisionProcessor(Node):
             if (seconds(header.stamp) <= self.last_stamp or
                     not self.gate.valid(seconds(header.stamp), source_epoch, now, wall, received)):
                 self.pending_detections.pop(key, None)
+                self.candidate_event(header, 'EXPIRED_OR_OLD',
+                                     ros_age_s=now-seconds(header.stamp),
+                                     receipt_age_s=wall-received)
                 expired = True
                 continue
             bundle = self.cache.match(header.stamp, header.frame_id, epoch)
             if bundle is None:
+                reason = ('WAIT_RGB' if seconds(header.stamp) not in self.cache.rgb else
+                          'WAIT_DEPTH' if not self.cache.depth else
+                          'WAIT_INFO' if not self.cache.info else 'WAIT_ALIGNED_PAIR')
+                self.candidate_event(header, reason,
+                    depth_captures=[nanoseconds(v[0].header.stamp) for v in self.cache.depth.values()],
+                    rgb_captures=[nanoseconds(v[0].header.stamp) for v in self.cache.rgb.values()])
                 continue
             if self.current(bundle):
                 for previous in list(self.pending_detections):
                     if previous <= key:
+                        if previous != key:
+                            self.candidate_event(self.pending_detections[previous][0], 'SUPERSEDED')
                         del self.pending_detections[previous]
                 trace_times = None
                 if self.trace.enabled:
@@ -285,9 +322,16 @@ class VisionProcessor(Node):
                         received = self.trace_receipts[kind].get(nanoseconds(source_stamp))
                         if received is not None:
                             trace_times[kind+'_receive'] = received
-                self.slot.replace((bundle, boxes, trace_times))
+                with self.slot.condition:
+                    if self.slot.item is not None:
+                        self.candidate_event(self.slot.item[0].rgb.header, 'SLOT_OVERWRITTEN')
+                    self.slot.replace((bundle, boxes, trace_times))
+                self.candidate_event(header, 'SUBMITTED')
                 self.last_submitted_ns = key
                 return
+            self.candidate_event(header, 'BUNDLE_NOT_CURRENT',
+                                 ros_age_s=now-bundle.stamp,
+                                 receipt_age_s=wall-bundle.receipt_wall)
         if expired and not self.pending_detections:
             self.report('NO_FRESH_ALIGNED_PAIR')
 
@@ -297,6 +341,8 @@ class VisionProcessor(Node):
             if item is None:
                 continue
             bundle, boxes, trace_times = item
+            with self.lock:
+                self.candidate_event(bundle.rgb.header, 'WORKER_TAKE')
             if trace_times is not None:
                 trace_times['work_take'] = time.monotonic_ns()
             outcome, ros_now_ns = 'WORKER_ERROR', None
@@ -330,6 +376,8 @@ class VisionProcessor(Node):
                 self.get_logger().error(f'fusion worker failed: {exc!r}')
                 self.report('WORKER_ERROR')
             finally:
+                with self.lock:
+                    self.candidate_event(bundle.rgb.header, 'WORKER_DONE', outcome=outcome)
                 if trace_times is not None:
                     self.trace.emit('fusion', source_frame=bundle.rgb.header.frame_id,
                         capture_ns=nanoseconds(bundle.rgb.header.stamp), local_epoch=bundle.epoch,

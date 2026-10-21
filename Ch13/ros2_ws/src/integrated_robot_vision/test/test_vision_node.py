@@ -76,7 +76,7 @@ def test_ros_fusion_preserves_capture_stamp_and_stops_worker_before_destroy():
         executor.add_node(stimulus)
         received, sent = [], set()
         sub = stimulus.create_subscription(PointStamped, '/vision/target_raw', received.append, 10)
-        pubs = [stimulus.create_publisher(kind, topic, qos_profile_sensor_data) for kind, topic in [
+        pubs = [stimulus.create_publisher(kind, topic, 5) for kind, topic in [
             (CameraInfo, '/camera/color/camera_info'), (Image, '/camera/color/image_raw'),
             (Image, '/camera/aligned_depth_to_color/image_raw'),
             (Detection2DArray, '/vision/detections')]]

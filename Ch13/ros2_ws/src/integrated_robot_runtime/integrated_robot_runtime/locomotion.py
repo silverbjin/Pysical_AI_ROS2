@@ -117,4 +117,6 @@ class LocomotionNode(LifecycleNode):
 
 
 def main():
-    spin(LocomotionNode)
+    # All callbacks are bounded and nonblocking; heavy perception is a
+    # different process. No synchronous service/action wait belongs here.
+    spin(LocomotionNode, threads=1)

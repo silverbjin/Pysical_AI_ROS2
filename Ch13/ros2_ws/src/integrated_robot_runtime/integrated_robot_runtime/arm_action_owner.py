@@ -19,6 +19,7 @@ class PendingTrajectory:
     cancel_sent: bool = False
     error: str = ''
     result_future: object = None
+    acceptance_future: object = None
 
 
 class ArmActionOwner:
@@ -42,6 +43,8 @@ class ArmActionOwner:
                         handle_status=getattr(record.handle, 'status', None) if record else None,
                         result_future_done=(record.result_future.done() if record and
                                             record.result_future is not None else None),
+                        acceptance_future_done=(record.acceptance_future.done() if record and
+                                                record.acceptance_future is not None else None),
                         events=list(self.events))
 
     def send(self, goal, *, now, timeout):
@@ -55,6 +58,7 @@ class ArmActionOwner:
             self.event(record, 'sent')
             try:
                 future = self.client.send_goal_async(goal, goal_uuid=UUID(uuid=list(identifier)))
+                record.acceptance_future = future
                 future.add_done_callback(lambda value: self._accepted(record, value))
             except Exception as exc:
                 self._unknown(record, exc)

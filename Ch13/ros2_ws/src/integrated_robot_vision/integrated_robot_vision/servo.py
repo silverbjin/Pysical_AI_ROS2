@@ -8,38 +8,49 @@ CONTROL_JOINTS = ('arm_joint_1', 'arm_joint_5')
 
 
 def project_target(chain, q, target_base, k):
+    return _camera_point(chain.forward(q), target_base, k)[0]
+
+
+def _camera_point(camera, target_base, k):
     target = np.asarray(target_base, dtype=float)
     if target.shape != (3,) or not np.isfinite(target).all():
         raise ValueError('finite base-frame target required')
-    camera = chain.forward(q)
     point = camera[:3, :3].T @ (target - camera[:3, 3])
     if not .1 <= point[2] <= 5.:
         raise ValueError('target outside camera depth range')
     return np.array([k.fx * point[0] / point[2] + k.cx,
-                     k.fy * point[1] / point[2] + k.cy])
+                     k.fy * point[1] / point[2] + k.cy]), point
 
 
 def projection_jacobian(chain, q, target_base, k, joints=CONTROL_JOINTS):
     if joints != CONTROL_JOINTS:
         raise ValueError('canonical two-axis control order required')
-    columns = []
-    for name in joints:
-        plus, minus = q.copy(), q.copy()
-        plus[name] += 1e-5
-        minus[name] -= 1e-5
-        columns.append((project_target(chain, plus, target_base, k)
-                        - project_target(chain, minus, target_base, k)) / 2e-5)
-    return np.column_stack(columns)
+    return _projection_and_jacobian(chain,q,target_base,k)[1]
+
+
+def _projection_and_jacobian(chain,q,target_base,k):
+    camera, axes = chain.camera_kinematics(q)
+    pixel, point = _camera_point(camera,target_base,k)
+    x,y,z = point
+    projection = np.array([[k.fx/z,0.,-k.fx*x/z**2],
+                           [0.,k.fy/z,-k.fy*y/z**2]])
+    columns=[]
+    for name in CONTROL_JOINTS:
+        axis,origin,kind = axes[name]
+        # Inverse camera motion for a stationary base-frame target.
+        derivative = (-axis if kind == 'prismatic' else
+                      -np.cross(axis,np.asarray(target_base)-origin))
+        columns.append(projection @ camera[:3,:3].T @ derivative)
+    return pixel,np.column_stack(columns)
 
 
 def servo_target(chain, q, target_base, k, dt):
     if not math.isfinite(dt) or dt <= 0:
         return None
     try:
-        pixel = project_target(chain, q, target_base, k)
+        pixel,jacobian = _projection_and_jacobian(chain,q,target_base,k)
         if not (0 <= pixel[0] < k.width and 0 <= pixel[1] < k.height):
             return None
-        jacobian = projection_jacobian(chain, q, target_base, k)
         singular = np.linalg.svd(jacobian, compute_uv=False)
         if singular[-1] < 1e-6 or singular[0] / singular[-1] > 100:
             return None

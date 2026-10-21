@@ -28,11 +28,17 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+import yaml
 
 
-def materialize_controller_config(source):
+def materialize_controller_config(source, *, vision=False):
     """Copy YAML to a short native path for gz_ros2_control Jazzy issue #512."""
     data = Path(source).read_bytes()
+    if vision:
+        config = yaml.safe_load(data)
+        config['controller_manager']['ros__parameters']['arm_trajectory_controller']['type'] = (
+            'integrated_robot_controller/JointTrajectoryController')
+        data = yaml.safe_dump(config, sort_keys=False).encode('utf-8')
     digest = hashlib.sha256(data).hexdigest()[:12]
     target = Path(tempfile.gettempdir()) / f'ch13_2_controllers_{digest}.yaml'
     if not target.exists() or target.read_bytes() != data:
@@ -49,7 +55,7 @@ def launch_nodes(context):
         package_share, 'worlds', 'vision_fixture.sdf' if vision else 'empty.sdf')
     xacro_path = os.path.join(package_share, 'urdf', 'robot_system.urdf.xacro')
     controllers = materialize_controller_config(
-        os.path.join(package_share, 'config', 'controllers.yaml')
+        os.path.join(package_share, 'config', 'controllers.yaml'), vision=vision
     )
     description = ParameterValue(
         Command(

@@ -28,9 +28,14 @@ from launch_ros.parameter_descriptions import ParameterValue
 import yaml
 
 
-def materialize_controller_config(source, plugin_source=None, *, trace_options=None):
+def materialize_controller_config(source, plugin_source=None, *, trace_options=None, vision=False):
     """Avoid ros2_control treating a package path as a robot_description argument."""
     data = Path(source).read_bytes()
+    if vision:
+        config = yaml.safe_load(data)
+        config['controller_manager']['ros__parameters']['arm_trajectory_controller']['type'] = (
+            'integrated_robot_controller/JointTrajectoryController')
+        data = yaml.safe_dump(config, sort_keys=False).encode('utf-8')
     if plugin_source is not None:
         # Controlled roots are disjoint: named controllers and /**.
         # One short file avoids native CM multi-file argv forwarding errors.
@@ -107,6 +112,7 @@ def launch_nodes(context):
         os.path.join(share, 'config', 'controllers.yaml'),
         camera_config,
         trace_options=trace if vision and backend == 'snapshot' else None,
+        vision=vision,
     )
     description = ParameterValue(
         Command(

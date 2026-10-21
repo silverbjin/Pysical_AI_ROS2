@@ -16,7 +16,8 @@ import uuid
 from verify_vision_13_4 import EvidenceRun, source_snapshot, verdict, file_digest
 
 PACKAGES = ('integrated_robot_interfaces', 'integrated_robot_vision',
-            'integrated_robot_description', 'integrated_robot_runtime', 'integrated_robot_camera')
+            'integrated_robot_description', 'integrated_robot_runtime', 'integrated_robot_camera',
+            'integrated_robot_controller')
 
 CORE_GROUPS = frozenset({'build', 'pytest', 'colcon', 'colcon_result', 'installed_paths'} |
     {f'{kind}_{engine}' for engine in ('gazebo', 'mujoco') for kind in (
@@ -198,6 +199,27 @@ def audit_installed_paths(prefix, repo):
                 if path.is_file() and '__pycache__' not in path.parts:
                     if path.read_bytes() != (share/path.relative_to(source)).read_bytes():
                         raise RuntimeError('installed share bytes differ: '+str(path))
+        if name == 'integrated_robot_controller':
+            hashes = json.loads((share/'source_manifest.json').read_text())
+            for relative, digest in hashes.items():
+                path = (source/relative).resolve(strict=True)
+                if not path.is_relative_to(source.resolve()) or file_digest(path) != digest:
+                    raise RuntimeError('controller source differs from configured build: '+relative)
+            for required in ('src/joint_trajectory_controller.cpp',
+                    'include/integrated_robot_controller/joint_trajectory_controller.hpp',
+                    'include/integrated_robot_controller/realtime_server_goal_handle.hpp',
+                    'controller_plugins.xml', 'UPSTREAM_SOURCES.json', 'LICENSE', 'LICENSE.realtime_tools'):
+                if required not in hashes:
+                    raise RuntimeError('controller build source manifest incomplete')
+            for filename in ('LICENSE', 'LICENSE.realtime_tools', 'controller_plugins.xml',
+                             'REUSE_MANIFEST.md', 'UPSTREAM_SOURCES.json'):
+                if (source/filename).read_bytes() != (share/filename).read_bytes():
+                    raise RuntimeError('installed controller metadata differs: '+filename)
+            library = package_prefix/'lib/libch13_joint_trajectory_controller.so'
+            if not library.resolve(strict=True).is_relative_to(package_prefix):
+                raise RuntimeError('controller library resolves outside package prefix')
+            row.update(library_path=str(library.resolve()),library_sha256=file_digest(library),
+                       source_hashes=hashes,license_verified=True,plugin_xml_verified=True)
         if name == 'integrated_robot_camera':
             hashes = json.loads((share/'source_manifest.json').read_text())
             for relative, digest in hashes.items():

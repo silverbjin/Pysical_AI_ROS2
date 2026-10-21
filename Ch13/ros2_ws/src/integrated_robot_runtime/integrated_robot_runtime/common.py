@@ -4,7 +4,7 @@ import signal
 import threading
 
 import rclpy
-from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
+from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor, SingleThreadedExecutor
 from rclpy.signals import SignalHandlerOptions
 
 
@@ -46,7 +46,10 @@ def spin(node_type, threads=4):
     node, executor = None, None
     try:
         node = node_type()
-        executor = DrainingExecutor(num_threads=threads)
+        # Bounded nonblocking callbacks need no Python pool handoff for every
+        # high-rate /clock sample. Blocking protocol nodes retain the pool.
+        executor = (SingleThreadedExecutor() if threads == 1
+                    else DrainingExecutor(num_threads=threads))
         executor.add_node(node)
         # A bounded wait also lets Python process SIGINT on otherwise idle nodes.
         while rclpy.ok() and not stopping.is_set():

@@ -2,7 +2,9 @@
   <include file="robot_system.xml"/>
   <!-- MuJoCo scales visual clipping by statistic.extent; fix it to one metre. -->
   <statistic extent="1"/>
-  <visual><global offwidth="320" offheight="240"/><map znear="0.1" zfar="5"/></visual>
+  <!-- Bound software-rendered shadow cost; RGB-D pixels/intrinsics stay320x240.
+       This changes shadow-edge quality, not physics, depth or camera cadence. -->
+  <visual><global offwidth="320" offheight="240"/><map znear="0.1" zfar="5"/><quality shadowsize="512"/></visual>
   <worldbody>
     <geom name="vision_fixture" type="box" pos="1 0 .72" size=".02 .25 .20" rgba="1 0 0 1"/>
   </worldbody>

@@ -19,6 +19,75 @@ from integrated_robot_vision.object_detector import ObjectDetector
 from test_rgbd_cache import info, stamp
 
 
+def test_detector_bounds_opencv_pool_before_inference():
+    import cv2
+    previous = cv2.getNumThreads()
+    cv2.setNumThreads(8)
+    rclpy.init(domain_id=146)
+    detector = None
+    try:
+        detector = ObjectDetector(parameter_overrides=[Parameter('backend', value='color_fixture')])
+        image = np.zeros((240,320,3), np.uint8)
+        image[100:130,150:180,2] = 255
+        assert len(detector.backend.detect(image)) == 1
+        assert cv2.getNumThreads() == 1, 'detector consumed an unbudgeted OpenCV worker pool'
+    finally:
+        if detector is not None:
+            detector.destroy_node()
+        rclpy.try_shutdown()
+        cv2.setNumThreads(previous)
+
+
+def test_detector_requests_reliable_bounded_rgb_and_calibration():
+    from rclpy.qos import ReliabilityPolicy, HistoryPolicy
+    rclpy.init(domain_id=146)
+    detector = ObjectDetector(parameter_overrides=[Parameter('backend', value='color_fixture')])
+    try:
+        for sub in (detector.rgb_sub, detector.info_sub):
+            assert sub.qos_profile.reliability == ReliabilityPolicy.RELIABLE
+            assert sub.qos_profile.history == HistoryPolicy.KEEP_LAST
+            assert 0 < sub.qos_profile.depth <= 10
+    finally:
+        detector.destroy_node()
+        rclpy.shutdown()
+
+
+def test_rejected_future_image_has_capture_linked_ingress_evidence():
+    rclpy.init(domain_id=146)
+    detector = ObjectDetector(parameter_overrides=[
+        Parameter('backend', value='color_fixture'), Parameter('trace_enabled', value=True),
+        Parameter('trace_run_id', value='f8c0bed5-cdac-43d8-81ff-84ab88360cdb')])
+    peer = Node('detector_rejection_peer')
+    executor = SingleThreadedExecutor()
+    executor.add_node(peer)
+    events = []
+    sub = peer.create_subscription(String, '/vision/detector_status',
+                                   lambda msg: events.append(json.loads(msg.data)), 50)
+    try:
+        now = detector.get_clock().now().nanoseconds / 1e9
+        calibration = info(now)
+        calibration.width, calibration.height = 100, 80
+        detector.on_info(calibration)
+        rgb = stamp(Image(), now + .2)
+        rgb.width, rgb.height, rgb.step, rgb.encoding = 100, 80, 300, 'bgr8'
+        rgb.data = bytes(80 * 300)
+        detector.on_rgb(rgb)
+        end = time.monotonic() + .2
+        while time.monotonic() < end:
+            executor.spin_once(timeout_sec=.01)
+        key = rgb.header.stamp.sec*1_000_000_000 + rgb.header.stamp.nanosec
+        matching = [event for event in events if event.get('capture_ns') == key]
+        assert any(event['status'] == 'INPUT_RECEIVED' for event in matching)
+        assert any(event['status'] == 'INPUT_REJECTED' and event['reason'] == 'FUTURE_CAPTURE'
+                   for event in matching)
+        assert detector.slot.take(0) is None
+    finally:
+        executor.shutdown()
+        detector.destroy_node()
+        peer.destroy_node()
+        rclpy.shutdown()
+
+
 def test_trace_keeps_capture_and_occurrence_time():
     rclpy.init(domain_id=146)
     detector, peer, executor = None, None, SingleThreadedExecutor()
@@ -116,8 +185,8 @@ def test_delayed_detector_capture_header_and_stale_completion(delay, should_publ
                                                    lambda msg: diagnostics.append(msg.data), 10)
         sub = stimulus.create_subscription(Detection2DArray, '/vision/detections', received.append,
                                             qos_profile_sensor_data)
-        rgb_pub = stimulus.create_publisher(Image, '/camera/color/image_raw', qos_profile_sensor_data)
-        info_pub = stimulus.create_publisher(CameraInfo, '/camera/color/camera_info', qos_profile_sensor_data)
+        rgb_pub = stimulus.create_publisher(Image, '/camera/color/image_raw', 5)
+        info_pub = stimulus.create_publisher(CameraInfo, '/camera/color/camera_info', 5)
         image = np.zeros((80, 100, 3), np.uint8)
         image[10:30, 20:40, 2] = 255
         deadline = time.monotonic() + 1.2
