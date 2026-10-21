@@ -1,5 +1,12 @@
 # 5.6절 실습 가이드 — 사인파 Hello Robot 검증 프로젝트
 
+## 코드 개정 반영 안내 (2026-10-21)
+- 파형 변경: `joint1 = 0.22 sin(0.8t)`, `joint4 = 0.28 sin(2.0t)` (각주파수 rad/s, 시뮬레이션 시각 t). 기존 0.3/1.0 및 0.5/4.0 값 설명은 **개정 전 기록**이다.
+- 최신 실행은 `ros2 launch manipulation_basics wave_hello.launch.py` (먼저 Gazebo 통합 launch 실행, simple_controller 종료). 내부 `use_sim_time=True`가 설정된다.
+- '/clock'·관절 상태·구독을 확인한 뒤 **3초 준비 자세 → 관절 오차 확인 → 20Hz wave 명령** 순서로 진행. 시계 역행·상태 오래됨·자세 준비 실패에는 추가 명령 중단.
+- 수정 보고서: [SECTION_5_6_CHANGE_TEST_REPORT_KO.md](SECTION_5_6_CHANGE_TEST_REPORT_KO.md). 실제 Gazebo 추종·물리 검증은 NOT_RUN.
+
+
 ## 공통 환경과 주의사항
 - 전제: Ubuntu 24.04(WSL2 가능), ROS 2 Jazzy, Gazebo Harmonic 및 ros2_control/gz_ros2_control/ros_gz_* 관련 패키지 설치. 실제 설치/동작은 본 문서 작업 환경에서 검증하지 못했다.
 - 저장소 루트가 홈 폴더에 있지 않다면 아래 경로를 본인의 체크아웃 경로로 바꾼다.
