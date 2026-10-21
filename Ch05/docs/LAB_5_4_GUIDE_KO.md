@@ -1,5 +1,11 @@
 # 5.4절 실습 가이드 — JointState 실측·오차 검증
 
+## 코드 개정 반영 안내 (2026-10-21)
+- 이제 listener는 Position 배열 길이·유한성을 검사하고, 누락 Velocity를 `N/A (not reported)`로 표시한다(0rad/s로 오인 금지).
+- `--ros-args -p target_joint:=joint4 -p log_period_sec:=1.0`로 관절과 출력 주기를 변경해 볼 수 있다.
+- 원고/옛 리뷰에 기재된 배열 인덱스 예외는 수정 이전 결함이다. 새 회귀 테스트: [SECTION_5_4_CHANGE_TEST_REPORT_KO.md](SECTION_5_4_CHANGE_TEST_REPORT_KO.md).
+
+
 ## 공통 환경과 주의사항
 - 전제: Ubuntu 24.04(WSL2 가능), ROS 2 Jazzy, Gazebo Harmonic 및 ros2_control/gz_ros2_control/ros_gz_* 관련 패키지 설치. 실제 설치/동작은 본 문서 작업 환경에서 검증하지 못했다.
 - 저장소 루트가 홈 폴더에 있지 않다면 아래 경로를 본인의 체크아웃 경로로 바꾼다.
@@ -54,7 +60,7 @@ ros2 run rqt_plot rqt_plot
 /joint_states 메시지를 echo하여 관절 이름 순서를 먼저 확인한다. 예를 들어 name[1]=joint2일 때에만 /joint_states/position[1]을 joint2로 해석할 수 있다. position[0]을 무조건 joint1이라고 읽지 않는다. 계단형 **명령 목표**와 실제 보간·센서 **실측 곡선**을 구분한다.
 
 ## 실습 4 — 결함을 설계 질문으로 전환
-소스의 msg.position[index], msg.velocity[index]를 확인한다. msg.name에는 joint2가 있으나 position이 빈 비정상 데이터를 수신하면 IndexError가 발생할 수 있다. 개선안은 먼저 index < len(msg.position)를 검사하고 velocity는 index < len(msg.velocity)일 때만 사용하도록 하는 것이다. 현재 노드에 해당 보호가 없음을 리뷰 보고서에서 확인한다.
+소스의 msg.position[index], msg.velocity[index]를 확인한다. msg.name에는 joint2가 있으나 position이 빈 비정상 데이터를 수신하면 IndexError가 발생할 수 있다. 개선안은 먼저 index < len(msg.position)를 검사하고 velocity는 index < len(msg.velocity)일 때만 사용하도록 하는 것이다. 수정된 노드에서는 해당 보호를 확인하고 새 단위 테스트로 회귀 검증한다.
 
 ## 체크포인트
 정상 움직임 2주기 동안 실제 각도 변화, 주기, /joint_states 토픽 주파수를 기록한다. PID 제어/추종 성능이 검증됐다고 과장하지 않는다.
