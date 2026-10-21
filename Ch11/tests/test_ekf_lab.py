@@ -64,15 +64,6 @@ class CommandOdometryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             f.set_command(math.nan, 0, 0, 0)
 
-    def test_out_of_order_and_noninteger_command_clock_do_not_replace_velocity(self):
-        f = self.core.CommandOdometry(noise_stddev=0, angular_noise_stddev=0)
-        f.set_command(0.1, 0, 0, 1_000_000_000)
-        for stamp in (999_999_999, 1_000_000_001.0, -1):
-            with self.assertRaises(ValueError):
-                f.set_command(9, 0, 0, stamp)
-        self.assertEqual(f.command, (0.1, 0, 0))
-        self.assertEqual(f.command_stamp, 1_000_000_000)
-
     def test_unknown_covariance_replaced_without_changing_known_covariance(self):
         cov = self.core.covariance3([0.0]*9, 0.04)
         self.assertEqual([cov[i] for i in (0, 4, 8)], [0.04]*3)

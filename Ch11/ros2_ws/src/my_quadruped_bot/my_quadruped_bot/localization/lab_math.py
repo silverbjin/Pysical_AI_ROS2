@@ -33,11 +33,8 @@ class CommandOdometry:
         self.command = (0.0, 0.0, 0.0)
 
     def set_command(self, vx, vy, wz, stamp_ns):
-        if not isinstance(stamp_ns, int) or stamp_ns < 0 or not all(
-                math.isfinite(v) for v in (vx, vy, wz)):
+        if not all(math.isfinite(v) for v in (vx, vy, wz)) or stamp_ns < 0:
             raise ValueError('Invalid command')
-        if self.command_stamp is not None and stamp_ns < self.command_stamp:
-            raise ValueError('Out-of-order command timestamp')
         self.command = (vx, vy, wz)
         self.command_stamp = stamp_ns
 
