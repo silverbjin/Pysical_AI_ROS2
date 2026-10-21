@@ -141,10 +141,10 @@ def generate_launch_description():
             
             # 가제보 및 월드 소환 관련
             gazebo_launch,
-            spawn_entity,
-            
-            # 컨트롤러 가동 관련
+            # Register the event handler BEFORE launching the entity so that
+            # a fast create-process exit cannot be missed.
             controllers_after_spawn,
+            spawn_entity,
             
             clock_bridge
         ]
