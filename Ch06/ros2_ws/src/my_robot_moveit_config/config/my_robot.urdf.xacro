@@ -46,13 +46,7 @@
     </link>
   </xacro:macro>
 
-  <link name="world"/>
-  
-  <joint name="world_to_base_joint" type="fixed">
-    <parent link="world"/>
-    <child link="base_link"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
+  <!-- Root is base_link. world -> base_link is defined only in the SRDF virtual joint. -->
 
   <link name="base_link">
     <visual>

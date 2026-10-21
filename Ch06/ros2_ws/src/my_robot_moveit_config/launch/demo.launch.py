@@ -6,7 +6,7 @@ from moveit_configs_utils.launches import generate_demo_launch
 
 
 def generate_launch_description():
-    moveit_config = MoveItConfigsBuilder("my_robot", package_name="my_robot_moveit_config").to_moveit_configs()
+    moveit_config = MoveItConfigsBuilder("my_robot", package_name="my_robot_moveit_config").robot_description(file_path="config/my_robot.urdf.xacro").to_moveit_configs()
         
     # # 1. Description 패키지 내부에 있는 진본 URDF 파일의 절대 경로를 만듭니다.
     # urdf_path = os.path.join(
