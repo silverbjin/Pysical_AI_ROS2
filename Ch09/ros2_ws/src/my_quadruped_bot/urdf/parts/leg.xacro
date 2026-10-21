@@ -13,15 +13,16 @@
 
     <link name="${prefix}_hip_link">
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry><box size="${hip_length} 0.04 0.04"/></geometry>
+        <origin xyz="0 ${y_reflect * hip_length / 2.0} 0" rpy="0 0 0"/>
+        <geometry><box size="0.04 ${hip_length} 0.04"/></geometry>
         <material name="grey"/>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry><box size="${hip_length} 0.04 0.04"/></geometry>
+        <origin xyz="0 ${y_reflect * hip_length / 2.0} 0" rpy="0 0 0"/>
+        <geometry><box size="0.04 ${hip_length} 0.04"/></geometry>
       </collision>
-      <xacro:box_inertia m="${hip_mass}" x="${hip_length}" y="0.04" z="0.04" xyz="0 0 0" rpy="0 0 0"/>
+      <!-- Hip is a lateral bar along +Y/-Y, not the body X axis. -->
+      <xacro:box_inertia m="${hip_mass}" x="0.04" y="${hip_length}" z="0.04" xyz="0 ${y_reflect * hip_length / 2.0} 0" rpy="0 0 0"/>
     </link>
 
     <joint name="${prefix}_thigh_joint" type="revolute">
