@@ -19,10 +19,10 @@ class TrajectoryGenerator:
         # [추가] 로봇 몸체 중심(Body Frame) 기준 각 다리의 기본 기립 원점 좌표 (X, Y, Z)
         # 로봇 제원에 맞게 간격(배치)을 설정합니다. (Z는 stance_depth 사용)
         self.nominal_positions = {
-            'FR': np.array([ 0.12, -0.05, self.stance_depth]),
-            'FL': np.array([ 0.12,  0.05, self.stance_depth]),
-            'RR': np.array([-0.12, -0.05, self.stance_depth]),
-            'RL': np.array([-0.12,  0.05, self.stance_depth])
+            'FR': np.array([ 0.25, -0.15, self.stance_depth]),
+            'FL': np.array([ 0.25,  0.15, self.stance_depth]),
+            'RR': np.array([-0.25, -0.15, self.stance_depth]),
+            'RL': np.array([-0.25,  0.15, self.stance_depth])
         }
 
     def generate_swing(self, start_pos: np.ndarray, end_pos: np.ndarray, swing_phase: float) -> np.ndarray:
@@ -64,7 +64,7 @@ class TrajectoryGenerator:
         stroke = velocity_cmd * T_stance
         
         # 수평 좌표 선형 트래킹
-        next_pos = nominal_pos + (0.5 - s) * stroke
+        next_pos = np.asarray(nominal_pos, dtype=float) + (0.5 - s) * np.asarray(stroke, dtype=float)
         
         # [수정] 외부 유입 nominal_pos[2] 대신 클래스 멤버 변수인 self.stance_depth를 명시적으로 적용
         next_pos[2] = self.stance_depth
@@ -99,27 +99,34 @@ class TrajectoryGenerator:
     # =========================================================================
     # 🌟 [핵심 추가] quadruped_controller.py와 맞물리는 고수준 통합 인터페이스
     # =========================================================================
-    def generate(self, leg_id: str, phase: float, is_swing: bool, velocity: np.ndarray) -> np.ndarray:
+    def generate(self, leg_id: str, phase: float, is_swing: bool, velocity: np.ndarray,\n                 T_cycle: float = 0.5, duty_factor: float = 0.5) -> np.ndarray:
         """
         컨트롤러 노드에서 호출하는 메인 오케스트레이터 함수.
         다리의 상태(is_swing)에 따라 적절한 궤적 생성 로직을 분기 실행한다.
         """
-        # 하드코딩 환경 변수 연동 (Trot 보행 표준 주기설정 정보 매핑)
-        T_cycle = 0.5
-        duty_factor = 0.5
+        # The velocity contract is [body vx, body vy, yaw rate], not a 3-D foot velocity.
+        if not (np.isfinite(T_cycle) and T_cycle > 0.0 and 0.0 < duty_factor < 1.0):
+            raise ValueError('Invalid gait period or duty factor')
+        command = np.asarray(velocity, dtype=float)
+        if command.shape != (3,) or not np.all(np.isfinite(command)):
+            raise ValueError('velocity must be a finite [vx, vy, wz] vector')
+        if leg_id not in self.nominal_positions:
+            raise ValueError(f'Unknown leg: {leg_id}')
         T_stance = T_cycle * duty_factor
         
         # 현재 제어 대상 다리의 기준 원점 로드
         nominal_pos = self.nominal_positions[leg_id].copy()
+        vx, vy, yaw = command
+        linear_foot = np.array([vx - yaw * nominal_pos[1], vy + yaw * nominal_pos[0], 0.0])
         
         if is_swing:
             # [유각기] 스탠스가 끝나는 지점(-stroke/2)에서 시작하여 Raibert 착지점 지점으로 이동
-            stroke = velocity * T_stance
+            stroke = linear_foot * T_stance
             start_pos = nominal_pos - 0.5 * stroke
-            end_pos = self.calculate_foothold(nominal_pos, velocity, T_stance)
+            end_pos = self.calculate_foothold(nominal_pos, linear_foot, T_stance)
             
             # 수직 사이클로이드가 포함된 스윙 좌표 반환
             return self.generate_swing(start_pos, end_pos, phase)
         else:
             # [입각기] 절대 중심 트래킹 기법 기반 스탠스 좌표 반환
-            return self.generate_stance(nominal_pos, velocity, phase, T_cycle, duty_factor)
+            return self.generate_stance(nominal_pos, linear_foot, phase, T_cycle, duty_factor)
