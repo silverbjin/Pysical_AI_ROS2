@@ -167,8 +167,6 @@ class QuadrupedAvoidanceEnv(QuadrupedGoalEnv):
         for index,direction in enumerate(directions):
             distance = mujoco.mj_ray(self.model,self.data,origin,direction,
                 self._ray_group,1,-1,geom_id)
-            if not np.isfinite(distance):
-                raise FloatingPointError('MuJoCo LiDAR returned a non-finite distance')
             self._lidar_distances[index] = (self.lidar_max_range if distance<0 else
                                             min(distance,self.lidar_max_range))
         measured = self._lidar_distances.copy()
