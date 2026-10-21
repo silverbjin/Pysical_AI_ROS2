@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
+import math
 from typing import Dict, Tuple
 
 class GaitPlanner:
@@ -7,6 +8,8 @@ class GaitPlanner:
         """
         4족 보행 로봇의 위상(Phase) 및 접촉 상태(Contact)를 관리하는 통합 스케줄러
         """
+        if not math.isfinite(cycle_time) or cycle_time <= 0.0:
+            raise ValueError('cycle_time must be finite and positive')
         self.T_cycle: float = cycle_time
         self.current_time: float = 0.0
         
@@ -43,9 +46,9 @@ class GaitPlanner:
 
     def update(self, dt: float) -> None:
         """매 제어 주기(dt)마다 글로벌 물리 시간 업데이트 (내부 연산용)"""
-        self.current_time += dt
-        if self.current_time >= self.T_cycle:
-            self.current_time -= self.T_cycle
+        if not math.isfinite(dt) or dt < 0.0:
+            raise ValueError('dt must be finite and nonnegative')
+        self.current_time = (self.current_time + dt) % self.T_cycle
 
     def get_leg_states(self) -> Dict[str, Tuple[float, bool]]:
         """
@@ -84,3 +87,23 @@ class GaitPlanner:
         phi_global = self.current_time / self.T_cycle
         # 주기가 막 끝나기 직전이거나 막 시작된 시점인지를 마진(epsilon)으로 판단
         return (phi_global < epsilon) or (phi_global > (1.0 - epsilon))
+
+
+def main():
+    """CLI demonstration for the installed gait_planner console script."""
+    import argparse
+    parser = argparse.ArgumentParser(description='Quadruped gait phase preview')
+    parser.add_argument('--gait', choices=('trot', 'walk', 'pace'), default='trot')
+    parser.add_argument('--steps', type=int, default=5)
+    parser.add_argument('--dt', type=float, default=0.1)
+    args = parser.parse_args()
+    if args.steps < 1:
+        parser.error('--steps must be positive')
+    planner = GaitPlanner(args.gait)
+    for _ in range(args.steps):
+        print(planner.get_leg_states())
+        planner.update(args.dt)
+
+
+if __name__ == '__main__':
+    main()
