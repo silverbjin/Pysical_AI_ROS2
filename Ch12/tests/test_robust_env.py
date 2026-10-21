@@ -172,3 +172,19 @@ def test_real_ppo_update():
         before = [p.detach().clone() for p in model.policy.parameters()]
         model.learn(32)
         assert any(not torch.equal(a,b) for a,b in zip(before,model.policy.parameters()))
+
+
+def test_robust_sensor_failure_requires_reset(monkeypatch):
+    with RobustQuadrupedEnv(randomize_dynamics=False, sensor_noise=False,
+                             push_probability=0) as env:
+        env.reset(seed=9)
+        with pytest.raises(FloatingPointError, match='Non-finite robust sensor'):
+            env._measure(np.full(env.observation_space.shape, np.inf))
+        def fail_sensor(_observation):
+            raise FloatingPointError('injected sensor fault')
+        monkeypatch.setattr(env, '_measure', fail_sensor)
+        with pytest.raises(FloatingPointError, match='injected sensor fault'):
+            env.step(np.zeros(12))
+        assert not env._ready
+        with pytest.raises(RuntimeError, match='reset'):
+            env.step(np.zeros(12))
