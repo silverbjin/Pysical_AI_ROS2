@@ -46,7 +46,7 @@ def analyze_front_sector(ranges, angle_min, angle_increment, range_min, range_ma
         angles[0] <= -scope+step and angles[-1] >= scope-step and
         all(b-a <= step for a, b in zip(angles, angles[1:])))
     nearest = min(valid) if valid else None
-    if nearest is not None and nearest < safe_distance:
+    if nearest is not None and nearest <= safe_distance:
         state, reason = 'OBSTACLE', 'close_return'
     elif nearest is None:
         state, reason = 'UNKNOWN', 'no_valid_returns'
