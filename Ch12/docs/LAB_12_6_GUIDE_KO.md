@@ -73,3 +73,29 @@ python Ch12/scripts/verify_viewer_shutdown.py --output Ch12/runs/verify-shutdown
 희소 광선 사이의 물체, 스캔 평면 아래의 낮은 장애물과 낭떠러지는 놓칠 수 있다. 로봇이 기울면 스캔도 기울어진다. 전역 경로 계획, 동적 장애물 회피, 지도 기반 탐색, 실제 로봇 전이는 이 환경만으로 해결되지 않는다. Gazebo 증거는 기존 Ch11 ROS 로봇의 센서·기립·종료 회귀이며 PPO를 Gazebo로 전송해 회피시킨 결과가 아니다.
 
 MuJoCo는 검증 버전 3.3.7로 고정한다. 실제 viewer 종료에는 해당 버전의 비동기 정리를 기다리는 호환 처리가 있으므로 업그레이드할 때 창 종료와 Ctrl+C를 재검증한다. 상세 수치와 로그 위치는 `SECTION_12_6_REPORT_KO.md`에 있다.
+
+
+---
+
+## 원고 연계 실습 보강 (2026-10-21 리뷰)
+
+**이번 절의 학습 목표:** Sparse LiDAR·충돌 안전·장애물 재배치. 알고리즘 구현 성공과 '실제 보행/회피/실기 적합' 판정을 나누어 기록한다. 아래 명령은 모두 저장소 루트에서 실행한다(기존 본문에 독립된 작업 경로 안내가 있는 경우 그 지시를 따른다).
+
+### 따라하기/재현용 최소 경로
+
+```bash
+python -m pytest Ch12/tests/test_avoidance_env.py -q
+python Ch12/examples/12_6_avoidance_demo.py --policy random --num-rays 32 --steps 200
+MUJOCO_GL=egl python Ch12/scripts/verify_avoidance_env.py --output /tmp/ch12-12-6-review
+```
+
+### 관찰 → 원리 설명 → 응용 실험
+
+장애물 없는 환경(`--obstacle-count 0`)과 박스 환경의 `lidar_min`, 시각화 ray 길이, `obstacle_collision`을 비교한다. LiDAR에 보이지 않는 낮은 물체·광선 사각을 안전 한계로 도식화한다. `--task avoidance` PPO의 초단기 동작 확인은 실제 회피가 아니라 학습 파이프라인 smoke로 라벨링한다. Gazebo LiDAR 검증은 기존 Ch11 센서 회귀이므로 본 PPO 실험과 분리한다.
+
+### 독자 제출물과 합격 기준
+
+- 실행 환경(Python, MuJoCo, Gymnasium, SB3, ROS 해당 시), Git SHA, seed, 사용 명령, 로그/JSON/화면 또는 CSV를 제출한다.
+- **합격선:** 64/80차원, 실제 ray 길이와 정규화, 센서 잡음의 시드 재현성, 로봇/바닥 제외, 장애물 충돌과 낙상을 서로 다른 info 키로 확인한다.
+- 실습을 수행하지 못했거나 해당 장치/GUI/ROS를 사용할 수 없다면 **미실행**으로 기록하며 기존 `evidence/`의 통과 기록을 자신의 결과로 사용하지 않는다.
+- 코드 2차 리뷰는 [SECTION_12_6_REPORT_KO.md](SECTION_12_6_REPORT_KO.md)를 참조한다.
