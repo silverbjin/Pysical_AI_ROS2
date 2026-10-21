@@ -129,6 +129,8 @@ class RobustQuadrupedEnv(gym.Wrapper):
                     obs[field] += self.np_random.normal(0,std,obs[field].shape)
             magnitude = np.linalg.norm(obs[6:9])
             obs[6:9] = obs[6:9]/magnitude if magnitude > 1e-12 else observation[6:9]
+        if not np.isfinite(obs).all():
+            raise FloatingPointError('Non-finite robust sensor observation')
         return obs
 
     def _get_obs(self):
@@ -181,7 +183,12 @@ class RobustQuadrupedEnv(gym.Wrapper):
             raise
         finally:
             data.xfrc_applied.fill(0)
-        self._observations.append(self._measure(observation))
+        try:
+            measured = self._measure(observation)
+        except BaseException:
+            self._ready = False
+            raise
+        self._observations.append(measured)
         self._cached_obs = self._observations.popleft()
         info = dict(info,commanded_action=command.tolist(),delayed_action=delayed.tolist(),
                     action_clipped=bool(np.any(command != clipped)),
