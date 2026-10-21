@@ -32,3 +32,12 @@ python3 -m unittest discover -s Ch11/tests -p 'test_slam_optimization.py' -v
 ## 5. 안전·출판 판정
 - 센서 재정렬 임계값은 max_delta이며 완전한 ROS clock epoch 판정기나 LiDAR deskew는 아니다.
 - Python/ROS 실제 구동 전 출판 성공 또는 물리적 안전을 주장하지 않음.
+
+## 6. 추가 오프라인 Python 검증 — 원격 반영 이후 수행
+- 대상 코드 Git blob SHA: `ed751d8a9e4e06213301aac5d109db152b7ccbe1`.
+- 소스 동일성/검사 방법: SHA 일치 attitude_history.py 직접 import / unittest.
+- Python 문법: **원본 전체 py_compile PASS**.
+- 오프라인 회귀 smoke: **3/3 PASS** — 소규모 역순 IMU 히스토리 보존, 큰 시각 역행 초기화, 누락 orientation 차단.
+- 실행 환경: 로컬 Python 3 (ROS 2/Gazebo 미설치), `unittest` 기반 독립 최소 회귀 시나리오. 실행 결과에서 FAIL/ERROR 없음.
+- **주의:** 이 검사는 기존 `Ch11/tests/test_*.py` 전체를 직접 실행한 것이 아니므로 해당 종합 테스트는 **NOT_RUN**. ROS 2 colcon build·시뮬레이션·TF·맵 품질·태스크 성공은 **NOT_RUN**.
+- 이 추가 기록은 앞의 초기 패치 시점 `NOT_RUN` 이후 수행된 **별도의 제한된 Python 검증**이며, 오프라인 단위 동작 범위를 넘는 성공을 증명하지 않는다.
