@@ -3,7 +3,7 @@
 - 검토일: 2026-10-21 (KST)
 - 원고: 첨부된 『Physical AI 실무 가이드』 10장 10.1절
 - 원격 기준: `silverbjin/Pysical_AI_ROS2` main, 작업 시작 시점 `bab76f6ca7df0bda6efd8882c1a698561707e51d`
-- 검토 대상: `Ch10/ros2_ws/src/my_quadruped_bot/my_quadruped_bot/quadruped_controller.py`, `Ch10/ros2_ws/src/my_quadruped_bot/my_quadruped_bot/quadruped_controller_ros2.py`, `Ch10/ros2_ws/package.xml`, `Ch10/ros2_ws/urdf/common/robot_properties.xacro`
+- 검토 대상: `Ch10/ros2_ws/src/my_quadruped_bot/my_quadruped_bot/quadruped_controller.py`, `Ch10/ros2_ws/src/my_quadruped_bot/my_quadruped_bot/quadruped_controller_ros2.py`, `Ch10/ros2_ws/src/my_quadruped_bot/package.xml`, `Ch10/ros2_ws/src/my_quadruped_bot/urdf/common/robot_properties.xacro`
 - 판정: **코드 정적 검토 완료 / 환경 실행 및 Gazebo 물리 검증 미수행 / 종합 승인 보류**
 
 ## 핵심 결론
