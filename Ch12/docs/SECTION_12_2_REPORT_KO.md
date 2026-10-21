@@ -130,9 +130,3 @@ python Ch12/examples/12_2_random_motion.py --steps 200 --seed 42
 **Acceptance:** 31차원과 frame_skip·dt·제어 50 Hz를 확인하고, 위치/토크 명령을 분리해 설명한다. headless CLI가 오류 없이 끝나고 시각화 선택 시 정상 종료해야 한다.
 
 **한계 및 조치:** 이 PR은 문서만 개정하며 실제 재실행·스크린샷·새 테스트 로그를 생성하지 않는다. 명령 실패 시 Python/MuJoCo/SB3/ROS 버전, 실행 위치, seed, stdout/stderr, 생성 JSON, git SHA를 남기고 버그/환경 문제를 분리해 새 코드 수정 PR로 처리한다.
-
----
-
-## 2026-10-21 후속 코드 수정·정적 점검 (이전 문서 전용 리뷰 이후)
-
-이 문서 상단의 **「코드 변경 없음 / 문서 전용 PR」**은 최초 편집·코드 2차 리뷰 시점의 기록으로 보존한다. 이후 동일한 기존 절별 브랜치에 실제 **코드 보강과 신규 회귀 테스트**를 추가했다. 변경 목록, 정적 검증 범위와 `NOT_RUN` 항목은 [SECTION_12_2_FIX_TEST_REPORT_KO.md](SECTION_12_2_FIX_TEST_REPORT_KO.md)를 우선 참조한다. 기존 2026-10-17 런타임 PASS는 새로운 커밋의 실행 증거가 아니다.

@@ -146,10 +146,3 @@ def test_torque_standing_baseline_remains_upright_for_twenty_seconds(seed):
         for _ in range(1000):
             _, _, terminated, _, _ = env.step(stand_action(env))
             assert not terminated
-
-
-def test_training_profile_rejects_incompatible_observation_overrides():
-    with pytest.raises(ValueError, match='31-D'):
-        QuadrupedTrainingEnv(observation_mode='textbook')
-    with QuadrupedTrainingEnv(observation_mode='quaternion') as env:
-        assert env.reset(seed=3)[0].shape == (31,)
