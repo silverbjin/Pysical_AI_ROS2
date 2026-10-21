@@ -17,6 +17,8 @@ hip 원점 (x±.25,y±.10) 및 nominal foot y±.15 정합, `stance_time=duty_fac
 - `Ch10/ros2_ws/src/my_quadruped_bot/my_quadruped_bot/trot_controllerFSM.py`
 - `Ch10/ros2_ws/src/my_quadruped_bot/test/test_section_10_5_fsm_static.py`
 
+- `Ch10/ros2_ws/test_gait_fsm.py`: 불가능한 시나리오 조건을 수정하고 의존성 import 후의 무효한 mocking 구간을 제거, 상태 복귀·관절 수·유한 수치 assert 추가. 실제 ROS 환경 실행은 NOT_RUN.
+
 ## 3. 이번 세션에서 실제 수행한 정적 점검
 
 - 검사 방법: GitHub 저장소의 **해당 절 기존 브랜치**를 `fetch_file`로 다시 조회하고, 이번 패치에서 기대한 구체적인 코드 표현·함수 호출·설정 구조·불필요한 패턴의 제거 여부를 JavaScript 조건 검사로 확인.
