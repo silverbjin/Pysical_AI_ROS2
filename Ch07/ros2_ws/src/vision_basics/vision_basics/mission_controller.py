@@ -17,6 +17,7 @@ from moveit_msgs.msg import Constraints, JointConstraint
 from moveit_msgs.srv import GetPositionIK
 from rclpy.action import ActionClient
 from rclpy.node import Node
+from rclpy.time import Time
 from std_msgs.msg import Bool
 from trajectory_msgs.msg import JointTrajectoryPoint
 
@@ -71,7 +72,7 @@ class MissionController(Node):
         if not (0.1 <= p.x <= 1.5 and abs(p.y) <= 1.0 and 0.02 <= p.z <= 1.4):
             self.get_logger().warning('Reject target outside educational workspace')
             return
-        stamp = rclpy.time.Time.from_msg(msg.header.stamp)
+        stamp = Time.from_msg(msg.header.stamp)
         age = (self.get_clock().now() - stamp).nanoseconds / 1e9
         if stamp.nanoseconds == 0 or age < -0.1 or age > self.max_age:
             self.get_logger().warning('Reject target: invalid/stale stamp')
