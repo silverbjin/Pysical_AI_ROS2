@@ -1,3 +1,5 @@
+> 2026-10-21 코드 수정 반영: Ch03의 `display.launch.py`를 수정하지 않아도 Ch04의 `display_ch04.launch.py`로 정상 파일명 `two_dof_arm.urdf.xacro`을 참조할 수 있다. 먼저 Ch03 워크스페이스를 빌드/source하고 이어 Ch04를 빌드/source한다. `ros2 launch my_robot_tf display_ch04.launch.py`가 권장 실행 경로다. 아래의 Ch03 원본 `sed` 수정법은 기존 코드 오류를 비교하기 위한 **대안**일 뿐 필수 단계가 아니다.
+
 # 4.5절 실습 가이드: JointState → RSP → TF → RViz
 
 **중요:** 현재 Ch04에는 `my_robot_description` 패키지가 **없다**. Ch03의 예제를 활용하며, Ch03 display launch의 잘못된 xacro 파일명을 수정하기 전에는 그대로 실행하는 명령이 성공한다고 보장할 수 없다.
