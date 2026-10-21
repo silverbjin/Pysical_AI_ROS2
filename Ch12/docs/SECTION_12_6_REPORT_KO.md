@@ -34,3 +34,39 @@ Gazebo는 시뮬레이션 8.024~38.046초에서 몸체 높이 0.249166~0.250203m
 독립 wheel 증거는 `wheel_build.log`, `wheel_install.log`, `wheel_human.json`, `wheel_viewer.log`, `ctrl_c.log`다. 반복 종료는 `viewer_shutdown_repeat.json`과 `viewer_shutdown.log`, Gazebo는 `gazebo/result.json`과 `gazebo/ch11_tests.log`다. 기계 판독 요약은 `verification_summary.json`에 있다.
 
 희소 몸체 평면 스캔은 전체 장애물 형상을 보지 못한다. 몸체 기울기·낮은 물체·낭떠러지·광선 사이 사각지대가 남는다. 0.8m 안전 비용은 센서 원점 기준이고 로봇 외곽 간격 보장이 아니다. 배치 여유는 전역 경로 존재를 보장하지 않는다. 동적 장애물, 전역 계획, 실물 전이, 장기 학습 회피 성능은 검증 범위 밖이다.
+
+
+---
+
+## 2026-10-21 편집·코드 2차 리뷰: 원고 12.6 ↔ main 구현
+
+> 범위: 공개 저장소 `main/Ch12` 소스·기존 문서·2026-10-17 실행 증거와 첨부 원고를 정적으로 대조했다. **이번 세션의 실행/PPO 학습/ROS launch 재검증은 수행하지 않았다.** 과거 통과 수치와 새로운 테스트 결과를 혼용하지 않는다. 코드 파일을 수정하지 않는 문서 전용 PR이다.
+
+### 실습 적합성 판정과 위험
+
+**기존 회귀 증거가 있는 실행 경로, 현장 재현과 성능 검증은 조건부.** 심각도는 독자 실습 중 잘못된 입력·기대 성능·안전 오해의 위험 순서다.
+
+1. **[높음·감지 범위]** 실제 구현은 로봇 몸체 평면에 묶인 16/32개의 `mujoco.mj_ray` 광선을 사용한다. 360도 전체 지형 인식이나 낭떠러지 감지를 의미하지 않으며 광선 간 사각지대가 남는다.
+2. **[중간·관측 계약]** 기본 16 rays면 48+16=64차원, 32 rays면 80차원이다. 정책 재생 시 num_rays와 manifest가 일치해야 한다. 장애물 미검출 값은 최대 거리/근접도 0으로 정규화된다.
+3. **[높음·충돌 정책]** `data.contact`에서 로봇 geom과 활성 장애물 geom 양쪽 순서를 검사하며 물리 하위 스텝의 순간 충돌도 종료 플래그로 유지한다. 충돌 스텝의 총 보상 -100과 성공 보상의 차단을 확인한다.
+4. **[중간·성능 한계]** 기존 더미·서브프로세스 PPO 짧은 재생은 저장/읽기 경로만 통과했고 목표 도착률 0%였다. 실용적 회피 성능을 입증하지 않는다.
+
+### 코드/테스트 추적 파일
+
+- [`Ch12/src/quadruped_rl/avoidance_env.py`](../src/quadruped_rl/avoidance_env.py)
+- [`Ch12/src/quadruped_rl/models/quadruped_avoidance.xml`](../src/quadruped_rl/models/quadruped_avoidance.xml)
+- [`Ch12/tests/test_avoidance_env.py`](../tests/test_avoidance_env.py)
+- [`Ch12/scripts/verify_avoidance_env.py`](../scripts/verify_avoidance_env.py)
+- 기존 본 보고서의 실험 로그와 [Ch12 README](../README.md). 이 경로는 감사 대상의 **과거 기록**이며 2026-10-21 신규 실행 로그가 아니다.
+
+### 재현 명령 (저장소 루트)
+
+```bash
+python -m pytest Ch12/tests/test_avoidance_env.py -q
+python Ch12/examples/12_6_avoidance_demo.py --policy random --num-rays 32 --steps 200
+MUJOCO_GL=egl python Ch12/scripts/verify_avoidance_env.py --output /tmp/ch12-12-6-review
+```
+
+**판정 기준:** 64/80차원, 실제 ray 길이와 정규화, 센서 잡음의 시드 재현성, 로봇/바닥 제외, 장애물 충돌과 낙상을 서로 다른 info 키로 확인한다.
+
+**미검증/후속 조치:** 라이브러리 설치 상태, 본 호스트의 MuJoCo viewer/ROS2 실행과 모델 학습의 재현 여부는 이번 리뷰에서 확인하지 못했다. 실제 수행 후 seed·환경 버전·기준 SHA·stdout·JSON·도표와 실패 여부를 보존하고, 결함이 확인되면 기존 증거를 수정하지 말고 별도 코드 PR을 작성한다.
