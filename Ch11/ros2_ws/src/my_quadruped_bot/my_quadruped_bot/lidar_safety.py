@@ -22,7 +22,7 @@ from my_quadruped_bot.sensors.lidar_processing import analyze_front_sector, scan
 
 
 class LidarSafety(Node):
-    """Watch +/-30 degrees in the aligned lidar_link frame, warn at or below 0.5 m."""
+    """Watch +/-30 degrees in the aligned lidar_link frame, warn below 0.5 m."""
 
     def __init__(self):
         super().__init__('lidar_safety')
@@ -61,7 +61,7 @@ class LidarSafety(Node):
         if state == 'OBSTACLE':
             self.get_logger().warning(
                 f'[충돌 위험] 전방 최소 거리 {data["min_distance"]:.2f} m '
-                f'<= {self.safe_distance:.2f} m', throttle_duration_sec=1.0)
+                f'< {self.safe_distance:.2f} m', throttle_duration_sec=1.0)
         elif state != self.last_state:
             if state == 'CLEAR':
                 self.get_logger().info('전방 유효 측정값이 경고 거리 밖에 있습니다.')
