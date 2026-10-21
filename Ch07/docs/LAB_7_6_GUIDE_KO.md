@@ -1,5 +1,7 @@
 # LAB_7_6_GUIDE_KO — 7.6절 그리퍼 제어와 파라미터 튜닝
 
+> **2026-10-21 코드 수정 반영 안내:** `ros2 run vision_basics gripper_controller`는 open 완료를 확인한 뒤 close 합니다. 이 모델의 조인트는 0~0.025m prismatic이고 `/gripper_group_controller/follow_joint_trajectory` 사용 전 컨트롤러 활성화가 필요합니다. 수정 범위와 정적 테스트는 [SECTION_7_6_FIX_TEST_REPORT_KO.md](SECTION_7_6_FIX_TEST_REPORT_KO.md)를 참조하세요. 본 가이드에 과거의 `BLOCKED`·미등록 안내가 있다면 **수정 전 리뷰 기록**이며, 현재의 ROS 빌드·실행 성공을 의미하지 않습니다.
+
 > 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
 > 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 (2026-10-20) · 상태: **BLOCKED — 제어 노드 존재, 시뮬레이터 실행·물리 파지 미검증**
 > 실제 실행 검증: **미수행**. 아래 코드는 교재 실습 절차 및 실행 후 검증 기준이며, 출력 사례를 실측 결과로 제시하지 않는다.
