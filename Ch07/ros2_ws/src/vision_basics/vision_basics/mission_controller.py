@@ -1,472 +1,211 @@
 #!/usr/bin/env python3
-import time
+"""Ch07 section 7.7 guarded demonstration of detection-based pick/place.
+
+Safety contract: no motion by default. Input is *metric* PointStamped in
+base_link from 7.5, not raw /camera/target_pixel (pixel units). Physical grasp
+requires an independent fresh /gripper/grasp_verified Boolean before lifting.
+"""
+import math
 import threading
+import time
+
 import rclpy
-from rclpy.node import Node
-from rclpy.action import ActionClient
-from moveit_msgs.action import MoveGroup
-from moveit_msgs.msg import Constraints, PositionConstraint, OrientationConstraint, PositionIKRequest
-from geometry_msgs.msg import PoseStamped   # PositionIKRequest 대용
 from control_msgs.action import FollowJointTrajectory
-from trajectory_msgs.msg import JointTrajectoryPoint
-from tf2_ros import Buffer, TransformListener
-from shape_msgs.msg import SolidPrimitive
-from geometry_msgs.msg import Quaternion
-
-from moveit_msgs.msg import (
-    Constraints,
-    JointConstraint,
-    RobotState
-)
-
+from geometry_msgs.msg import PointStamped
+from moveit_msgs.action import MoveGroup
+from moveit_msgs.msg import Constraints, JointConstraint
 from moveit_msgs.srv import GetPositionIK
-
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from std_msgs.msg import Bool
+from trajectory_msgs.msg import JointTrajectoryPoint
 
 
 class MissionController(Node):
+    JOINTS = ('joint1', 'joint2', 'joint3', 'joint4', 'joint_wrist')
+
     def __init__(self):
         super().__init__('mission_controller')
+        self.declare_parameter('enable_motion', False)
+        self.declare_parameter('max_target_age_sec', 0.5)
+        self.declare_parameter('server_timeout_sec', 5.0)
+        self.declare_parameter('action_timeout_sec', 30.0)
+        self.motion_enabled = bool(self.get_parameter('enable_motion').value)
+        self.max_age = float(self.get_parameter('max_target_age_sec').value)
+        self.server_timeout = float(self.get_parameter('server_timeout_sec').value)
+        self.action_timeout = float(self.get_parameter('action_timeout_sec').value)
+        if min(self.max_age, self.server_timeout, self.action_timeout) <= 0:
+            raise ValueError('all timeouts must be positive')
+        self.triggered = False  # one-shot; restart node to re-arm
+        self.status = 'IDLE'
+        self.grasp_ok_at = None
+        self.create_subscription(PointStamped, '/robot/target_position',
+                                 self.receive_target, 10)
+        self.create_subscription(Bool, '/gripper/grasp_verified',
+                                 self.receive_grasp_evidence, 10)
+        self.ik = self.create_client(GetPositionIK, '/compute_ik')
+        self.move_group = ActionClient(self, MoveGroup, '/move_action')
+        self.gripper = ActionClient(
+            self, FollowJointTrajectory,
+            '/gripper_group_controller/follow_joint_trajectory')
+        self.get_logger().info(
+            'Mission armed: enable_motion=%s; physical grasp verification required'
+            % self.motion_enabled)
 
-        self.is_working = False
-        
-        # 1. TF Listener 설정
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
+    def receive_grasp_evidence(self, msg):
+        # A Bool-only topic does not attest hardware provenance; simulation-only.
+        if msg.data:
+            self.grasp_ok_at = time.monotonic()
+        else:
+            self.grasp_ok_at = None
 
-        # 2. Action Clients
-        self.move_group_client = ActionClient(self, MoveGroup, 'move_action')
-        self.gripper_client = ActionClient(
-            self, FollowJointTrajectory, '/gripper_group_controller/follow_joint_trajectory'
-        )
-        
-        # compute_ik
-        self.compute_ik_client = self.create_client(
-            GetPositionIK,
-            "/compute_ik"
-        ) 
-        self.get_logger().info("Waiting for /compute_ik ...")
-        self.compute_ik_client.wait_for_service()
-
-        self.get_logger().info("Waiting for Action Servers (MoveIt & Gripper)...")
-        # ⭐️ 서버가 완전히 준비될 때까지 안전하게 대기하도록 주석 해제
-        self.move_group_client.wait_for_server()
-        self.gripper_client.wait_for_server()
-        self.get_logger().info("System Ready! Waiting for TF [target_object]...")
-
-        # 3. FSM 트리거용 타이머
-        self.timer = self.create_timer(1.0, self.check_target_and_execute)
-
-    def check_target_and_execute(self):
-        if self.is_working:
+    def receive_target(self, msg):
+        if self.triggered:
             return
+        if msg.header.frame_id != 'base_link':
+            self.get_logger().warning('Reject target: expected base_link metric frame')
+            return
+        p = msg.point
+        if not all(math.isfinite(v) for v in (p.x, p.y, p.z)):
+            return
+        if not (0.1 <= p.x <= 1.5 and abs(p.y) <= 1.0 and 0.02 <= p.z <= 1.4):
+            self.get_logger().warning('Reject target outside educational workspace')
+            return
+        stamp = rclpy.time.Time.from_msg(msg.header.stamp)
+        age = (self.get_clock().now() - stamp).nanoseconds / 1e9
+        if stamp.nanoseconds == 0 or age < -0.1 or age > self.max_age:
+            self.get_logger().warning('Reject target: invalid/stale stamp')
+            return
+        self.triggered = True
+        if not self.motion_enabled:
+            self.status = 'HELD'
+            self.get_logger().warning(
+                'Validated target; motion DISABLED. Enable only after dry-run and collision checks.')
+            return
+        self.status = 'STARTING'
+        worker = threading.Thread(
+            target=self.execute, args=(p.x, p.y, p.z), daemon=True)
+        worker.start()
 
-        try:
-            transform = self.tf_buffer.lookup_transform(
-                "base_link", "target_object", rclpy.time.Time()
-            )
-            
-            target_x = transform.transform.translation.x
-            target_y = transform.transform.translation.y
-            target_z = transform.transform.translation.z
-            
-            self.get_logger().info(f"Target TF Detected: ({target_x:.3f}, {target_y:.3f}, {target_z:.3f})")
-            
-            self.is_working = True
-            threading.Thread(target=self.execute_pick_and_place, args=(target_x, target_y, target_z)).start()
- 
-        except Exception:
-            pass
+    def await_future(self, future, label):
+        deadline = time.monotonic() + self.action_timeout
+        while rclpy.ok() and not future.done():
+            if time.monotonic() > deadline:
+                raise TimeoutError(label + ' timed out')
+            time.sleep(0.02)
+        if not future.done():
+            raise RuntimeError(label + ': ROS shutdown')
+        value = future.result()
+        if value is None:
+            raise RuntimeError(label + ': null result')
+        return value
 
-    # debugging test
-    # def execute_pick_and_place(self, t_x, t_y, t_z):
-    #     # self.test_joint_goal()
-    #     self.move_arm_pose_test()
+    def require_servers(self):
+        if not self.ik.wait_for_service(timeout_sec=self.server_timeout):
+            raise TimeoutError('/compute_ik unavailable')
+        if not self.move_group.wait_for_server(timeout_sec=self.server_timeout):
+            raise TimeoutError('/move_action unavailable')
+        if not self.gripper.wait_for_server(timeout_sec=self.server_timeout):
+            raise TimeoutError('gripper action unavailable')
 
-    def execute_pick_and_place(self, t_x, t_y, t_z):
-        try:
-            # ⭐️ time.sleep() 대신 Action의 완료를 기다리도록 로직 변경 (내부적으로 while not future.done() 사용)
-            
-            # [Step 1] Pre-Grasp: 물체 상공 15cm
-            self.get_logger().info(">>> [Step 1] Pre-Grasp Approach")
-            self.control_gripper("open") # 그리퍼를 먼저 열면서 이동
-            # ⭐️ 순서 변경: 팔을 움직이기 전에 그리퍼를 먼저 완벽히 엽니다.
-            time.sleep(1.0) # 그리퍼가 벌어질 때까지 확실하게 대기 (자가 충돌 해제 시간)            
-            # self.move_arm(t_x - 0.3, t_y, t_z + 0.15)
-            # self.move_arm(0.90829, 0.0, 0.1289+0.2)
-            self.move_arm(1.0, 0.0, 0.1289+0.3)
-            # self.move_arm(t_x, t_y, 0.1289+0.3)
-            
-            # time.sleep(8) # 동작 완료 대기
-
-            # [Step 2] Grasp Approach: 하강 (z + 0.02)
-            self.get_logger().info(">>> [Step 2] Descending to Object")
-            # self.move_arm(t_x, t_y, t_z + 0.02) 
-            # self.move_arm(0.90829, 0.0, 0.1289+0.02)
-            self.move_arm(1.0, 0.0, 0.1289+0.04)
-            # self.move_arm(t_x, t_y, 0.1289+0.02)
-            
-            # [Step 3] Grasping: 잡기
-            self.get_logger().info(">>> [Step 3] Gripping")
-            self.control_gripper("close")
-            # time.sleep(0.5) # 물리 엔진에서 물체가 잡히는 안정화 시간 (이 경우는 sleep 허용)
-            time.sleep(1) # 물리 엔진에서 물체가 잡히는 안정화 시간 (이 경우는 sleep 허용)
-
-            # [Step 4] Post-Grasp: 들어 올리기
-            self.get_logger().info(">>> [Step 4] Lifting")
-            # self.move_arm(t_x, t_y, t_z + 0.20)
-            self.move_arm(0.90829, 0.0, 0.1289+0.3)
-            # self.move_arm(1,0, 0.0, 0.1289+0.3)            
-
-            # [Step 5] Move to Bin (x=0.0, y=0.3, z=0.3)
-            self.get_logger().info(">>> [Step 5] Moving to Bin")
-            # self.move_arm(0.0, 0.3, 0.3)
-            self.move_arm(1.1, 0.0, 0.1289+0.2)
-
-            # [Step 6] Release: 놓기
-            self.get_logger().info(">>> [Step 6] Releasing")
-            self.control_gripper("open")
-            time.sleep(1)
-
-            self.get_logger().info(">>> [Step 7] Mission Complete.")
-
-        except Exception as e:
-            self.get_logger().error(f"Mission Failed: {e}")
-        finally:
-            self.is_working = False 
-
-    # def move_arm(self, x, y, z, qx=0.0, qy=1.0, qz=0.0, qw=0.0):
-    def move_arm(self, x, y, z, qx=0.0, qy=0.7071, qz=0.0, qw=0.7071):    
-    # def move_arm(self, x, y, z, qx=0.674506, qy=-0.677911, qz=-0.206224, qw=0.207243):
-    #ori_constraint.orientation = Quaternion(x=-0.674506, y=0.677911, z=-0.206224, w=0.207243)    
-        req = GetPositionIK.Request()
-        req.ik_request.group_name = "arm_group"
-        req.ik_request.avoid_collisions = True
-        req.ik_request.pose_stamped.header.frame_id = "base_link"
-        req.ik_request.pose_stamped.pose.position.x = x
-        req.ik_request.pose_stamped.pose.position.y = y
-        req.ik_request.pose_stamped.pose.position.z = z
-        req.ik_request.pose_stamped.pose.orientation.x = qx
-        req.ik_request.pose_stamped.pose.orientation.y = qy
-        req.ik_request.pose_stamped.pose.orientation.z = qz
-        req.ik_request.pose_stamped.pose.orientation.w = qw
-        self.get_logger().info(f"ComputeIK -> ({x:.3f}, {y:.3f}, {z:.3f})")
-        future = self.compute_ik_client.call_async(req)
-        # while not future.done():
-        #     rclpy.spin_once(self, timeout_sec=0.1)
-        while not future.done():
-            time.sleep(0.05)
-        response = future.result()
-        if response is None:
-            raise RuntimeError("IK response is None")
+    def move_arm(self, x, y, z):
+        request = GetPositionIK.Request()
+        request.ik_request.group_name = 'arm_group'
+        request.ik_request.avoid_collisions = True
+        request.ik_request.pose_stamped.header.frame_id = 'base_link'
+        pose = request.ik_request.pose_stamped.pose
+        pose.position.x, pose.position.y, pose.position.z = x, y, z
+        pose.orientation.y = 0.70710678
+        pose.orientation.w = 0.70710678
+        response = self.await_future(self.ik.call_async(request), 'IK')
         if response.error_code.val != 1:
-            raise RuntimeError(f"IK Failed (error={response.error_code.val})")
-        joint_state = response.solution.joint_state
-        joint_map = dict(zip(joint_state.name, joint_state.position))
-        goal_msg = MoveGroup.Goal()
-        goal_msg.request.group_name = "arm_group"
-        goal_msg.request.allowed_planning_time = 5.0
-        goal_msg.request.num_planning_attempts = 5
-        goal_msg.planning_options.plan_only = False
-        goal_msg.planning_options.replan = False
+            raise RuntimeError('IK failed: %s' % response.error_code.val)
+        mapping = dict(zip(response.solution.joint_state.name,
+                           response.solution.joint_state.position))
+        if any(j not in mapping for j in self.JOINTS):
+            raise RuntimeError('IK omitted required arm joints')
+        goal = MoveGroup.Goal()
+        goal.request.group_name = 'arm_group'
+        goal.request.allowed_planning_time = 5.0
+        goal.request.num_planning_attempts = 5
+        goal.planning_options.plan_only = False
+        goal.planning_options.replan = False
         constraints = Constraints()
-        for joint_name in ["joint1", "joint2", "joint3", "joint4", "joint_wrist"]:
-            if joint_name not in joint_map:
-                continue
+        for joint in self.JOINTS:
             jc = JointConstraint()
-            jc.joint_name = joint_name
-            jc.position = float(joint_map[joint_name])
-            jc.tolerance_above = 0.01
-            jc.tolerance_below = 0.01
+            jc.joint_name = joint
+            jc.position = float(mapping[joint])
+            jc.tolerance_above = 0.02
+            jc.tolerance_below = 0.02
             jc.weight = 1.0
             constraints.joint_constraints.append(jc)
-        goal_msg.request.goal_constraints.append(constraints)
-        self.get_logger().info("Sending MoveGroup Goal...")
-        future = self.move_group_client.send_goal_async(goal_msg)
-        while not future.done():
-            # rclpy.spin_once(self, timeout_sec=0.1)
-            time.sleep(0.05)
-        goal_handle = future.result()
-        if not goal_handle or not goal_handle.accepted:
-            raise RuntimeError("MoveGroup rejected goal")
-        result_future = goal_handle.get_result_async()
-        while not result_future.done():
-            # rclpy.spin_once(self, timeout_sec=0.1)
-            time.sleep(0.05)
-        result = result_future.result()
-        if result is None:
-            raise RuntimeError("MoveGroup result is None")
-        self.get_logger().info(f"MoveIt status = {result.status}")
-        if result.status != 4:
-            raise RuntimeError("Move execution failed")
-        self.get_logger().info("Move SUCCESS")
+        goal.request.goal_constraints.append(constraints)
+        handle = self.await_future(self.move_group.send_goal_async(goal), 'move acceptance')
+        if not handle.accepted:
+            raise RuntimeError('MoveGroup rejected goal')
+        result = self.await_future(handle.get_result_async(), 'move execution')
+        if result.status != 4 or result.result.error_code.val != 1:
+            raise RuntimeError('MoveGroup failed: status=%s' % result.status)
 
-
-    # def move_arm(self, x, y, z):
-        
-    #     goal_msg = MoveGroup.Goal()
-    #     goal_msg.request.group_name = "arm_group"        
-    #     # ⭐️ 플래닝 타임아웃 설정 (충분히 연산할 수 있도록 5.0초 부여)
-    #     goal_msg.request.allowed_planning_time = 5.0
-        
-    #     # 플래닝 옵션
-    #     goal_msg.request.num_planning_attempts = 1
-    #     goal_msg.planning_options.plan_only = False
-    #     # goal_msg.planning_options.plan_only = True
-    #     goal_msg.planning_options.replan = True
-    #     goal_msg.planning_options.replan_attempts = 1
-        
-    #     # ⭐️ 0. 작업 공간(Workspace) 명시적 확장 (경계선 문제 해결)
-    #     # 로봇을 중심으로 반경 2m 공간을 플래닝 영역으로 설정합니다.
-    #     goal_msg.request.workspace_parameters.header.frame_id = "base_link"
-    #     goal_msg.request.workspace_parameters.min_corner.x = -2.0
-    #     goal_msg.request.workspace_parameters.min_corner.y = -2.0
-    #     goal_msg.request.workspace_parameters.min_corner.z = -0.5
-    #     goal_msg.request.workspace_parameters.max_corner.x = 2.0
-    #     goal_msg.request.workspace_parameters.max_corner.y = 2.0
-    #     goal_msg.request.workspace_parameters.max_corner.z = 2.0
-        
-    #     # --- ⭐️ 1. 위치 제약 조건(Position Constraint) ---
-    #     pos_constraint = PositionConstraint()
-    #     pos_constraint.header.frame_id = "base_link"
-    #     pos_constraint.link_name = "link_wrist"        
-    #     # ⭐️ 제약 조건 가중치 명시 (near zero 경고 해결)
-    #     pos_constraint.weight = 1.0
-        
-    #     bv = SolidPrimitive()
-    #     bv.type = SolidPrimitive.SPHERE
-    #     # bv.dimensions = [0.05] 
-    #     bv.type = SolidPrimitive.BOX
-    #     bv.dimensions = [0.10, 0.10, 0.10]
-        
-    #     pos_constraint.constraint_region.primitives.append(bv)
-        
-    #     # target_pose = PositionIKRequest().pose_stamped 
-    #     # target_pose.pose.position.x = x
-    #     # target_pose.pose.position.y = y
-    #     # target_pose.pose.position.z = z
-    #     target_pose = PoseStamped()
-    #     target_pose.header.frame_id = "base_link"
-    #     target_pose.pose.position.x = x
-    #     target_pose.pose.position.y = y
-    #     target_pose.pose.position.z = z
-    #     pos_constraint.constraint_region.primitive_poses.append(target_pose.pose)
-        
-    #     # --- ⭐️ 2. 방향 제약 조건(Orientation Constraint) 추가 ---
-    #     ori_constraint = OrientationConstraint()
-    #     ori_constraint.header.frame_id = "base_link"
-    #     ori_constraint.link_name = "link_wrist"
-    #     # ⭐️ 제약 조건 가중치 명시
-    #     ori_constraint.weight = 1.0
-
-    #     # # 그리퍼가 바닥을 향하도록 하는 쿼터니언 (로봇 모델에 따라 Pitch 90도 혹은 180도 조절 필요)
-    #     # ori_constraint.orientation = Quaternion(x=0.0, y=1.0, z=0.0, w=0.0) 
-    #     ori_constraint.orientation = Quaternion(x=-0.674506, y=0.677911, z=-0.206224, w=0.207243) 
-        
-    #     # # 허용 오차 (Tolerances)
-    #     # 초기 디버깅 단계에서는 플래너가 자유롭게 해를 찾을 수 있도록 
-    #     # 수직 방향을 향하되 회전 오차 범위를 아주 넉넉하게(0.7 rad ≒ 40도) 완화합니다.
-    #         # ⭐️ 3. 방향 제약 조건 일시 비활성화 (순수 도달 테스트)
-    #         # 방향 제약(Orientation)이 IK 실패의 원인일 수 있으므로 일단 위치 제약만 넘깁니다.        
-    #     # ori_constraint.orientation = Quaternion(x=0.0, y=1.0, z=0.0, w=0.0) 
-    #     ori_constraint.absolute_x_axis_tolerance = 0.7 # 0.1
-    #     ori_constraint.absolute_y_axis_tolerance = 0.7 # 0.1
-    #     ori_constraint.absolute_z_axis_tolerance = 3.14 # Z축(Roll) 회전은 자유롭게 허용
-        
-
-    #     goal_msg.request.workspace_parameters.header.frame_id = "base_link"
-    #     # Constraints에 위치와 방향 모두 추가
-    #     goal_msg.request.goal_constraints.append(Constraints(
-    #         position_constraints=[pos_constraint],
-    #         orientation_constraints=[ori_constraint]
-    #     ))
-
-    #     # --- ⭐️ 3. 스레드 안전 동기화 블로킹 로직 ---
-    #     self.get_logger().info(f"Commanding Arm to: {x:.2f}, {y:.2f}, {z:.2f} ...")
-    #     future = self.move_group_client.send_goal_async(goal_msg)
-        
-    #     # Action Server가 목표를 수락하고 실행을 완료할 때까지 대기 (스핀 락)
-    #     while not future.done():
-    #         time.sleep(0.05)
-            
-    #     goal_handle = future.result()
-    #     if not goal_handle.accepted:
-    #         raise RuntimeError("MoveIt rejected the motion plan.")
-            
-    #     result_future = goal_handle.get_result_async()
-    #     while not result_future.done():
-    #         time.sleep(0.05)
-            
-    #     if result_future.result().status != 4: # 4 = SUCCEEDED
-    #         raise RuntimeError("Arm movement failed during execution.")
-
-    def control_gripper(self, command):
-        # width = 0.025 if command == 'open' else 0.005 
-        # width = 0.005 if command == 'open' else 0.02
-        width = 0.001 if command == 'open' else 0.02
-        
+    def move_gripper(self, position_m):
+        if not 0.0 <= position_m <= 0.025:
+            raise ValueError('Finger position out of URDF limits')
         goal = FollowJointTrajectory.Goal()
-        
-        # ⭐️ 로봇 모델에 맞는 정확한 그리퍼 조인트 이름으로 변경!
-        # [후보 1] 단일 조인트일 경우:
-        # goal.trajectory.joint_names = ['finger_joint'] 
-        # [후보 2] 양쪽 핑거를 개별 제어하는 멀티 조인트일 경우:
         goal.trajectory.joint_names = ['joint_finger1', 'joint_finger2']
-        
         point = JointTrajectoryPoint()
-        # point.positions = [width]
-        point.positions = [width, width] # 조인트 개수에 맞게 위치 배열도 늘려야 함
+        point.positions = [position_m, position_m]
         point.time_from_start.sec = 1
-        point.time_from_start.nanosec = 0
         goal.trajectory.points = [point]
-        
-        # 액션 전송
-        self.get_logger().info(f"Sending Gripper Goal: {width}")
-        future = self.gripper_client.send_goal_async(goal)
-        
-        # ⭐️ 그리퍼도 실행이 끝날 때까지 대기
-        while not future.done():
-            time.sleep(0.05)
-            
-        goal_handle = future.result()
-        if goal_handle.accepted:
-            result_future = goal_handle.get_result_async()
-            while not result_future.done():
-                time.sleep(0.05)
+        handle = self.await_future(self.gripper.send_goal_async(goal), 'gripper acceptance')
+        if not handle.accepted:
+            raise RuntimeError('Gripper rejected goal')
+        result = self.await_future(handle.get_result_async(), 'gripper result')
+        if result.status != 4 or result.result.error_code != 0:
+            raise RuntimeError('Gripper action failed')
 
-    # 'JointConstraint 방식' 분리 진단 테스트: ok
-    def test_joint_goal(self):
-        self.latest_joint_state = None
-        goal_msg = MoveGroup.Goal()
-        goal_msg.request.group_name = "arm_group"
-        goal_msg.request.allowed_planning_time = 5.0
-        goal_msg.request.num_planning_attempts = 5
-        goal_msg.planning_options.plan_only = False
-        goal_msg.planning_options.replan = False
-        # Start State
-        if self.latest_joint_state is not None:
-            start_state = RobotState()
-            start_state.joint_state.name = \
-                list(self.latest_joint_state.name)
-            start_state.joint_state.position = \
-                list(self.latest_joint_state.position)
-            goal_msg.request.start_state = start_state
-        # Goal Joint Constraints
-        jc1 = JointConstraint()
-        jc1.joint_name = "joint1"
-        jc1.position = 0.0
-        jc1.tolerance_above = 0.05
-        jc1.tolerance_below = 0.05
-        jc1.weight = 1.0
+    def execute(self, x, y, z):
+        try:
+            self.require_servers()
+            self.status = 'APPROACH'
+            self.move_gripper(0.0)  # open
+            self.move_arm(x, y, z + 0.15)
+            self.status = 'DESCEND'
+            self.move_arm(x, y, z + 0.03)
+            self.status = 'GRASP'
+            self.grasp_ok_at = None  # evidence must be NEW after close
+            self.move_gripper(0.02)  # close
+            deadline = time.monotonic() + 3.0
+            while rclpy.ok() and time.monotonic() < deadline:
+                if self.grasp_ok_at is not None:
+                    break
+                time.sleep(0.02)
+            if self.grasp_ok_at is None:
+                raise RuntimeError('No fresh grasp verification: STOP before lift')
+            self.status = 'LIFT'
+            self.move_arm(x, y, z + 0.20)
+            self.status = 'PLACE'
+            self.move_arm(0.4, -0.25, 0.4)  # configured educational bin pose
+            self.move_gripper(0.0)
+            self.status = 'COMMAND_SEQUENCE_DONE'
+            self.get_logger().warning(
+                'Command sequence finished; OBJECT PLACEMENT NOT VERIFIED.')
+        except Exception as exc:
+            self.status = 'FAILED'
+            self.get_logger().error('Mission halted at stage: ' + str(exc))
+        # Deliberately never re-arm from a persistent target.
 
-        jc2 = JointConstraint()
-        jc2.joint_name = "joint2"
-        jc2.position = 0.3
-        jc2.tolerance_above = 0.05
-        jc2.tolerance_below = 0.05
-        jc2.weight = 1.0
 
-        jc3 = JointConstraint()
-        jc3.joint_name = "joint3"
-        jc3.position = 1.57
-        jc3.tolerance_above = 0.05
-        jc3.tolerance_below = 0.05
-        jc3.weight = 1.0
-
-        jc4 = JointConstraint()
-        jc4.joint_name = "joint4"
-        jc4.position = 0.3
-        jc4.tolerance_above = 0.05
-        jc4.tolerance_below = 0.05
-        jc4.weight = 1.0
-
-        jc5 = JointConstraint()
-        jc5.joint_name = "joint_wrist"
-        jc5.position = 0.0
-        jc5.tolerance_above = 0.05
-        jc5.tolerance_below = 0.05
-        jc5.weight = 1.0
-
-        constraints = Constraints()
-
-        constraints.joint_constraints = [jc1, jc2, jc3, jc4, jc5]
-        goal_msg.request.goal_constraints.append(constraints)
-        self.get_logger().info("Sending Joint Goal Test...")
-        future = self.move_group_client.send_goal_async(goal_msg)
-        while not future.done():
-            time.sleep(0.05)
-
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            raise RuntimeError("MoveGroup rejected goal")
-
-        result_future = goal_handle.get_result_async()
-        while not result_future.done():
-            time.sleep(0.05)
-
-        result = result_future.result()
-        self.get_logger().info(
-            f"MoveIt status = {result.status}"
-        )
-
-        if result.status != 4:
-            raise RuntimeError("Joint goal execution failed")
-        self.get_logger().info("Joint Goal SUCCESS")
-
-    # 'PositionConstraint 기반 Goal 생성' 분리 진단 테스트
-    from geometry_msgs.msg import PoseStamped
-    from moveit_msgs.msg import Constraints
-    from moveit_msgs.msg import PositionConstraint
-    from shape_msgs.msg import SolidPrimitive
-
-    # PositionConstraint 기반 Goal
-    def move_arm_pose_test(self):
-        goal = MoveGroup.Goal()
-        goal.request.group_name = "arm_group"
-        goal.planning_options.plan_only = True
-        goal.request.allowed_planning_time = 10.0
-        goal.request.num_planning_attempts = 10
-
-        pose_constraint = PositionConstraint()
-        pose_constraint.header.frame_id = "base_link"
-        pose_constraint.link_name = "link_wrist"
-        # pose_constraint.link_name = "link4"
-        pose_constraint.weight = 1.0
-
-        sphere = SolidPrimitive()
-        sphere.type = SolidPrimitive.SPHERE
-        sphere.dimensions = [0.1]
-
-        pose_constraint.constraint_region.primitives.append(
-            sphere
-        )
-
-        target = PoseStamped()
-        target.header.frame_id = "base_link"
-
-        target.pose.position.x = 0.30
-        target.pose.position.y = 0.00
-        target.pose.position.z = 0.40
-
-        pose_constraint.constraint_region.primitive_poses.append(
-            target.pose
-        )
-
-        goal.request.goal_constraints.append(
-            Constraints(
-                position_constraints=[pose_constraint]
-            )
-        )
-
-        future = self.move_group_client.send_goal_async(
-            goal
-        )
-    
 def main(args=None):
     rclpy.init(args=args)
-    controller = MissionController()
-    rclpy.spin(controller)
-    controller.destroy_node()
-    rclpy.shutdown()
+    node = MissionController()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
