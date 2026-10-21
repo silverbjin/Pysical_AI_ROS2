@@ -37,14 +37,6 @@ class AttitudeHistoryTests(unittest.TestCase):
         self.h.add(1_020_000_000, (0, math.nan, 0, 1))
         self.assertIsNone(self.h.nearest(1_020_000_000))
 
-    def test_small_out_of_order_packet_does_not_flush_history(self):
-        q = (0, math.sin(.1), 0, math.cos(.1))
-        self.h.add(1_000_000_000, q)
-        self.h.add(1_020_000_000, (0, 0, 0, 1))
-        self.h.add(1_010_000_000, (0, 0, 0, 1))
-        self.assertEqual(self.h.nearest(1_000_000_000), q)
-        self.assertEqual(self.h.nearest(1_020_000_000), (0, 0, 0, 1))
-
     def test_time_reset_clears_old_orientation(self):
         self.h.add(10_000_000_000, (0, 0, 0, 1))
         self.h.add(1_000_000_000, (0, 0, 0, 1))

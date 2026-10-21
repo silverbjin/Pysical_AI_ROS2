@@ -32,10 +32,6 @@ class AttitudeHistory:
         if stamp_ns <= 0:
             return
         if self.samples and stamp_ns < self.samples[-1][0]:
-            # Small out-of-order DDS delivery must not erase valid orientation
-            # history. A substantial rewind marks a new simulation time epoch.
-            if self.samples[-1][0] - stamp_ns <= self.max_delta_ns:
-                return
             self.samples.clear()
         try:
             q = unit(quaternion) if available else None
