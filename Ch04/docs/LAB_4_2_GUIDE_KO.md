@@ -1,3 +1,5 @@
+> 2026-10-21 코드 수정 반영: Python과 다중 launch/RViz의 LiDAR 자식 프레임을 모두 `lidar_sensor_link`로 통일했다. 아래 표와 명령도 수정된 코드 기준이다.
+
 # 4.2절 실습 가이드: 변하지 않는 센서 좌표 방송
 
 **학습 목표:** `/tf_static`, transient-local QoS, static TF 한 번 전송과 다중 launch의 차이를 확인한다.
@@ -42,11 +44,11 @@ ros2 topic info /tf_static -v
 ```bash
 ros2 launch my_robot_tf multi_static_tf.launch.py
 # 새 터미널
-ros2 run tf2_ros tf2_echo world lidar
+ros2 run tf2_ros tf2_echo world lidar_sensor_link
 ros2 run tf2_tools view_frames
 ```
 
-기대 트리: `world→base_link→lidar`. `world→base_link`는 z=1.0m, `base_link→lidar`는 (0.1,0,0.2)m이므로 **world 기준 lidar**는 (0.1,0,1.2)m, 회전 없음이다. 포함 RViz 설정의 Fixed Frame은 `world`.
+기대 트리: `world→base_link→lidar_sensor_link`. `world→base_link`는 z=1.0m, `base_link→lidar_sensor_link`는 (0.1,0,0.2)m이므로 **world 기준 lidar**는 (0.1,0,1.2)m, 회전 없음이다. 포함 RViz 설정의 Fixed Frame은 `world`.
 
 ## 4. 원고와 실제 코드의 프레임 이름 비교
 
@@ -54,7 +56,7 @@ ros2 run tf2_tools view_frames
 |---|---|---|
 | 표준 CLI 예제 | `base_link→camera_link` | 원고 4.2.1 |
 | Python 노드 | `base_link→lidar_sensor_link` | 실제 소스 |
-| 다중 launch | `world→base_link→lidar` | 실제 소스·RViz |
+| 다중 launch | `world→base_link→lidar_sensor_link` | 실제 소스·RViz |
 | 원고에 기재된 `lidar_link` | 해당 코드에 없음 | 이름 오기 주의 |
 
 프레임 이름이 다르다고 모두 고장난 것은 아니다. 다만 별도 프레임을 같은 센서라고 해석하면 잘못된 TF 조회를 하게 된다. 리팩터링 시 코드를 일관된 명명법으로 변경한다.
