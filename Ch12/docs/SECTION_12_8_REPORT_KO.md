@@ -41,3 +41,43 @@ Gazebo 8초 벽시계 구간에서 334개(약 41.75Hz)가 실행됐다. 시뮬�
 ## 최종 패키지 확인
 
 전체 테스트 147개가 34.23초에 통과했다(`green_final.log`). 0.8.0 wheel 빌드 후 `/tmp/ch12-final-wheel`에 별도 설치하고 해당 경로의 패키지를 실제 사용함을 검사했다. human viewer 100 step, 정상 close 및 별도 프로세스 Ctrl+C exit 130이 통과했다(`wheel/wheel_human.json`). locomotion에는 경로 마커가 없으므로 검증 도구의 마커 검사는 goal/avoidance 과제에만 적용하도록 수정했다. 수정 전 잘못된 마커 기대값 실패는 `wheel_viewer_before_profile_fix.log`에 보존했다. ROS 패키지도 최종 colcon 빌드를 수행했다.
+
+
+---
+
+## 2026-10-21 편집·코드 2차 리뷰: 원고 12.8 ↔ main 구현
+
+> 범위: 공개 저장소 `main/Ch12` 소스·기존 문서·2026-10-17 실행 증거와 첨부 원고를 정적으로 대조했다. **이번 세션의 실행/PPO 학습/ROS launch 재검증은 수행하지 않았다.** 과거 통과 수치와 새로운 테스트 결과를 혼용하지 않는다. 코드 파일을 수정하지 않는 문서 전용 PR이다.
+
+### 실습 적합성 판정과 위험
+
+**기존 회귀 증거가 있는 실행 경로, 현장 재현과 성능 검증은 조건부.** 심각도는 독자 실습 중 잘못된 입력·기대 성능·안전 오해의 위험 순서다.
+
+1. **[높음·원고 수정 필요]** 원고는 `/imu/data`와 `/joint_group_effort_controller/commands`에 직접 정책을 연결하지만 실제 구현은 `/imu/data_raw`, `/joint_states`, `/simulation/odom`, `/cmd_vel`을 구독하고 MuJoCo에 `/rl/joint_targets` 또는 Gazebo `.../cmd_pos` **위치 타깃**을 발행한다. 위치 잔차를 effort 토픽에 보내면 안 된다.
+2. **[높음·기본 보안]** `RLController`의 기본 `enabled=False`는 진단 전용이다. 물리 제어 검증은 시뮬레이터에서만 `enabled:=true`로 따로 켠다. 실제 로봇 배포 승인·비상정지 구현을 의미하지 않는다.
+3. **[높음·정책 호환]** ROS 어댑터는 `locomotion` 또는 내부 locomotion 기반 `robust`만 지원한다. goal/avoidance는 ROS LiDAR·목표 조건 관측 경로가 없어 차원 수가 같더라도 연결할 수 없다.
+4. **[중간·시간 의미]** `ControllerCore`는 관절 이름 기반 매핑, 48차원·몸체 좌표계 관측, 0.25초 센서·0.5초 cmd 만료·0.1초 skew와 20ms 추론 예산을 검사한다. **50Hz는 시뮬레이션 시간**이며 벽시계 50Hz 보장은 아니다.
+5. **[중간·배포 한계]** 과거 증거는 WSL/ROS2/Jazzy/시뮬레이터 통합·정상 종료의 실행 증거다. 실기 또는 장시간 안정적 보행·회피 성능 증거로 대체하지 않는다.
+
+### 코드/테스트 추적 파일
+
+- [`Ch12/src/quadruped_rl/ros_core.py`](../src/quadruped_rl/ros_core.py)
+- [`Ch12/ros2_ws/src/quadruped_rl_ros/quadruped_rl_ros/rl_controller.py`](../ros2_ws/src/quadruped_rl_ros/quadruped_rl_ros/rl_controller.py)
+- [`Ch12/ros2_ws/src/quadruped_rl_ros/quadruped_rl_ros/mujoco_bridge.py`](../ros2_ws/src/quadruped_rl_ros/quadruped_rl_ros/mujoco_bridge.py)
+- [`Ch12/scripts/verify_ros_integration.py`](../scripts/verify_ros_integration.py)
+- [`Ch12/tests/test_ros_core.py`](../tests/test_ros_core.py)
+- 기존 본 보고서의 실험 로그와 [Ch12 README](../README.md). 이 경로는 감사 대상의 **과거 기록**이며 2026-10-21 신규 실행 로그가 아니다.
+
+### 재현 명령 (저장소 루트)
+
+```bash
+source /opt/ros/jazzy/setup.bash
+# 기존 LAB_12_8_GUIDE_KO.md 설치/colcon/ros_env.sh 절차 완료 후
+python -m pytest Ch12/tests/test_ros_core.py -q
+ros2 launch quadruped_rl_ros rl_simulation.launch.py backend:=mujoco bundle_path:="$PWD/Ch12/runs/ros-smoke"
+# 별도 터미널에서 ros2 topic echo /rl/controller_status 로 dry_run 확인
+```
+
+**판정 기준:** 기본 dry_run에서 정책 타깃 미발행, 12관절 이름 및 48차원 규격, 준비 후 시뮬레이터 enabled=true의 active/hold/만료 상태를 구별한다. Gazebo 비교 실행은 ROS overlay 분리와 별도 도메인을 사용한다.
+
+**미검증/후속 조치:** 라이브러리 설치 상태, 본 호스트의 MuJoCo viewer/ROS2 실행과 모델 학습의 재현 여부는 이번 리뷰에서 확인하지 못했다. 실제 수행 후 seed·환경 버전·기준 SHA·stdout·JSON·도표와 실패 여부를 보존하고, 결함이 확인되면 기존 증거를 수정하지 말고 별도 코드 PR을 작성한다.
