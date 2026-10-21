@@ -17,6 +17,19 @@
 
 각 절을 **별도의 브랜치·PR**로 제출했습니다. 이 README는 10.8절 PR에 포함되었으므로 다른 절 PR이 병합되기 전에는 일부 링크의 파일이 main에 없을 수 있습니다.
 
+## 각 절 수정·정적 테스트 결과
+
+- 10.1 [수정·정적 테스트 보고서](docs/SECTION_10_1_FIX_TEST_REPORT_KO.md)
+- 10.2 [수정·정적 테스트 보고서](docs/SECTION_10_2_FIX_TEST_REPORT_KO.md)
+- 10.3 [수정·정적 테스트 보고서](docs/SECTION_10_3_FIX_TEST_REPORT_KO.md)
+- 10.4 [수정·정적 테스트 보고서](docs/SECTION_10_4_FIX_TEST_REPORT_KO.md)
+- 10.5 [수정·정적 테스트 보고서](docs/SECTION_10_5_FIX_TEST_REPORT_KO.md)
+- 10.6 [수정·정적 테스트 보고서](docs/SECTION_10_6_FIX_TEST_REPORT_KO.md)
+- 10.7 [수정·정적 테스트 보고서](docs/SECTION_10_7_FIX_TEST_REPORT_KO.md)
+- 10.8 [수정·정적 테스트 보고서](docs/SECTION_10_8_FIX_TEST_REPORT_KO.md)
+
+> 2026-10-21 개정: 소스 패턴 일치 검사 46항목을 수행했으며, 10.4의 IK 로컬 Python 수치 회귀 200개를 추가로 통과했습니다. 단, colcon·ROS 2·Gazebo 실기동은 수행하지 않았습니다. 서로 다른 절의 동일 파일 변경(FSM 등)은 PR 병합 순서에 따라 충돌할 수 있습니다.
+
 ## 환경과 시작 명령
 
 - 권장: Ubuntu 24.04/ROS 2 Jazzy/Gazebo Harmonic, Python 3와 NumPy, colcon.
