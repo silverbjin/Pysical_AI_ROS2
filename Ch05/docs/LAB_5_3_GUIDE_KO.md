@@ -1,5 +1,11 @@
 # 5.3절 실습 가이드 — Python JointTrajectory 발행
 
+## 코드 개정 반영 안내 (2026-10-21)
+- simple_controller는 controller 구독자가 없을 때 목표 발행/토글을 보류한다.
+- 한 점의 위치뿐 아니라 **끝점 속도 0rad/s**도 전달해 Jazzy JTC cubic 보간을 사용하도록 변경됐다. `ros2 topic echo`의 `velocities: [0,0,0,0]`도 확인한다.
+- `validate_goal()`에서 4축 목표 개수·유한성·URDF 관절 범위를 검사한다. 보고서: [SECTION_5_3_CHANGE_TEST_REPORT_KO.md](SECTION_5_3_CHANGE_TEST_REPORT_KO.md).
+
+
 ## 공통 환경과 주의사항
 - 전제: Ubuntu 24.04(WSL2 가능), ROS 2 Jazzy, Gazebo Harmonic 및 ros2_control/gz_ros2_control/ros_gz_* 관련 패키지 설치. 실제 설치/동작은 본 문서 작업 환경에서 검증하지 못했다.
 - 저장소 루트가 홈 폴더에 있지 않다면 아래 경로를 본인의 체크아웃 경로로 바꾼다.
