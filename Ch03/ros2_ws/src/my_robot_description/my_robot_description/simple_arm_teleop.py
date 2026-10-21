@@ -41,12 +41,13 @@ class SimpleArmTeleop(Node):
                 "Keyboard teleop requires an interactive TTY; run in a terminal, "
                 "not as a background launch process."
             )
+        # 취득 실패 시 ROS Node를 만들지 않아 초기화 중 리소스 누수를 방지한다.
+        self.settings = termios.tcgetattr(sys.stdin.fileno())
         super().__init__("simple_arm_teleop")
         self.pub_j1 = self.create_publisher(Float64, "/joint1/cmd_pos", 10)
         self.pub_j2 = self.create_publisher(Float64, "/joint2/cmd_pos", 10)
         self.joint1_pos = 0.0
         self.joint2_pos = 0.0
-        self.settings = termios.tcgetattr(sys.stdin.fileno())
 
     def get_key(self):
         """Read a single character, always restoring the terminal on exit."""
@@ -58,12 +59,14 @@ class SimpleArmTeleop(Node):
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, self.settings)
 
-    def publish_commands(self):
-        """Send both joints' target angles (radians) to the bridge."""
-        for publisher, position in (
-            (self.pub_j1, self.joint1_pos),
-            (self.pub_j2, self.joint2_pos),
+    def publish_commands(self, changed_joint):
+        """Publish only the key-selected joint; the other remains uncommanded."""
+        for name, publisher, position in (
+            ("joint1", self.pub_j1, self.joint1_pos),
+            ("joint2", self.pub_j2, self.joint2_pos),
         ):
+            if name != changed_joint:
+                continue
             message = Float64()
             message.data = position
             publisher.publish(message)
@@ -75,7 +78,7 @@ def main(args=None):
     try:
         node = SimpleArmTeleop()
         print(HELP, flush=True)
-        node.publish_commands()
+        # 시작 시 0 rad를 보내면 기존 로봇 자세가 갑자기 바뀔 수 있으므로 발행하지 않는다.
         while rclpy.ok():
             key = node.get_key().lower()
             if key in ("q", "\x03"):
@@ -84,6 +87,7 @@ def main(args=None):
             if key not in ("w", "s", "a", "d"):
                 # Do not flood the bridge with unchanged commands while idle.
                 continue
+            previous = (node.joint1_pos, node.joint2_pos)
             if key == "w":
                 node.joint1_pos += STEP_SIZE
             elif key == "s":
@@ -99,7 +103,11 @@ def main(args=None):
             node.joint2_pos = constrain(
                 node.joint2_pos, JOINT2_LIMIT["min"], JOINT2_LIMIT["max"]
             )
-            node.publish_commands()
+            if (node.joint1_pos, node.joint2_pos) == previous:
+                # 각도 제한에 걸려 목표가 변하지 않으면 중복 명령을 보내지 않는다.
+                continue
+            changed_joint = "joint1" if key in ("w", "s") else "joint2"
+            node.publish_commands(changed_joint)
             print(
                 f"Joint 1: {node.joint1_pos:+.2f} rad / "
                 f"Joint 2: {node.joint2_pos:+.2f} rad",
@@ -108,14 +116,17 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        if node is not None:
-            # Double restoration is deliberate: cleanup after abnormal exit.
-            termios.tcsetattr(
-                sys.stdin.fileno(), termios.TCSADRAIN, node.settings
-            )
-            node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
+        try:
+            if node is not None:
+                try:
+                    termios.tcsetattr(
+                        sys.stdin.fileno(), termios.TCSADRAIN, node.settings
+                    )
+                finally:
+                    node.destroy_node()
+        finally:
+            if rclpy.ok():
+                rclpy.shutdown()
 
 
 if __name__ == "__main__":
