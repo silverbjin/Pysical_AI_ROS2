@@ -1,5 +1,11 @@
 # 5.1절 실습 가이드 — 기초 제어 패키지 준비와 정적 매핑
 
+## 코드 개정 반영 안내 (2026-10-21)
+- 현재 이 브랜치에서 gripper_controller 미사용 선언은 **제거됨**. 파트 5.1의 검사에서 그리퍼가 나타나지 않아야 정상이다.
+- `open_loop_control`은 deprecated 설정이므로 제거됨; 사용자 메시지 발행의 개루프 성격과 JTC 내부 상태 처리를 구분한다.
+- package.xml의 ROS/Gazebo 실행 의존성과 setup.py 0.0.1 버전이 보완됨. 검증 보고서: [SECTION_5_1_CHANGE_TEST_REPORT_KO.md](SECTION_5_1_CHANGE_TEST_REPORT_KO.md).
+
+
 ## 공통 환경과 주의사항
 - 전제: Ubuntu 24.04(WSL2 가능), ROS 2 Jazzy, Gazebo Harmonic 및 ros2_control/gz_ros2_control/ros_gz_* 관련 패키지 설치. 실제 설치/동작은 본 문서 작업 환경에서 검증하지 못했다.
 - 저장소 루트가 홈 폴더에 있지 않다면 아래 경로를 본인의 체크아웃 경로로 바꾼다.
@@ -35,7 +41,7 @@ grep -n 'joint name=' urdf/robot.ros2_control.xacro
 - YAML의 arm_controller.joints 순서를 적고 URDF의 joint1~joint4와 모두 동일한지 확인한다.
 - command_interfaces에 position, state_interfaces에 position/velocity가 있는지 찾는다.
 - joint_trajectory_controller는 상위 명령의 시간 기반 궤적을 처리한다. 원고의 '개루프'는 피드백을 읽지 않는 **사용자 publisher**의 형태를 가리킨다. 전체 스택을 피드백 없는 시스템으로 오인하지 않는다.
-- gripper_controller는 YAML에는 있으나 URDF의 gripper_joint가 없고 시작 스포너에서도 실행되지 않는다는 점을 확인한다.
+- 개정 YAML에는 gripper_controller 설정이 없음을 확인한다(현재 로봇에 gripper_joint가 없음).
 
 ## 실습 3 — 의존성·빌드 진단
 ~~~bash
