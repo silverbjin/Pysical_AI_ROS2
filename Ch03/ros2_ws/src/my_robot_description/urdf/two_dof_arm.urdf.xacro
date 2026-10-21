@@ -27,6 +27,7 @@
     </inertial>
   </xacro:macro>
 
+  <!-- h는 로컬 Z축 길이, w는 X축 폭, d는 Y축 깊이. -->
   <xacro:macro name="arm_link_macro" params="name color_name r g b">
     <link name="${name}">
       <visual>
@@ -50,7 +51,7 @@
     </link>
   </xacro:macro>
 
-  <!-- trouble shooting: Dummy Link 및 가상 고정 장치 추가-->
+  <!-- 참고: world-to-base 예제는 비활성화되어 있으며, Gazebo 실제 고정 베이스를 보장하지 않는다. -->
   <!-- <link name="world"/>
   <joint name="world_to_base_joint" type="fixed">
     <parent link="world"/>
