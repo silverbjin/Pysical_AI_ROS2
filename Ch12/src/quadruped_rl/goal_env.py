@@ -67,7 +67,13 @@ class QuadrupedGoalEnv(QuadrupedLocomotionEnv):
 
     @staticmethod
     def quat_to_yaw(quat):
-        w,x,y,z = quat
+        quat = np.asarray(quat, dtype=np.float64)
+        if quat.shape != (4,) or not np.isfinite(quat).all():
+            raise ValueError('yaw quaternion must have four finite wxyz elements')
+        norm = float(np.linalg.norm(quat))
+        if norm < 1e-6:
+            raise ValueError('yaw quaternion must have nonzero norm')
+        w,x,y,z = quat/norm
         return math.atan2(2*(w*z+x*y),1-2*(y*y+z*z))
 
     def goal_features(self):
