@@ -90,11 +90,3 @@ def test_step_requires_reset():
 def test_invalid_configuration(kwargs):
     with pytest.raises(ValueError):
         QuadrupedEnv(**kwargs)
-
-
-def test_base_reset_rejects_unknown_options_without_changing_state():
-    with QuadrupedEnv() as env:
-        with pytest.raises(ValueError, match='does not accept options'):
-            env.reset(seed=0, options={'target': [1, 2]})
-        assert env._needs_reset
-        assert env.reset(seed=0, options={})[0].shape == (30,)

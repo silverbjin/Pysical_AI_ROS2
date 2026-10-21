@@ -75,9 +75,6 @@ class QuadrupedEnv(gym.Env):
         self._renderer = None
 
     def reset(self, *, seed=None, options=None):
-        # The base profile has no reset-time options; reject silent misconfiguration.
-        if options is not None and (not isinstance(options, dict) or options):
-            raise ValueError('QuadrupedEnv reset does not accept options')
         super().reset(seed=seed)
         mujoco.mj_resetData(self.model, self.data)
         self.data.qpos[:3] = [0, 0, self.initial_height]
