@@ -170,11 +170,6 @@ def train(output, *, task='locomotion', env_kwargs=None, total_timesteps=2_000_0
             model.save(root/'interrupted_model')
         _write_json(root/'result.json',dict(status='INTERRUPTED'))
         raise
-    except Exception as error:
-        # Keep an explicit failure record for a run that already has a manifest.
-        _write_json(root/'result.json', dict(status='FAIL',
-            error_type=type(error).__name__, error=str(error)))
-        raise
     finally:
         if training_env is not None:
             training_env.close()

@@ -105,18 +105,3 @@ def test_robust_bundle_and_numpy_major_guard(tmp_path):
     path.write_text(json.dumps(manifest))
     with pytest.raises(ValueError,match='NumPy major'):
         load_bundle(root)
-
-
-def test_training_failure_persists_result_after_manifest(tmp_path, monkeypatch):
-    import stable_baselines3
-    def fail_ppo(*args, **kwargs):
-        raise RuntimeError('intentional PPO failure')
-    monkeypatch.setattr(stable_baselines3, 'PPO', fail_ppo)
-    root = tmp_path / 'failed'
-    with pytest.raises(RuntimeError, match='intentional PPO failure'):
-        train(root, total_timesteps=32, n_envs=1, n_steps=16, batch_size=16,
-              n_epochs=1, eval_every=32, eval_episodes=1, checkpoint_every=32)
-    assert (root / 'manifest.json').is_file()
-    report = json.loads((root / 'result.json').read_text())
-    assert report['status'] == 'FAIL'
-    assert report['error_type'] == 'RuntimeError'
