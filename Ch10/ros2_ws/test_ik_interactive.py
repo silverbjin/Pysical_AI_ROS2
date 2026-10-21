@@ -29,24 +29,27 @@ from my_quadruped_bot.inverse_kinematics import InverseKinematics
 # ------------------------------
 
 def forward_kinematics(q: np.ndarray, l1: float, l2: float, l3: float) -> list:
-    """Independent educational FK including the fixed URDF thigh/calf RPY offsets."""
-    q1, q2, q3 = map(float, q)
-    a, b = 1.2 + q2, -2.4 + q3
+    """관절 각도와 링크 길이를 기반으로 각 관절의 3D 좌표를 계산 (FK)"""
+    q1, q2, q3 = q
+    
+    # 2D 지역 평면(X-Z') 좌표 연산
+    x_hip, z_prime_hip = 0.0, 0.0
+    x_knee = l2 * np.sin(q2)
+    z_prime_knee = -l2 * np.cos(q2)
+    x_foot = x_knee + l3 * np.sin(q2 + q3)
+    z_prime_foot = z_prime_knee - l3 * np.cos(q2 + q3)
 
-    def project(x, y, z):
-        return np.array([x, y * np.cos(q1) - z * np.sin(q1),
-                         y * np.sin(q1) + z * np.cos(q1)])
+    # 3D 전역 좌표계로 투영
+    p_origin = np.array([0.0, 0.0, 0.0])
+    p_hip = np.array([x_hip, l1 * np.cos(q1) - z_prime_hip * np.sin(q1), l1 * np.sin(q1) + z_prime_hip * np.cos(q1)])
+    p_knee = np.array([x_knee, l1 * np.cos(q1) - z_prime_knee * np.sin(q1), l1 * np.sin(q1) + z_prime_knee * np.cos(q1)])
+    p_foot = np.array([x_foot, l1 * np.cos(q1) - z_prime_foot * np.sin(q1), l1 * np.sin(q1) + z_prime_foot * np.cos(q1)])
 
-    knee_x, knee_z = -l2 * np.sin(a), -l2 * np.cos(a)
-    foot_x = knee_x - l3 * np.sin(a + b)
-    foot_z = knee_z - l3 * np.cos(a + b)
-    return [np.zeros(3), project(0, l1, 0), project(knee_x, l1, knee_z),
-            project(foot_x, l1, foot_z)]
-
+    return [p_origin, p_hip, p_knee, p_foot]
 
 def launch_interactive_ik():
     # 초기 기구학 파라미터 및 목표점 정의
-    init_l1, init_l2, init_l3 = 0.05, 0.25, 0.25
+    init_l1, init_l2, init_l3 = 0.05, 0.20, 0.20
     init_x, init_y, init_z = 0.0, 0.05, -0.30
     
     ik_solver = InverseKinematics()
