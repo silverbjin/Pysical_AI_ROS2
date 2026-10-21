@@ -1,8 +1,9 @@
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
 from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.event_handlers import OnProcessExit
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from moveit_configs_utils import MoveItConfigsBuilder
@@ -99,7 +100,8 @@ def generate_launch_description():
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", "controller_manager"],
+        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager",
+                   "--controller-manager-timeout", "60"],
         parameters=[{"use_sim_time": use_sim_time}]
     )
 
@@ -107,7 +109,8 @@ def generate_launch_description():
         package="controller_manager",
         executable="spawner",
         # 기존 데모의 'arm_group_controller' 이름을 유지하되 실제 설정을 따릅니다.
-        arguments=["arm_group_controller", "--controller-manager", "controller_manager"],
+        arguments=["arm_group_controller", "--controller-manager", "/controller_manager",
+                   "--controller-manager-timeout", "60"],
         parameters=[{"use_sim_time": use_sim_time}]
     )
  
@@ -118,6 +121,16 @@ def generate_launch_description():
     arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
     output='screen'
 )
+
+    # Controller manager is started by gz_ros2_control inside the Gazebo entity.
+    # Spawners must not start until robot spawn process has finished.
+    # This mitigates (but does not eliminate) service readiness races.
+    controllers_after_spawn = RegisterEventHandler(
+        OnProcessExit(
+            target_action=spawn_entity,
+            on_exit=[joint_state_broadcaster_spawner, arm_controller_spawner],
+        )
+    )
 
     return LaunchDescription(
         [
@@ -131,8 +144,7 @@ def generate_launch_description():
             spawn_entity,
             
             # 컨트롤러 가동 관련
-            joint_state_broadcaster_spawner,
-            arm_controller_spawner,
+            controllers_after_spawn,
             
             clock_bridge
         ]
