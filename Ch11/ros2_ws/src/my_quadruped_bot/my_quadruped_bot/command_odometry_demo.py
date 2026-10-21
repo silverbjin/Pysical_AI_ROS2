@@ -39,13 +39,7 @@ class CommandOdometryDemo(Node):
         self.get_logger().info("DEMO ONLY: integrating commands, not measuring robot motion")
 
     def cmd_vel_callback(self, msg):
-        # A NaN/Inf command must never contaminate the demo odometry pose.
-        if not all(math.isfinite(v) for v in (msg.linear.x, msg.linear.y, msg.angular.z)):
-            self.vx = self.vy = self.vth = 0.0
-            self.last_cmd_time = self.get_clock().now()
-            self.get_logger().warning('Nonfinite demo velocity rejected; motion stopped.')
-            return
-        slip_factor = 0.9
+        slip_factor = 0.9 
         self.vx = msg.linear.x * slip_factor
         self.vy = msg.linear.y * slip_factor
         self.vth = msg.angular.z * slip_factor
@@ -55,20 +49,9 @@ class CommandOdometryDemo(Node):
         current_time = self.get_clock().now()
         dt = (current_time - self.last_time).nanoseconds / 1e9
         self.last_time = current_time
-        if dt < 0.0:
-            # Gazebo/ROS clock rewind creates a new odometry epoch.
-            self.x = self.y = self.th = 0.0
-            self.vx = self.vy = self.vth = 0.0
-            self.last_cmd_time = current_time
-            dt = 0.0
-            self.get_logger().warning('Demo clock reversed: pose and velocity reset.')
-        elif dt > 0.2:
-            # Never extrapolate across a pause or a missing timer callback.
-            self.vx = self.vy = self.vth = 0.0
-            dt = 0.0
-
+        
         # [방어 코드 추가] 0.2초 동안 새로운 cmd_vel이 없으면 로봇이 멈춘 것으로 간주
-        if not 0.0 <= (current_time - self.last_cmd_time).nanoseconds / 1e9 <= 0.2:
+        if (current_time - self.last_cmd_time).nanoseconds / 1e9 > 0.2:
             self.vx = 0.0
             self.vy = 0.0
             self.vth = 0.0
