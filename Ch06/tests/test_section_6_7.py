@@ -15,6 +15,7 @@ class DiagnosticTests(unittest.TestCase):
         result = d.diagnose((0.0, 0.0), (0.7, 0.0))
         self.assertEqual(result["verdict"], "NEAR_SINGULAR")
         self.assertLess(result["min_singular_value"], 1e-5)
+        self.assertIsNone(result["jacobian_condition"])  # JSON-safe singularity marker
 
     def test_unreachable_target(self):
         self.assertEqual(d.diagnose((0.1, 0.1), (1.2, 0.0))["verdict"], "UNREACHABLE")
