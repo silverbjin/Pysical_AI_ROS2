@@ -36,6 +36,12 @@ class ObjectDetector(Node):
 
         self.bridge = CvBridge()
         
+        # Reject small noisy blobs; units are pixel squared (not metres).
+        self.declare_parameter('min_contour_area', 500.0)
+        self.min_contour_area = float(self.get_parameter('min_contour_area').value)
+        if self.min_contour_area <= 0:
+            raise ValueError('min_contour_area must be positive')
+
         # [색상 범위 설정] 'Red' Coke Can Detection
         self.lower_red1 = np.array([0, 100, 100])
         self.upper_red1 = np.array([10, 255, 255])
@@ -67,7 +73,7 @@ class ObjectDetector(Node):
             c = max(contours, key=cv2.contourArea)
             area = cv2.contourArea(c)
 
-            if area > 50:
+            if area >= self.min_contour_area:
                 M = cv2.moments(c)
                 if M["m00"] != 0:
                     cx = int(M["m10"] / M["m00"])
@@ -85,9 +91,12 @@ class ObjectDetector(Node):
                     point_msg.header = msg.header 
                     point_msg.point.x = float(cx)
                     point_msg.point.y = float(cy)
+                    # Legacy PointStamped contract: x/y=pixels, z=area in pixel^2.
+                    # This is NOT a 3D point; 7.5 must ignore z as depth.
                     point_msg.point.z = float(area) 
                     self.coord_pub.publish(point_msg)
 
+        # No detection publishes NO target; downstream consumers MUST enforce TTL.
         # 결과 이미지 Publish
         try:
             detected_img_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
