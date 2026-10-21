@@ -35,6 +35,10 @@ ros2 launch my_quadruped_bot simulation.launch.py
 
 새 터미널에서 노드를 실행할 때도 동일하게 ROS 2와 `Ch10/ros2_ws/install/setup.bash`를 source합니다. Gazebo 기동만으로 로봇이 자동 보행하지는 않으며, 각 절의 실습 가이드를 참고해 **제어기를 하나씩** 실행해야 합니다.
 
+## 정적 점검 기록
+
+- [2026-10-21 소스 패턴 15항목 확인 기록](docs/STATIC_SOURCE_CHECKS_20261021_KO.md): 15개 패턴 일치이며 **코드 실행 테스트의 통과 수가 아님**.
+
 ## 먼저 읽을 위험 사항
 
 1. **URDF와 IK 제원 불일치:** 실제 Xacro의 허벅지·종아리 길이 각 0.25m와 IK 코드의 각 0.20m 등 차이가 있습니다. URDF·FK 기준 조정 없이는 관절 명령을 검증 완료로 간주하지 않습니다.
