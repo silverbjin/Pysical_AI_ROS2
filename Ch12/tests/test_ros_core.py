@@ -64,3 +64,17 @@ def test_body_velocity_and_quaternion_conventions():
         core.update_imu([0,0,np.sin(np.pi/4),np.cos(np.pi/4)],[0,0,0],1.)
         core.update_velocity([1,0,0],1.,frame='world')
         assert np.allclose(core.observation(1.)[:3],[0,-1,0],atol=1e-6)
+
+
+def test_older_command_cannot_override_newer_and_clock_reset_rearms():
+    with QuadrupedLocomotionEnv() as env:
+        env.reset(seed=4)
+        core = ControllerCore(PolicyContract.from_env(env))
+        core.update_command([1, 0, 0], 2.)
+        with pytest.raises(ValueError, match='Out-of-order command'):
+            core.update_command([0, 0, 0], 1.)
+        np.testing.assert_array_equal(core.command, [1, 0, 0])
+        assert core.command_stamp == 2.
+        core.reset_timing()
+        core.update_command([0, 0, 0], 1.)
+        assert core.command_stamp == 1.
