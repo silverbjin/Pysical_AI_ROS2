@@ -1,8 +1,10 @@
 <?xml version="1.0" ?>
 <sdf version="1.8">
   <world name="my_first_world">
+    <!-- 중력을 명시해 시뮬레이션 환경을 재현할 수 있게 한다. -->
+    <gravity>0 0 -9.80665</gravity>
     <physics name="1ms" type="ignored">
-      <max_step_size>0.001</max_step_size> <!-- 1ms마다 물리 계산 (국룰) -->
+      <max_step_size>0.001</max_step_size> <!-- 1ms는 목표 물리 스텝이며 실제 RTF·GUI FPS를 보장하지 않음 -->
       <real_time_factor>1.0</real_time_factor>
     </physics>
 
