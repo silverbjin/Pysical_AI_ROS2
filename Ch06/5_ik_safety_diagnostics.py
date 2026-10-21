@@ -42,7 +42,7 @@ def diagnose(theta, goal, damping=0.05, max_step=0.15, limits=(-math.pi, math.pi
     disc = math.sqrt(max(trace * trace - 4 * detj * detj, 0.0))
     sigma_min = math.sqrt(max((trace - disc) / 2, 0.0))
     sigma_max = math.sqrt(max((trace + disc) / 2, 0.0))
-    condition = float("inf") if sigma_min <= 1e-12 else sigma_max / sigma_min
+    condition = None if sigma_min <= 1e-12 else sigma_max / sigma_min
     # J^T J + lambda^2 I, a positive-definite 2x2 system.
     aa, ab = a * a + c * c + damping ** 2, a * b + c * d
     bb = b * b + d * d + damping ** 2
