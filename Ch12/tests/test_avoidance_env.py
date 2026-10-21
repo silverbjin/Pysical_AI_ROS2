@@ -184,3 +184,11 @@ def test_rgb_obstacles_and_lidar():
         assert image.shape == (480,640,3) and image.std()>1
         scene = env._renderer.scene
         assert sum(geom.type==mujoco.mjtGeom.mjGEOM_LINE for geom in scene.geoms[:scene.ngeom])==16
+
+
+def test_lidar_rejects_nonfinite_ray_before_policy_observation(monkeypatch):
+    with QuadrupedAvoidanceEnv(obstacle_count=0) as env:
+        env.reset(seed=4)
+        monkeypatch.setattr(mujoco, 'mj_ray', lambda *args, **kwargs: float('nan'))
+        with pytest.raises(FloatingPointError, match='LiDAR'):
+            env.refresh_lidar()
