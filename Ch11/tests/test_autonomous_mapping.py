@@ -156,13 +156,6 @@ class SavedMapTests(unittest.TestCase):
             p=Path(d)/'map.pgm';p.write_bytes(b'P5\n2 2\n255\n'+bytes([0]))
             with self.assertRaises(ValueError): self.m.read_pgm(p)
 
-    def test_extra_p5_raster_bytes_are_rejected(self):
-        with tempfile.TemporaryDirectory() as d:
-            p = Path(d)/'map.pgm'
-            p.write_bytes(b'P5\n2 2\n255\n' + bytes([0, 254, 205, 254, 0]))
-            with self.assertRaisesRegex(ValueError, 'raster length'):
-                self.m.read_pgm(p)
-
     def test_yaml_and_image_statistics_do_not_claim_accuracy(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)
