@@ -29,6 +29,9 @@ def read_pgm(path):
             raise ValueError('Missing PGM separator')
         i += 2 if data[i:i+2] == b'\r\n' else 1
         pixels = data[i:i+width*height]
+        # Refuse extra P5 payload: image dimensions must match saved bytes.
+        if len(data) - i != width*height:
+            raise ValueError('PGM raster length does not match dimensions')
     else:
         pixels = bytes(int(token()) for _ in range(width*height))
     if len(pixels) != width*height:
