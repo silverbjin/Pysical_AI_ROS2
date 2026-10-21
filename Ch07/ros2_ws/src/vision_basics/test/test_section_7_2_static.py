@@ -19,6 +19,8 @@ class TestSection72(unittest.TestCase):
         launch = (ROOT/'launch/camera_lab.launch.py').read_text()
         ast.parse(launch)
         self.assertIn('sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo', launch)
+        self.assertNotIn('model://sun', ET.tostring(world, encoding='unicode'))
+        self.assertIn("override_frame_id': 'camera_optical_frame'", launch)
 
 
 if __name__ == '__main__':
