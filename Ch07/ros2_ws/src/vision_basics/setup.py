@@ -30,7 +30,7 @@ setup(
     zip_safe=True,
     maintainer='jinho',
     maintainer_email='silverbjin@gmail.com',
-    description='Physical AI 실무 가이드 - 로봇 디스크립션 패키지',
+    description='Physical AI Ch07 vision and manipulation labs',
     license='TODO: License declaration',
     extras_require={
         'test': [
@@ -43,7 +43,12 @@ setup(
             'simple_arm_teleop = vision_basics.simple_arm_teleop:main',  # 텔레오퍼레이션 노드 추가
             'joint_control_cli = vision_basics.joint_control_cli:main',  # 제어 노드 추가
             
-            'joint_splitter = vision_basics.joint_splitter:main'  # GUI 슬라이더 제어 노드 추가
+            'joint_splitter = vision_basics.joint_splitter:main',
+            'simple_image_subscriber = vision_basics.simple_image_subscriber:main',
+            'vision_processor = vision_basics.vision_processor:main',
+            'object_detector = vision_basics.object_detector:main',
+            'gripper_controller = vision_basics.gripper_controller:main',
+            'mission_controller = vision_basics.mission_controller:main',
         ],
     },
 )
