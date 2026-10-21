@@ -11,6 +11,8 @@ class VisionProcessor(Node):
     def __init__(self):
         super().__init__('vision_processor')
 
+        self.declare_parameter('show_gui', False)
+        self.show_gui = bool(self.get_parameter('show_gui').value)
         # 1. QoS 설정 (Gazebo와의 호환성 필수)
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -53,14 +55,15 @@ class VisionProcessor(Node):
         blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
         edge_image = cv2.Canny(blurred_image, 50, 150)
 
-        # [Step 3] 결과 시각화 (로컬 윈도우)
-        # 실제 로봇에서는 GUI가 없을 수 있으므로 주의해야 하지만,
-        # 학습 단계에서는 직관적인 확인을 위해 cv2.imshow를 사용한다.
-        cv2.imshow("Original View", cv_image)
-        cv2.imshow("Edge Detection", edge_image)
-        
-        # cv2.imshow를 갱신하기 위해 필수적인 웨이팅 함수 (1ms 대기)
-        cv2.waitKey(1)
+        # GUI is optional: ROS image publishing must work headlessly (WSL/SSH).
+        if self.show_gui:
+            try:
+                cv2.imshow("Original View", cv_image)
+                cv2.imshow("Edge Detection", edge_image)
+                cv2.waitKey(1)
+            except cv2.error as exc:
+                self.get_logger().warning(f'Disabling GUI after OpenCV error: {exc}')
+                self.show_gui = False
 
         # [Step 4] OpenCV Image -> ROS Image 역변환 및 송출
         try:
@@ -84,7 +87,8 @@ def main(args=None):
         pass
     finally:
         # 종료 시 OpenCV 창 모두 닫기
-        cv2.destroyAllWindows()
+        if node.show_gui:
+            cv2.destroyAllWindows()
         node.destroy_node()
         rclpy.shutdown()
 
