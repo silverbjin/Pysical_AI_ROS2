@@ -73,9 +73,11 @@ class LidarProcessingTests(unittest.TestCase):
         self.assertEqual(result.state, 'UNKNOWN')
         self.assertFalse(result.coverage_complete)
 
-    def test_threshold_uses_strict_less_than(self):
-        self.assertEqual(self.scan([0.5]*361).state, 'CLEAR')
+    def test_threshold_is_inclusive_for_conservative_warning(self):
+        # A return exactly at the safety boundary must not be declared CLEAR.
+        self.assertEqual(self.scan([0.5]*361).state, 'OBSTACLE')
         self.assertEqual(self.scan([0.49]*361).state, 'OBSTACLE')
+        self.assertEqual(self.scan([0.51]*361).state, 'CLEAR')
 
     def test_invalid_metadata_rejected(self):
         for inc, lo, hi in ((0, 0.1, 10), (math.nan, 0.1, 10), (0.01, 10, 1)):
