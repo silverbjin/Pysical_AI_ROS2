@@ -1,3 +1,5 @@
+> 2026-10-21 실행 코드 추가: Ch03 실습 launch를 수정하지 않고 Ch04의 `sim_sync_ch04.launch.py`를 사용할 수 있다. Ch03 모델 패키지와 Ch04 TF 패키지를 각각 빌드한 뒤, **Ch03 → Ch04 순서로 source**하고 `ros2 launch my_robot_tf sim_sync_ch04.launch.py`를 실행한다. 기존 `ros2 launch my_robot_description sim_sync.launch.py`는 비교용 레거시 경로다. 이 새 launch도 **관절 TF만** 연동하며 `world→base_link` 실측 포즈는 구현하지 않는다.
+
 # 4.6절 실습 가이드: Gazebo 관절 상태를 RViz와 동기화
 
 **실습 목적:** Gazebo 내부 관절 상태를 ROS의 `/joint_states`로 전달한 다음 RSP가 계산한 TF를 RViz로 확인한다. **전체 몸체 pose 동기화는 별도의 확장 과제**다.
