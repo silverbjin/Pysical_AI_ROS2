@@ -1,168 +1,118 @@
-#!/usr/bin/env python3
-import time
-import yaml
-import os
-import gc # 안정적인 종료
+"""Ch06 MoveItPy example: plan a named pose and a position-only IK goal.
+
+Safe default is PLAN ONLY. --execute opts in to mock/Gazebo controller execution.
+Never connect to real hardware without separate safety verification.
+"""
+import argparse
+from pathlib import Path
 
 import rclpy
-
+from geometry_msgs.msg import PoseStamped
 from moveit.planning import MoveItPy
 from moveit_configs_utils import MoveItConfigsBuilder
-
 from ament_index_python.packages import get_package_share_directory
-from geometry_msgs.msg import PoseStamped
 
 
 def build_moveit_config():
-    package_name = "my_robot_moveit_config"
-    pkg_share = get_package_share_directory(package_name)
-    config_dir = os.path.join(pkg_share, "config")
-
-    # 기본 MoveIt 설정 로드
+    # This file is installed by my_robot_description, unlike the missing
+    # my_robot_moveit_config/urdf/my_robot.urdf referenced by the old demo.
+    description = Path(get_package_share_directory("my_robot_description"))
+    urdf = description / "urdf" / "my_robot.urdf.xacro"
+    if not urdf.is_file():
+        raise FileNotFoundError(f"Robot model not installed: {urdf}")
     moveit_config = (
-        MoveItConfigsBuilder(
-            robot_name="my_robot",
-            package_name=package_name,
-        )
-        .robot_description(
-            file_path="urdf/my_robot.urdf"
-        )
-        .robot_description_semantic(
-            file_path="config/my_robot.srdf"
-        )
-        .robot_description_kinematics(
-            file_path="config/kinematics.yaml"
-        )
-        .joint_limits(
-            file_path="config/joint_limits.yaml"
-        )
-        .trajectory_execution(
-            file_path="config/moveit_controllers.yaml"
-        )
+        MoveItConfigsBuilder(robot_name="my_robot", package_name="my_robot_moveit_config")
+        .robot_description(file_path=str(urdf))
+        .robot_description_semantic(file_path="config/my_robot.srdf")
+        .robot_description_kinematics(file_path="config/kinematics.yaml")
+        .joint_limits(file_path="config/joint_limits.yaml")
+        .trajectory_execution(file_path="config/moveit_controllers.yaml")
+        .planning_pipelines(pipelines=["ompl"], default_planning_pipeline="ompl")
         .to_moveit_configs()
     )
-
     params = moveit_config.to_dict()
-
-    # OMPL 설정 로드
-    ompl_file = os.path.join(
-        config_dir,
-        "ompl_planning.yaml"
-    )
-
-    with open(ompl_file, "r") as f:
-        ompl_config = yaml.safe_load(f)
-
-    # MoveItPy가 기대하는 구조 생성
-    params["ompl"] = ompl_config
+    kin = params.get("robot_description_kinematics", {})
+    if "arm_group" in kin:
+        # Five arm joints cannot in general satisfy an arbitrary 6D pose.
+        kin["arm_group"]["position_only_ik"] = True
+    # MoveItPy's MoveItCpp expects its own pipeline naming and scene monitor.
+    planning = params.get("planning_pipelines", {})
+    ompl = planning.get("ompl") if isinstance(planning, dict) else None
+    if ompl is None:
+        raise RuntimeError("OMPL configuration not loaded")
+    params["ompl"] = ompl
     params["planning_pipelines"] = {
         "pipeline_names": ["ompl"],
         "default_planning_pipeline": "ompl",
     }
-    # Planning Scene Monitor
     params["planning_scene_monitor_options"] = {
         "name": "planning_scene_monitor",
         "robot_description": "robot_description",
         "joint_state_topic": "/joint_states",
         "wait_for_initial_state_timeout": 10.0,
     }
-    # 기본 Planner 설정
     params["plan_request_params"] = {
-        "planning_pipeline": "ompl",
-        "planner_id": "RRTConnectkConfigDefault",
-        "planning_attempts": 1,
-        "planning_time": 5.0,
-        "max_velocity_scaling_factor": 1.0,
-        "max_acceleration_scaling_factor": 1.0,
+        "planning_pipeline": "ompl", "planner_id": "RRTConnectkConfigDefault",
+        "planning_attempts": 1, "planning_time": 5.0,
+        "max_velocity_scaling_factor": 0.2,
+        "max_acceleration_scaling_factor": 0.2,
     }
     return params
 
 
+def parse_arguments(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--execute", action="store_true", help="opt in to trajectory execution")
+    parser.add_argument("--target", nargs=3, type=float, default=[0.3, 0.0, 1.1],
+                        metavar=("X", "Y", "Z"), help="IK target in base_link [metres]")
+    parser.add_argument("--named", default="ready", help="SRDF named configuration")
+    return parser.parse_args(argv)
+
+
+def plan_step(robot, component, label, goal, execute=False):
+    component.set_start_state_to_current_state()
+    goal(component)
+    plan = component.plan()
+    if not plan:
+        print(f"FAIL: {label} PLANNING (check collision, IK and scene state)")
+        return False
+    print(f"PASS: {label} PLAN ONLY (not an execution or goal-reach result)")
+    if execute:
+        result = robot.execute(plan.trajectory, controllers=[])
+        print(f"EXECUTION RESULT for {label}: {result!s}")
+        # Never announce a task success without controller/feedback evidence.
+        if "SUCCEEDED" not in str(result).upper():
+            print("UNVERIFIED: check FollowJointTrajectory action result and final FK")
+            return False
+    return True
+
+
 def main():
+    args = parse_arguments()
     rclpy.init()
-    print("=== MoveIt Config Loading ===")
+    try:
+        config = build_moveit_config()
+        robot = MoveItPy(node_name="hello_moveit", config_dict=config)
+        arm = robot.get_planning_component("arm_group")
+        print("MODE:", "EXECUTE (sim/mock only)" if args.execute else "PLAN ONLY")
+        if not plan_step(robot, arm, "named", lambda a: a.set_goal_state(
+                configuration_name=args.named), args.execute):
+            return 1
+        goal = PoseStamped()
+        goal.header.frame_id = "base_link"
+        goal.pose.position.x, goal.pose.position.y, goal.pose.position.z = args.target
+        goal.pose.orientation.w = 1.0  # ignored by position_only_ik; explicitly documented
+        if not plan_step(robot, arm, "IK XYZ", lambda a: a.set_goal_state(
+                pose_stamped_msg=goal, pose_link="link_wrist"), args.execute):
+            return 2
+        return 0
+    except (FileNotFoundError, RuntimeError, ValueError) as error:
+        print(f"SETUP FAILED: {error}")
+        return 3
+    finally:
+        if rclpy.ok():
+            rclpy.shutdown()
 
-    moveit_config = build_moveit_config()
-    print("\n=== Planning Pipeline ===")
-    print(moveit_config["planning_pipelines"])
-    print("\n=== OMPL Plugin ===")
-    print(moveit_config["ompl"]["planning_plugins"])
-
-    # MoveItPy 생성
-    my_robot = MoveItPy(
-        node_name="hello_moveit",
-        config_dict=moveit_config,
-    )
-    # arm_group 획득
-    arm = my_robot.get_planning_component(
-        "arm_group"
-    )
-    # 초기화 대기
-    # time.sleep(1.0)
-    time.sleep(2.0)
-    
-    print("\n=== Robot Ready ===")
-    ##################################################
-    # Task 1 : Named State
-    ##################################################
-    print("\n[Task 1] Move To Named State")
-    arm.set_start_state_to_current_state()
-    arm.set_goal_state(
-        configuration_name="ready"
-    )
-    plan_result = arm.plan()
-
-    if plan_result:
-        print("Planning Success")
-        my_robot.execute(
-            plan_result.trajectory,
-            controllers=[]
-        )
-        print("Execution Success")
-    else:
-        print("Planning Failed")
-    time.sleep(2.0)
-
-    ##################################################
-    # Task 2 : IK Goal
-    ##################################################
-    print("\n[Task 2] IK Planning")
-    pose_goal = PoseStamped()
-    pose_goal.header.frame_id = "base_link"
-    pose_goal.pose.position.x = 0.00
-    pose_goal.pose.position.y = 0.00
-    pose_goal.pose.position.z = 2.1
-    pose_goal.pose.orientation.x = 0.0
-    pose_goal.pose.orientation.y = 0.0
-    pose_goal.pose.orientation.z = 0.0
-    pose_goal.pose.orientation.w = 1.0
-    arm.set_start_state_to_current_state()
-    arm.set_goal_state(
-        pose_stamped_msg=pose_goal,
-        pose_link="link_wrist"
-    )
-    plan_result = arm.plan()
-
-    if plan_result:
-        print("IK Planning Success")
-        my_robot.execute(
-            plan_result.trajectory,
-            controllers=[]
-        )
-        print("IK Execution Success")
-    else:
-        print("IK Planning Failed")
-        
-    # 종료 전 대기    
-    time.sleep(2.0)
-    print("\n=== Finished ===")         
-    
-    
-    del my_robot    
-    gc.collect()
-        
-    rclpy.shutdown()
-    os._exit(0)
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
