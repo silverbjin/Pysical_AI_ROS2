@@ -1,6 +1,8 @@
+> 2026-10-21 반영: `tracking_demo.launch.py` 및 listener 프레임 파라미터가 추가됐다. 통합 launch 사용 시 수동 static publisher를 동시에 띄우지 않는다.
+
 # 4.4절 실습 가이드: TF 리스너로 움직이는 프레임 추적
 
-**목표:** 4.3절의 `turtle_frame` 위치를 `world` 기준으로 1초마다 읽고 평면 거리 2m를 검증한다. **현재 코드에는 `police_bot`이라는 프레임이 없음**을 먼저 확인한다.
+**목표:** 4.3절의 `turtle_frame` 위치를 `world` 기준으로 1초마다 읽고 평면 거리 2m를 검증한다. **기본 단독 실행은 `world` 기준**이지만, 새 `tracking_demo.launch.py`를 쓰면 `world→police_bot` 정적 TF를 자동으로 만들고 관측자를 `police_bot`으로 설정한다.
 
 ## 1. 환경·빌드
 
@@ -14,7 +16,16 @@ ros2 pkg executables my_robot_tf
 
 각 터미널에서 `source /opt/ros/jazzy/setup.bash`와 같은 워크스페이스 `source install/setup.bash`를 실행한다.
 
-## 2. 두 노드 순서대로 실행
+## 2. 통합 실행(권장) 및 두 노드 개별 실행
+
+권장 명령(한 터미널):
+
+```bash
+ros2 launch my_robot_tf tracking_demo.launch.py
+```
+
+이 launch는 방송 노드, `world→police_bot` 정적 TF, `tf_listener`(`target_frame=police_bot`)를 함께 시작한다. 다음은 별도 단독 실행/디버깅용이다.
+
 
 터미널 A (4.3 방송):
 
@@ -45,7 +56,7 @@ ros2 topic hz /tf
 
 ## 4. '경찰 로봇' 실험을 정확하게 확장하기
 
-현재 `world` 원점에서 관찰하므로 '경찰 로봇이 world 원점에 있다'는 **개념 가정**이다. 실제 `police_bot` TF가 필요하다면 새 터미널에서 아래 명령을 실행한다.
+현재 `world` 원점에서 관찰하므로 '경찰 로봇이 world 원점에 있다'는 **개념 가정**이다. 통합 launch를 사용하지 않을 때 `police_bot` TF가 필요하다면 새 터미널에서 아래 명령을 실행한다.
 
 ```bash
 ros2 run tf2_ros static_transform_publisher \
@@ -54,7 +65,7 @@ ros2 run tf2_ros static_transform_publisher \
 ros2 run tf2_ros tf2_echo police_bot turtle_frame
 ```
 
-`police_bot`을 world 원점과 동일하게 둔 상태에서는 world 기준 값과 동일해야 한다. Python 리스너도 `self.target_frame='police_bot'`으로 바꾸면 같은 계약을 테스트할 수 있지만 **원본 코드의 기본 실행은 world**다. 자식 `police_bot`을 이미 발행 중이면 중복 방송 금지.
+`police_bot`을 world 원점과 동일하게 둔 상태에서는 world 기준 값과 동일해야 한다. Python 리스너의 코드를 수정하지 않고 `ros2 run my_robot_tf tf_listener --ros-args -p target_frame:=police_bot`으로 지정할 수 있다. 단독 실행의 기본값은 world다. 자식 `police_bot`을 이미 발행 중이면 중복 방송 금지.
 
 ## 5. 예외 및 시간 처리
 
