@@ -35,3 +35,14 @@ python3 -m unittest discover -s Ch11/tests -p 'test_lidar_processing.py' -v
 - 경계 포괄은 교육용 경고의 보수적 기준이며 하드웨어 인증 AEB 아님.
 - 새 런타임 Evidence 없음. 출판 또는 물리적 안전 성공은 이 커밋만으로 주장할 수 없음.
 - 11.3 기존 문서 PR에서 코드·정적 검사·실행 미검증의 경계를 유지해야 함.
+
+## 6. 추가 오프라인 Python 검증 — 원격 반영 이후 수행
+- 대상 코드 Git blob SHA: `ee57c66b0d5c24e85a325fa3beb7947dd435a429`.
+- 소스 동일성/검사 방법: SHA 일치 lidar_processing.py 직접 import / unittest.
+- Python 문법: **원본 전체 py_compile PASS**.
+- 오프라인 회귀 smoke: **3/3 PASS** — 0.49/0.50/0.51m 거리 경계, NaN 스캔 UNKNOWN, 시각 freshness.
+- 실행 환경: 로컬 Python 3 (ROS 2/Gazebo 미설치), `unittest` 기반 독립 최소 회귀 시나리오. 실행 결과에서 FAIL/ERROR 없음.
+- **주의:** 이 검사는 기존 `Ch11/tests/test_*.py` 전체를 직접 실행한 것이 아니므로 해당 종합 테스트는 **NOT_RUN**. ROS 2 colcon build·시뮬레이션·TF·맵 품질·태스크 성공은 **NOT_RUN**.
+- 이 추가 기록은 앞의 초기 패치 시점 `NOT_RUN` 이후 수행된 **별도의 제한된 Python 검증**이며, 오프라인 단위 동작 범위를 넘는 성공을 증명하지 않는다.
+
+- 경고 출력 정합성: `lidar_safety.py`의 로그 부등호와 설명도 `<=` 기준으로 정정하여 판정·표현을 일치시켰다.
