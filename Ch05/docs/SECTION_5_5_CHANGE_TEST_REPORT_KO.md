@@ -23,3 +23,9 @@
 통합 launch는 이미 RViz를 띄우므로 **동일한 ROS 그래프에서 중복 실행하지 말 것**. 분리 진단에서만 `ros2 launch manipulation_basics rviz_only.launch.py`. 현재 모델은 fixed world-to-base이므로 Gazebo 물리 베이스 움직임을 RViz가 자동 복제하는 것은 아니다.
 
 **판정: SYNTAX / STATIC PASS, GUI·TF RUNTIME NOT_RUN.**
+
+## 추가 회귀 — RViz robot_description QoS
+- 확인: 기존 RViz 구독 설정의 `Durability Policy: Volatile`은 robot_state_publisher의 transient-local 발행에서 늦게 구독했을 때 이전 설명을 받지 못할 수 있다.
+- 수정: `manipulation.rviz`의 RobotModel Description Topic Durability를 `Transient Local`로 변경.
+- 정적 검사: 토픽 문자열·QoS 정책 값 비교를 테스트에 추가. 실제 지연 실행 GUI 재현은 NOT_RUN.
+- 근거: https://index.ros.org/p/robot_state_publisher/.

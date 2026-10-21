@@ -1,6 +1,7 @@
 # 5.5절 실습 가이드 — Gazebo와 RViz 상태 미러링
 
 ## 코드 개정 반영 안내 (2026-10-21)
+- RViz RobotModel의 `/robot_description` 구독 Durability를 `Transient Local`로 변경해 뒤늦은 RViz 실행에서도 기존 모델 설명을 받을 수 있도록 설정했다.
 - `manipulation.rviz`의 Fixed Frame 기본값을 **world**로 변경했다. 현재 URDF의 world→base_link 고정 연결을 기준으로 해석한다.
 - 별도 RViz만 확인하려면 **이미 로봇 description/TF를 발행하는 별도 실행 환경**에서 `ros2 launch manipulation_basics rviz_only.launch.py`. 기존 통합 launch와 동시에 실행하면 RViz가 중복된다.
 - 보고서: [SECTION_5_5_CHANGE_TEST_REPORT_KO.md](SECTION_5_5_CHANGE_TEST_REPORT_KO.md).

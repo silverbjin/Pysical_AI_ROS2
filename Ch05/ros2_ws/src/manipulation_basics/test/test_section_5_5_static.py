@@ -24,3 +24,4 @@ def test_config_robot_and_tf_topics():
     assert 'rviz_default_plugins/TF' in classes
     robot = next(v for v in displays if v['Class'].endswith('/RobotModel'))
     assert robot['Description Topic']['Value'] == '/robot_description'
+    assert robot['Description Topic']['Durability Policy'] == 'Transient Local'
