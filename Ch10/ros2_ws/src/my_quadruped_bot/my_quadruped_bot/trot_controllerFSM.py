@@ -20,6 +20,7 @@ from geometry_msgs.msg import Twist, TransformStamped, Quaternion
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
 from tf2_ros import TransformBroadcaster
+from my_robot_interfaces.srv import SetGait
 
 def euler_to_quaternion(roll, pitch, yaw) -> Quaternion:
     """Euler 각도를 Quaternion 메시지로 변환하는 헬퍼 함수"""
@@ -228,6 +229,7 @@ class TrotControllerNode(Node):
         self.get_logger().info("4족 보행 로봇 Trot Controller FSM 노드 시작!")
         
         self.controller = TrotController()
+        self.gait_service = self.create_service(SetGait, 'set_gait', self.set_gait_callback)
         
         self.sub_cmd = self.create_subscription(
             Twist,
@@ -293,6 +295,13 @@ class TrotControllerNode(Node):
         # self.timer = self.create_timer(self.dt, self.control_loop)
         self.get_logger().info("TrotControllerFSM initialized with Odometry, TF, LPF, and Dynamic Params.")
         
+    def set_gait_callback(self, request, response):
+        accepted = self.controller.gait_planner.set_gait(request.gait_name)
+        response.success = bool(accepted)
+        response.message = ('Queued gait transition at next cycle boundary'
+                            if accepted else 'Unsupported gait')
+        return response
+
     def cmd_vel_callback(self, msg: Twist):
         # self.controller.update_command(msg)
         """목표 속도 수신 (LPF 적용을 위해 target에만 저장)"""
