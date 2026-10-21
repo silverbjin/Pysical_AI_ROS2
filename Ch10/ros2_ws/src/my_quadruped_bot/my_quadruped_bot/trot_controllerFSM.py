@@ -51,6 +51,7 @@ class TrotController:
         self.target_height = 0.25 # 0.30    
         self.current_height = self.idle_height
         self.step_frequency = 2.0
+        self.manual_gait_name = None  # None means speed-based automatic gait selection
         
         self.cmd_vel = {'x': 0.0, 'y': 0.0, 'yaw': 0.0}
         self.last_non_zero_vel = {'x': 0.0, 'y': 0.0, 'yaw': 0.0}
@@ -131,7 +132,7 @@ class TrotController:
             # -----------------------------------------------------------
             # [수정] 히스테리시스(Hysteresis)를 적용한 보행 패턴 전이 예약
             # -----------------------------------------------------------
-            if cmd_active:
+            if cmd_active and self.manual_gait_name is None:
                 if vel_norm < 0.08:
                     self.gait_planner.set_gait('crawl')  # 확실한 저속 구간에서만 크롤 변환
                 elif vel_norm > 0.12:
@@ -296,7 +297,14 @@ class TrotControllerNode(Node):
         self.get_logger().info("TrotControllerFSM initialized with Odometry, TF, LPF, and Dynamic Params.")
         
     def set_gait_callback(self, request, response):
+        if request.gait_name == 'auto':
+            self.controller.manual_gait_name = None
+            response.success = True
+            response.message = 'Automatic gait selection restored'
+            return response
         accepted = self.controller.gait_planner.set_gait(request.gait_name)
+        if accepted:
+            self.controller.manual_gait_name = request.gait_name
         response.success = bool(accepted)
         response.message = ('Queued gait transition at next cycle boundary'
                             if accepted else 'Unsupported gait')
