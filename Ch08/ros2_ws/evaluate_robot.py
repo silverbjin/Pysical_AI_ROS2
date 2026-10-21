@@ -1,94 +1,75 @@
+"""8.7: 추론 평가 — 성공률, 종단 거리, 행동 변화량을 구분한다."""
+import argparse
+from pathlib import Path
+
 import numpy as np
-import gymnasium as gym
 from stable_baselines3 import PPO
 from rl_env import ReachEnv
-from tqdm import tqdm
 
-def evaluate_policy_robotics(model, env, n_eval_episodes=100):
-    """
-    물리 AI 및 로봇 매니퓰레이션 시스템 특화 정량 성능 평가 함수
-    """
-    success_count = 0
-    episode_rewards = []
-    episode_lengths = []
-    action_smoothness_scores = []
-    final_steady_state_errors = []  # [추가] 정착 오차 (최종 남은 거리) 추적
 
-    print(f"\n==================================================")
-    print(f"[평가 개시] 총 {n_eval_episodes}회의 독립 에피소드 테스트를 진행합니다.")
-    print(f"==================================================")
-    
-    for i in tqdm(range(n_eval_episodes), desc="로봇 에이전트 평가 중"):
-        obs, info = env.reset()  # Gymnasium 최신 스펙 적용 (info 수신)
-        done = False
-        total_reward = 0
-        steps = 0
-        
-        last_action = None  # [교정] 첫 스텝 거칠기 왜곡 방지를 위해 None으로 초기화
-        episode_action_diff = 0
-        
-        while not done:
-            # Deterministic=True: 결정론적 최적 제어 명령 추출
+def terminal_distance(obs, info):
+    # 6DoF ReachEnv observation = qpos[6], qvel[6], ee[3], target[3].
+    if "distance" in info:
+        distance = float(info["distance"])
+    else:
+        if np.asarray(obs).shape != (18,):
+            raise ValueError("Cannot infer distance: expected ReachEnv 18D observation")
+        distance = float(np.linalg.norm(obs[-6:-3] - obs[-3:]))
+    if not np.isfinite(distance) or distance < 0:
+        raise ValueError("Invalid terminal distance")
+    return distance
+
+
+def evaluate_policy_robotics(model, env, n_eval_episodes=100, seed=42, max_steps=500):
+    if n_eval_episodes < 1 or max_steps < 1:
+        raise ValueError("n_eval_episodes and max_steps must be positive")
+    successes, returns, lengths, changes, errors = 0, [], [], [], []
+    for episode in range(n_eval_episodes):
+        obs, _ = env.reset(seed=seed + episode)
+        prev_action, diff_sum, episode_reward = None, 0.0, 0.0
+        for step in range(1, max_steps + 1):
             action, _ = model.predict(obs, deterministic=True)
+            action = np.asarray(action, dtype=float)
             obs, reward, terminated, truncated, info = env.step(action)
-            
-            total_reward += reward
-            steps += 1
-            
-            # [교정] 부드러움 측정: 두 번째 스텝부터 연속적인 변화량만 순수 측정
-            if last_action is not None:
-                episode_action_diff += np.linalg.norm(action - last_action)
-            last_action = action.copy()
+            episode_reward += float(reward)
+            if prev_action is not None:
+                diff_sum += float(np.linalg.norm(action - prev_action))
+            prev_action = action.copy()
+            if terminated or truncated:
+                break
+        success = bool(info.get("is_success", False))
+        successes += int(success)
+        errors.append(terminal_distance(obs, info))
+        returns.append(episode_reward)
+        lengths.append(step)
+        changes.append(diff_sum / max(1, step - 1))
+    success_rate = 100.0 * successes / n_eval_episodes
+    mean_return = float(np.mean(returns))
+    print(f"Episodes={n_eval_episodes}, success={success_rate:.1f}%")
+    print(f"Terminal distance (ALL episodes): {np.mean(errors)*1000:.1f} mm")
+    print(f"Mean episode length: {np.mean(lengths):.1f} steps")
+    print(f"Mean |delta action|/step: {np.mean(changes):.5f} (NOT physical jerk or power)")
+    print(f"Mean reward: {mean_return:.3f} ± {np.std(returns):.3f}")
+    return success_rate, mean_return
 
-            # [교정] Gymnasium 표준 종료 조건 연산 및 타임아웃 강제 방어
-            done = terminated or truncated or steps >= 500
-            
-            # [보안] 에피소드가 종료(done)되었을 때 성공 조건 확인
-            if done:
-                # 환경의 info 내 'is_success' 표준 플래그 혹은 terminated 기반 판단
-                if info.get('is_success', False) or (terminated and not truncated):
-                    success_count += 1
-                
-                # [추가] 정착 오차 데이터 수집 (마지막 순간 목표물과의 거리)
-                if 'distance' in info:
-                    final_steady_state_errors.append(info['distance'])
-        
-        episode_rewards.append(total_reward)
-        episode_lengths.append(steps)
-        
-        # 스텝당 평균 액션 변화량 계산 (최소 1스텝 이상일 때만 분모 연산)
-        denom = max(1, steps - 1)
-        action_smoothness_scores.append(episode_action_diff / denom)
 
-    # 정량 통계 지표 산출
-    success_rate = (success_count / n_eval_episodes) * 100
-    mean_reward = np.mean(episode_rewards)
-    std_reward = np.std(episode_rewards)
-    mean_steps = np.mean(episode_lengths)
-    mean_smoothness = np.mean(action_smoothness_scores)
-    mean_sse = np.mean(final_steady_state_errors) if final_steady_state_errors else 0.0
-
-    print("\n==================================================")
-    print("📊 6-DOF 매니퓰레이터 정량적 성능 평가 결과 보고서")
-    print("==================================================")
-    print(f"1. 태스크 도달 성공률 (Success Rate)       : {success_rate:.2f}%")
-    print(f"2. 평균 정착 오차 (Steady-State Error)    : {mean_sse*1000:.1f} mm (실패 포함)")
-    print(f"3. 평균 제어 소요 시간 (Mean Time Steps)   : {mean_steps:.1f} Steps")
-    print(f"4. 제어 신호 거칠기 (Action Jerk Score)   : {mean_smoothness:.4f} (낮을수록 소모전력 최적화됨)")
-    print(f"5. 에피소드 평균 보상 (Mean Return)        : {mean_reward:.2f} +/- {std_reward:.2f}")
-    print("==================================================\n")
-    
-    return success_rate, mean_reward
-
-if __name__ == "__main__":
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=Path, required=True, help="explicit *.zip policy path")
+    parser.add_argument("--episodes", type=int, default=100)
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
+    if not args.model.is_file():
+        parser.error(f"Policy not found: {args.model}")
     env = ReachEnv(render_mode=None)
-    model_path = "./models/ppo_reach_final"
-    
     try:
-        model = PPO.load(model_path)
-        print(f"[시스템] 최적화된 학습 완료 정책 모델 로드 완료: {model_path}")
-        evaluate_policy_robotics(model, env, n_eval_episodes=100)
-    except FileNotFoundError:
-        print(f"[오류] 지정한 경로({model_path})에 가중치 파일 파일이 없습니다. 학습을 먼저 완료하세요.")
+        model = PPO.load(str(args.model), env=None, device="cpu")
+        if model.observation_space != env.observation_space or model.action_space != env.action_space:
+            raise ValueError("Policy/environment observation or action contract mismatch")
+        evaluate_policy_robotics(model, env, args.episodes, args.seed)
     finally:
         env.close()
+
+
+if __name__ == "__main__":
+    main()
