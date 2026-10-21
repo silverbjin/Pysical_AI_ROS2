@@ -1,5 +1,11 @@
 # 5.2절 실습 가이드 — Gazebo 소환과 컨트롤러 활성화
 
+## 코드 개정 반영 안내 (2026-10-21)
+- 이제 실행 순서는 **Gazebo create 정상 종료 → JSB spawner 정상 종료 → arm spawner**이다. 과거 '2초 대기' 설명은 수정 전 코드에 한정된다.
+- 실패 종료코드면 후속 스포너를 시작하지 않고 launch를 종료한다. 여전히 실제 active 상태는 `ros2 control list_controllers`로 직접 확인한다.
+- 수정 보고서: [SECTION_5_2_CHANGE_TEST_REPORT_KO.md](SECTION_5_2_CHANGE_TEST_REPORT_KO.md).
+
+
 ## 공통 환경과 주의사항
 - 전제: Ubuntu 24.04(WSL2 가능), ROS 2 Jazzy, Gazebo Harmonic 및 ros2_control/gz_ros2_control/ros_gz_* 관련 패키지 설치. 실제 설치/동작은 본 문서 작업 환경에서 검증하지 못했다.
 - 저장소 루트가 홈 폴더에 있지 않다면 아래 경로를 본인의 체크아웃 경로로 바꾼다.
