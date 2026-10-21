@@ -3,28 +3,38 @@ from gymnasium import spaces
 import numpy as np
 import mujoco
 import os
+from pathlib import Path
 
 class MuJoCoArmEnv(gym.Env):
     """
     MuJoCo 3.3.0 시뮬레이터와 연동되는 3관절 로봇 팔 강화학습 환경
     """
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 50}
+    metadata = {"render_modes": ["human"], "render_fps": 10}
 
     def __init__(self, model_path="src/my_robot_description/assets/simple_arm_3dof.xml", render_mode=None):
         super(MuJoCoArmEnv, self).__init__()
         
         # 1. MuJoCo 모델 및 데이터 로드
-        if not os.path.exists(model_path):
+        model_path = Path(model_path)
+        if not model_path.is_absolute():
+            model_path = Path(__file__).resolve().parent / model_path
+        if not model_path.is_file():
             raise FileNotFoundError(f"모델 파일을 찾을 수 없습니다: {model_path}")
             
-        self.model = mujoco.MjModel.from_xml_path(model_path)
+        self.model = mujoco.MjModel.from_xml_path(str(model_path))
         self.data = mujoco.MjData(self.model)
         
+        if render_mode not in (None, "human"):
+            raise ValueError("MuJoCoArmEnv supports only human rendering")
         self.render_mode = render_mode
+        self.max_episode_steps = 200
+        self._elapsed_steps = 0
         self.viewer = None # MuJoCo 3.x Passive Viewer 객체
 
         # [최적화] 매 step마다 ID를 찾지 않도록, End-Effector의 ID를 미리 캐싱해 둡니다.
         self.ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "link_ee")
+        if self.ee_id < 0 or self.model.nu != 3 or self.model.nq != 3 or self.model.nv != 3:
+            raise ValueError("Expected a 3DoF arm with link_ee and 3 actuators")
 
         # 2. 행동 공간 (Action Space): 3개 관절의 토크 제어 (-1.0 ~ 1.0)
         # n_actions = 3, n_observations = 12 (상대벡터 포함) 설정을 그대로 사용할 수 있습니다!
@@ -68,9 +78,10 @@ class MuJoCoArmEnv(gym.Env):
         
         # 물리 엔진 상태 초기화
         mujoco.mj_resetData(self.model, self.data)
+        self._elapsed_steps = 0
         
         # 작업 영역(Workspace) 내에서 목표물을 무작위로 생성 (강건한 학습 유도)
-        self.target_pos = np.random.uniform(
+        self.target_pos = self.np_random.uniform(
             low=[0.3, -0.2, 0.3], high=[0.7, 0.2, 0.6]
         )
         
@@ -84,8 +95,11 @@ class MuJoCoArmEnv(gym.Env):
         Agent의 제어 입력(Torque)을 받아 물리 엔진을 한 스텝 진행시킵니다.
         """
         # 1. Action 적용 (정규화된 값을 실제 토크 값으로 스케일링)
-        motor_scaling = 50.0
-        self.data.ctrl[:] = action * motor_scaling
+        action = np.asarray(action, dtype=np.float64)
+        if action.shape != self.action_space.shape or not np.all(np.isfinite(action)):
+            raise ValueError("Invalid action shape or nonfinite action")
+        # MJCF motor gear already scales physical actuation; ctrlrange is [-1, 1].
+        self.data.ctrl[:] = np.clip(action, self.action_space.low, self.action_space.high)
         
         # 2. 물리 시뮬레이션 (Frame Skip 적용)
         # 강화학습은 초당 50~100번의 의사결정이면 충분하지만, 물리 엔진은 초당 500번 이상의 계산이 필요함.
@@ -106,8 +120,9 @@ class MuJoCoArmEnv(gym.Env):
             reward += 10.0  # 성공 보너스 부여
             terminated = True
             
-        truncated = False
-        info = {"distance": distance}
+        self._elapsed_steps += 1
+        truncated = bool(self._elapsed_steps >= self.max_episode_steps and not terminated)
+        info = {"distance": float(distance), "is_success": bool(terminated)}
         
         return observation, reward, terminated, truncated, info
 
