@@ -102,11 +102,8 @@ class ControllerCore:
     def update_command(self,command,stamp):
         value=finite_vector(command,3,'command')
         if np.any(np.abs(value)>3):raise ValueError('Command exceeds training bounds [-3,3]')
-        stamp=self._stamp(stamp)
-        if stamp<self.command_stamp-1e-9:
-            raise ValueError('Out-of-order command timestamp')
         self.command=value
-        self.command_stamp=stamp
+        self.command_stamp=self._stamp(stamp)
 
     def observation(self,now):
         now=self._stamp(now)

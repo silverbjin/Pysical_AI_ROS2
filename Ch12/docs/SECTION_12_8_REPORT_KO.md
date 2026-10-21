@@ -81,9 +81,3 @@ ros2 launch quadruped_rl_ros rl_simulation.launch.py backend:=mujoco bundle_path
 **판정 기준:** 기본 dry_run에서 정책 타깃 미발행, 12관절 이름 및 48차원 규격, 준비 후 시뮬레이터 enabled=true의 active/hold/만료 상태를 구별한다. Gazebo 비교 실행은 ROS overlay 분리와 별도 도메인을 사용한다.
 
 **미검증/후속 조치:** 라이브러리 설치 상태, 본 호스트의 MuJoCo viewer/ROS2 실행과 모델 학습의 재현 여부는 이번 리뷰에서 확인하지 못했다. 실제 수행 후 seed·환경 버전·기준 SHA·stdout·JSON·도표와 실패 여부를 보존하고, 결함이 확인되면 기존 증거를 수정하지 말고 별도 코드 PR을 작성한다.
-
----
-
-## 2026-10-21 후속 코드 수정·정적 점검 (이전 문서 전용 리뷰 이후)
-
-이 문서 상단의 **「코드 변경 없음 / 문서 전용 PR」**은 최초 편집·코드 2차 리뷰 시점의 기록으로 보존한다. 이후 동일한 기존 절별 브랜치에 실제 **코드 보강과 신규 회귀 테스트**를 추가했다. 변경 목록, 정적 검증 범위와 `NOT_RUN` 항목은 [SECTION_12_8_FIX_TEST_REPORT_KO.md](SECTION_12_8_FIX_TEST_REPORT_KO.md)를 우선 참조한다. 기존 2026-10-17 런타임 PASS는 새로운 커밋의 실행 증거가 아니다.
