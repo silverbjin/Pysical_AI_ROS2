@@ -49,3 +49,40 @@
 ## 공통 CLI 통합 검증
 
 공통 `quadruped-train --task robust`로 실제 Subproc 2개 환경·256 transition을 추가 실행했다. 파라미터 L1 변화는 0.633326이며 번들 저장·검증·100 step 재생이 통과했다. 증거는 `ppo_runs/integrated/result.json`, `integrated_play.json`이다. 최종 전체 suite 결과는 12.8의 `green_final.log`에 **147 passed (34.23초)**로 기록했다. 이전 128개 결과는 당시 범위이며 최종 수와 혼동하지 않는다.
+
+
+---
+
+## 2026-10-21 편집·코드 2차 리뷰: 원고 12.7 ↔ main 구현
+
+> 범위: 공개 저장소 `main/Ch12` 소스·기존 문서·2026-10-17 실행 증거와 첨부 원고를 정적으로 대조했다. **이번 세션의 실행/PPO 학습/ROS launch 재검증은 수행하지 않았다.** 과거 통과 수치와 새로운 테스트 결과를 혼용하지 않는다. 코드 파일을 수정하지 않는 문서 전용 PR이다.
+
+### 실습 적합성 판정과 위험
+
+**기존 회귀 증거가 있는 실행 경로, 현장 재현과 성능 검증은 조건부.** 심각도는 독자 실습 중 잘못된 입력·기대 성능·안전 오해의 위험 순서다.
+
+1. **[높음·원고 교정]** 원고의 `model.body_mass[:]` 전체 변경은 world/비물리 타깃과 관성을 무시한다. 구현은 로봇 동적 링크 질량·관성을 함께 스케일하고 매 reset 원본을 복원한다. `mj_setConst`는 **임시 MjData**에서 호출해 reset 자세가 훼손되지 않도록 한다.
+2. **[높음·외력 API]** 원고 `qfrc_applied[body_id,:]`는 MuJoCo 배열 형상과 맞지 않는다. 구현은 world 힘을 `xfrc_applied[base_id,:3]`에 넣고 스텝 종료/예외/리셋 시 지운다.
+3. **[중간·지연 관측]** 기본 action/observation 2-step 큐 지연은 50Hz에서 40ms다. 지연된 관측은 과거의 명령·이력과 센서가 함께 있는 프레임이므로 현재 관측처럼 해석하면 안 된다.
+4. **[중간·병렬 가속]** 저장된 과거 벤치마크에서 `subproc`는 환경 수 1개일 때 오히려 느리고 worker 시작 비용이 크다. 8배·16배 속도 증가를 보장하지 않는다.
+
+### 코드/테스트 추적 파일
+
+- [`Ch12/src/quadruped_rl/robust_env.py`](../src/quadruped_rl/robust_env.py)
+- [`Ch12/scripts/benchmark_vec_env.py`](../scripts/benchmark_vec_env.py)
+- [`Ch12/config/section12_7_robust.json`](../config/section12_7_robust.json)
+- [`Ch12/tests/test_robust_env.py`](../tests/test_robust_env.py)
+- 기존 본 보고서의 실험 로그와 [Ch12 README](../README.md). 이 경로는 감사 대상의 **과거 기록**이며 2026-10-21 신규 실행 로그가 아니다.
+
+### 재현 명령 (저장소 루트)
+
+```bash
+python -m pip install -e './Ch12[train,test]'
+python -m pytest Ch12/tests/test_robust_env.py -q
+python Ch12/scripts/verify_robust_env.py --output /tmp/ch12-12-7-review
+python Ch12/scripts/benchmark_vec_env.py --output /tmp/ch12-12-7-bench.json --envs 1 2 4 --steps 100
+```
+
+**판정 기준:** 동일 시드 물성·초기 자세 재현, nominal 보존, 실제 delayed_action 및 지연 관측, 외력 초기화, n_env별 시작 시간과 transition/s 수치를 구분해 제출한다.
+
+**미검증/후속 조치:** 라이브러리 설치 상태, 본 호스트의 MuJoCo viewer/ROS2 실행과 모델 학습의 재현 여부는 이번 리뷰에서 확인하지 못했다. 실제 수행 후 seed·환경 버전·기준 SHA·stdout·JSON·도표와 실패 여부를 보존하고, 결함이 확인되면 기존 증거를 수정하지 말고 별도 코드 PR을 작성한다.
