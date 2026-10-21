@@ -119,6 +119,8 @@ class QuadrupedControllerROS2(Node):
         # Validate first to avoid accepting half-applied parameter batches.
         updates = {p.name: p.value for p in params}
         for name, value in updates.items():
+            if name == 'publish_cmd_odom_tf':
+                return SetParametersResult(successful=False, reason='TF setting requires restart')
             if name == 'alpha' and not (isinstance(value, (int, float)) and math.isfinite(value) and 0 < value <= 1):
                 return SetParametersResult(successful=False, reason='alpha must be in (0, 1]')
             if name == 'step_freq' and not (isinstance(value, (int, float)) and math.isfinite(value) and 0.2 <= value <= 4.0):
@@ -136,9 +138,6 @@ class QuadrupedControllerROS2(Node):
                 self.gait_planner.next_gait.frequency = freq
         if 'gait_type' in updates:
             self.gait_planner.set_gait(updates['gait_type'])
-        if 'publish_cmd_odom_tf' in updates:
-            # TF broadcaster is created at startup only; reject runtime toggling.
-            return SetParametersResult(successful=False, reason='TF setting requires restart')
         return SetParametersResult(successful=True)
 
     # =====================================================================
