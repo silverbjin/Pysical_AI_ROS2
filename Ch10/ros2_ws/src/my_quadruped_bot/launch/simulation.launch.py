@@ -3,9 +3,10 @@ import os
 import xacro # [보완] Xacro 파일을 런타임에 직접 파싱하기 위해 필수 임포트
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     # 패키지 이름 및 셰어(Share) 디렉터리 경로 설정
@@ -34,7 +35,8 @@ def generate_launch_description():
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
-        parameters=[{'robot_description': robot_description_raw}]
+        parameters=[{'robot_description': robot_description_raw,
+                     'use_sim_time': LaunchConfiguration('use_sim_time')}]
     )
  
     # 5. Gazebo 환경 내에 로봇 엔티티 생성 노드 (create)
@@ -61,6 +63,7 @@ def generate_launch_description():
  
     # 정의된 모든 인프라 노드들을 런치 엔진에 반환하여 동시 구동
     return LaunchDescription([
+        DeclareLaunchArgument('use_sim_time', default_value='true'),
         gazebo,
         node_robot_state_publisher,
         spawn_entity,
