@@ -40,6 +40,7 @@ def generate_launch_description():
             '/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
             '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
         ],
+        parameters=[{'override_frame_id': 'camera_optical_frame'}],
         remappings=[
             ('/camera/image', '/camera/image_raw'),
             ('/camera/depth_image', '/camera/depth/image_raw'),
