@@ -4,7 +4,6 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
 from launch.substitutions import Command, LaunchConfiguration
 
 def generate_launch_description():
@@ -38,7 +37,7 @@ def generate_launch_description():
     
     # 5. Robot State Publisher 설정
     # Xacro 명령어를 실행하여 XML 문자열을 실시간으로 파싱
-    robot_desc_content = ParameterValue(Command(['xacro ', xacro_file]), value_type=str)
+    robot_desc_content = Command(['xacro ', xacro_file])
     
     node_robot_state_publisher = Node(
         package='robot_state_publisher',
