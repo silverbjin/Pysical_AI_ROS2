@@ -1,33 +1,26 @@
-# This config file is used by ros2_control
+# Ch07: use the same FollowJointTrajectory contract as vision_basics/config.
+# This is a controller definition only; activation requires ros2_control hardware
+# interfaces / Gazebo plugin and must be verified in the target environment.
 controller_manager:
   ros__parameters:
-    update_rate: 100  # Hz
-
+    update_rate: 100
     arm_group_controller:
       type: joint_trajectory_controller/JointTrajectoryController
-
     gripper_group_controller:
-      # type: position_controllers/GripperActionController
-      # type: parallel_gripper_controllers/GripperActionController
-      type: parallel_gripper_action_controller/GripperActionController
-
+      type: joint_trajectory_controller/JointTrajectoryController
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
 arm_group_controller:
   ros__parameters:
-    joints:
-      - joint1
-      - joint2
-      - joint3
-      - joint4
-      - joint_wrist
-    command_interfaces:
-      - position
-    state_interfaces:
-      - position
-      - velocity
-    allow_nonzero_velocity_at_trajectory_end: true
+    joints: [joint1, joint2, joint3, joint4, joint_wrist]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+
 gripper_group_controller:
   ros__parameters:
-    joint: joint_finger1
+    joints: [joint_finger1, joint_finger2]
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
