@@ -8,7 +8,7 @@ class ReachEnv(gym.Env):
     """
     3자유도 로봇 팔이 목표 지점(빨간 구)에 도달하도록 학습하는 환경 (물리 정합성 수정본)
     """
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 50}
+    metadata = {"render_modes": ["human"], "render_fps": 100}
 
     def __init__(self, render_mode=None):
         super(ReachEnv, self).__init__()
@@ -23,13 +23,21 @@ class ReachEnv(gym.Env):
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
         
+        if render_mode not in (None, "human"):
+            raise ValueError("ReachEnv currently supports only human rendering")
         self.render_mode = render_mode
         self.viewer = None
 
         # [최적화] API 오버헤드 방지를 위한 바디 및 조인트 ID 사전 캐싱
         self.ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "link_ee")
         self.target_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "target")
-        self.target_jnt_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "target_joint")
+        if self.ee_id < 0 or self.target_id < 0:
+            raise ValueError("MJCF missing link_ee or target body")
+        self.target_mocap_idx = int(self.model.body_mocapid[self.target_id])
+        if self.target_mocap_idx < 0:
+            raise ValueError("target must be a MuJoCo mocap body")
+        self.max_episode_steps = 500
+        self._elapsed_steps = 0
 
         # 2. Action Space: 3개 관절의 토크 정규화 범위 (-1.0 ~ 1.0)
         # self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
@@ -77,6 +85,8 @@ class ReachEnv(gym.Env):
         
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
+        mujoco.mj_resetData(self.model, self.data)
+        self._elapsed_steps = 0
         
         # 1. 로봇 관절 물리 상태 복사 및 초기화 (독립된 qpos, qvel)
         qpos = self.init_qpos.copy()
@@ -107,7 +117,7 @@ class ReachEnv(gym.Env):
         mocap_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "target")
         
         # 해당 모캡 바디의 실제 주소 인덱스(body_mocapid)를 참조하여 3차원 좌표를 덮어씁니다.
-        target_mocap_idx = self.model.body_mocapid[mocap_id]
+        target_mocap_idx = self.target_mocap_idx
         self.data.mocap_pos[target_mocap_idx] = target_pos
         
         # 4. 바뀐 상태 정보(로봇 관절 + 모캡 위치)를 시뮬레이션 물리 세계에 즉시 전방 반영
@@ -120,7 +130,10 @@ class ReachEnv(gym.Env):
 
 
     def step(self, action):
-        action = np.clip(action, -1.0, 1.0)
+        action = np.asarray(action, dtype=np.float64)
+        if action.shape != self.action_space.shape or not np.all(np.isfinite(action)):
+            raise ValueError("Invalid action shape or nonfinite action")
+        action = np.clip(action, self.action_space.low, self.action_space.high)
         self.data.ctrl[:] = action 
         
         for _ in range(5):
@@ -141,7 +154,8 @@ class ReachEnv(gym.Env):
         # terminated = reward_info["is_success"]
         # [교정] NumPy bool 구조가 섞이지 않도록 명시적으로 파이썬 네이티브 bool 타입으로 변환
         terminated = bool(reward_info["is_success"])
-        truncated = False
+        self._elapsed_steps += 1
+        truncated = bool(self._elapsed_steps >= self.max_episode_steps and not terminated)
 
         if self.render_mode == "human":
             self.render()
@@ -165,7 +179,7 @@ class ReachEnv(gym.Env):
             self.data.qpos[:self.model.nq],  # 6개 관절 각도
             self.data.qvel[:self.model.nv],  # 6개 관절 속도
             self.data.site('ee_site').xpos,  # 말단 장치 3D 좌표
-            self.data.mocap_pos[0]           # 목표물 3D 좌표
+            self.data.mocap_pos[self.target_mocap_idx]  # 목표물 3D 좌표
         ]).astype(np.float32)
     
 
