@@ -193,7 +193,7 @@ class ReachEnv(gym.Env):
         보상 함수 심화 구현 (Sim-to-Real 부드러움 제어 추가 항 반영)
         """
         # 1. 거리 보상
-        distance = np.linalg.norm(ee_pos - target_pos)
+        distance = float(np.linalg.norm(ee_pos - target_pos))
         w_dist = 1.0
         r_dist = -distance 
 
@@ -203,7 +203,7 @@ class ReachEnv(gym.Env):
         
         # 3. [추가] Sim-to-Real을 위한 부드러움 제어 페널티 (Action Derivative Penalty)
         # 가중치는 과도한 주객전도를 막기 위해 0.05 수준으로 작게 제어합니다.
-        w_smooth = 0.05 # 이전 액션과의 차이를 억제하여 곡선 흐름을 만듭니다.
+        w_smooth = 0.05 # action 변화량 페널티. 물리 jerk 또는 에너지 측정이 아님.
         r_smooth = -np.sum(np.square(action - self.last_action))
         
         # 4. 성공 보너스
@@ -222,13 +222,14 @@ class ReachEnv(gym.Env):
                         (w_contact * r_contact))
         
         reward_info = {
-            "reward_total": total_reward,
-            "reward_dist": r_dist * w_dist,
-            "reward_ctrl": r_ctrl * w_ctrl,
-            "reward_smooth": r_smooth * w_smooth, # 모니터링용 데이터 추가
-            "reward_contact": r_contact * w_contact,
+            "reward_total": float(total_reward),
+            "distance": distance,
+            "reward_dist": float(r_dist * w_dist),
+            "reward_ctrl": float(r_ctrl * w_ctrl),
+            "reward_smooth": float(r_smooth * w_smooth), # 모니터링용 데이터 추가
+            "reward_contact": float(r_contact * w_contact),
             "reward_bonus": r_bonus,
-            "is_success": distance < threshold
+            "is_success": bool(distance < threshold)
         }
         
-        return total_reward, reward_info
+        return float(total_reward), reward_info
