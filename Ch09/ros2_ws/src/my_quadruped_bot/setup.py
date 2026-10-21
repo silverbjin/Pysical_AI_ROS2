@@ -10,8 +10,6 @@ package_name = 'my_quadruped_bot'
 def walk_and_collect(source_dir, target_base):
     data_files = []
     for root, dirs, files in os.walk(source_dir):
-        dirs.sort()
-        files = sorted(f for f in files if f.endswith(('.xacro', '.urdf')))
         if files:
             # 소스 디렉토리 기준 상대 경로 계산 (예: 'urdf/common' -> 'common')
             rel_path = os.path.relpath(root, source_dir)

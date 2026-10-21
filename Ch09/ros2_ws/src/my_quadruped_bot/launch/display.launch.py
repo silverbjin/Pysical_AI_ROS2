@@ -11,7 +11,7 @@ def generate_launch_description():
     # 1. 패키지 및 URDF 파일 경로 설정
     pkg_share = get_package_share_directory('my_quadruped_bot')
     
-    # Ch09 패키지의 robot.urdf.xacro 파일 경로
+    # 3장에서 만든 xacro 파일 경로 (자신의 파일명에 맞게 수정)
     urdf_file = os.path.join(pkg_share, 'urdf', 'robot.urdf.xacro')
     
     # 2. Xacro를 URDF로 변환하는 커맨드 생성
@@ -38,7 +38,7 @@ def generate_launch_description():
     )
     
     # 5. 패키지 경로를 동적으로 획득
-    package_name = 'my_quadruped_bot'
+    package_name = 'my_robot_description'
     rviz_config_path = os.path.join(                # setup.py의 data_files 설정에 따라 'rviz/' 폴더 내의 파일을 찾습니다.
         get_package_share_directory(package_name),  # 패키지 공유 디렉토리 경로 확보
         'rviz',
