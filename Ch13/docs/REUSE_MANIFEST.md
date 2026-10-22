@@ -2,6 +2,8 @@
 
 ## 13.5 추가 — 구현 진행 중
 
+- `projection.py`와 `motion_guard.py`의 새 평면 투영·안전 kernel/수신기/watchdog은 Ch13 작성 코드다. 시각화가 아닌 실제 원본6D odometry의 child-frame 속도 계약은 기존 Ch13 `integrated_robot_vision.native_pose`(기준 commit `8e07b05cdf45eeb96dffbfe4fdbe1cf045373146`)와 대조했다. 노드 종료에는 같은 기준의 `integrated_robot_vision.execution.run_node`를 import하며 원본을 복제·수정하지 않는다.
+
 - `integrated_robot_navigation_sensors`의 ABI·소유권 패턴·라이선스와 실제 C++ vendor 버전은 [패키지 출처표](../ros2_ws/src/integrated_robot_navigation_sensors/REUSE_MANIFEST.md)에 기록한다. 외부 고정 underlay 원본은 수정하지 않는다.
 - `integrated_robot_navigation/scene.py`의 컵 형상은 Ch13 `scripts/semantic_fixture_13_4.py`, commit `8e07b05cdf45eeb96dffbfe4fdbe1cf045373146`에서 필요한 `cup_parts` 형상 구성만 적응했다. 컵 위치를 장면 인수로 바꾸고 평지 접근용 pedestal를 절반 크기0.14×0.18m로 명시했다. 모든 변경은 실제 엔진 형상과 지도에 반영하며 인식 결과를 주입하지 않는다.
 - `mujoco_navigation_plugins.yaml`은 같은 commit의 Ch13 `mujoco_snapshot_vision_plugins.yaml`에서 native pose와 기존 snapshot camera 설정을 복사하고 읽기 전용 navigation 센서 항목만 추가했다. 원래 config·카메라 구현은 변경하지 않았다.

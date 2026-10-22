@@ -1,0 +1,81 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+________ test_actual_dds_projection_has_only_new_odom_and_tf_ownership _________
+
+    def test_actual_dds_projection_has_only_new_odom_and_tf_ownership():
+        module = api()
+>       assert hasattr(module, 'NavProjection'), 'projection ROS node not available'
+E       AssertionError: projection ROS node not available
+E       assert False
+E        +  where False = hasattr(<module 'integrated_robot_navigation.projection' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f8819...ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/projection.py'>, 'NavProjection')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py:49: AssertionError
+_________ test_malformed_command_payload_fails_closed_not_an_exception _________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_malformed_command_payload_fails_closed_not_an_exception(nav_robot_model):
+        guard = armed(nav_robot_model)
+>       value, reason = guard.evaluate(bundle(nav_robot_model),
+            replace(command(), data={'x': .006, 'y': 0., 'yaw': .01}), command(),
+            1_000_000_000, 10_000_000_000)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.motion_guard.MotionGuard object at 0x7f5792f7c5f0>
+bundle = SensorBundle(joints=Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=1000000000, frame_id='base_...={'ready': True, 'generation': 0, 'model_sha256': 'b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc'}))
+raw = Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=10000000000, frame_id='nav_base', data={'x': 0.006, 'y': 0.0, 'yaw': 0.01})
+smoothed = Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=10000000000, frame_id='nav_base', data=(0.006, 0.0, 0.01))
+ros_ns = 1000000000, wall_ns = 10000000000
+
+    def evaluate(self, bundle: SensorBundle, raw: Sample, smoothed: Sample,
+                 ros_ns: int, wall_ns: int) -> tuple[Vec3, str]:
+        if (self.last_ros is not None and ros_ns < self.last_ros or
+                self.last_wall is not None and wall_ns < self.last_wall):
+            self.restart_required = True
+            return self.fail('clock_rollback')
+        if self.last_ros is None or ros_ns > self.last_ros:
+            self.progress_wall = wall_ns
+        self.last_ros, self.last_wall = ros_ns, wall_ns
+        if self.fault:
+            return ZERO, self.fault
+        if self.mode != 'CRAWL':
+            return ZERO, ''
+        # Raw is independent of the smoother and is checked first.
+        for name, value in (('raw', raw), ('smoothed', smoothed)):
+            ok, reason = sample_valid(value, ros_ns, wall_ns, self.generation,
+                                      max_age_ns=200_000_000)
+            if not ok:
+                return self.fail(name+':'+reason)
+            if (value.frame_id != 'nav_base' or len(value.data) != 3
+>                   or abs(value.data[0]) > self.limits['max_vx']
+                           ^^^^^^^^^^^^^
+                    or value.data[1] != 0. or abs(value.data[2]) > self.limits['max_wz']):
+E                   KeyError: 0
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/motion_guard.py:87: KeyError
+_______ test_shutdown_joins_watchdog_and_publishes_final_not_ready_zero ________
+
+rig = <test_motion_guard_ros.Rig object at 0x7f57903c70b0>
+
+    def test_shutdown_joins_watchdog_and_publishes_final_not_ready_zero(rig):
+        assert rig.mode('CRAWL').accepted
+        rig.pump(.1)
+        old = rig.guard
+        rig.executor.remove_node(old)
+        old.destroy_node()
+        rig.guard = None
+        for _ in range(30):
+            rig.executor.spin_once(timeout_sec=.002)
+        assert rig.outputs[-1][1:] == (0., 0.)
+>       assert not rig.states[-1].ready
+E       AssertionError: assert not True
+E        +  where True = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=4, nanose...879100d29b24d667b17d93aa71282cadc', state='CRAWL', phase='', swing_foot='', ready=True, stopped=False, fault_reason='').ready
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:171: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py::test_actual_dds_projection_has_only_new_odom_and_tf_ownership
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_malformed_command_payload_fails_closed_not_an_exception
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_shutdown_joins_watchdog_and_publishes_final_not_ready_zero
+3 failed, 19 deselected in 9.36s

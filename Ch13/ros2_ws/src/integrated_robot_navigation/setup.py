@@ -15,5 +15,7 @@ setup(
     license='Apache-2.0', tests_require=['pytest'],
     entry_points={'console_scripts': [
         'gazebo_contact_adapter = integrated_robot_navigation.gazebo_contacts:main',
+        'nav_projection = integrated_robot_navigation.projection:main',
+        'motion_guard = integrated_robot_navigation.motion_guard:main',
     ]},
 )

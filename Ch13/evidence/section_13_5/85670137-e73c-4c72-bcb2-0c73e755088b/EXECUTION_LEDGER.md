@@ -83,3 +83,20 @@
 - 최종 전체 source: `python -m pytest Ch13/tests Ch13/ros2_ws/src/integrated_robot_runtime/test Ch13/ros2_ws/src/integrated_robot_vision/test Ch13/ros2_ws/src/integrated_robot_navigation/test -q`, **444 passed /257.47초**, `task4-all-source.log`.
 - 설치 감사: `task4-fixed-install-audit.json`. 기존6패키지 + navigation + navigation_sensors의 실제 경로/bytes/빌드 소스 manifest를 확인했다. `.so` SHA와 실제 pluginlib probe의 header/runtime 버전, `gz plugin --info --plugin <실제 설치 .so>`의4개 System 인터페이스 등록을 기록했다.
 - **미검증:** 전체 ROS 엔진 G1/G2, 실제 Gazebo 접촉·scan 정확도/자기 충돌 활성화, crawl 이동, Nav2, 정상 전체 엔진 종료는 아직 실행하지 않았다. 위 kernel/ROS/ECM/등록 시험을 종단 인수 통과로 세지 않는다.
+
+## Task 5 — 평면 투영·이동 게이트
+
+- 시작 기준: Task4 완료 커밋 `5d3c137a08776516642b9c4e1de27df4d90e47b2`. 커밋 후 CTest5 target/실제10 gtest 및 navigation70 시험 재확인 기록은 `task4-commit-gate.log`다.
+- RED 명령: `python -m pytest Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py -q`, 누락 기능 **13 failed**, `task5-core-red.log`.
+- 첫 구현의 ModelContract 필드명 오류 `.foot_links`는 `task5-core-first.log`의3실패로 확인하고 기존 계약 `.feet`만 사용하도록 수정했다. `task5-core-green.log` **13 passed**.
+- 투영은 원본6D pose/twist/촬영·수신 시각을 바꾸지 않는다. 별도 `nav_base` z/roll/pitch0과 그 프레임의 실제 planar twist를 계산한다. `/odom`은 구독만 하고 `/navigation/odom` 및 `odom→nav_base`만 발행한다.
+- 실제 DDS wrapper 부재는 `task5-ros-red.log`, offline profile 실제 서비스 거절을 포함한 부재는 `task5-ros-admission-red.log`에서 확인했다. 새 구현은 짧은 수신 실행기와 독립 monotonic watchdog으로 원본 raw 및 각 관측의 나이를 검사한다. 미래 센서는 clock이 따라올 때까지 최초 receipt를 보존해 대기시킨다.
+- 헤더 없는 Twist의 RESET 이전 패킷은 동일 host DDS SYSTEM source timestamp cutoff로 거절한다. 엔진 epoch와 명령 generation은 별도이며, RESET은 관측·명령 cache를 비우고 HOLD로 돌아갈 뿐 CRAWL을 자동 허용하지 않는다.
+- `task5-ros-first.log` **6 passed**: 실제 DDS·ROS clock pause에서 smoother 계속 발행/raw 중단, 중복 publisher, carry 이탈, scan 만료, 이전 generation, 실제 offline profile 거절. **양성 통신 시험은 외부 native-evidence admission만 stub**한다. controller·물리 보행이나 native G1 통과를 주장하지 않는다. 별도 unstubbed 서비스 시험은 실제 profile validator를 호출해 거절을 확인한다.
+- 추가 RED3는 `task5-boundaries-red.log`: 실제 DDS용 투영 Node 미노출, dict 명령의 KeyError, 최종0 발행 후에도 ready=true 상태가 남는 문제. Node 경계를 노출하고 형식을 검사하며 종료 시 STOP/not-ready를 설정해 `task5-boundaries-green.log` **22 passed**로 확인했다. STOPPED는 guard가 증명하지 않는다.
+- 실제 소유자 교체 RED: `task5-owner-replacement-red.log`. raw publisher를 파괴·재생성해 수가1로 돌아오면 출력이 계속(.006,.01)이었다. CRAWL 동안10개 입력/명령 stream의 실제 DDS endpoint GID도 고정해 교체 시 fault·0·명시적 재무장을 요구하도록 교정했다. `task5-owner-identity-green.log` **23 passed /26.03초**.
+- 최종 build: 같은 전용 prefix에서 `colcon build --base-paths Ch13/ros2_ws/src --packages-select integrated_robot_navigation`; `task5-fixed-build.log`, 성공.
+- 최종 package: 같은 prefix에서 `colcon test --base-paths Ch13/ros2_ws/src --packages-select integrated_robot_navigation --executor sequential`, `test-result --test-result-base <build13_5_UUID> --verbose`. `task5-fixed-package.log`: **108 tests/0 errors/0 failures/0 skipped**. Python93 및 이전 고정 C++10+CTest wrapper5 집계이며108개 실제 엔진 인수가 아니다.
+- `task5-fixed-install-audit.json`의8패키지 소스/설치 bytes·센서 build manifest/library hash·실제 등록 감사 통과. fixed-topic DDS 시험 프로세스가 서로 다른 producer로 보이지 않도록 package 시험과 전체 source 시험을 같은 domain159에서 **순차** 실행했다.
+- 최종 전체 source 명령은 Task4와 같은4개 pytest 경로다. `task5-fixed-all-source.log`: **467 passed /260.61초**.
+- **미검증:** 실측 접촉 기반 crawl 및 G1/G2, 실제 Nav2 접근·취소, 전체 엔진 정상 종료와 최종13.3/13.4 실제 엔진 회귀는 후속 작업이다. 이 단계는 native 배포 완료가 아니다.

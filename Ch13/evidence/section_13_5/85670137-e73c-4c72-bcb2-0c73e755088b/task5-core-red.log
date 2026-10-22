@@ -1,0 +1,361 @@
+FFFFFFFFFFFFF                                                            [100%]
+=================================== FAILURES ===================================
+____ test_projection_preserves_capture_and_6d_input_but_changes_twist_basis ____
+
+    def test_projection_preserves_capture_and_6d_input_but_changes_twist_basis():
+        r, p, y = .3, .4, math.pi/2
+        sr, cr, sp, cp, sy, cy = (math.sin(r/2), math.cos(r/2), math.sin(p/2),
+                                  math.cos(p/2), math.sin(y/2), math.cos(y/2))
+        quaternion = (sr*cp*cy-cr*sp*sy, cr*sp*cy+sr*cp*sy,
+                      cr*cp*sy-sr*sp*cy, cr*cp*cy+sr*sp*sy)
+        source = Sample(1_000_000_000, 10_000_000_000, 3, 7, 'odom', dict(
+            position=(1., 2., .46), orientation=quaternion,
+            linear_velocity=(1., 0., 0.), angular_velocity=(0., 0., 1.),
+            child_frame_id='base_footprint'))
+        original = deepcopy(source)
+>       result = api().project_body(source)
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.projection'), 'projection missing'
+E       AssertionError: projection missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.projection')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py:12: AssertionError
+_______ test_bad_native_observation_is_not_projected[orientation-value0] _______
+
+field = 'orientation', value = (0.0, 0.0, 0.0, 0.0)
+
+    @pytest.mark.parametrize('field,value', [('orientation', (0., 0., 0., 0.)),
+                                           ('position', (0., 0., math.nan))])
+    def test_bad_native_observation_is_not_projected(field, value):
+        source = Sample(1, 2, 0, 1, 'odom', dict(position=(0., 0., .4),
+            orientation=(0., 0., 0., 1.), linear_velocity=(0.,)*3, angular_velocity=(0.,)*3,
+            child_frame_id='base_footprint'))
+        with pytest.raises(ValueError):
+>           api().project_body(replace(source, data={**source.data, field: value}))
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py:44: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.projection'), 'projection missing'
+E       AssertionError: projection missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.projection')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py:12: AssertionError
+________ test_bad_native_observation_is_not_projected[position-value1] _________
+
+field = 'position', value = (0.0, 0.0, nan)
+
+    @pytest.mark.parametrize('field,value', [('orientation', (0., 0., 0., 0.)),
+                                           ('position', (0., 0., math.nan))])
+    def test_bad_native_observation_is_not_projected(field, value):
+        source = Sample(1, 2, 0, 1, 'odom', dict(position=(0., 0., .4),
+            orientation=(0., 0., 0., 1.), linear_velocity=(0.,)*3, angular_velocity=(0.,)*3,
+            child_frame_id='base_footprint'))
+        with pytest.raises(ValueError):
+>           api().project_body(replace(source, data={**source.data, field: value}))
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py:44: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.projection'), 'projection missing'
+E       AssertionError: projection missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.projection')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py:12: AssertionError
+________ test_raw_loss_latches_even_when_smoother_and_sensors_are_fresh ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_raw_loss_latches_even_when_smoother_and_sensors_are_fresh(nav_robot_model):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+______ test_explicit_reset_changes_generation_but_does_not_enable_motion _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_explicit_reset_changes_generation_but_does_not_enable_motion(nav_robot_model):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+____________ test_measured_faults_zero_without_smoother_ramp[carry] ____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+fault = 'carry'
+
+    @pytest.mark.parametrize('fault', ['carry', 'scan', 'joint', 'body', 'collision', 'owner', 'limit'])
+    def test_measured_faults_zero_without_smoother_ramp(nav_robot_model, fault):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+____________ test_measured_faults_zero_without_smoother_ramp[scan] _____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+fault = 'scan'
+
+    @pytest.mark.parametrize('fault', ['carry', 'scan', 'joint', 'body', 'collision', 'owner', 'limit'])
+    def test_measured_faults_zero_without_smoother_ramp(nav_robot_model, fault):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+____________ test_measured_faults_zero_without_smoother_ramp[joint] ____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+fault = 'joint'
+
+    @pytest.mark.parametrize('fault', ['carry', 'scan', 'joint', 'body', 'collision', 'owner', 'limit'])
+    def test_measured_faults_zero_without_smoother_ramp(nav_robot_model, fault):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+____________ test_measured_faults_zero_without_smoother_ramp[body] _____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+fault = 'body'
+
+    @pytest.mark.parametrize('fault', ['carry', 'scan', 'joint', 'body', 'collision', 'owner', 'limit'])
+    def test_measured_faults_zero_without_smoother_ramp(nav_robot_model, fault):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+__________ test_measured_faults_zero_without_smoother_ramp[collision] __________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+fault = 'collision'
+
+    @pytest.mark.parametrize('fault', ['carry', 'scan', 'joint', 'body', 'collision', 'owner', 'limit'])
+    def test_measured_faults_zero_without_smoother_ramp(nav_robot_model, fault):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+____________ test_measured_faults_zero_without_smoother_ramp[owner] ____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+fault = 'owner'
+
+    @pytest.mark.parametrize('fault', ['carry', 'scan', 'joint', 'body', 'collision', 'owner', 'limit'])
+    def test_measured_faults_zero_without_smoother_ramp(nav_robot_model, fault):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+____________ test_measured_faults_zero_without_smoother_ramp[limit] ____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+fault = 'limit'
+
+    @pytest.mark.parametrize('fault', ['carry', 'scan', 'joint', 'body', 'collision', 'owner', 'limit'])
+    def test_measured_faults_zero_without_smoother_ramp(nav_robot_model, fault):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+_______________ test_clock_rollback_requires_restart_not_a_reset _______________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_clock_rollback_requires_restart_not_a_reset(nav_robot_model):
+        model = nav_robot_model
+>       guard = armed(model)
+                ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:16: in armed
+    guard = api().MotionGuard(model, default_limits(), CARRY)
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.motion_guard'), 'motion guard missing'
+E       AssertionError: motion guard missing
+E       assert None
+E        +  where None = <function find_spec at 0x732aaf8bc720>('integrated_robot_navigation.motion_guard')
+E        +    where <function find_spec at 0x732aaf8bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:11: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py::test_projection_preserves_capture_and_6d_input_but_changes_twist_basis
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py::test_bad_native_observation_is_not_projected[orientation-value0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_projection.py::test_bad_native_observation_is_not_projected[position-value1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_raw_loss_latches_even_when_smoother_and_sensors_are_fresh
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_explicit_reset_changes_generation_but_does_not_enable_motion
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_measured_faults_zero_without_smoother_ramp[carry]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_measured_faults_zero_without_smoother_ramp[scan]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_measured_faults_zero_without_smoother_ramp[joint]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_measured_faults_zero_without_smoother_ramp[body]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_measured_faults_zero_without_smoother_ramp[collision]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_measured_faults_zero_without_smoother_ramp[owner]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_measured_faults_zero_without_smoother_ramp[limit]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_clock_rollback_requires_restart_not_a_reset
+13 failed in 5.30s

@@ -191,6 +191,38 @@ benchmark의 map/world 원점은 고정 world 정의로 일치시킨다. `map �
 
 ## 8. Nav2·속도·충돌 처리
 
+### Task 5 구현 관측·소유권 세부 계약
+
+`Sample.epoch`는 물리 엔진 세션이며, `MotionState.generation`은 명시적 RESET으로
+바뀌는 명령 소유권 세대다. 서로 같은 값이라고 가정하지 않는다. body Sample은
+`odom` 부모와 `base_footprint` child의 실제 xyz/quaternion 및 **child 기준** 선·각속도를
+보존한다. `project_body`는 별도 `nav_base` Sample을 만들며 원본6D TF를 대체하지 않는다.
+투영 선속도는 세계 평면에 투영 후 nav_base로 회전하고, yaw 속도는 단순 세계 angular.z가
+아니라 투영된 heading의 시간 미분이다. 이는 native-ground-truth benchmark이며
+새 SLAM/공분산 추정 구현을 의미하지 않는다. 제거한 z/roll/pitch 자유도는 큰 분산으로 표시한다.
+
+안전 게이트의 canonical 입력은 관절별 position/velocity, IMU acceleration/angular_velocity,
+발 names/points/forces/touching/unexpected_contacts, 원본6D body, scan ranges/hits와
+carry ready/generation/model_sha256다. scan의 +∞는 no-hit 마스크와 유한 최대 거리로
+정규화하되 NaN·음수·너무 작은 거리는 유효 관측으로 바꾸지 않는다.
+
+센서와 clock의 DDS 도착 순서가 바뀌면 미래 촬영을 최대10개씩 대기시키고 clock이
+따라온 촬영만 선택한다. 최초 wall 수신 시각을 보존한다. 헤더 없는 Twist는 이 절의
+**동일 host** profile에서 DDS SYSTEM source timestamp로 RESET 이전 패킷을 거절하며,
+ROS 시각과 monotonic 시각을 서로 빼지 않는다. 분산 host 시간 동기화까지 검증한 기능은 아니다.
+
+motion_guard는 짧은 ROS 수신 실행기와 별도의 monotonic watchdog을 사용한다.
+원래 raw 입력의 중단은 smoothed 재발행으로 가려지지 않는다. CRAWL 동안 입력·명령
+발행자 수뿐 아니라 실제 DDS endpoint GID도 고정한다. 교체·추가·손실은 fault이며
+입력이 복구됐다는 이유만으로 재활성화하지 않는다. 종료 때 새 명령을 막고 STOP/최종0을
+발행하고 watchdog을 join한 후 ROS 자원을 파괴한다. 이0이나 STOP 상태는 물리 STOPPED의 증명이 아니다.
+
+ROS CRAWL 서비스는 실제 bound profile 검사를 통과해야 한다. 순수 게이트 및 DDS 단위
+시험의 admission stub은 통신·안전 로직만 검사하는 시험 경계이며 실제 G1 인수 기록이 아니다.
+별도 unstubbed 서비스 시험에서 offline profile의 CRAWL 거절을 확인한다.
+
+### Nav2 연결 계약 — 구현·인수는 후속 Task 9 이후
+
 ROS 2 Jazzy의 실제 Nav2 map/planner/controller/BT/lifecycle/smoother를 사용한다.
 controller는 전후진·yaw만 허용하며 y 속도0, 검증하지 않은 Spin/BackUp recovery는
 비활성화한다. 상위 액션 취소 또는 실패 뒤 다른 이동을 자동 재시도하지 않는다.
