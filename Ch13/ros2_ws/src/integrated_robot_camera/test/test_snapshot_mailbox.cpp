@@ -59,6 +59,47 @@ protected:
 };
 
 // A single shared rendering buffer would change the acquired frame here.
+TEST_F(MailboxTest, AcquiredTimingSurvivesOverwriteAndReset)
+{
+  SnapshotMailbox mailbox(model.get(), 2, true);
+  ASSERT_TRUE(send(mailbox, 1., 0.1));
+  auto lease = mailbox.wait_take();
+  ASSERT_TRUE(lease);
+  const auto timing = lease->timing();
+  EXPECT_GT(timing.submit_start_ns, 0u);
+  EXPECT_LE(timing.submit_start_ns, timing.submit_end_ns);
+  EXPECT_LE(timing.submit_end_ns, timing.acquire_ns);
+  std::promise<void> go;
+  auto barrier = go.get_future();
+  auto producer = std::async(std::launch::async, [&] {
+    barrier.wait();
+    const bool sent = send(mailbox, 2., .2) && send(mailbox, 3., .3);
+    mailbox.reset_epoch();
+    return sent;
+  });
+  go.set_value();
+  ASSERT_EQ(producer.wait_for(2s), std::future_status::ready);
+  EXPECT_TRUE(producer.get());
+  EXPECT_DOUBLE_EQ(lease->stamp_seconds(), 1.);
+  EXPECT_EQ(lease->timing().submit_start_ns, timing.submit_start_ns);
+  EXPECT_EQ(lease->timing().submit_end_ns, timing.submit_end_ns);
+  EXPECT_EQ(lease->timing().acquire_ns, timing.acquire_ns);
+  lease.reset();
+  ASSERT_TRUE(send(mailbox, .5, .05));
+  auto fresh = mailbox.wait_take();
+  EXPECT_GT(fresh->timing().submit_start_ns, timing.acquire_ns);
+}
+
+TEST_F(MailboxTest, DisabledTimingIsZero)
+{
+  SnapshotMailbox mailbox(model.get(), 2);
+  ASSERT_TRUE(send(mailbox, 1., .1));
+  auto lease = mailbox.wait_take();
+  EXPECT_EQ(lease->timing().submit_start_ns, 0u);
+  EXPECT_EQ(lease->timing().submit_end_ns, 0u);
+  EXPECT_EQ(lease->timing().acquire_ns, 0u);
+}
+
 TEST_F(MailboxTest, ConsumerLeaseSurvivesProducerOverwrite)
 {
   SnapshotMailbox mailbox(model.get(), 2);

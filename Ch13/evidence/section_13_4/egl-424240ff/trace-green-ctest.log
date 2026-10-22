@@ -1,0 +1,59 @@
+Internal ctest changing into directory: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_egl_424240ff-0bfe-4a4b-92d4-93f6a78d49b8/integrated_robot_camera
+Test project /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_egl_424240ff-0bfe-4a4b-92d4-93f6a78d49b8/integrated_robot_camera
+    Start 1: test_camera_trace
+1/5 Test #1: test_camera_trace ................***Failed    1.60 sec
+-- run_test.py: invoking following command in '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_egl_424240ff-0bfe-4a4b-92d4-93f6a78d49b8/integrated_robot_camera':
+ - /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_egl_424240ff-0bfe-4a4b-92d4-93f6a78d49b8/integrated_robot_camera/test_camera_trace --gtest_output=xml:/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_egl_424240ff-0bfe-4a4b-92d4-93f6a78d49b8/integrated_robot_camera/test_results/integrated_robot_camera/test_camera_trace.gtest.xml
+Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from TraceTest
+[ RUN      ] TraceTest.TraceDisabledNeverPublishes
+[       OK ] TraceTest.TraceDisabledNeverPublishes (48 ms)
+[ RUN      ] TraceTest.TraceEscapesStringsAndCapsUtf8Bytes
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_camera_trace.cpp:73: Failure
+Expected equality of these values:
+  qos.depth
+    Which is: 0
+  32u
+    Which is: 32
+
+[INFO] [1792453874.183182012] [camera_trace_test]: camera_trace_totals run_id=424240ff-0bfe-4a4b-92d4-93f6a78d49b8 producer_id=8ee32060-d18f-4249-9669-d0a01bb1977b attempted=3 emitted=1 drop=2 oversize=1 errors=1
+[  FAILED  ] TraceTest.TraceEscapesStringsAndCapsUtf8Bytes (17 ms)
+[ RUN      ] TraceTest.TraceStopsAtSessionLimit
+[INFO] [1792453874.637815775] [camera_trace_test]: camera_trace_totals run_id=424240ff-0bfe-4a4b-92d4-93f6a78d49b8 producer_id=b5b6a0d7-5173-41c7-b127-c2263b01eb17 attempted=20001 emitted=20000 drop=1 oversize=0 errors=0
+[       OK ] TraceTest.TraceStopsAtSessionLimit (454 ms)
+[ RUN      ] TraceTest.InvalidRunIdRejected
+[       OK ] TraceTest.InvalidRunIdRejected (7 ms)
+[----------] 4 tests from TraceTest (528 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (578 ms total)
+[  PASSED  ] 3 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] TraceTest.TraceEscapesStringsAndCapsUtf8Bytes
+
+ 1 FAILED TEST
+-- run_test.py: return code 1
+-- run_test.py: inject classname prefix into gtest result file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_egl_424240ff-0bfe-4a4b-92d4-93f6a78d49b8/integrated_robot_camera/test_results/integrated_robot_camera/test_camera_trace.gtest.xml'
+-- run_test.py: verify result file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/build13_4_egl_424240ff-0bfe-4a4b-92d4-93f6a78d49b8/integrated_robot_camera/test_results/integrated_robot_camera/test_camera_trace.gtest.xml'
+
+    Start 2: test_snapshot_mailbox
+2/5 Test #2: test_snapshot_mailbox ............   Passed    1.09 sec
+    Start 3: test_snapshot_camera_plugin
+3/5 Test #3: test_snapshot_camera_plugin ......   Passed    3.32 sec
+    Start 4: test_egl_context
+4/5 Test #4: test_egl_context .................   Passed    2.89 sec
+    Start 5: test_plugin_loading
+5/5 Test #5: test_plugin_loading ..............   Passed    1.42 sec
+
+80% tests passed, 1 tests failed out of 5
+
+Label Time Summary:
+gtest    =  10.33 sec*proc (5 tests)
+
+Total Test time (real) =  10.42 sec
+
+The following tests FAILED:
+	  1 - test_camera_trace (Failed)
+Errors while running CTest

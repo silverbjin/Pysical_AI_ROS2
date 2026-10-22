@@ -14,31 +14,8 @@ from controller_manager_msgs.srv import ListControllers
 
 
 def stop(process):
-    if process.poll() is None:
-        # Signal launch first; it forwards SIGINT to children itself.
-        process.send_signal(signal.SIGINT)
-        try:
-            process.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGTERM)
-            process.wait(timeout=10)
-    # Ruby/gz can outlive an exited launch parent. This group was created by us
-    # with start_new_session=True, so never infer a group from unrelated PIDs.
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        return
-    deadline = time.monotonic() + 2
-    while time.monotonic() < deadline:
-        try:
-            os.killpg(process.pid, 0)
-        except ProcessLookupError:
-            return
-        time.sleep(0.05)
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
+    from probe_sensors_13_4 import stop_owned_group
+    return stop_owned_group(process, grace_s=15.)
 
 
 def main():
@@ -55,6 +32,9 @@ def main():
     os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
     processes = []
     logs = []
+    engine = None
+    cleanup = []
+    gazebo_stop = None
     rclpy.init()
     node = rclpy.create_node('architecture_engine_waiter')
     try:
@@ -99,25 +79,57 @@ def main():
         result = json.loads(result_path.read_text(encoding='utf-8'))
         result.update(status='FAIL', engine=args.engine, runner_error=str(exc))
         result_path.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
-        raise
     finally:
         for process in reversed(processes):
-            stop(process)
+            if process is engine and args.engine == 'gazebo':
+                from run_vision_13_4 import quiesce_gazebo, owned_gazebo_members, wait_owned_members_exit
+                gazebo_stop = dict(confirmed=False)
+                try:
+                    members = owned_gazebo_members(process)
+                    if not members:
+                        raise RuntimeError('owned Gazebo member missing before shutdown')
+                    gazebo_stop['pause'] = quiesce_gazebo('section_13_2')
+                    command = ['gz', 'service', '-s', '/server_control', '--reqtype',
+                        'gz.msgs.ServerControl', '--reptype', 'gz.msgs.Boolean',
+                        '--timeout', '2000', '--req', 'stop: true']
+                    response = subprocess.run(command, capture_output=True, text=True, timeout=5.)
+                    gazebo_stop.update(command=command, returncode=response.returncode,
+                        stdout=response.stdout, stderr=response.stderr,
+                        native_exited=wait_owned_members_exit(process, members, timeout=8.))
+                    gazebo_stop['confirmed'] = (gazebo_stop['pause']['confirmed']
+                        and response.returncode == 0 and 'data: true' in response.stdout
+                        and gazebo_stop['native_exited'])
+                except Exception as exc:
+                    gazebo_stop['error'] = repr(exc)
+            report = stop(process)
+            cleanup.append(dict(pid=process.pid, role='engine' if process is engine else 'runtime',
+                                returncode=process.poll(), **report))
         for log in logs:
             log.close()
         node.destroy_node()
         rclpy.shutdown()
     result = json.loads(result_path.read_text(encoding='utf-8'))
-    runtime_log = (output / 'runtime.log').read_text(encoding='utf-8')
+    runtime_path = output/'runtime.log'
+    runtime_log = runtime_path.read_text(encoding='utf-8') if runtime_path.is_file() else ''
     clean = ('Traceback' not in runtime_log and 'exception was never retrieved' not in runtime_log
              and runtime_log.count('process has finished cleanly') == 5)
-    result.update(engine=args.engine, runtime_shutdown='PASS' if clean else 'FAIL')
-    if not clean:
+    engine_log = (output/'engine.log').read_text(encoding='utf-8') if engine else ''
+    engine_clean = (bool(cleanup) and (args.engine == 'none' or engine is not None)
+                    and all(not item['forced_cleanup'] and not item['residual_live_pids']
+                        and item['returncode'] == 0 for item in cleanup)
+                    and not any(marker in engine_log for marker in
+                        ('escalating to', 'process has died', 'failed to terminate'))
+                    and (args.engine != 'gazebo' or bool(gazebo_stop and gazebo_stop.get('confirmed'))))
+    result.update(engine=args.engine, runtime_shutdown='PASS' if clean else 'FAIL',
+                  engine_shutdown='PASS' if engine_clean else 'FAIL', cleanup=cleanup)
+    if gazebo_stop is not None:
+        result['gazebo_stop'] = gazebo_stop
+    if not clean or not engine_clean:
         result['status'] = 'FAIL'
     result_path.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(result, indent=2))
-    if not clean:
-        raise RuntimeError('runtime did not shut down cleanly; inspect runtime.log')
+    if result['status'] != 'PASS':
+        raise RuntimeError('architecture or normal shutdown failed; inspect saved result/logs')
 
 
 if __name__ == '__main__':

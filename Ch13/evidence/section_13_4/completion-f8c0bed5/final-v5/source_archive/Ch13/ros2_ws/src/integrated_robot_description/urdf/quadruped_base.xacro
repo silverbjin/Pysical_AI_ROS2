@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="base_length" value="0.60"/>
+  <xacro:property name="base_width" value="0.30"/>
+  <xacro:property name="base_height" value="0.15"/>
+  <xacro:property name="thigh_length" value="0.25"/>
+  <xacro:property name="calf_length" value="0.25"/>
+
+  <xacro:macro name="quadruped_leg" params="prefix x_sign y_sign">
+    <joint name="${prefix}_hip_joint" type="revolute">
+      <parent link="base_link"/><child link="${prefix}_hip_link"/>
+      <origin xyz="${x_sign*0.25} ${y_sign*0.10} 0" rpy="0 0 0"/>
+      <axis xyz="1 0 0"/><limit lower="-0.8" upper="0.8" effort="20" velocity="10"/>
+    </joint>
+    <link name="${prefix}_hip_link">
+      <visual><geometry><box size="0.08 0.04 0.04"/></geometry><material name="joint_grey"/></visual>
+      <collision><geometry><box size="0.08 0.04 0.04"/></geometry></collision>
+      <xacro:box_inertial mass="0.20" x="0.08" y="0.04" z="0.04"/>
+    </link>
+
+    <joint name="${prefix}_thigh_joint" type="revolute">
+      <parent link="${prefix}_hip_link"/><child link="${prefix}_thigh_link"/>
+      <origin xyz="0 ${y_sign*0.05} 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/><limit lower="-1.0" upper="4.0" effort="30" velocity="10"/>
+    </joint>
+    <link name="${prefix}_thigh_link">
+      <visual><origin xyz="0 0 -0.125"/><geometry><cylinder radius="0.02" length="0.25"/></geometry><material name="body_black"/></visual>
+      <collision><origin xyz="0 0 -0.125"/><geometry><cylinder radius="0.02" length="0.25"/></geometry></collision>
+      <xacro:cylinder_inertial mass="0.70" radius="0.02" length="0.25" origin_xyz="0 0 -0.125"/>
+    </link>
+
+    <joint name="${prefix}_calf_joint" type="revolute">
+      <parent link="${prefix}_thigh_link"/><child link="${prefix}_calf_link"/>
+      <origin xyz="0 0 -0.25" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/><limit lower="-2.8" upper="2.8" effort="30" velocity="10"/>
+    </joint>
+    <link name="${prefix}_calf_link">
+      <visual><origin xyz="0 0 -0.125"/><geometry><cylinder radius="0.015" length="0.25"/></geometry><material name="joint_grey"/></visual>
+      <collision><origin xyz="0 0 -0.125"/><geometry><cylinder radius="0.015" length="0.25"/></geometry></collision>
+      <xacro:cylinder_inertial mass="0.50" radius="0.015" length="0.25" origin_xyz="0 0 -0.125"/>
+    </link>
+
+    <joint name="${prefix}_foot_fixed" type="fixed">
+      <parent link="${prefix}_calf_link"/><child link="${prefix}_foot"/>
+      <origin xyz="0 0 -0.25"/>
+    </joint>
+    <link name="${prefix}_foot">
+      <visual><geometry><sphere radius="0.02"/></geometry><material name="body_black"/></visual>
+      <collision><geometry><sphere radius="0.02"/></geometry></collision>
+      <xacro:sphere_inertial mass="0.10" radius="0.02"/>
+    </link>
+    <gazebo reference="${prefix}_foot"><mu1 value="1.0"/><mu2 value="1.0"/></gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="quadruped_base">
+    <link name="base_footprint">
+      <xacro:box_inertial mass="0.0001" x="0.01" y="0.01" z="0.01"/>
+    </link>
+    <joint name="base_footprint_joint" type="fixed">
+      <parent link="base_footprint"/><child link="base_link"/>
+    </joint>
+    <link name="base_link">
+      <visual><geometry><box size="0.60 0.30 0.15"/></geometry><material name="body_black"/></visual>
+      <collision><geometry><box size="0.60 0.30 0.15"/></geometry></collision>
+      <xacro:box_inertial mass="6.0" x="0.60" y="0.30" z="0.15"/>
+    </link>
+    <xacro:quadruped_leg prefix="fr" x_sign="1" y_sign="-1"/>
+    <xacro:quadruped_leg prefix="fl" x_sign="1" y_sign="1"/>
+    <xacro:quadruped_leg prefix="rr" x_sign="-1" y_sign="-1"/>
+    <xacro:quadruped_leg prefix="rl" x_sign="-1" y_sign="1"/>
+  </xacro:macro>
+</robot>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="3.141" timestamp="2026-10-21T21:26:38.278774+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_tracking_baseline" name="test_baseline_requires_three_unique_precontrol_measurements" time="0.000"><failure message="AttributeError: module 'run_vision_13_4' has no attribute 'tracking_baseline'">def test_baseline_requires_three_unique_precontrol_measurements():
+        samples = [dict(capture_ns=11, wall=10.1, pixel_error=6.),
+                   dict(capture_ns=12, wall=10.2, pixel_error=5.),
+                   dict(capture_ns=12, wall=10.3, pixel_error=5.)]
+&gt;       assert runner.tracking_baseline(samples, 10.) is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'tracking_baseline'
+
+Ch13/tests/test_tracking_baseline.py:9: AttributeError</failure></testcase><testcase classname="Ch13.tests.test_tracking_baseline" name="test_elapsed_warmup_cannot_replace_missing_or_invalid_baseline" time="0.000"><failure message="AttributeError: module 'run_vision_13_4' has no attribute 'tracking_baseline'">def test_elapsed_warmup_cannot_replace_missing_or_invalid_baseline():
+&gt;       assert runner.tracking_baseline([], 10.) is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'tracking_baseline'
+
+Ch13/tests/test_tracking_baseline.py:18: AttributeError</failure></testcase></testsuite></testsuites>

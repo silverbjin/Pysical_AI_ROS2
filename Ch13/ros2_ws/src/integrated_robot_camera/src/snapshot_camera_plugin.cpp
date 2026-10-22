@@ -18,6 +18,9 @@
  */
 
 #include "snapshot_camera_plugin.hpp"
+#include "egl_render_context.hpp"
+#include <sys/syscall.h>
+#include <unistd.h>
 
 namespace integrated_robot_camera
 {
@@ -33,11 +36,21 @@ bool SnapshotCameraPlugin::init(rclcpp::Node::SharedPtr node, const mjModel* mod
   mj_model_ = model;
   try {
     auto state = std::make_shared<SelectionState>();
+    const std::string prefix = "mujoco_plugins." + node_->get_sub_namespace() + ".";
+    if (!node_->has_parameter(prefix + "trace_enabled")) {
+      node_->declare_parameter(prefix + "trace_enabled", false);
+    }
+    if (!node_->has_parameter(prefix + "trace_run_id")) {
+      node_->declare_parameter(prefix + "trace_run_id", "");
+    }
+    trace_ = std::make_unique<CameraTrace>(node_,
+      node_->get_parameter(prefix + "trace_enabled").as_bool(),
+      node_->get_parameter(prefix + "trace_run_id").as_string());
     if (!register_cameras(state)) {
       close();
       return false;
     }
-    state->mailbox = std::make_shared<SnapshotMailbox>(model, cameras_.size());
+    state->mailbox = std::make_shared<SnapshotMailbox>(model, cameras_.size(), trace_->enabled());
     state->selected.reserve(cameras_.size());
     state->selected_polls.reserve(cameras_.size());
     state->stopped = false;
@@ -298,121 +311,17 @@ void SnapshotCameraPlugin::close()
     rendering_thread_.join();
   }
   cameras_.clear();
+  trace_.reset();
   node_.reset();
   mj_model_ = nullptr;
 }
 
-bool SnapshotCameraPlugin::init_egl_context()
-{
-  // Get EGL display
-  egl_display_ = eglGetPlatformDisplay(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, NULL);
-
-  // Initialize EGL
-  EGLint major, minor;
-  if (!eglInitialize(egl_display_, &major, &minor))
-  {
-    RCLCPP_ERROR(node_->get_logger(), "EGL: Failed to initialize (error: 0x%x)", eglGetError());
-    return false;
-  }
-  const char* client_apis = eglQueryString(egl_display_, EGL_CLIENT_APIS);
-  const char* vendor = eglQueryString(egl_display_, EGL_VENDOR);
-  RCLCPP_INFO(node_->get_logger(), "EGL: Initialized version %d.%d", major, minor);
-  RCLCPP_INFO(node_->get_logger(), "EGL: Vendor: %s, APIs: %s", vendor, client_apis);
-  // Choose EGL config for offscreen rendering
-  const EGLint config_attribs[] = { EGL_SURFACE_TYPE,
-                                    EGL_PBUFFER_BIT,
-                                    EGL_RED_SIZE,
-                                    8,
-                                    EGL_GREEN_SIZE,
-                                    8,
-                                    EGL_BLUE_SIZE,
-                                    8,
-                                    EGL_ALPHA_SIZE,
-                                    8,
-                                    EGL_DEPTH_SIZE,
-                                    24,
-                                    EGL_RENDERABLE_TYPE,
-                                    EGL_OPENGL_BIT,
-                                    EGL_NONE };
-
-  EGLConfig egl_config;
-  EGLint num_configs;
-  if (!eglChooseConfig(egl_display_, config_attribs, &egl_config, 1, &num_configs) || num_configs == 0)
-  {
-    RCLCPP_ERROR(node_->get_logger(), "EGL: Failed to choose config (error: 0x%x)", eglGetError());
-    eglTerminate(egl_display_);
-    egl_display_ = EGL_NO_DISPLAY;
-    return false;
-  }
-
-  // Bind OpenGL API
-  if (!eglBindAPI(EGL_OPENGL_API))
-  {
-    RCLCPP_ERROR(node_->get_logger(), "EGL: Failed to bind OpenGL API (error: 0x%x)", eglGetError());
-    eglTerminate(egl_display_);
-    egl_display_ = EGL_NO_DISPLAY;
-    return false;
-  }
-
-  // Create EGL context
-  egl_context_ = eglCreateContext(egl_display_, egl_config, EGL_NO_CONTEXT, nullptr);
-  if (egl_context_ == EGL_NO_CONTEXT)
-  {
-    RCLCPP_ERROR(node_->get_logger(), "EGL: Failed to create context (error: 0x%x)", eglGetError());
-    eglTerminate(egl_display_);
-    egl_display_ = EGL_NO_DISPLAY;
-    return false;
-  }
-
-  // Create PBuffer surface for offscreen rendering
-  const EGLint pbuffer_attribs[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
-  egl_surface_ = eglCreatePbufferSurface(egl_display_, egl_config, pbuffer_attribs);
-  if (egl_surface_ == EGL_NO_SURFACE)
-  {
-    RCLCPP_ERROR(node_->get_logger(), "EGL: Failed to create PBuffer surface (error: 0x%x)", eglGetError());
-    eglDestroyContext(egl_display_, egl_context_);
-    eglTerminate(egl_display_);
-    egl_context_ = EGL_NO_CONTEXT;
-    egl_display_ = EGL_NO_DISPLAY;
-    return false;
-  }
-
-  // Make the context current
-  if (!eglMakeCurrent(egl_display_, egl_surface_, egl_surface_, egl_context_))
-  {
-    RCLCPP_ERROR(node_->get_logger(), "EGL: Failed to make context current (error: 0x%x)", eglGetError());
-    cleanup_egl_context();
-    return false;
-  }
-
-  RCLCPP_INFO(node_->get_logger(), "EGL: Successfully initialized headless OpenGL context");
-  return true;
-}
-
-void SnapshotCameraPlugin::cleanup_egl_context()
-{
-  if (egl_display_ != EGL_NO_DISPLAY)
-  {
-    eglMakeCurrent(egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    if (egl_surface_ != EGL_NO_SURFACE)
-    {
-      eglDestroySurface(egl_display_, egl_surface_);
-      egl_surface_ = EGL_NO_SURFACE;
-    }
-    if (egl_context_ != EGL_NO_CONTEXT)
-    {
-      eglDestroyContext(egl_display_, egl_context_);
-      egl_context_ = EGL_NO_CONTEXT;
-    }
-    eglTerminate(egl_display_);
-    egl_display_ = EGL_NO_DISPLAY;
-  }
-}
 
 void SnapshotCameraPlugin::update_loop(std::shared_ptr<SelectionState> state, std::promise<bool> ready)
 {
-  GLFWwindow* window = nullptr;
-  bool has_gl = false;
+  EglRenderContext gl;
+  bool has_scene = false;
+  bool has_context = false;
   bool announced = false;
   mjv_defaultOption(&mjv_opt_);
   mjv_defaultScene(&mjv_scn_);
@@ -422,34 +331,27 @@ void SnapshotCameraPlugin::update_loop(std::shared_ptr<SelectionState> state, st
     std::function<void()> action;
     ~ScopeExit() {action();}
   } release{[&] {
-      if (has_gl) {
-        mjr_freeContext(&mjr_con_);
-        mjv_freeScene(&mjv_scn_);
-      }
-      cleanup_egl_context();
-      if (window) {glfwDestroyWindow(window);}
-      // Do not glfwTerminate(): the host simulator may own other GLFW windows.
+      if (has_context) {mjr_freeContext(&mjr_con_);}
+      if (has_scene) {mjv_freeScene(&mjv_scn_);}
+      // gl is destroyed AFTER this guard, on the same worker.
     }};
   try {
-    // Creation, current context, rendering and destruction all belong to this worker.
-    if (glfwInit()) {
-      glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-      window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
-      if (window) {glfwMakeContextCurrent(window);}
-    }
-    use_egl_ = !window;
-    has_gl = window || init_egl_context();
-    if (!has_gl) {
+    if (!gl.initialize()) {
+      RCLCPP_ERROR(logger_, "Snapshot EGL initialization failed; no renderer fallback");
       state->mailbox->request_stop();
       ready.set_value(false);
       return;
     }
-    RCLCPP_INFO(logger_, "Snapshot renderer %s: %s", use_egl_ ? "EGL" : "GLFW",
-      reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
+    RCLCPP_INFO(logger_, "Snapshot renderer EGL: %s; vendor=%s; version=%s; worker_tid=%ld",
+      reinterpret_cast<const char *>(glGetString(GL_RENDERER)),
+      reinterpret_cast<const char *>(glGetString(GL_VENDOR)),
+      reinterpret_cast<const char *>(glGetString(GL_VERSION)), syscall(SYS_gettid));
     mjv_opt_.flags[mjtVisFlag::mjVIS_RANGEFINDER] = 0;
     for (int i = 0; i < mjNGROUP; ++i) {mjv_opt_.sitegroup[i] = 0;}
     mjv_makeScene(mj_model_, &mjv_scn_, 2000);
+    has_scene = true;
     mjr_makeContext(mj_model_, &mjr_con_, mjFONTSCALE_150);
+    has_context = true;
     int max_width = 1, max_height = 1;
     for (const auto & camera : cameras_) {
       if (camera.policy == CameraPolicy::DISABLED) {continue;}
@@ -493,14 +395,28 @@ void SnapshotCameraPlugin::update_cameras(const std::shared_ptr<SelectionState> 
 void SnapshotCameraPlugin::render_and_publish_camera(CameraData & camera, const rclcpp::Time & stamp,
   const SnapshotMailbox::RenderLease & lease, const std::shared_ptr<SelectionState> & state)
 {
+  const bool tracing = trace_->enabled();
+  std::array<uint64_t, native_trace_keys.size()> times{};
+  const auto mark = [&](size_t index) {
+    if (tracing) {times[index] = monotonic_nanoseconds();}
+  };
+  if (tracing) {
+    times[0] = lease.timing().submit_start_ns;
+    times[1] = lease.timing().submit_end_ns;
+    times[2] = lease.timing().acquire_ns;
+  }
   // Step 1: Render the scene and copy images to relevant camera data containers.
   // Render scene
+  mark(3);
   mjv_updateScene(mj_model_, const_cast<mjData *>(lease.data()), &mjv_opt_, NULL,
     &camera.mjv_cam, mjCAT_ALL, &mjv_scn_);
+  mark(4);
   mjr_render(camera.viewport, &mjv_scn_, &mjr_con_);
+  mark(5);
 
   // Copy image into relevant buffers
   mjr_readPixels(camera.image_buffer.data(), camera.depth_buffer.data(), camera.viewport, &mjr_con_);
+  mark(6);
 
   // Step 2: Adjust the images and copy depth data.
   // Fix non-linear depth buffer and flip it vertically (OpenGL's origin is the bottom left)
@@ -530,9 +446,33 @@ void SnapshotCameraPlugin::render_and_publish_camera(CameraData & camera, const 
   camera.depth_image.header.stamp = stamp;
   camera.camera_info.header.stamp = stamp;
 
+  bool complete = true;
+  mark(7);
   if (state->mailbox->is_current(lease.epoch())) {camera.image_pub->publish(camera.image);}
+  else {complete = false;}
+  mark(8);
+  mark(9);
   if (state->mailbox->is_current(lease.epoch())) {camera.depth_image_pub->publish(camera.depth_image);}
+  else {complete = false;}
+  mark(10);
+  mark(11);
   if (state->mailbox->is_current(lease.epoch())) {camera.camera_info_pub->publish(camera.camera_info);}
+  else {complete = false;}
+  mark(12);
+  if (tracing) {
+    // All allocations and ROS trace failures are isolated AFTER the original publications.
+    try {
+      NativeFrameTrace frame;
+      frame.source_frame = camera.frame_name;
+      frame.capture_ns = stamp.nanoseconds();
+      frame.local_epoch = lease.epoch();
+      frame.native_sequence = lease.sequence();
+      frame.ros_now_ns = node_->now().nanoseconds();
+      frame.outcome = complete ? "PUBLISHED" : "EPOCH_INVALIDATED";
+      for (size_t i = 0; i < times.size(); ++i) {frame.times_ns.emplace(native_trace_keys[i], times[i]);}
+      trace_->publish(frame);
+    } catch (...) {trace_->record_error();}
+  }
 }
 
 }  // namespace integrated_robot_camera

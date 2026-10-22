@@ -37,7 +37,7 @@ def normalize_native_info(msg):
 class NativeCameraInfoAdapter(Node):
     def __init__(self):
         super().__init__('native_camera_info_adapter')
-        self.pub = self.create_publisher(CameraInfo, '/camera/color/camera_info', qos_profile_sensor_data)
+        self.pub = self.create_publisher(CameraInfo, '/camera/color/camera_info', 5)
         self.sub = self.create_subscription(CameraInfo, '/native/camera_info', self.receive,
                                             qos_profile_sensor_data)
 

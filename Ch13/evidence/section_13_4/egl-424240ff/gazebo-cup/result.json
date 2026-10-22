@@ -1,0 +1,653 @@
+{
+  "schema_version": 1,
+  "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+  "expected_run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+  "invocation_started_at": 1792512191.6084685,
+  "started_at": 1792512191.6084685,
+  "status": "PASS",
+  "checks": {
+    "measured_startup": true,
+    "actual_inference_frames": true,
+    "recognition": true,
+    "valid_3d_detections": true,
+    "one_clock": true,
+    "one_odometry": true,
+    "sensor_contract": true,
+    "engine_alive": true,
+    "single_tf_owners": true,
+    "native_snapshot": true,
+    "clean_shutdown": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/gazebo-cup",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 86477,
+      "sha256": "745fad1b25738a2503c69c83187a77188582b08fc1de574d885f6c7bfd088c79"
+    },
+    {
+      "path": "semantic_cup.sdf",
+      "size": 40721,
+      "sha256": "ec8a3ea6954f80e1c778d0c513602b301e53d8592966ad0f81c589d1980ca5d0"
+    },
+    {
+      "path": "observations.json",
+      "size": 686500,
+      "sha256": "b9b4b956d42ba26ac7b12d91ad4938e38669cc7bbff7866bb5c8fa1c6640bd8c"
+    },
+    {
+      "path": "joints.npz",
+      "size": 273728,
+      "sha256": "7882f5eededb4c96f61ffac1c2f1b42028fc9a2c5cfe0b963bef027ba3618106"
+    },
+    {
+      "path": "system.log",
+      "size": 26304,
+      "sha256": "3fc7a3595e6ffb60c1dd40d0b096de5848496435827692618eeb348e92a5d2f8"
+    },
+    {
+      "path": "trace.jsonl",
+      "size": 1259117,
+      "sha256": "279b1894aa7c132d856b3fd79647a22cbcc36a6c9ca15cb9695c2f4d0e6880b0"
+    },
+    {
+      "path": "trace_summary.json",
+      "size": 7706,
+      "sha256": "53507365c46de62347074cab2dc5f64d14d2918e46d83145eeb4e9aa93756119"
+    },
+    {
+      "path": "rgb.png",
+      "size": 5042,
+      "sha256": "0c4e97a25c5071ed25942584a1deb8156dd91c43fc7dd74e9b9d4e2685adfb36"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "d7429e604a8400656e4cda0fbd6ae75b10690f764d24e3ca23c0bd1b5df2869b"
+    },
+    {
+      "path": "annotated.png",
+      "size": 5923,
+      "sha256": "e7d703f3a5be3f6b14c7ba3daa1dfb746e8af7063bd8b7ad9d2213f07d36e63a"
+    },
+    {
+      "path": "camera.json",
+      "size": 1247,
+      "sha256": "60b946c4eae489e9a49f4e16f64aadb29b9423d25889215d8e014f633bdbc361"
+    }
+  ],
+  "required_checks": [
+    "actual_inference_frames",
+    "clean_shutdown",
+    "engine_alive",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "recognition",
+    "sensor_contract",
+    "single_tf_owners",
+    "valid_3d_detections"
+  ],
+  "engine": "gazebo",
+  "vision_camera_backend": "upstream",
+  "source_head": "09b057465da50ffcf892c30e2e8f7e9f516ab953",
+  "detector_backend": "yolo",
+  "scenario": "yolo",
+  "processing_delay_s": 0.0,
+  "processes": [
+    {
+      "pid": 2650,
+      "pgid": 2650,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=gazebo",
+        "detector_backend:=yolo",
+        "processing_delay_s:=0.0",
+        "tracking_enabled:=false",
+        "max_rate_hz:=10.0",
+        "allow_camera_motion_test:=false",
+        "weights_path:=/home/jinho/ch13_vision_13_4_assets/yolov8n.pt",
+        "trace_enabled:=true",
+        "trace_run_id:=66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+        "world:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/gazebo-cup/semantic_cup.sdf"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "trace_enabled": true,
+  "trace_run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+  "inference_rate_hz": 10.0,
+  "semantic_fixture": {
+    "kind": "authored_geometry_cup",
+    "expected_class": "41",
+    "note": "Static hollow mug/handle and coffee on table; not a photo billboard or grasp test"
+  },
+  "stages": [
+    {
+      "stage": "startup",
+      "started_monotonic": 1470.784658793,
+      "status": "PASS",
+      "finished_monotonic": 1503.607692093,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "invalid/lost target",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 20,
+          "session_generation": null,
+          "event": "heartbeat",
+          "emitted_monotonic": 1503.588386643,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "events": [
+              {
+                "uuid": "7f1dee6b9cc14f16bddf5759c2553832",
+                "event": "sent",
+                "wall": 1500.692759763
+              },
+              {
+                "uuid": "7f1dee6b9cc14f16bddf5759c2553832",
+                "event": "accepted",
+                "wall": 1500.702650313
+              },
+              {
+                "uuid": "7f1dee6b9cc14f16bddf5759c2553832",
+                "event": "result_requested",
+                "wall": 1500.702654723
+              },
+              {
+                "uuid": "7f1dee6b9cc14f16bddf5759c2553832",
+                "event": "terminal",
+                "wall": 1503.436524963,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 6598000000,
+            "target_capture_ns": 6404000000,
+            "target_received_wall": 1503.585032253,
+            "joint_capture_ns": 6590000000,
+            "joint_received_wall": 1503.575989953,
+            "leg_positions": [
+              -6.789876968526774e-12,
+              -0.4999999999934785,
+              1.000000000169458,
+              6.789877574743662e-12,
+              -0.49999999999347844,
+              1.000000000169458,
+              -5.251321940805665e-12,
+              -0.49999999999503547,
+              1.000000000142886,
+              5.251321618442413e-12,
+              -0.49999999999503536,
+              1.000000000142886
+            ],
+            "leg_status": {
+              "active": false,
+              "mode": "STOP",
+              "ready": true,
+              "command_count": 0,
+              "max_timer_gap_s": 0.10103436000008514,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1503.237515793
+          }
+        },
+        "counts": {
+          "info": 100,
+          "depth": 83,
+          "rgb": 100,
+          "detection_frames": 73,
+          "raw_targets": 62,
+          "valid_tracks": 62,
+          "invalid_tracks": 19
+        },
+        "command_count": 0
+      }
+    }
+  ],
+  "recognition": {
+    "frames": 158,
+    "detected_frames": 158,
+    "valid_3d": 121,
+    "expected_class": "41",
+    "coverage": 1.0,
+    "note": "Actual native camera and YOLO; no fallback"
+  },
+  "owners": {
+    "/clock": [
+      "ros_gz_bridge"
+    ],
+    "/odom": [
+      "native_pose_adapter"
+    ],
+    "/camera/color/image_raw": [
+      "ros_gz_bridge"
+    ],
+    "/camera/aligned_depth_to_color/image_raw": [
+      "ros_gz_bridge"
+    ],
+    "/native/camera_info": [],
+    "/camera/color/camera_info": [
+      "ros_gz_bridge"
+    ],
+    "/tf": [
+      "robot_state_publisher",
+      "native_pose_adapter"
+    ],
+    "/tf_static": [
+      "robot_state_publisher"
+    ],
+    "/overview/color": [],
+    "/overview/depth": [],
+    "/overview/camera_info": [],
+    "/eye_in_hand/color": [],
+    "/eye_in_hand/depth": [],
+    "/eye_in_hand/camera_info": []
+  },
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 15.276176280000072
+  },
+  "tf_ownership_method": "graph+model-parent-contract inference; Jazzy does not expose packet GID",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.3.7",
+    "ultralytics": "8.3.221",
+    "torch": "2.5.1+cpu",
+    "opencv-python": "4.10.0.84"
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "gazebo_native_stop": {
+    "pids": [
+      2656,
+      2659
+    ],
+    "exited": true
+  },
+  "launch_returncode": 0,
+  "trace_analysis": {
+    "analysis_status": "PARTIAL",
+    "segments": {
+      "detector_queue": {
+        "count": 242,
+        "p50_ns": 39081555.0,
+        "p95_ns": 98948389.49999999,
+        "max_ns": 157053510,
+        "worst_capture": {
+          "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 15908000000,
+          "producer_id": "c5600fa5-6a4c-4ef1-9c0a-db661be173f3",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "detector_convert": {
+        "count": 242,
+        "p50_ns": 169110.0,
+        "p95_ns": 2453597.9999999995,
+        "max_ns": 9348660,
+        "worst_capture": {
+          "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 6800000000,
+          "producer_id": "c5600fa5-6a4c-4ef1-9c0a-db661be173f3",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "detector_inference": {
+        "count": 242,
+        "p50_ns": 114524055.0,
+        "p95_ns": 170997425.99999997,
+        "max_ns": 252775980,
+        "worst_capture": {
+          "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 15908000000,
+          "producer_id": "c5600fa5-6a4c-4ef1-9c0a-db661be173f3",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "detector_publish": {
+        "count": 241,
+        "p50_ns": 237960.0,
+        "p95_ns": 1776780.0,
+        "max_ns": 5930100,
+        "worst_capture": {
+          "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 19670000000,
+          "producer_id": "c5600fa5-6a4c-4ef1-9c0a-db661be173f3",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "fusion_queue": {
+        "count": 193,
+        "p50_ns": 1128690.0,
+        "p95_ns": 6377867.999999999,
+        "max_ns": 10675080,
+        "worst_capture": {
+          "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 1058000000,
+          "producer_id": "228f83a1-01c4-479b-8271-90aaf8477460",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "fusion_depth_span": {
+        "count": 193,
+        "p50_ns": 575910.0,
+        "p95_ns": 5562071.999999987,
+        "max_ns": 12164400,
+        "worst_capture": {
+          "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 15578000000,
+          "producer_id": "228f83a1-01c4-479b-8271-90aaf8477460",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "fusion_tf_span": {
+        "count": 193,
+        "p50_ns": 675270.0,
+        "p95_ns": 4740659.999999989,
+        "max_ns": 21438900,
+        "worst_capture": {
+          "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 19406000000,
+          "producer_id": "228f83a1-01c4-479b-8271-90aaf8477460",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "fusion_publish": {
+        "count": 193,
+        "p50_ns": 138870.0,
+        "p95_ns": 976193.9999999965,
+        "max_ns": 2995920,
+        "worst_capture": {
+          "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 20726000000,
+          "producer_id": "228f83a1-01c4-479b-8271-90aaf8477460",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "detector_to_fusion_receive": {
+        "count": 183,
+        "p50_ns": 1856430.0,
+        "p95_ns": 10205226.000000011,
+        "max_ns": 20195010,
+        "worst_capture": {
+          "run_id": "66cb5852-c86c-4de5-8bf8-30f3bef0541f",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 16766000000,
+          "producer_id": "228f83a1-01c4-479b-8271-90aaf8477460",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      }
+    },
+    "counts": {
+      "seen": 2264,
+      "valid": 2264,
+      "malformed": 0,
+      "unmatched": 77,
+      "ambiguous": 0,
+      "no_target": 359,
+      "duplicate": 0,
+      "sequence_gap_lower_bound": 197,
+      "dropped": null
+    },
+    "missing_stages": [
+      "camera"
+    ],
+    "target_gaps_ns": [
+      130567770,
+      133537860,
+      91398960,
+      113352660,
+      96658920,
+      111405420,
+      92316240,
+      272231190,
+      116468640,
+      118331820,
+      153011880,
+      103320900,
+      115748100,
+      262562580,
+      170991900,
+      123924150,
+      144882180,
+      177262740,
+      260801910,
+      107680050,
+      89029890,
+      141258240,
+      117008010,
+      208993410,
+      76922730,
+      98117100,
+      147947850,
+      110096010,
+      101296620,
+      84706920,
+      249990390,
+      130182480,
+      122158530,
+      325160370,
+      453135690,
+      125083440,
+      130632210,
+      158935860,
+      76694940,
+      155372040,
+      92673450,
+      180038700,
+      164025450,
+      139539510,
+      110416860,
+      111982320,
+      115186410,
+      111439620,
+      112302090,
+      103529880,
+      94204980,
+      105394860,
+      218821320,
+      137154960,
+      155623860,
+      132112530,
+      154173690,
+      146821860,
+      221395410,
+      143491500,
+      152265060,
+      219954240,
+      100201140,
+      127732050,
+      105871860,
+      91865610,
+      125511300,
+      92659140,
+      111232710,
+      105198930,
+      94591980,
+      116741700,
+      213146190,
+      95839560,
+      104376870,
+      79020360,
+      160997400,
+      139382550,
+      137822670,
+      173679390,
+      168658110,
+      168596910,
+      303751170,
+      103899600,
+      131049720,
+      126714870,
+      299268630,
+      104426190,
+      101004300,
+      124936200,
+      156012480,
+      319609620,
+      120264300,
+      200629080,
+      197784630,
+      114715890,
+      144864270,
+      113680710,
+      153210150,
+      268584300,
+      132564060,
+      164587410,
+      121766040,
+      130555080,
+      128778660,
+      455967270,
+      143087040,
+      89400690,
+      88573410,
+      354509460,
+      88304850,
+      140102730,
+      115739460,
+      118247760,
+      99543330,
+      206987490,
+      306392490,
+      150416640,
+      119212560,
+      223363800,
+      117850500,
+      151186410,
+      117660690,
+      117960390,
+      181544490,
+      401690970,
+      109292220,
+      94236120,
+      143429310,
+      198538830,
+      135856620,
+      149234040,
+      140097240,
+      224226810,
+      197844750,
+      245185560,
+      364101660,
+      181061640,
+      479655630,
+      132631470,
+      283379130,
+      117206370,
+      100476180,
+      119909340,
+      93128580,
+      363393270,
+      86275980,
+      120310020,
+      214583850,
+      130925790,
+      119696760,
+      138717630,
+      124921620,
+      285018570,
+      186354000,
+      139921830,
+      137393370,
+      191067210,
+      148825890,
+      164829690,
+      141262830,
+      122482980,
+      242146800,
+      115158690,
+      207324720,
+      96773490,
+      328561290,
+      150276240,
+      109681560,
+      335957490,
+      119878560,
+      146366730,
+      127751220,
+      124223400,
+      289051740,
+      253998720,
+      116143380,
+      109490670,
+      104554440,
+      116744580,
+      108542430,
+      140318370,
+      282865140,
+      98164710,
+      115193340,
+      79094340,
+      224704800,
+      102815640,
+      326278980,
+      75630690,
+      83044980,
+      111562200
+    ],
+    "gate_losses": [],
+    "errors": [],
+    "native_boundary": "UNVERIFIED",
+    "note": "Source-clock segments only; unknown producer totals keep coverage PARTIAL. Publish-to-receive includes DDS, scheduling and callback wait; not pure network latency. Depth/TF spans may interleave for multiple boxes, so do not add them as exclusive CPU time. Native render/readback are API spans, not isolated GPU-work measurements.",
+    "collector": {
+      "seen": 2264,
+      "accepted": 2264
+    },
+    "collector_limits": {
+      "per_producer": 20000,
+      "total": 80000,
+      "producers": 16,
+      "payload_bytes": 4096
+    }
+  },
+  "cleanup": [
+    {
+      "pid": 2650,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792512278.7855794
+}

@@ -1,0 +1,44 @@
+Starting >>> integrated_robot_interfaces
+Starting >>> integrated_robot_camera
+Starting >>> integrated_robot_controller
+Finished <<< integrated_robot_camera [6.50s]
+Finished <<< integrated_robot_interfaces [21.3s]
+Starting >>> integrated_robot_vision
+--- stderr: integrated_robot_controller
+CMake Deprecation Warning at /opt/ros/jazzy/share/tl_expected/cmake/tl_expectedConfig.cmake:37 (message):
+  Package 'tl_expected' is deprecated (This package will be removed in ROS 2
+  Lyrical Luth.
+
+        Use tl/expected.hpp from libexpected-dev,
+        or rcpputils/tl_expected/expected.hpp if the system header is not available)
+Call Stack (most recent call first):
+  /opt/ros/jazzy/share/parameter_traits/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/parameter_traits/cmake/parameter_traitsConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/joint_trajectory_controller/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/joint_trajectory_controller/cmake/joint_trajectory_controllerConfig.cmake:41 (include)
+  CMakeLists.txt:6 (find_package)
+
+
+CMake Error at /opt/ros/jazzy/share/ament_cmake_target_dependencies/cmake/ament_target_dependencies.cmake:146 (target_link_libraries):
+  The keyword signature for target_link_libraries has already been used with
+  the target "ch13_joint_trajectory_controller".  All uses of
+  target_link_libraries with a target must be either all-keyword or
+  all-plain.
+
+  The uses of the keyword signature are here:
+
+   * CMakeLists.txt:16 (target_link_libraries)
+
+Call Stack (most recent call first):
+  CMakeLists.txt:18 (ament_target_dependencies)
+
+
+---
+Failed   <<< integrated_robot_controller [25.0s, exited with code 1]
+Aborted  <<< integrated_robot_vision [5.97s]
+
+Summary: 2 packages finished [28.4s]
+  1 package failed: integrated_robot_controller
+  1 package aborted: integrated_robot_vision
+  1 package had stderr output: integrated_robot_controller
+  2 packages not processed

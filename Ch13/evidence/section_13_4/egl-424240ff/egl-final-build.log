@@ -1,0 +1,32 @@
+Starting >>> integrated_robot_interfaces
+Starting >>> integrated_robot_camera
+Finished <<< integrated_robot_interfaces [20.0s]
+Starting >>> integrated_robot_vision
+--- stderr: integrated_robot_camera
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:81:17: error: conflicting declaration of C function ‘void mjr_render(mjrRect, const mjvScene*, const mjrContext*)’
+   81 | extern "C" void mjr_render(mjrRect viewport, const mjvScene * scene, const mjrContext * context)
+      |                 ^~~~~~~~~~
+In file included from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/include/integrated_robot_camera/snapshot_mailbox.hpp:5,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/src/snapshot_camera_plugin.hpp:34,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:11:
+/opt/ros/jazzy/opt/mujoco_vendor/include/mujoco/mujoco.h:949:12: note: previous declaration ‘void mjr_render(mjrRect, mjvScene*, const mjrContext*)’
+  949 | MJAPI void mjr_render(mjrRect viewport, mjvScene* scn, const mjrContext* con);
+      |            ^~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp: In function ‘void mjr_render(mjrRect, const mjvScene*, const mjrContext*)’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:84:68: error: invalid conversion from ‘const mjvScene*’ {aka ‘const mjvScene_*’} to ‘mjvScene_*’ [-fpermissive]
+   84 |   egl_audit::native<decltype(&mjr_render)>("mjr_render")(viewport, scene, context);
+      |                                                                    ^~~~~
+      |                                                                    |
+      |                                                                    const mjvScene* {aka const mjvScene_*}
+gmake[2]: *** [CMakeFiles/test_snapshot_camera_plugin.dir/build.make:76: CMakeFiles/test_snapshot_camera_plugin.dir/test/test_snapshot_camera_plugin.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:276: CMakeFiles/test_snapshot_camera_plugin.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< integrated_robot_camera [27.6s, exited with code 2]
+Aborted  <<< integrated_robot_vision [11.0s]
+
+Summary: 1 package finished [31.9s]
+  1 package failed: integrated_robot_camera
+  1 package aborted: integrated_robot_vision
+  1 package had stderr output: integrated_robot_camera
+  2 packages not processed

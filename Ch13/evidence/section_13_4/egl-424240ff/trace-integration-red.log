@@ -1,0 +1,53 @@
+Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+Note: Google Test filter = CameraTest.TraceReportsAcquiredFrameWithoutChangingImages:CameraTest.EnabledTraceRejectsInvalidRunIdBeforeWorker
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from CameraTest
+[ RUN      ] CameraTest.TraceReportsAcquiredFrameWithoutChangingImages
+[INFO] [1792453368.292366653] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+[INFO] [1792453368.292957321] [snapshot_camera_test]: Adding camera: 'eye'
+[INFO] [1792453368.293528029] [snapshot_camera_test]:     policy: 'streaming'
+[INFO] [1792453368.293903152] [snapshot_camera_test]:     frame_name: 'camera_optical_frame'
+[INFO] [1792453368.294271956] [snapshot_camera_test]:     info_topic: 'eye/camera_info'
+[INFO] [1792453368.294579576] [snapshot_camera_test]:     image_topic: 'eye/color'
+[INFO] [1792453368.294889203] [snapshot_camera_test]:     depth_topic: 'eye/depth'
+[INFO] [1792453368.298014959] [snapshot_camera_test]: Adding camera: 'other'
+[INFO] [1792453368.298549861] [snapshot_camera_test]:     policy: 'disabled'
+[INFO] [1792453368.298880149] [snapshot_camera_test]:     frame_name: 'other_frame'
+[INFO] [1792453368.613737294] [SnapshotCameraPlugin]: Snapshot renderer EGL: llvmpipe (LLVM 20.1.2, 256 bits); vendor=Mesa; version=4.5 (Compatibility Profile) Mesa 25.2.8-0ubuntu0.24.04.4; worker_tid=1891
+[INFO] [1792453368.639133210] [SnapshotCameraPlugin]: integrated_robot_camera/SnapshotCameraPlugin initialized
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:242: Failure
+Value of: until([&] {return !traces.empty();}, 500ms)
+  Actual: false
+Expected: true
+
+[  FAILED  ] CameraTest.TraceReportsAcquiredFrameWithoutChangingImages (977 ms)
+[ RUN      ] CameraTest.EnabledTraceRejectsInvalidRunIdBeforeWorker
+[INFO] [1792453369.226023461] [snapshot_camera_test]: Publishing camera data at rate 1000000.000000 per second.
+[INFO] [1792453369.226875293] [snapshot_camera_test]: Adding camera: 'eye'
+[INFO] [1792453369.227473159] [snapshot_camera_test]:     policy: 'streaming'
+[INFO] [1792453369.227976979] [snapshot_camera_test]:     frame_name: 'camera_optical_frame'
+[INFO] [1792453369.228423650] [snapshot_camera_test]:     info_topic: 'eye/camera_info'
+[INFO] [1792453369.228852473] [snapshot_camera_test]:     image_topic: 'eye/color'
+[INFO] [1792453369.229268664] [snapshot_camera_test]:     depth_topic: 'eye/depth'
+[INFO] [1792453369.230904149] [snapshot_camera_test]: Adding camera: 'other'
+[INFO] [1792453369.231573001] [snapshot_camera_test]:     policy: 'disabled'
+[INFO] [1792453369.232071507] [snapshot_camera_test]:     frame_name: 'other_frame'
+[INFO] [1792453369.238804147] [SnapshotCameraPlugin]: Snapshot renderer EGL: llvmpipe (LLVM 20.1.2, 256 bits); vendor=Mesa; version=4.5 (Compatibility Profile) Mesa 25.2.8-0ubuntu0.24.04.4; worker_tid=1918
+[INFO] [1792453369.280751853] [SnapshotCameraPlugin]: integrated_robot_camera/SnapshotCameraPlugin initialized
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_camera/test/test_snapshot_camera_plugin.cpp:250: Failure
+Value of: start()
+  Actual: true
+Expected: false
+
+[  FAILED  ] CameraTest.EnabledTraceRejectsInvalidRunIdBeforeWorker (68 ms)
+[----------] 2 tests from CameraTest (1049 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (1105 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] CameraTest.TraceReportsAcquiredFrameWithoutChangingImages
+[  FAILED  ] CameraTest.EnabledTraceRejectsInvalidRunIdBeforeWorker
+
+ 2 FAILED TESTS

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="9" time="6.345" timestamp="2026-10-21T20:48:42.324701+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_detector_node" name="test_detector_requests_reliable_bounded_rgb_and_calibration" time="0.760" /><testcase classname="test.test_detector_node" name="test_rejected_future_image_has_capture_linked_ingress_evidence" time="0.053"><failure message="TypeError: ObjectDetector.report() got multiple values for argument 'reason'">def test_rejected_future_image_has_capture_linked_ingress_evidence():
+        rclpy.init(domain_id=146)
+        detector = ObjectDetector(parameter_overrides=[
+            Parameter('backend', value='color_fixture'), Parameter('trace_enabled', value=True),
+            Parameter('trace_run_id', value='f8c0bed5-cdac-43d8-81ff-84ab88360cdb')])
+        peer = Node('detector_rejection_peer')
+        executor = SingleThreadedExecutor()
+        executor.add_node(peer)
+        events = []
+        sub = peer.create_subscription(String, '/vision/detector_status',
+                                       lambda msg: events.append(json.loads(msg.data)), 50)
+        try:
+            now = detector.get_clock().now().nanoseconds / 1e9
+            calibration = info(now)
+            calibration.width, calibration.height = 100, 80
+            detector.on_info(calibration)
+            rgb = stamp(Image(), now + .2)
+            rgb.width, rgb.height, rgb.step, rgb.encoding = 100, 80, 300, 'bgr8'
+            rgb.data = bytes(80 * 300)
+&gt;           detector.on_rgb(rgb)
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/object_detector.py:158: in on_rgb
+    self.input_event(msg, 'INPUT_REJECTED', reason=reason)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;integrated_robot_vision.object_detector.ObjectDetector object at 0x706b1c104530&gt;
+image = sensor_msgs.msg.Image(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1792583325, nanosec=486923520),..., 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+status = 'INPUT_REJECTED', details = {'reason': 'FUTURE_CAPTURE'}
+
+    def input_event(self, image, status, **details):
+        """Bounded capture-linked evidence, including frames never put in a slot."""
+        if not self.trace.enabled or self.input_events &gt;= 20000:
+            return
+        self.input_events += 1
+&gt;       self.report(status, run_id=self.trace.run_id, sequence=self.input_events,
+                    capture_ns=image.header.stamp.sec*1_000_000_000+image.header.stamp.nanosec,
+                    source_frame=image.header.frame_id, monotonic_ns=time.monotonic_ns(),
+                    ros_now_ns=self.get_clock().now().nanoseconds, **details)
+E       TypeError: ObjectDetector.report() got multiple values for argument 'reason'
+
+Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/object_detector.py:168: TypeError</failure></testcase><testcase classname="test.test_detector_node" name="test_trace_keeps_capture_and_occurrence_time" time="0.091" /><testcase classname="test.test_detector_node" name="test_explicit_fifteen_hz_option_keeps_default_ten_and_single_worker" time="0.053" /><testcase classname="test.test_detector_node" name="test_delayed_detector_capture_header_and_stale_completion[False-0.15-True]" time="0.198" /><testcase classname="test.test_detector_node" name="test_delayed_detector_capture_header_and_stale_completion[False-0.35-False]" time="1.254" /><testcase classname="test.test_detector_node" name="test_delayed_detector_capture_header_and_stale_completion[True-0.15-True]" time="0.228" /><testcase classname="test.test_detector_node" name="test_delayed_detector_capture_header_and_stale_completion[True-0.35-False]" time="1.271" /><testcase classname="test.test_detector_node" name="test_explicit_image_ingress_pause_discards_inflight_result_without_stopping_camera" time="0.153" /></testsuite></testsuites>

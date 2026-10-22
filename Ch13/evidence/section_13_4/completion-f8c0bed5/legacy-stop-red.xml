@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.428" timestamp="2026-10-21T21:02:35.502893+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_legacy_shutdown" name="test_legacy_stop_records_actual_graceful_exit_and_no_residuals" time="0.482"><failure message="AssertionError: assert None == {'forced_cleanup': False, 'residual_live_pids': []}&#10; +  where {'forced_cleanup': False, 'residual_live_pids': []} = dict(forced_cleanup=False, residual_live_pids=[])">def test_legacy_stop_records_actual_graceful_exit_and_no_residuals():
+        code = ('import signal,sys; '
+                'signal.signal(signal.SIGINT,lambda *_:sys.exit(0)); '
+                'print("READY",flush=True); signal.pause()')
+        process = subprocess.Popen([sys.executable, '-c', code], stdout=subprocess.PIPE,
+                                   text=True, start_new_session=True)
+        try:
+            assert process.stdout.readline().strip() == 'READY'
+            record = runner.stop(process)
+&gt;           assert record == dict(forced_cleanup=False, residual_live_pids=[])
+E           AssertionError: assert None == {'forced_cleanup': False, 'residual_live_pids': []}
+E            +  where {'forced_cleanup': False, 'residual_live_pids': []} = dict(forced_cleanup=False, residual_live_pids=[])
+
+Ch13/tests/test_legacy_shutdown.py:21: AssertionError</failure></testcase></testsuite></testsuites>

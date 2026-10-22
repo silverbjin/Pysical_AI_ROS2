@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.754" timestamp="2026-10-21T21:59:22.048644+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_arm_transport_isolation" name="test_real_result_arrives_without_parent_pool_capacity" time="1.331"><failure message="AssertionError: {'acceptance_future_done': False, 'accepted': False, 'events': [{'event': 'sent', 'uuid': '5929da53d1784f40a419ca7020f1cc6a', 'wall': 6541.98136896}], 'handle_status': None, ...}&#10;assert False&#10; +  where False = PendingTrajectory(identifier=b'Y)\xdaS\xd1xO@\xa4\x19\xcap \xf1\xccj', deadline=6543.981333943, handle=None, result=No...=None, cancel_sent=False, error='', result_future=None, acceptance_future=&lt;rclpy.task.Future object at 0x73a7bea626c0&gt;).terminal">def test_real_result_arrives_without_parent_pool_capacity():
+        rclpy.init(domain_id=149)
+        node = ManipulationNode()
+        peer = Node('independent_controller_boundary')
+        executed, release, stopping = threading.Event(), threading.Event(), threading.Event()
+        occupied = threading.Barrier(5)
+        record = None
+    
+        def execute(handle):
+            executed.set()
+            handle.succeed()
+            return FollowJointTrajectory.Result(error_code=0)
+    
+        server = ActionServer(peer, FollowJointTrajectory,
+            '/arm_trajectory_controller/follow_joint_trajectory', execute)
+        parent = DrainingExecutor(num_threads=4)
+        controller = SingleThreadedExecutor()
+        parent.add_node(node)
+        controller.add_node(peer)
+    
+        def spin(executor):
+            while not stopping.is_set():
+                executor.spin_once(timeout_sec=.01)
+    
+        threads = [threading.Thread(target=spin, args=(executor,))
+                   for executor in (parent, controller)]
+        for thread in threads:
+            thread.start()
+        try:
+            assert node.trajectory.wait_for_server(timeout_sec=3)
+    
+            def busy_parent_callback():
+                occupied.wait(timeout=3)
+                release.wait(timeout=3)
+    
+            for _ in range(4):
+                parent.create_task(busy_parent_callback)
+            occupied.wait(timeout=3)
+            goal = FollowJointTrajectory.Goal()
+            goal.trajectory.joint_names = list(ARM_NAMES)
+            goal.trajectory.points = [JointTrajectoryPoint(positions=[0.]*6)]
+            record = node.arm_owner.send(goal, now=time.monotonic(), timeout=2)
+            assert executed.wait(timeout=1), 'real server did not execute the request'
+            deadline = time.monotonic()+.5
+            while not record.terminal and time.monotonic() &lt; deadline:
+                time.sleep(.005)
+&gt;           assert record.terminal, node.arm_owner.snapshot()
+E           AssertionError: {'acceptance_future_done': False, 'accepted': False, 'events': [{'event': 'sent', 'uuid': '5929da53d1784f40a419ca7020f1cc6a', 'wall': 6541.98136896}], 'handle_status': None, ...}
+E           assert False
+E            +  where False = PendingTrajectory(identifier=b'Y)\xdaS\xd1xO@\xa4\x19\xcap \xf1\xccj', deadline=6543.981333943, handle=None, result=No...=None, cancel_sent=False, error='', result_future=None, acceptance_future=&lt;rclpy.task.Future object at 0x73a7bea626c0&gt;).terminal
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_arm_transport_isolation.py:63: AssertionError</failure></testcase></testsuite></testsuites>

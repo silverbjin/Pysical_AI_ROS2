@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.105" timestamp="2026-10-21T10:45:35.133608+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_candidate_diagnostics" name="test_unsubmitted_candidate_reports_receipts_and_missing_depth" time="1.069"><failure message="AssertionError: unsubmitted candidate has no input/rejection evidence&#10;assert {'DETECTION_R... 'WAIT_DEPTH'} &lt;= set()&#10;  &#10;  Extra items in the left set:&#10;  'RGB_RECEIVED'&#10;  'DETECTION_RECEIVED'&#10;  'WAIT_DEPTH'">def test_unsubmitted_candidate_reports_receipts_and_missing_depth():
+        rclpy.init(args=['--ros-args', '-p', 'trace_enabled:=true', '-p',
+                        'trace_run_id:=f8c0bed5-cdac-43d8-81ff-84ab88360cdb'], domain_id=147)
+        node, peer = VisionProcessor(), Node('candidate_diagnostics_peer')
+        executor = SingleThreadedExecutor()
+        executor.add_node(peer)
+        events = []
+        sub = peer.create_subscription(String, '/vision/status',
+                                       lambda msg: events.append(json.loads(msg.data)), 50)
+        try:
+            stamp = peer.get_clock().now().nanoseconds / 1e9
+            node.on_info(info(stamp))
+            rgb, _ = images(stamp, stamp)
+            node.on_rgb(rgb)
+            node.on_detections(to_detection_array([Box2D(5., 5., 6., 6., 'fixture_red', 1.)], rgb.header))
+            end = time.monotonic() + .15
+            while time.monotonic() &lt; end:
+                executor.spin_once(timeout_sec=.005)
+            key = rgb.header.stamp.sec * 1_000_000_000 + rgb.header.stamp.nanosec
+            capture = [e for e in events if e.get('capture_ns') == key]
+&gt;           assert {'RGB_RECEIVED', 'DETECTION_RECEIVED', 'WAIT_DEPTH'} &lt;= {
+                e.get('event') for e in capture}, 'unsubmitted candidate has no input/rejection evidence'
+E               AssertionError: unsubmitted candidate has no input/rejection evidence
+E               assert {'DETECTION_R... 'WAIT_DEPTH'} &lt;= set()
+E                 
+E                 Extra items in the left set:
+E                 'RGB_RECEIVED'
+E                 'DETECTION_RECEIVED'
+E                 'WAIT_DEPTH'
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_candidate_diagnostics.py:36: AssertionError</failure></testcase></testsuite></testsuites>

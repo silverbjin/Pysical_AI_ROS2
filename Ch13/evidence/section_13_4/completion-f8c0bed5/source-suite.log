@@ -1,0 +1,118 @@
+........................................................................ [ 20%]
+........................................................................ [ 40%]
+....F................................................................... [ 61%]
+........................................................................ [ 81%]
+..................................................................       [100%]
+=================================== FAILURES ===================================
+_ test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity _
+
+    def test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity():
+        from ament_index_python.packages import get_package_prefix
+        from verify_all_13_4 import audit_installed_paths
+        prefix = Path(get_package_prefix('integrated_robot_camera')).parent
+        repo = Path(__file__).resolve().parents[2]
+        # conftest intentionally puts source modules first. Do not weaken the audit
+        # to accept that; execute the installed audit in a fresh interpreter instead.
+        with pytest.raises(RuntimeError, match='stale Python module'):
+            audit_installed_paths(prefix, repo)
+>       rows = json.loads(subprocess.check_output([sys.executable,
+            str(repo/'Ch13/scripts/verify_all_13_4.py'), '--audit-install-prefix', str(prefix)],
+            text=True, timeout=30.))
+
+Ch13/tests/test_section_13_4_summary.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = 30.0, check = True
+popenargs = (['/home/jinho/ch13_vision_13_4_venv/bin/python', '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe...e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_egl_424240ff-0bfe-4a4b-92d4-93f6a78d49b8'],)
+kwargs = {'stdout': -1, 'text': True}
+process = <Popen: returncode: 1 args: ['/home/jinho/ch13_vision_13_4_venv/bin/python',...>
+stdout = '', stderr = None, retcode = 1
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout is given, and the process takes too long, a TimeoutExpired
+        exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/home/jinho/ch13_vision_13_4_venv/bin/python', '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/verify_all_13_4.py', '--audit-install-prefix', '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_egl_424240ff-0bfe-4a4b-92d4-93f6a78d49b8']' returned non-zero exit status 1.
+
+/usr/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/verify_all_13_4.py", line 334, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/verify_all_13_4.py", line 266, in main
+    print(json.dumps(audit_installed_paths(args.audit_install_prefix, repo), indent=2))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/verify_all_13_4.py", line 185, in audit_installed_paths
+    raise RuntimeError('stale Python module: '+name)
+RuntimeError: stale Python module: integrated_robot_vision
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/source-suite.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_summary.py::test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity
+1 failed, 353 passed in 143.17s (0:02:23)

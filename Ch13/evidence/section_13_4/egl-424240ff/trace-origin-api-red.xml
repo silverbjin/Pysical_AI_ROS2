@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.057" timestamp="2026-10-20T09:40:39.105148+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_section_13_4_trace" name="test_native_trace_requires_the_audited_live_pid_and_boot" time="0.010"><failure message="AttributeError: module 'run_vision_13_4' has no attribute 'native_trace_origin_verified'">def test_native_trace_requires_the_audited_live_pid_and_boot():
+        import run_vision_13_4 as runner
+        value = rows()
+        proof = dict(egl_renderer=['unit contract, not a native run'], library_sha256='a'*64,
+                     mailbox_library_sha256='b'*64, native_pid=1, boot_id=BOOT)
+&gt;       assert runner.native_trace_origin_verified(value, proof)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'native_trace_origin_verified'
+
+Ch13/tests/test_section_13_4_trace.py:143: AttributeError</failure></testcase></testsuite></testsuites>

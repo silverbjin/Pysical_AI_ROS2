@@ -12,6 +12,60 @@ from integrated_robot_vision.vision_processor import VisionProcessor, make_execu
 from test_rgbd_cache import images, info, stamp
 
 
+def test_fusion_trace_uses_capture_stamp_and_actual_receive_order():
+    import json
+    from std_msgs.msg import String
+    rclpy.init(domain_id=145, args=['--ros-args', '-p', 'trace_enabled:=true', '-p',
+        'trace_run_id:=424240ff-0bfe-4a4b-92d4-93f6a78d49b8'])
+    node, peer, executor = None, None, make_executor()
+    try:
+        node, peer = VisionProcessor(), Node('fusion_trace_peer')
+        executor.add_node(node)
+        executor.add_node(peer)
+        traces, targets = [], []
+        sub = peer.create_subscription(String, '/vision/fusion_trace',
+            lambda m: traces.append(json.loads(m.data)), qos_profile_sensor_data)
+        target = peer.create_subscription(PointStamped, '/vision/target_raw', targets.append, 10)
+        transform = TransformStamped()
+        transform.header.frame_id, transform.child_frame_id = 'odom', 'camera_optical_frame'
+        transform.transform.rotation.w = 1.
+        node.tf_buffer.set_transform_static(transform, 'fusion_trace_test_only')
+        capture = peer.get_clock().now().nanoseconds/1e9
+        node.on_info(info(capture))
+        rgb, depth = images(capture, capture)
+        detection = Detection2D()
+        detection.bbox.center.position.x = detection.bbox.center.position.y = 5.
+        detection.bbox.size_x = detection.bbox.size_y = 6.
+        best = ObjectHypothesisWithPose()
+        best.hypothesis.class_id, best.hypothesis.score = 'fixture_red', .9
+        detection.results = [best]
+        message = stamp(Detection2DArray(detections=[detection]), capture)
+        # Independent streams may arrive in any order; do not sort their timestamps.
+        node.on_detections(message)
+        node.on_depth(depth)
+        node.on_rgb(rgb)
+        deadline = time.monotonic()+.25
+        while time.monotonic() < deadline and not (traces and targets):
+            executor.spin_once(timeout_sec=.005)
+        assert targets, 'original fusion target missing'
+        assert traces, 'missing capture-linked fusion trace'
+        trace = next(v for v in traces if v['outcome'] == 'PUBLISHED')
+        assert trace['capture_ns'] == rgb.header.stamp.sec*1_000_000_000+rgb.header.stamp.nanosec
+        assert trace['source_frame'] == 'camera_optical_frame'
+        times = trace['times_ns']
+        assert times['detection_receive'] <= times['depth_receive'] <= times['rgb_receive']
+        for start, end in [('bundle_select', 'work_take'), ('depth_start', 'depth_end'),
+                           ('tf_start', 'tf_end'), ('publish_start', 'publish_end')]:
+            assert 0 < times[start] <= times[end]
+    finally:
+        executor.shutdown(timeout_sec=2.)
+        if node is not None:
+            node.destroy_node()
+        if peer is not None:
+            peer.destroy_node()
+        rclpy.try_shutdown()
+
+
 def test_ros_fusion_preserves_capture_stamp_and_stops_worker_before_destroy():
     rclpy.init(domain_id=145)
     node, stimulus, executor = None, None, make_executor()
@@ -22,7 +76,7 @@ def test_ros_fusion_preserves_capture_stamp_and_stops_worker_before_destroy():
         executor.add_node(stimulus)
         received, sent = [], set()
         sub = stimulus.create_subscription(PointStamped, '/vision/target_raw', received.append, 10)
-        pubs = [stimulus.create_publisher(kind, topic, qos_profile_sensor_data) for kind, topic in [
+        pubs = [stimulus.create_publisher(kind, topic, 5) for kind, topic in [
             (CameraInfo, '/camera/color/camera_info'), (Image, '/camera/color/image_raw'),
             (Image, '/camera/aligned_depth_to_color/image_raw'),
             (Detection2DArray, '/vision/detections')]]

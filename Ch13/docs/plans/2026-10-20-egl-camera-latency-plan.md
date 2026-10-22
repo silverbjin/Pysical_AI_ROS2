@@ -8,7 +8,7 @@
 
 **Tech Stack:** ROS2 Jazzy, MuJoCo3.3.7, C++17/EGL/OpenGL, rclcpp/rclpy, Python3.12, gtest/pytest/colcon, 실제 MuJoCo/Gazebo.
 
-**Spec:** [사용자 승인 설계](../specs/2026-10-20-egl-camera-latency-design.md). 방향 확정 후 서면 설계를 사용자 승인받았다. **현재 구현 계획 검토 대기 / 제품 수정 미착수**. 계획 작성 기준 HEAD는656bb06fe0aa0569f63d27e9b4092b4a0d436ca1이다.
+**Spec:** [사용자 승인 설계](../specs/2026-10-20-egl-camera-latency-design.md). 방향·서면 설계·구현 계획을 사용자 승인받았다. **구현·22회 실제 검증 수행 / 전체13.4 인수 FAIL**. [최신 결과](../SECTION_13_4_EGL_TRACE_RESULTS_KO.md). 절 브랜치 보존·push 외 main/13.5는 보류한다. 계획 작성 기준 HEAD는656bb06fe0aa0569f63d27e9b4092b4a0d436ca1, 실제 구현 시작 HEAD는0ff4063f75e2f551aee09349e7fe9454792beea2다.
 
 ## Global Constraints
 
@@ -108,7 +108,7 @@ CMakeLists.txt, package.xml, REUSE_MANIFEST.md 수정.
 초기화는 직렬화해 성공 후 재사용하며 cleanup에서 eglTerminate하지 않는다.
 SnapshotCameraPlugin의 외부 init/update/cleanup/class ID는 불변이다.
 
-- [ ] **1. 실패 시험:** 기존 CameraTest에 `WorkerUsesEglWithoutGlfw` 추가.
+- [x] **1. 실패 시험:** 기존 CameraTest에 `WorkerUsesEglWithoutGlfw` 추가.
   시험 실행 파일에서 glfwInit 호출을 세고 false를 반환해 기존 코드도 실제 EGL로 진행하게 한다.
   실제 frame을 받은 뒤 `EXPECT_EQ(glfw_init_calls,0)`가 기존 소스에서1로 실패해야 한다.
   EGL 초기화/실패/cleanup의 호출 TID와 live context/surface 수를 actual API interposition으로 기록한다.
@@ -121,20 +121,20 @@ SnapshotCameraPlugin의 외부 init/update/cleanup/class ID는 불변이다.
   ASSERT_TRUE(until([&] {return !rgb.empty();}));
   EXPECT_EQ(glfw_init_calls.load(), 0);
   ```
-- [ ] **2. RED 실행:** 공통 build 후
+- [x] **2. RED 실행:** 공통 build 후
   `"$CH13_EGL_BUILD/integrated_robot_camera/test_snapshot_camera_plugin" --gtest_filter=CameraTest.WorkerUsesEglWithoutGlfw`.
   Expected: GLFW 호출1≠0의 행동 FAIL. EGL 미지원은 별도 실패로 기록하고 fake GL로 통과시키지 않는다.
-- [ ] **3. 최소 구현:** 기존 init_egl_context/cleanup을 RAII로 이동해 GLFW 우선 분기·헤더·직접 링크를 제거한다.
+- [x] **3. 최소 구현:** 기존 init_egl_context/cleanup을 RAII로 이동해 GLFW 우선 분기·헤더·직접 링크를 제거한다.
   EGL pbuffer1×1, MuJoCo offscreen320×240, display 프로세스 수명 정책을 적용한다.
   private context/surface는 worker에서만 정리하고 mjr/mjv 해제는 current인 동안 수행한다.
   실패는 init=false, 자동 fallback/재시작 없음. namespace/class ID·토픽·두 슬롯 정책은 유지한다.
-- [ ] **4. 실패 경계·GREEN:** EGL display/init/config/bind/context/surface/make-current 실패를
+- [x] **4. 실패 경계·GREEN:** EGL display/init/config/bind/context/surface/make-current 실패를
   각각 fresh 시험 자식에서 주입한다(프로세스별 display cache 때문에 fresh child 필요).
   각 실패에서 `init()==false`, join 완료, live private 자원0, 이중 cleanup 및 명시 재init 성공,
   `eglTerminate_calls==0`를 확인한다. 기존 busy/reset/polled/header/depth/flip/disabled 회귀도 수행한다.
   실행: `ctest --test-dir "$CH13_EGL_BUILD/integrated_robot_camera" --output-on-failure`.
   Expected: nonzero tests/zero failures, GLFW0, actual EGL renderer 증거와 worker TID 일치.
-- [ ] **5. checkpoint:** 외부 status와 복사/라이선스 유지, peer context 보호를 자체 검토한다.
+- [x] **5. checkpoint:** 외부 status와 복사/라이선스 유지, peer context 보호를 자체 검토한다.
   task 소스/시험/REUSE만 stage하고 `fix(ch13): use worker-owned EGL camera context`로 commit.
 
 ### Task 2: lease와 일치하는 native 시각·유계 trace

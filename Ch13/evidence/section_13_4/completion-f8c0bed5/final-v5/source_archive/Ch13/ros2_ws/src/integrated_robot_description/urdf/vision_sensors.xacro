@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="vision_frames" params="enabled">
+    <link name="camera_sensor_frame"/>
+    <joint name="camera_sensor_joint" type="fixed">
+      <parent link="camera_link"/><child link="camera_sensor_frame"/>
+      <origin rpy="0 ${2*pi/3} 0"/>
+    </joint>
+    <link name="camera_optical_frame"/>
+    <joint name="camera_optical_joint" type="fixed">
+      <parent link="camera_sensor_frame"/><child link="camera_optical_frame"/>
+      <origin rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
+    <xacro:if value="${enabled}">
+      <gazebo reference="camera_sensor_frame">
+        <sensor name="eye_in_hand" type="rgbd_camera">
+          <always_on>true</always_on><update_rate>15</update_rate>
+          <topic>/camera</topic><gz_frame_id>camera_optical_frame</gz_frame_id>
+          <camera>
+            <horizontal_fov>${pi/3}</horizontal_fov>
+            <image><width>320</width><height>240</height><format>R8G8B8</format></image>
+            <clip><near>0.10</near><far>5.0</far></clip>
+            <depth_camera><clip><near>0.10</near><far>5.0</far></clip></depth_camera>
+          </camera>
+        </sensor>
+      </gazebo>
+      <gazebo>
+        <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+          <odom_frame>odom</odom_frame><robot_base_frame>base_footprint</robot_base_frame>
+          <odom_publish_frequency>50</odom_publish_frequency><dimensions>3</dimensions>
+          <odom_topic>/native/odom</odom_topic><tf_topic>/native/pose_tf_unused</tf_topic>
+        </plugin>
+      </gazebo>
+    </xacro:if>
+  </xacro:macro>
+</robot>

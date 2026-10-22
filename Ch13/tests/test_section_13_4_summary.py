@@ -37,7 +37,7 @@ def test_fixture_does_not_imply_yolo_or_tracking_success(tmp_path):
     assert summarize({'yolo_smoke': results['yolo_smoke']}, batch)['status'] == 'FAIL'
 
 
-def test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity():
+def test_fresh_install_audit_covers_six_packages_and_native_source_binary_identity():
     from ament_index_python.packages import get_package_prefix
     from verify_all_13_4 import audit_installed_paths
     prefix = Path(get_package_prefix('integrated_robot_camera')).parent
@@ -50,7 +50,16 @@ def test_fresh_install_audit_covers_five_packages_and_camera_source_binary_ident
         str(repo/'Ch13/scripts/verify_all_13_4.py'), '--audit-install-prefix', str(prefix)],
         text=True, timeout=30.))
     assert set(rows) == {'integrated_robot_camera', 'integrated_robot_description',
-                         'integrated_robot_interfaces', 'integrated_robot_runtime', 'integrated_robot_vision'}
+                         'integrated_robot_interfaces', 'integrated_robot_runtime',
+                         'integrated_robot_vision', 'integrated_robot_controller'}
+    controller = rows['integrated_robot_controller']
+    for relative in ('src/joint_trajectory_controller.cpp',
+                     'include/integrated_robot_controller/realtime_server_goal_handle.hpp'):
+        assert controller['source_hashes'][relative] == hashlib.sha256(
+            (repo/'Ch13/ros2_ws/src/integrated_robot_controller'/relative).read_bytes()).hexdigest()
+    assert len(controller['library_sha256']) == 64
+    assert Path(controller['library_path']).is_relative_to(prefix)
+    assert controller['license_verified'] and controller['plugin_xml_verified']
     camera = rows['integrated_robot_camera']
     assert camera['source_hashes']['src/snapshot_camera_plugin.cpp'] == hashlib.sha256(
         (repo/'Ch13/ros2_ws/src/integrated_robot_camera/src/snapshot_camera_plugin.cpp').read_bytes()).hexdigest()
@@ -68,6 +77,16 @@ def test_batch_native_command_forwards_explicit_backend_and_rate():
         assert command[command.index('--vision-camera-backend')+1] == 'snapshot'
         assert command[command.index('--inference-rate-hz')+1] == '15.0'
         assert command[command.index('--engine')+1] == engine
+
+
+def test_batch_trace_flag_is_explicit_and_does_not_change_required_groups():
+    from types import SimpleNamespace
+    from verify_all_13_4 import native_trial_command
+    args = SimpleNamespace(weights='', vision_camera_backend='snapshot', inference_rate_hz=10.,
+                           trace_enabled=True)
+    assert '--trace-enabled' in native_trial_command(args, 'mujoco', 'static', Path('/tmp/trace'))
+    args.trace_enabled = False
+    assert '--trace-enabled' not in native_trial_command(args, 'gazebo', 'tracking', Path('/tmp/trace'))
 
 
 def test_batch_smoke_writes_annotation_inside_ignored_build_not_beside_input(tmp_path):

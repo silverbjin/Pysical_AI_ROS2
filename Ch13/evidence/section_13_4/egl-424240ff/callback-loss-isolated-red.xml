@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.566" timestamp="2026-10-20T09:23:36.362541+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_tracking_ros" name="test_target_callback_gate_loss_keeps_last_valid_source_without_a_timer_tick" time="1.186"><failure message="AssertionError: callback disabled immediately but no gate-loss boundary was emitted&#10;assert None is not None">def test_target_callback_gate_loss_keeps_last_valid_source_without_a_timer_tick():
+        from rclpy.executors import SingleThreadedExecutor
+        from rclpy.qos import qos_profile_sensor_data
+        rclpy.init(domain_id=148)
+        node = ManipulationNode(parameter_overrides=[
+            Parameter('trace_enabled', value=True),
+            Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+        peer, executor = Node('callback_gate_loss_peer'), SingleThreadedExecutor()
+        executor.add_node(peer)  # deliberately never runs node's control timer
+        traces = []
+        sub = peer.create_subscription(String, '/architecture/tracking_trace',
+            lambda m: traces.append(json.loads(m.data)), qos_profile_sensor_data)
+        try:
+            target = TrackedTarget(valid=True, status='TRACKED', track_id='one', class_id='fixture', score=.9)
+            target.header.frame_id, target.source_header.frame_id = 'odom', 'camera_optical_frame'
+            target.header.stamp = target.source_header.stamp = node.get_clock().now().to_msg()
+            target.position.x = .9
+            node.tracking.on_target(target)
+            node.tracking.guard.enable(dict.fromkeys(node.tracking.guard.CONDITIONS, True))
+            target.valid, target.status = False, 'LOST'
+            node.tracking.on_target(target)
+            end = time.monotonic()+.2
+            while time.monotonic() &lt; end:
+                executor.spin_once(timeout_sec=.005)
+            assert not node.tracking.guard.enabled and node.arm_owner.pending is None
+            assert len(traces) == 2
+            initial = next(v for v in traces if v['outcome'] == 'TARGET_RECEIVED')
+            lost = next((v for v in traces if v['outcome'] == 'GATE_LOST'), None)
+&gt;           assert lost is not None, 'callback disabled immediately but no gate-loss boundary was emitted'
+E           AssertionError: callback disabled immediately but no gate-loss boundary was emitted
+E           assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:427: AssertionError</failure></testcase></testsuite></testsuites>

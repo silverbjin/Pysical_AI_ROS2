@@ -19,20 +19,37 @@ import subprocess
 import tempfile
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
+from integrated_robot_vision.trace import trace_options as validate_trace_options
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+import yaml
 
 
-def materialize_controller_config(source, plugin_source=None):
+def materialize_controller_config(source, plugin_source=None, *, trace_options=None, vision=False):
     """Avoid ros2_control treating a package path as a robot_description argument."""
     data = Path(source).read_bytes()
+    if vision:
+        config = yaml.safe_load(data)
+        config['controller_manager']['ros__parameters']['arm_trajectory_controller']['type'] = (
+            'integrated_robot_controller/JointTrajectoryController')
+        data = yaml.safe_dump(config, sort_keys=False).encode('utf-8')
     if plugin_source is not None:
         # Controlled roots are disjoint: named controllers and /**.
         # One short file avoids native CM multi-file argv forwarding errors.
-        data += b'\n' + Path(plugin_source).read_bytes()
+        plugin_data = Path(plugin_source).read_bytes()
+        if trace_options is not None:
+            options = validate_trace_options(
+                trace_options['trace_enabled'], trace_options['trace_run_id'])
+            if options['trace_enabled']:
+                config = yaml.safe_load(plugin_data)
+                eye = config['/**']['ros__parameters']['mujoco_plugins'].get('eye_camera', {})
+                if eye.get('type') == 'integrated_robot_camera/SnapshotCameraPlugin':
+                    eye.update(options)
+                    plugin_data = yaml.safe_dump(config, sort_keys=False).encode('utf-8')
+        data += b'\n' + plugin_data
     digest = hashlib.sha256(data).hexdigest()[:12]
     target = Path(tempfile.gettempdir()) / f'ch13_2_controllers_{digest}.yaml'
     if not target.exists() or target.read_bytes() != data:
@@ -79,6 +96,9 @@ def probe_snapshot_plugin(expected_prefix: Path) -> dict:
 
 
 def launch_nodes(context):
+    trace = validate_trace_options(
+        LaunchConfiguration('trace_enabled', default='false').perform(context),
+        LaunchConfiguration('trace_run_id', default='').perform(context))
     share = get_package_share_directory('integrated_robot_description')
     vision = LaunchConfiguration('vision_enabled').perform(context).lower() == 'true'
     backend = LaunchConfiguration('vision_camera_backend', default='upstream').perform(context)
@@ -91,6 +111,8 @@ def launch_nodes(context):
     controllers = materialize_controller_config(
         os.path.join(share, 'config', 'controllers.yaml'),
         camera_config,
+        trace_options=trace if vision and backend == 'snapshot' else None,
+        vision=vision,
     )
     description = ParameterValue(
         Command(
@@ -144,4 +166,6 @@ def generate_launch_description():
                                   'vision_camera_backend', default_value='upstream'),
                               DeclareLaunchArgument('mujoco_headless', default_value='false'),
                               DeclareLaunchArgument('model_path', default_value=''),
+                              DeclareLaunchArgument('trace_enabled', default_value='false'),
+                              DeclareLaunchArgument('trace_run_id', default_value=''),
                               OpaqueFunction(function=launch_nodes)])

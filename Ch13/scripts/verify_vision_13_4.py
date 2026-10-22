@@ -18,7 +18,8 @@ def source_snapshot(repo):
     repo = Path(repo).resolve()
     roots = [repo/'Ch13/scripts', repo/'Ch13/tests'] + [repo/'Ch13/ros2_ws/src'/name for name in (
         'integrated_robot_description', 'integrated_robot_interfaces',
-        'integrated_robot_runtime', 'integrated_robot_vision', 'integrated_robot_camera')]
+        'integrated_robot_runtime', 'integrated_robot_vision', 'integrated_robot_camera',
+        'integrated_robot_controller')]
     files = {}
     for root in roots:
         for path in sorted(root.rglob('*')):

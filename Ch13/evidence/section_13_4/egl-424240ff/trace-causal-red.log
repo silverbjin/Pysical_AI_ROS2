@@ -1,0 +1,62 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_incomplete_publication_or_impossible_fusion_causality_never_joins[native_partial] _
+
+damage = 'native_partial'
+
+    @pytest.mark.parametrize('damage', ['native_partial', 'fusion_before_tf', 'fusion_before_receive'])
+    def test_incomplete_publication_or_impossible_fusion_causality_never_joins(damage):
+        value = rows()
+        if damage == 'native_partial':
+            value[0]['record']['outcome'] = 'EPOCH_INVALIDATED'
+        elif damage == 'fusion_before_tf':
+            value[2]['record']['times_ns']['tf_end'] = 600
+        else:
+            value[2]['record']['times_ns']['rgb_receive'] = 600
+        result = analyze_trace(value, expected_run_id=RUN, require_native=True)
+>       assert 'native_to_dispatch' not in result['segments']
+E       AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}
+
+Ch13/tests/test_section_13_4_trace.py:110: AssertionError
+_ test_incomplete_publication_or_impossible_fusion_causality_never_joins[fusion_before_tf] _
+
+damage = 'fusion_before_tf'
+
+    @pytest.mark.parametrize('damage', ['native_partial', 'fusion_before_tf', 'fusion_before_receive'])
+    def test_incomplete_publication_or_impossible_fusion_causality_never_joins(damage):
+        value = rows()
+        if damage == 'native_partial':
+            value[0]['record']['outcome'] = 'EPOCH_INVALIDATED'
+        elif damage == 'fusion_before_tf':
+            value[2]['record']['times_ns']['tf_end'] = 600
+        else:
+            value[2]['record']['times_ns']['rgb_receive'] = 600
+        result = analyze_trace(value, expected_run_id=RUN, require_native=True)
+>       assert 'native_to_dispatch' not in result['segments']
+E       AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}
+
+Ch13/tests/test_section_13_4_trace.py:110: AssertionError
+_ test_incomplete_publication_or_impossible_fusion_causality_never_joins[fusion_before_receive] _
+
+damage = 'fusion_before_receive'
+
+    @pytest.mark.parametrize('damage', ['native_partial', 'fusion_before_tf', 'fusion_before_receive'])
+    def test_incomplete_publication_or_impossible_fusion_causality_never_joins(damage):
+        value = rows()
+        if damage == 'native_partial':
+            value[0]['record']['outcome'] = 'EPOCH_INVALIDATED'
+        elif damage == 'fusion_before_tf':
+            value[2]['record']['times_ns']['tf_end'] = 600
+        else:
+            value[2]['record']['times_ns']['rgb_receive'] = 600
+        result = analyze_trace(value, expected_run_id=RUN, require_native=True)
+>       assert 'native_to_dispatch' not in result['segments']
+E       AssertionError: assert 'native_to_dispatch' not in {'detector_convert': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, 'detector_inference': {'count': ...s': 10.0, 'p95_ns': 10.0, ...}, 'detector_queue': {'count': 1, 'max_ns': 10, 'p50_ns': 10.0, 'p95_ns': 10.0, ...}, ...}
+
+Ch13/tests/test_section_13_4_trace.py:110: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/trace-causal-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_trace.py::test_incomplete_publication_or_impossible_fusion_causality_never_joins[native_partial]
+FAILED Ch13/tests/test_section_13_4_trace.py::test_incomplete_publication_or_impossible_fusion_causality_never_joins[fusion_before_tf]
+FAILED Ch13/tests/test_section_13_4_trace.py::test_incomplete_publication_or_impossible_fusion_causality_never_joins[fusion_before_receive]
+3 failed in 3.28s

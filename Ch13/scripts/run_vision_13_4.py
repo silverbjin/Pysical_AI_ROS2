@@ -10,15 +10,17 @@ import os
 from pathlib import Path
 import signal
 import shutil
+import statistics
 import subprocess
 from threading import Event
 import time
 import xml.etree.ElementTree as ET
 
 from verify_vision_13_4 import EvidenceRun, rms_error, geometry_summary, tf_contract_single_owners, tracking_summary, source_snapshot, file_digest
+from integrated_robot_vision.trace import trace_options
 
 
-COMMON = {'one_clock', 'one_odometry', 'single_tf_owners', 'sensor_contract',
+COMMON = {'one_clock', 'one_odometry', 'single_tf_owners', 'sensor_contract', 'controller_backend_loaded',
           'measured_startup', 'engine_alive', 'clean_shutdown', 'native_snapshot'}
 
 
@@ -70,6 +72,22 @@ def offset_fixture(engine, share, output, y):
     return path
 
 
+def tracking_baseline(samples, since):
+    """Require measured, distinct captures before the first control enable."""
+    unique = {}
+    for sample in samples:
+        if sample['wall'] >= since:
+            unique.setdefault(sample['capture_ns'], sample)
+    selected = list(unique.values())
+    errors = [sample['pixel_error'] for sample in selected]
+    if (len(selected) < 3 or any(key <= 0 for key in unique)
+            or not all(math.isfinite(error) and error >= 0 for error in errors)
+            or statistics.median(errors) <= 1.):
+        return None
+    return dict(capture_ns=list(unique), pixel_errors=errors,
+                measurement_walls=[sample['wall'] for sample in selected])
+
+
 def clean_shutdown(cleanup, returncode, log):
     return (bool(cleanup) and returncode == 0 and all(
         not v['forced_cleanup'] and not v['residual_live_pids'] for v in cleanup)
@@ -79,21 +97,108 @@ def clean_shutdown(cleanup, returncode, log):
 
 
 def wait_owned_members_exit(process, members, *, timeout=8.):
-    from probe_sensors_13_4 import live_group_pids
+    """Wait for parent reaping, not just absence from a non-zombie live list.
+
+    Launch's pidfd child watcher must consume each exit status before the next
+    launch SIGINT can forward another signal. Popen.send_signal polls/reaps an
+    already exited child; racing that with the watcher produces exit code255.
+    PID start ticks protect this read-only barrier against PID reuse.
+    """
     if not math.isfinite(timeout) or not 0 < timeout <= 10.:
         raise ValueError('bounded native stop grace required')
+    pending = {}
     for pid in members:
         try:
-            if os.getpgid(pid) != process.pid:
+            fields = (Path('/proc')/str(pid)/'stat').read_text().rsplit(')', 1)[1].split()
+            if int(fields[2]) != process.pid:
                 raise ValueError('refuse to wait on an unrelated process group member')
-        except ProcessLookupError:
+            pending[pid] = fields[19]
+        except (FileNotFoundError, ProcessLookupError):
             continue
     deadline = time.monotonic()+timeout
-    while set(members) & set(live_group_pids(process.pid)):
+    while pending:
+        if process.pid in pending:
+            # We are this Popen's parent, so only we may consume its status.
+            # Other members must be reaped by their actual launch parent.
+            process.poll()
+        for pid, started in tuple(pending.items()):
+            try:
+                fields = (Path('/proc')/str(pid)/'stat').read_text().rsplit(')', 1)[1].split()
+                if fields[19] != started:
+                    del pending[pid]  # original PID was reaped and recycled
+            except (FileNotFoundError, ProcessLookupError):
+                del pending[pid]
+        if not pending:
+            return True
         if time.monotonic() >= deadline:
             return False
         time.sleep(.05)
     return True
+
+
+def stop_owned_runtime_nodes(process):
+    """Close command ingress and join workers while the physical server lives.
+
+    Only known console executables inside this launch's own process group are
+    signaled. Engine, ROS bridges and robot_state_publisher remain alive here.
+    """
+    from probe_sensors_13_4 import live_group_pids
+    names = {'locomotion_node', 'manipulation_node', 'mission_commander',
+             'state_manager', 'vision_processor', 'object_detector',
+             'native_pose_adapter', 'native_camera_info_adapter'}
+    packages = {'integrated_robot_runtime', 'integrated_robot_vision'}
+    record = dict(started_ns=time.monotonic_ns(), nodes=[], confirmed=False,
+                  completion_boundary='owned children reaped by parent')
+    for pid in live_group_pids(process.pid):
+        try:
+            argv = (Path('/proc')/str(pid)/'cmdline').read_bytes().split(b'\0')
+            for argument in argv[:2]:
+                executable = Path(os.fsdecode(argument))
+                if (executable.name in names and len(executable.parts) >= 3
+                        and executable.parts[-2] in packages and executable.parts[-3] == 'lib'):
+                    if os.getpgid(pid) != process.pid:
+                        raise RuntimeError('runtime owner changed before shutdown')
+                    record['nodes'].append(dict(pid=pid, executable=str(executable)))
+                    os.kill(pid, signal.SIGINT)
+                    break
+        except ProcessLookupError:
+            continue
+    record['confirmed'] = bool(record['nodes']) and wait_owned_members_exit(
+        process, [item['pid'] for item in record['nodes']], timeout=8.)
+    record['finished_ns'] = time.monotonic_ns()
+    return record
+
+
+def quiesce_gazebo(world):
+    """Observe a paused world before asking rendering/physics to tear down.
+
+    Called only after the tracking/action drain. ACK is not state evidence.
+    No retries, signals or timeout relaxation; a failed handshake stays FAIL.
+    """
+    record = dict(confirmed=False, started_ns=time.monotonic_ns(), commands=[])
+    try:
+        command = ['gz', 'service', '-s', f'/world/{world}/control', '--reqtype',
+                   'gz.msgs.WorldControl', '--reptype', 'gz.msgs.Boolean',
+                   '--timeout', '2000', '--req', 'pause: true']
+        record['commands'].append(command)
+        response = subprocess.run(command, capture_output=True, text=True, timeout=5.)
+        record['pause'] = dict(returncode=response.returncode, stdout=response.stdout,
+                               stderr=response.stderr)
+        if response.returncode != 0 or 'data: true' not in response.stdout:
+            return record
+        command = ['gz', 'topic', '-e', '-t', f'/world/{world}/stats', '-n', '1',
+                   '--json-output']
+        record['commands'].append(command)
+        response = subprocess.run(command, capture_output=True, text=True, timeout=5.)
+        record['stats'] = dict(returncode=response.returncode, stdout=response.stdout,
+                               stderr=response.stderr)
+        if response.returncode == 0:
+            record['confirmed'] = json.loads(response.stdout).get('paused') is True
+    except (subprocess.TimeoutExpired, ValueError, OSError) as exc:
+        record['error'] = repr(exc)
+    finally:
+        record['finished_ns'] = time.monotonic_ns()
+    return record
 
 
 def is_gazebo_command(command_line):
@@ -165,6 +270,24 @@ def camera_launch_module():
     return module
 
 
+def mapped_owned_library(process, expected_library):
+    """Actual library bytes in an explicitly owned launch process group."""
+    from probe_sensors_13_4 import live_group_pids
+    expected = Path(expected_library).resolve(strict=True)
+    for pid in live_group_pids(process.pid):
+        try:
+            if os.getpgid(pid) != process.pid:
+                continue
+            for line in (Path('/proc')/str(pid)/'maps').read_text().splitlines():
+                fields = line.split(maxsplit=5)
+                if len(fields) == 6 and fields[-1] == str(expected):
+                    return dict(pid=pid,pgid=process.pid,library_path=str(expected),
+                                library_sha256=file_digest(expected))
+        except (ProcessLookupError,FileNotFoundError):
+            continue
+    raise RuntimeError('expected controller library not mapped in owned engine: '+str(expected))
+
+
 def mapped_camera_library(pid, owned_pgid, expected_library):
     """Read only an owned group's mappings; no attach, signals or policy changes."""
     if os.getpgid(pid) != owned_pgid:
@@ -214,17 +337,39 @@ def audit_camera_backend(process, expected_prefix: Path) -> dict:
     log = Path(process.ch13_system_log).read_text(encoding='utf-8')
     if 'integrated_robot_camera/SnapshotCameraPlugin initialized' not in log:
         raise RuntimeError('native camera initialization class ID was not observed')
+    renderer_lines = [line.split('Snapshot renderer EGL:', 1)[1].strip()
+                      for line in log.splitlines() if 'Snapshot renderer EGL:' in line]
+    if not renderer_lines:
+        raise RuntimeError('actual snapshot EGL renderer initialization was not observed')
     from verify_all_13_4 import audit_installed_paths
     installed = audit_installed_paths(Path(expected_prefix).resolve().parent,
                                       Path(__file__).resolve().parents[2])
     if loaded['mailbox_library_sha256'] != installed['integrated_robot_camera']['mailbox_library_sha256']:
         raise RuntimeError('native mailbox binary differs from installed audit')
-    return dict(audit, **loaded, native_pid=candidates[0], installed_packages=installed)
+    return dict(audit, **loaded, native_pid=candidates[0], installed_packages=installed,
+                egl_renderer=renderer_lines,
+                boot_id=Path('/proc/sys/kernel/random/boot_id').read_text().strip())
 
 
 LEGACY_AUTO_CAMERA_TOPICS = tuple(
     f'/{camera}/{stream}' for camera in ('overview', 'eye_in_hand')
     for stream in ('color', 'depth', 'camera_info'))
+
+
+def native_trace_origin_verified(records, proof):
+    """Bind trace metadata to the live audited native process; never signal it."""
+    if (not isinstance(proof, dict) or not proof.get('egl_renderer')
+            or not proof.get('library_sha256') or not proof.get('mailbox_library_sha256')
+            or type(proof.get('native_pid')) is not int or proof['native_pid'] <= 0
+            or not proof.get('boot_id')):
+        return False
+    try:
+        cameras = [row['record'] for row in records if row['record']['stage'] == 'camera']
+        return bool(cameras) and all(value['pid'] == proof['native_pid'] and
+            value['boot_id'] == proof['boot_id'] and value['clock_id'] == 'linux/CLOCK_MONOTONIC'
+            for value in cameras)
+    except (KeyError, TypeError):
+        return False
 
 
 def camera_publishers_unique(owners):
@@ -254,6 +399,7 @@ def _scenario_checks(scenario):
 
 
 def build_launch_command(args, delay):
+    trace = trace_options(getattr(args, 'trace_enabled', False), getattr(args, 'trace_run_id', ''))
     rate = float(getattr(args, 'inference_rate_hz', 10.))
     if not math.isfinite(rate) or not 0 < rate <= 15:
         raise ValueError('inference rate must be finite and in (0,15]')
@@ -266,6 +412,8 @@ def build_launch_command(args, delay):
         'allow_camera_motion_test:='+str(args.scenario == 'delay').lower()]
     if args.weights_path:
         command.append('weights_path:='+args.weights_path)
+    if trace['trace_enabled']:
+        command += ['trace_enabled:=true', 'trace_run_id:='+trace['trace_run_id']]
     if args.engine == 'mujoco':
         command.append('mujoco_headless:='+str(getattr(args, 'mujoco_headless', True)).lower())
         command.append('vision_camera_backend:='+backend)
@@ -277,6 +425,8 @@ def run_trial(args, *, launch_command=None):
     backend = getattr(args, 'vision_camera_backend', 'upstream')
     required = required_checks(args.scenario, engine=args.engine, camera_backend=backend)
     run = EvidenceRun(args.output_dir, required)
+    args = copy(args)
+    args.trace_run_id = run.run_id if getattr(args, 'trace_enabled', False) else ''
     process = log = node = None
     content = ''
     initialized, checks, cleanup = False, {}, []
@@ -308,14 +458,16 @@ def run_trial(args, *, launch_command=None):
             rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
             initialized = True
             previous_signal = signal.signal(signal.SIGINT, lambda *_: stopping.set())
-            node = VisionObserver(run.root)
+            trace = trace_options(getattr(args, 'trace_enabled', False), args.trace_run_id)
+            node = VisionObserver(run.root, **trace)
             os.environ['GZ_PARTITION'] = 'ch13_vision_'+run.run_id
             os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
             delay = .15 if args.scenario == 'delay' else 0.
             if args.processing_delay_s is not None:
                 delay = args.processing_delay_s
             run.result.update(engine=args.engine, detector_backend=args.detector_backend,
-                              scenario=args.scenario, processing_delay_s=delay, processes=[])
+                              scenario=args.scenario, processing_delay_s=delay, processes=[],
+                              trace_enabled=trace['trace_enabled'], trace_run_id=args.trace_run_id)
             command = launch_command or build_launch_command(args, delay)
             run.result['inference_rate_hz'] = float(getattr(args, 'inference_rate_hz', 10.))
             fixture_y = 0.
@@ -391,6 +543,15 @@ def run_trial(args, *, launch_command=None):
 
             until(lambda: node.startup.get('status') == 'READY' and node.standing(), args.timeout, 'startup')
             checks['measured_startup'] = True
+            from ament_index_python.packages import get_package_prefix
+            controller_prefix = Path(get_package_prefix('integrated_robot_controller')).resolve()
+            controller_library = (controller_prefix/'lib/libch13_joint_trajectory_controller.so').resolve(strict=True)
+            if not controller_library.is_relative_to(controller_prefix):
+                raise RuntimeError('controller library resolves outside selected package')
+            run.result['controller_backend_audit'] = dict(
+                class_id='integrated_robot_controller/JointTrajectoryController',
+                **mapped_owned_library(process,controller_library))
+            checks['controller_backend_loaded'] = True
             if args.engine == 'mujoco' and backend == 'snapshot':
                 from ament_index_python.packages import get_package_prefix
                 audit = audit_camera_backend(process, Path(get_package_prefix('integrated_robot_camera')))
@@ -447,8 +608,12 @@ def run_trial(args, *, launch_command=None):
                         node.save_frame(bundle, boxes[0] if boxes else None)
                         break
             elif args.scenario in ('tracking', 'safety'):
-                pump(1.)
-                initial = [v['pixel_error'] for v in node.samples if v['wall'] >= started]
+                until(lambda: tracking_baseline(node.samples, started) is not None,
+                      args.timeout, 'tracking_baseline')
+                baseline = tracking_baseline(node.samples, started)
+                baseline.update(finished_monotonic=time.monotonic(), command_count=len(node.commands))
+                run.result['tracking_baseline'] = baseline
+                initial = baseline['pixel_errors']
                 initial_errors = initial
                 until(lambda: bool(node.tracks) and node.tracks[-1]['valid']
                       and 0 <= node.get_clock().now().nanoseconds-node.tracks[-1]['capture_ns'] <= .2e9,
@@ -597,11 +762,21 @@ def run_trial(args, *, launch_command=None):
                     except Exception as exc:
                         run.fail('pre-shutdown/evidence failure: '+repr(exc))
             if process is not None:
+                if launch_command is None:
+                    try:
+                        run.result['runtime_stop'] = stop_owned_runtime_nodes(process)
+                        if not run.result['runtime_stop']['confirmed']:
+                            run.fail('owned runtime shutdown unconfirmed before engine stop')
+                    except Exception as exc:
+                        run.fail('runtime stop failure: '+repr(exc))
                 if args.engine == 'gazebo' and launch_command is None:
                     try:
                         native_members = owned_gazebo_members(process)
                         if not native_members:
                             raise RuntimeError('owned Gazebo native/launcher members could not be identified')
+                        run.result['gazebo_quiescence'] = quiesce_gazebo('section_13_4')
+                        if not run.result['gazebo_quiescence']['confirmed']:
+                            run.fail('Gazebo world pause was not observed before shutdown')
                         response = subprocess.run(['gz', 'service', '-s', '/server_control', '--reqtype',
                             'gz.msgs.ServerControl', '--reptype', 'gz.msgs.Boolean', '--timeout', '2000',
                             '--req', 'stop: true'], capture_output=True, text=True, timeout=5.)
@@ -627,18 +802,46 @@ def run_trial(args, *, launch_command=None):
                         or 'Arm shutdown cancellation unconfirmed' in content):
                     run.fail('native/runtime exception; inspect system.log')
             checks['clean_shutdown'] = clean_shutdown(cleanup, process.poll() if process else None, content)
+            if launch_command is None:
+                checks['clean_shutdown'] = checks['clean_shutdown'] and (
+                    run.result.get('runtime_stop', {}).get('confirmed') is True)
             if args.engine == 'gazebo' and launch_command is None and process is not None:
                 stop = run.result.get('gazebo_stop', {})
                 checks['clean_shutdown'] = checks['clean_shutdown'] and (
-                    stop.get('returncode') == 0 and 'data: true' in stop.get('stdout', ''))
+                    stop.get('returncode') == 0 and 'data: true' in stop.get('stdout', '')
+                    and run.result.get('gazebo_quiescence', {}).get('confirmed') is True)
             if node is not None:
+                if getattr(args, 'trace_enabled', False):
+                    try:
+                        # Bounded drain of diagnostic callbacks after our engine
+                        # has exited; never wait for trace to control the robot.
+                        for _ in range(128):
+                            rclpy.spin_once(node, timeout_sec=0.)
+                        native = args.engine == 'mujoco' and backend == 'snapshot'
+                        summary = node.save_trace(require_native=native)
+                        proof = run.result.get('camera_backend_audit', {})
+                        if native and not native_trace_origin_verified(node.trace_collector.records, proof):
+                            summary.update(analysis_status='UNVERIFIED', native_boundary='UNVERIFIED',
+                                           segments={})
+                            summary['errors'].append(
+                                'actual EGL/owned PID/boot/library evidence missing or mismatched')
+                            (run.root/'trace_summary.json').write_text(
+                                json.dumps(summary, indent=2)+'\n', encoding='utf-8')
+                        run.result['trace_analysis'] = summary
+                    except Exception as exc:
+                        # Diagnostic success/failure is separate from native
+                        # physics, terminal action and clean shutdown verdicts.
+                        run.result['trace_analysis'] = dict(analysis_status='UNVERIFIED',
+                            errors=[repr(exc)])
                 node.destroy_node()
             if initialized:
                 rclpy.try_shutdown()
             if previous_signal is not None:
                 signal.signal(signal.SIGINT, previous_signal)
             run.result['cleanup'] = cleanup
-            names = ['observations.json', 'joints.npz']
+            names = ['observations.json', 'joints.npz', 'system.log']
+            if getattr(args, 'trace_enabled', False):
+                names += ['trace.jsonl', 'trace_summary.json']
             names += [v['path'] for v in run.result.get('shutdown_stacks', [])]
             if node is not None and node.saved_frame:
                 names += ['rgb.png', 'depth.npy', 'annotated.png', 'camera.json']
@@ -685,6 +888,7 @@ def main():
     parser.add_argument('--processing-delay-s', type=float)
     parser.add_argument('--inference-rate-hz', type=float, default=10.)
     parser.add_argument('--vision-camera-backend', choices=('upstream', 'snapshot'), default='upstream')
+    parser.add_argument('--trace-enabled', action='store_true')
     args = parser.parse_args()
     args.scenario = args.scenario or ('geometry' if args.detector_backend == 'color_fixture' else 'yolo')
     if args.scenario == 'geometry':

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="6.831" timestamp="2026-10-22T02:51:28.133176+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_runtime_shutdown_order" name="test_runtime_stop_waits_for_parent_reaping_not_only_zombie" time="2.661"><failure message="AssertionError: zombie was declared fully stopped before parent reaping&#10;assert (False)&#10; +  where False = is_alive()&#10; +    where is_alive = &lt;Thread(Thread-1 (stop), stopped 127141656131264)&gt;.is_alive">tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_runtime_stop_waits_for_pa0')
+
+    def test_runtime_stop_waits_for_parent_reaping_not_only_zombie(tmp_path):
+        entry = tmp_path/'lib/integrated_robot_runtime/manipulation_node'
+        entry.parent.mkdir(parents=True)
+        entry.write_text('import os,signal,sys\n'
+                         'signal.signal(signal.SIGINT,lambda *_:sys.exit(0))\n'
+                         'print(os.getpid(),flush=True)\n'
+                         'signal.pause()\n')
+        gate = tmp_path/'allow-parent-reap'
+        parent = ('import subprocess,sys,time; from pathlib import Path; '
+                  f'p=subprocess.Popen([sys.executable,{str(entry)!r}]); '
+                  f'gate=Path({str(gate)!r}); '
+                  'exec("while not gate.exists(): time.sleep(.01)"); '
+                  'raise SystemExit(p.wait())')
+        process = subprocess.Popen([sys.executable, '-c', parent], stdout=subprocess.PIPE,
+                                   text=True, start_new_session=True)
+        result, errors = [], []
+        def stop():
+            try:
+                result.append(runner.stop_owned_runtime_nodes(process))
+            except Exception as exc:
+                errors.append(exc)
+        thread = threading.Thread(target=stop)
+        try:
+            child = int(process.stdout.readline())
+            thread.start()
+            deadline = time.monotonic()+2.
+            while time.monotonic() &lt; deadline:
+                state = Path(f'/proc/{child}/stat').read_text().rsplit(')', 1)[1].split()[0]
+                if state == 'Z':
+                    break
+                time.sleep(.005)
+            assert state == 'Z', 'controlled parent must still own the exited child'
+            time.sleep(.1)
+&gt;           assert thread.is_alive() and not result, 'zombie was declared fully stopped before parent reaping'
+E           AssertionError: zombie was declared fully stopped before parent reaping
+E           assert (False)
+E            +  where False = is_alive()
+E            +    where is_alive = &lt;Thread(Thread-1 (stop), stopped 127141656131264)&gt;.is_alive
+
+Ch13/tests/test_runtime_shutdown_order.py:73: AssertionError</failure></testcase></testsuite></testsuites>

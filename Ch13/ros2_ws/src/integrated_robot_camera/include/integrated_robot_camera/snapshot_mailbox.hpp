@@ -15,6 +15,14 @@
 
 namespace integrated_robot_camera
 {
+// Explicit Linux CLOCK_MONOTONIC, never ROS/simulation time. Zero means failure.
+uint64_t monotonic_nanoseconds() noexcept;
+struct FrameTiming
+{
+  uint64_t submit_start_ns{0};
+  uint64_t submit_end_ns{0};
+  uint64_t acquire_ns{0};
+};
 struct ClockObservation
 {
   uint64_t epoch;
@@ -31,6 +39,7 @@ class SnapshotMailbox
     double stamp{0.};
     uint64_t sequence{0};
     uint64_t epoch{0};
+    FrameTiming timing;
     std::vector<size_t> cameras;
     std::vector<size_t> retained_cameras;
   };
@@ -48,6 +57,7 @@ public:
     double stamp_seconds() const noexcept {return slot_->stamp;}
     uint64_t sequence() const noexcept {return slot_->sequence;}
     uint64_t epoch() const noexcept {return slot_->epoch;}
+    const FrameTiming & timing() const noexcept {return slot_->timing;}
     const std::vector<size_t> & camera_indices() const noexcept {return slot_->cameras;}
 
   private:
@@ -58,7 +68,7 @@ public:
     const Slot * slot_;
   };
 
-  explicit SnapshotMailbox(const mjModel * model, size_t camera_count);
+  explicit SnapshotMailbox(const mjModel * model, size_t camera_count, bool trace_enabled = false);
   SnapshotMailbox(const SnapshotMailbox &) = delete;
   SnapshotMailbox & operator=(const SnapshotMailbox &) = delete;
   SnapshotMailbox(SnapshotMailbox &&) = delete;
@@ -81,6 +91,7 @@ private:
   void release_render() noexcept;
   const mjModel * model_;
   const size_t camera_count_;
+  const bool trace_enabled_;
   std::array<Slot, 2> slots_;
   size_t pending_index_{0};
   size_t render_index_{1};

@@ -1,0 +1,20 @@
+F...                                                                     [100%]
+=================================== FAILURES ===================================
+_____ test_pending_acceptance_is_reserved_and_late_acceptance_is_canceled ______
+
+    def test_pending_acceptance_is_reserved_and_late_acceptance_is_canceled():
+        transport = Transport()
+        owner = ArmActionOwner(transport)
+        record = owner.send(object(), now=0., timeout=2.)
+        assert owner.pending is record and transport.uuid in owner.known_ids
+        assert owner.snapshot()['pending_uuid'] == transport.uuid.hex()
+        assert owner.snapshot()['events'][-1]['event'] == 'sent'
+>       assert owner.snapshot()['acceptance_future_done'] is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'acceptance_future_done'
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_arm_action_owner.py:38: KeyError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/acceptance-state-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_arm_action_owner.py::test_pending_acceptance_is_reserved_and_late_acceptance_is_canceled
+1 failed, 3 passed in 4.24s

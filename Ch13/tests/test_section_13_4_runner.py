@@ -13,6 +13,34 @@ SCRIPTS = Path(__file__).resolve().parents[1]/'scripts'
 sys.path.insert(0, str(SCRIPTS))
 
 
+def test_trace_cli_launch_uses_trial_uuid_and_is_default_off():
+    runner = importlib.import_module('run_vision_13_4')
+    args = argparse.Namespace(engine='mujoco', detector_backend='color_fixture',
+        weights_path='', scenario='static', trace_enabled=True,
+        trace_run_id='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')
+    command = runner.build_launch_command(args, 0.)
+    assert 'trace_enabled:=true' in command
+    assert 'trace_run_id:='+args.trace_run_id in command
+    args.trace_run_id = ''
+    with pytest.raises(ValueError):
+        runner.build_launch_command(args, 0.)
+    args.trace_enabled = False
+    assert not any(v.startswith('trace_run_id:=') for v in runner.build_launch_command(args, 0.))
+
+
+def test_trace_artifacts_cannot_promote_a_missing_native_engine(tmp_path):
+    runner = importlib.import_module('run_vision_13_4')
+    args = argparse.Namespace(engine='mujoco', detector_backend='color_fixture', weights_path='',
+        scenario='static', output_dir=str(tmp_path), timeout=1., duration=1.,
+        processing_delay_s=None, vision_camera_backend='snapshot', trace_enabled=True)
+    result = runner.run_trial(args, launch_command=[sys.executable, '-c', 'raise SystemExit(7)'])
+    assert result['status'] == 'FAIL' and result['trace_run_id'] == result['run_id']
+    assert result['trace_analysis']['analysis_status'] == 'UNVERIFIED'
+    artifacts = {v['path'] for v in result['artifacts']}
+    assert {'trace.jsonl', 'trace_summary.json', 'system.log'} <= artifacts
+    assert result['checks'].get('camera_backend_loaded') is not True
+
+
 @pytest.mark.parametrize('cleanup', [None, [], [{'residual_live_pids': [123]}]])
 def test_geometry_never_starts_delay_after_unconfirmed_static_cleanup(tmp_path, monkeypatch, cleanup):
     runner = importlib.import_module('run_vision_13_4')

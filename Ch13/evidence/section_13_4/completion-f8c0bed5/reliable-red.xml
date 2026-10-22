@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="4.066" timestamp="2026-10-21T10:53:58.928173+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_candidate_diagnostics" name="test_fusion_requests_reliable_bounded_inputs_for_complete_capture" time="0.541"><failure message="AssertionError: /camera/color/image_raw&#10;assert &lt;ReliabilityPolicy.BEST_EFFORT: 2&gt; == &lt;ReliabilityPolicy.RELIABLE: 1&gt;&#10; +  where &lt;ReliabilityPolicy.BEST_EFFORT: 2&gt; = &lt;rclpy.qos.QoSProfile object at 0x730d80e438b0&gt;.reliability&#10; +  and   &lt;ReliabilityPolicy.RELIABLE: 1&gt; = &lt;enum 'ReliabilityPolicy'&gt;.RELIABLE">def test_fusion_requests_reliable_bounded_inputs_for_complete_capture():
+        from rclpy.qos import ReliabilityPolicy, HistoryPolicy
+        rclpy.init(domain_id=147)
+        node = VisionProcessor()
+        try:
+            # This is our live transport contract, not a source-text/config assertion.
+            # Independent best-effort RGB loss made an otherwise complete native
+            # depth+detection candidate unusable at capture18.464s in candidate-m10.
+            for sub in node.subscriptions_owned:
+                qos = sub.qos_profile
+&gt;               assert qos.reliability == ReliabilityPolicy.RELIABLE, sub.topic_name
+E               AssertionError: /camera/color/image_raw
+E               assert &lt;ReliabilityPolicy.BEST_EFFORT: 2&gt; == &lt;ReliabilityPolicy.RELIABLE: 1&gt;
+E                +  where &lt;ReliabilityPolicy.BEST_EFFORT: 2&gt; = &lt;rclpy.qos.QoSProfile object at 0x730d80e438b0&gt;.reliability
+E                +  and   &lt;ReliabilityPolicy.RELIABLE: 1&gt; = &lt;enum 'ReliabilityPolicy'&gt;.RELIABLE
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_candidate_diagnostics.py:26: AssertionError</failure></testcase><testcase classname="test.test_candidate_diagnostics" name="test_unsubmitted_candidate_reports_receipts_and_missing_depth" time="0.220" /></testsuite></testsuites>

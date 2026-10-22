@@ -35,10 +35,12 @@ def test_pending_acceptance_is_reserved_and_late_acceptance_is_canceled():
     assert owner.pending is record and transport.uuid in owner.known_ids
     assert owner.snapshot()['pending_uuid'] == transport.uuid.hex()
     assert owner.snapshot()['events'][-1]['event'] == 'sent'
+    assert owner.snapshot()['acceptance_future_done'] is False
     with pytest.raises(RuntimeError):
         owner.send(object(), now=.1, timeout=2.)
     owner.cancel(now=.1)
     transport.accept()
+    assert owner.snapshot()['acceptance_future_done'] is True
     assert transport.cancels == 1 and owner.pending is record
     assert owner.snapshot()['result_future_done'] is False
     transport.cancel.set_result(SimpleNamespace(goals_canceling=[object()]))

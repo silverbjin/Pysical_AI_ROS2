@@ -120,14 +120,16 @@ def test_control_timer_does_not_fill_executor_with_callbacks_waiting_on_same_loc
 
 
 @pytest.mark.parametrize('stop', ['operator', 'loss', 'lifecycle', 'foreign', 'shutdown', 'camera_motion',
-                                 'compute_expiry'])
+                                 'compute_expiry', 'compute_isolation'])
 def test_default_off_exclusive_session_and_disable_cancels_without_successor(stop):
     rclpy.init(domain_id=148)
     node, peer, executor, thread = None, None, None, None
     stopping = threading.Event()
     try:
         node = ManipulationNode(parameter_overrides=[
-            Parameter('allow_camera_motion_test', value=stop == 'camera_motion')])
+            Parameter('allow_camera_motion_test', value=stop == 'camera_motion'),
+            Parameter('trace_enabled', value=stop == 'compute_expiry'),
+            Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
         peer = Node('tracking_action_peer')
         assert hasattr(node, 'tracking'), 'missing runtime tracking integration'
         goals, cancellations, commands, goal_ids = [], [], [], []
@@ -151,6 +153,10 @@ def test_default_off_exclusive_session_and_disable_cancels_without_successor(sto
                               callback_group=node.group)
         audit = peer.create_subscription(String, '/architecture/arm_command',
                                           lambda m: commands.append(json.loads(m.data)), 10)
+        from rclpy.qos import qos_profile_sensor_data
+        traces = []
+        trace_sub = peer.create_subscription(String, '/architecture/tracking_trace',
+            lambda m: traces.append(json.loads(m.data)), qos_profile_sensor_data)
         executor = DrainingExecutor(num_threads=6)
         executor.add_node(node)
         executor.add_node(peer)
@@ -175,6 +181,9 @@ def test_default_off_exclusive_session_and_disable_cancels_without_successor(sto
         xml = subprocess.run(['xacro', str(pkg/'urdf/robot_system.urdf.xacro'),
                               'vision_enabled:=true'], check=True, capture_output=True, text=True).stdout
         node.tracking.on_model(String(data=xml))
+        # Service discovery does not establish action-server discovery.
+        # Wait before timestamping the fresh300ms fixtures, then enable once.
+        assert node.trajectory.wait_for_server(timeout_sec=3)
         transform = TransformStamped()
         transform.header.frame_id, transform.child_frame_id = 'base_link', 'odom'
         transform.transform.rotation.w = 1.
@@ -196,22 +205,46 @@ def test_default_off_exclusive_session_and_disable_cancels_without_successor(sto
         target.header.stamp = target.source_header.stamp = node.get_clock().now().to_msg()
         target.position.x, target.position.y, target.position.z = .90, .02, .35
         node.tracking.on_target(target)
-        if stop == 'compute_expiry':
+        if stop in ('compute_expiry', 'compute_isolation'):
             calculate = node.tracking.current_goal
+            computing, release_compute = threading.Event(), threading.Event()
 
-            def delayed_calculation(now, wall):
-                values = calculate(now, wall)
-                time.sleep(.31)  # real elapsed computation, not a mocked motor publisher
+            def delayed_calculation(*args, **kwargs):
+                values = calculate(*args, **kwargs)
+                if stop == 'compute_expiry':
+                    time.sleep(.31)  # real elapsed computation, not a mocked motor publisher
+                else:
+                    computing.set()
+                    release_compute.wait(timeout=1.)
                 return values
 
             node.tracking.current_goal = delayed_calculation
         enabled = toggle.call_async(SetBool.Request(data=True))
         wait(enabled.done)
         assert enabled.result().success, enabled.result().message
+        if stop == 'compute_isolation':
+            assert computing.wait(timeout=1.)
+            target.valid, target.status = False, 'LOST'
+            ingress = threading.Thread(target=node.tracking.on_target, args=(target,))
+            ingress.start()
+            try:
+                ingress.join(timeout=.1)
+                assert not ingress.is_alive(), 'servo calculation blocked safety input ingress'
+                assert not node.tracking.guard.enabled
+            finally:
+                release_compute.set()
+                ingress.join(timeout=2.)
+            time.sleep(.1)
+            assert goals == [] and commands == [], 'late computation dispatched after invalidation'
+            return
         if stop == 'compute_expiry':
             time.sleep(.6)
             assert goals == [] and commands == []
             assert not node.tracking.guard.enabled
+            wait(lambda: any(v['outcome'] == 'GATE_LOST' for v in traces))
+            lost = next(v for v in traces if v['outcome'] == 'GATE_LOST')
+            assert lost['ros_now_ns']-lost['capture_ns'] > 300_000_000
+            assert lost['times_ns']['gate_lost']-lost['times_ns']['decision'] > 300_000_000
             return
         wait(lambda: bool(goals))
         wait(lambda: bool(commands))
@@ -280,6 +313,46 @@ def test_failed_action_result_latches_tracking_off_instead_of_retrying():
         rclpy.shutdown()
 
 
+def test_new_input_does_not_renew_computed_targets_wall_deadline(monkeypatch):
+    """Capture age and joint age can be fresh while the computed target's wall TTL expires."""
+    import uuid
+    rclpy.init(domain_id=148)
+    node = ManipulationNode()
+    try:
+        tracking = node.tracking
+        tracking.timer.cancel()
+        tracking.chain = object()
+        tracking.reference = dict.fromkeys(ARM_NAMES, 0.)
+        tracking.target = TrackedTarget(valid=True)
+        tracking.target.header.stamp = node.get_clock().now().to_msg()
+        tracking.target_at = time.monotonic()-.29
+        tracking.joints.append((node.get_clock().now().nanoseconds, time.monotonic(),
+                                tracking.reference.copy(), list(STAND)))
+        # Isolate the dispatch boundary: all unrelated lifecycle/TF/model gates
+        # are already satisfied, and the selected joint remains fresh.
+        monkeypatch.setattr(tracking, 'conditions', lambda *_:
+                            dict.fromkeys(tracking.guard.CONDITIONS, True))
+        tracking.token = tracking.guard.enable(dict.fromkeys(tracking.guard.CONDITIONS, True))
+        tracking.session = node.busy = True
+
+        def calculate(now, wall, work):
+            time.sleep(.04)
+            tracking.target_at = time.monotonic()  # a newer input is received during computation
+            return tracking.reference.copy(), work['joints'][-1]
+
+        monkeypatch.setattr(tracking, 'current_goal', calculate)
+        # No physical transport is attached to this boundary characterization.
+        monkeypatch.setattr(node.arm_owner, 'send', lambda *_args, **_kwargs:
+                            SimpleNamespace(identifier=uuid.uuid4().bytes, terminal=False))
+        tracking._tick()
+        assert tracking.goal_count == 0, 'new input renewed the old computation wall TTL'
+        assert not tracking.guard.enabled
+        assert 'expired' in tracking.guard.reason
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
 def test_malformed_model_is_not_ready_without_escaping_the_ros_callback():
     rclpy.init(domain_id=148)
     node = ManipulationNode()
@@ -301,3 +374,125 @@ def test_camera_motion_benchmark_requires_explicit_test_opt_in():
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
+
+def test_trace_failure_does_not_renew_or_disable_target(monkeypatch):
+    rclpy.init(domain_id=148)
+    node = ManipulationNode(parameter_overrides=[
+        Parameter('trace_enabled', value=True),
+        Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+    try:
+        tracking = node.tracking
+        assert hasattr(tracking, 'trace'), 'missing isolated tracking trace hook'
+        def fail(_):
+            raise RuntimeError('diagnostic transport failure')
+        monkeypatch.setattr(tracking.trace.publisher, 'publish', fail)
+        target = TrackedTarget(valid=True, status='TRACKED', track_id='one', class_id='fixture', score=.9)
+        target.header.frame_id, target.source_header.frame_id = 'odom', 'camera_optical_frame'
+        target.header.stamp = target.source_header.stamp = node.get_clock().now().to_msg()
+        target.position.x = .9
+        tracking.on_target(target)
+        received = tracking.target_at
+        token = tracking.guard.enable(dict.fromkeys(tracking.guard.CONDITIONS, True))
+        tracking.on_target(target)  # same capture must not renew receipt TTL
+        assert tracking.target_at == received and tracking.target is target
+        assert tracking.guard.enabled and tracking.guard.generation == token
+        assert tracking.trace.stats['errors'] >= 1
+        assert node.arm_owner.pending is None
+        tracking.guard.disable('test end')
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+def test_trace_serialization_runs_outside_control_lock(monkeypatch):
+    rclpy.init(domain_id=148)
+    node = ManipulationNode(parameter_overrides=[
+        Parameter('trace_enabled', value=True),
+        Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+    observed = []
+    try:
+        assert hasattr(node.tracking, 'trace'), 'missing control trace hook'
+        original = node.tracking.trace.emit
+        def checked(*args, **kwargs):
+            # RLock.acquire on another thread detects ownership, including nested calls.
+            acquired = []
+            def probe():
+                locked = node.lock.acquire(timeout=.05)
+                acquired.append(locked)
+                if locked:
+                    node.lock.release()
+            probe_thread = threading.Thread(target=probe)
+            probe_thread.start()
+            probe_thread.join(timeout=.2)
+            assert acquired == [True], 'trace serialization ran under control lock'
+            observed.append(kwargs)
+            return original(*args, **kwargs)
+        monkeypatch.setattr(node.tracking.trace, 'emit', checked)
+        node.tracking.tick()
+        assert observed and observed[-1]['capture_ns'] is None
+        assert observed[-1]['times_ns']['decision'] > 0
+        assert node.arm_owner.pending is None
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+def test_tracking_trace_closes_before_context_shutdown():
+    import sys
+    code = '''
+import rclpy
+from rclpy.parameter import Parameter
+from integrated_robot_runtime.manipulation import ManipulationNode
+rclpy.init(domain_id=149)
+node = ManipulationNode(parameter_overrides=[
+    Parameter('trace_enabled', value=True),
+    Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+node.tracking.tick()
+node.destroy_node()
+rclpy.shutdown()
+'''
+    result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True, timeout=15.)
+    assert result.returncode == 0, result.stdout+result.stderr
+    output = result.stdout+result.stderr
+    assert output.count('trace_totals') == 1
+    assert 'context is invalid' not in output, output
+
+
+def test_target_callback_gate_loss_keeps_last_valid_source_without_a_timer_tick():
+    from rclpy.executors import SingleThreadedExecutor
+    from rclpy.qos import qos_profile_sensor_data
+    rclpy.init(domain_id=148)
+    node = ManipulationNode(parameter_overrides=[
+        Parameter('trace_enabled', value=True),
+        Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+    peer, executor = Node('callback_gate_loss_peer'), SingleThreadedExecutor()
+    executor.add_node(peer)  # deliberately never runs node's control timer
+    traces = []
+    sub = peer.create_subscription(String, '/architecture/tracking_trace',
+        lambda m: traces.append(json.loads(m.data)), qos_profile_sensor_data)
+    try:
+        target = TrackedTarget(valid=True, status='TRACKED', track_id='one', class_id='fixture', score=.9)
+        target.header.frame_id, target.source_header.frame_id = 'odom', 'camera_optical_frame'
+        target.header.stamp = target.source_header.stamp = node.get_clock().now().to_msg()
+        target.position.x = .9
+        node.tracking.on_target(target)
+        node.tracking.guard.enable(dict.fromkeys(node.tracking.guard.CONDITIONS, True))
+        target.valid, target.status = False, 'LOST'
+        node.tracking.on_target(target)
+        end = time.monotonic()+.2
+        while time.monotonic() < end:
+            executor.spin_once(timeout_sec=.005)
+        assert not node.tracking.guard.enabled and node.arm_owner.pending is None
+        assert len(traces) == 2
+        initial = next(v for v in traces if v['outcome'] == 'TARGET_RECEIVED')
+        lost = next((v for v in traces if v['outcome'] == 'GATE_LOST'), None)
+        assert lost is not None, 'callback disabled immediately but no gate-loss boundary was emitted'
+        assert lost['capture_ns'] == initial['capture_ns']
+        assert lost['times_ns']['target_receive'] == initial['times_ns']['target_receive']
+        assert lost['times_ns']['gate_lost'] >= lost['times_ns']['decision']
+    finally:
+        executor.shutdown()
+        node.destroy_node()
+        peer.destroy_node()
+        rclpy.try_shutdown()

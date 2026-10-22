@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="6.112" timestamp="2026-10-22T09:24:41.800418+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_architecture_probe_time" name="test_rehearsal_preserves_capture_while_server_clock_catches_up" time="1.716"><failure message="AssertionError: [(10.06, 10.0, 'target timestamp is stale, future, or invalid')]&#10;assert False&#10; +  where False = ClientGoalHandle &lt;id=[129 145 237 148  52 240  70   9 161 119 147  12  31 126  78 162], accepted=False, status=0&gt;.accepted">def test_rehearsal_preserves_capture_while_server_clock_catches_up():
+        """Sending immediately makes a valid synthetic capture look 60ms future-dated."""
+        spec = importlib.util.spec_from_file_location('architecture_probe',
+            Path(__file__).resolve().parents[1]/'scripts/verify_architecture_13_3.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        rclpy.init(domain_id=163)
+        peer, probe = Node('architecture_clock_peer'), module.Probe()
+        executor = SingleThreadedExecutor()
+        executor.add_node(peer)
+        publisher = peer.create_publisher(Clock, '/clock', 1)
+        stop = threading.Event()
+        deliveries = []
+        started = [None]
+    
+        def accept(goal):
+            # A controlled delayed server clock sample, not a relaxed age predicate.
+            elapsed = time.monotonic()-started[0]
+            server_now = 10.0 if elapsed &lt; .08 else 10.16
+            stamp = goal.target_pose.header.stamp.sec+goal.target_pose.header.stamp.nanosec*1e-9
+            error = validate_target('cup', 'base_link', stamp, server_now,
+                                    [.3, 0., .4], [0., 0., 0., 1.], True)
+            deliveries.append((stamp, server_now, error))
+            return GoalResponse.REJECT if error else GoalResponse.ACCEPT
+    
+        def execute(handle):
+            handle.abort()
+            return PickObject.Result(success=False, error_code=PickObject.Result.NOT_IMPLEMENTED)
+    
+        server = ActionServer(peer, PickObject, '/manipulation_node/pick_object', execute,
+                              goal_callback=accept)
+    
+        def spin():
+            while not stop.is_set():
+                executor.spin_once(timeout_sec=.005)
+    
+        thread = threading.Thread(target=spin)
+        thread.start()
+        try:
+            assert probe.pick.wait_for_server(timeout_sec=3)
+            message = Clock()
+            message.clock.sec, message.clock.nanosec = 10, 60_000_000
+            deadline = time.monotonic()+3
+            while probe.get_clock().now().nanoseconds != 10_060_000_000:
+                assert time.monotonic() &lt; deadline
+                publisher.publish(message)
+                rclpy.spin_once(probe, timeout_sec=.02)
+            started[0] = time.monotonic()
+            handle = probe.goal()
+&gt;           assert handle.accepted, deliveries
+E           AssertionError: [(10.06, 10.0, 'target timestamp is stale, future, or invalid')]
+E           assert False
+E            +  where False = ClientGoalHandle &lt;id=[129 145 237 148  52 240  70   9 161 119 147  12  31 126  78 162], accepted=False, status=0&gt;.accepted
+
+Ch13/tests/test_architecture_probe_time.py:65: AssertionError</failure></testcase></testsuite></testsuites>

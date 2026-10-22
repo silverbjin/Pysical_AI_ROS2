@@ -9,6 +9,9 @@
 #include <thread>
 #include <vector>
 #include "snapshot_camera_plugin.hpp"
+#include "egl_call_audit.hpp"
+#include "egl_render_context.hpp"
+#include <std_msgs/msg/string.hpp>
 
 using namespace std::chrono_literals;
 using integrated_robot_camera::SnapshotCameraPlugin;
@@ -50,6 +53,7 @@ struct ReadbackBarrier
 extern "C" void mjr_readPixels(unsigned char * rgb, float * depth, mjrRect viewport,
   const mjrContext * context)
 {
+  egl_audit::record("readback");
   {
     std::unique_lock<std::mutex> lock(readback.mutex);
     ++readback.calls;
@@ -63,6 +67,22 @@ extern "C" void mjr_readPixels(unsigned char * rgb, float * depth, mjrRect viewp
   static const auto native = reinterpret_cast<ReadPixels>(dlsym(RTLD_NEXT, "mjr_readPixels"));
   if (!native) {std::abort();}
   native(rgb, depth, viewport, context);
+}
+
+extern "C" void mjr_makeContext(const mjModel * model, mjrContext * context, int scale)
+{
+  egl_audit::record("make_mjr");
+  egl_audit::native<decltype(&mjr_makeContext)>("mjr_makeContext")(model, context, scale);
+}
+extern "C" void mjr_freeContext(mjrContext * context)
+{
+  egl_audit::record("free_mjr");
+  egl_audit::native<decltype(&mjr_freeContext)>("mjr_freeContext")(context);
+}
+extern "C" void mjr_render(mjrRect viewport, mjvScene * scene, const mjrContext * context)
+{
+  egl_audit::record("render");
+  egl_audit::native<decltype(&mjr_render)>("mjr_render")(viewport, scene, context);
 }
 
 namespace
@@ -194,6 +214,136 @@ TEST_F(CameraTest, FrameHeadersMatchAcquiredSnapshot)
   ASSERT_GT(red, 10u);
   EXPECT_GT(sum_u / red, 160.);  // positive model X projects right
   EXPECT_LT(sum_v / red, 120.);  // positive model Y projects up after vertical flip
+}
+
+TEST_F(CameraTest, WorkerUsesEglWithoutGlfw)
+{
+  egl_audit::clear_events();
+  ASSERT_TRUE(start());
+  ASSERT_TRUE(until([&] {return node->count_subscribers("/eye_camera/eye/color") > 0;}));
+  frame(1.);
+  ASSERT_TRUE(until([&] {return !rgb.empty() && !depth.empty();}));
+  plugin.cleanup();
+  EXPECT_EQ(egl_audit::glfw_calls.load(), 0);
+}
+
+TEST_F(CameraTest, TraceReportsAcquiredFrameWithoutChangingImages)
+{
+  node->declare_parameter("mujoco_plugins.eye_camera.trace_enabled", true);
+  node->declare_parameter("mujoco_plugins.eye_camera.trace_run_id",
+    "424240ff-0bfe-4a4b-92d4-93f6a78d49b8");
+  std::vector<std::string> traces;
+  auto sub = node->create_subscription<std_msgs::msg::String>("/vision/camera_trace",
+    rclcpp::SensorDataQoS().keep_last(32),
+    [&](std_msgs::msg::String::ConstSharedPtr msg) {traces.push_back(msg->data);});
+  ASSERT_TRUE(start());
+  readback.arm();
+  capture(1.);
+  ASSERT_TRUE(readback.wait());
+  frame(2.);
+  readback.release();
+  ASSERT_TRUE(until([&] {return !rgb.empty() && !depth.empty();}));
+  ASSERT_TRUE(until([&] {return !traces.empty();}, 500ms));
+  EXPECT_EQ(rclcpp::Time(rgb.front().header.stamp).nanoseconds(), 1000000000LL);
+  const auto integer = [&](const std::string & key) -> uint64_t {
+    const auto prefix = "\"" + key + "\":";
+    const auto start = traces.front().find(prefix);
+    if (start == std::string::npos) {ADD_FAILURE() << key; return 0;}
+    return std::stoull(traces.front().substr(start + prefix.size()));
+  };
+  EXPECT_EQ(integer("capture_ns"), 1000000000u);
+  EXPECT_EQ(integer("local_epoch"), 0u);
+  EXPECT_EQ(integer("native_sequence"), 1u);
+  uint64_t previous = 0;
+  for (const auto key : integrated_robot_camera::native_trace_keys) {
+    const auto current = integer(key);
+    EXPECT_GT(current, 0u) << key;
+    EXPECT_GE(current, previous) << key;
+    previous = current;
+  }
+}
+
+TEST_F(CameraTest, EnabledTraceRejectsInvalidRunIdBeforeWorker)
+{
+  node->declare_parameter("mujoco_plugins.eye_camera.trace_enabled", true);
+  node->declare_parameter("mujoco_plugins.eye_camera.trace_run_id", "not-a-uuid");
+  EXPECT_FALSE(start());
+  plugin.cleanup();
+}
+
+TEST_F(CameraTest, TraceFailureCannotChangeFramePublication)
+{
+  node->declare_parameter("mujoco_plugins.eye_camera.trace_enabled", true);
+  node->declare_parameter("mujoco_plugins.eye_camera.trace_run_id",
+    "424240ff-0bfe-4a4b-92d4-93f6a78d49b8");
+  const std::string large_frame(5000, 'x');
+  node->set_parameter(rclcpp::Parameter("mujoco_plugins.eye_camera.eye.frame_name", large_frame));
+  size_t traces = 0;
+  auto sub = node->create_subscription<std_msgs::msg::String>("/vision/camera_trace",
+    rclcpp::SensorDataQoS().keep_last(32),
+    [&](std_msgs::msg::String::ConstSharedPtr) {++traces;});
+  ASSERT_TRUE(start());
+  frame(1.);
+  ASSERT_TRUE(until([&] {return !rgb.empty() && !depth.empty() && !info.empty();}));
+  EXPECT_EQ(rgb.front().header.frame_id, large_frame);
+  EXPECT_EQ(rgb.front().header, depth.front().header);
+  EXPECT_EQ(rgb.front().header, info.front().header);
+  EXPECT_EQ(rclcpp::Time(rgb.front().header.stamp).nanoseconds(), 1000000000LL);
+  plugin.cleanup();
+  until([] {return false;}, 50ms);
+  EXPECT_EQ(traces, 0u);
+}
+
+TEST_F(CameraTest, WorkerDoesNotTerminateSharedDisplay)
+{
+  egl_audit::clear_events();
+  ASSERT_TRUE(start());
+  plugin.cleanup();
+  EXPECT_EQ(egl_audit::terminate_calls.load(), 0);
+  EXPECT_EQ(egl_audit::contexts.load(), 0);
+  EXPECT_EQ(egl_audit::surfaces.load(), 0);
+  ASSERT_FALSE(egl_audit::events.empty());
+  const auto worker = egl_audit::events.front().second;
+  EXPECT_NE(worker, std::this_thread::get_id());
+  for (const auto & event : egl_audit::events) {EXPECT_EQ(event.second, worker) << event.first;}
+}
+
+TEST_F(CameraTest, PeerContextSurvivesPluginCleanup)
+{
+  std::promise<bool> ready;
+  auto initialized = ready.get_future();
+  std::promise<void> finish;
+  auto stopping = finish.get_future();
+  auto peer = std::async(std::launch::async, [&] {
+    integrated_robot_camera::EglRenderContext context;
+    const bool ok = context.initialize();
+    const auto display = eglGetCurrentDisplay();
+    const auto current = eglGetCurrentContext();
+    const auto surface = eglGetCurrentSurface(EGL_DRAW);
+    ready.set_value(ok);
+    stopping.wait();
+    if (ok) {
+      EXPECT_TRUE(eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT));
+      EXPECT_TRUE(eglMakeCurrent(display, surface, surface, current));
+      EXPECT_NE(glGetString(GL_RENDERER), nullptr);
+    }
+  });
+  const bool peer_ready = initialized.get();
+  bool started = false;
+  if (peer_ready) {
+    started = start();
+    if (started) {
+      frame(1.);
+      EXPECT_TRUE(until([&] {return !rgb.empty();}));
+      plugin.cleanup();
+    }
+  }
+  finish.set_value();
+  peer.get();
+  EXPECT_TRUE(peer_ready);
+  EXPECT_TRUE(started);
+  EXPECT_EQ(egl_audit::contexts.load(), 0);
+  EXPECT_EQ(egl_audit::surfaces.load(), 0);
 }
 
 TEST_F(CameraTest, DisabledCameraNeverRenders)

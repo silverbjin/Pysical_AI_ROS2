@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_native_trace_requires_the_audited_live_pid_and_boot ___________
+
+    def test_native_trace_requires_the_audited_live_pid_and_boot():
+        import run_vision_13_4 as runner
+        value = rows()
+        proof = dict(egl_renderer=['unit contract, not a native run'], library_sha256='a'*64,
+                     mailbox_library_sha256='b'*64, native_pid=1, boot_id=BOOT)
+>       assert runner.native_trace_origin_verified(value, proof)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'native_trace_origin_verified'
+
+Ch13/tests/test_section_13_4_trace.py:143: AttributeError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/trace-origin-api-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_trace.py::test_native_trace_requires_the_audited_live_pid_and_boot
+1 failed in 4.08s

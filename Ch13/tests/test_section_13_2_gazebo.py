@@ -23,19 +23,41 @@ def test_gazebo_world_has_ground_physics_and_required_systems():
 
 
 def test_gazebo_launch_has_one_spawn_and_all_controller_spawners():
+    from launch import LaunchContext
+    from launch.utilities import normalize_to_list_of_substitutions, perform_substitutions
+    from launch_ros.actions import Node
+
     path = PKG / "launch/gazebo.launch.py"
-    ast.parse(path.read_text(encoding="utf-8"))
     source = path.read_text(encoding="utf-8")
-    assert source.count("executable='create'") == 1
+    tree = ast.parse(source)
+    executables = [keyword.value.value for node in ast.walk(tree)
+                   if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                   and node.func.id == 'Node' for keyword in node.keywords
+                   if keyword.arg == 'executable' and isinstance(keyword.value, ast.Constant)]
+    assert executables.count('create') == 1
     assert 'control_backend:=gazebo' in source
     assert "gz_sim.launch.py" in source
-    for controller in (
+    declarations = [node.value for node in ast.walk(tree) if isinstance(node, ast.Assign)
+                    and any(isinstance(target, ast.Name) and target.id == 'spawners'
+                            for target in node.targets)]
+    assert len(declarations) == 1
+    # Evaluate the real spawner declaration; another use of a controller name in
+    # YAML selection must not look like a second command owner.
+    spawners = eval(compile(ast.Expression(declarations[0]), str(path), 'eval'), {'Node': Node})
+    context = LaunchContext()
+    commands = [[perform_substitutions(context, normalize_to_list_of_substitutions(part))
+                 for part in node.cmd] for node in spawners]
+    expected = (
         "joint_state_broadcaster",
         "leg_position_controller",
         "arm_trajectory_controller",
         "gripper_position_controller",
-    ):
-        assert source.count(f"'{controller}'") == 1
+    )
+    assert len(commands) == len(expected)
+    for controller in expected:
+        assert sum(command.count(controller) for command in commands) == 1
+    assert all('--controller-manager' in command and '/controller_manager' in command
+               for command in commands)
     assert "TimerAction" in source
     assert "materialize_controller_config" in source
     assert "tempfile.gettempdir" in source

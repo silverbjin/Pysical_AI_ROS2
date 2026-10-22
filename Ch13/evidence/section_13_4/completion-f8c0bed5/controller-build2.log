@@ -1,0 +1,42 @@
+Starting >>> integrated_robot_interfaces
+Starting >>> integrated_robot_camera
+Starting >>> integrated_robot_controller
+Finished <<< integrated_robot_camera [6.93s]
+Finished <<< integrated_robot_interfaces [22.2s]
+Starting >>> integrated_robot_vision
+Finished <<< integrated_robot_vision [13.9s]
+--- stderr: integrated_robot_controller
+CMake Deprecation Warning at /opt/ros/jazzy/share/tl_expected/cmake/tl_expectedConfig.cmake:37 (message):
+  Package 'tl_expected' is deprecated (This package will be removed in ROS 2
+  Lyrical Luth.
+
+        Use tl/expected.hpp from libexpected-dev,
+        or rcpputils/tl_expected/expected.hpp if the system header is not available)
+Call Stack (most recent call first):
+  /opt/ros/jazzy/share/parameter_traits/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/parameter_traits/cmake/parameter_traitsConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/joint_trajectory_controller/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/joint_trajectory_controller/cmake/joint_trajectory_controllerConfig.cmake:41 (include)
+  CMakeLists.txt:6 (find_package)
+
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_controller/src/joint_trajectory_controller.cpp: In member function ‘virtual controller_interface::return_type ch13_joint_trajectory_controller::JointTrajectoryController::update(const rclcpp::Time&, const rclcpp::Duration&)’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_controller/src/joint_trajectory_controller.cpp:244:64: warning: ‘double hardware_interface::LoanedStateInterface::get_value() const’ is deprecated: Use std::optional<T> get_optional() instead to retrieve the value. This method will be removed by the ROS 2 Kilted Kaiju release. [-Wdeprecated-declarations]
+  244 |     scaling_factor_ = scaling_state_interface_->get().get_value();
+      |                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+In file included from /opt/ros/jazzy/include/controller_interface/controller_interface/controller_interface_base.hpp:30,
+                 from /opt/ros/jazzy/include/controller_interface/controller_interface/controller_interface.hpp:21,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_controller/include/integrated_robot_controller/joint_trajectory_controller.hpp:29,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_controller/src/joint_trajectory_controller.cpp:15:
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/loaned_state_interface.hpp:98:10: note: declared here
+   98 |   double get_value() const
+      |          ^~~~~~~~~
+---
+Finished <<< integrated_robot_controller [58.9s]
+Starting >>> integrated_robot_description
+Finished <<< integrated_robot_description [18.9s]
+Starting >>> integrated_robot_runtime
+Finished <<< integrated_robot_runtime [15.4s]
+
+Summary: 6 packages finished [1min 34s]
+  1 package had stderr output: integrated_robot_controller

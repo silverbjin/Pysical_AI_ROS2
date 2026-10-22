@@ -1,0 +1,38 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+___________ test_one_thread_mode_runs_callback_inline_and_closes_ros ___________
+
+    def test_one_thread_mode_runs_callback_inline_and_closes_ros():
+        """A pool in the one-thread mode reintroduces the measured clock handoff cost."""
+        from rclpy.node import Node
+        owner = threading.get_ident()
+        callbacks = []
+    
+        class Probe(Node):
+            def __init__(self):
+                super().__init__('inline_executor_probe')
+                self.timer = self.create_timer(.02, self.finish)
+    
+            def finish(self):
+                self.timer.cancel()
+                callbacks.append(threading.get_ident())
+                os.kill(os.getpid(), signal.SIGINT)
+    
+        spin(Probe, threads=1)
+>       assert callbacks == [owner]
+E       assert [138189297678016] == [138189998131008]
+E         
+E         At index 0 diff: 138189297678016 != 138189998131008
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_runtime_cleanup.py:29: AssertionError
+=============================== warnings summary ===============================
+test/test_runtime_cleanup.py::test_one_thread_mode_runs_callback_inline_and_closes_ros
+  Warning: MultiThreadedExecutor is used with a single thread.
+  Use the SingleThreadedExecutor instead.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/executor-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_runtime/test/test_runtime_cleanup.py::test_one_thread_mode_runs_callback_inline_and_closes_ros
+1 failed, 1 passed, 1 warning in 4.61s

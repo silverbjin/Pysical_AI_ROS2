@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="7.993" timestamp="2026-10-20T09:17:07.771232+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_tracking_ros" name="test_tracking_trace_closes_before_context_shutdown" time="4.466"><failure message="AssertionError: [INFO] [1792455435.095231814] [manipulation_node]: trace_totals {&quot;attempted&quot;: 1, &quot;dropped&quot;: 0, &quot;emitted&quot;: 1, &quot;errors&quot;: 0, &quot;oversize&quot;: 0, &quot;producer_id&quot;: &quot;7512dbdf-a2f0-4195-b168-51eddc830826&quot;, &quot;run_id&quot;: &quot;424240ff-0bfe-4a4b-92d4-93f6a78d49b8&quot;, &quot;topic&quot;: &quot;/architecture/tracking_trace&quot;}&#10;  Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423&#10;  &#10;assert 'context is invalid' not in '[INFO] [179...sher.c:423\n'&#10;  &#10;  'context is invalid' is contained here:&#10;    blisher's context is invalid, at ./src/rcl/publisher.c:423&#10;  ?           ++++++++++++++++++">def test_tracking_trace_closes_before_context_shutdown():
+        import sys
+        code = '''
+    import rclpy
+    from rclpy.parameter import Parameter
+    from integrated_robot_runtime.manipulation import ManipulationNode
+    rclpy.init(domain_id=149)
+    node = ManipulationNode(parameter_overrides=[
+        Parameter('trace_enabled', value=True),
+        Parameter('trace_run_id', value='424240ff-0bfe-4a4b-92d4-93f6a78d49b8')])
+    node.tracking.tick()
+    node.destroy_node()
+    rclpy.shutdown()
+    '''
+        result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True, timeout=15.)
+        assert result.returncode == 0, result.stdout+result.stderr
+        output = result.stdout+result.stderr
+        assert output.count('trace_totals') == 1
+&gt;       assert 'context is invalid' not in output, output
+E       AssertionError: [INFO] [1792455435.095231814] [manipulation_node]: trace_totals {"attempted": 1, "dropped": 0, "emitted": 1, "errors": 0, "oversize": 0, "producer_id": "7512dbdf-a2f0-4195-b168-51eddc830826", "run_id": "424240ff-0bfe-4a4b-92d4-93f6a78d49b8", "topic": "/architecture/tracking_trace"}
+E         Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+E         
+E       assert 'context is invalid' not in '[INFO] [179...sher.c:423\n'
+E         
+E         'context is invalid' is contained here:
+E           blisher's context is invalid, at ./src/rcl/publisher.c:423
+E         ?           ++++++++++++++++++
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:396: AssertionError</failure></testcase></testsuite></testsuites>

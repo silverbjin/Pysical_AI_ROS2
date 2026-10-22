@@ -1,12 +1,13 @@
 """Measured arm startup and explicit, cancelable PickObject protocol rehearsal."""
 import math
+import json
 import threading
 import time
 
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
 from integrated_robot_interfaces.action import PickObject
-from rclpy.action import ActionClient, ActionServer, CancelResponse, GoalResponse
+from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.lifecycle import LifecycleNode, TransitionCallbackReturn
 from sensor_msgs.msg import JointState
@@ -16,6 +17,8 @@ from trajectory_msgs.msg import JointTrajectoryPoint
 from .common import seconds, spin
 from .policy import ARM_NAMES, SAFE_ARM, joint_snapshot, safe_arm, validate_target
 from .arm_action_owner import ArmActionOwner
+from .arm_transport import ArmActionTransport
+from .protocol_worker import ProtocolWorker
 from .tracking_support import TrackingSupport
 
 
@@ -32,16 +35,22 @@ class ManipulationNode(LifecycleNode):
         self.group = ReentrantCallbackGroup()
         self.create_subscription(JointState, '/joint_states', self.on_joints, 10,
                                  callback_group=self.group)
-        self.trajectory = ActionClient(self, FollowJointTrajectory,
-                                       '/arm_trajectory_controller/follow_joint_trajectory',
-                                       callback_group=self.group)
+        self.arm_transport = ArmActionTransport(self)
+        self.trajectory = self.arm_transport.client
         self.arm_owner = ArmActionOwner(self.trajectory)
-        self.tracking = TrackingSupport(self)
-        self.create_service(Trigger, '~/stow', self.stow, callback_group=self.group)
-        self.action = ActionServer(
-            self, PickObject, '~/pick_object', execute_callback=self.execute,
-            goal_callback=self.accept_goal, cancel_callback=lambda _: CancelResponse.ACCEPT,
-            callback_group=self.group)
+        self.protocol = ProtocolWorker(self)
+        try:
+            self.tracking = TrackingSupport(self)
+            self.create_service(Trigger, '~/stow', self.stow, callback_group=self.group)
+            self.action = ActionServer(
+                self, PickObject, '~/pick_object', execute_callback=self.execute,
+                goal_callback=self.accept_goal, cancel_callback=lambda _: CancelResponse.ACCEPT,
+                callback_group=self.group)
+            # No receiver thread may escape a failed parent constructor.
+            self.arm_transport.start()
+        except Exception:
+            self.destroy_node()
+            raise
 
     def on_joints(self, message):
         with self.lock:
@@ -82,9 +91,31 @@ class ManipulationNode(LifecycleNode):
         self.on_deactivate(None)
 
     def shutdown_ready(self):
-        return self.arm_owner.pending is None
+        return self.arm_owner.pending is None and self.protocol.idle
 
-    def stow(self, request, response):
+    def destroy_node(self):
+        # The executor's existing ownership drain remains authoritative. Emit
+        # diagnostics while the node/context logger is still alive, not later
+        # from Context.on_shutdown after ROS has already invalidated rosout.
+        if hasattr(self, 'protocol'):
+            self.protocol.close()
+        if hasattr(self, 'tracking'):
+            self.tracking.trace.close()
+        if hasattr(self, 'arm_transport'):
+            self.arm_transport.close()
+        return super().destroy_node()
+
+    async def stow(self, request, response):
+        if not self.enabled:
+            response.message = 'Arm inactive'
+            return response
+        try:
+            return await self.protocol.run(self.stow_blocking, request, response)
+        except RuntimeError as exc:
+            response.message = str(exc)
+            return response
+
+    def stow_blocking(self, request, response):
         with self.lock:
             if not self.enabled or self.busy or not self.tracking.guard.arm_available:
                 response.message = 'Arm inactive or busy'
@@ -115,7 +146,7 @@ class ManipulationNode(LifecycleNode):
                     or result.result.error_code != FollowJointTrajectory.Result.SUCCESSFUL):
                 raise RuntimeError('safe pose trajectory failed')
             deadline = time.monotonic() + 3
-            while time.monotonic() < deadline:
+            while self.enabled and time.monotonic() < deadline:
                 with self.lock:
                     if self.enabled and self.measured_safe():
                         self.safe = True
@@ -145,16 +176,32 @@ class ManipulationNode(LifecycleNode):
             [pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w],
             goal.dry_run)
         with self.lock:
-            if (error or not self.enabled or not self.safe or self.busy or not self.measured_safe()
-                    or not self.tracking.guard.arm_available):
+            gates = dict(target_valid=not error, enabled=self.enabled, safe=self.safe,
+                         idle=not self.busy, measured_safe=self.measured_safe(),
+                         arm_available=self.tracking.guard.arm_available)
+            if not all(gates.values()):
                 self.get_logger().info(
-                    f'Pick rejected: {error or "inactive, unsafe, or busy"}; age_s={now-stamp:.6f}')
+                    'Pick rejected: '+json.dumps(dict(error=error, gates=gates,
+                        target_age_s=now-stamp, arm=self.arm,
+                        joint_ros_age_s=now-self.stamp,
+                        joint_wall_age_s=time.monotonic()-self.received,
+                        owner=self.arm_owner.snapshot())))
                 return GoalResponse.REJECT
             self.busy = True
             self.work_running = True
         return GoalResponse.ACCEPT
 
-    def execute(self, handle):
+    async def execute(self, handle):
+        try:
+            return await self.protocol.run(self.execute_blocking, handle)
+        except RuntimeError as exc:
+            handle.abort()
+            with self.lock:
+                self.busy = self.work_running = False
+            return PickObject.Result(success=False, error_code=PickObject.Result.NOT_READY,
+                                     message=str(exc))
+
+    def execute_blocking(self, handle):
         result = PickObject.Result(success=False)
         try:
             # Protocol rehearsal intentionally sends no grasp/motion commands.
@@ -187,4 +234,6 @@ class ManipulationNode(LifecycleNode):
 
 
 def main():
-    spin(ManipulationNode)
+    # Clock/TF/input/control callbacks are bounded. Long protocol waits yield
+    # to the one-slot worker; action responses have their own low-traffic loop.
+    spin(ManipulationNode, threads=1)

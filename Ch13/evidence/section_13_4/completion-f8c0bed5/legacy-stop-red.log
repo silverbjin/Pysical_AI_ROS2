@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_legacy_stop_records_actual_graceful_exit_and_no_residuals ________
+
+    def test_legacy_stop_records_actual_graceful_exit_and_no_residuals():
+        code = ('import signal,sys; '
+                'signal.signal(signal.SIGINT,lambda *_:sys.exit(0)); '
+                'print("READY",flush=True); signal.pause()')
+        process = subprocess.Popen([sys.executable, '-c', code], stdout=subprocess.PIPE,
+                                   text=True, start_new_session=True)
+        try:
+            assert process.stdout.readline().strip() == 'READY'
+            record = runner.stop(process)
+>           assert record == dict(forced_cleanup=False, residual_live_pids=[])
+E           AssertionError: assert None == {'forced_cleanup': False, 'residual_live_pids': []}
+E            +  where {'forced_cleanup': False, 'residual_live_pids': []} = dict(forced_cleanup=False, residual_live_pids=[])
+
+Ch13/tests/test_legacy_shutdown.py:21: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/legacy-stop-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_legacy_shutdown.py::test_legacy_stop_records_actual_graceful_exit_and_no_residuals
+1 failed in 5.46s

@@ -19,7 +19,7 @@ import numpy as np
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
+from rclpy.qos import DurabilityPolicy, ReliabilityPolicy, QoSProfile, qos_profile_sensor_data
 from rclpy.time import Time
 from rosidl_runtime_py.convert import message_to_ordereddict
 from sensor_msgs.msg import CameraInfo, Image, JointState
@@ -29,6 +29,8 @@ from tf2_ros import Buffer, TransformException, TransformListener
 from vision_msgs.msg import Detection2DArray
 
 from verify_vision_13_4 import visible_surface_point
+from latency_trace_13_4 import TraceCollector
+from integrated_robot_vision.trace import trace_options
 
 
 def matrix(transform):
@@ -45,7 +47,8 @@ def matrix(transform):
 
 
 class VisionObserver(Node):
-    def __init__(self, output):
+    def __init__(self, output, *, trace_enabled=False, trace_run_id=''):
+        options = trace_options(trace_enabled, trace_run_id)
         super().__init__('section_13_4_observer', parameter_overrides=[Parameter('use_sim_time', value=True)])
         self.output = Path(output)
         self.cache, self.bridge = RGBDCache(), CvBridge()
@@ -63,6 +66,17 @@ class VisionObserver(Node):
         self.tf_owners, self.tf_parents, self.model_parents = {}, {}, {}
         self.tf_metadata_fields = set()
         self.collecting, self.saved_frame = False, False
+        self.trace_collector = TraceCollector(options['trace_run_id']) if options['trace_enabled'] else None
+        self.trace_subscriptions = []
+        if self.trace_collector is not None:
+            trace_qos = QoSProfile(depth=32, reliability=ReliabilityPolicy.BEST_EFFORT,
+                                   durability=DurabilityPolicy.VOLATILE)
+            for stage, topic in [('camera', '/vision/camera_trace'),
+                                 ('detector', '/vision/detector_trace'),
+                                 ('fusion', '/vision/fusion_trace'),
+                                 ('tracking', '/architecture/tracking_trace')]:
+                self.trace_subscriptions.append(self.create_subscription(String, topic,
+                    lambda message, stage=stage: self.on_trace(message, stage=stage), trace_qos))
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.subs = [
             self.create_subscription(Image, '/camera/color/image_raw', self.on_rgb, qos_profile_sensor_data),
@@ -94,6 +108,17 @@ class VisionObserver(Node):
             self.cache.add_rgb(message, 0)
         except ValueError:
             self.invalid['rgb_contract'] += 1
+
+    def on_trace(self, message, *, stage):
+        received_ns = time.monotonic_ns()
+        if self.trace_collector is not None:
+            return self.trace_collector.add(message.data, received_ns=received_ns, expected_stage=stage)
+        return False
+
+    def save_trace(self, *, require_native):
+        if self.trace_collector is not None:
+            return self.trace_collector.save(self.output, require_native=require_native)
+        return None
 
     def on_depth(self, message):
         self.counts['depth'] += 1

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="4.203" timestamp="2026-10-21T21:50:50.255120+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_arm_action_owner" name="test_pending_acceptance_is_reserved_and_late_acceptance_is_canceled" time="0.001"><failure message="KeyError: 'acceptance_future_done'">def test_pending_acceptance_is_reserved_and_late_acceptance_is_canceled():
+        transport = Transport()
+        owner = ArmActionOwner(transport)
+        record = owner.send(object(), now=0., timeout=2.)
+        assert owner.pending is record and transport.uuid in owner.known_ids
+        assert owner.snapshot()['pending_uuid'] == transport.uuid.hex()
+        assert owner.snapshot()['events'][-1]['event'] == 'sent'
+&gt;       assert owner.snapshot()['acceptance_future_done'] is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'acceptance_future_done'
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_arm_action_owner.py:38: KeyError</failure></testcase><testcase classname="test.test_arm_action_owner" name="test_cancel_timeout_latches_fault_even_after_late_terminal_ack" time="0.001" /><testcase classname="test.test_arm_action_owner" name="test_rejection_and_send_exception_do_not_leave_a_false_active_goal" time="0.000" /><testcase classname="test.test_arm_action_owner" name="test_only_unknown_live_statuses_are_foreign" time="0.001" /></testsuite></testsuites>

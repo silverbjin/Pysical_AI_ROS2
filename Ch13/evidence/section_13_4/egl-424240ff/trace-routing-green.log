@@ -1,0 +1,35 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_trace_arguments_reach_only_requested_nodes ________________
+
+    def test_trace_arguments_reach_only_requested_nodes():
+        run = '424240ff-0bfe-4a4b-92d4-93f6a78d49b8'
+        ctx = context(trace_enabled='true', trace_run_id=run, vision_camera_backend='snapshot')
+        vision = load('integrated_robot_vision', 'vision.launch.py')
+        for node in vision.launch_nodes(ctx):
+            parameters = evaluate_parameters(ctx, node._Node__parameters)
+            assert any(v.get('trace_enabled') is True and v.get('trace_run_id') == run
+                       for v in parameters if isinstance(v, dict)), 'missing explicit trace parameters'
+        system = load('integrated_robot_runtime', 'vision_system.launch.py')
+        actions = system.launch_nodes(ctx)
+        for action in actions:
+            assert dict(action.launch_arguments)['trace_run_id'] == run
+        gazebo = system.launch_nodes(context(engine='gazebo', trace_enabled='true', trace_run_id=run))
+        assert 'trace_enabled' not in dict(gazebo[0].launch_arguments)
+        for arguments in ({'trace_enabled': 'maybe'}, {'trace_enabled': 'true', 'trace_run_id': ''}):
+            with pytest.raises(ValueError):
+                system.launch_nodes(context(**arguments))
+        architecture = load('integrated_robot_runtime', 'architecture.launch.py')
+        nodes = [v for v in architecture.launch_nodes(ctx) if isinstance(v, Node)]
+        for node in nodes:
+            parameters = evaluate_parameters(ctx, node._Node__parameters)
+            tracing = [v for v in parameters if isinstance(v, dict) and 'trace_enabled' in v]
+>           assert bool(tracing) is (node.node_executable[0].text == 'manipulation_node')
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'str' object has no attribute 'text'
+
+Ch13/tests/test_section_13_4_launch.py:85: AttributeError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/egl-424240ff/trace-routing-green.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_launch.py::test_trace_arguments_reach_only_requested_nodes
+1 failed, 2 passed in 3.33s

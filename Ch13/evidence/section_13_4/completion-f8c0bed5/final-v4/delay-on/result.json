@@ -1,0 +1,1374 @@
+{
+  "schema_version": 1,
+  "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+  "expected_run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+  "invocation_started_at": 1792603989.7996044,
+  "started_at": 1792603989.7996044,
+  "status": "PASS",
+  "checks": {
+    "measured_startup": true,
+    "controller_backend_loaded": true,
+    "camera_backend_loaded": true,
+    "thirty_observations": true,
+    "geometry_rms": true,
+    "actual_camera_motion": true,
+    "delay_150ms": true,
+    "single_camera_owners": true,
+    "one_clock": true,
+    "one_odometry": true,
+    "sensor_contract": true,
+    "engine_alive": true,
+    "single_tf_owners": true,
+    "native_snapshot": true,
+    "clean_shutdown": true
+  },
+  "errors": [],
+  "artifact_root": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/final-v4/delay-on",
+  "artifacts": [
+    {
+      "path": "source_snapshot.json",
+      "size": 92388,
+      "sha256": "d63c5e497bad60d0d84cb89d03162b8e5f617702fc422a777eb8f6ffa4f45ca0"
+    },
+    {
+      "path": "camera_backend.json",
+      "size": 7938,
+      "sha256": "21e1877cf4adb2b6e0b078277aea1f48be9c87bbdf72447cce8b054f84da5ed1"
+    },
+    {
+      "path": "observations.json",
+      "size": 1390240,
+      "sha256": "8dc006bf98b89a5d32010e66eb0fecac042ee3e2b6d41486c2d217dd4b1a9cf1"
+    },
+    {
+      "path": "joints.npz",
+      "size": 159280,
+      "sha256": "608985646ca64afec1eb61b0bcb22489ea7b753022aa70faa1426e97f089b02a"
+    },
+    {
+      "path": "system.log",
+      "size": 44011,
+      "sha256": "5c8d8132cec68d7e7f246282c17d1a79a81eb41383e23c00dc9778cd16fa0b4c"
+    },
+    {
+      "path": "trace.jsonl",
+      "size": 1151679,
+      "sha256": "f7125e4ddcc5888d75897dce02ffd8da08f8f291454f2439fcde5abd650d1a78"
+    },
+    {
+      "path": "trace_summary.json",
+      "size": 11756,
+      "sha256": "b6d088dbca26d41b0e746d323d0ef9e3b06d75359610451bf2cb544d9575b7f8"
+    },
+    {
+      "path": "rgb.png",
+      "size": 17336,
+      "sha256": "cb45516687bc31c97bc7df97b3fa0ce548d303515a81b5fe1a9273c1ee410ee7"
+    },
+    {
+      "path": "depth.npy",
+      "size": 614528,
+      "sha256": "cbf88a8680df9643739046b90578477b074b9e8ecaf8665aa46d3444b480dec0"
+    },
+    {
+      "path": "annotated.png",
+      "size": 18492,
+      "sha256": "f9132fdd7170c80ff89885a06b3fb9f3053dba5dd48dab48dc71883da966f5a6"
+    },
+    {
+      "path": "camera.json",
+      "size": 1251,
+      "sha256": "91a2545f84d4baf1b0d8cdad17c41913aeb75bfbd6acc80522b7d21f9e964a86"
+    }
+  ],
+  "required_checks": [
+    "actual_camera_motion",
+    "camera_backend_loaded",
+    "clean_shutdown",
+    "controller_backend_loaded",
+    "delay_150ms",
+    "engine_alive",
+    "geometry_rms",
+    "measured_startup",
+    "native_snapshot",
+    "one_clock",
+    "one_odometry",
+    "sensor_contract",
+    "single_camera_owners",
+    "single_tf_owners",
+    "thirty_observations"
+  ],
+  "engine": "mujoco",
+  "vision_camera_backend": "snapshot",
+  "source_head": "64f6c0ce91637e90ef44f1dc9c49c7d747adc91f",
+  "detector_backend": "color_fixture",
+  "scenario": "delay",
+  "processing_delay_s": 0.15,
+  "processes": [
+    {
+      "pid": 4504,
+      "pgid": 4504,
+      "command": [
+        "ros2",
+        "launch",
+        "integrated_robot_runtime",
+        "vision_system.launch.py",
+        "engine:=mujoco",
+        "detector_backend:=color_fixture",
+        "processing_delay_s:=0.15",
+        "tracking_enabled:=false",
+        "max_rate_hz:=10.0",
+        "allow_camera_motion_test:=true",
+        "trace_enabled:=true",
+        "trace_run_id:=f720f86c-1f98-43d4-9326-6d12a0998275",
+        "mujoco_headless:=true",
+        "vision_camera_backend:=snapshot"
+      ],
+      "start_new_session": true
+    }
+  ],
+  "trace_enabled": true,
+  "trace_run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+  "inference_rate_hz": 10.0,
+  "stages": [
+    {
+      "stage": "startup",
+      "started_monotonic": 1483.60495067,
+      "status": "PASS",
+      "finished_monotonic": 1508.362493368,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "invalid/lost target",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 13,
+          "session_generation": null,
+          "event": "heartbeat",
+          "emitted_monotonic": 1508.336369652,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "acceptance_future_done": null,
+            "events": [
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "sent",
+                "wall": 1506.241935119
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "accepted",
+                "wall": 1506.249104185
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "result_requested",
+                "wall": 1506.249108218
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "terminal",
+                "wall": 1508.258275615,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 15770000000,
+            "target_capture_ns": 15494000000,
+            "target_received_wall": 1508.327867386,
+            "joint_capture_ns": 15770000000,
+            "joint_received_wall": 1508.333887869,
+            "leg_positions": [
+              -0.008328065627702459,
+              -0.4891705442424612,
+              1.0679879460038915,
+              0.008328065627703614,
+              -0.4891705442424705,
+              1.0679879460038872,
+              -0.0055260124109219174,
+              -0.49444147146735423,
+              1.0570247505585109,
+              0.005526012410919767,
+              -0.4944414714673577,
+              1.057024750558507
+            ],
+            "leg_status": {
+              "active": false,
+              "mode": "STOP",
+              "ready": true,
+              "command_count": 0,
+              "max_timer_gap_s": 0.14005767499998,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1508.159076521
+          }
+        },
+        "counts": {
+          "depth": 204,
+          "rgb": 155,
+          "info": 205,
+          "detection_frames": 91,
+          "raw_targets": 13,
+          "valid_tracks": 13,
+          "invalid_tracks": 12
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "/manipulation_node/set_camera_motion_test:service_ready",
+      "started_monotonic": 1515.345675046,
+      "status": "PASS",
+      "finished_monotonic": 1515.345761029,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "invalid/lost target",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 13,
+          "session_generation": null,
+          "event": "heartbeat",
+          "emitted_monotonic": 1508.336369652,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "acceptance_future_done": null,
+            "events": [
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "sent",
+                "wall": 1506.241935119
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "accepted",
+                "wall": 1506.249104185
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "result_requested",
+                "wall": 1506.249108218
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "terminal",
+                "wall": 1508.258275615,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 15770000000,
+            "target_capture_ns": 15494000000,
+            "target_received_wall": 1508.327867386,
+            "joint_capture_ns": 15770000000,
+            "joint_received_wall": 1508.333887869,
+            "leg_positions": [
+              -0.008328065627702459,
+              -0.4891705442424612,
+              1.0679879460038915,
+              0.008328065627703614,
+              -0.4891705442424705,
+              1.0679879460038872,
+              -0.0055260124109219174,
+              -0.49444147146735423,
+              1.0570247505585109,
+              0.005526012410919767,
+              -0.4944414714673577,
+              1.057024750558507
+            ],
+            "leg_status": {
+              "active": false,
+              "mode": "STOP",
+              "ready": true,
+              "command_count": 0,
+              "max_timer_gap_s": 0.14005767499998,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1508.159076521
+          }
+        },
+        "counts": {
+          "depth": 204,
+          "rgb": 155,
+          "info": 205,
+          "detection_frames": 91,
+          "raw_targets": 13,
+          "valid_tracks": 13,
+          "invalid_tracks": 12
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "/manipulation_node/set_camera_motion_test:reply",
+      "started_monotonic": 1515.345920621,
+      "status": "PASS",
+      "finished_monotonic": 1515.356777345,
+      "last_inputs": {
+        "tracking": {
+          "enabled": false,
+          "mode": "tracking",
+          "reason": "invalid/lost target",
+          "goal_count": 0,
+          "reserved": false,
+          "outstanding": false,
+          "fault": "",
+          "generation": 30,
+          "session_generation": null,
+          "event": "disabled",
+          "emitted_monotonic": 1510.972960514,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "acceptance_future_done": null,
+            "events": [
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "sent",
+                "wall": 1506.241935119
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "accepted",
+                "wall": 1506.249104185
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "result_requested",
+                "wall": 1506.249108218
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "terminal",
+                "wall": 1508.258275615,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 18412000000,
+            "target_capture_ns": 0,
+            "target_received_wall": 1510.86804637,
+            "joint_capture_ns": 18410000000,
+            "joint_received_wall": 1510.968283681,
+            "leg_positions": [
+              -0.008651992078684029,
+              -0.4830819695019573,
+              1.054358108914149,
+              0.008651992078684652,
+              -0.4830819695019621,
+              1.0543581089141467,
+              -0.005349734582341117,
+              -0.4900085526326638,
+              1.0368995906568057,
+              0.00534973458234004,
+              -0.49000855263266535,
+              1.036899590656804
+            ],
+            "leg_status": {
+              "active": true,
+              "mode": "STAND",
+              "ready": true,
+              "command_count": 135,
+              "max_timer_gap_s": 0.14005767499998,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1510.964999814
+          }
+        },
+        "counts": {
+          "depth": 206,
+          "rgb": 157,
+          "info": 207,
+          "detection_frames": 93,
+          "raw_targets": 15,
+          "valid_tracks": 14,
+          "invalid_tracks": 13
+        },
+        "command_count": 0
+      }
+    },
+    {
+      "stage": "camera_motion_ack",
+      "started_monotonic": 1515.360926912,
+      "status": "PASS",
+      "finished_monotonic": 1515.639664971,
+      "last_inputs": {
+        "tracking": {
+          "enabled": true,
+          "mode": "camera_motion_test",
+          "reason": "enabled explicitly",
+          "goal_count": 0,
+          "reserved": true,
+          "outstanding": false,
+          "fault": "",
+          "generation": 58,
+          "session_generation": 58,
+          "event": "enable_ack",
+          "emitted_monotonic": 1515.346421671,
+          "owner": {
+            "pending_uuid": null,
+            "accepted": false,
+            "handle_status": null,
+            "result_future_done": null,
+            "acceptance_future_done": null,
+            "events": [
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "sent",
+                "wall": 1506.241935119
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "accepted",
+                "wall": 1506.249104185
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "result_requested",
+                "wall": 1506.249108218
+              },
+              {
+                "uuid": "e33e2fad53754e2295938a4e2d59d90e",
+                "event": "terminal",
+                "wall": 1508.258275615,
+                "status": 4
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 22787999999,
+            "target_capture_ns": 22529999999,
+            "target_received_wall": 1515.286048541,
+            "joint_capture_ns": 22781999999,
+            "joint_received_wall": 1515.338760354,
+            "leg_positions": [
+              -0.008336521464583531,
+              -0.48521981282867177,
+              1.052817078500699,
+              0.008336521464583291,
+              -0.48521981282867027,
+              1.0528170785006994,
+              -0.005344346780189805,
+              -0.4889710526428079,
+              1.0378050516440689,
+              0.005344346780189984,
+              -0.488971052642808,
+              1.0378050516440693
+            ],
+            "leg_status": {
+              "active": true,
+              "mode": "STAND",
+              "ready": true,
+              "command_count": 345,
+              "max_timer_gap_s": 0.14005767499998,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1515.159922548
+          }
+        },
+        "counts": {
+          "depth": 213,
+          "rgb": 164,
+          "info": 214,
+          "detection_frames": 98,
+          "raw_targets": 59,
+          "valid_tracks": 38,
+          "invalid_tracks": 37
+        },
+        "command_count": 2
+      }
+    },
+    {
+      "stage": "thirty_unique_observations",
+      "started_monotonic": 1515.639680738,
+      "status": "PASS",
+      "finished_monotonic": 1521.640333762,
+      "last_inputs": {
+        "tracking": {
+          "enabled": true,
+          "mode": "camera_motion_test",
+          "reason": "enabled explicitly",
+          "goal_count": 26,
+          "reserved": true,
+          "outstanding": true,
+          "fault": "",
+          "generation": 58,
+          "session_generation": 58,
+          "event": "heartbeat",
+          "emitted_monotonic": 1521.457518814,
+          "owner": {
+            "pending_uuid": "c2cbd33357ea4ec0b748748b5ff4c67d",
+            "accepted": true,
+            "handle_status": 2,
+            "result_future_done": false,
+            "acceptance_future_done": true,
+            "events": [
+              {
+                "uuid": "270f7cdebe994e8ab376ae5ca795e0d0",
+                "event": "terminal",
+                "wall": 1519.582385035,
+                "status": 4
+              },
+              {
+                "uuid": "eeb2b1d3a21b4ba59898e01b84a9b007",
+                "event": "sent",
+                "wall": 1519.596585484
+              },
+              {
+                "uuid": "eeb2b1d3a21b4ba59898e01b84a9b007",
+                "event": "accepted",
+                "wall": 1519.601714326
+              },
+              {
+                "uuid": "eeb2b1d3a21b4ba59898e01b84a9b007",
+                "event": "result_requested",
+                "wall": 1519.601718451
+              },
+              {
+                "uuid": "eeb2b1d3a21b4ba59898e01b84a9b007",
+                "event": "terminal",
+                "wall": 1519.851436403,
+                "status": 4
+              },
+              {
+                "uuid": "579bb71db6ef495ba0e807c4715eba55",
+                "event": "sent",
+                "wall": 1519.856575603
+              },
+              {
+                "uuid": "579bb71db6ef495ba0e807c4715eba55",
+                "event": "accepted",
+                "wall": 1519.861630836
+              },
+              {
+                "uuid": "579bb71db6ef495ba0e807c4715eba55",
+                "event": "result_requested",
+                "wall": 1519.861634686
+              },
+              {
+                "uuid": "579bb71db6ef495ba0e807c4715eba55",
+                "event": "terminal",
+                "wall": 1520.113975956,
+                "status": 4
+              },
+              {
+                "uuid": "8e4ef123af73450e9ccd177e189d3328",
+                "event": "sent",
+                "wall": 1520.116895447
+              },
+              {
+                "uuid": "8e4ef123af73450e9ccd177e189d3328",
+                "event": "accepted",
+                "wall": 1520.132477496
+              },
+              {
+                "uuid": "8e4ef123af73450e9ccd177e189d3328",
+                "event": "result_requested",
+                "wall": 1520.132481438
+              },
+              {
+                "uuid": "8e4ef123af73450e9ccd177e189d3328",
+                "event": "terminal",
+                "wall": 1520.375611858,
+                "status": 4
+              },
+              {
+                "uuid": "f6a860dce3b343f6a088a0b12ee288b0",
+                "event": "sent",
+                "wall": 1520.377340324
+              },
+              {
+                "uuid": "f6a860dce3b343f6a088a0b12ee288b0",
+                "event": "accepted",
+                "wall": 1520.385117782
+              },
+              {
+                "uuid": "f6a860dce3b343f6a088a0b12ee288b0",
+                "event": "result_requested",
+                "wall": 1520.385121999
+              },
+              {
+                "uuid": "f6a860dce3b343f6a088a0b12ee288b0",
+                "event": "terminal",
+                "wall": 1520.585348754,
+                "status": 4
+              },
+              {
+                "uuid": "0dcbc8da46984991b9a48e43b7783c5c",
+                "event": "sent",
+                "wall": 1520.598153762
+              },
+              {
+                "uuid": "0dcbc8da46984991b9a48e43b7783c5c",
+                "event": "accepted",
+                "wall": 1520.606928736
+              },
+              {
+                "uuid": "0dcbc8da46984991b9a48e43b7783c5c",
+                "event": "result_requested",
+                "wall": 1520.60693442
+              },
+              {
+                "uuid": "0dcbc8da46984991b9a48e43b7783c5c",
+                "event": "terminal",
+                "wall": 1520.806957217,
+                "status": 4
+              },
+              {
+                "uuid": "0aa86c9c22e04b708ef9961ccd77742a",
+                "event": "sent",
+                "wall": 1520.817126441
+              },
+              {
+                "uuid": "0aa86c9c22e04b708ef9961ccd77742a",
+                "event": "accepted",
+                "wall": 1520.819697416
+              },
+              {
+                "uuid": "0aa86c9c22e04b708ef9961ccd77742a",
+                "event": "result_requested",
+                "wall": 1520.819701083
+              },
+              {
+                "uuid": "0aa86c9c22e04b708ef9961ccd77742a",
+                "event": "terminal",
+                "wall": 1521.026684588,
+                "status": 4
+              },
+              {
+                "uuid": "41b91ecbe1c14320bc29aada0556061c",
+                "event": "sent",
+                "wall": 1521.036838871
+              },
+              {
+                "uuid": "41b91ecbe1c14320bc29aada0556061c",
+                "event": "accepted",
+                "wall": 1521.045782787
+              },
+              {
+                "uuid": "41b91ecbe1c14320bc29aada0556061c",
+                "event": "result_requested",
+                "wall": 1521.045788745
+              },
+              {
+                "uuid": "41b91ecbe1c14320bc29aada0556061c",
+                "event": "terminal",
+                "wall": 1521.299836756,
+                "status": 4
+              },
+              {
+                "uuid": "c2cbd33357ea4ec0b748748b5ff4c67d",
+                "event": "sent",
+                "wall": 1521.301470164
+              },
+              {
+                "uuid": "c2cbd33357ea4ec0b748748b5ff4c67d",
+                "event": "accepted",
+                "wall": 1521.310721897
+              },
+              {
+                "uuid": "c2cbd33357ea4ec0b748748b5ff4c67d",
+                "event": "result_requested",
+                "wall": 1521.310725839
+              }
+            ]
+          },
+          "inputs": {
+            "ros_now_ns": 28895999999,
+            "target_capture_ns": 28585999999,
+            "target_received_wall": 1521.411154183,
+            "joint_capture_ns": 28891999999,
+            "joint_received_wall": 1521.45035039,
+            "leg_positions": [
+              -0.008335158211150303,
+              -0.48548862364283424,
+              1.0526638390652572,
+              0.008336087444539108,
+              -0.48548754103149944,
+              1.0526636874275876,
+              -0.005347167451761974,
+              -0.48879115869878703,
+              1.0379092521180995,
+              0.005341783231625732,
+              -0.4887912984534439,
+              1.0379115071565617
+            ],
+            "leg_status": {
+              "active": true,
+              "mode": "STAND",
+              "ready": true,
+              "command_count": 655,
+              "max_timer_gap_s": 0.14005767499998,
+              "policy": "stand_reference_not_ppo"
+            },
+            "leg_status_received_wall": 1521.359229236
+          }
+        },
+        "counts": {
+          "depth": 296,
+          "rgb": 230,
+          "info": 297,
+          "detection_frames": 136,
+          "raw_targets": 97,
+          "valid_tracks": 78,
+          "invalid_tracks": 77
+        },
+        "command_count": 27
+      }
+    }
+  ],
+  "controller_backend_audit": {
+    "class_id": "integrated_robot_controller/JointTrajectoryController",
+    "pid": 4511,
+    "pgid": 4504,
+    "library_path": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_controller/lib/libch13_joint_trajectory_controller.so",
+    "library_sha256": "0078101fddf9d21f55dfa0f45a7664e02f943137dfdaed1ac86d4379aa539717"
+  },
+  "camera_backend_audit": {
+    "class_id": "integrated_robot_camera/SnapshotCameraPlugin",
+    "library_path": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_camera/lib/libsnapshot_camera_plugin.so",
+    "library_sha256": "aeabd2e34c76f5983ee3fd8f6e6ce2b01221fe37e7604edda64e61b6915c9abd",
+    "package_prefix": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_camera",
+    "mailbox_library_path": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_camera/lib/libsnapshot_mailbox.so",
+    "mailbox_library_sha256": "6a2ff6b3edf96e64b7fe079967b7b3824edce12b674d9548a0b893b96987b5a8",
+    "native_pid": 4511,
+    "installed_packages": {
+      "integrated_robot_interfaces": {
+        "share": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_interfaces/share/integrated_robot_interfaces"
+      },
+      "integrated_robot_vision": {
+        "share": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_vision/share/integrated_robot_vision",
+        "python_source_verified": true
+      },
+      "integrated_robot_description": {
+        "share": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_description/share/integrated_robot_description"
+      },
+      "integrated_robot_runtime": {
+        "share": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_runtime/share/integrated_robot_runtime",
+        "python_source_verified": true
+      },
+      "integrated_robot_camera": {
+        "share": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_camera/share/integrated_robot_camera",
+        "class_id": "integrated_robot_camera/SnapshotCameraPlugin",
+        "library_path": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_camera/lib/libsnapshot_camera_plugin.so",
+        "library_sha256": "aeabd2e34c76f5983ee3fd8f6e6ce2b01221fe37e7604edda64e61b6915c9abd",
+        "package_prefix": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_camera",
+        "mailbox_library_path": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_camera/lib/libsnapshot_mailbox.so",
+        "mailbox_library_sha256": "6a2ff6b3edf96e64b7fe079967b7b3824edce12b674d9548a0b893b96987b5a8",
+        "source_hashes": {
+          "CMakeLists.txt": "b4db9b85ef95979e3dde06d2d279e2b597990d9a0a2b24b66be009579416e492",
+          "LICENSE": "10df721a4406adc5fc3024b9cefc6f62345dda19a28b7d842cc16ee470c6c198",
+          "REUSE_MANIFEST.md": "d332f1d93345e1f29063e25cb6f85aaf5e940745151bf0a63d5f8e89f7bb0023",
+          "include/integrated_robot_camera/snapshot_mailbox.hpp": "cb667d73119bd7032918af681dfda59c0e30cb3a6360dfcbe80ac2c4b927473c",
+          "integrated_robot_camera_plugins.xml": "9f990f8093a72884048273d959e457df5809049740f386dc8fd6d3585d112767",
+          "package.xml": "0ebef8b47c26e203d60f955d0db381ef3d8fbdd2cdce8d56e2e26b1c41620512",
+          "src/camera_plugin_probe.cpp": "1ab4694eea6178b9f8a9d74718806bf741bc7cc614074bec8cfbb2772634f9b9",
+          "src/camera_trace.cpp": "883d1ac78233b39f837ab28954170d456bf289e46d47940311cfc9ddfd7390d1",
+          "src/camera_trace.hpp": "08c091ca7fcc96791deb98848edf32aeba52c62f6a203cd35a7029548b82730b",
+          "src/egl_render_context.cpp": "7b63218c7871b4ed05c07f47e90fd32088b6ea88fe56f76689099c9d39b5824f",
+          "src/egl_render_context.hpp": "77a565edb006b378a72c7a49c754d38952fa014c95ee5c63df1d432a81f49825",
+          "src/snapshot_camera_plugin.cpp": "ac2c6935ab6ff878d7b29c99ba5f282b1720768df9525f852184d08750614857",
+          "src/snapshot_camera_plugin.hpp": "011990083dd1b7e831d4cee82c50be8844c6f865db237b95e9e7874cd938e870",
+          "src/snapshot_mailbox.cpp": "70675e748f75a7b9e112cbb5252913a939dea7aa534c093ba46ea7e07f0911f9",
+          "test/egl_call_audit.hpp": "7a261b5e85c6f13eea3875ead6a151daba7547dc54bdee377487d5bb2bc8e212",
+          "test/test_camera_trace.cpp": "f4522a7b0a4d386a8031cf9b93ed53686d800d1e9e6975b9cff6bd1c68b57674",
+          "test/test_egl_context.cpp": "cd193d5be0e978e56a4c3f003ca14bdcdfc3c2e440b75c897a00a335a009f7e5",
+          "test/test_plugin_loading.cpp": "d64fe2ccb1558bc2d978ec9c4a61949e32a2cc4c88f3865daf33ea177c503936",
+          "test/test_snapshot_camera_plugin.cpp": "4ddbd0f07aa16c91074367f4988912df15d23f5b9801e22b4d8c29a0e9675da0",
+          "test/test_snapshot_mailbox.cpp": "d68697e7dc1d4ad8ab4197760efb2d12918141ef52e7f40c97f19a6cd0abeed1"
+        },
+        "license_verified": true,
+        "plugin_xml_verified": true
+      },
+      "integrated_robot_controller": {
+        "share": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_controller/share/integrated_robot_controller",
+        "library_path": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_controller/lib/libch13_joint_trajectory_controller.so",
+        "library_sha256": "0078101fddf9d21f55dfa0f45a7664e02f943137dfdaed1ac86d4379aa539717",
+        "source_hashes": {
+          "CMakeLists.txt": "93538ace54f33138800c30341b62b55e5fb6253d713d19fb1c0e90387cdec8f5",
+          "LICENSE": "10df721a4406adc5fc3024b9cefc6f62345dda19a28b7d842cc16ee470c6c198",
+          "LICENSE.realtime_tools": "62acda8c82d601960a95e26eeac9b7360e2106bd7f567ee6694fe15951e033ff",
+          "REUSE_MANIFEST.md": "0ec1b51b235813b67c589bef0230025e656b025f31159b40de3da7e52bf1463c",
+          "UPSTREAM_SOURCES.json": "6330c81303b7514e68af3890a42f152e0bc7f8069ef3a8377b9e7630ba6f76e9",
+          "controller_plugins.xml": "7a8ccf230674a7f54cf594907edfa8109e92523d5e5e118d3d58ec2dfb4e76ed",
+          "include/integrated_robot_controller/joint_trajectory_controller.hpp": "be759093b27ffb2f8dfc8bfed26d668c9e7809d6fbb85d8253d9d21b75b17b7d",
+          "include/integrated_robot_controller/realtime_server_goal_handle.hpp": "c9145b413e10ad4fe021e411fcef27dc20ceef972d25d6d8bb0059d0bb449ce7",
+          "package.xml": "e3411954737a858bd9f66414908e4933b0cf1fcbdb9396e7bc0417658843d4a6",
+          "src/joint_trajectory_controller.cpp": "9b0709e8e1ed5f5ed177a175e1e49ca81124187b0a1b113e42e6e3e4778b1a0b",
+          "test/test_terminal_race.cpp": "4ab76fdd12e5112c317188e09728849a3f52784c875d7210466938cadd23c146"
+        },
+        "license_verified": true,
+        "plugin_xml_verified": true
+      }
+    },
+    "egl_renderer": [
+      "llvmpipe (LLVM 20.1.2, 256 bits); vendor=Mesa; version=4.5 (Compatibility Profile) Mesa 25.2.8-0ubuntu0.24.04.4; worker_tid=4716"
+    ],
+    "boot_id": "f9a237a0-43d9-44af-8b1e-4fd06b70ff6b"
+  },
+  "motion_enable": "Explicit stationary local mode: camera_motion_test",
+  "geometry": {
+    "valid_samples": 32,
+    "unique_captures": 32,
+    "rms_m": 0.0025269866284328498,
+    "rms_limit_m": 0.05,
+    "required_samples": 30,
+    "unique_timestamps": true,
+    "latest_tf_diagnostic_rms_m": 0.011493517215756588,
+    "accepted": true,
+    "metric": "capture RGB bbox ray intersect declared front surface x=.98, not object COM",
+    "elapsed_wall_s": 6.0008952079999744
+  },
+  "motion": {
+    "measured_q1_peak_to_peak_rad": 0.05500300345949154,
+    "nominal_amplitude_rad": 0.03,
+    "nominal_period_sim_s": 2.0,
+    "measured_trace": "joints.npz; this is camera motion, NOT PPO walking"
+  },
+  "owners": {
+    "/clock": [
+      "mujoco_ros2_control_node"
+    ],
+    "/odom": [
+      "native_pose_adapter"
+    ],
+    "/camera/color/image_raw": [
+      "mujoco_ros2_control_node"
+    ],
+    "/camera/aligned_depth_to_color/image_raw": [
+      "mujoco_ros2_control_node"
+    ],
+    "/native/camera_info": [
+      "mujoco_ros2_control_node"
+    ],
+    "/camera/color/camera_info": [
+      "native_camera_info_adapter"
+    ],
+    "/tf": [
+      "robot_state_publisher",
+      "native_pose_adapter"
+    ],
+    "/tf_static": [
+      "robot_state_publisher"
+    ],
+    "/overview/color": [],
+    "/overview/depth": [],
+    "/overview/camera_info": [],
+    "/eye_in_hand/color": [],
+    "/eye_in_hand/depth": [],
+    "/eye_in_hand/camera_info": []
+  },
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 17.737098521999997
+  },
+  "tf_ownership_method": "graph+model-parent-contract inference; Jazzy does not expose packet GID",
+  "versions": {
+    "numpy": "1.26.4",
+    "mujoco": "3.3.7",
+    "ultralytics": "8.3.221",
+    "torch": "2.5.1+cpu",
+    "opencv-python": "4.10.0.84"
+  },
+  "runtime_stop": {
+    "started_ns": 1522255423111,
+    "nodes": [
+      {
+        "pid": 4513,
+        "executable": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_vision/lib/integrated_robot_vision/native_pose_adapter"
+      },
+      {
+        "pid": 4514,
+        "executable": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_vision/lib/integrated_robot_vision/native_camera_info_adapter"
+      },
+      {
+        "pid": 4515,
+        "executable": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_runtime/lib/integrated_robot_runtime/locomotion_node"
+      },
+      {
+        "pid": 4516,
+        "executable": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_runtime/lib/integrated_robot_runtime/manipulation_node"
+      },
+      {
+        "pid": 4517,
+        "executable": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_runtime/lib/integrated_robot_runtime/mission_commander"
+      },
+      {
+        "pid": 4518,
+        "executable": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_runtime/lib/integrated_robot_runtime/state_manager"
+      },
+      {
+        "pid": 4519,
+        "executable": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_vision/lib/integrated_robot_vision/object_detector"
+      },
+      {
+        "pid": 4520,
+        "executable": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_4_completion_f8c0bed5-cdac-43d8-81ff-84ab88360cdb/integrated_robot_vision/lib/integrated_robot_vision/vision_processor"
+      }
+    ],
+    "confirmed": true,
+    "finished_ns": 1523072226141
+  },
+  "launch_returncode": 0,
+  "trace_analysis": {
+    "analysis_status": "PARTIAL",
+    "segments": {
+      "native_submit": {
+        "count": 345,
+        "p50_ns": 31534.0,
+        "p95_ns": 53313.20000000001,
+        "max_ns": 1699592,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 10160000000,
+          "producer_id": "2f5e3a22-1120-44e6-9d1a-3a4307907a8d",
+          "local_epoch": 0,
+          "native_sequence": 132
+        }
+      },
+      "native_queue": {
+        "count": 345,
+        "p50_ns": 56925.0,
+        "p95_ns": 1870476.4000000001,
+        "max_ns": 44764589,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 850000000,
+          "producer_id": "2f5e3a22-1120-44e6-9d1a-3a4307907a8d",
+          "local_epoch": 0,
+          "native_sequence": 3
+        }
+      },
+      "native_scene": {
+        "count": 345,
+        "p50_ns": 15125.0,
+        "p95_ns": 26198.600000000002,
+        "max_ns": 900625,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 12458000000,
+          "producer_id": "2f5e3a22-1120-44e6-9d1a-3a4307907a8d",
+          "local_epoch": 0,
+          "native_sequence": 164
+        }
+      },
+      "native_render": {
+        "count": 345,
+        "p50_ns": 15547857.0,
+        "p95_ns": 23171095.6,
+        "max_ns": 65387113,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 0,
+          "producer_id": "2f5e3a22-1120-44e6-9d1a-3a4307907a8d",
+          "local_epoch": 0,
+          "native_sequence": 1
+        }
+      },
+      "native_readback": {
+        "count": 345,
+        "p50_ns": 8086466.0,
+        "p95_ns": 14410310.600000001,
+        "max_ns": 58410822,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 0,
+          "producer_id": "2f5e3a22-1120-44e6-9d1a-3a4307907a8d",
+          "local_epoch": 0,
+          "native_sequence": 1
+        }
+      },
+      "native_rgb_publish": {
+        "count": 345,
+        "p50_ns": 302225.0,
+        "p95_ns": 2591380.2000000007,
+        "max_ns": 9206541,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 9585999999,
+          "producer_id": "2f5e3a22-1120-44e6-9d1a-3a4307907a8d",
+          "local_epoch": 0,
+          "native_sequence": 124
+        }
+      },
+      "native_depth_publish": {
+        "count": 345,
+        "p50_ns": 168483.0,
+        "p95_ns": 1879093.2,
+        "max_ns": 8525274,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 1134000000,
+          "producer_id": "2f5e3a22-1120-44e6-9d1a-3a4307907a8d",
+          "local_epoch": 0,
+          "native_sequence": 7
+        }
+      },
+      "native_info_publish": {
+        "count": 345,
+        "p50_ns": 34284.0,
+        "p95_ns": 225206.80000000005,
+        "max_ns": 2721308,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 22087999999,
+          "producer_id": "2f5e3a22-1120-44e6-9d1a-3a4307907a8d",
+          "local_epoch": 0,
+          "native_sequence": 298
+        }
+      },
+      "detector_queue": {
+        "count": 168,
+        "p50_ns": 38604635.0,
+        "p95_ns": 70138778.4,
+        "max_ns": 81922495,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 24181999999,
+          "producer_id": "98f96eea-f6f1-45d1-8334-4b2137d402f1",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "detector_convert": {
+        "count": 168,
+        "p50_ns": 324500.5,
+        "p95_ns": 3354986.3500000024,
+        "max_ns": 13693441,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 2899999999,
+          "producer_id": "98f96eea-f6f1-45d1-8334-4b2137d402f1",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "detector_inference": {
+        "count": 167,
+        "p50_ns": 3350142.0,
+        "p95_ns": 10346608.399999999,
+        "max_ns": 18390899,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 15494000000,
+          "producer_id": "98f96eea-f6f1-45d1-8334-4b2137d402f1",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "detector_publish": {
+        "count": 167,
+        "p50_ns": 234758.0,
+        "p95_ns": 1584678.8999999997,
+        "max_ns": 5082550,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 28297999999,
+          "producer_id": "98f96eea-f6f1-45d1-8334-4b2137d402f1",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "fusion_queue": {
+        "count": 163,
+        "p50_ns": 1785850.0,
+        "p95_ns": 5363663.800000001,
+        "max_ns": 7960057,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 7919999999,
+          "producer_id": "0b3ded3f-47be-4fe6-8810-feff2436bdfa",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "fusion_depth_span": {
+        "count": 163,
+        "p50_ns": 648358.0,
+        "p95_ns": 4548655.600000001,
+        "max_ns": 10686408,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 20447999999,
+          "producer_id": "0b3ded3f-47be-4fe6-8810-feff2436bdfa",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "fusion_tf_span": {
+        "count": 89,
+        "p50_ns": 636533.0,
+        "p95_ns": 2197414.199999999,
+        "max_ns": 5731824,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 23895999999,
+          "producer_id": "0b3ded3f-47be-4fe6-8810-feff2436bdfa",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "fusion_publish": {
+        "count": 89,
+        "p50_ns": 119350.0,
+        "p95_ns": 878386.7999999984,
+        "max_ns": 2999608,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 27359999999,
+          "producer_id": "0b3ded3f-47be-4fe6-8810-feff2436bdfa",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "native_to_detector_receive": {
+        "count": 61,
+        "p50_ns": 1633866.0,
+        "p95_ns": 14083849.0,
+        "max_ns": 18787999,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 15494000000,
+          "producer_id": "98f96eea-f6f1-45d1-8334-4b2137d402f1",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "detector_to_fusion_receive": {
+        "count": 61,
+        "p50_ns": 1587575.0,
+        "p95_ns": 7700183.0,
+        "max_ns": 9052633,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 15494000000,
+          "producer_id": "0b3ded3f-47be-4fe6-8810-feff2436bdfa",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "tracking_decision_to_dispatch": {
+        "count": 17,
+        "p50_ns": 1081575.0,
+        "p95_ns": 2534729.999999999,
+        "max_ns": 3529350,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 24685999999,
+          "producer_id": "606158f1-1cb2-4e8e-8eda-6a18c13ec6fe",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "fusion_to_target_receive": {
+        "count": 17,
+        "p50_ns": 1327242.0,
+        "p95_ns": 3474148.7999999993,
+        "max_ns": 4348208,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 28941999999,
+          "producer_id": "606158f1-1cb2-4e8e-8eda-6a18c13ec6fe",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "detector_to_dispatch": {
+        "count": 17,
+        "p50_ns": 239428278.0,
+        "p95_ns": 268016378.4,
+        "max_ns": 273122652,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 23895999999,
+          "producer_id": "606158f1-1cb2-4e8e-8eda-6a18c13ec6fe",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      },
+      "native_to_dispatch": {
+        "count": 17,
+        "p50_ns": 270113601.0,
+        "p95_ns": 298945260.2,
+        "max_ns": 307086433,
+        "worst_capture": {
+          "run_id": "f720f86c-1f98-43d4-9326-6d12a0998275",
+          "source_frame": "camera_optical_frame",
+          "capture_ns": 27505999999,
+          "producer_id": "606158f1-1cb2-4e8e-8eda-6a18c13ec6fe",
+          "local_epoch": 0,
+          "native_sequence": null
+        }
+      }
+    },
+    "counts": {
+      "seen": 1945,
+      "valid": 1945,
+      "malformed": 0,
+      "unmatched": 493,
+      "ambiguous": 0,
+      "no_target": 918,
+      "duplicate": 0,
+      "sequence_gap_lower_bound": 511,
+      "dropped": null
+    },
+    "missing_stages": [],
+    "target_gaps_ns": [
+      142311759,
+      156776849,
+      157616608,
+      157803150,
+      157337941,
+      157564450,
+      157128849,
+      157922958,
+      162607766,
+      164482533,
+      145300183,
+      189240231,
+      2050668928,
+      172590632,
+      161090499,
+      157797192,
+      159008107,
+      160789925,
+      152199750,
+      167166624,
+      156230608,
+      154162424,
+      158369467,
+      156512483,
+      154519558,
+      156433099,
+      162292250,
+      159723382,
+      148980692,
+      155967250,
+      164810332,
+      153011092,
+      151019908,
+      163731141,
+      167342532,
+      155920042,
+      155526516,
+      167583707,
+      150635367,
+      158244891,
+      158771700,
+      156209983,
+      159609166,
+      153779441,
+      153220367,
+      154992649,
+      164755791,
+      156505241,
+      160466342,
+      155757699,
+      155262608,
+      159729066,
+      158075858,
+      159775358,
+      150603192,
+      156085499,
+      160734466,
+      150149625,
+      156349958,
+      160563141,
+      161513266,
+      154515433,
+      154609759,
+      157967507,
+      155354733,
+      157824417,
+      154217974,
+      160699083,
+      167288632,
+      146890967,
+      158377808,
+      153803642,
+      156062399,
+      155460242,
+      171272007,
+      150688808,
+      153118708,
+      156188533,
+      153254192,
+      158743099,
+      160448466,
+      158822758,
+      154110083,
+      150642242,
+      155741291,
+      164657983,
+      155607549,
+      165960933
+    ],
+    "gate_losses": [],
+    "errors": [],
+    "native_boundary": "OBSERVED",
+    "note": "Source-clock segments only; unknown producer totals keep coverage PARTIAL. Publish-to-receive includes DDS, scheduling and callback wait; not pure network latency. Depth/TF spans may interleave for multiple boxes, so do not add them as exclusive CPU time. Native render/readback are API spans, not isolated GPU-work measurements.",
+    "collector": {
+      "seen": 1945,
+      "accepted": 1945
+    },
+    "collector_limits": {
+      "per_producer": 20000,
+      "total": 80000,
+      "producers": 16,
+      "payload_bytes": 4096
+    }
+  },
+  "cleanup": [
+    {
+      "pid": 4504,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "finished_at": 1792604059.0408595
+}
