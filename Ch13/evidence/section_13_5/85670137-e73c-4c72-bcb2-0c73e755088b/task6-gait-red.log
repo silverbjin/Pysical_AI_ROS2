@@ -1,0 +1,256 @@
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+_______ test_no_lift_from_planned_com_or_missing_measured_support[False] _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+missing_support = False
+
+    @pytest.mark.parametrize('missing_support', [False, True])
+    def test_no_lift_from_planned_com_or_missing_measured_support(nav_robot_model, missing_support):
+        plant = IdealFeedback(nav_robot_model)
+        if missing_support:
+            data = {**plant.state.contacts.data, 'forces': (0., 30., 30., 30.),
+                    'touching': (False, True, True, True)}
+            plant.state = replace(plant.state, contacts=replace(plant.state.contacts, data=data))
+>       value = machine(nav_robot_model, plant)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:20: in machine
+    value = api().CrawlMachine(model, default_limits())
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gait'), 'crawl machine missing'
+E       AssertionError: crawl machine missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b6d017c0720>('integrated_robot_navigation.gait')
+E        +    where <function find_spec at 0x7b6d017c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:15: AssertionError
+_______ test_no_lift_from_planned_com_or_missing_measured_support[True] ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+missing_support = True
+
+    @pytest.mark.parametrize('missing_support', [False, True])
+    def test_no_lift_from_planned_com_or_missing_measured_support(nav_robot_model, missing_support):
+        plant = IdealFeedback(nav_robot_model)
+        if missing_support:
+            data = {**plant.state.contacts.data, 'forces': (0., 30., 30., 30.),
+                    'touching': (False, True, True, True)}
+            plant.state = replace(plant.state, contacts=replace(plant.state.contacts, data=data))
+>       value = machine(nav_robot_model, plant)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:20: in machine
+    value = api().CrawlMachine(model, default_limits())
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gait'), 'crawl machine missing'
+E       AssertionError: crawl machine missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b6d017c0720>('integrated_robot_navigation.gait')
+E        +    where <function find_spec at 0x7b6d017c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:15: AssertionError
+______ test_one_swing_order_and_measured_support_margin_in_ideal_feedback ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_one_swing_order_and_measured_support_margin_in_ideal_feedback(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+>       value = machine(nav_robot_model, plant)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:20: in machine
+    value = api().CrawlMachine(model, default_limits())
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gait'), 'crawl machine missing'
+E       AssertionError: crawl machine missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b6d017c0720>('integrated_robot_navigation.gait')
+E        +    where <function find_spec at 0x7b6d017c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:15: AssertionError
+_____________ test_invalid_command_emits_no_new_joint_target[bad0] _____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = (nan, 0.0, 0.0)
+
+    @pytest.mark.parametrize('bad', [(math.nan, 0., 0.), (.011, 0., 0.), (0., .001, 0.)])
+    def test_invalid_command_emits_no_new_joint_target(nav_robot_model, bad):
+        plant = IdealFeedback(nav_robot_model)
+>       value = machine(nav_robot_model, plant)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:20: in machine
+    value = api().CrawlMachine(model, default_limits())
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gait'), 'crawl machine missing'
+E       AssertionError: crawl machine missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b6d017c0720>('integrated_robot_navigation.gait')
+E        +    where <function find_spec at 0x7b6d017c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:15: AssertionError
+_____________ test_invalid_command_emits_no_new_joint_target[bad1] _____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = (0.011, 0.0, 0.0)
+
+    @pytest.mark.parametrize('bad', [(math.nan, 0., 0.), (.011, 0., 0.), (0., .001, 0.)])
+    def test_invalid_command_emits_no_new_joint_target(nav_robot_model, bad):
+        plant = IdealFeedback(nav_robot_model)
+>       value = machine(nav_robot_model, plant)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:20: in machine
+    value = api().CrawlMachine(model, default_limits())
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gait'), 'crawl machine missing'
+E       AssertionError: crawl machine missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b6d017c0720>('integrated_robot_navigation.gait')
+E        +    where <function find_spec at 0x7b6d017c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:15: AssertionError
+_____________ test_invalid_command_emits_no_new_joint_target[bad2] _____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = (0.0, 0.001, 0.0)
+
+    @pytest.mark.parametrize('bad', [(math.nan, 0., 0.), (.011, 0., 0.), (0., .001, 0.)])
+    def test_invalid_command_emits_no_new_joint_target(nav_robot_model, bad):
+        plant = IdealFeedback(nav_robot_model)
+>       value = machine(nav_robot_model, plant)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:20: in machine
+    value = api().CrawlMachine(model, default_limits())
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gait'), 'crawl machine missing'
+E       AssertionError: crawl machine missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b6d017c0720>('integrated_robot_navigation.gait')
+E        +    where <function find_spec at 0x7b6d017c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:15: AssertionError
+________ test_feedback_expiry_never_claims_stopped_or_guesses_a_landing ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_feedback_expiry_never_claims_stopped_or_guesses_a_landing(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+>       value = machine(nav_robot_model, plant)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:20: in machine
+    value = api().CrawlMachine(model, default_limits())
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gait'), 'crawl machine missing'
+E       AssertionError: crawl machine missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b6d017c0720>('integrated_robot_navigation.gait')
+E        +    where <function find_spec at 0x7b6d017c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:15: AssertionError
+_______ test_stop_freezes_body_advance_and_lands_before_measured_settle ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_stop_freezes_body_advance_and_lands_before_measured_settle(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+>       value = machine(nav_robot_model, plant)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:20: in machine
+    value = api().CrawlMachine(model, default_limits())
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gait'), 'crawl machine missing'
+E       AssertionError: crawl machine missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b6d017c0720>('integrated_robot_navigation.gait')
+E        +    where <function find_spec at 0x7b6d017c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:15: AssertionError
+______________ test_ik_failure_latches_without_clipping_or_retry _______________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_ik_failure_latches_without_clipping_or_retry(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+>       value = machine(nav_robot_model, plant)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:112: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:20: in machine
+    value = api().CrawlMachine(model, default_limits())
+            ^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gait'), 'crawl machine missing'
+E       AssertionError: crawl machine missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b6d017c0720>('integrated_robot_navigation.gait')
+E        +    where <function find_spec at 0x7b6d017c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:15: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_no_lift_from_planned_com_or_missing_measured_support[False]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_no_lift_from_planned_com_or_missing_measured_support[True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_one_swing_order_and_measured_support_margin_in_ideal_feedback
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_invalid_command_emits_no_new_joint_target[bad0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_invalid_command_emits_no_new_joint_target[bad1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_invalid_command_emits_no_new_joint_target[bad2]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_feedback_expiry_never_claims_stopped_or_guesses_a_landing
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_stop_freezes_body_advance_and_lands_before_measured_settle
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_ik_failure_latches_without_clipping_or_retry
+9 failed in 5.33s

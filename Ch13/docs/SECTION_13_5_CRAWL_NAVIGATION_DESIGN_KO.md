@@ -324,6 +324,34 @@ Gazebo 추가 추적2회 및 양 엔진13.3 회귀를 새 설치본에서 보존
 
 ## 근거
 
+### Task 6 구현 — 실제 관측에 의해 허용되는 crawl
+
+`CrawlMachine`의 세계 좌표 발 목표·몸체 reference는 **제어 목표**이지 odometry가 아니다.
+FL→RR→FR→RL의 한 발씩 SHIFT/SWING/TOUCHDOWN/SETTLE을 진행하고,
+들기 전과 swing 중 모두 실제 관측으로 계산한 지지 여유 0.01m를 요구한다.
+SHIFT의 예측에서는 몸통 이동만 무게중심에 더하지 않는다. 지지 발의 세계 위치를 고정한
+네 다리 IK와 URDF 전체 질량으로 후보 몸체 자세의 CoM을 다시 계산한다.
+예측 여유 0.025m를 만족하는 제한 구간 내 후보를 유계 탐색하되,
+**예측 성공만으로 발을 들지 않고 실제 여유 0.01m를 다시 검사**한다.
+
+0속도는 다음 발을 시작하지 않고 현재 발을 착지시켜 실측 정지를 기다린다.
+일반 속도 일시정지는 새 허가 명령으로 재개할 수 있지만, 명시적 STOP과 FAULT는
+새 속도 패킷만으로 해제하지 않는다. STOPPED는 실제 네 발 접촉과 속도 한계가
+1초 유지돼야 한다. 관측 손실·시계 정지/역행·슬립·IK/footprint 관절 범위 실패는
+새 위치 목표를 내보내지 않으며 STOPPED를 추정하지 않는다.
+
+`crawl_controller`는 lifecycle 관리되는 유일한 다리 publisher다. configure/activate 전과
+deactivate 뒤에는 위치 명령이 없고, STAND bootstrap은 carry 전에 가능하다.
+미검증 profile은 외부 ready 플래그가 있어도 CRAWL에 진입할 수 없다.
+비활성화는 고장 기록 삭제가 아니므로 직전 fault_reason을 유지한다.
+입력 정규화·미래 촬영 대기는 `observations.py`로 공유하되 최초 수신 나이를 보존한다.
+
+이 단계의 ideal-feedback 시험은 **수학·상태 전이 시험용**으로, 제어 목표를 정확히
+따르는 가상 응답을 명시적으로 사용한다. 별도 무응답 시험은 예측만으로 발을 들 수
+없음을 검사한다. 둘 다 실제 엔진의 지지력·보행 성공·G1/G2 증거가 아니다.
+
+아래는 프로젝트의 기존 근거 자료다.
+
 - [13.4 완료·검증 범위](SECTION_13_4_COMPLETION_RESULTS_KO.md).
 - [기존 기립 전용 이동 노드](../ros2_ws/src/integrated_robot_runtime/integrated_robot_runtime/locomotion.py).
 - [실제 native odometry·6D base_footprint](../ros2_ws/src/integrated_robot_vision/integrated_robot_vision/native_pose.py).

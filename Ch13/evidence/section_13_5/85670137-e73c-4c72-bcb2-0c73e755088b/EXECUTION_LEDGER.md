@@ -100,3 +100,15 @@
 - `task5-fixed-install-audit.json`의8패키지 소스/설치 bytes·센서 build manifest/library hash·실제 등록 감사 통과. fixed-topic DDS 시험 프로세스가 서로 다른 producer로 보이지 않도록 package 시험과 전체 source 시험을 같은 domain159에서 **순차** 실행했다.
 - 최종 전체 source 명령은 Task4와 같은4개 pytest 경로다. `task5-fixed-all-source.log`: **467 passed /260.61초**.
 - **미검증:** 실측 접촉 기반 crawl 및 G1/G2, 실제 Nav2 접근·취소, 전체 엔진 정상 종료와 최종13.3/13.4 실제 엔진 회귀는 후속 작업이다. 이 단계는 native 배포 완료가 아니다.
+
+## Task 6 — 관측 기반 crawl kernel·lifecycle 다리 소유자
+
+- 시작 기준 `25ba8531f16bb020e5d664df79710b38638c62b4`. Task5 commit gate93 통과는 `task5-commit-gate.log`에 보존했다.
+- `test_gait.py`/실제 DDS lifecycle 시험을 먼저 작성했다. 부재·초기 경계 실패는 `task6-gait-red.log`, `task6-gait-boundaries-red.log`, `task6-lifecycle-red.log`다. 첫 kernel11, 공유 수신기/기존 DDS22, lifecycle6 통과는 각각 `task6-gait-first.log`, `task6-shared-receiver-first.log`, `task6-lifecycle-first.log`에 기록했다.
+- 확대 시험 `task6-gait-envelope-red.log`: **4 failed/15 passed**. 0명령인데 다음 swing 진행, 현재 지지 밖에서 몸체 목표 발행, 최대 전·후진 중 CoM 여유 부족을 재현했다. 0명령은 현재 발 착지·정지 대기로 바꾸고 현재 지지 검사를 선행했다. `task6-pause-support-green.log` 관련6 통과.
+- `task6-com-unit-probe.json`은 수정 전 코드 SHA가 포함된 **ideal-unit-only** 진단이다. 전진 첫 swing 여유0.01530→0.009970m, 후진 RR에서0.02204→0.009922m로 감소했다. 몸통 이동=전체 CoM 이동이라는 근사가 고정 지지 발의 관절·질량 변화를 누락했다. 전체 IK/URDF 질량으로 후보 CoM을 계산하고 제한 구간 내 유계 탐색을 사용했다. 측정 여유0.01m를 완화하지 않았다. `task6-kinematic-com-first.log`: **19 passed/20.19초**.
+- 시계 정지/양쪽 시계 역행, 명시적 STOP 후 비영 명령 재개 금지와 inactive 진단 보존도 추가했다. `task6-final-boundaries-red.log`: **1 failed/26 passed**. deactivate가 직전 `clock paused`를 지우는 결함을 실제 DDS에서 확인하고 inactive 상태에도 fault를 보존하도록 수정했다.
+- 최초 촬영/수신 나이·미래 inbox를 복제하지 않기 위해 Task5 수신기를 `observations.py`로 추출했다. 기존 motion_guard 실제 DDS도 같은 설치본/전체 source 회귀 대상이다.
+- `task6-fixed-build.log` 성공. `task6-fixed-package.log`: **141 tests/0 errors/0 failures/0 skipped** (navigation126+기존 C++10/CTest wrapper5). `task6-fixed-install-audit.json`: 8패키지 설치 bytes·센서 plugin 출처/실제 등록 감사 통과. 전체 source 회귀 결과는 실행 종료 후 별도 기록한다.
+- ideal-feedback fixture는 목표에 정확히 반응하는 수학/상태 전이 시험이며 native 물리 성공 증거가 아니다. 별도 무응답 시험은 계획 CoM만으로 발을 들지 못하게 한다. **G1/G2·실제 보행/전체 종료는 아직 미검증**이다.
+- 최종 전체 source: `python -m pytest Ch13/tests Ch13/ros2_ws/src/integrated_robot_runtime/test Ch13/ros2_ws/src/integrated_robot_vision/test Ch13/ros2_ws/src/integrated_robot_navigation/test -q`. `task6-fixed-all-source.log`: **500 passed/337.63초**. 검증 뒤 runtime 변경 없이 문서만 보완하고 Task6를 커밋한다.

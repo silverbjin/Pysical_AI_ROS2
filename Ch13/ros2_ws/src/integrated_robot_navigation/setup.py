@@ -17,5 +17,6 @@ setup(
         'gazebo_contact_adapter = integrated_robot_navigation.gazebo_contacts:main',
         'nav_projection = integrated_robot_navigation.projection:main',
         'motion_guard = integrated_robot_navigation.motion_guard:main',
+        'crawl_controller = integrated_robot_navigation.crawl_controller:main',
     ]},
 )

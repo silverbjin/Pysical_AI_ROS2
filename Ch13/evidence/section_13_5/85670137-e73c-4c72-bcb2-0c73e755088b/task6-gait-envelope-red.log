@@ -1,0 +1,92 @@
+...........FFF..F..                                                      [100%]
+=================================== FAILURES ===================================
+_____ test_zero_velocity_lands_current_foot_without_starting_another_swing _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_zero_velocity_lands_current_foot_without_starting_another_swing(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        for _ in range(200):
+            result = value.advance(plant.state, (.001, 0., 0.), plant.ros, plant.wall)
+            plant.tick(value, result)
+            if result.phase == 'SWING' and not all(plant.state.contacts.data['touching']):
+                break
+        else:
+            pytest.fail('no swing')
+        landed = False
+        for _ in range(150):
+            result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            plant.tick(value, result)
+            if all(plant.state.contacts.data['touching']):
+                landed = True
+            if landed:
+>               assert result.swing_foot is None or result.phase == 'TOUCHDOWN'
+E               AssertionError: assert ('fl_foot' is None or 'SWING' == 'TOUCHDOWN'
+E                +  where 'fl_foot' = ControlResult(state='CRAWL', phase='SWING', swing_foot='fl_foot', generation=0, joint_targets={'fr_hip_joint': 0.04767...hip_joint': 0.04741918151450242, 'rl_thigh_joint': -0.563629348100176, 'rl_calf_joint': 0.9629905561812366}, reason='').swing_foot
+E                 
+E                 - TOUCHDOWN
+E                 + SWING)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:155: AssertionError
+__ test_maximum_command_envelope_remains_finite_and_footprint_bound[command0] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (0.01, 0.0, 0.0)
+
+    @pytest.mark.parametrize('command', [(.01, 0., 0.), (-.01, 0., 0.),
+                                         (0., 0., .03), (.01, 0., .03)])
+    def test_maximum_command_envelope_remains_finite_and_footprint_bound(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        for _ in range(450):
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+>           assert result.state != 'FAULT', result.reason
+E           AssertionError: swing support lost
+E           assert 'FAULT' != 'FAULT'
+E            +  where 'FAULT' = ControlResult(state='FAULT', phase='SWING', swing_foot=None, generation=0, joint_targets=None, reason='swing support lost').state
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:166: AssertionError
+__ test_maximum_command_envelope_remains_finite_and_footprint_bound[command1] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (-0.01, 0.0, 0.0)
+
+    @pytest.mark.parametrize('command', [(.01, 0., 0.), (-.01, 0., 0.),
+                                         (0., 0., .03), (.01, 0., .03)])
+    def test_maximum_command_envelope_remains_finite_and_footprint_bound(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        for _ in range(450):
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+>           assert result.state != 'FAULT', result.reason
+E           AssertionError: swing support lost
+E           assert 'FAULT' != 'FAULT'
+E            +  where 'FAULT' = ControlResult(state='FAULT', phase='SWING', swing_foot=None, generation=0, joint_targets=None, reason='swing support lost').state
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:166: AssertionError
+________ test_current_support_outside_polygon_cannot_command_body_shift ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_current_support_outside_polygon_cannot_command_body_shift(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        data = {**plant.state.contacts.data, 'forces': (0., 30., 30., 30.),
+                'touching': (False, True, True, True)}
+        plant.state = replace(plant.state, contacts=replace(plant.state.contacts, data=data))
+        value = machine(nav_robot_model, plant)
+        result = value.advance(plant.state, (.001, 0., 0.), plant.ros, plant.wall)
+>       assert result.state == 'FAULT' and result.joint_targets is None
+E       AssertionError: assert ('CRAWL' == 'FAULT'
+E         
+E         - FAULT
+E         + CRAWL)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:182: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_zero_velocity_lands_current_foot_without_starting_another_swing
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_maximum_command_envelope_remains_finite_and_footprint_bound[command0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_maximum_command_envelope_remains_finite_and_footprint_bound[command1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_current_support_outside_polygon_cannot_command_body_shift
+4 failed, 15 passed in 13.72s

@@ -22,7 +22,8 @@ from integrated_robot_interfaces.srv import SetMode
 
 from .carry_profile import CarryProfile, _validate_limits, validate_profile
 from .model import compile_model
-from .projection import body_data, body_rotation
+from .projection import body_rotation
+from .observations import SensorInbox, sensor_sample
 from .samples import SensorBundle, Sample, Vec3, sample_valid, validate_bundle
 
 OWNERS = ('raw', 'smoothed', 'final', 'legs', 'joints', 'imu', 'contacts', 'body', 'scan', 'carry')
@@ -166,8 +167,7 @@ class MotionGuardNode(Node):
         self.engine = engine or selected
         self.core = MotionGuard(self.model, self.profile.limits, self.profile.arm_q)
         self.lock = threading.RLock()
-        self.samples = {key: None for key in ('joints', 'imu', 'contacts', 'body', 'scan', 'carry')}
-        self.pending = {key: {} for key in self.samples}
+        self.inbox = SensorInbox(0)
         self.commands = {'raw': None, 'smoothed': None}
         self.command_sources = {}
         self.owner_ids = {}
@@ -232,42 +232,11 @@ class MotionGuardNode(Node):
 
     def _sensor(self, key, msg):
         receipt = time.monotonic_ns()
-        stamp = msg.header.stamp.sec*1_000_000_000+msg.header.stamp.nanosec
         try:
-            frame = msg.header.frame_id
-            if key == 'joints':
-                if len(set(msg.name)) != len(msg.name) or len(msg.position) != len(msg.name) or len(msg.velocity) != len(msg.name):
-                    raise ValueError('joint shape/names')
-                data = dict(position=dict(zip(msg.name, msg.position)), velocity=dict(zip(msg.name, msg.velocity)))
-                frame = 'base_link'  # joint axes are identified by model names, not a Cartesian header
-            elif key == 'imu':
-                a, w = msg.linear_acceleration, msg.angular_velocity
-                data = dict(acceleration=(a.x, a.y, a.z), angular_velocity=(w.x, w.y, w.z))
-            elif key == 'contacts':
-                if msg.epoch != self.core.engine_epoch:
-                    raise ValueError('engine epoch changed; restart required')
-                data = dict(names=tuple(msg.names), points=tuple((p.x, p.y, p.z) for p in msg.points),
-                    forces=tuple(msg.normal_forces), touching=tuple(msg.touching), unexpected_contacts=msg.unexpected_contacts)
-            elif key == 'body':
-                data = body_data(msg)
-            elif key == 'scan':
-                if any(math.isnan(v) or v < msg.range_min or v == -math.inf for v in msg.ranges):
-                    raise ValueError('invalid native scan range')
-                data = dict(ranges=tuple(min(v, msg.range_max) for v in msg.ranges),
-                    hits=tuple(math.isfinite(v) and v <= msg.range_max for v in msg.ranges),
-                    range_min=msg.range_min, range_max=msg.range_max,
-                    angle_min=msg.angle_min, angle_increment=msg.angle_increment)
-            else:
-                data = dict(ready=msg.ready, generation=msg.generation, model_sha256=msg.model_sha256)
-            sample = Sample(stamp, receipt, self.core.engine_epoch, stamp, frame, data)
+            sample = sensor_sample(key, msg, receipt, self.core.engine_epoch)
             with self.lock:
-                previous = self.samples[key]
-                if (self.closing or stamp <= self.reset_ros or
-                        previous is not None and stamp <= previous.stamp_ns):
-                    return
-                self.pending[key].setdefault(stamp, sample)
-                while len(self.pending[key]) > 10:
-                    del self.pending[key][min(self.pending[key])]
+                if not self.closing:
+                    self.inbox.receive(key, sample)
         except (TypeError, ValueError) as error:
             with self.lock:
                 if self.core.mode == 'CRAWL':
@@ -276,15 +245,7 @@ class MotionGuardNode(Node):
     def _bundle(self, ros_ns):
         # Clock and sensor DDS callbacks may arrive in different orders. Buffer
         # future captures; never accept them early or renew their first receipt.
-        for key, candidates in self.pending.items():
-            eligible = [stamp for stamp in candidates if stamp <= ros_ns]
-            if eligible:
-                latest = max(eligible)
-                self.samples[key] = candidates[latest]
-                for stamp in list(candidates):
-                    if stamp <= latest:
-                        del candidates[stamp]
-        return SensorBundle(**self.samples)
+        return self.inbox.bundle(ros_ns)
 
     def _mode(self, request, response):
         with self.lock:
@@ -302,8 +263,7 @@ class MotionGuardNode(Node):
             if response.accepted and request.mode == 'RESET':
                 self.reset_ros = self.get_clock().now().nanoseconds
                 self.reset_system = time.time_ns()
-                self.samples = {key: None for key in self.samples}
-                self.pending = {key: {} for key in self.samples}
+                self.inbox.clear(self.reset_ros)
                 self.commands = {'raw': None, 'smoothed': None}
                 self.command_sources.clear()
                 self.owner_ids.clear()

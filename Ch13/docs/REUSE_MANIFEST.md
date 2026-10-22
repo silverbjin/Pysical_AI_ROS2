@@ -2,6 +2,8 @@
 
 ## 13.5 추가 — 구현 진행 중
 
+- `gait.py`, `crawl_controller.py`, `observations.py`와 관련 수학/실제 DDS·lifecycle 시험은 Ch13 작성 코드다. `observations.py`는 Task5 커밋 `25ba8531f16bb020e5d664df79710b38638c62b4`의 motion_guard 수신 정규화·미래 촬영 inbox를 내부 모듈로 추출했다. 기존 Ch13 `integrated_robot_vision.kinematics`와 ROS 설치 lifecycle API를 import하며 Ch01~Ch12나 외부 구현 소스를 복사하지 않는다. ideal-feedback fixture는 실제 엔진 증거로 사용하지 않는다.
+
 - `projection.py`와 `motion_guard.py`의 새 평면 투영·안전 kernel/수신기/watchdog은 Ch13 작성 코드다. 시각화가 아닌 실제 원본6D odometry의 child-frame 속도 계약은 기존 Ch13 `integrated_robot_vision.native_pose`(기준 commit `8e07b05cdf45eeb96dffbfe4fdbe1cf045373146`)와 대조했다. 노드 종료에는 같은 기준의 `integrated_robot_vision.execution.run_node`를 import하며 원본을 복제·수정하지 않는다.
 
 - `integrated_robot_navigation_sensors`의 ABI·소유권 패턴·라이선스와 실제 C++ vendor 버전은 [패키지 출처표](../ros2_ws/src/integrated_robot_navigation_sensors/REUSE_MANIFEST.md)에 기록한다. 외부 고정 underlay 원본은 수정하지 않는다.
