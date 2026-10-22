@@ -1,0 +1,71 @@
+F.FF.                                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_terminal_success_then_actual_settle_for_one_second ____________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x734753230f20>
+
+    def test_terminal_success_then_actual_settle_for_one_second(carry_rig):
+        rig = carry_rig
+        assert rig.call(rig.prepare).success
+        rig.pump(.12)
+        assert rig.executed.is_set()
+        rig.release.set()
+        rig.pump(.65)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        rig.pump(.6)
+>       assert rig.states[-1].ready and rig.gripper_commands
+E       AssertionError: assert (False)
+E        +  where False = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=179266280...67b17d93aa71282cadc', state='FAULT', phase='', swing_foot='', ready=False, stopped=False, fault_reason='guard:ros_age').ready
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:163: AssertionError
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow0')
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true')
+        module = launch_file('crawl_system')
+        actions = module.launch_nodes(ctx)
+        nodes = [a for a in actions if isinstance(a, Node)]
+>       executables = [a.node_executable.perform(ctx) for a in nodes]
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'str' object has no attribute 'perform'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:43: AttributeError
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow1')
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true')
+        module = launch_file('crawl_system')
+        actions = module.launch_nodes(ctx)
+        nodes = [a for a in actions if isinstance(a, Node)]
+>       executables = [a.node_executable.perform(ctx) for a in nodes]
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'str' object has no attribute 'perform'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:43: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_terminal_success_then_actual_settle_for_one_second
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo]
+3 failed, 2 passed in 23.82s

@@ -112,3 +112,17 @@
 - `task6-fixed-build.log` 성공. `task6-fixed-package.log`: **141 tests/0 errors/0 failures/0 skipped** (navigation126+기존 C++10/CTest wrapper5). `task6-fixed-install-audit.json`: 8패키지 설치 bytes·센서 plugin 출처/실제 등록 감사 통과. 전체 source 회귀 결과는 실행 종료 후 별도 기록한다.
 - ideal-feedback fixture는 목표에 정확히 반응하는 수학/상태 전이 시험이며 native 물리 성공 증거가 아니다. 별도 무응답 시험은 계획 CoM만으로 발을 들지 못하게 한다. **G1/G2·실제 보행/전체 종료는 아직 미검증**이다.
 - 최종 전체 source: `python -m pytest Ch13/tests Ch13/ros2_ws/src/integrated_robot_runtime/test Ch13/ros2_ws/src/integrated_robot_vision/test Ch13/ros2_ws/src/integrated_robot_navigation/test -q`. `task6-fixed-all-source.log`: **500 passed/337.63초**. 검증 뒤 runtime 변경 없이 문서만 보완하고 Task6를 커밋한다.
+
+## Task 7 — 실제 ROS 수납 액션·시동 순서·배타 launch
+
+- 시작 기준 `b6b976c2481d729c3d2170c61ef56da2a0782f31`. Task6 지정 commit gate **30 passed/32.26초**, `task6-commit-gate.log`.
+- 실제 ROS FJT peer 경계 RED: `task7-carry-red.log` **1 failed/6 errors** (기능 부재). `task7-startup-launch-red.log` **4 failed**, 누락 시동/launch와 validation_mode에서도 CRAWL을 허용하던 문제. 서버·클라이언트·terminal·cancel ACK는 실제 ROS 전송이지만 peer는 물리 엔진/실제 JTC가 아니다.
+- carry는 기존13.4 `ArmActionOwner`/독립 `ArmActionTransport`를 import한다. 서비스 success=예약이며 실제 result+실측 정착1초 전에는 ready가 아니다. 미확정 terminal 중 destroy 거절·receiver 보존, 이전 세대·팔 고착·외부 active goal·중복 그리퍼 명령자를 검사한다. 빈 그리퍼0.015m 유지가 물리 파지 증거라는 주장은 하지 않는다.
+- `task7-carry-first.log` **5 failed/2 passed**. 후속 계측에서 action status endpoint가 실제2개임을 확인했다(`task7-core-second.log`). 시험의 native ActionServer waitable에 명시적 destroy를 추가했다. count 제한을2로 늘리거나 중복 발행자를 무시하지 않았다.
+- `task7-explicit-server-lifetime.log` **3 failed/5 passed**: 중복 endpoint 오류는 사라졌지만 실제 시험 송신 공백 **303.573768ms**가200ms 안전 제한을 넘었다. production과 다른 하나의 MultiThreaded pool에 긴 peer와 짧은 parent를 묶었던 시험을 분리했다. 실제 배포와 같은 SingleThreaded parent + 별도 blocking peer 실행기에서 `task7-production-executor-comparison.log` **13 passed/33.41초**. 제품 age·취소 제한은 완화하지 않았다. 이전 실패는 모두 보존한다.
+- launch 검사의 Jazzy public executable/location 표현을 바로잡은 뒤 실제 `scene_directory`/`scene_dir` 불일치를 `task7-launch-binding-red.log`의 Gazebo1실패로 재현·교정했다. 엔진 include는 하나이며 legacy locomotion/manipulation/tracking requester를 기동하지 않는다.
+- 초기 설치 검증 `task7-fixed-package.log` **155 tests/0 error/0 failure/0 skip**,8패키지 감사 통과. 하지만 native 관절 broadcaster가 뜨기 전 activate할 수 있는 빈틈을 추가 검토에서 발견했다. `task7-premature-activation-red.log` **2 failed** → inactive 비명령 관측 준비 phase를 대기하도록 수정 → `task7-bootstrap-first.log` **13 passed/26.88초**.
+- 수정 뒤 `task7-bootstrap-fixed-package.log` **156 tests/0 error/0 failure/0 skip**,8패키지 감사 통과. 이후 직선 그리퍼에 rad/rad-s 허용 오차를 쓰는 단위 결함을 `task7-gripper-units-red.log` **2 failed**로 재현했다. 팔0.03rad/0.02rad-s는 유지하고, 그리퍼는 목표0.015m에 대해 **0.002m/0.005m-s**를 별도 적용했다. 양성 peer도 명시적으로0.015m 실제 메시지 피드백을 공급하도록 교정했다. 기존 footprint는 그리퍼 전체 허용 구간을 포함하므로 축소하지 않는다.
+- 위155/156건은 후속 runtime 변경 이전의 결과다. 마지막 소스의 package·설치 감사 결과는 실행 종료 후 별도 기록한다. 변경 없는13.3/13.4 전체 matrix는 이 디버깅 단계마다 재실행하지 않고 Task13 최종 동결 회귀에서 수행한다.
+- **미검증:** G1 실제 controller·native 센서·carry·발 lift, G2 실제 보행, 실제 Nav2와 전체 정상 엔진 종료. unit/peer 통신 성공으로 이 항목을 PASS로 세지 않는다.
+- 마지막 소스 검증 `task7-si-fixed-build.log` 성공. `task7-si-fixed-package.log`: **158 tests/0 errors/0 failures/0 skipped** (navigation143+기존 C++10/CTest wrapper5). `task7-si-fixed-install-audit.json`: **8패키지 설치 bytes·센서 library/실제 등록 감사 통과**. 이후 runtime 수정 없이 Task7를 커밋한다. 실제 엔진 결과는 아직 없다.

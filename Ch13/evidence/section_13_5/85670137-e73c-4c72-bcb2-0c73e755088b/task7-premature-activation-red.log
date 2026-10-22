@@ -1,0 +1,88 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks _____
+
+    def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks():
+        assert importlib.util.find_spec('integrated_robot_navigation.startup'), 'startup sequencer missing'
+        module = importlib.import_module('integrated_robot_navigation.startup')
+        ctx = Context()
+        rclpy.init(context=ctx)
+        peer = Node('startup_service_peer', context=ctx)
+        node = module.StartupManager(context=ctx)
+        executor = SingleThreadedExecutor(context=ctx)
+        executor.add_node(peer)
+        executor.add_node(node)
+        calls, states = [], []
+        guard_mode, stand_ready, carry_ready = 'HOLD', False, False
+        feedback_ready, active = False, False
+    
+        def mode(request, response):
+            nonlocal guard_mode
+            calls.append(('mode', request.mode))
+            guard_mode = request.mode
+            response.accepted = True
+            return response
+    
+        def lifecycle(request, response):
+            nonlocal active
+            calls.append(('lifecycle', request.transition.id))
+            response.success = request.transition.id != Transition.TRANSITION_ACTIVATE or feedback_ready
+            if response.success and request.transition.id == Transition.TRANSITION_ACTIVATE:
+                active = True
+            return response
+    
+        def prepare(request, response):
+            calls.append(('carry', 'prepare'))
+            response.success = True
+            return response
+    
+        peer.create_service(SetMode, '/navigation/set_mode', mode)
+        peer.create_service(ChangeState, '/crawl_controller/change_state', lifecycle)
+        peer.create_service(Trigger, '/carry_manager/prepare', prepare)
+        pubs = {key: peer.create_publisher(MotionState, '/navigation/'+key+'_state', 10)
+                for key in ('guard', 'crawl', 'carry')}
+        peer.create_subscription(MotionState, '/navigation/startup_state', states.append, 10)
+    
+        def pump(seconds):
+            end = time.monotonic()+seconds
+            while time.monotonic() < end:
+                for key, pub in pubs.items():
+                    msg = MotionState(generation=0, model_sha256='a'*64,
+                        state=guard_mode if key == 'guard' else ('STAND' if active else 'INACTIVE')
+                              if key == 'crawl' else 'READY',
+                        phase='BOOTSTRAP_FEEDBACK_READY' if key == 'crawl' and feedback_ready else '',
+                        ready=stand_ready if key == 'crawl' else carry_ready if key == 'carry' else False,
+                        stopped=stand_ready if key == 'crawl' else False)
+                    msg.header.stamp = peer.get_clock().now().to_msg()
+                    msg.header.frame_id = 'base_link'
+                    pub.publish(msg)
+                executor.spin_once(timeout_sec=.01)
+    
+        try:
+            pump(.4)
+>           assert calls == [('mode', 'STAND'), ('lifecycle', Transition.TRANSITION_CONFIGURE)]
+E           AssertionError: assert [('mode', 'ST...ifecycle', 3)] == [('mode', 'ST...ifecycle', 1)]
+E             
+E             Left contains one more item: ('lifecycle', 3)
+E             Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py:75: AssertionError
+_____ test_inactive_bootstrap_feedback_signal_is_fresh_and_never_commands ______
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x7e3ad57fdcd0>
+
+    def test_inactive_bootstrap_feedback_signal_is_fresh_and_never_commands(crawl_rig):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        rig.pump(.1)
+>       assert rig.crawl_states[-1].phase == 'BOOTSTRAP_FEEDBACK_READY'
+E       AssertionError: assert 'STAND' == 'BOOTSTRAP_FEEDBACK_READY'
+E         
+E         - BOOTSTRAP_FEEDBACK_READY
+E         + STAND
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_lifecycle.py:102: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py::test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_lifecycle.py::test_inactive_bootstrap_feedback_signal_is_fresh_and_never_commands
+2 failed in 8.64s

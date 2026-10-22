@@ -28,6 +28,7 @@ class CrawlController(LifecycleNode):
         super().__init__('crawl_controller', **kwargs)
         self.model_file = self.declare_parameter('model_file', '').value
         self.profile_file = self.declare_parameter('carry_profile', '').value
+        self.validation_mode = self.declare_parameter('validation_mode', False).value
         self.engine = engine or self.declare_parameter('engine', 'mujoco').value
         self.model, self.profile = model, profile
         self.lock = threading.RLock()
@@ -182,7 +183,7 @@ class CrawlController(LifecycleNode):
             self._stand_since = now
         return now-self._stand_since >= int(limits['settle_s']*1e9)
 
-    def _publish_status(self, result=None, stand_ready=False):
+    def _publish_status(self, result=None, stand_ready=False, bootstrap_phase=''):
         if result is None and self.machine is not None:
             # Inactive means no commands, not that a latched fault disappeared.
             result = self.machine._result()
@@ -195,6 +196,8 @@ class CrawlController(LifecycleNode):
         if result is not None:
             status.phase, status.swing_foot = result.phase, result.swing_foot or ''
             status.fault_reason = result.reason or self.stop_reason
+        if not self.active and bootstrap_phase:
+            status.phase = bootstrap_phase
         status.ready = self.active and not status.fault_reason and (stand_ready or status.state == 'CRAWL')
         status.stopped = self.active and (stand_ready or status.state == 'STOPPED')
         self.status.publish(status)
@@ -204,7 +207,17 @@ class CrawlController(LifecycleNode):
             if self.closing:
                 return
             if not self.active or self.machine is None:
-                self._publish_status()
+                phase = 'BOOTSTRAP_WAIT_FEEDBACK'
+                if self.machine is not None and self.machine.state != 'FAULT':
+                    ros_ns, wall_ns = self.get_clock().now().nanoseconds, time.monotonic_ns()
+                    try:
+                        _, _, _, loads, points, com = self.machine._measure(
+                            self.inbox.bundle(ros_ns), ros_ns, wall_ns)
+                        if self.machine._margin(com, loads, points) >= self.machine.limits['min_support_margin_m']:
+                            phase = 'BOOTSTRAP_FEEDBACK_READY'
+                    except (ValueError, KeyError, TypeError, IndexError):
+                        pass  # absence before activation is waiting, not a motor command or recovery
+                self._publish_status(bootstrap_phase=phase if not self.machine or self.machine.state != 'FAULT' else '')
                 return
             ros_ns, wall_ns = self.get_clock().now().nanoseconds, time.monotonic_ns()
             bundle = self.inbox.bundle(ros_ns)
@@ -216,7 +229,9 @@ class CrawlController(LifecycleNode):
                 self.machine.request_stop(urgent=True)
             command = (0., 0., 0.)
             if valid and self.gate.state == 'CRAWL' and self.gate.ready and not self.stop_reason:
-                if not self.admission[0]:
+                if self.validation_mode:
+                    self.machine._fail('validation_mode_forbids_crawl')
+                elif not self.admission[0]:
                     self.machine._fail(self.admission[1])
                 else:
                     fresh, why = sample_valid(self.command, ros_ns, wall_ns, self.generation, max_age_ns=200_000_000)

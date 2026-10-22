@@ -1,0 +1,70 @@
+..FFF...                                                                 [100%]
+=================================== FAILURES ===================================
+___________ test_terminal_success_then_actual_settle_for_one_second ____________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x76640b57a270>
+
+    def test_terminal_success_then_actual_settle_for_one_second(carry_rig):
+        rig = carry_rig
+        assert rig.call(rig.prepare).success
+        rig.pump(.12)
+        assert rig.executed.is_set()
+        rig.release.set()
+        rig.pump(.65)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        rig.pump(.6)
+>       assert rig.states[-1].ready and rig.gripper_commands, list(rig.manager.diagnostics)
+E       AssertionError: [{'event': 'receive', 'source_age_ms': 36.307699, 'stream': 'guard'}, {'event': 'receive', 'source_age_ms': 36.415407,...ource_age_ms': 64.407196, 'stream': 'guard'}, {'event': 'receive', 'source_age_ms': 64.476588, 'stream': 'crawl'}, ...]
+E       assert (False)
+E        +  where False = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=179266324...67b17d93aa71282cadc', state='FAULT', phase='', swing_foot='', ready=False, stopped=False, fault_reason='guard:ros_age').ready
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:177: AssertionError
+___________ test_actual_velocity_prevents_settle_even_after_terminal ___________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x766409d3dc40>
+
+    def test_actual_velocity_prevents_settle_even_after_terminal(carry_rig):
+        rig = carry_rig
+        rig.velocity = .021
+        rig.pump(.04)
+        assert rig.call(rig.prepare).success
+        rig.release.set()
+        rig.pump(1.15)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        rig.velocity = 0.
+        rig.pump(.7)
+        assert not rig.states[-1].ready
+        rig.pump(.5)
+>       assert rig.states[-1].ready, dict(diagnostics=list(rig.manager.diagnostics),
+            max_publish_gap_ms=max(b-a for a, b in zip(rig.publish_times, list(rig.publish_times)[1:]))/1e6)
+E       AssertionError: {'diagnostics': [{'event': 'receive', 'source_age_ms': 1.084691, 'stream': 'crawl'}, {'event': 'receive', 'source_age_...: 'guard'}, {'event': 'receive', 'source_age_ms': 2.695642, 'stream': 'crawl'}, ...], 'max_publish_gap_ms': 303.573768}
+E       assert False
+E        +  where False = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=179266325...67b17d93aa71282cadc', state='FAULT', phase='', swing_foot='', ready=False, stopped=False, fault_reason='guard:ros_age').ready
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:199: AssertionError
+________ test_generation_change_cancels_without_adopting_foreign_lease _________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x766400076bd0>
+
+    def test_generation_change_cancels_without_adopting_foreign_lease(carry_rig):
+        rig = carry_rig
+        assert rig.call(rig.prepare).success
+        rig.pump(.1)
+        rig.generation = 1
+        rig.pump(.1)
+        assert rig.states[-1].generation == 0 and rig.states[-1].fault_reason
+        assert rig.manager.owner.pending is not None and not rig.states[-1].ready
+        rig.release.set()
+        rig.pump(.12)
+>       assert rig.manager.owner.pending is None
+E       AssertionError: assert PendingTrajectory(identifier=b'\x7fc\x8d\x807ME\xa7\xa9pG\x9b\xb0\x8a\x0b\xa3', deadline=466.104793193, handle=ClientG...lt_future=<rclpy.task.Future object at 0x766410499070>, acceptance_future=<rclpy.task.Future object at 0x76640017af90>) is None
+E        +  where PendingTrajectory(identifier=b'\x7fc\x8d\x807ME\xa7\xa9pG\x9b\xb0\x8a\x0b\xa3', deadline=466.104793193, handle=ClientG...lt_future=<rclpy.task.Future object at 0x766410499070>, acceptance_future=<rclpy.task.Future object at 0x76640017af90>) = <integrated_robot_runtime.arm_action_owner.ArmActionOwner object at 0x7664104c5fd0>.pending
+E        +    where <integrated_robot_runtime.arm_action_owner.ArmActionOwner object at 0x7664104c5fd0> = <integrated_robot_navigation.carry_manager.CarryManager object at 0x76641014bb00>.owner
+E        +      where <integrated_robot_navigation.carry_manager.CarryManager object at 0x76641014bb00> = <test_carry_manager_ros.CarryRig object at 0x766400076bd0>.manager
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:213: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_terminal_success_then_actual_settle_for_one_second
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_actual_velocity_prevents_settle_even_after_terminal
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_generation_change_cancels_without_adopting_foreign_lease
+3 failed, 5 passed in 28.42s

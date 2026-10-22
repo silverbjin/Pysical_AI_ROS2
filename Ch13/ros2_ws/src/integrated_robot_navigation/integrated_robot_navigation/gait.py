@@ -28,6 +28,7 @@ class CrawlMachine:
         self.model, self.limits = model, dict(limits)
         self.state, self.phase, self.reason = 'INACTIVE', 'STAND', ''
         self.generation = -1
+        self.epoch = 0  # the supported native plugins start one immutable engine epoch
         self.reference_body = np.eye(4)
         self.stopping, self.urgent = False, False
         self._explicit_stop = self._paused = False

@@ -1,0 +1,83 @@
+.FFFFF.                                                                  [100%]The following exception was never retrieved: cannot use Destroyable because destruction was requested
+
+=================================== FAILURES ===================================
+_____ test_delayed_acceptance_and_cancel_ack_never_release_without_result ______
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7985c45ed070>
+
+    def test_delayed_acceptance_and_cancel_ack_never_release_without_result(carry_rig):
+        rig = carry_rig
+        rig.accept.clear()
+>       assert rig.call(rig.prepare).success
+E       AssertionError: assert False
+E        +  where False = std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner').success
+E        +    where std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner') = call(<rclpy.client.Client object at 0x7985b411ad80>)
+E        +      where call = <test_carry_manager_ros.CarryRig object at 0x7985c45ed070>.call
+E        +      and   <rclpy.client.Client object at 0x7985b411ad80> = <test_carry_manager_ros.CarryRig object at 0x7985c45ed070>.prepare
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:137: AssertionError
+___________ test_terminal_success_then_actual_settle_for_one_second ____________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7985c47818b0>
+
+    def test_terminal_success_then_actual_settle_for_one_second(carry_rig):
+        rig = carry_rig
+>       assert rig.call(rig.prepare).success
+E       AssertionError: assert False
+E        +  where False = std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner').success
+E        +    where std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner') = call(<rclpy.client.Client object at 0x7985b4084920>)
+E        +      where call = <test_carry_manager_ros.CarryRig object at 0x7985c47818b0>.call
+E        +      and   <rclpy.client.Client object at 0x7985b4084920> = <test_carry_manager_ros.CarryRig object at 0x7985c47818b0>.prepare
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:156: AssertionError
+___________ test_actual_velocity_prevents_settle_even_after_terminal ___________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x798598e1aea0>
+
+    def test_actual_velocity_prevents_settle_even_after_terminal(carry_rig):
+        rig = carry_rig
+        rig.velocity = .021
+        rig.pump(.04)
+>       assert rig.call(rig.prepare).success
+E       AssertionError: assert False
+E        +  where False = std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner').success
+E        +    where std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner') = call(<rclpy.client.Client object at 0x79859912c200>)
+E        +      where call = <test_carry_manager_ros.CarryRig object at 0x798598e1aea0>.call
+E        +      and   <rclpy.client.Client object at 0x79859912c200> = <test_carry_manager_ros.CarryRig object at 0x798598e1aea0>.prepare
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:177: AssertionError
+________ test_generation_change_cancels_without_adopting_foreign_lease _________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x79859912c770>
+
+    def test_generation_change_cancels_without_adopting_foreign_lease(carry_rig):
+        rig = carry_rig
+>       assert rig.call(rig.prepare).success
+E       AssertionError: assert False
+E        +  where False = std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner').success
+E        +    where std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner') = call(<rclpy.client.Client object at 0x7985c4588230>)
+E        +      where call = <test_carry_manager_ros.CarryRig object at 0x79859912c770>.call
+E        +      and   <rclpy.client.Client object at 0x7985c4588230> = <test_carry_manager_ros.CarryRig object at 0x79859912c770>.prepare
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:190: AssertionError
+__________________ test_duplicate_gripper_owner_latches_fault __________________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7985c42dff80>
+
+    def test_duplicate_gripper_owner_latches_fault(carry_rig):
+        rig = carry_rig
+>       assert rig.call(rig.prepare).success
+E       AssertionError: assert False
+E        +  where False = std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner').success
+E        +    where std_srvs.srv.Trigger_Response(success=False, message='duplicate/missing arm or observation owner') = call(<rclpy.client.Client object at 0x7985c45088f0>)
+E        +      where call = <test_carry_manager_ros.CarryRig object at 0x7985c42dff80>.call
+E        +      and   <rclpy.client.Client object at 0x7985c45088f0> = <test_carry_manager_ros.CarryRig object at 0x7985c42dff80>.prepare
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:204: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_delayed_acceptance_and_cancel_ack_never_release_without_result
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_terminal_success_then_actual_settle_for_one_second
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_actual_velocity_prevents_settle_even_after_terminal
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_generation_change_cancels_without_adopting_foreign_lease
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_duplicate_gripper_owner_latches_fault
+5 failed, 2 passed in 27.64s

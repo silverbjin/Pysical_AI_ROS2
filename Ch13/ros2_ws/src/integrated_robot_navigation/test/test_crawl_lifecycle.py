@@ -60,7 +60,7 @@ class CrawlRig(Rig):
 
 
 @pytest.fixture
-def crawl_rig(nav_robot_model):
+def crawl_rig(nav_robot_model, request):
     module = importlib.import_module('integrated_robot_navigation.crawl_controller') if importlib.util.find_spec(
         'integrated_robot_navigation.crawl_controller') else None
     assert module is not None, 'crawl lifecycle owner missing'
@@ -68,7 +68,8 @@ def crawl_rig(nav_robot_model):
     ctx = Context()
     rclpy.init(context=ctx)
     controller = module.CrawlController(nav_robot_model, profile, 'mujoco', context=ctx,
-        parameter_overrides=[Parameter('use_sim_time', value=True)])
+        parameter_overrides=[Parameter('use_sim_time', value=True),
+                             Parameter('validation_mode', value=getattr(request, 'param', False))])
     value = CrawlRig(controller, nav_robot_model, ctx)
     try:
         value.pump(.3)
@@ -92,6 +93,17 @@ def test_lifecycle_inactive_cannot_command_then_bootstrap_stand_without_carry(cr
     count = len(rig.commands)
     rig.pump(.15)
     assert len(rig.commands) == count
+
+
+def test_inactive_bootstrap_feedback_signal_is_fresh_and_never_commands(crawl_rig):
+    rig = crawl_rig
+    assert rig.transition(Transition.TRANSITION_CONFIGURE)
+    rig.pump(.1)
+    assert rig.crawl_states[-1].phase == 'BOOTSTRAP_FEEDBACK_READY'
+    assert not rig.crawl_states[-1].ready and not rig.commands
+    rig.pump(.28, clock=False)
+    assert rig.crawl_states[-1].phase == 'BOOTSTRAP_WAIT_FEEDBACK'
+    assert not rig.crawl_states[-1].ready and not rig.commands
 
 
 def test_unvalidated_profile_cannot_walk_even_with_external_ready_flag(crawl_rig):

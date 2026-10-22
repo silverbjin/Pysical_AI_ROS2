@@ -1,0 +1,105 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks _____
+
+    def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks():
+>       assert importlib.util.find_spec('integrated_robot_navigation.startup'), 'startup sequencer missing'
+E       AssertionError: startup sequencer missing
+E       assert None
+E        +  where None = <function find_spec at 0x790c82dc0720>('integrated_robot_navigation.startup')
+E        +    where <function find_spec at 0x790c82dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py:18: AssertionError
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow0')
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true')
+>       module = launch_file('crawl_system')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'crawl_system'
+
+    def launch_file(name):
+        path = Path(__file__).resolve().parents[1]/'launch'/(name+'.launch.py')
+>       assert path.is_file(), 'exclusive navigation launch missing: '+name
+E       AssertionError: exclusive navigation launch missing: crawl_system
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = PosixPath('/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/launch/crawl_system.launch.py').is_file
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:23: AssertionError
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow1')
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true')
+>       module = launch_file('crawl_system')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'crawl_system'
+
+    def launch_file(name):
+        path = Path(__file__).resolve().parents[1]/'launch'/(name+'.launch.py')
+>       assert path.is_file(), 'exclusive navigation launch missing: '+name
+E       AssertionError: exclusive navigation launch missing: crawl_system
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = PosixPath('/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/launch/crawl_system.launch.py').is_file
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:23: AssertionError
+_______ test_validation_mode_denies_crawl_even_with_validated_admission ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x790c81033770>
+
+    def test_validation_mode_denies_crawl_even_with_validated_admission(nav_robot_model, monkeypatch):
+        from integrated_robot_navigation import motion_guard
+        monkeypatch.setattr(motion_guard, 'validate_profile', lambda *args: (True, 'admission_stub'))
+        ctx = Context()
+        rclpy.init(context=ctx)
+        guard = motion_guard.MotionGuardNode(nav_robot_model, prepare_profile(nav_robot_model, CARRY),
+            'mujoco', context=ctx, parameter_overrides=[Parameter('use_sim_time', value=True),
+                                                      Parameter('validation_mode', value=True)])
+        rig = Rig(guard, nav_robot_model, ctx)
+        try:
+            rig.pump(.3)
+            response = rig.mode('CRAWL')
+>           assert not response.accepted and 'validation' in response.message
+E           AssertionError: assert (not True)
+E            +  where True = integrated_robot_interfaces.srv.SetMode_Response(accepted=True, message='').accepted
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:70: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py::test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_validation_mode_denies_crawl_even_with_validated_admission
+4 failed in 13.22s

@@ -18,5 +18,7 @@ setup(
         'nav_projection = integrated_robot_navigation.projection:main',
         'motion_guard = integrated_robot_navigation.motion_guard:main',
         'crawl_controller = integrated_robot_navigation.crawl_controller:main',
+        'carry_manager = integrated_robot_navigation.carry_manager:main',
+        'crawl_startup = integrated_robot_navigation.startup:main',
     ]},
 )

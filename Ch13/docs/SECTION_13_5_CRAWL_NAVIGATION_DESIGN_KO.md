@@ -352,6 +352,41 @@ deactivate 뒤에는 위치 명령이 없고, STAND bootstrap은 carry 전에 �
 
 아래는 프로젝트의 기존 근거 자료다.
 
+### Task 7 구현 — 배타적 시동·수납 결과의 세 경계
+
+`crawl_system.launch.py`는 단 하나의 엔진 장면과 motion_guard/crawl_controller/
+carry_manager/nav_projection/crawl_startup만 연결한다. 기존 locomotion_node,
+manipulation_node, visual tracking requester는 이 경로에서 기동하지 않는다.
+기존 비navigation launch의 기본값은 유지한다. Gazebo 접촉 어댑터는 해시 검증한
+동일 장면의 실제 충돌 이름 매핑을 `scene_dir`로 받는다.
+
+시동기는 STAND 모드 요청 → crawl configure/activate → **실측 기립 정착** →
+carry 예약 → **실제 FJT terminal 수신** → **실측 팔/그리퍼 오차·속도 1초 유지**를
+순차 확인한다. 45초 wall deadline을 넘기거나 서비스가 거절되면 fault이며 자동 재시도나
+CRAWL 진입을 하지 않는다. startup READY는 시동 절차 완료 기록이지 현재 이동 허가가 아니다.
+실시간 guard/crawl/carry 상태가 이동 허용의 권위다.
+
+configure와 activate 사이에는 비활성 crawl 소유자의 `BOOTSTRAP_FEEDBACK_READY`를
+기다린다. 이 신호는 관절·IMU·접촉·몸체 관측의 두 나이, 모델/범위와 현재 지지 여유를
+검사한 결과이며 모터 명령이나 이동 ready가 아니다. 단순히 guard가 STAND를 발행했다고
+엔진의 joint_state_broadcaster가 이미 준비됐다고 간주하지 않는다. 활성화 시에도 관측을
+다시 검사하며, 실패한 activate를 자동 재시도하지 않는다.
+
+carry_manager만 팔 FJT와 그리퍼 무부하 0.015m 자세를 소유한다. 서비스 응답의 success는
+**요청 예약**이며 준비 완료가 아니다. 실제 result를 받기 전에는 취소 ACK나 status가 있어도
+팔 lease를 해제하지 않는다. 팔 오차 0.03rad/속도 0.02rad/s 이내를 1초 유지해야 READY이고,
+그 후 자세·관측·세대·소유권이 바뀌면 sticky fault로 차단한다. 물체를 잡았다는 뜻이 아니다.
+직선 관절인 그리퍼에는 팔의 rad 허용 오차를 재사용하지 않고 목표0.015m에 대해
+위치 오차0.002m/속도0.005m/s를 적용한다. footprint는 원래 그리퍼 전체 허용 이동
+구간을 포함하므로 이 정착 검사는 기존 형상 경계를 줄이거나 충돌을 숨기는 조작이 아니다.
+지연/취소 결과 수신은 기존 13.4의 독립 action receiver에서 처리한다.
+미확정 terminal이 있으면 destroy를 거절하고 receiver를 유지한다. 정상 종료 증명에는
+호출자가 실제 결과 drain과 receiver join을 확인해야 한다.
+
+`validation_mode=true`는 STAND+carry 검증만 허용한다. motion_guard의 CRAWL 서비스와
+crawl_controller의 외부 ready 처리 양쪽에서 이를 차단한다. 실제 통신 peer 시험은
+물리 엔진·JointTrajectoryController 시험을 대신하지 않으며 G1/G2 통과로 세지 않는다.
+
 - [13.4 완료·검증 범위](SECTION_13_4_COMPLETION_RESULTS_KO.md).
 - [기존 기립 전용 이동 노드](../ros2_ws/src/integrated_robot_runtime/integrated_robot_runtime/locomotion.py).
 - [실제 native odometry·6D base_footprint](../ros2_ws/src/integrated_robot_vision/integrated_robot_vision/native_pose.py).

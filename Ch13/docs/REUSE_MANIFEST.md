@@ -2,6 +2,8 @@
 
 ## 13.5 추가 — 구현 진행 중
 
+- `carry_manager.py`는 Ch13 `integrated_robot_runtime.arm_action_owner.ArmActionOwner`와 `arm_transport.ArmActionTransport`(재사용 기준 `8e07b05cdf45eeb96dffbfe4fdbe1cf045373146`)를 import한다. 예약·지연 acceptance·실제 result 수신·미확정 취소의 소유권 규칙을 복제하거나 외부 원본에 덧대지 않는다. 새 수납/시동/배타 launch와 실제 ROS peer 시험은 Ch13 작성 코드이며, 실제 controller·물리 수납 검증은 G1에서 별도로 수행한다.
+
 - `gait.py`, `crawl_controller.py`, `observations.py`와 관련 수학/실제 DDS·lifecycle 시험은 Ch13 작성 코드다. `observations.py`는 Task5 커밋 `25ba8531f16bb020e5d664df79710b38638c62b4`의 motion_guard 수신 정규화·미래 촬영 inbox를 내부 모듈로 추출했다. 기존 Ch13 `integrated_robot_vision.kinematics`와 ROS 설치 lifecycle API를 import하며 Ch01~Ch12나 외부 구현 소스를 복사하지 않는다. ideal-feedback fixture는 실제 엔진 증거로 사용하지 않는다.
 
 - `projection.py`와 `motion_guard.py`의 새 평면 투영·안전 kernel/수신기/watchdog은 Ch13 작성 코드다. 시각화가 아닌 실제 원본6D odometry의 child-frame 속도 계약은 기존 Ch13 `integrated_robot_vision.native_pose`(기준 commit `8e07b05cdf45eeb96dffbfe4fdbe1cf045373146`)와 대조했다. 노드 종료에는 같은 기준의 `integrated_robot_vision.execution.run_node`를 import하며 원본을 복제·수정하지 않는다.

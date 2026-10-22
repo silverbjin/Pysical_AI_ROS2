@@ -1,0 +1,46 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow1')
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true')
+        module = launch_file('crawl_system')
+        actions = module.launch_nodes(ctx)
+        nodes = [a for a in actions if isinstance(a, Node)]
+        executables = [a.node_executable for a in nodes]
+        assert sorted(executables) == sorted(['motion_guard', 'crawl_controller', 'carry_manager',
+                                              'nav_projection', 'crawl_startup'])
+        for action in nodes:
+            values = evaluate_parameters(ctx, action._Node__parameters)
+            assert any(isinstance(p, dict) and p.get('use_sim_time') is True for p in values)
+        selected = launch_file('navigation_sensors').select_engine(ctx)
+        included = [a for a in selected if isinstance(a, IncludeLaunchDescription)]
+        assert len(included) == 1
+        included[0].launch_description_source.get_launch_description(ctx)
+        assert included[0].launch_description_source.location.endswith(engine+'.launch.py')
+        arguments = {key: perform_substitutions(ctx, normalize_to_list_of_substitutions(value))
+                     for key, value in included[0].launch_arguments}
+        assert arguments['navigation_enabled'] == 'true'
+        assert arguments['navigation_scene'] == str(tmp_path/'scene')
+        if engine == 'gazebo':
+            adapter = next(a for a in selected if isinstance(a, Node))
+            values = evaluate_parameters(ctx, adapter._Node__parameters)
+>           assert any(isinstance(p, dict) and p.get('scene_dir') == str(tmp_path/'scene') for p in values)
+E           assert False
+E            +  where False = any(<generator object test_launch_graph_has_exact_owners_and_bound_sensor_scene.<locals>.<genexpr> at 0x7629d7977010>)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:62: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo]
+1 failed, 1 passed, 1 deselected in 8.33s

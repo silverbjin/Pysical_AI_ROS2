@@ -162,6 +162,7 @@ class MotionGuardNode(Node):
         model_file = self.declare_parameter('model_file', '').value
         profile_file = self.declare_parameter('carry_profile', '').value
         selected = self.declare_parameter('engine', 'mujoco').value
+        self.validation_mode = self.declare_parameter('validation_mode', False).value
         self.model = model if model is not None else compile_model(Path(model_file).read_text())
         self.profile = profile if profile is not None else CarryProfile(**json.loads(Path(profile_file).read_text()))
         self.engine = engine or selected
@@ -251,6 +252,9 @@ class MotionGuardNode(Node):
         with self.lock:
             generation = self.core.generation
         if request.mode == 'CRAWL':
+            if self.validation_mode:
+                response.accepted, response.message = False, 'validation_mode_forbids_crawl'
+                return response
             accepted, reason = validate_profile(self.profile, self.model, self.engine)
             if not accepted:
                 response.accepted, response.message = False, reason
