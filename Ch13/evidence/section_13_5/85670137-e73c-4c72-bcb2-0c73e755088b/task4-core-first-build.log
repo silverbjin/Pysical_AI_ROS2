@@ -1,0 +1,36 @@
+[3.027s] WARNING:colcon.colcon_core.package_selection:Some selected packages are already built in one or more underlay workspaces:
+	'integrated_robot_interfaces' is in: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_5_85670137-e73c-4c72-bcb2-0c73e755088b/integrated_robot_interfaces
+If a package in a merged underlay workspace is overridden and it installs headers, then all packages in the overlay must sort their include directories by workspace order. Failure to do so may result in build failures or undefined behavior at run time.
+If the overridden package is used by another package in any underlay, then the overriding package in the overlay must be API and ABI compatible or undefined behavior at run time may occur.
+
+If you understand the risks and want to override a package anyways, add the following to the command line:
+	--allow-overriding integrated_robot_interfaces
+
+This may be promoted to an error in a future release of colcon-override-check.
+Starting >>> integrated_robot_interfaces
+[Processing: integrated_robot_interfaces]
+[Processing: integrated_robot_interfaces]
+[Processing: integrated_robot_interfaces]
+[Processing: integrated_robot_interfaces]
+Finished <<< integrated_robot_interfaces [2min 17s]
+Starting >>> integrated_robot_navigation_sensors
+--- stderr: integrated_robot_navigation_sensors
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/normalization.cpp: In function ‘std::array<float, 360> integrated_robot_navigation_sensors::cast_scan(const mjModel*, const mjData*)’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/normalization.cpp:96:35: error: too few arguments to function ‘mjtNum mj_ray(const mjModel*, const mjData*, const mjtNum*, const mjtNum*, const mjtByte*, mjtBool, int, int*, mjtNum*)’
+   96 |     const double distance = mj_ray(m, d, d->xpos + 3*lidar, ray, groups, 1, -1, &geom);
+      |                             ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/include/integrated_robot_navigation_sensors/normalization.hpp:3,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/normalization.cpp:2:
+/opt/ros/jazzy/opt/mujoco_vendor/include/mujoco/mujoco.h:691:14: note: declared here
+  691 | MJAPI mjtNum mj_ray(const mjModel* m, const mjData* d, const mjtNum pnt[3], const mjtNum vec[3],
+      |              ^~~~~~
+gmake[2]: *** [CMakeFiles/navigation_sensor_core.dir/build.make:90: CMakeFiles/navigation_sensor_core.dir/src/normalization.cpp.o] Error 1
+gmake[2]: *** Waiting for unfinished jobs....
+gmake[1]: *** [CMakeFiles/Makefile2:161: CMakeFiles/navigation_sensor_core.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< integrated_robot_navigation_sensors [15.1s, exited with code 2]
+
+Summary: 1 package finished [2min 34s]
+  1 package failed: integrated_robot_navigation_sensors
+  1 package had stderr output: integrated_robot_navigation_sensors

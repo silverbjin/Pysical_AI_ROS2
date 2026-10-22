@@ -1,0 +1,111 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_____ test_native_scene_materializes_bound_files_without_overwrite[mujoco] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_native_scene_materializes0')
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_native_scene_materializes_bound_files_without_overwrite(tmp_path, engine):
+        output = tmp_path / engine
+>       record = api().materialize_scene(engine, 'detour', output)
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:21: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.scene'), 'scene implementation missing'
+E       AssertionError: scene implementation missing
+E       assert None
+E        +  where None = <function find_spec at 0x7bdcd81c0720>('integrated_robot_navigation.scene')
+E        +    where <function find_spec at 0x7bdcd81c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:14: AssertionError
+_____ test_native_scene_materializes_bound_files_without_overwrite[gazebo] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_native_scene_materializes1')
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_native_scene_materializes_bound_files_without_overwrite(tmp_path, engine):
+        output = tmp_path / engine
+>       record = api().materialize_scene(engine, 'detour', output)
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:21: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.scene'), 'scene implementation missing'
+E       AssertionError: scene implementation missing
+E       assert None
+E        +  where None = <function find_spec at 0x7bdcd81c0720>('integrated_robot_navigation.scene')
+E        +    where <function find_spec at 0x7bdcd81c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:14: AssertionError
+___________ test_mujoco_sensor_physics_and_robot_ray_mask_are_native ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_mujoco_sensor_physics_and0')
+
+    def test_mujoco_sensor_physics_and_robot_ray_mask_are_native(tmp_path):
+        import mujoco
+>       record = api().materialize_scene('mujoco', 'front', tmp_path/'scene')
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.scene'), 'scene implementation missing'
+E       AssertionError: scene implementation missing
+E       assert None
+E        +  where None = <function find_spec at 0x7bdcd81c0720>('integrated_robot_navigation.scene')
+E        +    where <function find_spec at 0x7bdcd81c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:14: AssertionError
+________ test_nav_xacro_opt_in_has_sensors_and_preserves_legacy_default ________
+
+    def test_nav_xacro_opt_in_has_sensors_and_preserves_legacy_default():
+        file = description_dir()/'urdf/robot_system.urdf.xacro'
+        legacy = ET.fromstring(xacro.process_file(str(file), mappings={'control_backend': 'gazebo'}).toxml())
+        assert not legacy.findall('.//sensor[@name="navigation_lidar"]')
+        nav = ET.fromstring(xacro.process_file(str(file), mappings={
+            'control_backend': 'gazebo', 'navigation_enabled': 'true', 'hip_mount_y': '.13'}).toxml())
+        lidar = nav.find('.//sensor[@name="navigation_lidar"]')
+>       assert lidar is not None
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:54: AssertionError
+____________ test_unknown_scene_is_rejected_before_creating_output _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_unknown_scene_is_rejected0')
+
+    def test_unknown_scene_is_rejected_before_creating_output(tmp_path):
+        output = tmp_path/'unknown'
+        with pytest.raises(ValueError):
+>           api().materialize_scene('mujoco', 'stairs', output)
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.scene'), 'scene implementation missing'
+E       AssertionError: scene implementation missing
+E       assert None
+E        +  where None = <function find_spec at 0x7bdcd81c0720>('integrated_robot_navigation.scene')
+E        +    where <function find_spec at 0x7bdcd81c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:14: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py::test_native_scene_materializes_bound_files_without_overwrite[mujoco]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py::test_native_scene_materializes_bound_files_without_overwrite[gazebo]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py::test_mujoco_sensor_physics_and_robot_ray_mask_are_native
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py::test_nav_xacro_opt_in_has_sensors_and_preserves_legacy_default
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py::test_unknown_scene_is_rejected_before_creating_output
+5 failed in 4.02s

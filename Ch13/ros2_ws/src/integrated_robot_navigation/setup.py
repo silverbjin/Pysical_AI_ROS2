@@ -13,4 +13,7 @@ setup(
     maintainer='Jinho', maintainer_email='jinho@todo.todo',
     description='Measured contact-driven crawl navigation for Ch13',
     license='Apache-2.0', tests_require=['pytest'],
+    entry_points={'console_scripts': [
+        'gazebo_contact_adapter = integrated_robot_navigation.gazebo_contacts:main',
+    ]},
 )

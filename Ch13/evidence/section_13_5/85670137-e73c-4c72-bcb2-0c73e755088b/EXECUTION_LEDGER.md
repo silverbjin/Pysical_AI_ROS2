@@ -64,3 +64,22 @@
 - `task3-refined-install-audit.json`에서 실제 설치 모듈·기존6패키지·신규 config/share bytes 일치를 확인했다. 준비 CLI는 설치본에서 실행했다.
 - 새 `task3-refined-offline-profile`은 앞쪽0.579451m/뒤쪽-0.572826m/좌우±0.427560m, inflation_radius0.770118m다. 원래의 더 큰 `offline-profile`도 보존한다. 두 출력 모두 **offline**, G1 증거 없음, 이동 허용 불가다.
 - 명목 수납 자세에서 URDF와 MJCF 각각401개 비인접 형상 쌍을 검사했다. 허용 gait 구간의 모든 자세가 자기 충돌 없이 동작한다는 실제 보행 보증은 아니며, G1/G2 실측이 남아 있다.
+
+## Task 4 — navigation 센서·장면·선택 launch
+
+- 시작 기준: `e1331bf5ff363037b7c371a7837b2a3c0049d8fa`. 소유한 중단 프로세스가 없음을 확인하고 재개했다. 기존 13.4 교육 문서40723바이트는 수정·stage하지 않았다.
+- RED: `task4-core-red.log`에서 snapshot/normalization 헤더 부재, `task4-contact-wire-red.log`에서 예상 밖 접촉 필드 부재를 재현했다. 별도 미빌드 prefix의 의존성 오류는 feature RED로 세지 않는다.
+- 구현: 독립 모델 clone·전체 `mj_copyData` 2슬롯·단일 consumer lease·최신 대기 프레임 덮어쓰기·stop 발행 경계·worker join. 카메라/EGL worker 또는 물리 live 데이터에 쓰지 않는다. reset/clock rollback은 재시작 전까지 차단한다.
+- 버전 진단: Python 오프라인 MuJoCo는3.3.7, 실제 ROS C++ vendor는 **3.12.0/header3012000**이었다. `mj_ray` 추가 normal 인수에서 컴파일 실패한 원본은 `task4-core-first-build.log`에 보존한다. underlay/driver는 바꾸지 않았고 정확한 버전의 공개 API로 컴파일했다. 실제 플러그인 시험에서 header/library 모두3012000을 확인했다.
+- 실행기 오류: `task4-core-vendor-test.log`는 colcon 탐색 범위 누락으로 Ch01의 기존 인코딩 진단이 나왔다. 소유한 시험기 PID1266에만 SIGINT를 보내고 `--base-paths Ch13/ros2_ws/src`로 교정했다. 시뮬레이터 종료 성공으로 세지 않는다. ROS 시험 콜백의 명시 타입 누락과 C++ Time 변환 오류도 원본 build log에 보존했다.
+- 실제 ROS plugin class 부재 RED는 `task4-plugin-load-red-test.log`, 이후 GREEN은 `task4-plugin-time-test.log`다. fixture의 물리 kernel에서 발 하중 합/중력 IMU/원래 world 벽 ray·source 상태 불변, 실제 ROS header·발행·reset 차단·worker stop을 검사했다.
+- Gazebo 관측기는 모든 로봇 collision에 `ContactSensorData`를 요청하고 실제 ECM 관성/세계 pose로 CoM을 계산한다. 빈 접촉 tick도 발행한다. fixed joint 결합 후의 실제 SDF collision 이름으로 매핑한다. 센서 core 부재 RED→ECM GREEN은 `task4-gz-observer-*`에 있다. 이는 Gazebo 전체 로봇 실행 정확도 인수는 아니다.
+- Gazebo 힘은 세계 좌표의 알려진 평지 지지 하중만 정규화한다. pair 미러링의 collision 순서와 원래 힘 방향을 동일시하지 않으며, 발/ground 명시 매핑·힘 쌍 검증·중복 거절을 사용한다. 경사면/일반 접촉 힘 추정을 주장하지 않는다. native G1 정적 체중 검사는 여전히 필요하다.
+- 장면 RED→GREEN: `task4-scene-red.log`, `task4-contact-map-red.log`, `task4-scenes-contacts-green.log`. 실제 MuJoCo parser와 Gazebo SDF 변환으로 검사했다. 평지·pedestal/컵·벽/우회 장애물과 같은 점유 지도를 생성하며 root 강제 이동/외력 plugin을 추가하지 않는다. RGB-D는320×240/15Hz 그대로다.
+- exact scene launch·변조 hash RED→GREEN: `task4-launch-red.log` / `task4-scene-launch-first.log` **16 passed**. 실제 생성 URDF/SDF를 선택하며 navigation=false의 기존 경로를 유지한다. Gazebo controller 파일은 기존 긴 경로 문제 때문에 내용 hash 기반의 짧은 `/tmp` 복사본을 사용하고 bundle과 bytes 일치를 검사한다.
+- 결합 시험: `task4-gz-join-red.log`의 신규4실패→`task4-gz-join-green.log` **11 passed**. 같은 native 촬영의 접촉/발 위치를 결합하고, 중복 수신으로 원래 wall 나이를 갱신하지 않는다. ROS/wall 각각200ms 및 clock reset 영구 차단을 확인했다.
+- 최종 build: `python /usr/bin/colcon --log-base <log13_5_UUID> build --base-paths Ch13/ros2_ws/src --build-base <build13_5_UUID> --install-base <install13_5_UUID> --packages-select integrated_robot_description integrated_robot_navigation_sensors integrated_robot_navigation --executor sequential --cmake-args -DPython3_EXECUTABLE=<venv/python>`; `task4-fixed-build.log`, 성공.
+- 최종 package: 같은 prefix에서 `colcon test --base-paths Ch13/ros2_ws/src --packages-select integrated_robot_navigation_sensors integrated_robot_navigation --executor sequential`, 이후 `colcon test-result --test-result-base <build13_5_UUID> --verbose`. **85 tests / 0 errors / 0 failures / 0 skipped**, `task4-fixed-package.log`. 구성은 Python70 + C++ 실제10 + CTest wrapper5이며85개 실제 물리 시험이라는 뜻이 아니다.
+- 최종 전체 source: `python -m pytest Ch13/tests Ch13/ros2_ws/src/integrated_robot_runtime/test Ch13/ros2_ws/src/integrated_robot_vision/test Ch13/ros2_ws/src/integrated_robot_navigation/test -q`, **444 passed /257.47초**, `task4-all-source.log`.
+- 설치 감사: `task4-fixed-install-audit.json`. 기존6패키지 + navigation + navigation_sensors의 실제 경로/bytes/빌드 소스 manifest를 확인했다. `.so` SHA와 실제 pluginlib probe의 header/runtime 버전, `gz plugin --info --plugin <실제 설치 .so>`의4개 System 인터페이스 등록을 기록했다.
+- **미검증:** 전체 ROS 엔진 G1/G2, 실제 Gazebo 접촉·scan 정확도/자기 충돌 활성화, crawl 이동, Nav2, 정상 전체 엔진 종료는 아직 실행하지 않았다. 위 kernel/ROS/ECM/등록 시험을 종단 인수 통과로 세지 않는다.

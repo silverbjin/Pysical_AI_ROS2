@@ -1,0 +1,16 @@
+Starting >>> integrated_robot_navigation_sensors
+--- stderr: integrated_robot_navigation_sensors
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/native_navigation_plugin.cpp: In function ‘void integrated_robot_navigation_sensors::{anonymous}::publish(const std::shared_ptr<Publishers>&, const integrated_robot_navigation_sensors::SnapshotLease&, integrated_robot_navigation_sensors::SensorWorker&)’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/native_navigation_plugin.cpp:44:89: error: ‘class rclcpp::Time’ has no member named ‘to_msg’
+   44 |   const auto stamp = rclcpp::Time(static_cast<int64_t>(std::llround(sample.stamp*1e9))).to_msg();
+      |                                                                                         ^~~~~~
+gmake[2]: *** [CMakeFiles/navigation_native_plugin.dir/build.make:76: CMakeFiles/navigation_native_plugin.dir/src/native_navigation_plugin.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:193: CMakeFiles/navigation_native_plugin.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< integrated_robot_navigation_sensors [38.2s, exited with code 2]
+[Processing: integrated_robot_navigation_sensors]
+
+Summary: 0 packages finished [39.6s]
+  1 package failed: integrated_robot_navigation_sensors
+  1 package had stderr output: integrated_robot_navigation_sensors

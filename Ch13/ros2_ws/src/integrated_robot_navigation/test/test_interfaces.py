@@ -44,3 +44,11 @@ def test_motion_state_roundtrip():
     actual = deserialize_message(serialize_message(state), messages.MotionState)
     assert (actual.generation, actual.state, actual.phase) == (3, 'CRAWLING', 'SHIFT')
     assert actual.ready and not actual.stopped
+
+
+def test_contacts_report_unexpected_nonfoot_collision():
+    contacts = messages.FootContacts()
+    assert hasattr(contacts, 'unexpected_contacts'), 'non-foot collision wire field missing'
+    contacts.unexpected_contacts = 2
+    actual = deserialize_message(serialize_message(contacts), messages.FootContacts)
+    assert actual.unexpected_contacts == 2

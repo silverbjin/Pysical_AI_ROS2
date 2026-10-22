@@ -6,3 +6,5 @@ string[4] names
 geometry_msgs/Point[4] points
 float64[4] normal_forces
 bool[4] touching
+# Any active contact other than the four named feet against the ground.
+uint32 unexpected_contacts

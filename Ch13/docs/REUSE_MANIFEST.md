@@ -2,6 +2,12 @@
 
 ## 13.5 추가 — 구현 진행 중
 
+- `integrated_robot_navigation_sensors`의 ABI·소유권 패턴·라이선스와 실제 C++ vendor 버전은 [패키지 출처표](../ros2_ws/src/integrated_robot_navigation_sensors/REUSE_MANIFEST.md)에 기록한다. 외부 고정 underlay 원본은 수정하지 않는다.
+- `integrated_robot_navigation/scene.py`의 컵 형상은 Ch13 `scripts/semantic_fixture_13_4.py`, commit `8e07b05cdf45eeb96dffbfe4fdbe1cf045373146`에서 필요한 `cup_parts` 형상 구성만 적응했다. 컵 위치를 장면 인수로 바꾸고 평지 접근용 pedestal를 절반 크기0.14×0.18m로 명시했다. 모든 변경은 실제 엔진 형상과 지도에 반영하며 인식 결과를 주입하지 않는다.
+- `mujoco_navigation_plugins.yaml`은 같은 commit의 Ch13 `mujoco_snapshot_vision_plugins.yaml`에서 native pose와 기존 snapshot camera 설정을 복사하고 읽기 전용 navigation 센서 항목만 추가했다. 원래 config·카메라 구현은 변경하지 않았다.
+- `navigation_bridge.yaml`은 같은 commit의 Ch13 `vision_bridge.yaml`을 기반으로 native scan·IMU·접촉·발 위치·CoM의 단방향 bridge 항목을 추가했다. `/odom`·TF 발행자는 늘리지 않는다.
+- 새 `navigation_sensors.xacro`, 장면·접촉 정규화·시험은 Ch13 작성 코드다. [SDF 1.11 lidar 계약](https://github.com/gazebosim/sdformat/blob/sdf14/sdf/1.11/lidar.sdf)의 visibility mask를 사용해 **스캔에서만 로봇을 제외**하고 world 장애물과 RGB 카메라의 로봇 형상은 유지한다.
+
 - 신규 navigation의 샘플·기구학·지지 영역·수납 profile·구간 경계 계산은 새로 작성했다.
   기존 Ch13의 `integrated_robot_vision.kinematics`를 import하며 원본을 복제하지 않는다.
 - navigation MJCF는 Ch13 기존 `mujoco/robot_system.xml`(해당 파일 마지막 커밋

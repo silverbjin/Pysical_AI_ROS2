@@ -7,6 +7,7 @@
   <xacro:arg name="mujoco_auto_register_cameras" default="true"/>
   <xacro:arg name="vision_enabled" default="false"/>
   <xacro:arg name="hip_mount_y" default="0.10"/>
+  <xacro:arg name="navigation_enabled" default="false"/>
 
   <xacro:include filename="materials.xacro"/>
   <xacro:include filename="inertial_macros.xacro"/>
@@ -14,6 +15,7 @@
   <xacro:include filename="manipulator.xacro"/>
   <xacro:include filename="system.ros2_control.xacro"/>
   <xacro:include filename="vision_sensors.xacro"/>
+  <xacro:include filename="navigation_sensors.xacro"/>
 
   <xacro:property name="backend" value="$(arg control_backend)"/>
   <xacro:unless value="${backend in ['mock', 'gazebo', 'mujoco']}">
@@ -45,6 +47,9 @@
     <xacro:vision_frames enabled="true"/>
   </xacro:if>
   <xacro:system_ros2_control name="IntegratedRobotSystem" backend="${backend}" mujoco_model_path="$(arg mujoco_model_path)" mujoco_headless="$(arg mujoco_headless)" mujoco_auto_register_cameras="$(arg mujoco_auto_register_cameras)"/>
+  <xacro:if value="$(arg navigation_enabled)">
+    <xacro:navigation_sensors backend="${backend}"/>
+  </xacro:if>
 
   <xacro:if value="${backend == 'gazebo'}">
     <gazebo>

@@ -6,7 +6,7 @@
 
 **Architecture:** 짧은 센서·제어 루프, 긴 액션 통신, 실제 센서 worker를 분리한다. 다리는 crawl_controller, 팔은 carry_manager만 명령하며 motion_guard가 단일 이동 허용권을 관리한다. 물리 보행 게이트 G2가 통과하기 전에는 Nav2 접근 인수로 넘어가지 않는다.
 
-**Tech Stack:** Ubuntu 24.04/ROS 2 Jazzy, Gazebo Harmonic, MuJoCo 3.3.7, Python 3.12/NumPy 1.26.4, C++17/ament, 실제 Nav2·ros2_control. 기존 Ch13 카메라·제어기의 고정 외부 의존 버전을 유지한다.
+**Tech Stack:** Ubuntu 24.04/ROS 2 Jazzy, Gazebo Harmonic, Python 오프라인 MuJoCo 3.3.7 / 고정 ROS C++ vendor MuJoCo 3.12.0, Python 3.12/NumPy 1.26.4, C++17/ament, 실제 Nav2·ros2_control. 기존 Ch13 카메라·제어기의 고정 외부 의존 버전을 유지한다. Task 4 빌드에서 실제 vendor 헤더와 underlay 링크를 확인해 버전 표기를 정정했다. 오프라인 결과는 실제 ROS 엔진 인수의 대체물이 아니다.
 
 **Spec:** [사용자 승인 상세 설계](SECTION_13_5_CRAWL_NAVIGATION_DESIGN_KO.md), 설계 커밋 `231309a77da49ed54b312d5c79b4ff0278c00048`.
 

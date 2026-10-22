@@ -51,12 +51,26 @@ def materialize_controller_config(source, *, vision=False):
 def launch_nodes(context):
     package_share = get_package_share_directory('integrated_robot_description')
     vision = LaunchConfiguration('vision_enabled').perform(context).lower() == 'true'
+    navigation = LaunchConfiguration('navigation_enabled', default='false').perform(context).lower() == 'true'
+    scene = None
+    if navigation:
+        from integrated_robot_navigation.scene import load_scene
+        scene = load_scene('gazebo', LaunchConfiguration('navigation_scene').perform(context))
+        if not vision:
+            raise ValueError('navigation scene requires vision_enabled')
     world = LaunchConfiguration('world').perform(context) or os.path.join(
         package_share, 'worlds', 'vision_fixture.sdf' if vision else 'empty.sdf')
+    if scene:
+        requested = LaunchConfiguration('world').perform(context)
+        if requested and Path(requested).resolve() != Path(scene['world']['path']).resolve():
+            raise ValueError('navigation world must match bound scene')
+        world = scene['world']['path']
     xacro_path = os.path.join(package_share, 'urdf', 'robot_system.urdf.xacro')
     controllers = materialize_controller_config(
         os.path.join(package_share, 'config', 'controllers.yaml'), vision=vision
     )
+    if scene:
+        controllers = scene['native_controllers']['path']
     description = ParameterValue(
         Command(
             [
@@ -69,6 +83,8 @@ def launch_nodes(context):
         ),
         value_type=str,
     )
+    if scene:
+        description = ParameterValue(Path(scene['robot']['path']).read_text(), value_type=str)
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -93,7 +109,8 @@ def launch_nodes(context):
     spawn_robot = Node(
         package='ros_gz_sim',
         executable='create',
-        arguments=['-topic', 'robot_description', '-name', 'integrated_robot', '-z', '0.52'],
+        arguments=([ '-file', scene['robot_sdf']['path']] if scene else
+                   ['-topic', 'robot_description']) + ['-name', 'integrated_robot', '-z', '0.52'],
         output='screen',
     )
     spawners = [
@@ -133,7 +150,8 @@ def launch_nodes(context):
         nodes.extend([
             Node(package='ros_gz_bridge', executable='parameter_bridge',
                  parameters=[{'config_file': os.path.join(
-                     package_share, 'config', 'vision_bridge.yaml')}]),
+                     package_share, 'config', 'vision_bridge.yaml') if not navigation else
+                     LaunchConfiguration('navigation_bridge').perform(context)}]),
             Node(package='integrated_robot_vision', executable='native_pose_adapter',
                  parameters=[{'engine': 'gazebo', 'use_sim_time': True}]),
         ])
@@ -144,5 +162,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('vision_enabled', default_value='false'),
         DeclareLaunchArgument('world', default_value=''),
+        DeclareLaunchArgument('navigation_enabled', default_value='false'),
+        DeclareLaunchArgument('navigation_scene', default_value=''),
+        DeclareLaunchArgument('navigation_bridge', default_value=''),
         OpaqueFunction(function=launch_nodes),
     ])
