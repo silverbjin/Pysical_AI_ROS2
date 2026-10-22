@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="4.443" timestamp="2026-10-21T16:13:30.224475+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_gazebo_shutdown_quiescence" name="test_quiescence_requires_observed_world_pause[False]" time="0.011"><failure message="AttributeError: module 'run_vision_13_4' has no attribute 'quiesce_gazebo'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7c88a46c8d40&gt;
+paused = False
+
+    @pytest.mark.parametrize('paused', [False, True])
+    def test_quiescence_requires_observed_world_pause(monkeypatch, paused):
+        runner = importlib.import_module('run_vision_13_4')
+        calls = []
+        def execute(command, **kwargs):
+            calls.append(command)
+            assert kwargs['timeout'] &lt;= 5
+            if command[:2] == ['gz', 'service']:
+                assert command[command.index('--req')+1] == 'pause: true'
+                return SimpleNamespace(returncode=0, stdout='data: true\n', stderr='')
+            assert command[:2] == ['gz', 'topic']
+            return SimpleNamespace(returncode=0, stdout=json.dumps({'paused': paused}), stderr='')
+        monkeypatch.setattr(runner.subprocess, 'run', execute)
+&gt;       record = runner.quiesce_gazebo('section_13_4')
+                 ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'quiesce_gazebo'
+
+Ch13/tests/test_gazebo_shutdown_quiescence.py:23: AttributeError</failure></testcase><testcase classname="Ch13.tests.test_gazebo_shutdown_quiescence" name="test_quiescence_requires_observed_world_pause[True]" time="0.001"><failure message="AttributeError: module 'run_vision_13_4' has no attribute 'quiesce_gazebo'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7c88a462e240&gt;
+paused = True
+
+    @pytest.mark.parametrize('paused', [False, True])
+    def test_quiescence_requires_observed_world_pause(monkeypatch, paused):
+        runner = importlib.import_module('run_vision_13_4')
+        calls = []
+        def execute(command, **kwargs):
+            calls.append(command)
+            assert kwargs['timeout'] &lt;= 5
+            if command[:2] == ['gz', 'service']:
+                assert command[command.index('--req')+1] == 'pause: true'
+                return SimpleNamespace(returncode=0, stdout='data: true\n', stderr='')
+            assert command[:2] == ['gz', 'topic']
+            return SimpleNamespace(returncode=0, stdout=json.dumps({'paused': paused}), stderr='')
+        monkeypatch.setattr(runner.subprocess, 'run', execute)
+&gt;       record = runner.quiesce_gazebo('section_13_4')
+                 ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'quiesce_gazebo'
+
+Ch13/tests/test_gazebo_shutdown_quiescence.py:23: AttributeError</failure></testcase><testcase classname="Ch13.tests.test_gazebo_shutdown_quiescence" name="test_pause_failure_does_not_claim_quiescence" time="0.001"><failure message="AttributeError: module 'run_vision_13_4' has no attribute 'quiesce_gazebo'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7c88a4438290&gt;
+
+    def test_pause_failure_does_not_claim_quiescence(monkeypatch):
+        runner = importlib.import_module('run_vision_13_4')
+        def execute(command, **kwargs):
+            assert command[:2] == ['gz', 'service']
+            raise subprocess.TimeoutExpired(command, kwargs['timeout'])
+        monkeypatch.setattr(runner.subprocess, 'run', execute)
+&gt;       record = runner.quiesce_gazebo('section_13_4')
+                 ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'quiesce_gazebo'
+
+Ch13/tests/test_gazebo_shutdown_quiescence.py:34: AttributeError</failure></testcase></testsuite></testsuites>

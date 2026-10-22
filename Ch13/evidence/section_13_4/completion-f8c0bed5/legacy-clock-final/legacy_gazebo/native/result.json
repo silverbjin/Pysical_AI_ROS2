@@ -1,0 +1,111 @@
+{
+  "status": "PASS",
+  "startup": {
+    "status": "READY",
+    "events": [
+      "arm_configured",
+      "legs_configured",
+      "arm_active",
+      "arm_safe",
+      "legs_active"
+    ],
+    "elapsed_s": 3.814625734999936
+  },
+  "command_samples": 524,
+  "median_period_s": 0.02036203749997867,
+  "p95_period_s": 0.029861975000017082,
+  "max_period_s": 0.05736445000002277,
+  "synchronized_samples": 61,
+  "feedback": [
+    "DryRunReview",
+    "PlanningUnavailable",
+    "Validating"
+  ],
+  "cancel": "PASS",
+  "overlapping_goal_rejection": "PASS",
+  "unimplemented_grasp_is_failure": "PASS",
+  "stale_pair_rejection": "PASS",
+  "inactive_output_gate": "PASS",
+  "mission_preserves_task_failure": "PASS",
+  "engine": "gazebo",
+  "runtime_shutdown": "PASS",
+  "engine_shutdown": "PASS",
+  "cleanup": [
+    {
+      "pid": 2876,
+      "role": "runtime",
+      "returncode": 0,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    },
+    {
+      "pid": 2711,
+      "role": "engine",
+      "returncode": 0,
+      "forced_cleanup": false,
+      "residual_live_pids": []
+    }
+  ],
+  "gazebo_stop": {
+    "confirmed": true,
+    "pause": {
+      "confirmed": true,
+      "started_ns": 594187720889,
+      "commands": [
+        [
+          "gz",
+          "service",
+          "-s",
+          "/world/section_13_2/control",
+          "--reqtype",
+          "gz.msgs.WorldControl",
+          "--reptype",
+          "gz.msgs.Boolean",
+          "--timeout",
+          "2000",
+          "--req",
+          "pause: true"
+        ],
+        [
+          "gz",
+          "topic",
+          "-e",
+          "-t",
+          "/world/section_13_2/stats",
+          "-n",
+          "1",
+          "--json-output"
+        ]
+      ],
+      "pause": {
+        "returncode": 0,
+        "stdout": "data: true\n\n",
+        "stderr": ""
+      },
+      "stats": {
+        "returncode": 0,
+        "stdout": "{\"simTime\":{\"sec\":\"35\",\"nsec\":350000000},\"realTime\":{\"sec\":\"44\",\"nsec\":970662772},\"paused\":true,\"iterations\":\"17675\",\"stepSize\":{}}\n",
+        "stderr": ""
+      },
+      "finished_ns": 597015784222
+    },
+    "command": [
+      "gz",
+      "service",
+      "-s",
+      "/server_control",
+      "--reqtype",
+      "gz.msgs.ServerControl",
+      "--reptype",
+      "gz.msgs.Boolean",
+      "--timeout",
+      "2000",
+      "--req",
+      "stop: true"
+    ],
+    "returncode": 0,
+    "stdout": "data: true\n\n",
+    "stderr": "",
+    "native_exited": true
+  }
+}

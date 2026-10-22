@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="6.181" timestamp="2026-10-21T22:47:44.607734+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_single_executor_protocol" name="test_stow_wait_keeps_single_executor_inputs_and_clock_progressing" time="1.995"><failure message="AssertionError: stow blocked the single clock/input executor&#10;assert (1 - 1) &gt;= 3&#10; +  where 1 = len([9201.674954641])">def test_stow_wait_keeps_single_executor_inputs_and_clock_progressing():
+        rclpy.init(domain_id=149)
+        node,peer=ManipulationNode(),Node('single_executor_controller_peer')
+        parent,controller=SingleThreadedExecutor(),DrainingExecutor(num_threads=2)
+        parent.add_node(node)
+        controller.add_node(peer)
+        stop,entered=threading.Event(),threading.Event()
+        group=ReentrantCallbackGroup()
+        pulses=[]
+        node.create_timer(.02,lambda:pulses.append(time.monotonic()))
+        publisher=peer.create_publisher(JointState,'/joint_states',10)
+    
+        def joints():
+            msg=JointState(name=list(ARM_NAMES+LEG_NAMES),position=[0.]*6+list(STAND))
+            msg.header.stamp=peer.get_clock().now().to_msg()
+            publisher.publish(msg)
+    
+        peer.create_timer(.02,joints,callback_group=group)
+    
+        def execute(handle):
+            entered.set()
+            time.sleep(.6)
+            handle.succeed()
+            return FollowJointTrajectory.Result(error_code=0)
+    
+        server=ActionServer(peer,FollowJointTrajectory,
+            '/arm_trajectory_controller/follow_joint_trajectory',execute,callback_group=group)
+        client=peer.create_client(Trigger,'/manipulation_node/stow',callback_group=group)
+    
+        def spin(executor):
+            while not stop.is_set():
+                executor.spin_once(timeout_sec=.01)
+    
+        threads=[threading.Thread(target=spin,args=(e,)) for e in (parent,controller)]
+        for thread in threads:
+            thread.start()
+        try:
+            assert client.wait_for_service(timeout_sec=3)
+            assert node.trajectory.wait_for_server(timeout_sec=3)
+            node.on_activate(None)
+            wait(lambda:node.arm is not None)
+            future=client.call_async(Trigger.Request())
+            assert entered.wait(timeout=3)
+            before=len(pulses)
+            time.sleep(.15)
+&gt;           assert len(pulses)-before&gt;=3, 'stow blocked the single clock/input executor'
+E           AssertionError: stow blocked the single clock/input executor
+E           assert (1 - 1) &gt;= 3
+E            +  where 1 = len([9201.674954641])
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_single_executor_protocol.py:71: AssertionError</failure></testcase></testsuite></testsuites>

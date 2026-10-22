@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.618" timestamp="2026-10-21T23:16:18.167974+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_controller_mapping" name="test_owned_mapping_rejects_unloaded_library_and_records_actual_child" time="2.363"><failure message="AttributeError: module 'run_vision_13_4' has no attribute 'mapped_owned_library'. Did you mean: 'mapped_camera_library'?">tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-13/test_owned_mapping_rejects_unl0')
+
+    def test_owned_mapping_rejects_unloaded_library_and_records_actual_child(tmp_path):
+        child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(2)'],start_new_session=True)
+        try:
+            maps=Path(f'/proc/{child.pid}/maps')
+            end=time.monotonic()+1
+            lines=[]
+            while time.monotonic()&lt;end:
+                lines=[line for line in maps.read_text().splitlines() if '/libc.so' in line]
+                if lines:
+                    break
+                time.sleep(.005)
+            assert lines
+            expected=Path(lines[0].split()[-1]).resolve()
+&gt;           audit=runner.mapped_owned_library(child,expected)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'run_vision_13_4' has no attribute 'mapped_owned_library'. Did you mean: 'mapped_camera_library'?
+
+Ch13/tests/test_controller_mapping.py:26: AttributeError</failure></testcase></testsuite></testsuites>

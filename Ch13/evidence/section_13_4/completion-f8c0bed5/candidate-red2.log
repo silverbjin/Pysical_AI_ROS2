@@ -1,0 +1,41 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_unsubmitted_candidate_reports_receipts_and_missing_depth _________
+
+    def test_unsubmitted_candidate_reports_receipts_and_missing_depth():
+        rclpy.init(args=['--ros-args', '-p', 'trace_enabled:=true', '-p',
+                        'trace_run_id:=f8c0bed5-cdac-43d8-81ff-84ab88360cdb'], domain_id=147)
+        node, peer = VisionProcessor(), Node('candidate_diagnostics_peer')
+        executor = SingleThreadedExecutor()
+        executor.add_node(peer)
+        events = []
+        sub = peer.create_subscription(String, '/vision/status',
+                                       lambda msg: events.append(json.loads(msg.data)), 50)
+        try:
+            stamp = peer.get_clock().now().nanoseconds / 1e9
+            node.on_info(info(stamp))
+            rgb, _ = images(stamp, stamp)
+            node.on_rgb(rgb)
+            node.on_detections(to_detection_array([Box2D(5., 5., 6., 6., 'fixture_red', 1.)], rgb.header))
+            end = time.monotonic() + .15
+            while time.monotonic() < end:
+                executor.spin_once(timeout_sec=.005)
+            key = rgb.header.stamp.sec * 1_000_000_000 + rgb.header.stamp.nanosec
+            capture = [e for e in events if e.get('capture_ns') == key]
+>           assert {'RGB_RECEIVED', 'DETECTION_RECEIVED', 'WAIT_DEPTH'} <= {
+                e.get('event') for e in capture}, 'unsubmitted candidate has no input/rejection evidence'
+E               AssertionError: unsubmitted candidate has no input/rejection evidence
+E               assert {'DETECTION_R... 'WAIT_DEPTH'} <= set()
+E                 
+E                 Extra items in the left set:
+E                 'DETECTION_RECEIVED'
+E                 'RGB_RECEIVED'
+E                 'WAIT_DEPTH'
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_candidate_diagnostics.py:36: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792547166.774021296] [vision_processor]: trace_totals {"attempted": 0, "dropped": 0, "emitted": 0, "errors": 0, "oversize": 0, "producer_id": "8c2516a8-3198-4429-8e0b-3772f6f10a21", "run_id": "f8c0bed5-cdac-43d8-81ff-84ab88360cdb", "topic": "/vision/fusion_trace"}
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/candidate-red2.xml -
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_candidate_diagnostics.py::test_unsubmitted_candidate_reports_receipts_and_missing_depth
+1 failed in 3.21s

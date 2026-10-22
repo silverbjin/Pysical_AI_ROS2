@@ -1,0 +1,25 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_fusion_requests_reliable_bounded_inputs_for_complete_capture _______
+
+    def test_fusion_requests_reliable_bounded_inputs_for_complete_capture():
+        from rclpy.qos import ReliabilityPolicy, HistoryPolicy
+        rclpy.init(domain_id=147)
+        node = VisionProcessor()
+        try:
+            # This is our live transport contract, not a source-text/config assertion.
+            # Independent best-effort RGB loss made an otherwise complete native
+            # depth+detection candidate unusable at capture18.464s in candidate-m10.
+            for sub in node.subscriptions_owned:
+                qos = sub.qos_profile
+>               assert qos.reliability == ReliabilityPolicy.RELIABLE, sub.topic_name
+E               AssertionError: /camera/color/image_raw
+E               assert <ReliabilityPolicy.BEST_EFFORT: 2> == <ReliabilityPolicy.RELIABLE: 1>
+E                +  where <ReliabilityPolicy.BEST_EFFORT: 2> = <rclpy.qos.QoSProfile object at 0x730d80e438b0>.reliability
+E                +  and   <ReliabilityPolicy.RELIABLE: 1> = <enum 'ReliabilityPolicy'>.RELIABLE
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_candidate_diagnostics.py:26: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/reliable-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_candidate_diagnostics.py::test_fusion_requests_reliable_bounded_inputs_for_complete_capture
+1 failed, 1 passed in 4.09s

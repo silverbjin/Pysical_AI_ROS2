@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_owned_runtime_stops_and_joins_before_engine_phase ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-6/test_owned_runtime_stops_and_j0')
+
+    def test_owned_runtime_stops_and_joins_before_engine_phase(tmp_path):
+        entry = tmp_path/'lib/integrated_robot_runtime/manipulation_node'
+        entry.parent.mkdir(parents=True)
+        entry.write_text('import os,signal,sys\n'
+                         'signal.signal(signal.SIGINT,lambda *_:sys.exit(0))\n'
+                         'print(os.getpid(),flush=True)\n'
+                         'signal.pause()\n')
+        parent = ('import subprocess,sys; '
+                  f'p=subprocess.Popen([sys.executable,{str(entry)!r}]); '
+                  'raise SystemExit(p.wait())')
+        process = subprocess.Popen([sys.executable, '-c', parent], stdout=subprocess.PIPE,
+                                   text=True, start_new_session=True)
+        try:
+            child_pid = int(process.stdout.readline())
+>           record = runner.stop_owned_runtime_nodes(process)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'run_vision_13_4' has no attribute 'stop_owned_runtime_nodes'
+
+Ch13/tests/test_runtime_shutdown_order.py:25: AttributeError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/runtime-order-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_runtime_shutdown_order.py::test_owned_runtime_stops_and_joins_before_engine_phase
+1 failed in 3.52s

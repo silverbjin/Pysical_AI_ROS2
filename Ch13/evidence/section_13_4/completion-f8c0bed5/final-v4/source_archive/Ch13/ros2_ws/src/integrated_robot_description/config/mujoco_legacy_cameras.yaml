@@ -1,0 +1,11 @@
+# Explicitly preserve the pre-13.4 overview stream. Do not auto-register the new eye camera.
+/**:
+  ros__parameters:
+    mujoco_plugins:
+      legacy_camera:
+        type: mujoco_ros2_control_plugins/CameraPlugin
+        camera_publish_rate: 5.0
+        overview:
+          policy: streaming
+        eye_in_hand:
+          policy: disabled

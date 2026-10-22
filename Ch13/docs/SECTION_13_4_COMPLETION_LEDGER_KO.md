@@ -20,10 +20,10 @@ Ruling: 독립 에이전트 리뷰 대신 자체 리뷰 — 네이티브 단일 
 
 ## 진행 순서
 
-- [ ] 최소 재현으로 입력→후보→fusion 갱신 공백을 설명하고 수정한다.
-- [ ] 실제 controller 결과 요청/응답/클라이언트 수신과 취소 소유권을 수정·검증한다.
-- [ ] runtime과 Gazebo 종료 순서를 재현·수정한다.
-- [ ] 코드 동결, 소스·패키지·설치 감사,20+2 matrix와 간헐 조건 연속3회.
+- [x] 최소 재현으로 입력→후보→fusion 갱신 공백을 설명하고 수정한다.
+- [x] 실제 controller 결과 요청/응답/클라이언트 수신과 취소 소유권을 수정·검증한다.
+- [x] runtime과 Gazebo 종료 순서를 재현·수정한다.
+- [x] 코드 동결, 소스·패키지·설치 감사,20+2 matrix와 간헐 조건 연속3회.
 - [ ] 한글 가이드·리뷰·REUSE·evidence와 non-force push/SHA 검증.
 
 ## 증거·다음 재현
@@ -392,3 +392,58 @@ reaped-images-a/b/c 실제MuJoCo3연속PASS와 reaped-gazebo-images 실제Gazebo
 (세션76893)가 source-final-v5→package-final-v5→새동결→전체matrix/legacy를 이어 수행한다.
 패키지/모델/런타임 설치 바이트는 final-v4와 같으며 변경은 source runner의 종료 회수 경계와
 관련 시험이다. 새 전체 인수의 결과만 최종 완료로 판정하고 이전 실패는 그대로 남긴다.
+
+source-final-v5:373PASS/144.71s, package-final-v5:199tests/0errors/0failures/0skips,
+6패키지 설치 감사 PASS. 구현·회귀·현재 문서는 중간 커밋
+f2fa0eba4c042b00bb70f15b4066869ed370d84f로 보존했다(아직 원격게시/완료 선언 아님).
+final-v5 batch4e8c9e6a-b53e-482a-a563-c09276ebfa84, 소스167/설치380파일과 소스 원본을
+동결했다. frozen-source.json SHA256
+6a94c7304319b2e49a3a7b6cd00c649b32fa8f8f850e1e20f05cf750f4537cb3.
+현재세션76893이 전체22native+2legacy를 순차 수행한다. 소스 변경 없이 실행 중이며,
+재개 시 final-v5/frozen-progress.jsonl과 활성 result/소유 프로세스를 먼저 확인한다.
+
+final-v5 geometry3PASS. Ruling: remaining 단계는 미검증 긴 Gazebo 추적3회를 먼저 실행한 뒤
+기존 컵/손실/기하 시험을 실행하도록 helper의 순서만 조정한다. 전체22개 label/required_checks와
+고정 제품 소스/설치본은 같고, 이미 실행한 시험을 반복하지 않는다. 엔진별 소유 정리는 그대로다.
+이후 실제 remaining/legacy helper는 workflow-final-v5-priority에 보존한다.
+
+final-v5 geometry3회와MuJoCo10Hz/15Hz추적 각3회(합계9native) PASS.
+각 추적은5.20s/픽셀91.7% 감소, 각도·실측 속도·주기/정상 종료/잔여 없음.
+원본 observations의 모든 명령/취소UUID를 실제 terminal과 대조해 미확정0을 재확인했다.
+현재 gazebo-tracking-a가 실행 중이며, 이어b/c→컵/손실/기하→legacy를 순차 수행한다.
+
+gazebo-tracking-a/b/c도3연속PASS. 각각5.20s/픽셀100% 감소, 모든제한/실제 terminal/
+정상runtime·native종료/관측pause/잔여 없음. 모든 명령·취소UUID의 실제 결과 미확정0을
+원본관측에서 별도확인했다. final-v5는현재12native PASS이며 남은 컵/손실/기하/legacy를
+동일동결본으로 이어 수행한다. 최종 전체 판정은 아직 아니다.
+
+## 재개: final-v5의 22native 완료와 13.3 시험 입력 시계
+
+final-v5의22native 모두PASS. legacy_mujoco는 실제READY 이후 probe120줄의 accepted
+검사에서FAIL했다. runtime 로그는 입력이 서버 시계보다56ms 미래여서 기존50ms 한계를
+초과했음을 보여준다. runtime/engine 정상종료는 모두PASS, 소유 잔여는 없다. 원본실패는
+final-v5/legacy_mujoco와legacy-progress.jsonl에 보존하고 성공으로 덮어쓰지 않는다.
+
+가설: 서로 별도 프로세스가 /clock을 받는 순서는 같지 않으며, 합성 목표를 만드는 즉시
+전송하는13.3 probe가 아직 소비하지 않은 서버 clock보다 앞선다. 실제 ROS action과 원래
+validate_target을 사용한 제어된60ms 시차 재현은 legacy-clock-red2에서1FAIL이었다.
+첫red는 Jazzy에 없는QoS별칭의ImportError여서 결함 재현으로 세지 않는다.
+제품 런타임은 수정하지 않는다. probe만 목표 생성/원래 header 보존→100ms pump→1회전송으로
+바꾼다. 촬영시각 now교체·미래허용/300ms 연장·거절 후 재시도는 없다. 이는 인수 입력 준비
+수정이므로 22native를 다시 돌리지 않고 영향받은 양엔진13.3를 새고정 supplement에서 검증한다.
+소스 전체 변경분은 probe와 그 회귀 시험만 허용하고,167원본/380설치의 나머지 해시를 대조한다.
+
+legacy-clock-green은1PASS. source-final-v5-probe는374PASS/193.29s.
+legacy-clock-final batch76fb983c-7f3f-4249-b5fc-79d1da9dc71f에서MuJoCo
+7b484898-7bc7-4bae-8665-801b725c54e5, Gazebo18dd0d53-8dd6-48ad-9da1-cd5994ea300b
+모두PASS. 실제취소결과·미구현실패보존·5runtime노드/엔진exit0·강제정리없음·잔여없음.
+before/after 감사에서제품/설치본 불변,168소스(시험추가1)/380설치 확인.
+
+collect_final.py의 최종 교차 감사PASS:22native/양엔진legacy2, 원본artifact 크기/해시,
+소스archive167+168해시,267명령 결과267,17취소요청 실제terminal17(16CANCELED5,
+1SUCCEEDED4),최종pending없음. 기존legacy1FAIL은 summary에도 명시적으로 포함한다.
+FINAL_POST_TRIAL_AUDIT도PASS: 일반UID1000, 소유runtime/엔진없음,
+외부underlay c261f5552edf124d1000a23fb25b6c07cadeb807 clean. 이전장변경없음.
+실제종단인수는PASS이며 문서·증거게시를 준비한다. 원격동명브랜치는2026-10-22조회에서없었다.
+무권한네트워크조회1회는연결거절, 승인된네트워크읽기조회는성공했다. 시스템관리자권한은없다.
+최종SHA는non-force push후 로컬/원격ref를 대조해 최종전달한다. main/PR/13.5는건드리지않는다.

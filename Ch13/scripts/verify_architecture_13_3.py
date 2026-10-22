@@ -101,6 +101,10 @@ class Probe(Node):
         goal.target_pose.pose.position.x = 0.3
         goal.target_pose.pose.position.z = 0.4
         goal.target_pose.pose.orientation.w = 1.0
+        # Synthetic rehearsal capture: preserve this header while allowing the
+        # separate processes to consume /clock before delivering the goal. This
+        # is one bounded input delay, not restamping, retry or a safety exemption.
+        self.pump(.1)
         future = self.pick.send_goal_async(
             goal, feedback_callback=lambda msg: self.feedback.append(msg.feedback.current_state))
         self.until(future.done)

@@ -146,3 +146,9 @@ Apache-2.0/BSD-3-Clause 저작권·라이선스를 보존하고 Ch13 namespace/p
 외부 checkout/underlay 원본은 수정·재설치하지 않았다. trajectory·파라미터 구현은 설치된
 공개 API/라이브러리로 재사용하며 복사하지 않는다. C++ 경쟁 재현·유계 프로토콜 worker·
 설치/실제 매핑 감사와 회귀는 Ch13 작성 코드다. 비전 외 경로의 기본 controller는 유지한다.
+
+최종 런타임 동결은 `f2fa0eba4c042b00bb70f15b4066869ed370d84f`의167소스/380설치
+해시(`completion-f8c0bed5/final-v5/frozen-source.json`)를 따른다. 이후 변경한
+`verify_architecture_13_3.py`의 합성 목표 전달 순서와 `test_architecture_probe_time.py`는
+Ch13 작성 코드이며 제3자 복사는 없다. 해당 두 파일만의 해시 차이와 원본·설치 동일성은
+`legacy-clock-final/frozen-source.json` 및 `after-audit.json`으로 별도 검증한다.

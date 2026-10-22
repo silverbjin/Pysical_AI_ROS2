@@ -1,0 +1,54 @@
+.F.......                                                                [100%]
+=================================== FAILURES ===================================
+________ test_rejected_future_image_has_capture_linked_ingress_evidence ________
+
+    def test_rejected_future_image_has_capture_linked_ingress_evidence():
+        rclpy.init(domain_id=146)
+        detector = ObjectDetector(parameter_overrides=[
+            Parameter('backend', value='color_fixture'), Parameter('trace_enabled', value=True),
+            Parameter('trace_run_id', value='f8c0bed5-cdac-43d8-81ff-84ab88360cdb')])
+        peer = Node('detector_rejection_peer')
+        executor = SingleThreadedExecutor()
+        executor.add_node(peer)
+        events = []
+        sub = peer.create_subscription(String, '/vision/detector_status',
+                                       lambda msg: events.append(json.loads(msg.data)), 50)
+        try:
+            now = detector.get_clock().now().nanoseconds / 1e9
+            calibration = info(now)
+            calibration.width, calibration.height = 100, 80
+            detector.on_info(calibration)
+            rgb = stamp(Image(), now + .2)
+            rgb.width, rgb.height, rgb.step, rgb.encoding = 100, 80, 300, 'bgr8'
+            rgb.data = bytes(80 * 300)
+>           detector.on_rgb(rgb)
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/object_detector.py:158: in on_rgb
+    self.input_event(msg, 'INPUT_REJECTED', reason=reason)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_vision.object_detector.ObjectDetector object at 0x706b1c104530>
+image = sensor_msgs.msg.Image(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1792583325, nanosec=486923520),..., 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+status = 'INPUT_REJECTED', details = {'reason': 'FUTURE_CAPTURE'}
+
+    def input_event(self, image, status, **details):
+        """Bounded capture-linked evidence, including frames never put in a slot."""
+        if not self.trace.enabled or self.input_events >= 20000:
+            return
+        self.input_events += 1
+>       self.report(status, run_id=self.trace.run_id, sequence=self.input_events,
+                    capture_ns=image.header.stamp.sec*1_000_000_000+image.header.stamp.nanosec,
+                    source_frame=image.header.frame_id, monotonic_ns=time.monotonic_ns(),
+                    ros_now_ns=self.get_clock().now().nanoseconds, **details)
+E       TypeError: ObjectDetector.report() got multiple values for argument 'reason'
+
+Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/object_detector.py:168: TypeError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792583325.283745381] [object_detector]: explicit detector backend=color_fixture, max_rate_hz=10.0
+[INFO] [1792583325.309937754] [object_detector]: trace_totals {"attempted": 0, "dropped": 0, "emitted": 0, "errors": 0, "oversize": 0, "producer_id": "c5a9bbf2-ec8c-4240-afec-5d3e2d039a03", "run_id": "f8c0bed5-cdac-43d8-81ff-84ab88360cdb", "topic": "/vision/detector_trace"}
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/detector-input-green.xml -
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py::test_rejected_future_image_has_capture_linked_ingress_evidence
+1 failed, 8 passed in 6.37s

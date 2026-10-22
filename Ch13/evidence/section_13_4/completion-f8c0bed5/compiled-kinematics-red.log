@@ -1,0 +1,35 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose[positions0] _
+
+chain = <integrated_robot_vision.kinematics.KinematicChain object at 0x7a92ccb6d610>
+positions = (0.01, -0.02, 0.03, -0.01, 0.02, 0.04)
+
+    @pytest.mark.parametrize('positions', [(.01,-.02,.03,-.01,.02,.04),
+                                          (-.02,.01,-.03,.02,-.01,-.02)])
+    def test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose(chain, positions):
+        q = dict(zip(ARM,positions))
+>       pose, axes = chain.camera_kinematics(q)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'KinematicChain' object has no attribute 'camera_kinematics'
+
+Ch13/tests/test_section_13_4_servo.py:59: AttributeError
+_ test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose[positions1] _
+
+chain = <integrated_robot_vision.kinematics.KinematicChain object at 0x7a92c44aa840>
+positions = (-0.02, 0.01, -0.03, 0.02, -0.01, -0.02)
+
+    @pytest.mark.parametrize('positions', [(.01,-.02,.03,-.01,.02,.04),
+                                          (-.02,.01,-.03,.02,-.01,-.02)])
+    def test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose(chain, positions):
+        q = dict(zip(ARM,positions))
+>       pose, axes = chain.camera_kinematics(q)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'KinematicChain' object has no attribute 'camera_kinematics'
+
+Ch13/tests/test_section_13_4_servo.py:59: AttributeError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/compiled-kinematics-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_servo.py::test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose[positions0]
+FAILED Ch13/tests/test_section_13_4_servo.py::test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose[positions1]
+2 failed, 10 deselected in 7.68s

@@ -1,0 +1,26 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_baseline_requires_three_unique_precontrol_measurements __________
+
+    def test_baseline_requires_three_unique_precontrol_measurements():
+        samples = [dict(capture_ns=11, wall=10.1, pixel_error=6.),
+                   dict(capture_ns=12, wall=10.2, pixel_error=5.),
+                   dict(capture_ns=12, wall=10.3, pixel_error=5.)]
+>       assert runner.tracking_baseline(samples, 10.) is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'tracking_baseline'
+
+Ch13/tests/test_tracking_baseline.py:9: AttributeError
+________ test_elapsed_warmup_cannot_replace_missing_or_invalid_baseline ________
+
+    def test_elapsed_warmup_cannot_replace_missing_or_invalid_baseline():
+>       assert runner.tracking_baseline([], 10.) is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_vision_13_4' has no attribute 'tracking_baseline'
+
+Ch13/tests/test_tracking_baseline.py:18: AttributeError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/baseline-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_tracking_baseline.py::test_baseline_requires_three_unique_precontrol_measurements
+FAILED Ch13/tests/test_tracking_baseline.py::test_elapsed_warmup_cannot_replace_missing_or_invalid_baseline
+2 failed in 3.16s

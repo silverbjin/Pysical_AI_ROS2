@@ -1,0 +1,23 @@
+...................................F...                                  [100%]
+=================================== FAILURES ===================================
+_ test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_members _
+
+    def test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_members():
+        runner = importlib.import_module('run_vision_13_4')
+        process = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(.2)'],
+                                   start_new_session=True)
+        unrelated = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(5)'],
+                                     start_new_session=True)
+        try:
+            with pytest.raises(ValueError):
+                runner.wait_owned_members_exit(process, [unrelated.pid], timeout=.05)
+>           assert runner.wait_owned_members_exit(process, [process.pid], timeout=2.)
+E           AssertionError: assert False
+E            +  where False = <function wait_owned_members_exit at 0x77f8afa9b4c0>(<Popen: returncode: None args: ['/home/jinho/ch13_vision_13_4_venv/bin/pytho...>, [1163], timeout=2.0)
+E            +    where <function wait_owned_members_exit at 0x77f8afa9b4c0> = <module 'run_vision_13_4' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_vision_13_4.py'>.wait_owned_members_exit
+
+Ch13/tests/test_section_13_4_runner.py:329: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/runtime-reaping-green2.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_4_runner.py::test_native_stop_wait_is_bounded_and_only_accepts_owned_process_group_members
+1 failed, 38 passed in 60.48s (0:01:00)

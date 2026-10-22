@@ -1,0 +1,56 @@
+...............F........................................................ [ 19%]
+........................................................................ [ 38%]
+............F........................................................... [ 58%]
+........................................................................ [ 77%]
+........................................................................ [ 97%]
+...........                                                              [100%]
+=================================== FAILURES ===================================
+_________ test_gazebo_launch_has_one_spawn_and_all_controller_spawners _________
+
+    def test_gazebo_launch_has_one_spawn_and_all_controller_spawners():
+        path = PKG / "launch/gazebo.launch.py"
+        ast.parse(path.read_text(encoding="utf-8"))
+        source = path.read_text(encoding="utf-8")
+        assert source.count("executable='create'") == 1
+        assert 'control_backend:=gazebo' in source
+        assert "gz_sim.launch.py" in source
+        for controller in (
+            "joint_state_broadcaster",
+            "leg_position_controller",
+            "arm_trajectory_controller",
+            "gripper_position_controller",
+        ):
+>           assert source.count(f"'{controller}'") == 1
+E           assert 2 == 1
+E            +  where 2 = <built-in method count of str object at 0x18f52df0>("'arm_trajectory_controller'")
+E            +    where <built-in method count of str object at 0x18f52df0> = '# Copyright 2026 Jinho\n#\n# Licensed under the Apache License, Version 2.0 (the "License");\n# you may not use this ...       DeclareLaunchArgument(\'world\', default_value=\'\'),\n        OpaqueFunction(function=launch_nodes),\n    ])\n'.count
+
+Ch13/tests/test_section_13_2_gazebo.py:38: AssertionError
+_ test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity _
+
+    def test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity():
+        from ament_index_python.packages import get_package_prefix
+        from verify_all_13_4 import audit_installed_paths
+        prefix = Path(get_package_prefix('integrated_robot_camera')).parent
+        repo = Path(__file__).resolve().parents[2]
+        # conftest intentionally puts source modules first. Do not weaken the audit
+        # to accept that; execute the installed audit in a fresh interpreter instead.
+        with pytest.raises(RuntimeError, match='stale Python module'):
+            audit_installed_paths(prefix, repo)
+        rows = json.loads(subprocess.check_output([sys.executable,
+            str(repo/'Ch13/scripts/verify_all_13_4.py'), '--audit-install-prefix', str(prefix)],
+            text=True, timeout=30.))
+>       assert set(rows) == {'integrated_robot_camera', 'integrated_robot_description',
+                             'integrated_robot_interfaces', 'integrated_robot_runtime', 'integrated_robot_vision'}
+E       AssertionError: assert {'integrated_...robot_vision'} == {'integrated_...robot_vision'}
+E         
+E         Extra items in the left set:
+E         'integrated_robot_controller'
+E         Use -v to get more diff
+
+Ch13/tests/test_section_13_4_summary.py:52: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/source-final-v4.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_2_gazebo.py::test_gazebo_launch_has_one_spawn_and_all_controller_spawners
+FAILED Ch13/tests/test_section_13_4_summary.py::test_fresh_install_audit_covers_five_packages_and_camera_source_binary_identity
+2 failed, 369 passed in 156.35s (0:02:36)

@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_detector_bounds_opencv_pool_before_inference _______________
+
+    def test_detector_bounds_opencv_pool_before_inference():
+        import cv2
+        previous = cv2.getNumThreads()
+        cv2.setNumThreads(8)
+        rclpy.init(domain_id=146)
+        detector = None
+        try:
+            detector = ObjectDetector(parameter_overrides=[Parameter('backend', value='color_fixture')])
+            image = np.zeros((240,320,3), np.uint8)
+            image[100:130,150:180,2] = 255
+            assert len(detector.backend.detect(image)) == 1
+>           assert cv2.getNumThreads() == 1, 'detector consumed an unbudgeted OpenCV worker pool'
+E           AssertionError: detector consumed an unbudgeted OpenCV worker pool
+E           assert 8 == 1
+E            +  where 8 = <built-in function getNumThreads>()
+E            +    where <built-in function getNumThreads> = <module 'cv2' from '/home/jinho/ch13_vision_13_4_venv/lib/python3.12/site-packages/cv2/__init__.py'>.getNumThreads
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py:33: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792588160.919304192] [object_detector]: explicit detector backend=color_fixture, max_rate_hz=10.0
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/opencv-budget-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py::test_detector_bounds_opencv_pool_before_inference
+1 failed, 9 deselected in 5.23s

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.489" timestamp="2026-10-21T21:14:39.403667+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_runtime_shutdown_order" name="test_owned_runtime_stops_and_joins_before_engine_phase" time="0.584"><failure message="AttributeError: module 'run_vision_13_4' has no attribute 'stop_owned_runtime_nodes'">tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-6/test_owned_runtime_stops_and_j0')
+
+    def test_owned_runtime_stops_and_joins_before_engine_phase(tmp_path):
+        entry = tmp_path/'lib/integrated_robot_runtime/manipulation_node'
+        entry.parent.mkdir(parents=True)
+        entry.write_text('import os,signal,sys\n'
+                         'signal.signal(signal.SIGINT,lambda *_:sys.exit(0))\n'
+                         'print(os.getpid(),flush=True)\n'
+                         'signal.pause()\n')
+        parent = ('import subprocess,sys; '
+                  f'p=subprocess.Popen([sys.executable,{str(entry)!r}]); '
+                  'raise SystemExit(p.wait())')
+        process = subprocess.Popen([sys.executable, '-c', parent], stdout=subprocess.PIPE,
+                                   text=True, start_new_session=True)
+        try:
+            child_pid = int(process.stdout.readline())
+&gt;           record = runner.stop_owned_runtime_nodes(process)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'run_vision_13_4' has no attribute 'stop_owned_runtime_nodes'
+
+Ch13/tests/test_runtime_shutdown_order.py:25: AttributeError</failure></testcase></testsuite></testsuites>

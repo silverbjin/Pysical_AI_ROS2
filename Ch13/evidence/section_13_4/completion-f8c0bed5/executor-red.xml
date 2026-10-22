@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="4.574" timestamp="2026-10-21T16:05:38.046950+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_runtime_cleanup" name="test_one_thread_mode_runs_callback_inline_and_closes_ros" time="0.657"><failure message="assert [138189297678016] == [138189998131008]&#10;  &#10;  At index 0 diff: 138189297678016 != 138189998131008&#10;  Use -v to get more diff">def test_one_thread_mode_runs_callback_inline_and_closes_ros():
+        """A pool in the one-thread mode reintroduces the measured clock handoff cost."""
+        from rclpy.node import Node
+        owner = threading.get_ident()
+        callbacks = []
+    
+        class Probe(Node):
+            def __init__(self):
+                super().__init__('inline_executor_probe')
+                self.timer = self.create_timer(.02, self.finish)
+    
+            def finish(self):
+                self.timer.cancel()
+                callbacks.append(threading.get_ident())
+                os.kill(os.getpid(), signal.SIGINT)
+    
+        spin(Probe, threads=1)
+&gt;       assert callbacks == [owner]
+E       assert [138189297678016] == [138189998131008]
+E         
+E         At index 0 diff: 138189297678016 != 138189998131008
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_runtime_cleanup.py:29: AssertionError</failure></testcase><testcase classname="test.test_runtime_cleanup" name="test_constructor_failure_closes_context_and_restores_sigint_handler" time="0.012" /></testsuite></testsuites>

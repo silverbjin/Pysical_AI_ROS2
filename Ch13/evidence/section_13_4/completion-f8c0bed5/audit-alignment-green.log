@@ -1,0 +1,35 @@
+.F......................                                                 [100%]
+=================================== FAILURES ===================================
+_________ test_gazebo_launch_has_one_spawn_and_all_controller_spawners _________
+
+    def test_gazebo_launch_has_one_spawn_and_all_controller_spawners():
+        from launch import LaunchContext
+        from launch_ros.actions import Node
+    
+        path = PKG / "launch/gazebo.launch.py"
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        executables = [keyword.value.value for node in ast.walk(tree)
+                       if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                       and node.func.id == 'Node' for keyword in node.keywords
+                       if keyword.arg == 'executable' and isinstance(keyword.value, ast.Constant)]
+        assert executables.count('create') == 1
+        assert 'control_backend:=gazebo' in source
+        assert "gz_sim.launch.py" in source
+        declarations = [node.value for node in ast.walk(tree) if isinstance(node, ast.Assign)
+                        and any(isinstance(target, ast.Name) and target.id == 'spawners'
+                                for target in node.targets)]
+        assert len(declarations) == 1
+        # Evaluate the real spawner declaration; another use of a controller name in
+        # YAML selection must not look like a second command owner.
+        spawners = eval(compile(ast.Expression(declarations[0]), str(path), 'eval'), {'Node': Node})
+        context = LaunchContext()
+>       commands = [[part.perform(context) for part in node.cmd] for node in spawners]
+                     ^^^^^^^^^^^^
+E       AttributeError: 'list' object has no attribute 'perform'
+
+Ch13/tests/test_section_13_2_gazebo.py:47: AttributeError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/audit-alignment-green.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_section_13_2_gazebo.py::test_gazebo_launch_has_one_spawn_and_all_controller_spawners
+1 failed, 23 passed in 14.31s

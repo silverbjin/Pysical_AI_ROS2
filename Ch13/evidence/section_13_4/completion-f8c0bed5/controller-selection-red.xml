@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="3.588" timestamp="2026-10-21T23:10:44.217005+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_controller_selection" name="test_vision_uses_isolated_controller_without_changing_legacy_configuration[mujoco]" time="0.027"><failure message="TypeError: materialize_controller_config() got an unexpected keyword argument 'vision'">engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine',['mujoco','gazebo'])
+    def test_vision_uses_isolated_controller_without_changing_legacy_configuration(engine):
+        path=PKG/'launch'/f'{engine}.launch.py'
+        spec=importlib.util.spec_from_file_location('ch13_controller_'+engine,path)
+        module=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        source=PKG/'config/controllers.yaml'
+        original=source.read_bytes()
+        legacy=yaml.safe_load(Path(module.materialize_controller_config(source)).read_text())
+&gt;       vision=yaml.safe_load(Path(module.materialize_controller_config(source,vision=True)).read_text())
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: materialize_controller_config() got an unexpected keyword argument 'vision'
+
+Ch13/tests/test_controller_selection.py:20: TypeError</failure></testcase><testcase classname="Ch13.tests.test_controller_selection" name="test_vision_uses_isolated_controller_without_changing_legacy_configuration[gazebo]" time="0.033"><failure message="TypeError: materialize_controller_config() got an unexpected keyword argument 'vision'">engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine',['mujoco','gazebo'])
+    def test_vision_uses_isolated_controller_without_changing_legacy_configuration(engine):
+        path=PKG/'launch'/f'{engine}.launch.py'
+        spec=importlib.util.spec_from_file_location('ch13_controller_'+engine,path)
+        module=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        source=PKG/'config/controllers.yaml'
+        original=source.read_bytes()
+        legacy=yaml.safe_load(Path(module.materialize_controller_config(source)).read_text())
+&gt;       vision=yaml.safe_load(Path(module.materialize_controller_config(source,vision=True)).read_text())
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: materialize_controller_config() got an unexpected keyword argument 'vision'
+
+Ch13/tests/test_controller_selection.py:20: TypeError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,46 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_launch_failure_keeps_original_error_and_cleanup_result __________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-3/test_launch_failure_keeps_orig0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x78d1186f5cd0>
+
+    def test_launch_failure_keeps_original_error_and_cleanup_result(tmp_path, monkeypatch):
+        monkeypatch.setattr(sys, 'argv', ['run_architecture', '--engine', 'gazebo',
+                                         '--output-dir', str(tmp_path)])
+        def fail_launch(*args, **kwargs):
+            raise OSError('intentional launch failure')
+        monkeypatch.setattr(runner.subprocess, 'Popen', fail_launch)
+        with pytest.raises(RuntimeError, match='architecture or normal shutdown failed'):
+>           runner.main()
+
+Ch13/tests/test_legacy_shutdown.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/scripts/run_architecture_13_3.py:112: in main
+    runtime_log = (output / 'runtime.log').read_text(encoding='utf-8')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/pathlib.py:1029: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/tmp/pytest-of-jinho/pytest-3/test_launch_failure_keeps_orig0/runtime.log')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-jinho/pytest-3/test_launch_failure_keeps_orig0/runtime.log'
+
+/usr/lib/python3.12/pathlib.py:1015: FileNotFoundError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/legacy-launch-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_legacy_shutdown.py::test_launch_failure_keeps_original_error_and_cleanup_result
+1 failed, 1 deselected in 2.99s

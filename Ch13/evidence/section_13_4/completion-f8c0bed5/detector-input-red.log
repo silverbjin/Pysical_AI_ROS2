@@ -1,0 +1,59 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_detector_requests_reliable_bounded_rgb_and_calibration __________
+
+    def test_detector_requests_reliable_bounded_rgb_and_calibration():
+        from rclpy.qos import ReliabilityPolicy, HistoryPolicy
+        rclpy.init(domain_id=146)
+        detector = ObjectDetector(parameter_overrides=[Parameter('backend', value='color_fixture')])
+        try:
+            for sub in (detector.rgb_sub, detector.info_sub):
+>               assert sub.qos_profile.reliability == ReliabilityPolicy.RELIABLE
+E               AssertionError: assert <ReliabilityPolicy.BEST_EFFORT: 2> == <ReliabilityPolicy.RELIABLE: 1>
+E                +  where <ReliabilityPolicy.BEST_EFFORT: 2> = <rclpy.qos.QoSProfile object at 0x7b28a340fa00>.reliability
+E                +    where <rclpy.qos.QoSProfile object at 0x7b28a340fa00> = <rclpy.subscription.Subscription object at 0x7b2898163890>.qos_profile
+E                +  and   <ReliabilityPolicy.RELIABLE: 1> = <enum 'ReliabilityPolicy'>.RELIABLE
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py:28: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792583252.520951521] [object_detector]: explicit detector backend=color_fixture, max_rate_hz=10.0
+________ test_rejected_future_image_has_capture_linked_ingress_evidence ________
+
+    def test_rejected_future_image_has_capture_linked_ingress_evidence():
+        rclpy.init(domain_id=146)
+        detector = ObjectDetector(parameter_overrides=[
+            Parameter('backend', value='color_fixture'), Parameter('trace_enabled', value=True),
+            Parameter('trace_run_id', value='f8c0bed5-cdac-43d8-81ff-84ab88360cdb')])
+        peer = Node('detector_rejection_peer')
+        executor = SingleThreadedExecutor()
+        executor.add_node(peer)
+        events = []
+        sub = peer.create_subscription(String, '/vision/detector_status',
+                                       lambda msg: events.append(json.loads(msg.data)), 50)
+        try:
+            now = detector.get_clock().now().nanoseconds / 1e9
+            calibration = info(now)
+            calibration.width, calibration.height = 100, 80
+            detector.on_info(calibration)
+            rgb = stamp(Image(), now + .2)
+            rgb.width, rgb.height, rgb.step, rgb.encoding = 100, 80, 300, 'bgr8'
+            rgb.data = bytes(80 * 300)
+            detector.on_rgb(rgb)
+            end = time.monotonic() + .2
+            while time.monotonic() < end:
+                executor.spin_once(timeout_sec=.01)
+            key = rgb.header.stamp.sec*1_000_000_000 + rgb.header.stamp.nanosec
+            matching = [event for event in events if event.get('capture_ns') == key]
+>           assert any(event['status'] == 'INPUT_RECEIVED' for event in matching)
+E           assert False
+E            +  where False = any(<generator object test_rejected_future_image_has_capture_linked_ingress_evidence.<locals>.<genexpr> at 0x7b28980b1630>)
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py:61: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792583252.585921640] [object_detector]: explicit detector backend=color_fixture, max_rate_hz=10.0
+[INFO] [1792583252.822244061] [object_detector]: trace_totals {"attempted": 0, "dropped": 0, "emitted": 0, "errors": 0, "oversize": 0, "producer_id": "68180cad-a44d-4b90-bc37-57d241c66336", "run_id": "f8c0bed5-cdac-43d8-81ff-84ab88360cdb", "topic": "/vision/detector_trace"}
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/detector-input-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py::test_detector_requests_reliable_bounded_rgb_and_calibration
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py::test_rejected_future_image_has_capture_linked_ingress_evidence
+2 failed, 7 deselected in 3.99s

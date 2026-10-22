@@ -1,0 +1,43 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_vision_uses_isolated_controller_without_changing_legacy_configuration[mujoco] _
+
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine',['mujoco','gazebo'])
+    def test_vision_uses_isolated_controller_without_changing_legacy_configuration(engine):
+        path=PKG/'launch'/f'{engine}.launch.py'
+        spec=importlib.util.spec_from_file_location('ch13_controller_'+engine,path)
+        module=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        source=PKG/'config/controllers.yaml'
+        original=source.read_bytes()
+        legacy=yaml.safe_load(Path(module.materialize_controller_config(source)).read_text())
+>       vision=yaml.safe_load(Path(module.materialize_controller_config(source,vision=True)).read_text())
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: materialize_controller_config() got an unexpected keyword argument 'vision'
+
+Ch13/tests/test_controller_selection.py:20: TypeError
+_ test_vision_uses_isolated_controller_without_changing_legacy_configuration[gazebo] _
+
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine',['mujoco','gazebo'])
+    def test_vision_uses_isolated_controller_without_changing_legacy_configuration(engine):
+        path=PKG/'launch'/f'{engine}.launch.py'
+        spec=importlib.util.spec_from_file_location('ch13_controller_'+engine,path)
+        module=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        source=PKG/'config/controllers.yaml'
+        original=source.read_bytes()
+        legacy=yaml.safe_load(Path(module.materialize_controller_config(source)).read_text())
+>       vision=yaml.safe_load(Path(module.materialize_controller_config(source,vision=True)).read_text())
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: materialize_controller_config() got an unexpected keyword argument 'vision'
+
+Ch13/tests/test_controller_selection.py:20: TypeError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/controller-selection-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_controller_selection.py::test_vision_uses_isolated_controller_without_changing_legacy_configuration[mujoco]
+FAILED Ch13/tests/test_controller_selection.py::test_vision_uses_isolated_controller_without_changing_legacy_configuration[gazebo]
+2 failed in 3.61s

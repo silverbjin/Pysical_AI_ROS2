@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_owned_mapping_rejects_unloaded_library_and_records_actual_child _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-13/test_owned_mapping_rejects_unl0')
+
+    def test_owned_mapping_rejects_unloaded_library_and_records_actual_child(tmp_path):
+        child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(2)'],start_new_session=True)
+        try:
+            maps=Path(f'/proc/{child.pid}/maps')
+            end=time.monotonic()+1
+            lines=[]
+            while time.monotonic()<end:
+                lines=[line for line in maps.read_text().splitlines() if '/libc.so' in line]
+                if lines:
+                    break
+                time.sleep(.005)
+            assert lines
+            expected=Path(lines[0].split()[-1]).resolve()
+>           audit=runner.mapped_owned_library(child,expected)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'run_vision_13_4' has no attribute 'mapped_owned_library'. Did you mean: 'mapped_camera_library'?
+
+Ch13/tests/test_controller_mapping.py:26: AttributeError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/controller-mapping-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_controller_mapping.py::test_owned_mapping_rejects_unloaded_library_and_records_actual_child
+1 failed in 5.66s

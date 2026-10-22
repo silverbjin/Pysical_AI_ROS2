@@ -1,0 +1,45 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_camera_bridge_creates_all_three_reliable_publishers ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_camera_bridge_creates_all0')
+
+    def test_camera_bridge_creates_all_three_reliable_publishers(tmp_path):
+        config = (Path(__file__).resolve().parents[2] / 'integrated_robot_description'
+                  / 'config/vision_bridge.yaml')
+        topics = ('/camera/color/image_raw', '/camera/aligned_depth_to_color/image_raw',
+                  '/camera/color/camera_info')
+        rclpy.init()
+        node = rclpy.create_node('bridge_contract_observer')
+        with (tmp_path / 'bridge.log').open('w+') as log:
+            process = subprocess.Popen(
+                ['ros2', 'run', 'ros_gz_bridge', 'parameter_bridge', '--ros-args',
+                 '-p', f'config_file:={config}', '-r', '__node:=bridge_contract'],
+                stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            try:
+                deadline = time.monotonic() + 15
+                endpoints = {}
+                while time.monotonic() < deadline:
+                    rclpy.spin_once(node, timeout_sec=.1)
+                    endpoints = {topic: [entry for entry in node.get_publishers_info_by_topic(topic)
+                                         if entry.node_name == 'bridge_contract'] for topic in topics}
+                    if all(endpoints.values()) or process.poll() is not None:
+                        break
+                log.flush()
+                log.seek(0)
+>               assert all(endpoints.values()), log.read()
+E               AssertionError: [ERROR] [1792565840.507017872] [BridgeConfig]: Could not parse entry: Invalid QoS profile 'DEFAULT'
+E                 [ERROR] [1792565840.507136397] [BridgeConfig]: Could not parse entry: Invalid QoS profile 'DEFAULT'
+E                 [ERROR] [1792565840.507148955] [BridgeConfig]: Could not parse entry: Invalid QoS profile 'DEFAULT'
+E                 [INFO] [1792565840.507992472] [bridge_contract]: Creating GZ->ROS Bridge: [/native/odom (gz.msgs.Odometry) -> /native/odom (nav_msgs/msg/Odometry)] (Lazy 0)
+E                 
+E               assert False
+E                +  where False = all(dict_values([[], [], []]))
+E                +    where dict_values([[], [], []]) = <built-in method values of dict object at 0x7e32495927c0>()
+E                +      where <built-in method values of dict object at 0x7e32495927c0> = {'/camera/aligned_depth_to_color/image_raw': [], '/camera/color/camera_info': [], '/camera/color/image_raw': []}.values
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_gazebo_bridge_config.py:34: AssertionError
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_4/completion-f8c0bed5/bridge-red.xml -
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_vision/test/test_gazebo_bridge_config.py::test_camera_bridge_creates_all_three_reliable_publishers
+1 failed in 20.14s

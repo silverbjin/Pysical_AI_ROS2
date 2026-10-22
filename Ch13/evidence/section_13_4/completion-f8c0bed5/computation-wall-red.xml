@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.033" timestamp="2026-10-22T02:11:31.657997+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_tracking_ros" name="test_new_input_does_not_renew_computed_targets_wall_deadline" time="0.995"><failure message="AssertionError: new input renewed the old computation wall TTL&#10;assert 1 == 0&#10; +  where 1 = &lt;integrated_robot_runtime.tracking_support.TrackingSupport object at 0x77e59a7d70b0&gt;.goal_count">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x77e59aa83770&gt;
+
+    def test_new_input_does_not_renew_computed_targets_wall_deadline(monkeypatch):
+        """Capture age and joint age can be fresh while the computed target's wall TTL expires."""
+        import uuid
+        rclpy.init(domain_id=148)
+        node = ManipulationNode()
+        try:
+            tracking = node.tracking
+            tracking.timer.cancel()
+            tracking.chain = object()
+            tracking.reference = dict.fromkeys(ARM_NAMES, 0.)
+            tracking.target = TrackedTarget(valid=True)
+            tracking.target.header.stamp = node.get_clock().now().to_msg()
+            tracking.target_at = time.monotonic()-.29
+            tracking.joints.append((node.get_clock().now().nanoseconds, time.monotonic(),
+                                    tracking.reference.copy(), list(STAND)))
+            # Isolate the dispatch boundary: all unrelated lifecycle/TF/model gates
+            # are already satisfied, and the selected joint remains fresh.
+            monkeypatch.setattr(tracking, 'conditions', lambda *_:
+                                dict.fromkeys(tracking.guard.CONDITIONS, True))
+            tracking.token = tracking.guard.enable(dict.fromkeys(tracking.guard.CONDITIONS, True))
+            tracking.session = node.busy = True
+    
+            def calculate(now, wall, work):
+                time.sleep(.04)
+                tracking.target_at = time.monotonic()  # a newer input is received during computation
+                return tracking.reference.copy(), work['joints'][-1]
+    
+            monkeypatch.setattr(tracking, 'current_goal', calculate)
+            # No physical transport is attached to this boundary characterization.
+            monkeypatch.setattr(node.arm_owner, 'send', lambda *_args, **_kwargs:
+                                SimpleNamespace(identifier=uuid.uuid4().bytes, terminal=False))
+            tracking._tick()
+&gt;           assert tracking.goal_count == 0, 'new input renewed the old computation wall TTL'
+E           AssertionError: new input renewed the old computation wall TTL
+E           assert 1 == 0
+E            +  where 1 = &lt;integrated_robot_runtime.tracking_support.TrackingSupport object at 0x77e59a7d70b0&gt;.goal_count
+
+Ch13/ros2_ws/src/integrated_robot_runtime/test/test_tracking_ros.py:348: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,8 +1,9 @@
 # 13.4 종단 인수 변경·리뷰 보고
 
 기준 커밋은 `64f6c0ce91637e90ef44f1dc9c49c7d747adc91f`이며 작업 브랜치는
-`feat/ch13-section-13-4-completion`이다. **최종 인수는 아직 미완료이며, final-v4의 종료 경계 실패를 보완해 재검증 중**이다.
-최종 판정·원격 SHA는 전체 실행과 게시 확인 뒤 이 문서에 확정한다.
+`feat/ch13-section-13-4-completion`이다. **2026-10-22 종단 인수PASS:** 실제13.4 22회,
+양엔진13.3 회귀, 원본 증거·실제 액션 terminal·소스/설치 감사가 모두 통과했다.
+원격 SHA는 게시 뒤 Git 원격 ref와 최종 전달 메시지에서 확인한다.
 
 ## 변경과 근거
 
@@ -33,11 +34,63 @@ sources/ 및 Ch01~Ch12는 수정하지 않았다. 초기 입력/계측 보완에
 
 ## 검증과 증거
 
-최신 소스 시험372PASS, 6패키지 검사199건/오류0/실패0/건너뜀0 및 설치 감사가 통과했다.
+최신 소스 시험374PASS(`source-final-v5-probe`,193.29s), 6패키지 검사199건/
+오류0/실패0/건너뜀0 및 설치 감사가 통과했다. 제품 동결 직전은373PASS였다.
 `final-v4/`의 batch UUID는 `084026ad-ae1f-45c2-9536-1726011a86df`이며 소스167파일과
 설치380파일을 동결했다. 이 batch는10PASS 뒤 영상 손실의clean_shutdown1FAIL로 중단됐다.
 해당 안전 정지·실제 취소 결과와 엔진 종료는 통과했지만 launch가 runtime255를 보고했다.
-`source_archive/`의167파일은 당시 동결 해시와 모두 일치한다. 최종 판정은 새final-v5에서 한다.
+`source_archive/`의167파일은 당시 동결 해시와 모두 일치한다.
+
+### 최신 실제 엔진 결과
+
+`final-v5` batch `4e8c9e6a-b53e-482a-a563-c09276ebfa84`는 구현 커밋
+`f2fa0eba4c042b00bb70f15b4066869ed370d84f`의167소스/380설치를 고정했다.
+원래20회 matrix에 Gazebo 추적2회를 추가한22native가 모두PASS다.
+실제 명령·UUID·촬영 자료는 각 디렉터리의 result/observations/system/trace에 남아 있다.
+
+| 검사 | MuJoCo(snapshot/EGL) | Gazebo |
+|---|---|---|
+| 정적, 각30고유 촬영 / RMS≤.03m | OFF .00313131m, ON .00313140m | .00229323m |
+| 카메라 이동+150ms,30고유 촬영 / RMS≤.05m | .00252216m | .00187220m |
+| 연속 추적 / 픽셀20%이상 감소 | 기본10Hz3회·선택15Hz3회, 각5.20s /91.7%감소 | 3연속, 각5.20s /100%감소 |
+| 실제 YOLO 고정 컵 | 102/102탐지 촬영, 유효3D113 | 182/182탐지 촬영, 유효3D181 |
+| images / tf / joints 손실 | 각각PASS | 각각PASS |
+| 명령·실측 각도/속도·주기 | 모든추적PASS, 최대5Hz/.04rad/.1rad/s 유지 | 모든추적PASS, 같은한계 유지 |
+| 실제 액션 결과·runtime/native 정상종료 | 13회 전부PASS | 9회 전부PASS |
+
+추적·취소·종료는 고정 제품 소스에서 MuJoCo10Hz/15Hz 각각3연속, Gazebo3연속을
+확인했다. 실패한 실행을 빼고 연속 횟수를 재계산하지 않았다. 기본10Hz와 선택15Hz는
+최대 추론 시작 빈도이며 모든 촬영을 처리한다는 보장은 아니다. 실제 컵은COCO class41,
+고정 yolov8n SHA256 `f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36`을
+사용했고 fixture 검출로 fallback하지 않았다.
+
+최초13.3 MuJoCo 회귀는 probe가 만든 합성 목표가 서버의 수신 시계보다56ms 미래여서
+FAIL했다. 안전 거절과 runtime/engine 정상종료는 유효하며 원본 실패는 보존했다.
+서버의 미래50ms/촬영300ms 허용치를 늘리지 않고, **시험 생성기만** 원래header를
+보존한100ms 전달 준비 후1회 전송하도록 보완했다. 제어된실제ROS 경계의RED→GREEN과
+전체소스374PASS 후 `legacy-clock-final`에서 양엔진13.3를 재검증해 모두PASS했다.
+이는 런타임 수정이 아니며, native22회가 사용한 소스·설치본은 바뀌지 않았다.
+새 manifest는 기존167중probe1개 변경과 새회귀1개 추가만 허용하고 모든380설치를 대조한다.
+최종 수집 감사는 이 실패를 별도 항목으로 포함하며 원본 결과를 성공으로 고치지 않는다.
+
+최종 파생 판정은 [FINAL_ACCEPTANCE_SUMMARY.json](../evidence/section_13_4/completion-f8c0bed5/final-v5/FINAL_ACCEPTANCE_SUMMARY.json),
+마지막 읽기 전용 감사는 [FINAL_POST_TRIAL_AUDIT.json](../evidence/section_13_4/completion-f8c0bed5/FINAL_POST_TRIAL_AUDIT.json)이다.
+모든 native 원본 artifact의 크기/SHA256, 명령267건의 실제 결과267건, 취소 요청17건의
+실제 terminal17건을 대조했다. 취소 요청 중16건은CANCELED5,1건은이미 완료된SUCCEEDED4다.
+취소 요청 자체나ACK를CANCELED로 간주하지 않았다. 최종 pending UUID는 모두없다.
+원래167파일 archive와 보완168파일 archive도 각각 manifest와 일치한다.
+보완 manifest SHA256은 `284caaed9391a16d96bf4f42ea5652a7c15b41f2a8a82aadfe430ade19227bdb`다.
+
+13.3 회귀는 시동 순서·50Hz 출력·동기화·겹친 목표 거절·취소 실제 결과·미구현 파지 실패·
+미션 실패 보존·stale pair 거절·inactive 출력 차단을 검사했다. MuJoCo 명령 주기 중앙값
+.018898s/p95 .045139s/max .104857s, Gazebo .020362s/.029862s/.057364s였다.
+이는 중앙값 기반 실습 허용치를 통과한 측정이지, 매20ms의 hard realtime 보장이 아니다.
+두 엔진 모두 runtime5노드 정상종료와 native exit0, 강제정리 없음/잔여없음을 확인했다.
+최종 감사의 일반 사용자UID는1000이며 외부 underlay HEAD는c261f55 그대로 clean이다.
+
+완료된 범위는 **명시적으로 선택한 MuJoCo snapshot/EGL 경로와 Gazebo의13.4**다.
+기존 upstream 카메라 기본값은 비교·호환 경로로 유지했으며 이번 수정을 검증한 경로로
+승격하지 않았다. main 병합·PR·13.5 재개·실로봇 배포 준비는 이 판정에 포함하지 않는다.
 
 최상위 증거는 [이번 실행 기록](SECTION_13_4_COMPLETION_LEDGER_KO.md)과
 [새 evidence](../evidence/section_13_4/completion-f8c0bed5)다.
@@ -78,6 +131,17 @@ trace 누락은 callback 부재로 단정하지 않으며, 관측 범위가 PART
 사용자 지정에 따라 단일 작업자가 구현·자체 리뷰했다. 별도 리뷰 에이전트를 사용하지
 않았으므로 독립 검토보다 제한적이다. 자체 리뷰에서 시작 전 실패의 원래 오류가 누락
 로그 예외로 덮이는 문제와 engine-first 종료 순서를 발견해 실패 회귀 후 보완했다.
+
+| 설계 판단 | 이유·남는 제약 |
+|---|---|
+| 사용자 지정 checkout 재사용 | 기존 측정 자산 보존. 별도 파일시스템 격리는 없음 |
+| 승인 범위 내 세부 변경의 재승인 생략 | 명시적 사용자 지시. 각 근거와 실패를 실행 기록에 공개 |
+| 자체 리뷰 | 네이티브 단일 작업자 지시. 독립 리뷰는 미수행 |
+| 입력 단일 실행기·긴 프로토콜 유계 worker | 측정된 clock/pool 비용 완화. OS 실시간 우선순위 보장은 아님 |
+| 그림자 맵512 | 렌더 비용 완화. 그림자 품질 변경은 있으나 출력 해상도·물리·보정 불변 |
+| 실제spawner/6패키지 기준의 시험 정합 | 소스 문자열 횟수와 예전5패키지 가정을 실제 실행 의미로 교정. 소유권/인수 기준 유지 |
+| 남은matrix에서Gazebo추적 우선 | 미검증 긴 경계를 먼저 판별.22개 label/check는 동일 |
+| 13.3 합성 목표 전달 준비 | 원래header·1회전송·모든서버 안전 검사 유지. 영향받은 양엔진 회귀만 재검증 |
 
 서비스 발견과 액션 발견은 별개다. 기존 ROS 경계 시험의 action_ready 경합은
 액션 서버 준비를 확인한 뒤 신선한 시험 입력을 생성하도록 수정했다. 실패 후 활성화

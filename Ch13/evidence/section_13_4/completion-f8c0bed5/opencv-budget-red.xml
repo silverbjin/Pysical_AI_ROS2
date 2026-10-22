@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.165" timestamp="2026-10-21T22:09:15.824148+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="test.test_detector_node" name="test_detector_bounds_opencv_pool_before_inference" time="1.497"><failure message="AssertionError: detector consumed an unbudgeted OpenCV worker pool&#10;assert 8 == 1&#10; +  where 8 = &lt;built-in function getNumThreads&gt;()&#10; +    where &lt;built-in function getNumThreads&gt; = &lt;module 'cv2' from '/home/jinho/ch13_vision_13_4_venv/lib/python3.12/site-packages/cv2/__init__.py'&gt;.getNumThreads">def test_detector_bounds_opencv_pool_before_inference():
+        import cv2
+        previous = cv2.getNumThreads()
+        cv2.setNumThreads(8)
+        rclpy.init(domain_id=146)
+        detector = None
+        try:
+            detector = ObjectDetector(parameter_overrides=[Parameter('backend', value='color_fixture')])
+            image = np.zeros((240,320,3), np.uint8)
+            image[100:130,150:180,2] = 255
+            assert len(detector.backend.detect(image)) == 1
+&gt;           assert cv2.getNumThreads() == 1, 'detector consumed an unbudgeted OpenCV worker pool'
+E           AssertionError: detector consumed an unbudgeted OpenCV worker pool
+E           assert 8 == 1
+E            +  where 8 = &lt;built-in function getNumThreads&gt;()
+E            +    where &lt;built-in function getNumThreads&gt; = &lt;module 'cv2' from '/home/jinho/ch13_vision_13_4_venv/lib/python3.12/site-packages/cv2/__init__.py'&gt;.getNumThreads
+
+Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py:33: AssertionError</failure></testcase></testsuite></testsuites>

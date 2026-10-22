@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="7.656" timestamp="2026-10-21T22:37:14.184657+09:00" hostname="DESKTOP-4B51LPI"><testcase classname="Ch13.tests.test_section_13_4_servo" name="test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose[positions0]" time="1.463"><failure message="AttributeError: 'KinematicChain' object has no attribute 'camera_kinematics'">chain = &lt;integrated_robot_vision.kinematics.KinematicChain object at 0x7a92ccb6d610&gt;
+positions = (0.01, -0.02, 0.03, -0.01, 0.02, 0.04)
+
+    @pytest.mark.parametrize('positions', [(.01,-.02,.03,-.01,.02,.04),
+                                          (-.02,.01,-.03,.02,-.01,-.02)])
+    def test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose(chain, positions):
+        q = dict(zip(ARM,positions))
+&gt;       pose, axes = chain.camera_kinematics(q)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'KinematicChain' object has no attribute 'camera_kinematics'
+
+Ch13/tests/test_section_13_4_servo.py:59: AttributeError</failure></testcase><testcase classname="Ch13.tests.test_section_13_4_servo" name="test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose[positions1]" time="1.448"><failure message="AttributeError: 'KinematicChain' object has no attribute 'camera_kinematics'">chain = &lt;integrated_robot_vision.kinematics.KinematicChain object at 0x7a92c44aa840&gt;
+positions = (-0.02, 0.01, -0.03, 0.02, -0.01, -0.02)
+
+    @pytest.mark.parametrize('positions', [(.01,-.02,.03,-.01,.02,.04),
+                                          (-.02,.01,-.03,.02,-.01,-.02)])
+    def test_compiled_camera_kinematics_and_jacobian_match_native_at_nonzero_pose(chain, positions):
+        q = dict(zip(ARM,positions))
+&gt;       pose, axes = chain.camera_kinematics(q)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'KinematicChain' object has no attribute 'camera_kinematics'
+
+Ch13/tests/test_section_13_4_servo.py:59: AttributeError</failure></testcase></testsuite></testsuites>
