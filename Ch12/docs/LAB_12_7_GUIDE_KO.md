@@ -89,3 +89,30 @@ quadruped-play --output Ch12/runs/robust-smoke --expected-task robust --steps 10
 ```
 
 `task=robust`와 내부 task=locomotion/goal/avoidance를 구분한다. 기본 설정 파일의 내부 task는 locomotion이다. 지연·노이즈·랜덤화 설정도 manifest에 저장해 재생 환경에 적용한다. ROS 배포에서는 센서/통신 자체가 지연과 잡음을 만들므로 학습 wrapper를 ROS 입력에 다시 중복 적용하지 않는다. 이 차이에 대한 실제 로봇 성능은 검증하지 않았다.
+
+
+---
+
+## 원고 연계 실습 보강 (2026-10-21 리뷰)
+
+**이번 절의 학습 목표:** 도메인 랜덤화·지연·외력·병렬 성능. 알고리즘 구현 성공과 '실제 보행/회피/실기 적합' 판정을 나누어 기록한다. 아래 명령은 모두 저장소 루트에서 실행한다(기존 본문에 독립된 작업 경로 안내가 있는 경우 그 지시를 따른다).
+
+### 따라하기/재현용 최소 경로
+
+```bash
+python -m pip install -e './Ch12[train,test]'
+python -m pytest Ch12/tests/test_robust_env.py -q
+python Ch12/scripts/verify_robust_env.py --output /tmp/ch12-12-7-review
+python Ch12/scripts/benchmark_vec_env.py --output /tmp/ch12-12-7-bench.json --envs 1 2 4 --steps 100
+```
+
+### 관찰 → 원리 설명 → 응용 실험
+
+같은 환경을 `enabled=False`와 `True`로 비교한다. 보상 차이를 모델 강건성의 자동 증거로 해석하지 않는다. 한 번의 0.1 action 임펄스를 입력해 첫 두 명령이 실제 적용되지 않고 지연된 관측에서 과거 행동 이력이 언제 나타나는지 표로 기록한다. 벤치마크의 `start-up`과 `steady transition/s`를 각각 측정하고 CPU 코어 수 이상의 worker 사용은 성능이 감소할 수 있음을 토론한다.
+
+### 독자 제출물과 합격 기준
+
+- 실행 환경(Python, MuJoCo, Gymnasium, SB3, ROS 해당 시), Git SHA, seed, 사용 명령, 로그/JSON/화면 또는 CSV를 제출한다.
+- **합격선:** 동일 시드 물성·초기 자세 재현, nominal 보존, 실제 delayed_action 및 지연 관측, 외력 초기화, n_env별 시작 시간과 transition/s 수치를 구분해 제출한다.
+- 실습을 수행하지 못했거나 해당 장치/GUI/ROS를 사용할 수 없다면 **미실행**으로 기록하며 기존 `evidence/`의 통과 기록을 자신의 결과로 사용하지 않는다.
+- 코드 2차 리뷰는 [SECTION_12_7_REPORT_KO.md](SECTION_12_7_REPORT_KO.md)를 참조한다.

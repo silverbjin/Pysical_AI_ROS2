@@ -37,8 +37,8 @@ class TurtlePatrolNode(Node):
         # 서비스와 액션 서버가 뜰 때까지 대기
         self.wait_for_servers()
         
-        # 첫 이동 시작
-        self.start_forward_motion()
+        # 실제 첫 Pose를 수신하기 전에는 (0, 0)을 시작점으로 가정하지 않는다.
+        self.pose_initialized = False
 
     def wait_for_servers(self):
         """필수 서비스와 액션 서버가 준비될 때까지 기다린다."""
@@ -55,6 +55,10 @@ class TurtlePatrolNode(Node):
         현재 상태(self.state)에 따라 다음에 할 행동을 결정한다.
         """
         self.current_pose = msg
+        if not self.pose_initialized:
+            self.pose_initialized = True
+            self.start_forward_motion()
+            return
 
         # 상태 1: 직진 중일 때
         if self.state == 'FORWARD':

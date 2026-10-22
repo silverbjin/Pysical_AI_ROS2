@@ -36,7 +36,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
         ),
-        launch_arguments={'gz_args': ['-r ', world_file]}.items(),
+        launch_arguments={'gz_args': f'-r {world_file}'}.items(),
     )
 
     # 4. 로봇 스폰 (Topic 방식 사용)
@@ -52,7 +52,7 @@ def generate_launch_description():
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=['--ros-args', '-p', f'config_file:={bridge_config}'],
+        parameters=[{'config_file': bridge_config}],
         output='screen'
     )
 

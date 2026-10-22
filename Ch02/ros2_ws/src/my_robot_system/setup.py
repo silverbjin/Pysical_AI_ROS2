@@ -38,7 +38,8 @@ setup(
             'count_until_server = my_robot_system.count_until_server:main', # 추가
             'count_until_client = my_robot_system.count_until_client:main', # 추가
             'turtle_patrol = my_robot_system.turtle_patrol:main', # 추가
-            'qos_test_node = my_robot_system.qos_test_node:main', # 추가    
+            'qos_test_node = my_robot_system.qos_test_node:main', # 추가
+            'qos_compare_sub = my_robot_system.qos_compare_subscriber:main',    
         ],
     },
 )
