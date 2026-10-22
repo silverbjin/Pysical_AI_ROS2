@@ -35,3 +35,15 @@
 - 기존 제어기 빌드의 deprecated API 경고는 원본 로그에 남기고 새 기능 때문에 관련 없는 소스를 변경하지 않는다.
 - 커밋 시 `.git/index.lock` 때문에 실패했다. Windows/WSL의 Git 프로세스·열린 핸들이 없고, 0바이트 잠금의 시각이 16분 넘게 변하지 않았음을 확인했다. 삭제하지 않고 `.git/index.lock.stale-85670137-e73c-4c72-bcb2-0c73e755088b`로 보존해 정상 Git 동작을 복구했다. 실패한 커밋 뒤 자동 완료 원장에 같은 BASE/HEAD가 들어간 항목은 미완료로 정정하고 실제 커밋 뒤 재시험한다.
 - pytest 원본 실패 로그에는 프레임워크가 출력한 줄 끝 공백이 있다. 원본 증거를 정리해 바꾸지 않고 보존한다. 소스·문서의 whitespace 검사는 raw evidence를 제외한 별도 검사로 적용한다.
+
+## Task 2
+
+- 시작 기준/Task 1 완료 커밋: `01ad4986cf740673dd8452c111b589dde4805a97`.
+- RED: `python -m pytest Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py -q`, **15 failed**, `task2-red.log`.
+- 최초 GREEN: navigation/test 전체 **30 passed**, `task2-green.log`. 전진 기구학은 별도 MuJoCo native 모델의 8자세×4발과 대조했다. 이는 물리 step/ROS/보행 시험이 아닌 오프라인 FK 교차검사다.
+- 자체 검토에서 실제 thigh 상한 4rad와 atan2 주값 범위 차이를 발견했다. q=(0,3.8,0.4)의 유효 자세가 IK에서 거절되는 것을 `task2-angle-wrap-red.log`로 재현했다.
+- 최소 수정: 원래 관절 한계 안의 2π 동등 해를 열거하고 직전 자세에 가까운 해를 선택한다. 작업 공간·관절 한계를 clipping해 통과시키지 않는다.
+- 수정 GREEN: 전체 navigation/test **31 passed, 3.96초**, `task2-angle-wrap-green.log`.
+- 수정 전 패키지 결과 `task2-package.log`와 소스 실행 `task2-all-source.log`는 최종 수정본 증거로 재사용하지 않는다. 수정 후 고정 소스로 `task2-fixed-*`에 재빌드·시험·감사를 수행한다.
+- 수정 후 전체 소스 회귀: **405 passed, 202.55초**, `task2-fixed-all-source.log`.
+- 수정 후 패키지 시험: **31 tests / 0 errors / 0 failures / 0 skipped**, `task2-fixed-package.log`. 새 설치본 byte 감사도 통과했으며 `task2-fixed-install-audit.json`에 해시를 보존한다.

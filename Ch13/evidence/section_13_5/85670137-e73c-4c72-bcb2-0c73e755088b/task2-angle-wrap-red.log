@@ -1,0 +1,59 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_inverse_retains_valid_thigh_above_pi ___________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_inverse_retains_valid_thigh_above_pi(robot_model):
+        q = (0., 3.8, .4)
+        target = fk_leg(robot_model, 'fr_foot', q)
+>       assert ik_leg(robot_model, 'fr_foot', target, previous=q) == pytest.approx(q, abs=1e-7)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_wrap.py:10: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+foot = 'fr_foot'
+p = (0.6208584158390767, -0.15000000000000002, 0.32030713331377925)
+previous = (0.0, 3.8, 0.4)
+
+    def ik_leg(model: ModelContract, foot: str, p: Vec3, previous: Vec3) -> Vec3:
+        if foot not in model.feet:
+            raise ValueError('unknown foot')
+        target, previous_array = np.asarray(p, dtype=float), np.asarray(previous, dtype=float)
+        if (target.shape != (3,) or previous_array.shape != (3,)
+                or not np.isfinite(target).all() or not np.isfinite(previous_array).all()):
+            raise ValueError('finite target and previous angles required')
+        fk_leg(model, foot, previous)  # validate the measured reference against real limits
+        hip, offset, upper, lower, names = _leg_spec(model.urdf, foot)
+        x, y, z = target - hip
+        radial_squared = y*y + z*z - offset*offset
+        if radial_squared <= 0:
+            raise ValueError('unreachable hip offset')
+        solutions = []
+        # Both radial branches are considered; the actual joint limits reject unsafe folds.
+        for local_z in (-math.sqrt(radial_squared), math.sqrt(radial_squared)):
+            hip_angle = math.atan2(z, y) - math.atan2(local_z, offset)
+            hip_angle = math.atan2(math.sin(hip_angle), math.cos(hip_angle))
+            cosine = (x*x + local_z*local_z - upper*upper - lower*lower) / (2*upper*lower)
+            if cosine < -1. - 1e-12 or cosine > 1. + 1e-12:
+                continue
+            # Roundoff at an analytic boundary, not workspace/joint-limit clipping.
+            knee_abs = math.acos(min(1., max(-1., cosine)))
+            for knee in (knee_abs, -knee_abs):
+                thigh = math.atan2(-x, -local_z) - math.atan2(
+                    lower*math.sin(knee), upper + lower*math.cos(knee))
+                q = (hip_angle, thigh, knee)
+                if all(model.limits[n][0] <= value <= model.limits[n][1]
+                       for n, value in zip(names, q)):
+                    if np.linalg.norm(np.asarray(fk_leg(model, foot, q)) - target) < 1e-8:
+                        solutions.append(q)
+        if not solutions:
+>           raise ValueError('unreachable target or joint limit')
+E           ValueError: unreachable target or joint limit
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/leg_kinematics.py:85: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_wrap.py::test_inverse_retains_valid_thigh_above_pi
+1 failed in 1.86s

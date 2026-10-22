@@ -96,11 +96,11 @@ export MUJOCO_GL=egl
 
 **Interfaces:** `validate_bundle(bundle:SensorBundle,ros_ns:int,wall_ns:int,epoch:int)->tuple[bool,str]`, `compile_model(urdf:str)->ModelContract`. FootContacts는 header/epoch/sequence와 4개 발 이름·점·정상력·접촉 여부를 담는다. 점은 odom/m, 정상력은 N이다. MotionState는 header/generation/model hash/state/phase/swing foot/ready/stopped/fault reason을 담으며 carry/crawl 토픽을 구분한다. ApproachObject goal은 object_name/track_id/target_pose(PoseStamped)/source_header, result는 success/error_code/message/reached_pose, feedback은 current_state/distance_remaining이다.
 
-- [ ] **1 RED:** 먼저 G0 기존 소스·설치 기준을 확인한다. `test_duplicate_does_not_refresh_receipt`, `test_epoch_and_names`, 실제 IDL round-trip 시험을 쓴다. stamp=1초·최초 receipt=10초인 중복 sample을 11초에 받아도 receipt=10초이며 wall age 0.20초 초과로 거절됨을 assert한다. NaN/미래 시각/이름 중복도 거절한다.
-- [ ] **2 실행:** `python -m pytest "$CH13_NAV_SRC/test/test_samples.py" "$CH13_NAV_SRC/test/test_interfaces.py" -v`. 새 모듈/IDL 부재에 따른 RED를 기록한다. 무관한 환경 오류를 의도한 실패로 세지 않는다.
-- [ ] **3 GREEN:** 위 타입·검증을 구현하고 새 IDL을 생성한다. ROS ns와 monotonic ns를 명확히 분리한다.
-- [ ] **4 검증:** BUILD 후 같은 시험과 기존 인터페이스 시험이 모두 PASS인지 확인한다.
-- [ ] **5 커밋:** 이 Task 파일만 stage하고 `feat(ch13): define navigation sample and action contracts`로 커밋한다.
+- [x] **1 RED:** 먼저 G0 기존 소스·설치 기준을 확인한다. `test_duplicate_does_not_refresh_receipt`, `test_epoch_and_names`, 실제 IDL round-trip 시험을 쓴다. stamp=1초·최초 receipt=10초인 중복 sample을 11초에 받아도 receipt=10초이며 wall age 0.20초 초과로 거절됨을 assert한다. NaN/미래 시각/이름 중복도 거절한다.
+- [x] **2 실행:** `python -m pytest "$CH13_NAV_SRC/test/test_samples.py" "$CH13_NAV_SRC/test/test_interfaces.py" -v`. 새 모듈/IDL 부재에 따른 RED를 기록한다. 무관한 환경 오류를 의도한 실패로 세지 않는다.
+- [x] **3 GREEN:** 위 타입·검증을 구현하고 새 IDL을 생성한다. ROS ns와 monotonic ns를 명확히 분리한다.
+- [x] **4 검증:** BUILD 후 같은 시험과 기존 인터페이스 시험이 모두 PASS인지 확인한다.
+- [x] **5 커밋:** 이 Task 파일만 stage하고 `feat(ch13): define navigation sample and action contracts`로 커밋한다.
 
 ## Task 2: 실제 다리 IK·지지 여유·CoM
 
