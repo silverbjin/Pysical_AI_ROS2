@@ -24,7 +24,7 @@ Ruling: 독립 에이전트 리뷰 대신 자체 리뷰 — 네이티브 단일 
 - [x] 실제 controller 결과 요청/응답/클라이언트 수신과 취소 소유권을 수정·검증한다.
 - [x] runtime과 Gazebo 종료 순서를 재현·수정한다.
 - [x] 코드 동결, 소스·패키지·설치 감사,20+2 matrix와 간헐 조건 연속3회.
-- [ ] 한글 가이드·리뷰·REUSE·evidence와 non-force push/SHA 검증.
+- [x] 한글 가이드·리뷰·REUSE·evidence와 non-force push/SHA 검증.
 
 ## 증거·다음 재현
 
@@ -447,3 +447,17 @@ FINAL_POST_TRIAL_AUDIT도PASS: 일반UID1000, 소유runtime/엔진없음,
 실제종단인수는PASS이며 문서·증거게시를 준비한다. 원격동명브랜치는2026-10-22조회에서없었다.
 무권한네트워크조회1회는연결거절, 승인된네트워크읽기조회는성공했다. 시스템관리자권한은없다.
 최종SHA는non-force push후 로컬/원격ref를 대조해 최종전달한다. main/PR/13.5는건드리지않는다.
+
+## 게시 확인
+
+구현 f2fa0eb와 최종증거/문서/13.3시험보완 fbea29f8b8c5bbcec7ccead0129918ada24d516e를
+새 feat/ch13-section-13-4-completion에 non-force push했다. git ls-remote의 실제원격SHA와
+로컬HEAD가 fbea29f8b8c5bbcec7ccead0129918ada24d516e로 일치했다. main병합/PR생성없음.
+이 게시 확인 기록은 제품/시험을 바꾸지 않는 후속문서커밋이며, 그 최종HEAD/원격동일성도
+별도로 확인해 최종응답에 남긴다. 원본실패/보존소스/새증거를 모두게시했다.
+
+Windows 기본Git이 깊은 원본보존 경로2개를 Filename too long/삭제처럼 보고했으나
+git -c core.longpaths=true status에서는깨끗하며 파일/해시는 존재했다. 사용자checkout의
+로컬Git설정에만 core.longpaths=true를 적용했고 일반status도깨끗함을 확인했다.
+시스템긴경로정책·전역Git설정·원본파일은변경하지 않았다. 향후Windows의 같은깊이
+checkout에서도 해당Git로컬옵션이 필요할 수 있다.
