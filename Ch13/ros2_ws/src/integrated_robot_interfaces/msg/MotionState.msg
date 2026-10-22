@@ -1,0 +1,9 @@
+std_msgs/Header header
+uint64 generation
+string model_sha256
+string state
+string phase
+string swing_foot
+bool ready
+bool stopped
+string fault_reason

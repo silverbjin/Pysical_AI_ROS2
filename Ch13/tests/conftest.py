@@ -3,5 +3,5 @@ from pathlib import Path
 import sys
 
 SRC = Path(__file__).resolve().parents[1] / 'ros2_ws' / 'src'
-for name in ('integrated_robot_vision', 'integrated_robot_runtime'):
+for name in ('integrated_robot_vision', 'integrated_robot_runtime', 'integrated_robot_navigation'):
     sys.path.insert(0, str(SRC / name))

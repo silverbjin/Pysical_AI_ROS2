@@ -1,0 +1,134 @@
+FFFEEEEEEEEE                                                             [100%]
+==================================== ERRORS ====================================
+__________ ERROR at setup of test_duplicate_does_not_refresh_receipt ___________
+
+    @pytest.fixture
+    def api():
+        spec = importlib.util.find_spec('integrated_robot_navigation')
+>       assert spec is not None, 'navigation sample implementation is missing'
+E       AssertionError: navigation sample implementation is missing
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:11: AssertionError
+________ ERROR at setup of test_reject_invalid_samples[changes0-epoch] _________
+
+    @pytest.fixture
+    def api():
+        spec = importlib.util.find_spec('integrated_robot_navigation')
+>       assert spec is not None, 'navigation sample implementation is missing'
+E       AssertionError: navigation sample implementation is missing
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:11: AssertionError
+_______ ERROR at setup of test_reject_invalid_samples[changes1-ros_age] ________
+
+    @pytest.fixture
+    def api():
+        spec = importlib.util.find_spec('integrated_robot_navigation')
+>       assert spec is not None, 'navigation sample implementation is missing'
+E       AssertionError: navigation sample implementation is missing
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:11: AssertionError
+_______ ERROR at setup of test_reject_invalid_samples[changes2-wall_age] _______
+
+    @pytest.fixture
+    def api():
+        spec = importlib.util.find_spec('integrated_robot_navigation')
+>       assert spec is not None, 'navigation sample implementation is missing'
+E       AssertionError: navigation sample implementation is missing
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:11: AssertionError
+______ ERROR at setup of test_reject_invalid_samples[changes3-nonfinite] _______
+
+    @pytest.fixture
+    def api():
+        spec = importlib.util.find_spec('integrated_robot_navigation')
+>       assert spec is not None, 'navigation sample implementation is missing'
+E       AssertionError: navigation sample implementation is missing
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:11: AssertionError
+______ ERROR at setup of test_reject_invalid_samples[changes4-nonfinite] _______
+
+    @pytest.fixture
+    def api():
+        spec = importlib.util.find_spec('integrated_robot_navigation')
+>       assert spec is not None, 'navigation sample implementation is missing'
+E       AssertionError: navigation sample implementation is missing
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:11: AssertionError
+________ ERROR at setup of test_reject_invalid_samples[changes5-frame] _________
+
+    @pytest.fixture
+    def api():
+        spec = importlib.util.find_spec('integrated_robot_navigation')
+>       assert spec is not None, 'navigation sample implementation is missing'
+E       AssertionError: navigation sample implementation is missing
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:11: AssertionError
+____________ ERROR at setup of test_age_boundary_and_missing_bundle ____________
+
+    @pytest.fixture
+    def api():
+        spec = importlib.util.find_spec('integrated_robot_navigation')
+>       assert spec is not None, 'navigation sample implementation is missing'
+E       AssertionError: navigation sample implementation is missing
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:11: AssertionError
+___ ERROR at setup of test_epoch_reset_and_out_of_order_never_replace_newer ____
+
+    @pytest.fixture
+    def api():
+        spec = importlib.util.find_spec('integrated_robot_navigation')
+>       assert spec is not None, 'navigation sample implementation is missing'
+E       AssertionError: navigation sample implementation is missing
+E       assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:11: AssertionError
+=================================== FAILURES ===================================
+_________________________ test_contact_wire_roundtrip __________________________
+
+    def test_contact_wire_roundtrip():
+>       assert hasattr(messages, 'FootContacts'), 'FootContacts IDL is missing'
+E       AssertionError: FootContacts IDL is missing
+E       assert False
+E        +  where False = hasattr(messages, 'FootContacts')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py:8: AssertionError
+_________ test_approach_wire_keeps_source_capture_separate_from_target _________
+
+    def test_approach_wire_keeps_source_capture_separate_from_target():
+>       assert hasattr(actions, 'ApproachObject'), 'ApproachObject IDL is missing'
+E       AssertionError: ApproachObject IDL is missing
+E       assert False
+E        +  where False = hasattr(actions, 'ApproachObject')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py:25: AssertionError
+_________________________ test_motion_state_roundtrip __________________________
+
+    def test_motion_state_roundtrip():
+>       assert hasattr(messages, 'MotionState'), 'MotionState IDL is missing'
+E       AssertionError: MotionState IDL is missing
+E       assert False
+E        +  where False = hasattr(messages, 'MotionState')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py:39: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py::test_contact_wire_roundtrip
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py::test_approach_wire_keeps_source_capture_separate_from_target
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py::test_motion_state_roundtrip
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_duplicate_does_not_refresh_receipt
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes0-epoch]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes1-ros_age]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes2-wall_age]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes3-nonfinite]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes4-nonfinite]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes5-frame]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_age_boundary_and_missing_bundle
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_epoch_reset_and_out_of_order_never_replace_newer
+3 failed, 9 errors in 2.70s

@@ -1,0 +1,8 @@
+# Native measurements in header.frame_id (odom), positions in m and forces in N.
+std_msgs/Header header
+uint64 epoch
+uint64 sequence
+string[4] names
+geometry_msgs/Point[4] points
+float64[4] normal_forces
+bool[4] touching
