@@ -6,6 +6,7 @@
   <xacro:arg name="mujoco_headless" default="false"/>
   <xacro:arg name="mujoco_auto_register_cameras" default="true"/>
   <xacro:arg name="vision_enabled" default="false"/>
+  <xacro:arg name="hip_mount_y" default="0.10"/>
 
   <xacro:include filename="materials.xacro"/>
   <xacro:include filename="inertial_macros.xacro"/>
@@ -19,7 +20,7 @@
     <xacro:error message="control_backend must be mock, gazebo, or mujoco"/>
   </xacro:unless>
 
-  <xacro:quadruped_base/>
+  <xacro:quadruped_base hip_mount_y="$(arg hip_mount_y)"/>
   <xacro:manipulator_arm parent_link="base_link" prefix="arm_" xyz="0 0 0.095" rpy="0 0 0"/>
 
   <joint name="lidar_mount_joint" type="fixed">

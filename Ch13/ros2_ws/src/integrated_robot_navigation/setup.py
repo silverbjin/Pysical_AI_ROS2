@@ -9,7 +9,7 @@ setup(
         ('share/integrated_robot_navigation/config', glob('config/*.yaml')),
         ('share/integrated_robot_navigation/launch', glob('launch/*.launch.py')),
     ],
-    install_requires=['setuptools', 'numpy'], zip_safe=True,
+    install_requires=['setuptools', 'numpy', 'PyYAML', 'mujoco==3.3.7'], zip_safe=True,
     maintainer='Jinho', maintainer_email='jinho@todo.todo',
     description='Measured contact-driven crawl navigation for Ch13',
     license='Apache-2.0', tests_require=['pytest'],

@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_opt_in_mount_clearance_preserves_original_default ____________
+
+    def test_opt_in_mount_clearance_preserves_original_default():
+        path = Path(__file__).resolve().parents[2] / 'integrated_robot_description/urdf/robot_system.urdf.xacro'
+        original = compile_model(xacro.process_file(str(path)).toxml())
+        navigation = compile_model(xacro.process_file(str(path), mappings={'hip_mount_y': '0.13'}).toxml())
+        assert fk_leg(original, 'fr_foot', (0., -.5, 1.))[1] == pytest.approx(-.15)
+>       assert fk_leg(navigation, 'fr_foot', (0., -.5, 1.))[1] == pytest.approx(-.18)
+E       assert -0.15000000000000002 == -0.18 ± 1.8e-07
+E         
+E         comparison failed
+E         Obtained: -0.15000000000000002
+E         Expected: -0.18 ± 1.8e-07
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_mount_clearance.py:15: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_mount_clearance.py::test_opt_in_mount_clearance_preserves_original_default
+1 failed in 3.42s

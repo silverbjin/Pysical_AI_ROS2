@@ -1,0 +1,76 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___ test_preparation_cannot_weaken_safety_contract[footprint_margin_m-0.049] ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+key = 'footprint_margin_m', value = 0.049
+
+    @pytest.mark.parametrize('key,value', [
+        ('footprint_margin_m', .049), ('sensor_max_age_s', .201),
+        ('max_roll_pitch', .16), ('max_vx', .011),
+    ])
+    def test_preparation_cannot_weaken_safety_contract(nav_robot_model, key, value):
+        module = api()
+        limits = module.default_limits()
+        limits[key] = value
+>       with pytest.raises(ValueError, match='limits'):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:64: Failed
+____ test_preparation_cannot_weaken_safety_contract[sensor_max_age_s-0.201] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+key = 'sensor_max_age_s', value = 0.201
+
+    @pytest.mark.parametrize('key,value', [
+        ('footprint_margin_m', .049), ('sensor_max_age_s', .201),
+        ('max_roll_pitch', .16), ('max_vx', .011),
+    ])
+    def test_preparation_cannot_weaken_safety_contract(nav_robot_model, key, value):
+        module = api()
+        limits = module.default_limits()
+        limits[key] = value
+>       with pytest.raises(ValueError, match='limits'):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:64: Failed
+_____ test_preparation_cannot_weaken_safety_contract[max_roll_pitch-0.16] ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+key = 'max_roll_pitch', value = 0.16
+
+    @pytest.mark.parametrize('key,value', [
+        ('footprint_margin_m', .049), ('sensor_max_age_s', .201),
+        ('max_roll_pitch', .16), ('max_vx', .011),
+    ])
+    def test_preparation_cannot_weaken_safety_contract(nav_robot_model, key, value):
+        module = api()
+        limits = module.default_limits()
+        limits[key] = value
+>       with pytest.raises(ValueError, match='limits'):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:64: Failed
+_________ test_preparation_cannot_weaken_safety_contract[max_vx-0.011] _________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+key = 'max_vx', value = 0.011
+
+    @pytest.mark.parametrize('key,value', [
+        ('footprint_margin_m', .049), ('sensor_max_age_s', .201),
+        ('max_roll_pitch', .16), ('max_vx', .011),
+    ])
+    def test_preparation_cannot_weaken_safety_contract(nav_robot_model, key, value):
+        module = api()
+        limits = module.default_limits()
+        limits[key] = value
+>       with pytest.raises(ValueError, match='limits'):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:64: Failed
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_preparation_cannot_weaken_safety_contract[footprint_margin_m-0.049]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_preparation_cannot_weaken_safety_contract[sensor_max_age_s-0.201]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_preparation_cannot_weaken_safety_contract[max_roll_pitch-0.16]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_preparation_cannot_weaken_safety_contract[max_vx-0.011]
+4 failed, 7 deselected in 7.97s

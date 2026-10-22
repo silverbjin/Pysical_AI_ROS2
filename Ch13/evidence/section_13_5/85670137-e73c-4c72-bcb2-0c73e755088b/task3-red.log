@@ -1,0 +1,203 @@
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+______________ test_offline_candidate_cannot_enable_either_engine ______________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_offline_candidate_cannot_enable_either_engine(robot_model):
+>       p = api().prepare_profile(robot_model, (0., 1.2, -2., 0., .8, 0.))
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.carry_profile'), 'carry profile missing'
+E       AssertionError: carry profile missing
+E       assert None
+E        +  where None = <function find_spec at 0x7ac1223c0720>('integrated_robot_navigation.carry_profile')
+E        +    where <function find_spec at 0x7ac1223c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:9: AssertionError
+_________________ test_changed_model_hash_rejects_old_profile __________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_changed_model_hash_rejects_old_profile(robot_model):
+>       p = api().prepare_profile(robot_model, (0., 1.2, -2., 0., .8, 0.))
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.carry_profile'), 'carry profile missing'
+E       AssertionError: carry profile missing
+E       assert None
+E        +  where None = <function find_spec at 0x7ac1223c0720>('integrated_robot_navigation.carry_profile')
+E        +    where <function find_spec at 0x7ac1223c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:9: AssertionError
+_______________ test_handwritten_validated_flag_is_insufficient ________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_handwritten_validated_flag_is_insufficient(robot_model):
+>       p = api().prepare_profile(robot_model, (0., 1.2, -2., 0., .8, 0.))
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.carry_profile'), 'carry profile missing'
+E       AssertionError: carry profile missing
+E       assert None
+E        +  where None = <function find_spec at 0x7ac1223c0720>('integrated_robot_navigation.carry_profile')
+E        +    where <function find_spec at 0x7ac1223c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:9: AssertionError
+__________________ test_invalid_carry_angles_are_rejected[q0] __________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+q = (0.0, 1.2, -3.0, 0.0, 0.8, 0.0)
+
+    @pytest.mark.parametrize('q', [(0., 1.2, -3., 0., .8, 0.),
+                                  (0., 1.2, float('nan'), 0., .8, 0.)])
+    def test_invalid_carry_angles_are_rejected(robot_model, q):
+        with pytest.raises(ValueError):
+>           api().prepare_profile(robot_model, q)
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.carry_profile'), 'carry profile missing'
+E       AssertionError: carry profile missing
+E       assert None
+E        +  where None = <function find_spec at 0x7ac1223c0720>('integrated_robot_navigation.carry_profile')
+E        +    where <function find_spec at 0x7ac1223c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:9: AssertionError
+__________________ test_invalid_carry_angles_are_rejected[q1] __________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+q = (0.0, 1.2, nan, 0.0, 0.8, 0.0)
+
+    @pytest.mark.parametrize('q', [(0., 1.2, -3., 0., .8, 0.),
+                                  (0., 1.2, float('nan'), 0., .8, 0.)])
+    def test_invalid_carry_angles_are_rejected(robot_model, q):
+        with pytest.raises(ValueError):
+>           api().prepare_profile(robot_model, q)
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.carry_profile'), 'carry profile missing'
+E       AssertionError: carry profile missing
+E       assert None
+E        +  where None = <function find_spec at 0x7ac1223c0720>('integrated_robot_navigation.carry_profile')
+E        +    where <function find_spec at 0x7ac1223c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:9: AssertionError
+____________ test_collision_model_is_checked_not_only_joint_limits _____________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_collision_model_is_checked_not_only_joint_limits(robot_model):
+        from integrated_robot_navigation.model import compile_model
+        enlarged = compile_model(robot_model.urdf.replace(
+            'size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"'))
+        with pytest.raises(ValueError, match='collision|ground'):
+>           api().prepare_profile(enlarged, (0., 1.2, -2., 0., .8, 0.))
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:44: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.carry_profile'), 'carry profile missing'
+E       AssertionError: carry profile missing
+E       assert None
+E        +  where None = <function find_spec at 0x7ac1223c0720>('integrated_robot_navigation.carry_profile')
+E        +    where <function find_spec at 0x7ac1223c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:9: AssertionError
+_____________ test_body_and_attitude_swept_volume_have_real_margin _____________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_body_and_attitude_swept_volume_have_real_margin(robot_model):
+>       module = api()
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.carry_profile'), 'footprint missing'
+E       AssertionError: footprint missing
+E       assert None
+E        +  where None = <function find_spec at 0x7ac1223c0720>('integrated_robot_navigation.carry_profile')
+E        +    where <function find_spec at 0x7ac1223c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py:9: AssertionError
+______________ test_interval_rotation_contains_interior_extremum _______________
+
+    def test_interval_rotation_contains_interior_extremum():
+>       module = api()
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.carry_profile'), 'footprint missing'
+E       AssertionError: footprint missing
+E       assert None
+E        +  where None = <function find_spec at 0x7ac1223c0720>('integrated_robot_navigation.carry_profile')
+E        +    where <function find_spec at 0x7ac1223c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py:9: AssertionError
+___________ test_carry_config_mismatch_cannot_reuse_small_footprint ____________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_carry_config_mismatch_cannot_reuse_small_footprint(robot_model):
+>       module = api()
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.carry_profile'), 'footprint missing'
+E       AssertionError: footprint missing
+E       assert None
+E        +  where None = <function find_spec at 0x7ac1223c0720>('integrated_robot_navigation.carry_profile')
+E        +    where <function find_spec at 0x7ac1223c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py:9: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_offline_candidate_cannot_enable_either_engine
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_changed_model_hash_rejects_old_profile
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_handwritten_validated_flag_is_insufficient
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_invalid_carry_angles_are_rejected[q0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_invalid_carry_angles_are_rejected[q1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_collision_model_is_checked_not_only_joint_limits
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py::test_body_and_attitude_swept_volume_have_real_margin
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py::test_interval_rotation_contains_interior_extremum
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py::test_carry_config_mismatch_cannot_reuse_small_footprint
+9 failed in 6.29s

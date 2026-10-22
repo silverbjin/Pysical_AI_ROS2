@@ -1,5 +1,22 @@
 # Ch13 13.2 재사용·출처 명세
 
+## 13.5 추가 — 구현 진행 중
+
+- 신규 navigation의 샘플·기구학·지지 영역·수납 profile·구간 경계 계산은 새로 작성했다.
+  기존 Ch13의 `integrated_robot_vision.kinematics`를 import하며 원본을 복제하지 않는다.
+- navigation MJCF는 Ch13 기존 `mujoco/robot_system.xml`(해당 파일 마지막 커밋
+  `d45d84eb1e338b1c967f5863c8827cb125187e94`)에서 생성하는 별도 산출물이다.
+  외부 checkout이나 Ch01~Ch12 파일을 수정·추가 복사하지 않았다.
+- 모델 교정은 navigation 전용 hip 장착 y=±0.13m이며 기존 기본값±0.10m는 유지한다.
+  원본 모델의 몸통/허벅지 침투 약20mm와 별도 장착 여유의 근거는 13.5 실행 원장에 기록한다.
+- Python MuJoCo3.3.7은 설치된 API 의존성이다. 충돌 검사에는 공식
+  [거리 API](https://mujoco.readthedocs.io/en/3.3.7/APIreference/APIfunctions.html#mj-geomdistance)와
+  [URDF 확장](https://mujoco.readthedocs.io/en/3.3.7/modeling.html#urdf-extensions)을 참고했으며
+  엔진 구현 소스를 복사하지 않았다. 기구학/거리 오프라인 검사를 실제 보행 성공으로 부르지 않는다.
+- footprint는 원래 collision을 보존한 구간 경계다. 준비 완료 후의 제한된 gait 관절 구간,
+  carry 허용 오차와 몸체 기울기를 포함한다. 팔 전체 작업 공간을 표현하지 않으며,
+  향후 제어기는 이 구간 밖의 이동 목표를 거절해야 한다.
+
 13.3 추가: `integrated_robot_interfaces`, `integrated_robot_runtime`, 검증기와 정책
 테스트는 새로 작성했다. 13.2 모델/launch 재사용 기준 커밋은
 `8d7d7e0b6003845ad7e6ef77420cf35e16758202`이며 원본 파일을 직접 호출한다.

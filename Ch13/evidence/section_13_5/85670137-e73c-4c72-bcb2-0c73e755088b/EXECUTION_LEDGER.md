@@ -47,3 +47,20 @@
 - 수정 전 패키지 결과 `task2-package.log`와 소스 실행 `task2-all-source.log`는 최종 수정본 증거로 재사용하지 않는다. 수정 후 고정 소스로 `task2-fixed-*`에 재빌드·시험·감사를 수행한다.
 - 수정 후 전체 소스 회귀: **405 passed, 202.55초**, `task2-fixed-all-source.log`.
 - 수정 후 패키지 시험: **31 tests / 0 errors / 0 failures / 0 skipped**, `task2-fixed-package.log`. 새 설치본 byte 감사도 통과했으며 `task2-fixed-install-audit.json`에 해시를 보존한다.
+
+## Task 3
+
+- 시작 기준: `ba05b4896922e66f2c5abff06e133e5b26cdb7e8`. profile/footprint 최초 RED **9 failed**, `task3-red.log`.
+- 독립 오프라인 검사 `task3-native-geometry-probe.json`: 원래 URDF와 MJCF 각각에서 base_link/네 thigh_link 침투 약0.020m. 렌더링·물리 step·ROS 실행은 하지 않았다.
+- 교정 판단: 기존 기본값을 유지하는 Xacro 선택 인수 `hip_mount_y=0.13`을 추가한다. navigation 전용 발 y는±0.18m이며 이전 기본 발 y=±0.15m다. 새 MJCF도 같은 hip origin에서 생성한다. 비인접 충돌 쌍을 제외하거나 collision 크기를 줄이지 않는다.
+- 선택 인수 시험: `task3-mount-red.log`에서 실제 미반영 실패→`task3-mount-green.log`의 기본 모델 보존/선택 모델 및 기구학 **8 passed**.
+- profile은 오프라인 상태로만 생성한다. G1 검증 기록은 엔진/모델/물리/config hash, 필수 검사와 관측·액션·소스·설치·종료 artifact 해시가 모두 필요하다. 별도 ready 플래그만으로 통과하지 않는다.
+- footprint는 허용 gait/arm 오차/roll·pitch 구간 전체의 삼각함수 극값과 보수적 행렬 구간을 사용한다. 몇 자세만 샘플링한 크기가 아니다. 원래 URDF collision과 더 큰 MJCF capsule 경계를 함께 포함한다.
+- `task3-green.log`: 42 passed/1 failed. cos(π/2)의 부동소수 잔여가 경계0을 제외하는 문제를 확인해 trig 구간에 반올림 여유와 바깥 방향 반올림을 추가했다.
+- `task3-roundoff-green.log`: **43 passed, 14.37초**. 준비 CLI 부재 RED는 `task3-cli-red.log`에 보존한다. 새 출력 생성·기존 출력 덮어쓰기 거절을 실제 명령으로 시험한다.
+- 최초 구간 경계의 앞쪽 0.720643m는 접근 후보 상한0.65m와 맞지 않아 `task3-interval-refinement-red.log`로 과대 추정을 재현했다. 연속 구간을 최대0.10rad로 나눈 전체 합집합을 배치 계산하고, 실제 native 형상24자세의 독립 투영과5cm 여유 포함을 대조했다. `task3-interval-refinement-green.log` **5 passed**. 몇 점만 샘플링해 경계를 줄인 것이 아니다.
+- 안전 설정 약화(여유·age·기울기·속도)를 허용하던 준비 API는 `task3-safety-limits-red.log`의 **4 failed**로 재현했다. 설정 상·하한 검사를 추가한 뒤 `task3-refined-green.log` **49 passed, 18.16초**.
+- 수정 후 전체 소스 회귀: `task3-refined-all-source.log` **423 passed, 198.97초**. 패키지 시험: `task3-refined-package.log` **49 tests / 0 errors / 0 failures / 0 skipped**.
+- `task3-refined-install-audit.json`에서 실제 설치 모듈·기존6패키지·신규 config/share bytes 일치를 확인했다. 준비 CLI는 설치본에서 실행했다.
+- 새 `task3-refined-offline-profile`은 앞쪽0.579451m/뒤쪽-0.572826m/좌우±0.427560m, inflation_radius0.770118m다. 원래의 더 큰 `offline-profile`도 보존한다. 두 출력 모두 **offline**, G1 증거 없음, 이동 허용 불가다.
+- 명목 수납 자세에서 URDF와 MJCF 각각401개 비인접 형상 쌍을 검사했다. 허용 gait 구간의 모든 자세가 자기 충돌 없이 동작한다는 실제 보행 보증은 아니며, G1/G2 실측이 남아 있다.

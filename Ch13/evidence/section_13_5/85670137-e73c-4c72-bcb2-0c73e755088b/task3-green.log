@@ -1,0 +1,16 @@
+...........F...............................                              [100%]
+=================================== FAILURES ===================================
+______________ test_interval_rotation_contains_interior_extremum _______________
+
+    def test_interval_rotation_contains_interior_extremum():
+        module = api()
+        lo, hi = module.trig_bounds('sin', 0., math.pi)
+        assert lo <= 0. and hi >= 1.  # endpoints alone both equal zero
+        lo, hi = module.trig_bounds('cos', -math.pi/2, math.pi/2)
+>       assert lo <= 0. and hi >= 1.
+E       assert (6.123233995736765e-17 <= 0.0)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py:30: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py::test_interval_rotation_contains_interior_extremum
+1 failed, 42 passed in 14.78s

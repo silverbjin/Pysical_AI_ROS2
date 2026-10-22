@@ -14,3 +14,10 @@ def robot_model():
     from integrated_robot_navigation.model import compile_model
     path = SRC / 'integrated_robot_description/urdf/robot_system.urdf.xacro'
     return compile_model(xacro.process_file(str(path)).toxml())
+
+
+@pytest.fixture
+def nav_robot_model():
+    from integrated_robot_navigation.model import compile_model
+    path = SRC / 'integrated_robot_description/urdf/robot_system.urdf.xacro'
+    return compile_model(xacro.process_file(str(path), mappings={'hip_mount_y': '0.13'}).toxml())
