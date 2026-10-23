@@ -1,5 +1,99 @@
 # 13.5 저속 crawl 기반 네비게이션 통합 설계
 
+## guard 상태와 로컬 시계의 도착 순서 (2026-10-24)
+
+82ffc55f의 first_stop은 `guard:ros_age`였으나 실제 선택 stamp11.578초가 판정 노드
+ROS11.576초보다2ms **미래**였다. 양 노드의 `/clock`과 guard subscription은 다른
+순서로 처리될 수 있다. 이는149959a0의205.80ms wall 지연과 별개의 원인이다.
+
+guard callback은 원래 header와 최초 receipt를 최대10개 후보에 보관한다.
+유효성 검사에서는 `stamp<=로컬 ROS 시각`인 가장 최신 후보만 선택한다. 나머지 미래
+후보는 보류하고, 마지막 선택값도 기존ROS/wall 각각200ms 범위에서만 사용할 수 있다.
+중복·역순 도착으로 receipt를 갱신하지 않으며, 만료·clock 정지·소유자 변경은 계속
+안전 정지를 유발한다. inactive 준비 신호도 유효한STAND/HOLD guard를 먼저 요구한다.
+
+```mermaid
+sequenceDiagram
+    participant G as Guard
+    participant C as Crawl 수신기
+    participant T as 로컬 ROS 시계
+    G->>C: 원본 stamp t+2ms 상태 도착
+    C->>C: 미래 후보로 보류·기존 유효 상태만 사용
+    T->>C: 시계 t+2ms 도착
+    C->>C: 원본 stamp·최초 receipt로 후보 선택
+    C->>C: 기존200ms·모델·세대·소유권 검사
+```
+
+재현 시험은 동일 callback/clock 순서를 강제로 분리해 미래 상태의 조기 선택과 중복
+receipt 갱신을 검출한다. 관련ROS10건은 통과했지만 실제 반복 인수 전이므로 전체
+간헐 실패를 해결했다고 선언하지 않는다. 오래된 packet 시험은 임의120ms가 아니라
+마지막 유효 capture의 원래200ms 만료를 기다리도록 교정했다.
+
+## 안전 주기를 막지 않는 하중 이동 탐색 (2026-10-24, 실제 인수 전)
+
+실제149959a0의 최초SHIFT 콜백은173.88ms를 차지했다. 다음 주기에 선택된 접촉은
+ROS age70ms지만 수신 후 wall age205.80ms로 기존200ms watchdog을 위반했다.
+단순히 센서가 발행되지 않았다고 단정하거나 한계를 늘리지 않는다.
+
+동일 관측의 CoM은 root-to-joint 공통 변환을 한 번만 계산한다. 다음 관측에는 새로
+계산하므로 상태를 시간 사이에 재사용하지 않는다. 회귀38건을 통과했지만 오프라인
+전체 탐색의 중앙값은28.00→28.95ms로, 이것만으로 속도 개선을 입증하지 못했다.
+
+따라서 기존 coarse9점·binary8회 탐색을 제어 주기마다 후보 하나씩 평가하는
+협력식 단계로 분리한다. 탐색 입력과 명령 기준은 고정하고 매 주기 실제 센서·지지·
+owner·정지 검사를 먼저 한다. 계획 완성 전에는 기존 명령을 유지하며 이동 곡선의
+시간도 진행시키지 않는다. STOP/FAULT는 탐색을 폐기한다. worker나 두 번째 명령
+소유자를 추가하지 않는다. Python을 hard real-time으로 보장하는 설계는 아니다.
+
+```mermaid
+flowchart LR
+    A[실제 센서·소유권·정지 검사] --> B{탐색 중?}
+    B -->|예| C[후보 1개만 IK·CoM 평가]
+    C --> D[기존 명령 유지·다음 콜백 반환]
+    B -->|완성| E[기존 제한의 하중 이동 시작]
+    A -->|실패 또는 STOP| F[탐색 폐기·기존 안전 정지]
+```
+
+새 계산량 회귀는 원래 한 주기 CoM14회에서 실패했고, 변경 후 기존 물리·보행을
+포함36건을 통과했다. 명목 탐색 시간 약0.26–0.34ROS초가 추가되므로 기존10wall초
+실제 calibration 인수 안에서 검증해야 한다. 한계나 완료 기준을 늘린 것이 아니다.
+
+## 활성화 시 위치 명령·실측 앵커 분리 (2026-10-24, 인수 진행 중)
+
+위치 힘 구동에서 하중이 있는 관절의 실측각은 기존 명령각과 다를 수 있다.
+740e454c 실제 실행에서 calf 실측1.035905rad/기존 명령1.0rad의 위치력은 약-17.95Nm였다.
+활성화가 실측각을 새 목표로 삼으면 이 지지력의 상당 부분이 사라진다.
+따라서 cold-start는 유일하고 유효한 URDF position initial_value12개를 사용하고,
+이후에는 동일 모델·동일 소유자의 마지막 명령을 유지해 command FK 목표를 인계한다.
+누락/중복/비유한/범위 밖 초기값·외부 다리 publisher가 있으면 거절한다.
+
+실제 발 앵커·floor·미끄러짐·지지 여유는 실측 상태로 유지한다. 명령 FK를 odometry나
+실측 발 위치로 발행하지 않는다. root pose/velocity 쓰기나 무조건적인 재시도가 아니다.
+최소 수학·실제 lifecycle/DDS 회귀는 통과했으나, 후속5091c217은 네 발 하중을
+유지한 뒤 guard ROS age로 중단됐다. 전체G1/G2 성공은 아직 아니며 정상 종료도 미완료다.
+
+반복 비용을 줄이기 위해 일반 사용자 소유 Linux 전용 build/install 영역과 명시적
+runtime 소스 범위 Git 감사를 사용한다. 설치607파일 최초 복제 해시·새 빌드 후8패키지
+감사를 기록하고, 최종 전체 회귀는 동결 뒤 수행한다. 과거 실패·기준·원본은 유지한다.
+
+## Task 8 실측에 따른 제어 설계 교정 — 인수 미완료
+
+기존의 고정8초 물리 주기 가정은 아직 달성한 성능이 아니다. `cycle_s=8`은
+발 이동량과 몸체 진행량을 계산하는 명목 phase-time으로 유지하되, 실제 부하 해제·안정
+게이트는 진행 시계를 멈출 수 있다. 실제 주기·진행률·Nav2 deadline 충족 여부는 G2/G4에서
+별도로 실측해야 하며 고정8초로 부르지 않는다. 강제로 시간을 맞추려고 발을 들지 않는다.
+
+내부 무게중심 이동도 quintic 최대 가속도0.10m/s²를 적용한다. 이동 완료 후 몸체 속도
+0.003m/s·각속도0.01rad/s 이내가100ms 유지돼야 SHIFT의 부하 해제를 시작한다.
+선택한 발만2mm/s, 최대10mm로 부드럽게 해제하고 실제 정상력2N 미만·다른 세 발 지지·
+실측 안정100ms 후 SWING으로 전이한다. 총 swing 높이20mm 한계는 그대로다. 해제 중에도
+발 소유권을 유지하므로 STOP은 같은 발을1초 이내에 착지시키고 기존 STOPPED 검사를 한다.
+
+이 교정은 모델·한계 hash를 바꾼다. 이전 native profile을 재사용하지 않는다. 원본 모델과
+13.4 장면은 불변이며 navigation 전용 position PD 후보만 별도 생성한다. 후보의 수학·
+Python 물리 시험 성공은 실제 양 엔진 G1/G2 통과가 아니다. 실패 원본과 판별 실험은
+`Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/EXECUTION_LEDGER.md`에 있다.
+
 상태: **사용자 승인 — 구현 진행 중**. 사용자는 저속 crawl 상세 설계와 구현 계획을 승인했다.
 이 문서는 승인된 설계이며, 아직 보행·접근 성능을 검증했다는 보고서가 아니다.
 
@@ -372,6 +466,72 @@ configure와 activate 사이에는 비활성 crawl 소유자의 `BOOTSTRAP_FEEDB
 엔진의 joint_state_broadcaster가 이미 준비됐다고 간주하지 않는다. 활성화 시에도 관측을
 다시 검사하며, 실패한 activate를 자동 재시도하지 않는다.
 
+Task8의 실제 MuJoCo 실행에서 `prepare` 서비스가 먼저 보이고 실제 팔·다리·그리퍼
+제어기는 아직 기동 중인 순서 경쟁을 관측했다. 따라서 활성화 전과 수납 예약 전에
+`/controller_manager/list_controllers`를 비차단 조회한다. 현재 장면 URDF의12개 다리·
+6개 팔·2개 그리퍼 position interface가 각각 지정 제어기에 정확히 한 번 할당되고,
+joint_state_broadcaster를 포함한 네 제어기가 모두 active여야 한다. 누락/비활성은
+기존45초 wall 예산 안에서 관측만 기다리며, active 상태의 잘못된 claim·중복/외부
+소유권은 즉시 sticky fault다. 조회 future는 한 개만 유지하고 거절된 모터 요청을
+자동 재시도하지 않는다. 서비스의 원래 거절 message도 startup fault에 보존한다.
+이 게이트는 실제 FJT terminal·실측 수납 정착·실시간 이동 허가를 대신하지 않는다.
+
+Gazebo 최초 실행에서 configure 서비스 ACK와 기존 구성 전 status의 도착 순서가
+다른 경쟁도 재현했다. WAIT_FEEDBACK에서만 `INACTIVE/BOOTSTRAP_WAIT_FEEDBACK`,
+빈 model hash, ready=false/stopped=false인 명시적 초기 상태를 준비 부재로 기다린다.
+실제 다른 nonempty hash나 준비를 주장한 잘못된 식별자는 계속 fault이며 자동 복구하지
+않는다. 200ms 관측 검사·45초 시동 deadline과 실제 claim 검사는 그대로다.
+
+착지도 시간만으로 완료하지 않는다. 내려오는 SWING에서 실제 정상력≥2N을 확인하면
+현재 명령을 유지하고 TOUCHDOWN으로 전이하여 이미 닿은 발을 더 밀어 넣지 않는다.
+발의 command anchor는 이 목표를 연속 보존하며, 탄성 변형된 실측 위치를 순간적으로
+새 목표로 복사하지 않는다. 접촉이 다시 사라지면 현재 목표에서2mm/s로만 탐색한다.
+기존 floor−2mm 한계·1초 touchdown timeout과 실제 다른 세 발 지지·CoM·센서 기준은
+유지한다. 실제 센서/odometry를 목표로 대체하는 것이 아니라 **명령의 연속성**을
+보장하는 조치다. 물리 결과와 팔/그리퍼 속도 한계는 양 엔진 G1/G2에서 별도 확인한다.
+
+### Task8 후속 판별 — 발 궤적의 시간 예산
+
+실제046c4a16 실행은 TOUCHDOWN 전에 수납 이탈로 실패했다. 따라서 접촉 이후의
+연속성 개선만으로 문제가 해결됐다는 가설은 성립하지 않는다. 몸체 속도 입력을
+제한해도 고정0.8초 SWING의 발 목표 속도까지 제한되는 것은 아니었다. 추가한
+`max_swing_speed_mps=0.02`는 기존 안전 기준 완화가 아니라 새 내부 명령 상한이다.
+
+발 궤적은 `P(u)=P0+(P1−P0)S5(u)+Az·B4(u)`다. quintic 보간의 최대 미분은15/8,
+quartic 높이 곡선 `B4=16u²(1−u)²`의 최대 절대 미분은16/(3√3)이므로,
+`T >= ((15/8)|P1−P0| + (16/(3√3))A)/0.02`로 실행 시간을 정한다. 최소0.8초는
+유지하되 실제 궤적의 시간을 늘리며 위치를 잘라내거나 실측 odometry를 조작하지 않는다.
+해당 phase의 몸체 진행은 여전히 명목0.8초 예산으로 매핑해 대기 시간 때문에 추가
+보폭이 적분되지 않게 한다. 이 선택은 구현자의 판정이며, 실제 주기·이동률과 과제
+시간을 늘릴 수 있는 비용이 있다. 정지10초·교정10초·힘/CoM·수납·센서 기준은
+그대로이며 실제 엔진에서 성공하지 못하면 인수 실패로 남긴다.
+
+### Task8 G1 원본 관측의 독립 판정
+
+READY·명령 발행·종료 코드만으로 센서/물리 인수를 대체하지 않는다. 아래 수치 경계는
+구현자가 추가한 판정 규칙이며 기존 필수 check와 안전 기준을 제거하거나 완화하지 않는다.
+
+| 판정 | 원본 관측과 계산 |
+| --- | --- |
+| 접촉 frame/힘 | 실제 발 이름 순서·world-z 정상력·접촉점/FK XY 차이≤0.01m·지면 Z 차이≤0.005m, 정적 총 지지력과 URDF 체중 차이≤5%, 힘의 중심과 native CoM 투영 차이≤0.01m |
+| IMU frame | base_link 기준 정적 중력 벡터 오차≤0.2m/s², 전체 운용 구간 gyro와 실제 몸체 각속도 차이≤0.02rad/s |
+| world scan | lidar_link의 실제 자세로 바운드 장면의 네 벽에 독립 ray/box 계산, 실제360개 hit와 거리 오차≤0.03m. 로봇 자체 hit나 world 벽을 빠뜨린 마스크를 인정하지 않음 |
+| 실제 발 들기 | FL의 실제 FK 높이 상승≥0.005m·해당 실제 힘<2N·다른 세 발≥2N인 고유 접촉 촬영≥3개. 명령 높이만으로 통과하지 않음 |
+| 충돌 | 실제 unexpected contact가0이어야 하며, 운용 중 실측 관절 값의 URDF 비인접 충돌 형상 간격도≥0.0001m이어야 함 |
+
+충돌 재구성은 고정 root의 별도 URDF 기하 모델에서 관절 값만 대입하는 오프라인 계산이다.
+Python MuJoCo3.3.7의 `mj_forward`/형상 거리 계산을 사용하지만 엔진을 step하지 않고,
+live 엔진의 root/속도/외력을 쓰지 않는다. 실제 ROS C++ MuJoCo3.12.0 또는 Gazebo 실행과
+물리 결과를 대신하지 않으며 실제 접촉 스트림·설치 라이브러리 출처 검사를 함께 요구한다.
+
+정적 구간은 실제 ROS와 monotonic 시간 **각각10초 이상**이어야 한다. 관측 coverage≥9.6초는
+양 끝의200ms 샘플 경계를 위한 별도 조건이지 시험 시간을9.6초로 줄이는 허가가 아니다.
+몸체·scan 각각30개 이상 고유 촬영을 요구한다. 수납은 원본 관절 위치/속도에서도 팔
+0.03rad/0.02rad/s, 그리퍼0.002m/0.005m/s를 운용 전 구간에 다시 적용한다.
+명시적 bootstrap/shutdown은 측정 구간에서 분리하지만 모든 원본은 `all_frames.json`과
+`observations.jsonl`에 남긴다. 운용 중 fault/outlier는 제외하지 않고 알 수 없는 stage도
+거절한다. 구간·지표·판정은 새 UUID 실행에 저장하며 이전 FAIL을 고쳐 쓰지 않는다.
+
 carry_manager만 팔 FJT와 그리퍼 무부하 0.015m 자세를 소유한다. 서비스 응답의 success는
 **요청 예약**이며 준비 완료가 아니다. 실제 result를 받기 전에는 취소 ACK나 status가 있어도
 팔 lease를 해제하지 않는다. 팔 오차 0.03rad/속도 0.02rad/s 이내를 1초 유지해야 READY이고,
@@ -394,3 +554,122 @@ crawl_controller의 외부 ready 처리 양쪽에서 이를 차단한다. 실제
 - [Ch12.8의 짧은 PPO 검증 한계](../../Ch12/docs/SECTION_12_8_REPORT_KO.md).
 - [Nav2 Jazzy velocity smoother](https://docs.nav2.org/jazzy/configuration_and_development/configuration_guide/core_servers/configuring_velocity_smoother/).
 - [Nav2 Jazzy obstacle layer 구현](https://api.nav2.org/nav2-jazzy/html/obstacle__layer_8cpp_source.html).
+
+### Gazebo 구동 경로 판별 추가 사항 (2026-10-23)
+
+`81da9758-805b-4052-8f44-057e4995ff66` 실행은 정적 수납 뒤 SHIFT의
+676ms 지점에서 FL/RR 측정 하중이 0N이 됐다. 아직 unload 전이며,
+제어기가 실제 선택한 입력의 ROS age는 2~12ms였다. 따라서 오래된 입력이나
+발 들기 명령으로 단정하지 않는다. 원본 `controller_report.json`과 그 해석을 보존한다.
+
+설치된 `gz_ros2_control` 1.2.20의 position 경로는 위치 오차를 `JointVelocityCmd`로
+변환한다. 이것은 MuJoCo 위치 PD와 다른 물리 구동 방식이다. 원인 판별을 위해
+Ch13 Gazebo 관측기에 **읽기 전용** schema2 진단을 추가한다. 실제 ECM의 scalar joint
+position/velocity/velocity command, 축·종류·제한, joint frame 전달 wrench를
+같은 capture에 기록한다. 프레임·회전/직선 단위를 구분하고, 전달 wrench의 축 투영을
+실제 actuator force로 이름 바꾸지 않는다. 제공되지 않는 값은 null/미준비로 보존한다.
+관측기는 명령·속도·root 상태를 쓰거나 힘을 추정하지 않는다. 명령 소유권과 모든
+2N·3점 지지·10mm margin·시각/수납/종료 기준은 유지한다.
+
+이 관측은 아직 물리 원인 해결 또는 G1 인수 성공이 아니다. 실제 구동 값과 실패를
+연결한 뒤 필요한 최소 물리 수정과 새 엔진 검증을 수행한다. 종료 코드0만으로
+FAULT 이후 측정 STOPPED 미확정을 정상 종료로 바꾸지 않는다.
+
+구동 명령 관측은 **Update priority-1**이다. 모든 controller PreUpdate 뒤이고,
+고정 gz-sim8.15.0 Physics Update(priority0)의 명령 소비·초기화 전이다. PostUpdate에서
+명령을 읽어 초기화된0을 적용 명령으로 오해하지 않는다. `capture_ns`는 해당 명령의
+적용 step, `state_capture_ns=capture_ns-step_ns`는 직전 완료된 ECM 상태 시각이다.
+진단에 `sample_phase=pre_physics`를 명시하고, 접촉/CoM은 기존 PostUpdate를 유지한다.
+동일 stop mutex로 두 경로를 막는다. 실제 플러그인 로더 회귀로 Update 참여·priority를
+검사하며, 이 시험 자체는 엔진의 물리 지지력이나 힘 제한을 증명하지 않는다.
+
+### 네이티브 감쇠 위치 구동 비교 결정 (미인수 후보)
+
+명령 소비 전 계측을 사용한 `54776df9-c003-44b1-af38-a554c8135e41`은 다시 SHIFT에서
+실패했다. 실제20관절/1,040고유 진단을 얻었고 최초 실패 접촉은
+FR1.8545/FL71.3324/RR76.0112/RL0N이었다. 여러 hip/thigh의 전달 토크가20/30Nm
+축 한계에 닿았다. 속도 명령은 작아도 폐쇄 사슬의 네 다리가 강한 속도 서보로
+경쟁할 수 있다는 가설이다. **무제한 토크라고 단정하지 않으며**, 전달 wrench와
+직접 적용 구동력의 구분을 유지한다. 후자는 이 경로에서 제공되지 않았다.
+
+Ch13 내부의 다음 비교 후보를 채택한다. 이것은 작성자의 구현 판단이며 실제 성공으로
+간주하지 않는다. ROS2 위치 인터페이스와 기존20관절·관절 한계·단일 Controller Manager는
+유지하고, Gazebo 하드웨어 내부만 `PositionPDSystem`으로 바꾼다.
+`tau=clip(kp*(q_target-q)-kd*q_dot, -effort_limit, +effort_limit)`를 실제 native
+관절 상태에서 계산해 scalar `JointForceCmd`에 적용한다. 회전은Nm/직선은N이다.
+MuJoCo 후보에 이미 사용한 동일 게인 설정을 재사용하며 수치·질량·힘 한계를 올리지 않는다.
+이 비교로 인과 가설을 판별하며, 실제 G1 실패면 채택 완료를 선언하지 않는다.
+
+- 위치 목표 발행자는 여전히 crawl/carry뿐이다. 내부 힘 명령을 별도 ROS 토픽으로 발행하거나
+  PPO/whole-body 제어가 구현됐다고 하지 않는다.
+- 초기 관절 reset은 native 하드웨어 초기화 때 URDF 초기값으로 한 번만 한다. 이후
+  루트/관절 pose·속도 reset, 외력, 모션 강제 설정은 금지한다.
+- 형상/힘/게인/인터페이스를 모두 검증한 뒤 초기화한다. 일부만 초기화하지 않는다.
+  잘못된 명령·native 상태는 sticky 오류로 차단하며 자동 복구하지 않는다.
+- 제어기 비활성 시에는 초기/마지막 승인 위치를 감쇠 유지한다. 전력 차단을 흉내 내지 않는다.
+  실제 STOPPED·typed terminal·관측 stop·엔진 종료는 각각 검증한다.
+- 생성되는 **13.5 Gazebo 장면만** 이 플러그인을 선택한다. 13.4와 이전 장의 기본 하드웨어는
+  바꾸지 않는다. 외부 패키지는 공개 base ABI에 link할 뿐 복사·수정하지 않는다.
+
+대안인 시간/힘 기준 완화는 인수 계약을 훼손하므로 제외했다. 속도 게인만 낮추는 방식은
+여전히 두 엔진의 구동 의미가 달라 원인 판별이 약하다. 같은 힘 제한의 감쇠 위치 구동을
+비교하는 대신 새 native 물리·profile hash·성능 검증 비용을 감수한다.
+
+### 명시적 PD 후보의 실패와 원생 감쇠 후보 (2026-10-24)
+
+앞 절의 외부 `kp*error-kd*velocity` 후보는 **미채택 실패 이력**이다.
+`38499c57-595c-4c11-8651-8f84c9f787ae`에서 시동 대기 입력477개가 관절 속도 한계로
+거절됐다. 입력은 신선했지만 팔/그리퍼 속도가 진동했다. 같은 숫자의 PD 게인이라도
+MuJoCo의 암시적 적분과 DART에 외부 힘으로 적용한 명시적 피드백은 같지 않다.
+
+설치된 DART6.13.2의 순차 1자유도 판별 실험
+`dart-damping-study-fe875293-b545-44ae-bcd0-7442a7785cb3.json`은 dt2ms, 관성0.0001,
+kp60/kd10, 외부 힘 한계12Nm를 고정했다. 명시적 후보는 속도 약3rad/s 진동과
+오차0.1rad가 남았다. 원생 감쇠 후보는 마지막200ms 오차1.93e-6rad/속도1.17e-5rad/s로
+정착했다. **실제 DART 구성요소 판별이며 전체 Gazebo 로봇 인수 증거는 아니다.**
+
+새 후보는 Gazebo 장면의 원래 수동 감쇠 `d_base`를 보존해 `d_native=d_base+kd`로
+명시한다. `ch13_damping_mode=native`, base/native 계수를 URDF 하드웨어 파라미터에
+함께 기록하고 변환된 실제 JointAxis의 damping과 일치해야 초기화한다.
+외부 위치력은 `clip(kp*(q_target-q), ±effort_limit)`만 적용한다. 미분 힘을 다시 빼지 않는다.
+원생 감쇠는 DART의 암시적 적분이 처리한다. 누락/불일치 시 명시적 모드로 fallback하지 않는다.
+
+이것은 **물리 감쇠 모델 변경**이며 새 물리·profile 해시와 실제 G1/G2 검증이 필요하다.
+원래 effort 한계는 외부 scalar 위치력의 한계다. 원생 수동 감쇠와 접촉 전달 wrench는
+별도 항이며, 그것들을 한계 내 actuator force로 위장하지 않는다. MuJoCo의 포화 PD와
+완전히 같은 액추에이터라고 주장하지 않는다. 기존 질량·관성·관절/명령/관측 한계,
+3점 지지와 정착/종료 조건은 바꾸지 않는다. 이전 절의 기본 모델도 수정하지 않는다.
+
+수정 전 명시적 후보의 runtime4파일은 이전 실행 source manifest와 SHA256 일치를 확인해
+`failed-explicit-runtime-source.zip`으로 추가 보존했다. 원본 FAIL/result/log는 변경하지 않았다.
+
+### IMU 검사의 동일 촬영 원칙 (2026-10-24)
+
+검사기에도 센서 결합과 같은 시간 계약이 필요하다. 7c3d8a5e에서 IMU31.412초의 값과
+최신 `/odom`31.446초를 비교해0.040626rad/s 오차가 났다. 실제 좌표축 오류로 단정할
+수 없는34ms 시차다. 두 스트림50Hz 목표가 같은 촬영을 보장하지 않으며 원본 body
+간격은 운영 구간20–78ms였다. 20ms 이내 보간만 허용한 사후 가설은752개 중314개를
+놓쳤다. 누락 표본을 삭제하거나 보간 폭을 늘려 성공시키는 방식을 채택하지 않는다.
+
+```mermaid
+flowchart LR
+    S["immutable MuJoCo snapshot\ntime / epoch / sequence"] --> G["gyro sensordata\n실제 IMU 값"]
+    S --> Q["free-joint qvel 회전3성분\n독립 BODY 각속도"]
+    G --> I["IMU 원본 촬영 header"]
+    Q --> C["기존 native_controls 진단\nbody_reference + capture"]
+    I --> J{"exact capture + epoch 대조"}
+    C --> J
+    J -->|누락·잘못된 frame·비유한값| F["FAIL, 원본 보존"]
+    J -->|같은 촬영| E["각속도 오차 ≤0.02rad/s\n모든 운영 표본 검사"]
+```
+
+free-joint 선속도는 WORLD지만 각속도는 BODY라는 native 계약을 구분한다.
+기준값은 gyro를 다시 읽거나 명령에서 계산하지 않는다. base_link가 free root인지,
+주소와 유한값이 맞는지 검증한다. 원본 snapshot을 `mj_forward`로 재계산하거나
+header를 변경하지 않는다. 엔진 스텝 내 sensordata/qvel 평가 단계 차이도 기존
+0.02rad/s 한계 안인지 실제 실행으로 확인해야 하며 단위시험만으로 인수하지 않는다.
+
+검사 수신은 별도 단일 소유 executor에서 진행하고 부모는 프로세스·파일 조회를 한다.
+스레드 예외는 고착 실패, 종료 시 join 완료 전 ROS 자원과 로그를 해제하지 않는다.
+프레임 신선도 기준·제어권·기존 명령 주기는 바꾸지 않는다. Gazebo의 동일 촬영
+관측 계약은 별도 경로로 검증하며 MuJoCo 결과를 대신 사용하지 않는다.

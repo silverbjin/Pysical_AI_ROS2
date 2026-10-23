@@ -10,6 +10,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 import numpy as np
+import yaml
 
 
 def description_dir():
@@ -28,6 +29,28 @@ def navigation_mjcf(model):
         joint = urdf.find(f"joint[@name='{prefix}_hip_joint']")
         body = tree.find(f".//body[@name='{prefix}_hip_link']")
         body.set('pos', joint.find('origin').get('xyz'))
+    # This candidate is specific to the combined navigation model. Legacy
+    # description gains are untouched; native G1/G2 validation is still required.
+    gains_file = Path(__file__).resolve().parents[1]/'config/mujoco_navigation_actuators.yaml'
+    if not gains_file.is_file():
+        from ament_index_python.packages import get_package_share_directory
+        gains_file = Path(get_package_share_directory('integrated_robot_navigation'))/'config/mujoco_navigation_actuators.yaml'
+    gains = yaml.safe_load(gains_file.read_text())
+    expected = {'hip', 'thigh', 'calf'} | (set(model.limits)-set(model.joint_names))
+    if not isinstance(gains, dict) or set(gains) != expected:
+        raise ValueError('navigation actuator gain schema')
+    for values in gains.values():
+        if (not isinstance(values, dict) or set(values) != {'kp', 'kv'}
+                or any(type(value) not in (int, float) or not math.isfinite(value) or value <= 0
+                       for value in values.values())):
+            raise ValueError('positive finite navigation actuator gains required')
+    for name in model.limits:
+        actuator = tree.find(f"actuator/position[@joint='{name}']")
+        if actuator is None:
+            raise ValueError('navigation position actuator missing: '+name)
+        group = name.split('_')[1] if name in model.joint_names else name
+        for key, value in gains[group].items():
+            actuator.set(key, str(float(value)))
     return ET.tostring(tree, encoding='unicode')
 
 

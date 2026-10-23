@@ -10,10 +10,88 @@
 #include <gz/sim/components/Pose.hh>
 #include <gz/sim/components/ParentEntity.hh>
 #include <gz/sim/components/World.hh>
+#include <gz/sim/components/JointAxis.hh>
+#include <gz/sim/components/JointType.hh>
+#include <gz/sim/components/JointPosition.hh>
+#include <gz/sim/components/JointVelocity.hh>
+#include <gz/sim/components/JointVelocityCmd.hh>
+#include <gz/sim/components/JointTransmittedWrench.hh>
+#include <nlohmann/json.hpp>
+#include <gz/plugin/Loader.hh>
+#include <gz/sim/System.hh>
 #include "integrated_robot_navigation_sensors/gazebo_observation.hpp"
 namespace sim = gz::sim;
 namespace comp = gz::sim::components;
 namespace nav = integrated_robot_navigation_sensors;
+
+TEST(GazeboControls, NativePluginObservesCommandsBeforePhysicsClearsThem)
+{
+  gz::plugin::Loader loader;
+  ASSERT_FALSE(loader.LoadLib(GZ_NAV_OBSERVER_LIBRARY).empty());
+  auto plugin = loader.Instantiate("integrated_robot_navigation_sensors::GazeboObserver");
+  ASSERT_TRUE(plugin);
+  // All PreUpdates (including the real ros2_control write) precede Update.
+  // Physics Update has default priority0 and consumes/clears the commands.
+  ASSERT_NE(plugin->QueryInterface<sim::ISystemUpdate>(), nullptr);
+  auto * priority = plugin->QueryInterface<sim::ISystemConfigurePriority>();
+  ASSERT_NE(priority, nullptr);
+  EXPECT_LT(priority->ConfigurePriority(), sim::System::kDefaultPriority);
+}
+
+TEST(GazeboControls, ActualScalarComponentsAndJointFrameEffortNotInferredTorque)
+{
+  sim::EntityComponentManager ecm;
+  const auto robot = ecm.CreateEntity();
+  ecm.CreateComponent(robot, comp::Model());
+  const auto joint = ecm.CreateEntity();
+  ecm.SetParentEntity(joint, robot);
+  ecm.CreateComponent(joint, comp::ParentEntity(robot));
+  ecm.CreateComponent(joint, comp::Name("fr_hip_joint"));
+  ecm.CreateComponent(joint, comp::JointType(sdf::JointType::REVOLUTE));
+  sdf::JointAxis axis;
+  ASSERT_TRUE(axis.SetXyz(gz::math::Vector3d(0, 1, 0)).empty());
+  axis.SetEffort(18.); axis.SetMaxVelocity(7.);
+  axis.SetDamping(.35);
+  axis.SetLower(-.8); axis.SetUpper(.8);
+  ecm.CreateComponent(joint, comp::JointAxis(axis));
+  // Before the real hardware exposes state/commands, no fabricated zero sample.
+  EXPECT_FALSE(nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(2), 3));
+  ecm.CreateComponent(joint, comp::JointPosition({.12}));
+  ecm.CreateComponent(joint, comp::JointVelocity({-.3}));
+  ecm.CreateComponent(joint, comp::JointVelocityCmd({-.7}));
+  gz::msgs::Wrench wrench;
+  wrench.mutable_torque()->set_x(91.);
+  wrench.mutable_torque()->set_y(-2.5);
+  wrench.mutable_force()->set_y(123.);
+  ecm.CreateComponent(joint, comp::JointTransmittedWrench(wrench));
+  const auto observed = nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(2), 3);
+  ASSERT_TRUE(observed);
+  const auto data = nlohmann::json::parse(observed->data());
+  EXPECT_EQ(data.at("schema"), 2);
+  EXPECT_EQ(data.at("engine"), "gazebo");
+  EXPECT_EQ(data.at("capture_ns"), 2000000000);
+  EXPECT_EQ(data.at("sequence"), 3);
+  const auto & row = data.at("joints").at(0);
+  EXPECT_EQ(row.at("name"), "fr_hip_joint");
+  EXPECT_EQ(row.at("entity"), joint);
+  EXPECT_EQ(row.at("position"), .12);
+  EXPECT_EQ(row.at("velocity"), -.3);
+  EXPECT_EQ(row.at("velocity_command"), -.7);
+  EXPECT_EQ(row.at("projected_transmitted_effort"), -2.5);
+  EXPECT_EQ(row.at("effort_unit"), "Nm");
+  EXPECT_EQ(row.at("effort_limit"), 18.);
+  EXPECT_EQ(row.at("native_damping"), .35);
+  EXPECT_TRUE(row.at("applied_generalized_force").is_null());
+  // Read-only observation must not clamp/replace actual native actuation.
+  EXPECT_EQ(ecm.Component<comp::JointVelocityCmd>(joint)->Data().at(0), -.7);
+  ecm.SetComponentData<comp::JointType>(joint, sdf::JointType::PRISMATIC);
+  const auto prismatic = nlohmann::json::parse(
+    nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(3), 4)->data());
+  EXPECT_EQ(prismatic.at("joints").at(0).at("projected_transmitted_effort"), 123.);
+  EXPECT_EQ(prismatic.at("joints").at(0).at("effort_unit"), "N");
+  ecm.SetComponentData<comp::JointVelocityCmd>(joint, {std::numeric_limits<double>::quiet_NaN()});
+  EXPECT_THROW(nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(4), 5), std::runtime_error);
+}
 
 TEST(GazeboObservation, NativeEcMassPoseFootNamesAndEmptyContactTick)
 {

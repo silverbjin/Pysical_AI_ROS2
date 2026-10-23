@@ -16,6 +16,21 @@ def fk_leg(model: ModelContract, foot: str, q: Vec3) -> Vec3:
     values = np.asarray(q, dtype=float)
     if values.shape != (3,) or not np.isfinite(values).all():
         raise ValueError('three finite joint angles required')
+    try:
+        hip, offset, upper, lower, names = _leg_spec(model.urdf, foot)
+    except ValueError:
+        # FK still supports general URDF axes/origins. Only verified scalar
+        # Rx/Ry/Ry geometry gets the fast path; IK keeps its stricter contract.
+        pass
+    else:
+        if any(not model.limits[name][0] <= value <= model.limits[name][1]
+               for name, value in zip(names, values)):
+            raise ValueError('joint position outside limits')
+        roll, thigh, knee = values
+        x = -upper*math.sin(thigh)-lower*math.sin(thigh+knee)
+        z = -upper*math.cos(thigh)-lower*math.cos(thigh+knee)
+        c, s = math.cos(roll), math.sin(roll)
+        return (float(hip[0]+x), float(hip[1]+offset*c-z*s), float(hip[2]+offset*s+z*c))
     names = tuple(foot[:2] + '_' + p + '_joint' for p in ('hip', 'thigh', 'calf'))
     joint_map = dict(zip(names, values))
     base = model.chains['base_link'].forward(joint_map)

@@ -16,19 +16,29 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output-dir', required=True)
     parser.add_argument('--urdf', help='Exact per-engine generated URDF; default is the offline mock variant')
+    parser.add_argument('--scene-engine', choices=('mujoco', 'gazebo'),
+                        help='Prepare a bound flat G1 scene and its exact URDF candidate; never validates it')
     parser.add_argument('--arm', type=float, nargs=6, default=(0., 1.2, -2., 0., .8, 0.))
     args = parser.parse_args()
     output = Path(args.output_dir).resolve()
     if output.exists():
         parser.error('output directory already exists; refusing overwrite')
-    if args.urdf:
+    if args.urdf and args.scene_engine:
+        parser.error('--urdf and --scene-engine are mutually exclusive')
+    if args.scene_engine:
+        from integrated_robot_navigation.scene import materialize_scene
+        output.mkdir(parents=True, exist_ok=False)
+        scene = materialize_scene(args.scene_engine, 'g1', output/'scene')
+        urdf = Path(scene['robot']['path']).read_text()
+    elif args.urdf:
         urdf = Path(args.urdf).read_text()
     else:
         urdf = xacro.process_file(str(description_dir()/'urdf/robot_system.urdf.xacro'),
                                  mappings={'hip_mount_y': '0.13'}).toxml()
     model = compile_model(urdf)
     profile = prepare_profile(model, tuple(args.arm))
-    output.mkdir(parents=True, exist_ok=False)
+    if not args.scene_engine:
+        output.mkdir(parents=True, exist_ok=False)
     (output/'robot.urdf').write_text(urdf, encoding='utf-8')
     (output/'robot.mjcf').write_text(navigation_mjcf(model), encoding='utf-8')
     (output/'carry_profile.json').write_text(

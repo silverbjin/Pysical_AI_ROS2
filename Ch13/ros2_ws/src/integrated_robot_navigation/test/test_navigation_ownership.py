@@ -39,16 +39,20 @@ def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
     profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
     ctx = LaunchContext()
     ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
-                                    carry_profile=str(profile), validation_mode='true')
+                                    carry_profile=str(profile), validation_mode='true',
+                                    tf_provenance_output=str(tmp_path/'tf_provenance.jsonl'))
     module = launch_file('crawl_system')
     actions = module.launch_nodes(ctx)
     nodes = [a for a in actions if isinstance(a, Node)]
     executables = [a.node_executable for a in nodes]
     assert sorted(executables) == sorted(['motion_guard', 'crawl_controller', 'carry_manager',
-                                          'nav_projection', 'crawl_startup'])
+                                          'nav_projection', 'crawl_startup', 'tf_provenance'])
     for action in nodes:
         values = evaluate_parameters(ctx, action._Node__parameters)
         assert any(isinstance(p, dict) and p.get('use_sim_time') is True for p in values)
+        if action.node_executable == 'crawl_startup':
+            assert any(isinstance(p, dict) and p.get('model_file') == record['robot']['path']
+                       for p in values), 'startup claim gate must bind the actual installed scene model'
     selected = launch_file('navigation_sensors').select_engine(ctx)
     included = [a for a in selected if isinstance(a, IncludeLaunchDescription)]
     assert len(included) == 1

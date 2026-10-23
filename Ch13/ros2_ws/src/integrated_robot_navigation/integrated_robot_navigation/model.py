@@ -19,6 +19,33 @@ class ModelContract:
     urdf: str
 
 
+def initial_leg_targets(model: ModelContract) -> dict[str, float]:
+    """Cold hardware hold only, never an estimate from loaded encoders."""
+    tree = ET.fromstring(model.urdf)
+    controls = tree.findall('ros2_control')
+    result = {}
+    if len(controls) != 1:
+        raise ValueError('one initial leg command source required')
+    for joint in controls[0].findall('joint'):
+        name = joint.get('name')
+        if name not in model.joint_names:
+            continue
+        initial = joint.findall("state_interface[@name='position']/param[@name='initial_value']")
+        interfaces = joint.findall('command_interface')
+        try:
+            value = float(initial[0].text) if len(initial) == 1 else float('nan')
+        except (TypeError, ValueError):
+            value = float('nan')
+        if (name in result or not math.isfinite(value)
+                or not model.limits[name][0] <= value <= model.limits[name][1]
+                or len(interfaces) != 1 or interfaces[0].get('name') != 'position'):
+            raise ValueError('invalid initial leg command: '+name)
+        result[name] = value
+    if set(result) != set(model.joint_names):
+        raise ValueError('missing initial leg command')
+    return result
+
+
 def compile_model(urdf: str) -> ModelContract:
     tree = ET.fromstring(urdf)
     links = [element.get('name') for element in tree.findall('link')]

@@ -30,9 +30,13 @@ def launch_nodes(context):
     common = dict(use_sim_time=True, model_file=record['robot']['path'], carry_profile=profile_path,
                   engine=engine, validation_mode=raw_validation == 'true')
     nodes = [Node(package='integrated_robot_navigation', executable=name,
-                  parameters=[common if name in ('motion_guard', 'crawl_controller', 'carry_manager')
+                  parameters=[common if name in ('motion_guard', 'crawl_controller', 'carry_manager', 'crawl_startup')
                               else {'use_sim_time': True}], output='screen')
              for name in ('motion_guard', 'crawl_controller', 'carry_manager', 'nav_projection', 'crawl_startup')]
+    provenance = LaunchConfiguration('tf_provenance_output', default='').perform(context)
+    if provenance:
+        nodes.append(Node(package='integrated_robot_navigation_sensors', executable='tf_provenance',
+                          arguments=[provenance], parameters=[{'use_sim_time': True}], output='screen'))
     return [sensors, *nodes]
 
 
@@ -40,4 +44,5 @@ def generate_launch_description():
     return LaunchDescription([DeclareLaunchArgument('engine', default_value='mujoco'),
         DeclareLaunchArgument('navigation_scene'), DeclareLaunchArgument('carry_profile'),
         DeclareLaunchArgument('validation_mode', default_value='false'),
+        DeclareLaunchArgument('tf_provenance_output', default_value=''),
         OpaqueFunction(function=launch_nodes)])

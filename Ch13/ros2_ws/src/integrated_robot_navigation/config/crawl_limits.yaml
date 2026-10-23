@@ -2,12 +2,20 @@
 control_hz: 50.0
 cycle_s: 8.0
 swing_height_m: 0.02
+# Spatial envelope alone does not bound contact impact. Time-scale the full
+# world-foot curve; the 8s stride integration clock remains nominal only.
+max_swing_speed_mps: 0.02
 max_foot_displacement_m: 0.08
 max_vx: 0.01
 max_vy: 0.0
 max_wz: 0.03
 max_accel_x: 0.02
 max_accel_wz: 0.06
+# Internal CoM shift is distinct from the navigation velocity ramp. Measured
+# support/velocity gates can extend the nominal cycle; never lift on a timer.
+max_support_shift_accel_mps2: 0.10
+unload_speed_mps: 0.002
+max_unload_height_m: 0.010
 max_roll_pitch: 0.15
 min_body_height_m: 0.30
 max_body_height_m: 0.70

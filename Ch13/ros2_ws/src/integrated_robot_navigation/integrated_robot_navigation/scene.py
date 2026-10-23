@@ -132,6 +132,30 @@ def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_f
     for link in urdf_tree.findall('link'):
         for i, collision in enumerate(link.findall('collision')):
             collision.set('name', f"navcol__{link.get('name')}__{i}")
+    if engine == 'gazebo':
+        # Use exactly the existing validated navigation position-servo gains,
+        # not a second set of constants or a change to legacy description files.
+        actuator_model = ET.fromstring(navigation_mjcf(compile_model(
+            ET.tostring(urdf_tree, encoding='unicode'))))
+        actuators = {a.get('joint'): a for a in actuator_model.findall('actuator/position')}
+        control = urdf_tree.find('ros2_control')
+        control.find('hardware/plugin').text = 'integrated_robot_navigation_sensors/PositionPDSystem'
+        for joint in control.findall('joint'):
+            actuator = actuators[joint.get('name')]
+            ET.SubElement(joint, 'param', name='ch13_kp').text = actuator.get('kp')
+            ET.SubElement(joint, 'param', name='ch13_kd').text = actuator.get('kv')
+            physical = urdf_tree.find(f"joint[@name='{joint.get('name')}']")
+            dynamics = physical.find('dynamics')
+            if dynamics is None:
+                dynamics = ET.SubElement(physical, 'dynamics')
+            base_damping = float(dynamics.get('damping', '0'))
+            if not math.isfinite(base_damping) or base_damping < 0:
+                raise ValueError('finite nonnegative original joint damping required')
+            native_damping = base_damping+float(actuator.get('kv'))
+            dynamics.set('damping', str(native_damping))
+            ET.SubElement(joint, 'param', name='ch13_damping_mode').text = 'native'
+            ET.SubElement(joint, 'param', name='ch13_base_damping').text = str(base_damping)
+            ET.SubElement(joint, 'param', name='ch13_native_damping').text = str(native_damping)
     urdf = ET.tostring(urdf_tree, encoding='unicode')
     robot.write_text(urdf, encoding='utf-8')
     if engine == 'mujoco':
@@ -209,16 +233,31 @@ def load_scene(engine, directory):
     record = json.loads((directory/'scene.json').read_text())
     if record.get('schema') != 1 or record.get('engine') != engine:
         raise ValueError('scene engine/schema mismatch')
-    keys = ['world', 'robot', 'map', 'map_image', 'controllers', 'native_controllers']
+    keys = ['world', 'robot', 'map', 'map_image', 'controllers']
     if engine == 'gazebo':
         keys.append('robot_sdf')
     for key in keys:
         entry = record[key]
         path = Path(entry['path']).resolve()
-        if key != 'native_controllers' and not path.is_relative_to(directory):
+        if not path.is_relative_to(directory):
             raise ValueError('scene path outside bundle')
         if hashlib.sha256(path.read_bytes()).hexdigest() != entry['sha256']:
             raise ValueError('scene bound file hash mismatch: '+key)
     if record['controllers']['sha256'] != record['native_controllers']['sha256']:
         raise ValueError('scene native controller hash mismatch')
+    # /tmp is a disposable cache, not durable scene evidence. Restore only our
+    # exact content-addressed short path from the already verified bundle. Never
+    # overwrite a changed cache, follow a symlink, or honor an arbitrary target.
+    digest = record['controllers']['sha256']
+    cache = Path(tempfile.gettempdir()).resolve()/f'ch13_5_controllers_{digest[:16]}.yaml'
+    if Path(record['native_controllers']['path']).absolute() != cache or cache.is_symlink():
+        raise ValueError('scene native controller path is not the owned cache path')
+    if not cache.exists():
+        try:
+            with cache.open('xb') as stream:
+                stream.write(Path(record['controllers']['path']).read_bytes())
+        except FileExistsError:
+            pass  # concurrent creator is accepted only after the same hash check
+    if cache.is_symlink() or hashlib.sha256(cache.read_bytes()).hexdigest() != digest:
+        raise ValueError('scene native controller cache hash mismatch')
     return record

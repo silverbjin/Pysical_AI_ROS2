@@ -32,14 +32,17 @@ class CrawlMachine:
         self.reference_body = np.eye(4)
         self.stopping, self.urgent = False, False
         self._explicit_stop = self._paused = False
+        self.calibrating = False
         self.swing_foot = None
         self._initialized = False
+        self._shift_plan = None
 
     def _result(self, targets=None):
         return ControlResult(self.state, self.phase, self.swing_foot,
                              self.generation, targets, self.reason)
 
     def _fail(self, reason):
+        self._shift_plan = None
         self.state, self.reason = 'FAULT', self.reason or reason
         self.swing_foot = None
         return self._result()
@@ -82,16 +85,29 @@ class CrawlMachine:
         com = center_of_mass(self.model, q, pose)
         return q, pose, centers, loads, points, com
 
-    def reset(self, bundle, ros_ns, wall_ns):
+    def reset(self, bundle, ros_ns, wall_ns, *, held_targets=None):
+        self._shift_plan = None
         self.generation += 1
         self.state, self.phase, self.reason = 'STAND', 'STAND', ''
         self.stopping = self.urgent = False
         self._explicit_stop = self._paused = False
+        self.calibrating = False
         self.swing_foot = None
         self.epoch = bundle.body.epoch if bundle.body is not None else 0
         self._initialized = False
         try:
             _, pose, centers, _, _, _ = self._measure(bundle, ros_ns, wall_ns)
+            commanded_centers = centers
+            if held_targets is not None:
+                if set(held_targets) != set(self.model.joint_names) or any(
+                        not math.isfinite(v) or not self.model.limits[n][0] <= v <= self.model.limits[n][1]
+                        for n, v in held_targets.items()):
+                    raise ValueError('invalid held leg command handoff')
+                commanded_centers = {}
+                for foot in self.model.feet:
+                    angles = tuple(held_targets[foot[:2]+'_'+part+'_joint']
+                                   for part in ('hip', 'thigh', 'calf'))
+                    commanded_centers[foot] = (pose @ np.array((*fk_leg(self.model, foot, angles), 1.)))[:3]
         except (ValueError, KeyError, TypeError, IndexError) as error:
             self._fail(str(error))
             return
@@ -99,7 +115,10 @@ class CrawlMachine:
         self.travel = pose.copy()
         self.anchors = {name: p.copy() for name, p in centers.items()}
         self.floor = {name: p[2] for name, p in centers.items()}
-        self._targets = {name: p.copy() for name, p in centers.items()}
+        # Encoders under load are not the position servo's held commands.
+        # Preserve spring preload at activation; actual anchors/floor above
+        # remain measured and continue to guard slip/support independently.
+        self._targets = {name: p.copy() for name, p in commanded_centers.items()}
         self.offset = np.zeros(2)
         self._phase_start = ros_ns
         self._stand_start_z = pose[2, 3]
@@ -110,8 +129,14 @@ class CrawlMachine:
         self._initialized = True
 
     def request_stop(self, urgent):
+        self._shift_plan = None
         self.stopping, self.urgent = True, self.urgent or bool(urgent)
         self._explicit_stop = True
+
+    def request_contact_calibration(self):
+        if not self._initialized or self.state != 'STAND' or self.stopping or self.calibrating:
+            raise ValueError('contact calibration requires idle measured STAND')
+        self.calibrating = True
 
     def _margin(self, com, loads, points, exclude=None):
         support = [points[n] for n in self.model.feet if loads[n] and n != exclude]
@@ -120,9 +145,14 @@ class CrawlMachine:
         return support_margin(com, support)
 
     def _begin_shift(self, com, loads, points, now, joints):
+        self._shift_plan = None
         self.phase, self.swing_foot, self._phase_start = 'SHIFT', None, now
         foot = self.ORDER[self._index]
         self._offset_start = self.offset.copy()
+        self._shift_duration = .7
+        self._shift_settled_start = None
+        self._unload_start = None
+        self._unloaded_since = None
         support = [points[n] for n in self.model.feet if n != foot and loads[n]]
         self._offset_goal = self.offset.copy()
         if len(support) < 3:
@@ -135,9 +165,17 @@ class CrawlMachine:
         # feet stay fixed while their leg joints move. Predict with the full
         # IK/URDF mass model, not COM_new = COM_old + body_delta.
         direction = centroid[:2]-np.asarray(com)[:2]
+        self._shift_plan = self._plan_shift(direction, support, desired_margin, dict(joints),
+                                            self.reference_body.copy())
 
+    def _plan_shift(self, direction, support, desired_margin, joints, reference_body):
+        """At most one full IK/CoM candidate per next(); no actuator writes.
+
+        The caller holds its previous reference while planning and performs all
+        live safety checks before every slice. No thread owns stale commands.
+        """
         def predicted_margin(weight):
-            body = self.reference_body.copy()
+            body = reference_body.copy()
             body[:2, 3] += direction*weight
             q = dict(joints)
             q.update(self._solve(joints, True, body))
@@ -149,6 +187,7 @@ class CrawlMachine:
                 safe = predicted_margin(candidate) >= desired_margin
             except ValueError:
                 safe = False
+            yield
             if safe:
                 high = float(candidate)
                 break
@@ -163,11 +202,17 @@ class CrawlMachine:
                 safe = predicted_margin(candidate) >= desired_margin
             except ValueError:
                 safe = False
+            yield
             if safe:
                 high = candidate
             else:
                 low = candidate
         self._offset_goal += direction*high
+        # Quintic blend has peak |d²s/du²| = 10*sqrt(3)/3. Bound the
+        # *internal* support translation, not just the incoming cmd_vel ramp.
+        distance = float(np.linalg.norm(self._offset_goal-self._offset_start))
+        self._shift_duration = max(.7, math.sqrt((10.*math.sqrt(3.)/3.)*distance/
+            self.limits['max_support_shift_accel_mps2']))
 
     def _effective_command(self, command):
         vx, _, wz = command
@@ -240,6 +285,8 @@ class CrawlMachine:
                     or abs(command[0]) > self.limits['max_vx'] or command[1] != 0.
                     or abs(command[2]) > self.limits['max_wz']):
                 raise ValueError('command limit/nonfinite')
+            if self.calibrating and command != (0., 0., 0.):
+                raise ValueError('contact calibration forbids navigation velocity')
             if ros_ns < self._last_ros or wall_ns < self._last_wall:
                 raise ValueError('clock rollback')
             if ros_ns > self._last_ros:
@@ -256,6 +303,9 @@ class CrawlMachine:
                     raise ValueError('stance slip')
             if self._margin(com, loads, points) < self.limits['min_support_margin_m']:
                 raise ValueError('current measured support lost')
+            if self.calibrating and self.state == 'STAND' and not self.stopping:
+                self.state = 'CALIBRATING'
+                self._begin_shift(com, loads, points, ros_ns, q)
             if self._paused and not self._explicit_stop and self.state == 'STOPPED' and command != (0., 0., 0.):
                 # Resuming an authorized velocity pause is not recovery from a
                 # fault. Explicit stop/fault still requires a caller reset.
@@ -276,49 +326,134 @@ class CrawlMachine:
                 if self.state == 'STAND':
                     self.state = 'CRAWL'
                     self._begin_shift(com, loads, points, ros_ns, q)
+                if self._shift_plan is not None:
+                    try:
+                        next(self._shift_plan)
+                    except StopIteration:
+                        self._shift_plan = None
+                        # Planning time is not executed body/foot motion. Start
+                        # the unchanged physical shift curve only when complete.
+                        self._phase_start = ros_ns
+                    else:
+                        return self._result(self._solve(q, True))
                 vx, wz = self._effective_command(command)
-                yaw = math.atan2(self.travel[1, 0], self.travel[0, 0])+wz*dt
-                self.travel[:2, 3] += np.array([math.cos(yaw), math.sin(yaw)])*vx*dt
-                self.travel[:3, :3] = [[math.cos(yaw), -math.sin(yaw), 0.],
-                                       [math.sin(yaw), math.cos(yaw), 0.], [0., 0., 1.]]
                 elapsed = (ros_ns-self._phase_start)/1e9
+                # Progress is phase-bounded: physical support waits do not
+                # integrate extra body travel while the feet remain planted.
+                token = (self.phase, self._phase_start)
+                if getattr(self, '_travel_token', None) != token:
+                    self._travel_token, self._travel_progress = token, 0.
+                budgets = {'SHIFT': .7, 'SWING': .8, 'TOUCHDOWN': .25, 'SETTLE': .25}
+                phase_time = elapsed*.7/self._shift_duration if self.phase == 'SHIFT' else elapsed
+                if self.phase == 'SWING':
+                    phase_time = elapsed*.8/self._swing_duration
+                progress = min(budgets[self.phase], max(0., phase_time))
+                travel_dt = max(0., progress-self._travel_progress)
+                self._travel_progress = progress
+                yaw = math.atan2(self.travel[1, 0], self.travel[0, 0])+wz*travel_dt
+                self.travel[:2, 3] += np.array([math.cos(yaw), math.sin(yaw)])*vx*travel_dt
+                # Integrate only the requested world-z rotation. Replacing this
+                # with a yaw-only pose instantly erases the standing roll/pitch,
+                # creating an IK target step even at dt=0 and zero command.
+                delta = wz*travel_dt
+                yaw_step = np.array([[math.cos(delta), -math.sin(delta), 0.],
+                                     [math.sin(delta), math.cos(delta), 0.], [0., 0., 1.]])
+                self.travel[:3, :3] = yaw_step @ self.travel[:3, :3]
                 foot = self.ORDER[self._index]
                 if self.phase == 'SHIFT':
-                    weight = blend(elapsed/.7)
+                    weight = blend(elapsed/self._shift_duration)
                     self.offset = self._offset_start*(1-weight)+self._offset_goal*weight
-                    if elapsed >= .7 and self._margin(com, loads, points, foot) >= self.limits['min_support_margin_m']:
+                    # The phase travel budget has ended before unloading. Check
+                    # actual settled motion, not command=0 or geometric CoM alone.
+                    measured_v = np.asarray(bundle.body.data['linear_velocity'])
+                    settled = (elapsed >= self._shift_duration
+                        and self._margin(com, loads, points, foot) >= self.limits['min_support_margin_m']
+                        and np.linalg.norm(measured_v) <= self.limits['stopped_v_mps']
+                        and np.linalg.norm(np.asarray(bundle.body.data['angular_velocity']))
+                            <= self.limits['stopped_wz_rps'])
+                    if settled:
+                        if self._shift_settled_start is None:
+                            self._shift_settled_start = ros_ns
+                    else:
+                        self._shift_settled_start = None
+                    if (self._unload_start is None and self._shift_settled_start is not None
+                            and ros_ns-self._shift_settled_start >= 100_000_000):
+                        self._unload_start = ros_ns
+                        self._unload_origin_z = self._targets[foot][2]
+                        self.swing_foot = foot  # same owner must also land during an unload STOP
+                    if self._unload_start is not None:
+                        if settled and loads[foot]:
+                            height = self._targets[foot][2]-self._unload_origin_z
+                            if height >= self.limits['max_unload_height_m']-1e-12:
+                                raise ValueError('measured unload height bound reached')
+                            self._targets[foot][2] += min(self.limits['unload_speed_mps']*dt,
+                                self.limits['max_unload_height_m']-height)
+                        if settled and not loads[foot]:
+                            if self._unloaded_since is None:
+                                self._unloaded_since = ros_ns
+                        else:
+                            self._unloaded_since = None
+                        unload_deadline = self.limits['max_unload_height_m']/self.limits['unload_speed_mps']+1.
+                        if (ros_ns-self._unload_start)/1e9 > unload_deadline:
+                            raise ValueError('measured unload timeout')
+                    if self._unloaded_since is not None and ros_ns-self._unloaded_since >= 100_000_000:
                         self.phase, self.swing_foot, self._phase_start = 'SWING', foot, ros_ns
-                        self._swing_start = self.anchors[foot].copy()
+                        self._swing_start = self._targets[foot].copy()
                         theta = wz*self.limits['cycle_s']
                         rotation = np.array([[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]])
                         self._swing_goal = self._swing_start.copy()
+                        self._swing_goal[2] = self.floor[foot]
+                        self._swing_amplitude = max(0., self.floor[foot]+self.limits['swing_height_m']
+                                                   -self._swing_start[2])
                         self._swing_goal[:2] = self.travel[:2, 3]+rotation @ (self._swing_start[:2]-self.travel[:2, 3])+np.array([math.cos(yaw), math.sin(yaw)])*vx*self.limits['cycle_s']
                         if np.linalg.norm(self._swing_goal[:2]-self._swing_start[:2]) > self.limits['max_foot_displacement_m']+1e-12:
                             raise ValueError('foot stride bound')
-                    elif elapsed > 2.:
-                        raise ValueError('shift timeout; measured support not gained')
+                        # Triangle bound on the full world-foot curve velocity:
+                        # max blend'(u)=15/8; max bump'(u)=16/(3*sqrt(3)).
+                        # Do not clip positions or integrate extra body travel
+                        # while the slower physical foot curve is executing.
+                        rate_bound = (1.875*np.linalg.norm(self._swing_goal-self._swing_start)
+                            +16./(3.*math.sqrt(3.))*self._swing_amplitude)
+                        self._swing_duration = max(.8, rate_bound/self.limits['max_swing_speed_mps'])
+                    elif self._unload_start is None and elapsed > self._shift_duration+1.:
+                        raise ValueError('shift timeout; measured support/settle not gained')
                 elif self.phase == 'SWING':
                     if self._margin(com, loads, points, foot) < self.limits['min_support_margin_m']:
                         raise ValueError('swing support lost')
-                    u = min(1., elapsed/.8)
-                    weight = blend(u)
-                    self._targets[foot] = self._swing_start*(1-weight)+self._swing_goal*weight
-                    self._targets[foot][2] += self.limits['swing_height_m']*16*u*u*(1-u)*(1-u)
-                    if u >= 1.:
+                    u = min(1., elapsed/self._swing_duration)
+                    if u >= .5 and loads[foot]:
+                        # The physical surface/compliance can be reached before
+                        # the nominal endpoint. Do not keep pushing a loaded
+                        # foot toward a timer-derived ground position.
                         self.phase, self._phase_start = 'TOUCHDOWN', ros_ns
+                    else:
+                        weight = blend(u)
+                        self._targets[foot] = self._swing_start*(1-weight)+self._swing_goal*weight
+                        self._targets[foot][2] += self._swing_amplitude*16*u*u*(1-u)*(1-u)
+                        if u >= 1.:
+                            self.phase, self._phase_start = 'TOUCHDOWN', ros_ns
                 elif self.phase == 'TOUCHDOWN':
                     if loads[foot] and elapsed >= .25:
-                        self.anchors[foot] = centers[foot].copy()
-                        self._targets[foot] = centers[foot].copy()
+                        # Anchors are command references, not measured odometry.
+                        # Replacing one with the compliant encoder position would
+                        # introduce a second position step under actual load.
+                        self.anchors[foot] = self._targets[foot].copy()
                         self.swing_foot = None
                         self.phase, self._phase_start = 'SETTLE', ros_ns
                     elif elapsed > 1.:
                         raise ValueError('touchdown timeout')
                     elif not loads[foot]:
-                        self._targets[foot][2] = self.floor[foot]-.002*min(1., elapsed/.25)
+                        self._targets[foot][2] = max(self.floor[foot]-.002,
+                            self._targets[foot][2]-self.limits['unload_speed_mps']*dt)
                 elif self.phase == 'SETTLE' and elapsed >= .25:
-                    self._index = (self._index+1)%4
-                    self._begin_shift(com, loads, points, ros_ns, q)
+                    if self.calibrating:
+                        self.calibrating = False
+                        self.state, self.phase = 'STAND', 'STAND'
+                        self.travel, self.offset = self.reference_body.copy(), np.zeros(2)
+                        self._stand_start, self._stand_start_z = ros_ns, self.reference_body[2, 3]
+                    else:
+                        self._index = (self._index+1)%4
+                        self._begin_shift(com, loads, points, ros_ns, q)
                 self.reference_body[:3, :3] = self.travel[:3, :3]
                 self.reference_body[:2, 3] = self.travel[:2, 3]+self.offset
             return self._result(self._solve(q, self.state != 'STAND'))

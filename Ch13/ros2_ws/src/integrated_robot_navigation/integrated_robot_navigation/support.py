@@ -34,6 +34,30 @@ def support_margin(point: Vec3, contacts: list[Vec3]) -> float:
                      for a, b in zip(hull, hull[1:] + hull[:1])))
 
 
+def _mass_frame(chain, joints, cache):
+    """Share root-to-joint prefixes within ONE measurement, never across time."""
+    transform = np.eye(4)
+    for name, kind, origin, axis, skew, squared, bounds in chain.compiled:
+        if name in cache:
+            transform = cache[name]
+            continue
+        transform = transform @ origin
+        if kind != 'fixed':
+            if name not in joints:
+                raise ValueError('missing named joint position')
+            value = joints[name]
+            if not math.isfinite(value) or bounds is not None and not bounds[0] <= value <= bounds[1]:
+                raise ValueError('joint position outside finite limits')
+            change = np.eye(4)
+            if kind == 'prismatic':
+                change[:3, 3] = axis*value
+            else:
+                change[:3, :3] += math.sin(value)*skew+(1-math.cos(value))*squared
+            transform = transform @ change
+        cache[name] = transform
+    return transform
+
+
 def center_of_mass(model: ModelContract, joints: JointMap, body_pose: object) -> Vec3:
     """body_pose is world_from_base_link, a rigid homogeneous 4x4 matrix."""
     pose = np.asarray(body_pose, dtype=float)
@@ -42,7 +66,8 @@ def center_of_mass(model: ModelContract, joints: JointMap, body_pose: object) ->
             or not np.allclose(pose[:3, :3].T @ pose[:3, :3], np.eye(3), atol=1e-8)
             or not math.isclose(np.linalg.det(pose[:3, :3]), 1., abs_tol=1e-8)):
         raise ValueError('rigid body pose required')
-    world_from_root = pose @ np.linalg.inv(model.chains['base_link'].forward(joints))
+    frames = {}
+    world_from_root = pose @ np.linalg.inv(_mass_frame(model.chains['base_link'], joints, frames))
     total, moment = 0., np.zeros(3)
     for link, (mass, local_point) in model.masses.items():
         if not math.isfinite(mass) or mass <= 0:
@@ -50,7 +75,7 @@ def center_of_mass(model: ModelContract, joints: JointMap, body_pose: object) ->
         local = np.asarray((*local_point, 1.), dtype=float)
         if local.shape != (4,) or not np.isfinite(local).all():
             raise ValueError('finite inertial origin required')
-        world = world_from_root @ model.chains[link].forward(joints) @ local
+        world = world_from_root @ _mass_frame(model.chains[link], joints, frames) @ local
         total += mass
         moment += mass * world[:3]
     if total <= 0:

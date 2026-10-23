@@ -73,3 +73,49 @@ def test_gazebo_collision_map_comes_from_actual_fixed_joint_conversion(tmp_path)
     mapping = record['foot_collision_map']
     assert set(mapping.values()) == {'fr_foot', 'fl_foot', 'rr_foot', 'rl_foot'}
     assert len(mapping) == 4 and set(mapping).issubset(actual)
+
+
+def test_nav_gazebo_position_system_binds_gains_without_changing_legacy_hardware(tmp_path):
+    record = api().materialize_scene('gazebo', 'g1', tmp_path/'pd_scene')
+    root = ET.parse(record['robot']['path']).getroot()
+    control = root.find('ros2_control')
+    assert control.findtext('hardware/plugin') == 'integrated_robot_navigation_sensors/PositionPDSystem'
+    expected = {
+        'hip': (200., 4.47213595499958), 'thigh': (500., 8.94427190999916),
+        'calf': (750., 10.954451150103322), 'arm_joint_1': (120., 25.),
+        'arm_joint_2': (120., 25.), 'arm_joint_3': (105., 40.),
+        'arm_joint_4': (75., 15.), 'arm_joint_5': (67.5, 15.), 'arm_joint_6': (60., 10.),
+        'gripper_left_joint': (100., 15.), 'gripper_right_joint': (100., 15.)}
+    assert len(control.findall('joint')) == 20
+    for joint in control.findall('joint'):
+        name = joint.get('name')
+        key = name.split('_')[1] if name[:3] in ('fr_', 'fl_', 'rr_', 'rl_') else name
+        assert (float(joint.findtext("param[@name='ch13_kp']")),
+                float(joint.findtext("param[@name='ch13_kd']"))) == expected[key]
+        assert [v.get('name') for v in joint.findall('command_interface')] == ['position']
+        physical = root.find(f"joint[@name='{name}']/limit")
+        # Existing physical caps remain the original model values, not PD gains.
+        assert float(physical.get('effort')) == (20. if key == 'hip' else
+            30. if key in ('thigh', 'calf', 'arm_joint_3') else
+            35. if key in ('arm_joint_1', 'arm_joint_2') else
+            20. if key == 'arm_joint_4' else 12. if key == 'arm_joint_6' else 15.)
+    legacy = ET.fromstring(xacro.process_file(str(description_dir()/'urdf/robot_system.urdf.xacro'),
+        mappings={'control_backend': 'gazebo'}).toxml())
+    assert legacy.findtext('ros2_control/hardware/plugin') == 'gz_ros2_control/GazeboSimSystem'
+
+
+def test_gazebo_damping_is_native_model_bound_and_not_double_counted(tmp_path):
+    record = api().materialize_scene('gazebo', 'g1', tmp_path/'native_damping')
+    root = ET.parse(record['robot']['path']).getroot()
+    legacy = ET.fromstring(xacro.process_file(str(description_dir()/'urdf/robot_system.urdf.xacro'),
+        mappings={'control_backend': 'gazebo'}).toxml())
+    for joint in root.findall('ros2_control/joint'):
+        name = joint.get('name')
+        original = legacy.find(f"joint[@name='{name}']/dynamics")
+        base = float(original.get('damping', '0')) if original is not None else 0.
+        kd = float(joint.findtext("param[@name='ch13_kd']"))
+        assert joint.findtext("param[@name='ch13_damping_mode']") == 'native'
+        assert float(joint.findtext("param[@name='ch13_base_damping']")) == base
+        assert float(joint.findtext("param[@name='ch13_native_damping']")) == pytest.approx(base+kd)
+        actual = root.find(f"joint[@name='{name}']/dynamics")
+        assert float(actual.get('damping')) == pytest.approx(base+kd)

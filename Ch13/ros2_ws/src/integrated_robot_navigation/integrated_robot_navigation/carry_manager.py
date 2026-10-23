@@ -1,6 +1,7 @@
 """One actual arm-action lease plus measured unloaded carry; never grasp proof."""
 import json
 from collections import deque
+from dataclasses import asdict
 from pathlib import Path
 import threading
 import time
@@ -55,6 +56,7 @@ class CarryManager(Node):
         self.observed = {key: {} for key in ('guard', 'crawl')}
         self.selected = dict.fromkeys(self.observed)
         self.state, self.fault = 'IDLE', ''
+        self.first_fault = None
         self.generation, self.record = 0, None
         self.closing = False
         self.settled_since = None
@@ -71,6 +73,7 @@ class CarryManager(Node):
             QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
         self.create_service(Trigger, '~/prepare', self._prepare)
         self.create_service(Trigger, '~/stop', self._stop)
+        self.create_service(Trigger, '~/report', self._report)
         self.create_timer(.02, self._tick, clock=Clock(clock_type=ClockType.STEADY_TIME))
         self.transport = ArmActionTransport(self)
         self.owner = ArmActionOwner(self.transport.client)
@@ -203,6 +206,14 @@ class CarryManager(Node):
         return response
 
     def _fail(self, reason):
+        if self.first_fault is None:
+            sample = self.inbox.samples['joints']
+            self.first_fault = dict(scope='selected_cache_at_first_failure', reason=reason,
+                ros_ns=self.get_clock().now().nanoseconds, wall_ns=time.monotonic_ns(),
+                state_before=self.state, model_sha256=self.model.model_sha256, generation=self.generation,
+                selected_joint_sample=asdict(sample) if sample else None,
+                selected_motion={key: asdict(value) if value else None
+                                 for key, value in self.selected.items()})
         self.fault = self.fault or reason
         self.state, self.settled_since = 'FAULT', None
         self.owner.cancel(now=time.monotonic())
@@ -214,6 +225,24 @@ class CarryManager(Node):
                 self.state = 'STOPPING'
             self.owner.cancel(now=time.monotonic())
             response.success, response.message = True, 'new commands blocked; terminal result drain required'
+            return response
+
+    def _report(self, request, response):
+        with self.lock, self.owner.lock:
+            record = self.record
+            value = self.owner.snapshot()
+            result = record.result if record else None
+            value.update(uuid=record.identifier.hex() if record else None,
+                terminal=bool(record and record.terminal), result_status=result.status if result else None,
+                result_error_code=result.result.error_code if result else None,
+                generation=self.generation, model_sha256=self.model.model_sha256,
+                receiver_healthy=self.transport.healthy, state=self.state, fault=self.fault,
+                first_fault=self.first_fault)
+            # Owner.snapshot refers to pending. After a real terminal it is empty,
+            # but the completed record still owns the received typed future.
+            value['result_future_done'] = bool(record and record.result_future is not None
+                                                and record.result_future.done())
+            response.success, response.message = True, json.dumps(value, allow_nan=False)
             return response
 
     def _tick(self):

@@ -18,7 +18,7 @@
 - 사용자 지정 기존 checkout과 `feat/ch13-section-13-5`를 사용한다. 미추적 13.4 교육 문서는 보존하고 무관한 커밋에 포함하지 않는다.
 - 실제 발 접촉으로 이동한다. root pose/velocity 강제 설정·명령 적분 odometry·외력/바퀴 대체 이동은 인수에 사용하지 않는다.
 - 평탄한 바닥·고정 지도·정지 물체·`native_ground_truth` localization profile만 지원한다. PPO/trot/등반/SLAM/MoveIt/물리 파지를 완성했다고 주장하지 않는다.
-- 제어 50Hz, `FL → RR → FR → RL`, `SHIFT → SWING → TOUCHDOWN → SETTLE`, full cycle 8초, 수평 발 이동≤0.08m, swing 높이≤0.02m.
+- 제어 50Hz, `FL → RR → FR → RL`, `SHIFT → SWING → TOUCHDOWN → SETTLE`, 명목 stride phase-time8초, 수평 발 이동≤0.08m, swing 높이≤0.02m. Task8 실측 교정에 따라 부하/안정 대기 중 진행 시계는 멈추며 실제 물리 주기는8초보다 길 수 있다. 이를 고정8초 달성으로 주장하지 않고 G2/G4 진행률·deadline을 실측한다. 상세 근거와 비용은 설계서의 Task8 교정 및 실행 원장에 남긴다.
 - 초기 속도 상한 전진 0.01m/s·횡이동 0·yaw 0.03rad/s, 가속도 전진 0.02m/s²·yaw 0.06rad/s². 후진은 같은 절대 선속도 상한을 적용하고 별도 실측한다.
 - 지지 여유≥0.01m, 접촉 정상력≥2N, roll/pitch 절대값≤0.15rad, 몸체 높이 0.30~0.70m, stance slip≤0.02m.
 - 관절·IMU·접촉·몸체의 ROS/수신 wall age 각각≤0.20초, raw 속도 입력 wall≤0.20초, scan≤0.30초. ROS와 monotonic을 서로 빼지 않는다.

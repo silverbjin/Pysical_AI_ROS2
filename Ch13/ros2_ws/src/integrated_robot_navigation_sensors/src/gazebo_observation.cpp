@@ -6,6 +6,15 @@
 #include <gz/sim/components/Inertial.hh>
 #include <gz/sim/components/Link.hh>
 #include <gz/sim/components/Name.hh>
+#include <gz/sim/components/JointAxis.hh>
+#include <gz/sim/components/JointType.hh>
+#include <gz/sim/components/JointPosition.hh>
+#include <gz/sim/components/JointVelocity.hh>
+#include <gz/sim/components/JointVelocityCmd.hh>
+#include <gz/sim/components/JointForce.hh>
+#include <gz/sim/components/JointForceCmd.hh>
+#include <gz/sim/components/JointTransmittedWrench.hh>
+#include <nlohmann/json.hpp>
 #include <array>
 #include <cmath>
 #include <set>
@@ -48,6 +57,77 @@ void point(gz::msgs::Vector3d * target, const gz::math::Vector3d & value)
 {
   target->set_x(value.X()); target->set_y(value.Y()); target->set_z(value.Z());
 }
+}
+std::optional<gz::msgs::StringMsg> read_gazebo_controls(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager & ecm,
+  std::chrono::steady_clock::duration stamp, uint64_t sequence)
+{
+  using Json = nlohmann::json;
+  Json rows = Json::array();
+  bool ready = true;
+  auto scalar = [](const std::vector<double> & values) {
+      if (values.size() != 1 || !std::isfinite(values[0])) {
+        throw std::runtime_error("nonfinite or non-scalar actual native joint value");
+      }
+      return values[0];
+    };
+  ecm.Each<comp::JointType, comp::JointAxis, comp::Name>(
+    [&](const gz::sim::Entity & entity, const comp::JointType * type,
+      const comp::JointAxis * axis, const comp::Name * name) {
+      if (!descendant(entity, model, ecm)) {return true;}
+      const bool hinge = type->Data() == sdf::JointType::REVOLUTE;
+      if (!hinge && type->Data() != sdf::JointType::PRISMATIC) {
+        if (type->Data() != sdf::JointType::FIXED) {
+          throw std::runtime_error("unsupported non-scalar native joint");
+        }
+        return true;
+      }
+      const auto * q = ecm.Component<comp::JointPosition>(entity);
+      const auto * qd = ecm.Component<comp::JointVelocity>(entity);
+      const auto * velocity = ecm.Component<comp::JointVelocityCmd>(entity);
+      const auto * force = ecm.Component<comp::JointForceCmd>(entity);
+      const auto * wrench = ecm.Component<comp::JointTransmittedWrench>(entity);
+      const bool has_velocity = velocity && !velocity->Data().empty();
+      const bool has_force = force && !force->Data().empty();
+      if (!q || q->Data().empty() || !qd || qd->Data().empty() || !wrench ||
+        (!has_velocity && !has_force)) {ready = false; return true;}
+      const auto a = axis->Data().Xyz();
+      const auto & w = wrench->Data();
+      const std::vector<double> torque{w.torque().x(), w.torque().y(), w.torque().z()};
+      const std::vector<double> transmitted_force{w.force().x(), w.force().y(), w.force().z()};
+      for (auto value : {a.X(), a.Y(), a.Z(), axis->Data().Effort(),
+          axis->Data().MaxVelocity(), axis->Data().Lower(), axis->Data().Upper(), axis->Data().Damping(),
+          torque[0], torque[1], torque[2], transmitted_force[0], transmitted_force[1],
+          transmitted_force[2]}) {
+        if (!std::isfinite(value)) {throw std::runtime_error("nonfinite native joint metadata/wrench");}
+      }
+      if (axis->Data().Damping() < 0.) {throw std::runtime_error("negative native damping");}
+      const auto & projected = hinge ? torque : transmitted_force;
+      Json applied = nullptr;
+      const auto * actual_force = ecm.Component<comp::JointForce>(entity);
+      if (actual_force && !actual_force->Data().empty()) {applied = scalar(actual_force->Data());}
+      rows.push_back(Json{{"entity", entity}, {"name", name->Data()},
+        {"type", hinge ? "hinge" : "slide"}, {"axis_joint", {a.X(), a.Y(), a.Z()}},
+        {"position", scalar(q->Data())}, {"velocity", scalar(qd->Data())},
+        {"position_unit", hinge ? "rad" : "m"}, {"velocity_unit", hinge ? "rad/s" : "m/s"},
+        {"effort_unit", hinge ? "Nm" : "N"}, {"effort_limit", axis->Data().Effort()},
+        {"native_damping", axis->Data().Damping()},
+        {"velocity_limit", axis->Data().MaxVelocity()}, {"lower", axis->Data().Lower()},
+        {"upper", axis->Data().Upper()},
+        {"velocity_command", has_velocity ? Json(scalar(velocity->Data())) : Json(nullptr)},
+        {"force_command", has_force ? Json(scalar(force->Data())) : Json(nullptr)},
+        {"transmitted_force_joint", transmitted_force}, {"transmitted_torque_joint", torque},
+        {"projected_transmitted_effort", a.X()*projected[0]+a.Y()*projected[1]+a.Z()*projected[2]},
+        {"applied_generalized_force", applied}});
+      return true;
+    });
+  if (!ready || rows.empty()) {return std::nullopt;}
+  const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stamp).count();
+  if (ns < 0) {throw std::runtime_error("negative native capture");}
+  gz::msgs::StringMsg result;
+  result.set_data(Json{{"schema", 2}, {"engine", "gazebo"}, {"capture_ns", ns},
+    {"epoch", 0}, {"sequence", sequence}, {"joints", rows}}.dump());
+  return result;
 }
 void request_gazebo_observations(gz::sim::Entity model, gz::sim::EntityComponentManager & ecm)
 {

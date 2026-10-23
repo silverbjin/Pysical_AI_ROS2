@@ -54,7 +54,10 @@ def _digest(limits, arm_q, physics_sha256, footprint, inflation_radius):
 def _validate_limits(limits):
     maxima = {
         'max_vx': .01, 'max_wz': .03, 'max_accel_x': .02, 'max_accel_wz': .06,
+        'max_support_shift_accel_mps2': .10,
+        'unload_speed_mps': .002, 'max_unload_height_m': .010,
         'max_roll_pitch': .15, 'swing_height_m': .02, 'max_foot_displacement_m': .08,
+        'max_swing_speed_mps': .02,
         'sensor_max_age_s': .20, 'raw_max_age_s': .20, 'scan_max_age_s': .30,
         'stop_landing_s': 1., 'stopped_v_mps': .003, 'stopped_wz_rps': .01,
         'carry_error_rad': .03, 'carry_velocity_rps': .02, 'max_body_height_m': .70,

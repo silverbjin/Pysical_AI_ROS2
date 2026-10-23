@@ -56,6 +56,7 @@ def test_legacy_body_thigh_overlap_is_not_silently_ignored(robot_model):
 @pytest.mark.parametrize('key,value', [
     ('footprint_margin_m', .049), ('sensor_max_age_s', .201),
     ('max_roll_pitch', .16), ('max_vx', .011),
+    ('max_swing_speed_mps', .021),
 ])
 def test_preparation_cannot_weaken_safety_contract(nav_robot_model, key, value):
     module = api()

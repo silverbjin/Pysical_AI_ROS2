@@ -8,6 +8,8 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -22,6 +24,7 @@ struct Publishers
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu;
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr com;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr controls;
   double last_scan{-std::numeric_limits<double>::infinity()};
 };
 struct PluginState
@@ -70,6 +73,23 @@ void publish(const std::shared_ptr<Publishers> & pubs,
   com.pose.position.y = sample.center_of_mass[1];
   com.pose.position.z = sample.center_of_mass[2];
   com.pose.orientation.w = 1.;  // position is a point, not a robot/TF pose
+  nlohmann::json actuators = nlohmann::json::array();
+  for (const auto & value : read_native_controls(owner.model(), lease.data())) {
+    actuators.push_back({{"actuator_id", value.actuator_id}, {"ctrl_index", value.ctrl_index},
+      {"output_index", value.output_index}, {"joint_name", value.joint_name},
+      {"joint_type", value.joint_type}, {"control_kind", value.control_kind},
+      {"position", value.position}, {"velocity", value.velocity}, {"ctrl", value.ctrl},
+      {"actuator_force", value.actuator_force}, {"joint_force", value.joint_force},
+      {"kp", value.kp}, {"kv", value.kv}, {"gear", value.gear},
+      {"force_limited", value.force_limited}, {"ctrl_limited", value.ctrl_limited},
+      {"force_range", value.force_range}, {"ctrl_range", value.ctrl_range}});
+  }
+  std_msgs::msg::String controls;
+  controls.data = nlohmann::json{{"schema", 1},
+    {"capture_ns", static_cast<int64_t>(std::llround(sample.stamp*1e9))},
+    {"epoch", lease.epoch()}, {"sequence", lease.sequence()}, {"actuators", actuators},
+    {"body_reference", {{"frame_id", "base_link"}, {"source", "mujoco_free_joint_qvel"},
+      {"angular_velocity", sample.body_angular_velocity}}}}.dump();
   sensor_msgs::msg::LaserScan scan;
   const bool scan_due = sample.stamp-pubs->last_scan >= .1-1e-9;
   if (scan_due) {
@@ -84,6 +104,7 @@ void publish(const std::shared_ptr<Publishers> & pubs,
   }
   owner.publish_if_current(lease, [&] {
     pubs->feet->publish(feet); pubs->imu->publish(imu); pubs->com->publish(com);
+    pubs->controls->publish(controls);
     if (scan_due) {pubs->scan->publish(scan); pubs->last_scan = sample.stamp;}
   });
 }
@@ -108,6 +129,8 @@ public:
       pubs->imu = node->create_publisher<sensor_msgs::msg::Imu>("/navigation/imu", qos);
       pubs->scan = node->create_publisher<sensor_msgs::msg::LaserScan>("/scan", qos);
       pubs->com = node->create_publisher<geometry_msgs::msg::PoseStamped>("/navigation/native_com", qos);
+      pubs->controls = node->create_publisher<std_msgs::msg::String>(
+        "/navigation/native_controls", rclcpp::QoS(rclcpp::KeepLast(100)).reliable());
       state->worker = std::make_shared<SensorWorker>(model,
         [pubs](const SnapshotLease & lease, SensorWorker & owner) {publish(pubs, lease, owner);});
       const std::weak_ptr<PluginState> weak = state;

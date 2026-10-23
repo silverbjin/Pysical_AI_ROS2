@@ -10,10 +10,15 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(integrated_robot_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
+find_package(nlohmann_json REQUIRED)
 find_package(gz_sim_vendor REQUIRED)
 find_package(gz-sim8 REQUIRED)
+find_package(gz_ros2_control REQUIRED)
+find_package(hardware_interface REQUIRED)
 find_package(gz_plugin_vendor REQUIRED)
-find_package(gz-plugin2 REQUIRED COMPONENTS register)
+find_package(gz-plugin2 REQUIRED COMPONENTS register loader)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(navigation_sensor_core SHARED src/snapshot.cpp src/normalization.cpp)
@@ -25,27 +30,42 @@ add_library(navigation_native_plugin SHARED src/native_navigation_plugin.cpp)
 target_link_libraries(navigation_native_plugin PRIVATE navigation_sensor_core
   mujoco_ros2_control_plugins::mujoco_ros2_control_plugins pluginlib::pluginlib
   rclcpp::rclcpp ${sensor_msgs_TARGETS} ${geometry_msgs_TARGETS}
-  ${integrated_robot_interfaces_TARGETS} ${std_srvs_TARGETS})
+  ${integrated_robot_interfaces_TARGETS} ${std_srvs_TARGETS}
+  ${std_msgs_TARGETS} nlohmann_json::nlohmann_json)
 install(TARGETS navigation_native_plugin LIBRARY DESTINATION lib)
 pluginlib_export_plugin_description_file(mujoco_ros2_control_plugins navigation_plugins.xml)
 add_executable(navigation_sensor_probe src/navigation_sensor_probe.cpp)
 target_link_libraries(navigation_sensor_probe PRIVATE mujoco::mujoco
   mujoco_ros2_control_plugins::mujoco_ros2_control_plugins pluginlib::pluginlib)
 install(TARGETS navigation_sensor_probe DESTINATION lib/${PROJECT_NAME})
+add_library(navigation_tf_provenance SHARED src/tf_provenance.cpp)
+target_include_directories(navigation_tf_provenance PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+target_link_libraries(navigation_tf_provenance PUBLIC rclcpp::rclcpp
+  ${tf2_msgs_TARGETS} nlohmann_json::nlohmann_json)
+add_executable(tf_provenance src/tf_provenance_main.cpp)
+target_link_libraries(tf_provenance PRIVATE navigation_tf_provenance)
+install(TARGETS navigation_tf_provenance LIBRARY DESTINATION lib)
+install(TARGETS tf_provenance DESTINATION lib/${PROJECT_NAME})
 add_library(navigation_gazebo_observation SHARED src/gazebo_observation.cpp)
 target_include_directories(navigation_gazebo_observation PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
-target_link_libraries(navigation_gazebo_observation PUBLIC gz-sim8::gz-sim8)
+target_link_libraries(navigation_gazebo_observation PUBLIC gz-sim8::gz-sim8 nlohmann_json::nlohmann_json)
 add_library(navigation_gazebo_observer SHARED src/gazebo_com_observer.cpp)
 target_link_libraries(navigation_gazebo_observer PRIVATE navigation_gazebo_observation
   gz-plugin2::gz-plugin2)
 install(TARGETS navigation_gazebo_observation navigation_gazebo_observer LIBRARY DESTINATION lib)
+add_library(navigation_position_system SHARED src/gazebo_position_system.cpp)
+target_link_libraries(navigation_position_system PRIVATE gz_ros2_control::gz_ros2_control-system
+  hardware_interface::hardware_interface pluginlib::pluginlib rclcpp::rclcpp)
+install(TARGETS navigation_position_system LIBRARY DESTINATION lib)
+pluginlib_export_plugin_description_file(gz_ros2_control gazebo_position_plugins.xml)
 install(FILES LICENSE REUSE_MANIFEST.md DESTINATION share/${PROJECT_NAME})
 
 # Same build-time provenance mechanism as the Ch13 camera package (8e07b05).
 file(GLOB_RECURSE sensor_inputs CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   include/*.hpp src/*.cpp test/*.cpp test/*.hpp)
-list(APPEND sensor_inputs CMakeLists.txt package.xml navigation_plugins.xml LICENSE REUSE_MANIFEST.md)
+list(APPEND sensor_inputs CMakeLists.txt package.xml navigation_plugins.xml gazebo_position_plugins.xml LICENSE REUSE_MANIFEST.md)
 list(SORT sensor_inputs)
 set(sensor_manifest "{\n")
 foreach(input IN LISTS sensor_inputs)
@@ -68,10 +88,22 @@ if(BUILD_TESTING)
   target_include_directories(test_plugin_loading PRIVATE test)
   target_link_libraries(test_plugin_loading mujoco::mujoco Threads::Threads
     mujoco_ros2_control_plugins::mujoco_ros2_control_plugins pluginlib::pluginlib
-    rclcpp::rclcpp ${sensor_msgs_TARGETS} ${integrated_robot_interfaces_TARGETS} ${std_srvs_TARGETS})
+    rclcpp::rclcpp ${sensor_msgs_TARGETS} ${integrated_robot_interfaces_TARGETS} ${std_srvs_TARGETS}
+    ${std_msgs_TARGETS} nlohmann_json::nlohmann_json)
   ament_add_gtest(test_gazebo_observation test/test_gazebo_observation.cpp TIMEOUT 30)
   target_include_directories(test_gazebo_observation PRIVATE include)
-  target_link_libraries(test_gazebo_observation navigation_gazebo_observation)
+  target_link_libraries(test_gazebo_observation navigation_gazebo_observation gz-plugin2::loader)
+  target_compile_definitions(test_gazebo_observation PRIVATE
+    GZ_NAV_OBSERVER_LIBRARY="$<TARGET_FILE:navigation_gazebo_observer>")
+  add_dependencies(test_gazebo_observation navigation_gazebo_observer)
+  ament_add_gtest(test_gazebo_position_system test/test_gazebo_position_system.cpp TIMEOUT 30)
+  target_include_directories(test_gazebo_position_system PRIVATE ${gz_ros2_control_INCLUDE_DIRS})
+  target_link_libraries(test_gazebo_position_system gz-sim8::gz-sim8
+    gz_ros2_control::gz_ros2_control-system hardware_interface::hardware_interface
+    pluginlib::pluginlib rclcpp::rclcpp)
+  ament_add_gtest(test_tf_provenance test/test_tf_provenance.cpp TIMEOUT 30)
+  target_include_directories(test_tf_provenance PRIVATE include)
+  target_link_libraries(test_tf_provenance navigation_tf_provenance)
 endif()
 install(TARGETS navigation_sensor_core EXPORT export_navigation_sensor_core
   LIBRARY DESTINATION lib ARCHIVE DESTINATION lib RUNTIME DESTINATION bin)

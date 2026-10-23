@@ -1,5 +1,6 @@
 """One-shot, nonblocking measured STAND -> actual carry startup, never CRAWL."""
 import time
+from pathlib import Path
 
 from rclpy.node import Node
 from rclpy.clock import Clock
@@ -7,23 +8,42 @@ from rclpy.clock_type import ClockType
 from lifecycle_msgs.msg import Transition
 from lifecycle_msgs.srv import ChangeState
 from std_srvs.srv import Trigger
+from controller_manager_msgs.srv import ListControllers
 from integrated_robot_interfaces.msg import MotionState
 from integrated_robot_interfaces.srv import SetMode
 
 from .samples import Sample, sample_valid
+from .model import compile_model
 
 
 class StartupManager(Node):
     def __init__(self, **kwargs):
         super().__init__('crawl_startup', **kwargs)
+        try:
+            model_file = self.declare_parameter('model_file', '').value
+            self.contract = compile_model(Path(model_file).read_text())
+            arms = tuple('arm_joint_'+str(i) for i in range(1, 7))
+            gripper = ('gripper_left_joint', 'gripper_right_joint')
+            if set(self.contract.limits) != set(self.contract.joint_names+arms+gripper):
+                raise ValueError('startup interface model partition')
+            self.expected_claims = {name: {joint+'/position' for joint in joints}
+                for name, joints in (
+                    ('leg_position_controller', self.contract.joint_names),
+                    ('arm_trajectory_controller', arms), ('gripper_position_controller', gripper),
+                    ('joint_state_broadcaster', ()))}
+        except Exception:
+            super().destroy_node()
+            raise
         self.state, self.fault = 'WAIT_GUARD', ''
         self.generation, self.model = None, ''
         self.messages = dict.fromkeys(('guard', 'crawl', 'carry'))
         self.future = None
+        self.controller_future = None
         self.deadline = time.monotonic()+45.
         self.mode = self.create_client(SetMode, '/navigation/set_mode')
         self.lifecycle = self.create_client(ChangeState, '/crawl_controller/change_state')
         self.prepare = self.create_client(Trigger, '/carry_manager/prepare')
+        self.controllers = self.create_client(ListControllers, '/controller_manager/list_controllers')
         self.status = self.create_publisher(MotionState, '/navigation/startup_state', 10)
         for key in self.messages:
             self.create_subscription(MotionState, '/navigation/'+key+'_state',
@@ -47,6 +67,14 @@ class StartupManager(Node):
         value = sample.data
         if value['fault']:
             raise ValueError(key+':'+value['fault'])
+        if (key == 'crawl' and self.state == 'WAIT_FEEDBACK' and not value['model_sha256']
+                and value['state'] == 'INACTIVE' and value['phase'] == 'BOOTSTRAP_WAIT_FEEDBACK'
+                and not value['ready'] and not value['stopped']):
+            # A service configure ACK can overtake the previous unconfigured
+            # status in DDS. This is absence of readiness, never authority.
+            return None
+        if value['model_sha256'] != self.contract.model_sha256:
+            raise ValueError(key+':startup scene model mismatch')
         if self.generation is not None and (value['generation'] != self.generation
                                            or value['model_sha256'] != self.model):
             raise ValueError(key+':startup generation/model changed')
@@ -61,8 +89,44 @@ class StartupManager(Node):
             return False
         value = self.future.result()
         if value is None or not getattr(value, attribute):
-            raise ValueError('startup service rejected: '+self.state)
+            reason = getattr(value, 'message', 'no response') if value is not None else 'no response'
+            raise ValueError('startup service rejected: '+self.state+': '+reason)
         return True
+
+    def _controllers_ready(self):
+        # One read-only request at a time; never retry a rejected motor command.
+        if self.controller_future is None:
+            if self.controllers.service_is_ready():
+                self.controller_future = self.controllers.call_async(ListControllers.Request())
+            return False
+        if not self.controller_future.done():
+            return False
+        result, self.controller_future = self.controller_future.result(), None
+        if result is None:
+            raise ValueError('controller interface response missing')
+        names, owners = {}, {}
+        for controller in result.controller:
+            if not controller.name or controller.name in names:
+                raise ValueError('duplicate controller interface owner name')
+            names[controller.name] = controller
+            claims = controller.claimed_interfaces
+            if len(claims) != len(set(claims)):
+                raise ValueError('duplicate command interface claim')
+            for claim in claims:
+                if claim in owners:
+                    raise ValueError('duplicate command interface owner: '+claim)
+                owners[claim] = controller.name
+                if (claim.split('/')[0] in self.contract.limits
+                        and claim not in self.expected_claims.get(controller.name, set())):
+                    raise ValueError('foreign command interface owner: '+claim)
+        ready = True
+        for name, expected in self.expected_claims.items():
+            controller = names.get(name)
+            if controller is None or controller.state != 'active':
+                ready = False
+            elif set(controller.claimed_interfaces) != expected:
+                raise ValueError('active controller interface claims mismatch: '+name)
+        return ready
 
     def _tick(self):
         try:
@@ -88,7 +152,8 @@ class StartupManager(Node):
                     crawl = self._fresh('crawl')
                     if (guard and guard['state'] == 'STAND' and crawl
                             and crawl['state'] == 'INACTIVE'
-                            and crawl['phase'] == 'BOOTSTRAP_FEEDBACK_READY'):
+                            and crawl['phase'] == 'BOOTSTRAP_FEEDBACK_READY'
+                            and self._controllers_ready()):
                         self._transition(Transition.TRANSITION_ACTIVATE, 'ACTIVATING')
                 elif self.state == 'ACTIVATING' and self._result('success'):
                     self.state = 'WAIT_STAND'
@@ -96,7 +161,7 @@ class StartupManager(Node):
                     crawl = self._fresh('crawl')
                     if (guard and guard['state'] == 'STAND' and crawl and crawl['ready']
                             and crawl['stopped'] and crawl['state'] in ('STAND', 'STOPPED')
-                            and self.prepare.service_is_ready()):
+                            and self.prepare.service_is_ready() and self._controllers_ready()):
                         self.future = self.prepare.call_async(Trigger.Request())
                         self.state = 'CARRY_REQUESTED'
                 elif self.state == 'CARRY_REQUESTED' and self._result('success'):

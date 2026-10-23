@@ -1,0 +1,26 @@
+# Candidate position servos for the combined navigation model, not legacy assets.
+# Physical component comparison ec500876-eac4-4996-bbe3-ca58b041df67:
+# kp x5 / kv xsqrt(5); force/control/joint limits are NOT increased.
+# Units: kp N*m/rad, kv N*m*s/rad. These values do not grant native admission.
+hip: {kp: 200.0, kv: 4.47213595499958}
+thigh: {kp: 500.0, kv: 8.94427190999916}
+# Native64989f80 static last5s: unsaturated front calf17.749834Nm
+# required0.0354997rad atkp500, exceeding unchanged0.03rad STAND readiness.
+# kp750 gives18Nm design-load error0.024rad; kv xsqrt(1.5) preserves
+# the previous nominal damping ratio. Actual native G1/G2 remain mandatory.
+calf: {kp: 750.0, kv: 10.954451150103322}
+# Carry damping comparison 89795b9b-dbd1-408b-91e8-4694117f7e90:
+# arm kp x1.5, arm/gripper kv x5. Limits and masses are unchanged.
+# Revolute SI units above; gripper kp N/m, kv N*s/m. Native G1/G2 still required.
+arm_joint_1: {kp: 120.0, kv: 25.0}
+arm_joint_2: {kp: 120.0, kv: 25.0}
+# Native626473a5 actual CarryManager selection: q=-2.0189971419,
+# qd=.0280387719 rad/s during support SHIFT (fresh12ms capture).
+# Position error .018997<.03; speed exceeds unchanged .02. Compare damping
+# alone, kv20->40, preserving kp/force caps and all acceptance thresholds.
+arm_joint_3: {kp: 105.0, kv: 40.0}
+arm_joint_4: {kp: 75.0, kv: 15.0}
+arm_joint_5: {kp: 67.5, kv: 15.0}
+arm_joint_6: {kp: 60.0, kv: 10.0}
+gripper_left_joint: {kp: 100.0, kv: 15.0}
+gripper_right_joint: {kp: 100.0, kv: 15.0}

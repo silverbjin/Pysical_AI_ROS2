@@ -6,6 +6,8 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <integrated_robot_interfaces/msg/foot_contacts.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <nlohmann/json.hpp>
 #include <chrono>
 #include <vector>
 #include <thread>
@@ -27,10 +29,12 @@ TEST(NativePlugin, RealRosMeasurementsReadOnlyAndResetFailClosed)
     "integrated_robot_navigation_sensors/NativeNavigationSensorsPlugin");
   auto m = nav_test::model();
   auto d = nav_test::settled(m.get());
+  d->ctrl[0] = .123;
   const auto qos = rclcpp::SensorDataQoS();
   std::vector<integrated_robot_interfaces::msg::FootContacts> contacts;
   std::vector<sensor_msgs::msg::Imu> imu;
   std::vector<sensor_msgs::msg::LaserScan> scans;
+  std::vector<nlohmann::json> controls;
   auto a = node->create_subscription<integrated_robot_interfaces::msg::FootContacts>(
     "/navigation/foot_contacts", qos,
     [&](integrated_robot_interfaces::msg::FootContacts::ConstSharedPtr msg) {contacts.push_back(*msg);});
@@ -38,10 +42,15 @@ TEST(NativePlugin, RealRosMeasurementsReadOnlyAndResetFailClosed)
     "/navigation/imu", qos, [&](sensor_msgs::msg::Imu::ConstSharedPtr msg) {imu.push_back(*msg);});
   auto c = node->create_subscription<sensor_msgs::msg::LaserScan>(
     "/scan", qos, [&](sensor_msgs::msg::LaserScan::ConstSharedPtr msg) {scans.push_back(*msg);});
+  auto diagnostic = node->create_subscription<std_msgs::msg::String>(
+    "/navigation/native_controls", rclcpp::QoS(rclcpp::KeepLast(100)).reliable(),
+    [&](std_msgs::msg::String::ConstSharedPtr msg) {
+      controls.push_back(nlohmann::json::parse(msg->data));
+    });
   ASSERT_TRUE(plugin->init(node, m.get(), d.get()));
   const std::vector<mjtNum> before(d->qpos, d->qpos + m->nq);
   auto deadline = std::chrono::steady_clock::now() + 3s;
-  while ((contacts.empty() || imu.empty() || scans.empty()) &&
+  while ((contacts.empty() || imu.empty() || scans.empty() || controls.empty()) &&
     std::chrono::steady_clock::now() < deadline)
   {
     plugin->update(m.get(), d.get());
@@ -50,6 +59,17 @@ TEST(NativePlugin, RealRosMeasurementsReadOnlyAndResetFailClosed)
     // Repeated capture must NOT be republished with a new header.
   }
   ASSERT_FALSE(contacts.empty()); ASSERT_FALSE(imu.empty()); ASSERT_FALSE(scans.empty());
+  ASSERT_FALSE(controls.empty());
+  EXPECT_EQ(controls.back().at("schema"), 1);
+  EXPECT_EQ(controls.back().at("capture_ns"), 2000000000LL);
+  EXPECT_EQ(controls.back().at("actuators")[0].at("joint_name"), "diagnostic_joint");
+  EXPECT_DOUBLE_EQ(controls.back().at("actuators")[0].at("ctrl").get<double>(), .123);
+  const auto & reference = controls.back().at("body_reference");
+  EXPECT_EQ(reference.at("source"), "mujoco_free_joint_qvel");
+  EXPECT_EQ(reference.at("frame_id"), "base_link");
+  for (int i = 0; i < 3; ++i) {
+    EXPECT_DOUBLE_EQ(reference.at("angular_velocity").at(i).get<double>(), d->qvel[3+i]);
+  }
   EXPECT_EQ(before, std::vector<mjtNum>(d->qpos, d->qpos + m->nq));
   EXPECT_EQ(contacts.back().header.frame_id, "odom");
   EXPECT_NEAR(rclcpp::Time(contacts.back().header.stamp).seconds(), 2., 1e-9);

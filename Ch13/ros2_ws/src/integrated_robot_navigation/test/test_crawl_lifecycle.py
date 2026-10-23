@@ -26,6 +26,7 @@ class CrawlRig(Rig):
         self.final = self.node.create_publisher(Twist, '/navigation/cmd_vel', 10)
         self.mode_name, self.value = 'STAND', 0.
         self.ready = False  # bootstrap must not depend on completed carry
+        self.gate_delay_ns = 0  # test-source delay, never a production clock change
         self.commands, self.crawl_states = [], []
         self.leg_sub = self.node.create_subscription(Float64MultiArray,
             '/leg_position_controller/commands', self.commands.append, 10)
@@ -41,6 +42,9 @@ class CrawlRig(Rig):
             message = MotionState(generation=self.generation, model_sha256=self.model.model_sha256,
                                   state=self.mode_name, ready=self.mode_name == 'CRAWL')
             message.header.stamp = Time(sec=sec, nanosec=int((self.capture-sec)*1e9))
+            if self.gate_delay_ns:
+                delayed = int(self.capture*1e9)-self.gate_delay_ns
+                message.header.stamp = Time(sec=delayed//1_000_000_000, nanosec=delayed%1_000_000_000)
             message.header.frame_id = 'nav_base'
             self.gate.publish(message)
             velocity = Twist()

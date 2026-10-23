@@ -2,6 +2,22 @@
 
 ## 13.5 추가 — 구현 진행 중
 
+- CoM의 측정 단위 공통경로 캐시·하중 이동의 협력식 탐색·Crawl guard 미래 시각 선택과
+  최초 실패 snapshot은 Ch13 신규 코드다. 변환 계산은 기존 Ch13
+  `integrated_robot_vision.kinematics.KinematicChain`의 고정 compiled tuple 계약
+  (재사용 기준 `8e07b05cdf45eeb96dffbfe4fdbe1cf045373146`)을 읽으며 외부 소스 복사가 아니다.
+  guard 후보 선택은 같은 Ch13 `SensorInbox`의 촬영 시각 eligibility 원칙을 적용했다.
+  원래 ROS/monotonic 시각과 모델·명령 소유권을 유지하고 실제 엔진 증거와 단위 시험을 구분한다.
+
+- Gazebo 실제 제어값 관측의 API 조사 기준은 설치 패키지 `ros-jazzy-gz-ros2-control 1.2.20-1noble.20261006.040504` 및 [공식1.2.20 구현](https://raw.githubusercontent.com/ros-controls/gz_ros2_control/1.2.20/gz_ros2_control/src/gz_system.cpp)이다. 이 backend의 position 입력은 내부 velocity 명령으로 변환되므로 MuJoCo PD/actuator index 판정을 그대로 재사용할 수 없다. 이번 조사는 읽기 전용이며 외부 구현 파일이나 underlay를 수정·복사하지 않았다. 설치된 Gazebo `JointTransmittedWrench`는 joint frame의 원점 기준 wrench이며, 이를 무조건 명령 effort나 MuJoCo actuator_force와 동일시하지 않는다. 실제 native 관측 구현/검증은 별도 G1 항목이다.
+
+- `verify_navigation_13_5.py`의 실제 관절 기하 재구성은 Ch13 자체 `geometry.native_geometry`의 비인접/welded 관계 제외 규칙을 재사용한다(기준 `b26bcfb03e72753140be41e5fa089621f417bd55`). 고정 root URDF에서 관절 값만 대입해 형상 간격을 재검산하며 Python MuJoCo3.3.7 API를 import한다. 외부 구현 파일 복사나 live 엔진의 root/속도 쓰기는 없고 실제 ROS C++3.12.0/Gazebo 물리 인수와 구분한다. 센서 ray/정적 힘/수납/구간 판정과 결함 주입 fixture는 Ch13 신규 코드이며 fixture를 native 출처 증거로 사용하지 않는다.
+
+- navigation 전용 `mujoco_navigation_actuators.yaml`은 원본 `robot_system.xml`의 질량·관성·힘/ctrl/관절 한계를 유지한 별도 생성 모델의 position PD 후보 설정이다. 다리 kp×5/kv×√5 및 팔 kp×1.5·팔/그리퍼 kv×5는 해당 물리 component 비교 UUID와 함께 설정 주석/실행 원장에 기록한다. 기존 description 모델이나 13.4 장면·외부 underlay의 gain을 수정하지 않는다. 새 설정마다 physics/profile hash를 갱신하며 Python component 성공은 실제 ROS MuJoCo/Gazebo의 G1/G2 허가가 아니다.
+- `carry_feedback_peer.py`는 시험용 별도 프로세스와 명시적 monotonic-paced `/clock`을 사용하는 Ch13 작성 fixture다. 실제 DDS 액션·watchdog의 통신 경계를 검사하지만 hand-defined joint feedback을 실제 물리 수납/보행 증거로 쓰지 않는다. 호스트 시계나 운영체제 설정을 변경하지 않는다.
+
+- G1 TF 출처 관측기는 설치된 Jazzy C++ `rclcpp::MessageInfo`와 `tf2_msgs`를 include/link하는 Ch13 신규 코드다. Python callback이 GID를 노출하지 않는 사실은 `task8-actual-tf-metadata.json`의 실제 DDS 측정으로 확인했다. 외부 RMW/underlay를 수정하거나 graph의 발행자 수를 메시지 GID로 대체하지 않는다. JSON 직렬화는 설치된 nlohmann_json3.11.3을 사용하며 제3자 구현 파일을 복사하지 않는다. 실제 GID·부모/소유자 전환·출력 수명 시험과 전체 엔진 인수는 별도로 구분한다.
+
 - `carry_manager.py`는 Ch13 `integrated_robot_runtime.arm_action_owner.ArmActionOwner`와 `arm_transport.ArmActionTransport`(재사용 기준 `8e07b05cdf45eeb96dffbfe4fdbe1cf045373146`)를 import한다. 예약·지연 acceptance·실제 result 수신·미확정 취소의 소유권 규칙을 복제하거나 외부 원본에 덧대지 않는다. 새 수납/시동/배타 launch와 실제 ROS peer 시험은 Ch13 작성 코드이며, 실제 controller·물리 수납 검증은 G1에서 별도로 수행한다.
 
 - `gait.py`, `crawl_controller.py`, `observations.py`와 관련 수학/실제 DDS·lifecycle 시험은 Ch13 작성 코드다. `observations.py`는 Task5 커밋 `25ba8531f16bb020e5d664df79710b38638c62b4`의 motion_guard 수신 정규화·미래 촬영 inbox를 내부 모듈로 추출했다. 기존 Ch13 `integrated_robot_vision.kinematics`와 ROS 설치 lifecycle API를 import하며 Ch01~Ch12나 외부 구현 소스를 복사하지 않는다. ideal-feedback fixture는 실제 엔진 증거로 사용하지 않는다.

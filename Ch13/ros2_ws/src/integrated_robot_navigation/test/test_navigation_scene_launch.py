@@ -1,5 +1,6 @@
 """Break: opt-in native launch silently falls back to legacy hip/sensor model."""
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -48,3 +49,47 @@ def test_scene_loader_rejects_changed_bound_model(tmp_path):
     Path(record['robot']['path']).write_text('<robot name="unexpected"/>')
     with pytest.raises(ValueError, match='hash'):
         scene.load_scene('mujoco', tmp_path/'scene')
+
+
+def test_scene_loader_restores_missing_verified_native_cache_only(tmp_path, monkeypatch):
+    native_tmp = tmp_path/'native-tmp'
+    native_tmp.mkdir()
+    monkeypatch.setattr(scene.tempfile, 'gettempdir', lambda: str(native_tmp))
+    record = scene.materialize_scene('mujoco', 'g1', tmp_path/'scene')
+    cache = Path(record['native_controllers']['path'])
+    expected = cache.read_bytes()
+    cache.unlink()  # only this test's generated file; persistent bundle is intact
+    loaded = scene.load_scene('mujoco', tmp_path/'scene')
+    assert loaded['native_controllers'] == record['native_controllers']
+    assert loaded['controllers'] == record['controllers']
+    assert cache.read_bytes() == expected
+    cache.write_bytes(b'corrupt preexisting cache')
+    with pytest.raises(ValueError, match='hash'):
+        scene.load_scene('mujoco', tmp_path/'scene')
+    assert cache.read_bytes() == b'corrupt preexisting cache'
+
+
+def test_scene_loader_never_reconstructs_cache_from_tampered_source(tmp_path, monkeypatch):
+    native_tmp = tmp_path/'native-tmp'
+    native_tmp.mkdir()
+    monkeypatch.setattr(scene.tempfile, 'gettempdir', lambda: str(native_tmp))
+    record = scene.materialize_scene('mujoco', 'g1', tmp_path/'scene')
+    cache = Path(record['native_controllers']['path'])
+    cache.unlink()
+    Path(record['controllers']['path']).write_bytes(b'tampered persistent source')
+    with pytest.raises(ValueError, match='hash'):
+        scene.load_scene('mujoco', tmp_path/'scene')
+    assert not cache.exists()
+
+
+def test_scene_loader_rejects_unowned_native_cache_target(tmp_path, monkeypatch):
+    native_tmp = tmp_path/'native-tmp'
+    native_tmp.mkdir()
+    monkeypatch.setattr(scene.tempfile, 'gettempdir', lambda: str(native_tmp))
+    record = scene.materialize_scene('mujoco', 'g1', tmp_path/'scene')
+    foreign = tmp_path/'unrelated.yaml'
+    record['native_controllers']['path'] = str(foreign)
+    (tmp_path/'scene/scene.json').write_text(json.dumps(record))
+    with pytest.raises(ValueError, match='native controller.*path'):
+        scene.load_scene('mujoco', tmp_path/'scene')
+    assert not foreign.exists()
