@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_future_guard_waits_for_local_clock_without_retagging_or_renewing_receipt _
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x76de23405ac0>
+
+    def test_future_guard_waits_for_local_clock_without_retagging_or_renewing_receipt(crawl_rig):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(.08)
+>       node = rig.controller
+               ^^^^^^^^^^^^^^
+E       AttributeError: 'CrawlRig' object has no attribute 'controller'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_guard_clock_order.py:14: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_guard_clock_order.py::test_future_guard_waits_for_local_clock_without_retagging_or_renewing_receipt
+1 failed in 11.38s

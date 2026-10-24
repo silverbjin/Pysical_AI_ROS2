@@ -1,0 +1,89 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_invalid_parallel_ingress_is_latched_without_mutating_model_or_publishing _
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x7608e6d2e960>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7608e6e9a750>
+
+    def test_invalid_parallel_ingress_is_latched_without_mutating_model_or_publishing(crawl_rig, monkeypatch):
+        """Concurrent receiver boundary, not an engine or DDS scheduling verdict."""
+        rig = crawl_rig
+        activate(rig)
+        owner = rig.guard
+        advance = owner.machine.advance
+        received = Event()
+        states, workers = [], []
+    
+        def during_advance(*args, **kwargs):
+            result = advance(*args, **kwargs)
+            def invalid_ingress():
+                owner._sensor('contacts', FootContacts(epoch=1))
+                states.append(owner.machine.state)
+                received.set()
+            worker = Thread(target=invalid_ingress)
+            workers.append(worker)
+            worker.start()
+            assert received.wait(.15), 'receiver must not wait for the model owner lock'
+            assert states == ['STAND'], 'receiver must not directly mutate the state machine'
+            return result  # valid calculation must not publish after the latched input fault
+    
+        monkeypatch.setattr(owner.machine, 'advance', during_advance)
+        count = len(rig.commands)
+        try:
+>           rig.pump(.04)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_lifecycle.py:53: in pump
+    super().pump(.02, **kwargs)
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:101: in pump
+    self.executor.spin_once(timeout_sec=.0005)
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py:926: in spin_once
+    self._spin_once_impl(timeout_sec)
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py:918: in _spin_once_impl
+    raise handler.exception()
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/task.py:286: in _execute_coroutine_step
+    result = coro.send(None)
+             ^^^^^^^^^^^^^^^
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py:592: in handler
+    await call_coroutine()
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py:454: in _execute
+    await await_or_execute(tmr.callback)
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py:115: in await_or_execute
+    return callback(*args)
+           ^^^^^^^^^^^^^^^
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/crawl_controller.py:321: in _dispatch_tick
+    self._tick()
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/crawl_controller.py:389: in _tick
+    result = self.machine.advance(bundle, command, ros_ns, wall_ns)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (SensorBundle(joints=Sample(stamp_ns=4475584999, received_ns=144905502042, epoch=0, sequence=4475584999, frame_id='bas...256': 'b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc'})), (0.0, 0.0, 0.0), 4475584999, 144925343542)
+kwargs = {}
+result = ControlResult(state='STAND', phase='STAND', swing_foot=None, generation=0, joint_targets={'fr_hip_joint': 0.0, 'fr_thi...99999999, 'rl_hip_joint': 0.0, 'rl_thigh_joint': -0.49999999999999994, 'rl_calf_joint': 0.9999999999999999}, reason='')
+invalid_ingress = <function test_invalid_parallel_ingress_is_latched_without_mutating_model_or_publishing.<locals>.during_advance.<locals>.invalid_ingress at 0x7608d3f523e0>
+worker = <Thread(Thread-1 (invalid_ingress), stopped 129780275046080)>
+@py_assert1 = <bound method Event.wait of <threading.Event at 0x7608e6e015e0: set>>
+@py_assert3 = 0.15, @py_assert5 = False
+@py_format7 = 'receiver must not wait for the model owner lock\n>assert False\n{False = wait\n{wait = <threading.Event at 0x7608e6e015e0: unset>.wait\n}(0.15)\n}'
+
+    def during_advance(*args, **kwargs):
+        result = advance(*args, **kwargs)
+        def invalid_ingress():
+            owner._sensor('contacts', FootContacts(epoch=1))
+            states.append(owner.machine.state)
+            received.set()
+        worker = Thread(target=invalid_ingress)
+        workers.append(worker)
+        worker.start()
+>       assert received.wait(.15), 'receiver must not wait for the model owner lock'
+E       AssertionError: receiver must not wait for the model owner lock
+E       assert False
+E        +  where False = wait(0.15)
+E        +    where wait = <threading.Event at 0x7608e6e015e0: unset>.wait
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py:82: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py::test_invalid_parallel_ingress_is_latched_without_mutating_model_or_publishing
+1 failed, 4 deselected in 11.92s

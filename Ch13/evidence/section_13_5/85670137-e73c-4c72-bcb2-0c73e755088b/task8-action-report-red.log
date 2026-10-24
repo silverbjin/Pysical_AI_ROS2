@@ -1,0 +1,31 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_report_exposes_received_typed_result_not_only_status ___________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7d6c2d486fc0>
+
+    def test_report_exposes_received_typed_result_not_only_status(carry_rig):
+        rig = carry_rig
+        assert rig.call(rig.prepare).success
+        rig.release.set()
+        rig.pump(.2)
+        client = rig.peer.create_client(Trigger, '/carry_manager/report')
+>       result = json.loads(rig.call(client).message)
+                            ^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_carry_manager_ros.CarryRig object at 0x7d6c2d486fc0>
+client = <rclpy.client.Client object at 0x7d6c1c3841a0>
+
+    def call(self, client):
+>       assert client.wait_for_service(timeout_sec=2.)
+E       assert False
+E        +  where False = wait_for_service(timeout_sec=2.0)
+E        +    where wait_for_service = <rclpy.client.Client object at 0x7d6c1c3841a0>.wait_for_service
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:101: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_report_exposes_received_typed_result_not_only_status
+1 failed in 15.24s

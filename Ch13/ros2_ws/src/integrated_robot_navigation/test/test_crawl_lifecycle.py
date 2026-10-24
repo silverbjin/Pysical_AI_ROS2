@@ -20,7 +20,8 @@ from test_motion_guard_ros import Rig
 
 class CrawlRig(Rig):
     def __init__(self, controller, model, context):
-        super().__init__(controller, model, context)
+        from integrated_robot_navigation.clock_execution import make_control_executor
+        super().__init__(controller, model, context, executor_factory=make_control_executor)
         self.node.destroy_publisher(self.leg)  # the actual crawl node is the sole leg publisher
         self.gate = self.node.create_publisher(MotionState, '/navigation/guard_state', 10)
         self.final = self.node.create_publisher(Twist, '/navigation/cmd_vel', 10)

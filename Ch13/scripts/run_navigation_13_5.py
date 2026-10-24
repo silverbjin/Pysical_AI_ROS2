@@ -5,11 +5,14 @@ from dataclasses import asdict
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import re
 from pathlib import Path
 import signal
+import shlex
 import subprocess
+import sys
 from threading import Event
 import time
 import traceback
@@ -38,6 +41,73 @@ from verify_navigation_13_5 import (FRAME_REQUIRED, assess_frames, assess_tf_own
 
 def save(path, value):
     path.write_text(json.dumps(value, indent=2, allow_nan=False)+'\n', encoding='utf-8')
+
+
+def g1_profile_arguments(node,root):
+    if node is None:return []
+    if node!='motion_guard':raise ValueError('only owned motion_guard diagnostic is supported')
+    target=Path(root)/'motion_guard.prof'
+    if target.exists():raise ValueError('profile output already exists')
+    return ['launch-prefix:='+shlex.join([sys.executable,'-m','cProfile','-o',str(target)]),
+            'launch-prefix-filter:=^motion_guard$']
+
+
+def native_required_checks(clock_mode,contact_mode,engine,*,profile_node=None):
+    if clock_mode not in ('native','relay100') or contact_mode not in ('native','allowance50um'):
+        raise ValueError('unknown native experiment mode')
+    if contact_mode!='native' and engine!='gazebo':
+        raise ValueError('DART contact experiment requires Gazebo G1')
+    required=G1_REQUIRED|FRAME_REQUIRED|{'contact_lift','native_ctrl_observed','native_library_loaded','tf_observer_owned'}
+    if clock_mode=='relay100':required=required|{'control_clock_contract'}
+    if contact_mode=='allowance50um':required=required|{'dart_contact_contract'}
+    if profile_node is not None:
+        if profile_node!='motion_guard':raise ValueError('unknown diagnostic profile target')
+        required=required|{'unprofiled_acceptance'}
+    return required
+
+
+def read_dart_contact_probe(prefix):
+    sensors=Path(get_package_prefix('integrated_robot_navigation_sensors')).resolve()
+    executable=(sensors/'lib/integrated_robot_navigation_sensors/navigation_dart_contact_probe').resolve(strict=True)
+    if not executable.is_relative_to(Path(prefix).resolve()):
+        raise RuntimeError('native DART probe outside selected install')
+    command=[str(executable)]
+    report=json.loads(subprocess.check_output(command,text=True,timeout=5.))
+    if type(report.get('current_m')) not in (float,int) or report['current_m']!=0.:
+        raise RuntimeError('unexpected native DART default allowance')
+    library=Path(report['library_path']).resolve(strict=True)
+    if library.name!='libdart.so.'+report['header_version']:
+        raise RuntimeError('native DART probe header/provider mismatch')
+    report.update(command=command,executable_sha256=file_digest(executable),library_sha256=file_digest(library))
+    return report
+
+
+def assess_dart_contact_configuration(records,expected):
+    report=dict(scope='native_api_configuration_not_contact_task_success',passed=False,records=len(records))
+    try:
+        if (not expected or type(expected.get('current_m')) not in (float,int) or expected['current_m']!=0.
+                or file_digest(Path(expected['library_path']))!=expected['library_sha256']):
+            raise ValueError('missing/changed preflight DART provider')
+        seen=set();phases=set()
+        for packet in records:
+            identity=tuple(packet[k] for k in ('epoch','sequence','capture_ns'))
+            if any(type(v) is not int or v<0 for v in identity) or identity in seen:
+                raise ValueError('duplicate/invalid native setting capture')
+            seen.add(identity);phases.add(packet['stage'])
+            state=packet['dart_contact_configuration']
+            if (type(state.get('schema')) is not int or state['schema']!=1 or state.get('mode')!='allowance50um'
+                    or type(state.get('world_count')) is not int or state['world_count']!=1
+                    or state.get('explicit_g1') is not True or state.get('header_version')!=expected['header_version']
+                    or state.get('library_path')!=expected['library_path']):
+                raise ValueError('unbound native DART configuration')
+            for key,value in (('before_m',0.),('requested_m',.00005),('effective_m',.00005)):
+                if type(state.get(key)) not in (float,int) or not math.isfinite(state[key]) or state[key]!=value:
+                    raise ValueError('DART setting not actually applied or changed: '+key)
+        if not {'stand','calibrate'}<=phases:raise ValueError('missing operational DART setting witnesses')
+        report['passed']=True
+    except (KeyError,ValueError,TypeError,OSError) as error:
+        report['error']=str(error)
+    return report
 
 
 def control_clock_launch_arguments(mode, root):
@@ -161,13 +231,19 @@ def attest_control_clock(process, pid, expected, *, proc_root=Path('/proc')):
         raise RuntimeError('control clock attestation: '+str(error)) from error
 
 
-def attest_gazebo_libraries(process, members, expected, *, proc_root=Path('/proc')):
+def attest_gazebo_libraries(process, members, expected, *, proc_root=Path('/proc'),dart_provider=None):
     """Bind bytes/inode/device to the same live direct native child, not a shell."""
     required = {'libnavigation_gazebo_observer.so', 'libnavigation_gazebo_observation.so',
                 'libnavigation_position_system.so'}
     try:
         if len(members) != 1 or len(expected) != 3:
             raise ValueError('one native child and three libraries required')
+        if dart_provider is not None:
+            provider=Path(dart_provider['library_path'])
+            if provider.name!='libdart.so.'+dart_provider['header_version']:
+                raise ValueError('wrong DART provider/version')
+            required=required|{provider.name}
+            expected=[*expected,dict(path=str(provider),sha256=dart_provider['library_sha256'])]
         member = members[0]
         directory = proc_root/str(member['pid'])
         identity = process_identity(member['pid'], proc_root=proc_root)
@@ -284,6 +360,26 @@ def audit_description_launches(repo, share):
     return hashes
 
 
+def audit_python_source_bytes(source, installed, repo, prefix):
+    """Bind reused Python sources to actual selected installation before launch."""
+    source,installed,repo,prefix=map(Path,(source,installed,repo,prefix))
+    hashes={}
+    try:
+        if not installed.resolve(strict=True).is_relative_to(prefix.resolve(strict=True)):
+            raise RuntimeError('Python dependency outside selected installed prefix: '+str(installed))
+        for path in sorted(source.rglob('*.py')):
+            if '__pycache__' in path.parts:continue
+            target=installed/path.relative_to(source)
+            if (not target.resolve(strict=True).is_relative_to(prefix.resolve())
+                    or path.read_bytes()!=target.read_bytes()):
+                raise RuntimeError('Python dependency source/install mismatch: '+str(path))
+            hashes[str(path.relative_to(repo))]=file_digest(path)
+    except OSError as error:
+        raise RuntimeError('Python dependency source/install missing: '+str(installed)) from error
+    if not hashes:raise RuntimeError('Python dependency source scope is empty: '+str(source))
+    return hashes
+
+
 def audit_runtime(repo, output):
     prefix = Path(get_package_prefix('integrated_robot_navigation')).resolve().parent
     audit = audit_installed_paths(prefix, repo)
@@ -304,6 +400,14 @@ def audit_runtime(repo, output):
                     raise RuntimeError('share source/install mismatch: '+str(path))
                 hashes[str(path.relative_to(repo))] = file_digest(path)
     audit['integrated_robot_navigation'] = dict(module=str(installed), source_hashes=hashes)
+    for dependency in ('integrated_robot_runtime','integrated_robot_vision'):
+        original=repo/'Ch13/ros2_ws/src'/dependency/dependency
+        actual=Path(importlib.util.find_spec(dependency).origin).resolve().parent
+        bound=audit_python_source_bytes(original,actual,repo,prefix)
+        audit[dependency].update(module=str(actual),source_hashes=bound)
+        hashes.update(bound)
+    from integrated_robot_navigation.dispatch_node import event_backend_manifest
+    audit['navigation_event_backend']=event_backend_manifest()
     description = Path(get_package_share_directory('integrated_robot_description'))
     if not description.resolve().is_relative_to(prefix):
         raise RuntimeError('description launch outside selected prefix')
@@ -348,6 +452,20 @@ def audit_runtime(repo, output):
     save(output/'source_manifest.json', dict(files=hashes, **runtime_git_identity(repo, hashes)))
     save(output/'install_manifest.json', audit)
     return prefix, sensor_probe
+
+
+def wait_launch_event_exit(process,*,timeout_s=8.):
+    """Observe the engine's launch exit event without injecting another signal.
+
+    A timeout stays failed; the caller still performs explicit owned cleanup.
+    """
+    timed_out=False
+    try:
+        process.wait(timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        timed_out=True
+    return dict(confirmed=not timed_out and process.returncode==0,
+                returncode=process.poll(),timed_out=timed_out,signal_sent=False)
 
 
 def stop_runtime(process):
@@ -407,12 +525,12 @@ def run(args):
         raise RuntimeError('G2 execution is not enabled before the native G1 gate is implemented and passed')
     root = Path(args.output_dir).resolve()
     root.mkdir(parents=True, exist_ok=False)
-    required = G1_REQUIRED | FRAME_REQUIRED | {'contact_lift', 'native_ctrl_observed',
-                                             'native_library_loaded', 'tf_observer_owned'}
     clock_mode = getattr(args, 'control_clock_mode', 'native')
+    contact_mode=getattr(args,'dart_contact_mode','native')
+    profile_node=getattr(args,'profile_node',None)
+    required=native_required_checks(clock_mode,contact_mode,args.engine,profile_node=profile_node)
     clock_arguments = control_clock_launch_arguments(clock_mode, root)
-    if clock_mode == 'relay100':
-        required = required | {'control_clock_contract'}  # never remove any original check
+    profile_arguments=g1_profile_arguments(profile_node,root)
     with EvidenceRun(root, required) as evidence:
         evidence.result.update(kind='native', gate='G1', engine=args.engine,
                                engine_started=False, phase='preflight_scene',
@@ -420,35 +538,44 @@ def run(args):
         evidence.save()
         process, probe, executor, log, metrics_log = None, None, None, None, None
         initialized = False
-        checks, teardown = {}, {}
+        checks, teardown = ({'unprofiled_acceptance':False} if profile_node else {}), {}
         phase_measurements = {}
         engine_members = {}
         observer_members = {}
         clock_members = {}
         clock_graph_passed = False
+        dart_probe=None
         ownership_graph_single = False
         stopping = Event()
         previous = signal.signal(signal.SIGINT, lambda *_: stopping.set())
         try:
             repo = Path(__file__).resolve().parents[2]
             scene = load_scene(args.engine, args.scene_dir)
+            if scene.get('dart_contact_mode','native')!=contact_mode:
+                raise RuntimeError('requested DART mode does not match bound native scene')
             model = compile_model(Path(scene['robot']['path']).read_text())
             profile = CarryProfile(**json.loads(Path(args.profile).read_text()))
             swept_footprint(model, profile, profile.limits)
             evidence.result['phase'] = 'preflight_install'
             evidence.save()
             prefix, sensor = audit_runtime(repo, root)
+            if contact_mode!='native':
+                dart_probe=read_dart_contact_probe(prefix)
+                save(root/'dart_contact_probe.json',dart_probe)
             no_existing_engines()
             if os.environ.get('LD_PRELOAD'):
                 raise RuntimeError('unaccounted LD_PRELOAD; refusing native provenance ambiguity')
             command = ['ros2', 'launch', 'integrated_robot_navigation', 'crawl_system.launch.py',
                 'engine:='+args.engine, 'navigation_scene:='+str(Path(args.scene_dir).resolve()),
                 'carry_profile:='+str(Path(args.profile).resolve()), 'validation_mode:=true',
-                'tf_provenance_output:='+str(root/'tf_provenance.jsonl'), *clock_arguments]
+                'tf_provenance_output:='+str(root/'tf_provenance.jsonl'), *clock_arguments,*profile_arguments]
             evidence.result.update(command=command, model_sha256=model.model_sha256,
                 execution_mode=dict(control_clock=clock_mode, validation_only=True,
+                    dart_contact=contact_mode,
+                    diagnostic_profile_node=profile_node,
                     crawl_clock_dispatch='isolated_2worker' if clock_mode == 'relay100' else 'single_worker'),
                 config_sha256=profile.config_sha256, physics_sha256=profile.physics_sha256,
+                native_physics_sha256=scene.get('native_physics_sha256'),
                 scene=scene, environment={key: os.environ.get(key) for key in (
                     'ROS_DOMAIN_ID', 'MUJOCO_GL', 'OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'LP_NUM_THREADS')})
             evidence.save()
@@ -556,7 +683,7 @@ def run(args):
             checks['carry_terminal_received'] = carry_terminal(report)
             if args.engine == 'gazebo':
                 save(root/'native_mapping.json', attest_gazebo_libraries(
-                    process, list(engine_members.values()), sensor['gazebo_libraries']))
+                    process, list(engine_members.values()), sensor['gazebo_libraries'],dart_provider=dart_probe))
                 checks['native_library_loaded'] = True
             rejection = call(probe.mode, SetMode.Request(mode='CRAWL'))
             checks['unvalidated_crawl_rejected'] = not rejection.accepted
@@ -592,7 +719,7 @@ def run(args):
                 checks['native_library_loaded'] = True
             else:
                 save(root/'native_mapping_final.json', attest_gazebo_libraries(
-                    process, list(engine_members.values()), sensor['gazebo_libraries']))
+                    process, list(engine_members.values()), sensor['gazebo_libraries'],dart_provider=dart_probe))
         except BaseException as error:
             (root/'error_traceback.txt').write_text(traceback.format_exc(), encoding='utf-8')
             evidence.result['failure_phase'] = evidence.result['phase']
@@ -695,6 +822,10 @@ def run(args):
                             and bool(members) and teardown['gazebo_pause']['confirmed'] and (
                             response.returncode == 0 and 'data: true' in response.stdout
                             and wait_owned_members_exit(process, members, timeout=8.)))
+                        if teardown['engine_exit']:
+                            teardown['launch_event_exit']=wait_launch_event_exit(process)
+                            if not teardown['launch_event_exit']['confirmed']:
+                                evidence.fail('engine exited but launch event completion unconfirmed')
                     cleanup = stop_owned_group(process)
                     teardown.update(cleanup, launch_returncode=process.poll(), parent_reaped=process.poll() is not None)
                     if args.engine == 'mujoco':
@@ -752,6 +883,10 @@ def run(args):
                 save(root/'probe_diagnostics.json', dict(errors=probe.errors, missing=dict(probe.missing),
                     final_states=probe.motion, all_frames=len(probe.frames), tf_python_api=probe.tf_api,
                     transport_errors=probe.transport_errors))
+                if contact_mode!='native':
+                    assessment=assess_dart_contact_configuration(probe.native_controls,dart_probe)
+                    save(root/'dart_contact_assessment.json',assessment)
+                    checks['dart_contact_contract']=assessment['passed']
                 probe.close_log()
             if probe:
                 probe.destroy_node()
@@ -810,6 +945,9 @@ def main():
     parser.add_argument('--profile', required=True)
     parser.add_argument('--output-dir', required=True)
     parser.add_argument('--control-clock-mode', choices=('native', 'relay100'), default='native')
+    parser.add_argument('--dart-contact-mode',choices=('native','allowance50um'),default='native')
+    parser.add_argument('--profile-node',choices=('motion_guard',),default=None,
+                        help='owned main-thread diagnostic only; cannot pass G1 acceptance')
     args = parser.parse_args()
     run(args)
     return 0

@@ -1,0 +1,44 @@
+F......                                                                  [100%]
+=================================== FAILURES ===================================
+________ test_imu_uses_same_capture_native_qvel_not_later_body_cache[] _________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl.....], 'phases': {'stand': {'ros_duration_s': 10.0, 'wall_duration_s': 10.0}}, 'root_source': 'native_ground_truth', ...}
+fault = ''
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'stamp', 'axis', 'nan', 'frame', 'epoch'])
+    def test_imu_uses_same_capture_native_qvel_not_later_body_cache(observed, fault):
+        """Catch asynchronous-cache comparison without weakening gyro error .02."""
+        references = []
+        for row in observed['frames']:
+            imu = row['samples']['imu']
+            # Literal synthetic dynamic case: later body has changed by .04rad/s.
+            if row['stage'] == 'calibrate':
+                imu['data']['angular_velocity'] = (.01, -.01, .002)
+                row['samples']['body']['stamp_ns'] += 34_000_000
+                row['samples']['body']['data']['angular_velocity'] = (.01, .03, .002)
+            references.append(dict(capture_ns=imu['stamp_ns'], epoch=0,
+                sequence=imu['sequence'], frame_id='base_link',
+                source='mujoco_free_joint_qvel', angular_velocity=list(imu['data']['angular_velocity'])))
+        target = references[-1]
+        if fault == 'missing':
+            references.pop()
+        elif fault == 'stamp':
+            target['capture_ns'] += 1  # exact capture required, no nearest substitution
+        elif fault == 'axis':
+            target['angular_velocity'] = (.01, .010001, .002)
+        elif fault == 'nan':
+            target['angular_velocity'] = (float('nan'), 0., 0.)
+        elif fault == 'frame':
+            target['frame_id'] = 'odom'
+        elif fault == 'epoch':
+            target['epoch'] = 1
+        observed['native_body_references'] = references
+        result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+>       assert result['checks']['imu_frame'] is (fault == ''), result
+E       AssertionError: {'checks': {'carry_collision_free': True, 'contact_frames_force': True, 'contact_lift': True, 'imu_frame': False, ...}...eight_n': 149.211081, 'geometry_scope': 'offline_fixed_root_URDF_at_measured_joints', 'lifted_unique_captures': 3, ...}
+E       assert False is ('' == '')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:167: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_imu_uses_same_capture_native_qvel_not_later_body_cache[]
+1 failed, 6 passed, 23 deselected in 13.04s

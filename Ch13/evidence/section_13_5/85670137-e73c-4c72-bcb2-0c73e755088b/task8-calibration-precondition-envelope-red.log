@@ -1,0 +1,34 @@
+FF.........                                                              [100%]
+=================================== FAILURES ===================================
+_____________ test_loaded_reference_slew_and_original_unload_bound _____________
+
+    def test_loaded_reference_slew_and_original_unload_bound():
+        assert step()==pytest.approx(.01679)
+        z=.01675
+        for _ in range(300): z=step(z=z)
+>       assert z==pytest.approx(.02675)  # immutable original rest+10mm; no renewed envelope
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0.01975 == 0.02675 ± 2.7e-08
+E         
+E         comparison failed
+E         Obtained: 0.01975
+E         Expected: 0.02675 ± 2.7e-08
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:20: AssertionError
+________ test_loaded_virtual_reference_is_not_capped_by_physical_floor _________
+
+    def test_loaded_virtual_reference_is_not_capped_by_physical_floor():
+        # Actual Gazebo: target rest+3mm held1.08ROSsec while measured FL>=18.5N.
+        # A virtual preload reference crossing floor does not mean actual lift.
+>       assert step(z=.01975)==pytest.approx(.01979)
+E       assert 0.01975 == 0.01979 ± 2.0e-08
+E         
+E         comparison failed
+E         Obtained: 0.01975
+E         Expected: 0.01979 ± 2.0e-08
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:26: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_loaded_reference_slew_and_original_unload_bound
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_loaded_virtual_reference_is_not_capped_by_physical_floor
+2 failed, 9 passed in 16.10s

@@ -60,3 +60,33 @@ def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fau
         value = runner.attest_gazebo_libraries(SimpleNamespace(pid=42),members,expected,proc_root=proc)
         assert value['pid'] == 43 and value['ppid'] == 42 and value['start_ticks'] == 123
         assert value['libraries'] == expected
+
+
+@pytest.mark.parametrize('fault',['','missing_provider','wrong_provider_hash','wrong_version','wrong_provider_inode'])
+def test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid(tmp_path,fault):
+    proc=tmp_path/'proc';child=proc/'43';child.mkdir(parents=True)
+    fields=['S','42','42']+['0']*17;fields[19]='123'
+    (child/'stat').write_text('43 (gz fixture) '+' '.join(fields))
+    (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+    libraries=[];maps=[]
+    for name in (*NAMES,'libdart.so.6.13.2'):
+        file=tmp_path/name;file.write_bytes(('explicit fixture '+name).encode())
+        libraries.append(dict(path=str(file),sha256=hashlib.sha256(file.read_bytes()).hexdigest()))
+        stat=file.stat()
+        maps.append(f'000-fff r-xp 00000000 {os.major(stat.st_dev):x}:{os.minor(stat.st_dev):x} {stat.st_ino} {file}')
+    provider=dict(library_path=libraries[-1]['path'],library_sha256=libraries[-1]['sha256'],header_version='6.13.2')
+    if fault=='missing_provider':maps.pop()
+    elif fault=='wrong_provider_hash':provider['library_sha256']='0'*64
+    elif fault=='wrong_version':provider['header_version']='6.19.0'
+    elif fault=='wrong_provider_inode':
+        pieces=maps[-1].split(maxsplit=5);pieces[4]=str(int(pieces[4])+1);maps[-1]=' '.join(pieces)
+    (child/'maps').write_text('\n'.join(maps))
+    members=[dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+    if fault:
+        with pytest.raises(RuntimeError,match='Gazebo'):
+            runner.attest_gazebo_libraries(SimpleNamespace(pid=42),members,libraries[:3],
+                dart_provider=provider,proc_root=proc)
+    else:
+        result=runner.attest_gazebo_libraries(SimpleNamespace(pid=42),members,libraries[:3],
+            dart_provider=provider,proc_root=proc)
+        assert len(result['libraries'])==4 and result['pid']==43

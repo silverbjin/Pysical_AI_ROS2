@@ -1,0 +1,63 @@
+F.F..F.                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_tf_publisher_identity_accepts_both_supported_message_info_shapes[True] __
+
+mapping = True
+
+    @pytest.mark.parametrize('mapping', [True, False])
+    def test_tf_publisher_identity_accepts_both_supported_message_info_shapes(mapping):
+        record = SimpleNamespace(transforms=[], errors=[])
+        transform = TransformStamped(child_frame_id='nav_base')
+        transform.header.frame_id = 'odom'
+        gid = [1, 2, 3, 4]
+        info = {'publisher_gid': gid} if mapping else SimpleNamespace(publisher_gid=gid)
+>       NavigationProbe._tf(record, TFMessage(transforms=[transform]), info)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:21: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(transforms=[], errors=[])
+msg = tf2_msgs.msg.TFMessage(transforms=[geometry_msgs.msg.TransformStamped(header=std_msgs.msg.Header(stamp=builtin_interfa...n=geometry_msgs.msg.Vector3(x=0.0, y=0.0, z=0.0), rotation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)))])
+info = {'publisher_gid': [1, 2, 3, 4]}
+
+    def _tf(self, msg, info):
+>       gid = bytes(info.publisher_gid).hex()
+                    ^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'dict' object has no attribute 'publisher_gid'
+
+Ch13/scripts/probe_navigation_13_5.py:84: AttributeError
+_____ test_bad_tf_metadata_reports_fault_without_breaking_cleanup_executor _____
+
+    def test_bad_tf_metadata_reports_fault_without_breaking_cleanup_executor():
+        record = SimpleNamespace(transforms=[], errors=[])
+>       NavigationProbe._tf(record, TFMessage(), {})
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(transforms=[], errors=[])
+msg = tf2_msgs.msg.TFMessage(transforms=[]), info = {}
+
+    def _tf(self, msg, info):
+>       gid = bytes(info.publisher_gid).hex()
+                    ^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'dict' object has no attribute 'publisher_gid'
+
+Ch13/scripts/probe_navigation_13_5.py:84: AttributeError
+__ test_successful_launch_wrapper_cannot_hide_crashed_or_unknown_engine_child __
+
+    def test_successful_launch_wrapper_cannot_hide_crashed_or_unknown_engine_child():
+        base = dict(runtime_exit=True, engine_exit=True, parent_reaped=True,
+                    launch_returncode=0, forced_cleanup=False, residual_live_pids=[])
+>       assert not api().normal_teardown({**base, 'engine_returncodes': [-6]})
+E       AssertionError: assert not True
+E        +  where True = <function normal_teardown at 0x7889447de160>({'engine_exit': True, 'engine_returncodes': [-6], 'forced_cleanup': False, 'launch_returncode': 0, ...})
+E        +    where <function normal_teardown at 0x7889447de160> = <module 'verify_navigation_13_5' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/verify_navigation_13_5.py'>.normal_teardown
+E        +      where <module 'verify_navigation_13_5' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/verify_navigation_13_5.py'> = api()
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py:21: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_tf_publisher_identity_accepts_both_supported_message_info_shapes[True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_bad_tf_metadata_reports_fault_without_breaking_cleanup_executor
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py::test_successful_launch_wrapper_cannot_hide_crashed_or_unknown_engine_child
+3 failed, 4 passed in 8.82s

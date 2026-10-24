@@ -1,0 +1,30 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_verified_leg_fk_avoids_general_matrix_solve_without_changing_positions __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70fac0495eb0>
+
+    def test_verified_leg_fk_avoids_general_matrix_solve_without_changing_positions(nav_robot_model, monkeypatch):
+        original = np.linalg.solve
+        solves = []
+    
+        def counted(*args, **kwargs):
+            solves.append(None)
+            return original(*args, **kwargs)
+    
+        monkeypatch.setattr(np.linalg, 'solve', counted)
+        expected = {'fr_foot': (.25, -.18, -.438791280945),
+                    'fl_foot': (.25, .18, -.438791280945),
+                    'rr_foot': (-.25, -.18, -.438791280945),
+                    'rl_foot': (-.25, .18, -.438791280945)}
+        for foot, point in expected.items():
+            assert fk_leg(nav_robot_model, foot, (0., -.5, 1.)) == pytest.approx(point, abs=1e-10)
+>       assert not solves, 'verified scalar leg geometry must not pay a dense root-frame solve every evaluation'
+E       AssertionError: verified scalar leg geometry must not pay a dense root-frame solve every evaluation
+E       assert not [None, None, None, None]
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_fk_budget.py:26: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_fk_budget.py::test_verified_leg_fk_avoids_general_matrix_solve_without_changing_positions
+1 failed, 2 passed in 7.88s

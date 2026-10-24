@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_peer_feedback_does_not_depend_on_test_assertion_thread __________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x78a3bed44e00>
+
+    def test_peer_feedback_does_not_depend_on_test_assertion_thread(carry_rig):
+        """The production sensor publisher is independent of its action client."""
+        rig = carry_rig
+        assert rig.call(rig.prepare).success
+        time.sleep(.25)  # client is idle; the independent source must keep publishing
+>       assert not rig.manager.fault, rig.manager.fault
+E       AssertionError: guard:ros_age
+E       assert not 'guard:ros_age'
+E        +  where 'guard:ros_age' = <integrated_robot_navigation.carry_manager.CarryManager object at 0x78a3bed58380>.fault
+E        +    where <integrated_robot_navigation.carry_manager.CarryManager object at 0x78a3bed58380> = <test_carry_manager_ros.CarryRig object at 0x78a3bed44e00>.manager
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:205: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_peer_feedback_does_not_depend_on_test_assertion_thread
+1 failed, 12 deselected in 12.32s

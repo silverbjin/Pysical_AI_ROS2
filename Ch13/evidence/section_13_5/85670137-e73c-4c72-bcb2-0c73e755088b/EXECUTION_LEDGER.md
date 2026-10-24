@@ -1,5 +1,204 @@
 # 13.5 실행 원장
 
+## 2026-10-25 G1 양 엔진 3회 연속 PASS·독립 감사
+
+- Gazebo series `58c7013c-863d-469a-8ff6-1863be26a9d1`: `9a84b6f2`, `02c5c7e1`,
+  `af6da055` 모두25/25 PASS. MuJoCo series `4838bfd2-55fc-43d9-8ead-b515ece094c5`:
+  `db816a78`, `8df657f3`, `99bfdd00` 모두23/23 PASS. 첫 FAIL 중단 규칙의 새 고정 series다.
+- 공통114소스 manifest SHA `34f193697acb681c8d741999149785b3a49cab0f2b0b164afcbcad9a42e4bd92`.
+  6회 부모/엔진 정상 종료·회수·forced_cleanup=false·residual[]다. 실제 G1 10wall초·
+  lift/재접촉/원래 참조 복귀/1wall초 안정화·carry terminal·센서/소유권을 모두 유지했다.
+- `task8-current-g1-audit-7a9766b9-3c99-43e4-9a1d-89fc29b56e29.json`: 별도 검증기가
+  6회 required_checks·현재114소스·모든 등록 artifact 크기/SHA·압축본 크기/SHA를 대조해 PASS.
+  결과/실패 원리/재현 위치는 `Ch13/docs/SECTION_13_5_G1_RESULTS_KO.md`에 정리했다.
+- Gazebo 실험은 여전히 G1 전용이다. G2 보행·Nav2·최종 legacy/matrix·게시를 완료하지 않았다.
+  현재 task 종료 뒤 남은 성공사례를 먼저 조사했으며 결과는
+  `SECTION_13_5_RESEARCH_DECISIONS_KO.md`다. 실제 schema/물리/설정/소유권 차이를 먼저 검증한다.
+
+## 2026-10-25 고정 검증 중단 및 공식 event 실행기 비교
+
+- `task8-calibration-events-remaining-regression.log`:73통과29.62초. 앞선460개와 합쳐
+  변경된 navigation/runtime 전 범위를 확인했다. 시험 fixture/옛 G1 계산 수 기대값의 두 실패는 보존했다.
+- 고정 series `ebb5ab24-50fe-48d0-a03f-671eed7264f7`: case1 `0a1068d6` **25/25 PASS**,
+  case2 `f1b9b848` **23/25 FAIL**. 두 실행 모두 물리 G1/carry/센서/소유권 통과지만
+  case2는 launch 부모 종료가 실패해 정상 종료 두 항목 false다. 세 번째는 실행하지 않았다.
+  엔진/runtime/relay/TF 관측기 exit0, 부모는 최종-15/forced_cleanup true, 잔여[]로 기록했다.
+  실패 ZIP29,054,880bytes SHA `df5a8c4a9ce2b39ee07100bb46543b1d311ab20cfc81547fb7e4e9dc26b01aa1`.
+  해당 series 원본의 status RUNNING은 cleanup assertion에서 중단된 상태이며 성공/진행으로
+  해석하지 않는다. 실제 종결은 **두 번째 FAIL에서 중단**이다. 원본 JSON을 덮어쓰지 않는다.
+- 실패 system.log: 엔진 clean exit 뒤 부모 SIGINT, 종료된 gazebo action의 timer가 남아
+  SIGTERM/SIGKILL escalation이 발생했다. 공식 설치 ros_gz_sim은 `on_exit_shutdown` 시
+  `ExecuteProcess(on_exit=Shutdown())`을 사용한다. direct navigation launch에서 그 수명
+  연결이 빠진 차이를 확인했다. 외부 launch는 읽기만 했으며 Ch13 navigation 경로만 수정한다.
+- 작은 실제 launch 자식 재현 RED1실패17.81초 → 종료 이벤트/신호 없는 bounded parent wait
+  및 장면·감사·실패 보존 **22통과11.82초**. timeout은 FAIL로 남기고 별도 소유 정리를 수행한다.
+  G1 물리 10초/안정화/센서 및 모든 required_checks는 그대로다. 새 launch로 다시 고정검증해야 한다.
+
+- series `4f1059f3-e748-4363-a160-ae63d3754856`는 첫 `5bdbaded-069f-4110-ac2d-aa03f2bd8468`에서
+  원래 10wall초 실패로 중단했다. 3회 중 성공을 골라 세지 않는다. 정리/잔여[] 확인,
+  85소스 ZIP28,321,640bytes SHA `c5210e90fba7ba029f76c468dc5587d42e72c4c6e59dca57fa5abc5e8f664d41`.
+- 설치 rclpy7.1.12 공식 EventsExecutor 비용 비교: 동일 실제 DDS1,600개 모두 순서대로 수신,
+  CPU345.036→196.143ms. 기존 직렬 navigation 역할에만 재사용하며 crawl2worker와 팔
+  독립 receiver는 제외한다. 물리/시간 인수 성공으로 해석하지 않는다.
+- 첫 관련 시험 `task8-calibration-events-action-shutdown-related` 전 단계는20통과/8setup오류였다.
+  원인은 공식 EventsExecutor가 MessageInfo callback에 원본 tuple 하나를 전달하는 차이였다.
+  `task8-calibration-events-message-info-red.log`: 실제 DDS1실패8.88초.
+  Ch13 자체 호환 경계는 원본 두 객체·required signature·동기/비동기 형식을 보존한다.
+  `task8-calibration-events-message-info-green.log`:14통과22.47초. 외부 SDK 수정 없음.
+- 설치 의존성 source binding 부재 RED1실패6.81초→
+  `task8-calibration-runtime-dependency-green.log`:6통과4.23초. runtime/vision 변경·누락·
+  외부 prefix·symlink 이탈을 거절한다. 파일 SHA는 실행 PID 매핑 증거라고 부르지 않는다.
+- `task8-calibration-events-action-shutdown-related.log`: 실제 액션 취소·terminal drain·
+  실행기/worker 수명·메시지 이벤트 관련 **19통과139.75초**.
+- `task8-calibration-events-rn-native-build.log`: runtime/navigation 설치20.8초 성공,
+  8패키지 감사 및 별도 strict runtime/vision/navigation byte 감사 통과.
+  SDK version/wrapper/extension fingerprint는 `task8-calibration-events-rn-native-runtime-audit/`에 있다.
+- 첫 전체 회귀는 공유 Guard Rig가 CrawlRig에도 event factory를 사용해 setup거절,
+  **7통과1오류10.84초**에서 중단했다. 제품의 병렬 crawl 차단을 약화하지 않고
+  시험 Rig에 factory를 주입해 실제 make_control_executor를 사용하도록 수정했다.
+  원래 실패 로그를 보존했다. 후속은460통과 뒤 오래된 G1 후보1개 기대값에서 실패했다.
+  G1만4개/일반CRAWL1개라는 현재 설계를 각각 확인하도록 매개변수화했다. 이는 안전/물리
+  인수 한계 변경이 아니다. 통과460개를 반복하지 않고 해당 파일 이후 및 runtime 전체를
+  `task8-calibration-events-remaining-regression.log`로 검증한다. 아직 새 backend의 물리 인수는 없다.
+
+## 2026-10-25 첫 물리 G1 통과·종료 경합 재현·고정 검증 계획
+
+- `58b9e263-4c7f-49df-b42c-8568932578ab`:원래가속도복귀뒤에도10초deadline FAIL.
+  들기시작까지4.586ROS초로직전4.596과거의같아SHIFT만빠르게하는방법으로는
+  느린가상참조하중해제의직렬비용을없앨수없었다. 전센서/접촉/lift는PASS.
+  실제native/launch/relay0·회수·강제없음·잔여[]. 85소스ZIP28,422,360bytes/SHA256
+  `8c3518cfbc821bd1001ae921aacd97466483cdef4763906ba537cfb82af3f4a5`.
+- 고정소스의판별실험`2d92e769-671d-403b-b5ed-6a657f18e8cb`, result
+  `e12f0c7f-69f0-46f2-8ed1-608d034ca538`:전체 **FAIL**. 물리G1/실제carry terminal/
+  모든관절·TF·센서·힘검사는TRUE, first_fault/stop모두null이다. 실제STAND후보후1초
+  실측확인까지원래10초안에끝났으나crawl 종료의unretrieved Destroyable예외로
+  normal_runtime_exit/normal_engine_exit는FALSE다. 실제모든종료코드0/회수/잔여[]와구분한다.
+  이실행은처음부터스레드CPU판별로지정했고연속인수성공으로골라세지않는다.
+  85소스ZIP25,540,270bytes/SHA256
+  `f384d264b6f4487b86992c9cfa9b5f2d07b126bf870a5627bea6107e887f2689`.
+- 실제소유native PID47276/start3607094/PGID47273의39회CPU표본을읽었다.
+  STAND의main ruby53.46%, llvmpipe두스레드합19.93%로renderer하나가전부라는가설은
+  지지되지않는다. 이름/CPU는함수stack/단일원인증명이아니며affinity를바꾸지않았다.
+  현재공개CPU정보는i7-1185G7/4물리8논리코어, DART는OpenMP에링크되지않았다.
+- 실제종료RED`task8-calibration-executor-drain-red.log`:1실패8.46초. worker콜백실행중
+  guard파괴를실제pool/guard의경계관찰로재현했다. 기존Ch13 DrainingExecutor를재사용한
+  관련14PASS12.78초/설치15초/8패키지감사PASS다. 외부rclpy/기존공통코드수정없음.
+- 이제같은동결소스/설치본/물리설정으로Gazebo3회연속을미리계획한다. 각실행은새UUID,
+  결과/소스일치/실제회수/잔여[]/원본압축보존후에만다음실행을시작한다.
+  **첫FAIL에서중단**하며재시도/성공만선택/원래25개검사완화는없다.
+
+## 2026-10-25 G1 우회 조치의 구조 재검토
+
+- `025d4b84-1972-46d9-8f82-8c89313d3881`, result`199e374a-a9c7-4328-949f-139711f8c045`:
+  계산batch후에도원래deadline FAIL. 요청22.028ROS초, SWING26.624/TOUCHDOWN27.124/
+  STAND후보28.308, 남은wall1.19549초, fault28.984ROS초였다. freshness는이번PASS이나
+  이전scan실패해결증거로취급하지않는다. 실제native/launch/relay0·reaped·noforce·잔여[].
+  85소스ZIP27,091,495bytes/SHA256
+  `18858dc953cacdd1f9c664eab590049294c98883213d09a299d00246f8220467`.
+- 더많은작은보정을쌓는대신실패했던임시G1절반가속도배율을재검토했다.
+  `legubiao/quadruped_ros2_control`실제API git tree의고정커밋
+  `5434c5810d1a7fe223bcfd04550e9d3bfdd4b458`에서controller update/FSM/README를읽었다.
+  공식native update의단계분리원칙만참고하고KDL불안정주의·다른5종명령인터페이스·
+  팔하중미검증·시간기반FixedStand전이를확인해소스/게인/완료판정은가져오지않았다.
+- 수치접촉0에서는절반가속도가접촉충격을해결하지못했고50µm후실측4건은모두들기/복귀
+  뒤deadline이첫fault였다. G1의내부배율.5만제거해기존설정max.1m/s²로복귀한다.
+  상한/일반CRAWL/목표/게인/30Nm/실제속도·하중·1wall초·10초는유지한다.
+  RED2실패/1통과10.60초→관련53PASS43.87초. 새로운실제실행전이며원인해결확정은아니다.
+
+## 2026-10-25 착지 후 안정화와 G1 계산 대기 예산
+
+- `f086a6a1-9f3c-4dc7-906b-42a352c7ee27`:프로파일러없이실제G1 **FAIL**.
+  SHIFT→SWING26.484→TOUCHDOWN27.004→STAND후보28.248ROS초,
+  후보시남은wall1.67864초, 원래deadline29.544ROS초에fault.
+  실제세번착지와원래rest복귀를확인했으나연속1wall초정지확인은미완료다.
+  endpoint기준오프라인분해에서는모든표본관절오차<.03, 마지막오차.023247rad,
+  마지막관절속도.000868rad/s였다. 몸체v가.003경계를다시넘어마지막연속healthy
+  probe구간은.880644wall초였다. 이는정확한owner callback/lease재현이아니다.
+  `stand-readiness-postmortem-v2.json`에분리기록했다. 최초분석의NumPy bool직렬화실패
+  불완전파일도원본그대로보존했다.
+- 독립sensor_freshness도FAIL1건: scan capture16.300/판단16.410ROS초,
+  원래receipt34536395373144/판단wall34536724600789ns, wall age329.228ms>300.
+  `planner-and-age-postmortem.json`에원본실패를보존했다. 시간예산과다른실패이며
+  아직수정됐다고주장하지않고타임스탬프변경·허용치확대·행제외를하지않는다.
+- 실제crawlCPU79.02%(직전93.39)/contact44.18%(51.88), STAND RTF.6724로
+  STAND물리속도자체가획기적으로개선됐다는뜻은아니다. 실제native/launch/relay0·
+  reaped·강제없음·잔여[]. 최초fault로전체normal_exit 실패를유지했다.
+  85소스ZIP28,314,133bytes/SHA256
+  `31f395c931ea7f29d5a4c32a2f453217ed6522c43f4c8b5f5acef4bc18f69fdd`.
+- G1의비구동계산은후보1개마다50Hz의다음tick을기다렸다. 실제저장입력으로후보4개
+  계산50회측정은p95 5.173ms/max6.058ms였다. 물리곡선/가속도/게인/접촉을바꾸는대신
+  G1만tick당최대4개의순수후보계산을묶는다. 정상보행은1개유지, 계획중참조hold,
+  각tick실측안전검사/동일endpoint/동일duration/.05가속도/원래deadline은유지한다.
+  `task8-calibration-planning-batch-red.log`:1실패/1통과8.62초로불필요한대기를재현했다.
+
+## 2026-10-25 실제 소유 노드 계측과 QoS 대기 항목 수정
+
+- `787361fb-f68b-4389-a719-47811bfbd10e`: 실제motion_guard만공식launch prefix/filter로
+  계측했다. G1은원래10wall초deadline FAIL, 추가`unprofiled_acceptance=false`도유지했다.
+  실제native/launch/relay0·회수·강제없음·잔여[]. 84소스ZIP27,943,096bytes/SHA256
+  `5a407be277fbbc97df8c9d2511b09c7a5e664c8558e13e32e43869f2faa34ca0`.
+  `main-profile-analysis.json`은실제명령과프로파일SHA/호출수를보존한다.
+  main-thread wall계측이며watchdog/전체CPU로해석하지않는다. coroutine호출의중첩시간보다
+  동기대기항목열거407,976회와후속실제DDS측정을근거로사용한다.
+- `task8-calibration-qos-waitables-cost.json`:8토픽50Hz로각각1,600메시지전수신,
+  기본경고이벤트34waitables/454.139ms CPU→경고없음2waitables/330.754ms CPU.
+  초기fixture의숫자로시작하는토픽명오류는명칭만수정하고엔진/제어소스는건드리지않았다.
+- 신규`dispatch_node.py`는공개rclpy API로기본QoS/타입경고전용waitable만제외한다.
+  QoS·메시지·명시적event container·주기·원본촬영·소유권·200ms/watchdog는유지한다.
+  RED3실패7.52초→실제ROS/시동/carry terminal/시계/종료관련48PASS148.59초.
+  지정matched callback실행과양종류Node의메시지전수신도확인했다.
+  새실제엔진의RTF/G1은다음실측으로판정하며국소CPU개선을성공으로세지않는다.
+
+## 2026-10-25 압축 여유 실측과 CPU 가설 판별
+
+- `bd8ad3ae-4d3b-4ce5-950b-da61eebd4df2`, result`beb18a76-d9ae-4d09-945b-366a782a0e44`:FAIL.
+  요청21.528ROS초/wall33433742130591, SWING26.268(요청후7.359wall초),
+  TOUCHDOWN26.818(8.195wall초), 원래10초deadline에28.054ROS초fault.
+  마지막참조는원래rest.016705m/속도0까지복귀했고실제FL중심.019798m/하중28.902N,
+  착지고유표본28.004/28.024두개였다. 고유세번째+1wall초안정화전이라FAIL유지한다.
+  전센서/힘/지원/lift/설정/실제lib계약PASS, carryterminal수신TRUE.
+  native/launch/relay실제0·reaped·noforce·잔여[], 물리STOPPED/전체normal_exit는FAIL.
+  84소스ZIP26,259,297bytes/SHA256
+  `6e133507813a6fd9c19e6b97f5a08ec0dd424423ae0366c5b80e4a379ef435b5`.
+- STAND실측RTF.6773, crawlCPU93.39%/17threads, contact adapter51.88%/15threads.
+  `task8-calibration-kernel-{default,blas1}.json`:동일저장입력500회수치계산만측정했다.
+  기본1.958ms/회와BLAS1지정2.284ms/회, 출력동일. NumPy1.26.4는Netlib BLAS3.12.0,
+  계산프로세스3threads였다. OpenBLAS과다스레드가설은지지되지않아환경변경을하지않았다.
+  이수치는실제ROS dispatch나물리인수가아니다. 선택도구threadpoolctl은설치돼있지않았고
+  추가설치대신실제로매핑된라이브러리와기본cProfile을읽었다.
+- 다음판별은공식ROSlaunch의실행파일prefix/filter로소유motion_guard하나만부모cProfile
+  아래시작하는것이다. 외부원본/시스템/드라이버/관리자설정은변경하지않는다.
+  원래모든required_checks에`unprofiled_acceptance=false`를추가해계측실행은G1승격불가다.
+  main-thread계측이므로watchdog별도스레드의비용을측정했다고해석하지않는다.
+
+## 2026-10-25 승인된50µm 첫 실측과 시간 예산 판별
+
+- `5b1854b7-9696-409c-b1c8-001a32ba2d12`, result `6cabc4df-ab1c-4761-9c85-92b2dcaad1c7`: **FAIL**.
+  실제DART설정계약1,540건과같은PID라이브러리4개SHA검증PASS. 실제lift PASS.
+  요청20.698ROS초/wall16633698646474ns, SWING26.476(요청후8.671wall초),
+  TOUCHDOWN27.024(9.613wall초), 최초fault27.246/16643712218484ns는원래10초deadline.
+  실제FL중심마지막.028441m, 원래rest.016705m/참조.035148m로복귀미완료다.
+  STOPPED·전체normal_exit FAIL보존. deactivate/typedterminal/consumer/relay종료TRUE,
+  실제native0/launch0/relay0/reaped/noforce/residual[]. 84소스ZIP26,550,601bytes SHA256
+  `b16e144f57403be36a330550e1efc3472ffbe496e7d90441c2999d9b3bc68363`.
+- S전체50PASS11.1초/감사8PASS. N설정/라이브러리/종료/시계관련62PASS9.94초,
+  장면관련29PASS19.69초. 현재새소스N전체는아직미실행(이전432PASS와구분).
+- `precondition-plateau-postmortem.json`: 실제명령source_input FK와동일native촬영의
+  원시하중을대조했다. 22.402–23.482ROS초참조.019705142m에서55표본/1.08ROS초정지,
+  FL최소18.529N(전발최소동일). 가상참조를물리floor로상한설정한내부3mm조건이지연원인.
+  이는실제발높이또는owner재실행이아닌오프라인명령분석임을명시했다.
+- 회귀 `task8-calibration-precondition-envelope-red.log`:2실패/9통과16.10초.
+  단순상한제거는관련10실패/54통과45.78초로강체모델조기접촉소실을검출해폐기했다.
+  원래rest+10mm/.002m/s/10N/전발2N/10wall초는보존하고측정관절의추종압축여유절반을
+  추가상한으로사용한다. 새API RED11실패/1통과11.42초→관련1실패/64통과49.53초.
+  남은한건은압축없는완전이상추종에진행을요구하던전처리시험이다. 강체에서는
+  조기해제를금지하도록바꾸고다른기존안전회귀/실측인수기준은유지했다.
+  첫green명령은없는파일명으로미실행, 한차례WSL실행은자동승인검토사용량한도로
+  미실행이었다. 원본로그를보존하고서비스허용확인후재개했다.
+  `task8-calibration-precondition-compression-green.log`:65PASS47.18초.
+  추가`precondition-compression-postmortem.json`은같은측정관절FK의남은여유1.30–1.50mm를
+  확인했다. 최초postmortem은덮어쓰지않았다. 설치감사후새실제실험으로판별한다.
+
 ## 2026-10-25 접촉 경계 실측·가설 판별 (Task8 미완료)
 
 - 전체navigation `task8-calibration-reference-ramp-full.log`:432PASS309.90초.

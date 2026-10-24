@@ -62,7 +62,8 @@ class CarryRig:
         # executor rather than changing the parent's production dispatch model.
         self.executor = MultiThreadedExecutor(num_threads=3, context=self.ctx)
         self.executor.add_node(self.peer)
-        self.parent_executor = SingleThreadedExecutor(context=self.ctx)
+        from integrated_robot_navigation.dispatch_node import make_navigation_executor
+        self.parent_executor = make_navigation_executor(self.manager)
         self.parent_executor.add_node(self.manager)
         self.running = True
         self.threads = [threading.Thread(target=self.spin, args=(executor,))

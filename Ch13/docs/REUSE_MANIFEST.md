@@ -2,6 +2,14 @@
 
 ## 13.5 추가 — 구현 진행 중
 
+- 50µm 수치접촉비교는 기본관측과구분한 G1 전용 opt-in이다. Ch13 신규
+  `dart_contact`와native읽기전용probe가설치DART6.13.2 공개API/CMake target에
+  link하며외부BSD소스복사·수정은없다. 동일실제Gazebo PID의기존3개Ch13라이브러리에
+  실제DART provider의path/inode/device/SHA검증을추가한다. 원래23검사와relay검사를
+  보존하고별도설정검사를추가한다. 기존profile의`physics_sha256`는오프라인MJCF
+  의미를유지하고,추가`native_physics_sha256`가생성URDF/SDF/world와두실험모드를묶는다.
+  기준checkpoint3fd278c/사용자승인2026-10-25. 실제전체인수전일반보행허가는없다.
+
 - G1 전용 native 명령 연속 적용은 기존 Ch13 `PositionPDSystem`의 opt-in 확장이다.
   Gazebo8.15 공개 `Component`/`Factory`/`VectorDoubleSerializer`를 사용하는
   Ch13 신규 `position_reference.hpp`는 진단용 입력/적용값·write시각을 보관하며
@@ -252,6 +260,43 @@ ROS/wall cutoff선택과동일tick bundle공유를추가하며외부소스복사
 변환은없다. 원생Gazebo2ms접촉batch는센서패키지자체REUSE에별도로기록했다.
 
 G1의loadedpreconditioning참조함수도동일Ch13로컬신규코드다. 원본heldrest와
-초기floor/실측하중을사용하며일반CRAWL이나외부PD게인을복사·수정하지않는다.
+측정관절추종압축여유/실측하중을사용하며일반CRAWL이나외부PD게인을복사·수정하지않는다.
 기준7f321eb의모델·접촉검증·unload상한을재사용하고원본rest를전처리후에
 새로정하지않는다. 명시적FL요청의관절/force인덱스회귀를함께보존한다.
+
+`dispatch_node.py`는Ch13신규코드이며rclpy공개Publisher/SubscriptionEventCallbacks의
+`use_default_callbacks`를사용한다. [Jazzy API](https://github.com/ros2/rclpy/blob/jazzy/rclpy/rclpy/event_handler.py)를
+참조했으나Apache-2.0소스를복사하지않았다. 명시적이벤트컨테이너·메시지QoS는보존하며
+기본불일치경고항목만제외한다. 로컬DDS비교와실제메시지/이벤트회귀를물리엔진인수와구분한다.
+실제노드계측은Python표준cProfile과공식ROSlaunch prefix/filter를사용하며외부패치를포함하지않는다.
+
+구조재검토참고: `legubiao/quadruped_ros2_control`의Apache-2.0커밋
+`5434c5810d1a7fe223bcfd04550e9d3bfdd4b458`,
+`controllers/unitree_guide_controller/{README.md,src/UnitreeGuideController.cpp,src/FSM/StateFixedStand.cpp}`.
+GitHub API의실제tree SHA와해당고정raw파일을읽기만했다. native단계/소유권구조를
+비교했고소스·게인·5종모터인터페이스·시간기반완료조건을복사하지않았다.
+
+relay100 종료 수정은기존Ch13 `integrated_robot_runtime/common.py::DrainingExecutor`를
+import해재사용한다. 원본커밋`f2fa0eba4c042b00bb70f15b4066869ed370d84f`,
+Apache-2.0이며해당공통파일/외부rclpy는수정하지않았다. worker pool실제join후guard를
+해제하는Jazzy호환hook은공통파일한곳의기존private접근으로유지한다.
+새실제구독회귀는종료중인콜백이끝나기전guard파괴를재현하고기존13.3프로토콜과함께검증한다.
+
+후속 직렬 navigation 실행기 비교는 설치된 **rclpy7.1.12**, Apache-2.0,
+[고정 커밋 bd637294dd02b1c128422395c059fa06df8387a3](https://github.com/ros2/rclpy/tree/bd637294dd02b1c128422395c059fa06df8387a3)의
+`experimental/events_executor.py`, native `events_executor.hpp/.cpp`, 공식 pub/sub·service·action
+시험을 읽고 설치 API를 호출한다. 외부 SDK 소스 복사·수정·설치 변경은 없다.
+`dispatch_node.py`의 MessageInfo signature/tuple 호환 처리와 backend fingerprint는
+Ch13 신규 코드다. 원본 메시지·metadata·촬영 header를 보존하며 Serial 역할에만 사용한다.
+위의 ‘공통파일 무변경’은 이전 Draining 재사용 단계의 기록이다. 이번 단계에서는
+`common.py::spin`에 선택적 executor factory 주입만 추가했다. 기존 기본 분기·종료 절차·
+DrainingExecutor 본문은 유지한다. 변경한 runtime과 재사용 vision Python 파일을 실제
+설치 bytes와 대조·해시 기록하며, SDK wrapper/extension도 fingerprint한다.
+파일 fingerprint와 실제 PID의 mapped-library 증거는 구분한다.
+
+navigation direct Gazebo action의 종료 이벤트는 설치된 Apache-2.0
+`ros_gz_sim/launch/gz_sim.launch.py::launch_gz`의 `on_exit_shutdown` 성공 패턴
+(`ExecuteProcess(on_exit=Shutdown())`)을 참조한다. 소스 복사/외부 수정 없이 Ch13 action에
+공개 API를 호출한다. legacy 13.4 include 경로는 유지한다. 설치 launch 파일 자체의 SHA는
+각 native 실행의 `install_manifest.json`에 기록한다. process exit와 launch 이벤트 완료를
+구분하며, 부모를 신호 없이 유계 대기하는 Ch13 runner 코드는 신규 작성이다.

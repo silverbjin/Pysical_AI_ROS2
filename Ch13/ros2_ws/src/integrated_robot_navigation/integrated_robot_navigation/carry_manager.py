@@ -8,7 +8,7 @@ import time
 
 from action_msgs.msg import GoalStatusArray
 from control_msgs.action import FollowJointTrajectory
-from rclpy.node import Node
+from .dispatch_node import NavigationNode as Node
 from rclpy.clock import Clock
 from rclpy.clock_type import ClockType
 from rclpy.qos import QoSProfile, DurabilityPolicy, qos_profile_sensor_data
@@ -307,4 +307,5 @@ class CarryManager(Node):
 
 def main(args=None):
     from integrated_robot_runtime.common import spin
-    spin(CarryManager, threads=1)
+    from .dispatch_node import make_navigation_executor
+    spin(CarryManager, threads=1, executor_factory=make_navigation_executor)

@@ -1,0 +1,436 @@
+FFFFFFFFFFFF                                                             [100%]
+=================================== FAILURES ===================================
+________ test_semantics_require_real_measurements_not_ready_or_commands ________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+
+    def test_semantics_require_real_measurements_not_ready_or_commands(observed):
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:80: AttributeError
+_ test_sensor_semantics_reject_specific_fault[force_scale-contact_frames_force] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'force_scale', check = 'contact_frames_force'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+_ test_sensor_semantics_reject_specific_fault[contact_names-contact_frames_force] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'contact_names', check = 'contact_frames_force'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+_______ test_sensor_semantics_reject_specific_fault[imu_axes-imu_frame] ________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'imu_axes', check = 'imu_frame'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+__ test_sensor_semantics_reject_specific_fault[scan_self-scan_world_not_self] __
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'scan_self', check = 'scan_world_not_self'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+______ test_sensor_semantics_reject_specific_fault[no_lift-contact_lift] _______
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'no_lift', check = 'contact_lift'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+____ test_sensor_semantics_reject_specific_fault[swapped_lift-contact_lift] ____
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'swapped_lift', check = 'contact_lift'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+_ test_sensor_semantics_reject_specific_fault[unexpected-carry_collision_free] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'unexpected', check = 'carry_collision_free'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+__ test_sensor_semantics_reject_specific_fault[geometry-carry_collision_free] __
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'geometry', check = 'carry_collision_free'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+_ test_sensor_semantics_reject_specific_fault[duplicates-contact_frames_force] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'duplicates', check = 'contact_frames_force'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+_ test_sensor_semantics_reject_specific_fault[command_source-contact_frames_force] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+failure = 'command_source', check = 'contact_frames_force'
+
+    @pytest.mark.parametrize('failure,check', [
+        ('force_scale', 'contact_frames_force'), ('contact_names', 'contact_frames_force'),
+        ('imu_axes', 'imu_frame'), ('scan_self', 'scan_world_not_self'),
+        ('no_lift', 'contact_lift'), ('swapped_lift', 'contact_lift'),
+        ('unexpected', 'carry_collision_free'), ('geometry', 'carry_collision_free'),
+        ('duplicates', 'contact_frames_force'), ('command_source', 'contact_frames_force')])
+    def test_sensor_semantics_reject_specific_fault(observed, failure, check):
+        for frame in observed['frames']:
+            samples = frame['samples']
+            if failure == 'force_scale':
+                samples['contacts']['data']['forces'] = [f*1.2 for f in samples['contacts']['data']['forces']]
+            elif failure == 'contact_names':
+                samples['contacts']['data']['names'] = ('fl_foot', 'fr_foot', 'rr_foot', 'rl_foot')
+            elif failure == 'imu_axes':
+                samples['imu']['data']['acceleration'] = (9.81, 0., 0.)
+            elif failure == 'scan_self':
+                samples['scan']['data']['ranges'] = (.2,)*360
+            elif failure == 'no_lift':
+                frame['stage'], frame['crawl']['state'] = 'stand', 'STAND'
+            elif failure == 'swapped_lift' and frame['crawl']['phase'] == 'SWING':
+                samples['contacts']['data'].update(forces=(0., 50., 50., 50.), touching=(False, True, True, True))
+            elif failure == 'unexpected':
+                samples['contacts']['data']['unexpected_contacts'] = 1
+            elif failure == 'duplicates':
+                for sample in samples.values():
+                    sample['stamp_ns'] = 1_000_000_000
+            elif failure == 'command_source':
+                observed['root_source'] = 'command_integrated'
+        if failure == 'geometry':
+            observed['urdf'] = observed['urdf'].replace('size="0.60 0.30 0.15"', 'size="0.60 0.30 3.0"')
+>       result = api().assess_g1_sensors(observed, WORLD, 'mujoco')
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_g1_sensors'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:115: AttributeError
+______ test_operational_scope_keeps_faults_but_excludes_explicit_teardown ______
+
+    def test_operational_scope_keeps_faults_but_excludes_explicit_teardown():
+        frames = [dict(stage='bootstrap'), dict(stage='stand', fault=True),
+                  dict(stage='calibrate'), dict(stage='shutdown', stale=True)]
+>       assert api().operational_frames(frames) == frames[1:3]
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'operational_frames'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:122: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_semantics_require_real_measurements_not_ready_or_commands
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[force_scale-contact_frames_force]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[contact_names-contact_frames_force]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[imu_axes-imu_frame]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[scan_self-scan_world_not_self]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[no_lift-contact_lift]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[swapped_lift-contact_lift]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[unexpected-carry_collision_free]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[geometry-carry_collision_free]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[duplicates-contact_frames_force]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_sensor_semantics_reject_specific_fault[command_source-contact_frames_force]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_operational_scope_keeps_faults_but_excludes_explicit_teardown
+12 failed in 10.14s

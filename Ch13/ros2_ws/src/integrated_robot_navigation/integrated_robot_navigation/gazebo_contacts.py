@@ -127,7 +127,7 @@ def main(args=None):
     import time
     import rclpy
     from rclpy.executors import ExternalShutdownException
-    from rclpy.node import Node
+    from .dispatch_node import NavigationNode as Node
     from rclpy.qos import qos_profile_sensor_data
     from geometry_msgs.msg import PoseArray
     from ros_gz_interfaces.msg import Contacts
@@ -138,6 +138,7 @@ def main(args=None):
     rclpy.init(args=args)
     node = Node('gazebo_contact_adapter')
     join = None
+    executor = None
     try:
         directory = node.declare_parameter('scene_dir', '').value
         record = load_scene('gazebo', directory)
@@ -168,11 +169,15 @@ def main(args=None):
             return response
 
         node.create_service(Trigger, '/navigation/stop_native_sensors', stop)
-        rclpy.spin(node)
+        from .dispatch_node import make_navigation_executor
+        executor=make_navigation_executor(node)
+        rclpy.spin(node,executor=executor)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         if join is not None:
             join.stop()
+        if executor is not None:
+            executor.shutdown(timeout_sec=2.)
         node.destroy_node()
         rclpy.try_shutdown()

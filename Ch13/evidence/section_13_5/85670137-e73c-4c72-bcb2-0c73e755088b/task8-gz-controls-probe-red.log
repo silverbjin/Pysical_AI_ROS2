@@ -1,0 +1,62 @@
+.......FF..                                                              [100%]
+=================================== FAILURES ===================================
+_ test_gazebo_controls_actual_dds_subscription_preserves_distinct_native_schema _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_gazebo_controls_actual_dd0')
+
+    def test_gazebo_controls_actual_dds_subscription_preserves_distinct_native_schema(tmp_path):
+        import json
+        import time
+        import rclpy
+        from rclpy.context import Context
+        from rclpy.executors import SingleThreadedExecutor
+        from rclpy.node import Node
+        from rclpy.qos import qos_profile_sensor_data
+        from std_msgs.msg import String
+        context = Context()
+        rclpy.init(context=context)
+        executor = SingleThreadedExecutor(context=context)
+        receiver = NavigationProbe(tmp_path, engine='gazebo', context=context)
+        source = Node('native_controls_test_producer', context=context)
+        executor.add_node(receiver)
+        executor.add_node(source)
+        pub = source.create_publisher(String, '/navigation/native_controls', qos_profile_sensor_data)
+        payload = dict(schema=2, engine='gazebo', capture_ns=123000000, epoch=0, sequence=7,
+            joints=[dict(name='fr_hip_joint', position=.12, velocity=-.3, velocity_command=-.7,
+                         projected_transmitted_effort=-2.5, applied_generalized_force=None)])
+        try:
+            deadline = time.monotonic()+5.
+            while time.monotonic() < deadline and not receiver.native_controls:
+                pub.publish(String(data=json.dumps(payload)))
+                executor.spin_once(timeout_sec=.05)
+>           assert receiver.native_controls, 'Gazebo native command diagnostics were not received'
+E           AssertionError: Gazebo native command diagnostics were not received
+E           assert []
+E            +  where [] = <probe_navigation_13_5.NavigationProbe object at 0x7b9f6c788560>.native_controls
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:126: AssertionError
+_ test_native_controls_do_not_mislabel_another_backend_schema[gazebo-payload0] _
+
+engine = 'gazebo'
+payload = {'actuators': [], 'capture_ns': 12, 'epoch': 0, 'schema': 1, ...}
+
+    @pytest.mark.parametrize('engine,payload', [
+        ('gazebo', dict(schema=1, capture_ns=12, epoch=0, sequence=3, actuators=[])),
+        ('mujoco', dict(schema=2, engine='gazebo', capture_ns=12, epoch=0, sequence=3, joints=[])),
+        ('gazebo', dict(schema=2, engine='mujoco', capture_ns=12, epoch=0, sequence=3, joints=[])),
+    ])
+    def test_native_controls_do_not_mislabel_another_backend_schema(engine, payload):
+        import json
+        from std_msgs.msg import String
+        record = SimpleNamespace(engine=engine, stage='stand', native_controls=[], transport_errors=[],
+                                 _write=lambda *_: None)
+        NavigationProbe._controls(record, String(data=json.dumps(payload)))
+>       assert not record.native_controls
+E       AssertionError: assert not [{'actuators': [], 'capture_ns': 12, 'epoch': 0, 'received_ns': 112640036081, ...}]
+E        +  where [{'actuators': [], 'capture_ns': 12, 'epoch': 0, 'received_ns': 112640036081, ...}] = namespace(engine='gazebo', stage='stand', native_controls=[{'schema': 1, 'capture_ns': 12, 'epoch': 0, 'sequence': 3, ...=[], _write=<function test_native_controls_do_not_mislabel_another_backend_schema.<locals>.<lambda> at 0x7b9f6c6bede0>).native_controls
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:152: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_gazebo_controls_actual_dds_subscription_preserves_distinct_native_schema
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_native_controls_do_not_mislabel_another_backend_schema[gazebo-payload0]
+2 failed, 9 passed in 16.24s

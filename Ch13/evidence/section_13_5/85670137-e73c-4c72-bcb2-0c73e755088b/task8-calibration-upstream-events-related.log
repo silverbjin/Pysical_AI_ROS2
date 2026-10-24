@@ -1,0 +1,613 @@
+..EEEEEEEE..................                                             [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_raw_loss_zeros_while_ros_clock_paused_and_smoother_continues _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b73781282f0>
+
+    @pytest.fixture
+    def rig(nav_robot_model, monkeypatch):
+        module = importlib.import_module('integrated_robot_navigation.motion_guard')
+        assert hasattr(module, 'MotionGuardNode'), 'steady watchdog ROS wrapper missing'
+        profile = prepare_profile(nav_robot_model, CARRY)
+        monkeypatch.setattr(module, 'validate_profile', lambda *args: (True, 'unit_admission_stub'))
+        ctx = Context()
+        rclpy.init(context=ctx)
+        guard = module.MotionGuardNode(nav_robot_model, profile, 'mujoco', context=ctx,
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
+        value = Rig(guard, nav_robot_model, ctx)
+        try:
+>           value.pump(.5)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_motion_guard_ros.Rig object at 0x7b737ed132c0>, duration = 0.5
+
+    def pump(self, duration, *, raw=True, clock=True, scan=True):
+        end = time.monotonic()+duration
+        while time.monotonic() < end:
+            if clock:
+                self.capture = 4.+time.monotonic()-self.start
+            sec = int(self.capture)
+            stamp = Time(sec=sec, nanosec=int((self.capture-sec)*1e9))
+            if clock:
+                self.clock.publish(Clock(clock=stamp))
+            state = bundle(self.model)
+            for key in ('joints', 'imu', 'contacts', 'body', 'scan', 'carry'):
+                if key == 'scan' and not scan:
+                    continue
+                if key == 'joints':
+                    data = state.joints.data
+                    msg = JointState(name=list(data['position']), position=list(data['position'].values()),
+                                     velocity=list(data['velocity'].values()))
+                elif key == 'imu':
+                    msg = Imu()
+                    msg.linear_acceleration.z = 9.81
+                elif key == 'contacts':
+                    data = state.contacts.data
+                    msg = FootContacts(names=list(data['names']), normal_forces=list(data['forces']),
+                        touching=list(data['touching']), sequence=int(self.capture*1e9),
+                        points=[Point(x=p[0], y=p[1], z=p[2]) for p in data['points']])
+                elif key == 'body':
+                    msg = Odometry(child_frame_id='base_footprint')
+                    msg.pose.pose.position.z = .46
+                    msg.pose.pose.orientation.w = 1.
+                elif key == 'scan':
+                    msg = LaserScan(angle_min=-3.141592653589793,
+                        angle_increment=6.283185307179586/360, range_min=.05, range_max=10.,
+                        ranges=[float('inf')]*360)
+                else:
+                    msg = MotionState(ready=self.ready, generation=self.generation,
+                                      model_sha256=self.model.model_sha256)
+                msg.header.stamp = stamp
+                msg.header.frame_id = getattr(state, key).frame_id
+                self.pubs[key].publish(msg)
+            command = Twist()
+            command.linear.x, command.angular.z = .006, .01
+            if raw:
+                self.pubs['raw'].publish(command)
+            self.pubs['smoothed'].publish(command)
+            for _ in range(24):
+>               self.executor.spin_once(timeout_sec=.0005)
+E               SystemError: null argument to internal routine
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:102: SystemError
+---------------------------- Captured stderr setup -----------------------------
+[INFO] [1792879124.778656439] [motion_guard]: Serial navigation callbacks use EventsExecutor
+_ ERROR at setup of test_offline_profile_is_rejected_by_real_ros_activation_service _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b737e1afd10>
+
+    @pytest.fixture
+    def rig(nav_robot_model, monkeypatch):
+        module = importlib.import_module('integrated_robot_navigation.motion_guard')
+        assert hasattr(module, 'MotionGuardNode'), 'steady watchdog ROS wrapper missing'
+        profile = prepare_profile(nav_robot_model, CARRY)
+        monkeypatch.setattr(module, 'validate_profile', lambda *args: (True, 'unit_admission_stub'))
+        ctx = Context()
+        rclpy.init(context=ctx)
+        guard = module.MotionGuardNode(nav_robot_model, profile, 'mujoco', context=ctx,
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
+        value = Rig(guard, nav_robot_model, ctx)
+        try:
+>           value.pump(.5)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_motion_guard_ros.Rig object at 0x7b736bf52930>, duration = 0.5
+
+    def pump(self, duration, *, raw=True, clock=True, scan=True):
+        end = time.monotonic()+duration
+        while time.monotonic() < end:
+            if clock:
+                self.capture = 4.+time.monotonic()-self.start
+            sec = int(self.capture)
+            stamp = Time(sec=sec, nanosec=int((self.capture-sec)*1e9))
+            if clock:
+                self.clock.publish(Clock(clock=stamp))
+            state = bundle(self.model)
+            for key in ('joints', 'imu', 'contacts', 'body', 'scan', 'carry'):
+                if key == 'scan' and not scan:
+                    continue
+                if key == 'joints':
+                    data = state.joints.data
+                    msg = JointState(name=list(data['position']), position=list(data['position'].values()),
+                                     velocity=list(data['velocity'].values()))
+                elif key == 'imu':
+                    msg = Imu()
+                    msg.linear_acceleration.z = 9.81
+                elif key == 'contacts':
+                    data = state.contacts.data
+                    msg = FootContacts(names=list(data['names']), normal_forces=list(data['forces']),
+                        touching=list(data['touching']), sequence=int(self.capture*1e9),
+                        points=[Point(x=p[0], y=p[1], z=p[2]) for p in data['points']])
+                elif key == 'body':
+                    msg = Odometry(child_frame_id='base_footprint')
+                    msg.pose.pose.position.z = .46
+                    msg.pose.pose.orientation.w = 1.
+                elif key == 'scan':
+                    msg = LaserScan(angle_min=-3.141592653589793,
+                        angle_increment=6.283185307179586/360, range_min=.05, range_max=10.,
+                        ranges=[float('inf')]*360)
+                else:
+                    msg = MotionState(ready=self.ready, generation=self.generation,
+                                      model_sha256=self.model.model_sha256)
+                msg.header.stamp = stamp
+                msg.header.frame_id = getattr(state, key).frame_id
+                self.pubs[key].publish(msg)
+            command = Twist()
+            command.linear.x, command.angular.z = .006, .01
+            if raw:
+                self.pubs['raw'].publish(command)
+            self.pubs['smoothed'].publish(command)
+            for _ in range(24):
+>               self.executor.spin_once(timeout_sec=.0005)
+E               SystemError: null argument to internal routine
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:102: SystemError
+---------------------------- Captured stderr setup -----------------------------
+[INFO] [1792879125.737065177] [motion_guard]: Serial navigation callbacks use EventsExecutor
+_ ERROR at setup of test_shutdown_joins_watchdog_and_publishes_final_not_ready_zero _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b73a7180a70>
+
+    @pytest.fixture
+    def rig(nav_robot_model, monkeypatch):
+        module = importlib.import_module('integrated_robot_navigation.motion_guard')
+        assert hasattr(module, 'MotionGuardNode'), 'steady watchdog ROS wrapper missing'
+        profile = prepare_profile(nav_robot_model, CARRY)
+        monkeypatch.setattr(module, 'validate_profile', lambda *args: (True, 'unit_admission_stub'))
+        ctx = Context()
+        rclpy.init(context=ctx)
+        guard = module.MotionGuardNode(nav_robot_model, profile, 'mujoco', context=ctx,
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
+        value = Rig(guard, nav_robot_model, ctx)
+        try:
+>           value.pump(.5)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_motion_guard_ros.Rig object at 0x7b738a4daff0>, duration = 0.5
+
+    def pump(self, duration, *, raw=True, clock=True, scan=True):
+        end = time.monotonic()+duration
+        while time.monotonic() < end:
+            if clock:
+                self.capture = 4.+time.monotonic()-self.start
+            sec = int(self.capture)
+            stamp = Time(sec=sec, nanosec=int((self.capture-sec)*1e9))
+            if clock:
+                self.clock.publish(Clock(clock=stamp))
+            state = bundle(self.model)
+            for key in ('joints', 'imu', 'contacts', 'body', 'scan', 'carry'):
+                if key == 'scan' and not scan:
+                    continue
+                if key == 'joints':
+                    data = state.joints.data
+                    msg = JointState(name=list(data['position']), position=list(data['position'].values()),
+                                     velocity=list(data['velocity'].values()))
+                elif key == 'imu':
+                    msg = Imu()
+                    msg.linear_acceleration.z = 9.81
+                elif key == 'contacts':
+                    data = state.contacts.data
+                    msg = FootContacts(names=list(data['names']), normal_forces=list(data['forces']),
+                        touching=list(data['touching']), sequence=int(self.capture*1e9),
+                        points=[Point(x=p[0], y=p[1], z=p[2]) for p in data['points']])
+                elif key == 'body':
+                    msg = Odometry(child_frame_id='base_footprint')
+                    msg.pose.pose.position.z = .46
+                    msg.pose.pose.orientation.w = 1.
+                elif key == 'scan':
+                    msg = LaserScan(angle_min=-3.141592653589793,
+                        angle_increment=6.283185307179586/360, range_min=.05, range_max=10.,
+                        ranges=[float('inf')]*360)
+                else:
+                    msg = MotionState(ready=self.ready, generation=self.generation,
+                                      model_sha256=self.model.model_sha256)
+                msg.header.stamp = stamp
+                msg.header.frame_id = getattr(state, key).frame_id
+                self.pubs[key].publish(msg)
+            command = Twist()
+            command.linear.x, command.angular.z = .006, .01
+            if raw:
+                self.pubs['raw'].publish(command)
+            self.pubs['smoothed'].publish(command)
+            for _ in range(24):
+>               self.executor.spin_once(timeout_sec=.0005)
+E               SystemError: null argument to internal routine
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:102: SystemError
+---------------------------- Captured stderr setup -----------------------------
+[INFO] [1792879126.787995526] [motion_guard]: Serial navigation callbacks use EventsExecutor
+_ ERROR at setup of test_real_dds_faults_require_reset_not_just_recovered_inputs[producer] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b73aa710920>
+
+    @pytest.fixture
+    def rig(nav_robot_model, monkeypatch):
+        module = importlib.import_module('integrated_robot_navigation.motion_guard')
+        assert hasattr(module, 'MotionGuardNode'), 'steady watchdog ROS wrapper missing'
+        profile = prepare_profile(nav_robot_model, CARRY)
+        monkeypatch.setattr(module, 'validate_profile', lambda *args: (True, 'unit_admission_stub'))
+        ctx = Context()
+        rclpy.init(context=ctx)
+        guard = module.MotionGuardNode(nav_robot_model, profile, 'mujoco', context=ctx,
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
+        value = Rig(guard, nav_robot_model, ctx)
+        try:
+>           value.pump(.5)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_motion_guard_ros.Rig object at 0x7b737edcc260>, duration = 0.5
+
+    def pump(self, duration, *, raw=True, clock=True, scan=True):
+        end = time.monotonic()+duration
+        while time.monotonic() < end:
+            if clock:
+                self.capture = 4.+time.monotonic()-self.start
+            sec = int(self.capture)
+            stamp = Time(sec=sec, nanosec=int((self.capture-sec)*1e9))
+            if clock:
+                self.clock.publish(Clock(clock=stamp))
+            state = bundle(self.model)
+            for key in ('joints', 'imu', 'contacts', 'body', 'scan', 'carry'):
+                if key == 'scan' and not scan:
+                    continue
+                if key == 'joints':
+                    data = state.joints.data
+                    msg = JointState(name=list(data['position']), position=list(data['position'].values()),
+                                     velocity=list(data['velocity'].values()))
+                elif key == 'imu':
+                    msg = Imu()
+                    msg.linear_acceleration.z = 9.81
+                elif key == 'contacts':
+                    data = state.contacts.data
+                    msg = FootContacts(names=list(data['names']), normal_forces=list(data['forces']),
+                        touching=list(data['touching']), sequence=int(self.capture*1e9),
+                        points=[Point(x=p[0], y=p[1], z=p[2]) for p in data['points']])
+                elif key == 'body':
+                    msg = Odometry(child_frame_id='base_footprint')
+                    msg.pose.pose.position.z = .46
+                    msg.pose.pose.orientation.w = 1.
+                elif key == 'scan':
+                    msg = LaserScan(angle_min=-3.141592653589793,
+                        angle_increment=6.283185307179586/360, range_min=.05, range_max=10.,
+                        ranges=[float('inf')]*360)
+                else:
+                    msg = MotionState(ready=self.ready, generation=self.generation,
+                                      model_sha256=self.model.model_sha256)
+                msg.header.stamp = stamp
+                msg.header.frame_id = getattr(state, key).frame_id
+                self.pubs[key].publish(msg)
+            command = Twist()
+            command.linear.x, command.angular.z = .006, .01
+            if raw:
+                self.pubs['raw'].publish(command)
+            self.pubs['smoothed'].publish(command)
+            for _ in range(24):
+>               self.executor.spin_once(timeout_sec=.0005)
+E               SystemError: null argument to internal routine
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:102: SystemError
+---------------------------- Captured stderr setup -----------------------------
+[INFO] [1792879127.770040612] [motion_guard]: Serial navigation callbacks use EventsExecutor
+_ ERROR at setup of test_real_dds_faults_require_reset_not_just_recovered_inputs[owner_replaced] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b73ab864b30>
+
+    @pytest.fixture
+    def rig(nav_robot_model, monkeypatch):
+        module = importlib.import_module('integrated_robot_navigation.motion_guard')
+        assert hasattr(module, 'MotionGuardNode'), 'steady watchdog ROS wrapper missing'
+        profile = prepare_profile(nav_robot_model, CARRY)
+        monkeypatch.setattr(module, 'validate_profile', lambda *args: (True, 'unit_admission_stub'))
+        ctx = Context()
+        rclpy.init(context=ctx)
+        guard = module.MotionGuardNode(nav_robot_model, profile, 'mujoco', context=ctx,
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
+        value = Rig(guard, nav_robot_model, ctx)
+        try:
+>           value.pump(.5)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_motion_guard_ros.Rig object at 0x7b73781b1a00>, duration = 0.5
+
+    def pump(self, duration, *, raw=True, clock=True, scan=True):
+        end = time.monotonic()+duration
+        while time.monotonic() < end:
+            if clock:
+                self.capture = 4.+time.monotonic()-self.start
+            sec = int(self.capture)
+            stamp = Time(sec=sec, nanosec=int((self.capture-sec)*1e9))
+            if clock:
+                self.clock.publish(Clock(clock=stamp))
+            state = bundle(self.model)
+            for key in ('joints', 'imu', 'contacts', 'body', 'scan', 'carry'):
+                if key == 'scan' and not scan:
+                    continue
+                if key == 'joints':
+                    data = state.joints.data
+                    msg = JointState(name=list(data['position']), position=list(data['position'].values()),
+                                     velocity=list(data['velocity'].values()))
+                elif key == 'imu':
+                    msg = Imu()
+                    msg.linear_acceleration.z = 9.81
+                elif key == 'contacts':
+                    data = state.contacts.data
+                    msg = FootContacts(names=list(data['names']), normal_forces=list(data['forces']),
+                        touching=list(data['touching']), sequence=int(self.capture*1e9),
+                        points=[Point(x=p[0], y=p[1], z=p[2]) for p in data['points']])
+                elif key == 'body':
+                    msg = Odometry(child_frame_id='base_footprint')
+                    msg.pose.pose.position.z = .46
+                    msg.pose.pose.orientation.w = 1.
+                elif key == 'scan':
+                    msg = LaserScan(angle_min=-3.141592653589793,
+                        angle_increment=6.283185307179586/360, range_min=.05, range_max=10.,
+                        ranges=[float('inf')]*360)
+                else:
+                    msg = MotionState(ready=self.ready, generation=self.generation,
+                                      model_sha256=self.model.model_sha256)
+                msg.header.stamp = stamp
+                msg.header.frame_id = getattr(state, key).frame_id
+                self.pubs[key].publish(msg)
+            command = Twist()
+            command.linear.x, command.angular.z = .006, .01
+            if raw:
+                self.pubs['raw'].publish(command)
+            self.pubs['smoothed'].publish(command)
+            for _ in range(24):
+>               self.executor.spin_once(timeout_sec=.0005)
+E               SystemError: null argument to internal routine
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:102: SystemError
+---------------------------- Captured stderr setup -----------------------------
+[INFO] [1792879128.900268955] [motion_guard]: Serial navigation callbacks use EventsExecutor
+_ ERROR at setup of test_real_dds_faults_require_reset_not_just_recovered_inputs[carry] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b73781285f0>
+
+    @pytest.fixture
+    def rig(nav_robot_model, monkeypatch):
+        module = importlib.import_module('integrated_robot_navigation.motion_guard')
+        assert hasattr(module, 'MotionGuardNode'), 'steady watchdog ROS wrapper missing'
+        profile = prepare_profile(nav_robot_model, CARRY)
+        monkeypatch.setattr(module, 'validate_profile', lambda *args: (True, 'unit_admission_stub'))
+        ctx = Context()
+        rclpy.init(context=ctx)
+        guard = module.MotionGuardNode(nav_robot_model, profile, 'mujoco', context=ctx,
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
+        value = Rig(guard, nav_robot_model, ctx)
+        try:
+>           value.pump(.5)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_motion_guard_ros.Rig object at 0x7b73781e26c0>, duration = 0.5
+
+    def pump(self, duration, *, raw=True, clock=True, scan=True):
+        end = time.monotonic()+duration
+        while time.monotonic() < end:
+            if clock:
+                self.capture = 4.+time.monotonic()-self.start
+            sec = int(self.capture)
+            stamp = Time(sec=sec, nanosec=int((self.capture-sec)*1e9))
+            if clock:
+                self.clock.publish(Clock(clock=stamp))
+            state = bundle(self.model)
+            for key in ('joints', 'imu', 'contacts', 'body', 'scan', 'carry'):
+                if key == 'scan' and not scan:
+                    continue
+                if key == 'joints':
+                    data = state.joints.data
+                    msg = JointState(name=list(data['position']), position=list(data['position'].values()),
+                                     velocity=list(data['velocity'].values()))
+                elif key == 'imu':
+                    msg = Imu()
+                    msg.linear_acceleration.z = 9.81
+                elif key == 'contacts':
+                    data = state.contacts.data
+                    msg = FootContacts(names=list(data['names']), normal_forces=list(data['forces']),
+                        touching=list(data['touching']), sequence=int(self.capture*1e9),
+                        points=[Point(x=p[0], y=p[1], z=p[2]) for p in data['points']])
+                elif key == 'body':
+                    msg = Odometry(child_frame_id='base_footprint')
+                    msg.pose.pose.position.z = .46
+                    msg.pose.pose.orientation.w = 1.
+                elif key == 'scan':
+                    msg = LaserScan(angle_min=-3.141592653589793,
+                        angle_increment=6.283185307179586/360, range_min=.05, range_max=10.,
+                        ranges=[float('inf')]*360)
+                else:
+                    msg = MotionState(ready=self.ready, generation=self.generation,
+                                      model_sha256=self.model.model_sha256)
+                msg.header.stamp = stamp
+                msg.header.frame_id = getattr(state, key).frame_id
+                self.pubs[key].publish(msg)
+            command = Twist()
+            command.linear.x, command.angular.z = .006, .01
+            if raw:
+                self.pubs['raw'].publish(command)
+            self.pubs['smoothed'].publish(command)
+            for _ in range(24):
+>               self.executor.spin_once(timeout_sec=.0005)
+E               SystemError: null argument to internal routine
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:102: SystemError
+---------------------------- Captured stderr setup -----------------------------
+[INFO] [1792879129.896796097] [motion_guard]: Serial navigation callbacks use EventsExecutor
+_ ERROR at setup of test_real_dds_faults_require_reset_not_just_recovered_inputs[scan] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b73a6d6d910>
+
+    @pytest.fixture
+    def rig(nav_robot_model, monkeypatch):
+        module = importlib.import_module('integrated_robot_navigation.motion_guard')
+        assert hasattr(module, 'MotionGuardNode'), 'steady watchdog ROS wrapper missing'
+        profile = prepare_profile(nav_robot_model, CARRY)
+        monkeypatch.setattr(module, 'validate_profile', lambda *args: (True, 'unit_admission_stub'))
+        ctx = Context()
+        rclpy.init(context=ctx)
+        guard = module.MotionGuardNode(nav_robot_model, profile, 'mujoco', context=ctx,
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
+        value = Rig(guard, nav_robot_model, ctx)
+        try:
+>           value.pump(.5)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_motion_guard_ros.Rig object at 0x7b737dcfa240>, duration = 0.5
+
+    def pump(self, duration, *, raw=True, clock=True, scan=True):
+        end = time.monotonic()+duration
+        while time.monotonic() < end:
+            if clock:
+                self.capture = 4.+time.monotonic()-self.start
+            sec = int(self.capture)
+            stamp = Time(sec=sec, nanosec=int((self.capture-sec)*1e9))
+            if clock:
+                self.clock.publish(Clock(clock=stamp))
+            state = bundle(self.model)
+            for key in ('joints', 'imu', 'contacts', 'body', 'scan', 'carry'):
+                if key == 'scan' and not scan:
+                    continue
+                if key == 'joints':
+                    data = state.joints.data
+                    msg = JointState(name=list(data['position']), position=list(data['position'].values()),
+                                     velocity=list(data['velocity'].values()))
+                elif key == 'imu':
+                    msg = Imu()
+                    msg.linear_acceleration.z = 9.81
+                elif key == 'contacts':
+                    data = state.contacts.data
+                    msg = FootContacts(names=list(data['names']), normal_forces=list(data['forces']),
+                        touching=list(data['touching']), sequence=int(self.capture*1e9),
+                        points=[Point(x=p[0], y=p[1], z=p[2]) for p in data['points']])
+                elif key == 'body':
+                    msg = Odometry(child_frame_id='base_footprint')
+                    msg.pose.pose.position.z = .46
+                    msg.pose.pose.orientation.w = 1.
+                elif key == 'scan':
+                    msg = LaserScan(angle_min=-3.141592653589793,
+                        angle_increment=6.283185307179586/360, range_min=.05, range_max=10.,
+                        ranges=[float('inf')]*360)
+                else:
+                    msg = MotionState(ready=self.ready, generation=self.generation,
+                                      model_sha256=self.model.model_sha256)
+                msg.header.stamp = stamp
+                msg.header.frame_id = getattr(state, key).frame_id
+                self.pubs[key].publish(msg)
+            command = Twist()
+            command.linear.x, command.angular.z = .006, .01
+            if raw:
+                self.pubs['raw'].publish(command)
+            self.pubs['smoothed'].publish(command)
+            for _ in range(24):
+>               self.executor.spin_once(timeout_sec=.0005)
+E               SystemError: null argument to internal routine
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:102: SystemError
+---------------------------- Captured stderr setup -----------------------------
+[INFO] [1792879130.929290569] [motion_guard]: Serial navigation callbacks use EventsExecutor
+_ ERROR at setup of test_real_dds_faults_require_reset_not_just_recovered_inputs[generation] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b738a4b76e0>
+
+    @pytest.fixture
+    def rig(nav_robot_model, monkeypatch):
+        module = importlib.import_module('integrated_robot_navigation.motion_guard')
+        assert hasattr(module, 'MotionGuardNode'), 'steady watchdog ROS wrapper missing'
+        profile = prepare_profile(nav_robot_model, CARRY)
+        monkeypatch.setattr(module, 'validate_profile', lambda *args: (True, 'unit_admission_stub'))
+        ctx = Context()
+        rclpy.init(context=ctx)
+        guard = module.MotionGuardNode(nav_robot_model, profile, 'mujoco', context=ctx,
+            parameter_overrides=[Parameter('use_sim_time', value=True)])
+        value = Rig(guard, nav_robot_model, ctx)
+        try:
+>           value.pump(.5)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_motion_guard_ros.Rig object at 0x7b737e1adfd0>, duration = 0.5
+
+    def pump(self, duration, *, raw=True, clock=True, scan=True):
+        end = time.monotonic()+duration
+        while time.monotonic() < end:
+            if clock:
+                self.capture = 4.+time.monotonic()-self.start
+            sec = int(self.capture)
+            stamp = Time(sec=sec, nanosec=int((self.capture-sec)*1e9))
+            if clock:
+                self.clock.publish(Clock(clock=stamp))
+            state = bundle(self.model)
+            for key in ('joints', 'imu', 'contacts', 'body', 'scan', 'carry'):
+                if key == 'scan' and not scan:
+                    continue
+                if key == 'joints':
+                    data = state.joints.data
+                    msg = JointState(name=list(data['position']), position=list(data['position'].values()),
+                                     velocity=list(data['velocity'].values()))
+                elif key == 'imu':
+                    msg = Imu()
+                    msg.linear_acceleration.z = 9.81
+                elif key == 'contacts':
+                    data = state.contacts.data
+                    msg = FootContacts(names=list(data['names']), normal_forces=list(data['forces']),
+                        touching=list(data['touching']), sequence=int(self.capture*1e9),
+                        points=[Point(x=p[0], y=p[1], z=p[2]) for p in data['points']])
+                elif key == 'body':
+                    msg = Odometry(child_frame_id='base_footprint')
+                    msg.pose.pose.position.z = .46
+                    msg.pose.pose.orientation.w = 1.
+                elif key == 'scan':
+                    msg = LaserScan(angle_min=-3.141592653589793,
+                        angle_increment=6.283185307179586/360, range_min=.05, range_max=10.,
+                        ranges=[float('inf')]*360)
+                else:
+                    msg = MotionState(ready=self.ready, generation=self.generation,
+                                      model_sha256=self.model.model_sha256)
+                msg.header.stamp = stamp
+                msg.header.frame_id = getattr(state, key).frame_id
+                self.pubs[key].publish(msg)
+            command = Twist()
+            command.linear.x, command.angular.z = .006, .01
+            if raw:
+                self.pubs['raw'].publish(command)
+            self.pubs['smoothed'].publish(command)The following exception was never retrieved: cannot use Destroyable because destruction was requested
+
+            for _ in range(24):
+>               self.executor.spin_once(timeout_sec=.0005)
+E               SystemError: null argument to internal routine
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:102: SystemError
+---------------------------- Captured stderr setup -----------------------------
+[INFO] [1792879132.113136565] [motion_guard]: Serial navigation callbacks use EventsExecutor
+=========================== short test summary info ============================
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_raw_loss_zeros_while_ros_clock_paused_and_smoother_continues
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_offline_profile_is_rejected_by_real_ros_activation_service
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_shutdown_joins_watchdog_and_publishes_final_not_ready_zero
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_real_dds_faults_require_reset_not_just_recovered_inputs[producer]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_real_dds_faults_require_reset_not_just_recovered_inputs[owner_replaced]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_real_dds_faults_require_reset_not_just_recovered_inputs[carry]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_real_dds_faults_require_reset_not_just_recovered_inputs[scan]
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_real_dds_faults_require_reset_not_just_recovered_inputs[generation]
+20 passed, 8 errors in 151.02s (0:02:31)

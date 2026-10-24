@@ -249,7 +249,7 @@ class CrawlMachine:
         # Quintic blend has peak |d²s/du²| = 10*sqrt(3)/3. Bound the
         # *internal* support translation, not just the incoming cmd_vel ramp.
         distance = float(np.linalg.norm(self._offset_goal-self._offset_start))
-        self._shift_accel_budget = self.limits['max_support_shift_accel_mps2']*(.5 if self.calibrating else 1.)
+        self._shift_accel_budget = self.limits['max_support_shift_accel_mps2']
         self._shift_duration = max(.7, math.sqrt((10.*math.sqrt(3.)/3.)*distance/
             self._shift_accel_budget))
 
@@ -375,13 +375,17 @@ class CrawlMachine:
                     self.state = 'CRAWL'
                     self._begin_shift(com, loads, points, ros_ns, q)
                 if self._shift_plan is not None:
-                    try:
-                        next(self._shift_plan)
-                    except StopIteration:
-                        self._shift_plan = None
-                        # Planning time is not executed body/foot motion. Start
-                        # the unchanged physical shift curve only when complete.
-                        self._phase_start = ros_ns
+                    # Bounded G1-only arithmetic batch, measured separately
+                    # from live control. No motor/body reference is advanced
+                    # while planning; every tick still checks current support.
+                    for _ in range(4 if self.calibrating else 1):
+                        try:
+                            next(self._shift_plan)
+                        except StopIteration:
+                            self._shift_plan = None
+                            # Planning is not executed body/foot motion.
+                            self._phase_start = ros_ns
+                            break
                     else:
                         return self._result(self._solve(q, True))
                 if self.calibrating and self._calibration_vertical is not None:
@@ -428,9 +432,12 @@ class CrawlMachine:
                     weight = blend(elapsed/self._shift_duration)
                     self.offset = self._offset_start*(1-weight)+self._offset_goal*weight
                     if self.calibrating and self._unload_start is None:
+                        local_center = pose[:3,:3].T @ (centers[foot]-pose[:3,3])
+                        measured_reference_z = (self.reference_body[:3,:3] @ local_center
+                                                +self.reference_body[:3,3])[2]
                         self._targets[foot][2] = precondition_loaded_reference(
                             z=float(self._targets[foot][2]),rest_z=self._calibration_rest_z,
-                            floor_z=self.floor[foot],forces=bundle.contacts.data['forces'],
+                            measured_reference_z=float(measured_reference_z),forces=bundle.contacts.data['forces'],
                             dt=dt,limits=self.limits)
                     # The phase travel budget has ended before unloading. Check
                     # actual settled motion, not command=0 or geometric CoM alone.

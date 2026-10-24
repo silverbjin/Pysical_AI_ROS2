@@ -1,0 +1,50 @@
+...FF.......                                                             [100%]
+=================================== FAILURES ===================================
+___________ test_actual_velocity_prevents_settle_even_after_terminal ___________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7678b137f980>
+
+    def test_actual_velocity_prevents_settle_even_after_terminal(carry_rig):
+        rig = carry_rig
+        rig.velocity = .021
+        rig.pump(.04)
+        assert rig.call(rig.prepare).success
+        rig.release.set()
+        rig.pump(1.15)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        rig.velocity = 0.
+        rig.pump(.7)
+        assert not rig.states[-1].ready
+        rig.pump(.5)
+>       assert rig.states[-1].ready, dict(diagnostics=list(rig.manager.diagnostics),
+            max_publish_gap_ms=max(b-a for a, b in zip(rig.publish_times, list(rig.publish_times)[1:]))/1e6)
+E       AssertionError: {'diagnostics': [{'event': 'receive', 'source_age_ms': 0.8188, 'stream': 'guard'}, {'event': 'receive', 'source_age_ms...ream': 'guard'}, {'event': 'receive', 'source_age_ms': 0.483, 'stream': 'crawl'}, ...], 'max_publish_gap_ms': 213.6852}
+E       assert False
+E        +  where False = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=179272029...67b17d93aa71282cadc', state='FAULT', phase='', swing_foot='', ready=False, stopped=False, fault_reason='guard:ros_age').ready
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:214: AssertionError
+____________ test_actual_terminal_success_does_not_cover_stuck_arm _____________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7678b16b42c0>
+
+    def test_actual_terminal_success_does_not_cover_stuck_arm(carry_rig):
+        rig = carry_rig
+        rig.error = .04
+        rig.pump(.04)
+        assert rig.call(rig.prepare).success
+        rig.release.set()
+        rig.pump(1.2)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        assert not rig.states[-1].fault_reason
+        rig.pump(10.)  # actual wall timeout, not a synthetic success or forged clock
+>       assert rig.states[-1].state == 'FAULT' and 'settle timeout' in rig.states[-1].fault_reason
+E       AssertionError: assert ('FAULT' == 'FAULT'
+E         
+E           FAULT and 'settle timeout' in 'guard:ros_age')
+E        +  where 'guard:ros_age' = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=179272031...67b17d93aa71282cadc', state='FAULT', phase='', swing_foot='', ready=False, stopped=False, fault_reason='guard:ros_age').fault_reason
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:228: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_actual_velocity_prevents_settle_even_after_terminal
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_actual_terminal_success_does_not_cover_stuck_arm
+2 failed, 10 passed in 52.51s

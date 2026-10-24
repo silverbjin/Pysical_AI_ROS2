@@ -1,0 +1,468 @@
+FFFFFF..                                                                 [100%]
+=================================== FAILURES ===================================
+_ test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks[delayed] _
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_startup_waits_for_measure0')
+case = 'delayed'
+
+    @pytest.mark.parametrize('case', ['delayed', 'wrong_claims', 'foreign_owner', 'carry_rejected'])
+    def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks(robot_model, tmp_path, case):
+        assert importlib.util.find_spec('integrated_robot_navigation.startup'), 'startup sequencer missing'
+        module = importlib.import_module('integrated_robot_navigation.startup')
+        ctx = Context()
+        rclpy.init(context=ctx)
+        peer = Node('startup_service_peer', context=ctx)
+        model_path = tmp_path/'robot.urdf'
+        model_path.write_text(robot_model.urdf)
+        node = module.StartupManager(context=ctx, parameter_overrides=[
+            Parameter('model_file', value=str(model_path))])
+        executor = SingleThreadedExecutor(context=ctx)
+        executor.add_node(peer)
+        executor.add_node(node)
+        calls, states = [], []
+        guard_mode, stand_ready, carry_ready = 'HOLD', False, False
+        feedback_ready, active = False, False
+        controllers_active = False
+    
+        def controllers(request, response):
+            response.controller = [ControllerState(name='joint_state_broadcaster', state='active')]
+            groups = {
+                'leg_position_controller': [p+'_'+j+'_joint/position'
+                    for p in ('fr', 'fl', 'rr', 'rl') for j in ('hip', 'thigh', 'calf')],
+                'arm_trajectory_controller': ['arm_joint_'+str(i)+'/position' for i in range(1, 7)],
+                'gripper_position_controller': ['gripper_left_joint/position', 'gripper_right_joint/position']}
+            for name, claims in groups.items():
+                if case == 'wrong_claims' and name == 'arm_trajectory_controller':
+                    claims = claims[:-1]
+                response.controller.append(ControllerState(name=name,
+                    state='active' if controllers_active else 'inactive',
+                    claimed_interfaces=claims if controllers_active else []))
+            if controllers_active and case == 'foreign_owner':
+                response.controller.append(ControllerState(name='foreign_arm', state='active',
+                    claimed_interfaces=['arm_joint_1/position']))
+            return response
+    
+        def mode(request, response):
+            nonlocal guard_mode
+            calls.append(('mode', request.mode))
+            guard_mode = request.mode
+            response.accepted = True
+            return response
+    
+        def lifecycle(request, response):
+            nonlocal active
+            calls.append(('lifecycle', request.transition.id))
+            response.success = request.transition.id != Transition.TRANSITION_ACTIVATE or feedback_ready
+            if response.success and request.transition.id == Transition.TRANSITION_ACTIVATE:
+                active = True
+            return response
+    
+        def prepare(request, response):
+            calls.append(('carry', 'prepare'))
+            response.success = case != 'carry_rejected'
+            response.message = 'arm action server unavailable' if not response.success else 'reserved'
+            return response
+    
+        peer.create_service(SetMode, '/navigation/set_mode', mode)
+        peer.create_service(ChangeState, '/crawl_controller/change_state', lifecycle)
+        peer.create_service(Trigger, '/carry_manager/prepare', prepare)
+        peer.create_service(ListControllers, '/controller_manager/list_controllers', controllers)
+        pubs = {key: peer.create_publisher(MotionState, '/navigation/'+key+'_state', 10)
+                for key in ('guard', 'crawl', 'carry')}
+        peer.create_subscription(MotionState, '/navigation/startup_state', states.append, 10)
+    
+        def pump(seconds):
+            end = time.monotonic()+seconds
+            while time.monotonic() < end:
+                for key, pub in pubs.items():
+                    msg = MotionState(generation=0, model_sha256=robot_model.model_sha256,
+                        state=guard_mode if key == 'guard' else ('STAND' if active else 'INACTIVE')
+                              if key == 'crawl' else 'READY',
+                        phase='BOOTSTRAP_FEEDBACK_READY' if key == 'crawl' and feedback_ready else '',
+                        ready=stand_ready if key == 'crawl' else carry_ready if key == 'carry' else False,
+                        stopped=stand_ready if key == 'crawl' else False)
+                    msg.header.stamp = peer.get_clock().now().to_msg()
+                    msg.header.frame_id = 'base_link'
+                    pub.publish(msg)
+                executor.spin_once(timeout_sec=.01)
+    
+        try:
+            pump(.4)
+            assert calls == [('mode', 'STAND'), ('lifecycle', Transition.TRANSITION_CONFIGURE)]
+            feedback_ready = True
+            pump(.3)
+>           assert ('lifecycle', Transition.TRANSITION_ACTIVATE) not in calls, \
+                'measured feedback must not substitute for active controller claims'
+E               AssertionError: measured feedback must not substitute for active controller claims
+E               assert ('lifecycle', 3) not in [('mode', 'STAND'), ('lifecycle', 1), ('lifecycle', 3)]
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py:106: AssertionError
+_ test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks[wrong_claims] _
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_startup_waits_for_measure1')
+case = 'wrong_claims'
+
+    @pytest.mark.parametrize('case', ['delayed', 'wrong_claims', 'foreign_owner', 'carry_rejected'])
+    def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks(robot_model, tmp_path, case):
+        assert importlib.util.find_spec('integrated_robot_navigation.startup'), 'startup sequencer missing'
+        module = importlib.import_module('integrated_robot_navigation.startup')
+        ctx = Context()
+        rclpy.init(context=ctx)
+        peer = Node('startup_service_peer', context=ctx)
+        model_path = tmp_path/'robot.urdf'
+        model_path.write_text(robot_model.urdf)
+        node = module.StartupManager(context=ctx, parameter_overrides=[
+            Parameter('model_file', value=str(model_path))])
+        executor = SingleThreadedExecutor(context=ctx)
+        executor.add_node(peer)
+        executor.add_node(node)
+        calls, states = [], []
+        guard_mode, stand_ready, carry_ready = 'HOLD', False, False
+        feedback_ready, active = False, False
+        controllers_active = False
+    
+        def controllers(request, response):
+            response.controller = [ControllerState(name='joint_state_broadcaster', state='active')]
+            groups = {
+                'leg_position_controller': [p+'_'+j+'_joint/position'
+                    for p in ('fr', 'fl', 'rr', 'rl') for j in ('hip', 'thigh', 'calf')],
+                'arm_trajectory_controller': ['arm_joint_'+str(i)+'/position' for i in range(1, 7)],
+                'gripper_position_controller': ['gripper_left_joint/position', 'gripper_right_joint/position']}
+            for name, claims in groups.items():
+                if case == 'wrong_claims' and name == 'arm_trajectory_controller':
+                    claims = claims[:-1]
+                response.controller.append(ControllerState(name=name,
+                    state='active' if controllers_active else 'inactive',
+                    claimed_interfaces=claims if controllers_active else []))
+            if controllers_active and case == 'foreign_owner':
+                response.controller.append(ControllerState(name='foreign_arm', state='active',
+                    claimed_interfaces=['arm_joint_1/position']))
+            return response
+    
+        def mode(request, response):
+            nonlocal guard_mode
+            calls.append(('mode', request.mode))
+            guard_mode = request.mode
+            response.accepted = True
+            return response
+    
+        def lifecycle(request, response):
+            nonlocal active
+            calls.append(('lifecycle', request.transition.id))
+            response.success = request.transition.id != Transition.TRANSITION_ACTIVATE or feedback_ready
+            if response.success and request.transition.id == Transition.TRANSITION_ACTIVATE:
+                active = True
+            return response
+    
+        def prepare(request, response):
+            calls.append(('carry', 'prepare'))
+            response.success = case != 'carry_rejected'
+            response.message = 'arm action server unavailable' if not response.success else 'reserved'
+            return response
+    
+        peer.create_service(SetMode, '/navigation/set_mode', mode)
+        peer.create_service(ChangeState, '/crawl_controller/change_state', lifecycle)
+        peer.create_service(Trigger, '/carry_manager/prepare', prepare)
+        peer.create_service(ListControllers, '/controller_manager/list_controllers', controllers)
+        pubs = {key: peer.create_publisher(MotionState, '/navigation/'+key+'_state', 10)
+                for key in ('guard', 'crawl', 'carry')}
+        peer.create_subscription(MotionState, '/navigation/startup_state', states.append, 10)
+    
+        def pump(seconds):
+            end = time.monotonic()+seconds
+            while time.monotonic() < end:
+                for key, pub in pubs.items():
+                    msg = MotionState(generation=0, model_sha256=robot_model.model_sha256,
+                        state=guard_mode if key == 'guard' else ('STAND' if active else 'INACTIVE')
+                              if key == 'crawl' else 'READY',
+                        phase='BOOTSTRAP_FEEDBACK_READY' if key == 'crawl' and feedback_ready else '',
+                        ready=stand_ready if key == 'crawl' else carry_ready if key == 'carry' else False,
+                        stopped=stand_ready if key == 'crawl' else False)
+                    msg.header.stamp = peer.get_clock().now().to_msg()
+                    msg.header.frame_id = 'base_link'
+                    pub.publish(msg)
+                executor.spin_once(timeout_sec=.01)
+    
+        try:
+            pump(.4)
+            assert calls == [('mode', 'STAND'), ('lifecycle', Transition.TRANSITION_CONFIGURE)]
+            feedback_ready = True
+            pump(.3)
+>           assert ('lifecycle', Transition.TRANSITION_ACTIVATE) not in calls, \
+                'measured feedback must not substitute for active controller claims'
+E               AssertionError: measured feedback must not substitute for active controller claims
+E               assert ('lifecycle', 3) not in [('mode', 'STAND'), ('lifecycle', 1), ('lifecycle', 3)]
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py:106: AssertionError
+_ test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks[foreign_owner] _
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_startup_waits_for_measure2')
+case = 'foreign_owner'
+
+    @pytest.mark.parametrize('case', ['delayed', 'wrong_claims', 'foreign_owner', 'carry_rejected'])
+    def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks(robot_model, tmp_path, case):
+        assert importlib.util.find_spec('integrated_robot_navigation.startup'), 'startup sequencer missing'
+        module = importlib.import_module('integrated_robot_navigation.startup')
+        ctx = Context()
+        rclpy.init(context=ctx)
+        peer = Node('startup_service_peer', context=ctx)
+        model_path = tmp_path/'robot.urdf'
+        model_path.write_text(robot_model.urdf)
+        node = module.StartupManager(context=ctx, parameter_overrides=[
+            Parameter('model_file', value=str(model_path))])
+        executor = SingleThreadedExecutor(context=ctx)
+        executor.add_node(peer)
+        executor.add_node(node)
+        calls, states = [], []
+        guard_mode, stand_ready, carry_ready = 'HOLD', False, False
+        feedback_ready, active = False, False
+        controllers_active = False
+    
+        def controllers(request, response):
+            response.controller = [ControllerState(name='joint_state_broadcaster', state='active')]
+            groups = {
+                'leg_position_controller': [p+'_'+j+'_joint/position'
+                    for p in ('fr', 'fl', 'rr', 'rl') for j in ('hip', 'thigh', 'calf')],
+                'arm_trajectory_controller': ['arm_joint_'+str(i)+'/position' for i in range(1, 7)],
+                'gripper_position_controller': ['gripper_left_joint/position', 'gripper_right_joint/position']}
+            for name, claims in groups.items():
+                if case == 'wrong_claims' and name == 'arm_trajectory_controller':
+                    claims = claims[:-1]
+                response.controller.append(ControllerState(name=name,
+                    state='active' if controllers_active else 'inactive',
+                    claimed_interfaces=claims if controllers_active else []))
+            if controllers_active and case == 'foreign_owner':
+                response.controller.append(ControllerState(name='foreign_arm', state='active',
+                    claimed_interfaces=['arm_joint_1/position']))
+            return response
+    
+        def mode(request, response):
+            nonlocal guard_mode
+            calls.append(('mode', request.mode))
+            guard_mode = request.mode
+            response.accepted = True
+            return response
+    
+        def lifecycle(request, response):
+            nonlocal active
+            calls.append(('lifecycle', request.transition.id))
+            response.success = request.transition.id != Transition.TRANSITION_ACTIVATE or feedback_ready
+            if response.success and request.transition.id == Transition.TRANSITION_ACTIVATE:
+                active = True
+            return response
+    
+        def prepare(request, response):
+            calls.append(('carry', 'prepare'))
+            response.success = case != 'carry_rejected'
+            response.message = 'arm action server unavailable' if not response.success else 'reserved'
+            return response
+    
+        peer.create_service(SetMode, '/navigation/set_mode', mode)
+        peer.create_service(ChangeState, '/crawl_controller/change_state', lifecycle)
+        peer.create_service(Trigger, '/carry_manager/prepare', prepare)
+        peer.create_service(ListControllers, '/controller_manager/list_controllers', controllers)
+        pubs = {key: peer.create_publisher(MotionState, '/navigation/'+key+'_state', 10)
+                for key in ('guard', 'crawl', 'carry')}
+        peer.create_subscription(MotionState, '/navigation/startup_state', states.append, 10)
+    
+        def pump(seconds):
+            end = time.monotonic()+seconds
+            while time.monotonic() < end:
+                for key, pub in pubs.items():
+                    msg = MotionState(generation=0, model_sha256=robot_model.model_sha256,
+                        state=guard_mode if key == 'guard' else ('STAND' if active else 'INACTIVE')
+                              if key == 'crawl' else 'READY',
+                        phase='BOOTSTRAP_FEEDBACK_READY' if key == 'crawl' and feedback_ready else '',
+                        ready=stand_ready if key == 'crawl' else carry_ready if key == 'carry' else False,
+                        stopped=stand_ready if key == 'crawl' else False)
+                    msg.header.stamp = peer.get_clock().now().to_msg()
+                    msg.header.frame_id = 'base_link'
+                    pub.publish(msg)
+                executor.spin_once(timeout_sec=.01)
+    
+        try:
+            pump(.4)
+            assert calls == [('mode', 'STAND'), ('lifecycle', Transition.TRANSITION_CONFIGURE)]
+            feedback_ready = True
+            pump(.3)
+>           assert ('lifecycle', Transition.TRANSITION_ACTIVATE) not in calls, \
+                'measured feedback must not substitute for active controller claims'
+E               AssertionError: measured feedback must not substitute for active controller claims
+E               assert ('lifecycle', 3) not in [('mode', 'STAND'), ('lifecycle', 1), ('lifecycle', 3)]
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py:106: AssertionError
+_ test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks[carry_rejected] _
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_startup_waits_for_measure3')
+case = 'carry_rejected'
+
+    @pytest.mark.parametrize('case', ['delayed', 'wrong_claims', 'foreign_owner', 'carry_rejected'])
+    def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks(robot_model, tmp_path, case):
+        assert importlib.util.find_spec('integrated_robot_navigation.startup'), 'startup sequencer missing'
+        module = importlib.import_module('integrated_robot_navigation.startup')
+        ctx = Context()
+        rclpy.init(context=ctx)
+        peer = Node('startup_service_peer', context=ctx)
+        model_path = tmp_path/'robot.urdf'
+        model_path.write_text(robot_model.urdf)
+        node = module.StartupManager(context=ctx, parameter_overrides=[
+            Parameter('model_file', value=str(model_path))])
+        executor = SingleThreadedExecutor(context=ctx)
+        executor.add_node(peer)
+        executor.add_node(node)
+        calls, states = [], []
+        guard_mode, stand_ready, carry_ready = 'HOLD', False, False
+        feedback_ready, active = False, False
+        controllers_active = False
+    
+        def controllers(request, response):
+            response.controller = [ControllerState(name='joint_state_broadcaster', state='active')]
+            groups = {
+                'leg_position_controller': [p+'_'+j+'_joint/position'
+                    for p in ('fr', 'fl', 'rr', 'rl') for j in ('hip', 'thigh', 'calf')],
+                'arm_trajectory_controller': ['arm_joint_'+str(i)+'/position' for i in range(1, 7)],
+                'gripper_position_controller': ['gripper_left_joint/position', 'gripper_right_joint/position']}
+            for name, claims in groups.items():
+                if case == 'wrong_claims' and name == 'arm_trajectory_controller':
+                    claims = claims[:-1]
+                response.controller.append(ControllerState(name=name,
+                    state='active' if controllers_active else 'inactive',
+                    claimed_interfaces=claims if controllers_active else []))
+            if controllers_active and case == 'foreign_owner':
+                response.controller.append(ControllerState(name='foreign_arm', state='active',
+                    claimed_interfaces=['arm_joint_1/position']))
+            return response
+    
+        def mode(request, response):
+            nonlocal guard_mode
+            calls.append(('mode', request.mode))
+            guard_mode = request.mode
+            response.accepted = True
+            return response
+    
+        def lifecycle(request, response):
+            nonlocal active
+            calls.append(('lifecycle', request.transition.id))
+            response.success = request.transition.id != Transition.TRANSITION_ACTIVATE or feedback_ready
+            if response.success and request.transition.id == Transition.TRANSITION_ACTIVATE:
+                active = True
+            return response
+    
+        def prepare(request, response):
+            calls.append(('carry', 'prepare'))
+            response.success = case != 'carry_rejected'
+            response.message = 'arm action server unavailable' if not response.success else 'reserved'
+            return response
+    
+        peer.create_service(SetMode, '/navigation/set_mode', mode)
+        peer.create_service(ChangeState, '/crawl_controller/change_state', lifecycle)
+        peer.create_service(Trigger, '/carry_manager/prepare', prepare)
+        peer.create_service(ListControllers, '/controller_manager/list_controllers', controllers)
+        pubs = {key: peer.create_publisher(MotionState, '/navigation/'+key+'_state', 10)
+                for key in ('guard', 'crawl', 'carry')}
+        peer.create_subscription(MotionState, '/navigation/startup_state', states.append, 10)
+    
+        def pump(seconds):
+            end = time.monotonic()+seconds
+            while time.monotonic() < end:
+                for key, pub in pubs.items():
+                    msg = MotionState(generation=0, model_sha256=robot_model.model_sha256,
+                        state=guard_mode if key == 'guard' else ('STAND' if active else 'INACTIVE')
+                              if key == 'crawl' else 'READY',
+                        phase='BOOTSTRAP_FEEDBACK_READY' if key == 'crawl' and feedback_ready else '',
+                        ready=stand_ready if key == 'crawl' else carry_ready if key == 'carry' else False,
+                        stopped=stand_ready if key == 'crawl' else False)
+                    msg.header.stamp = peer.get_clock().now().to_msg()
+                    msg.header.frame_id = 'base_link'
+                    pub.publish(msg)
+                executor.spin_once(timeout_sec=.01)
+    
+        try:
+            pump(.4)
+            assert calls == [('mode', 'STAND'), ('lifecycle', Transition.TRANSITION_CONFIGURE)]
+            feedback_ready = True
+            pump(.3)
+>           assert ('lifecycle', Transition.TRANSITION_ACTIVATE) not in calls, \
+                'measured feedback must not substitute for active controller claims'
+E               AssertionError: measured feedback must not substitute for active controller claims
+E               assert ('lifecycle', 3) not in [('mode', 'STAND'), ('lifecycle', 1), ('lifecycle', 3)]
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py:106: AssertionError
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow0')
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true',
+                                        tf_provenance_output=str(tmp_path/'tf_provenance.jsonl'))
+        module = launch_file('crawl_system')
+        actions = module.launch_nodes(ctx)
+        nodes = [a for a in actions if isinstance(a, Node)]
+        executables = [a.node_executable for a in nodes]
+        assert sorted(executables) == sorted(['motion_guard', 'crawl_controller', 'carry_manager',
+                                              'nav_projection', 'crawl_startup', 'tf_provenance'])
+        for action in nodes:
+            values = evaluate_parameters(ctx, action._Node__parameters)
+            assert any(isinstance(p, dict) and p.get('use_sim_time') is True for p in values)
+            if action.node_executable == 'crawl_startup':
+>               assert any(isinstance(p, dict) and p.get('model_file') == record['robot']['path']
+                           for p in values), 'startup claim gate must bind the actual installed scene model'
+E               AssertionError: startup claim gate must bind the actual installed scene model
+E               assert False
+E                +  where False = any(<generator object test_launch_graph_has_exact_owners_and_bound_sensor_scene.<locals>.<genexpr> at 0x7550181c4ba0>)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:54: AssertionError
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow1')
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true',
+                                        tf_provenance_output=str(tmp_path/'tf_provenance.jsonl'))
+        module = launch_file('crawl_system')
+        actions = module.launch_nodes(ctx)
+        nodes = [a for a in actions if isinstance(a, Node)]
+        executables = [a.node_executable for a in nodes]
+        assert sorted(executables) == sorted(['motion_guard', 'crawl_controller', 'carry_manager',
+                                              'nav_projection', 'crawl_startup', 'tf_provenance'])
+        for action in nodes:
+            values = evaluate_parameters(ctx, action._Node__parameters)
+            assert any(isinstance(p, dict) and p.get('use_sim_time') is True for p in values)
+            if action.node_executable == 'crawl_startup':
+>               assert any(isinstance(p, dict) and p.get('model_file') == record['robot']['path']
+                           for p in values), 'startup claim gate must bind the actual installed scene model'
+E               AssertionError: startup claim gate must bind the actual installed scene model
+E               assert False
+E                +  where False = any(<generator object test_launch_graph_has_exact_owners_and_bound_sensor_scene.<locals>.<genexpr> at 0x754ff8782180>)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:54: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py::test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks[delayed]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py::test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks[wrong_claims]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py::test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks[foreign_owner]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py::test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks[carry_rejected]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo]
+6 failed, 2 passed in 18.06s

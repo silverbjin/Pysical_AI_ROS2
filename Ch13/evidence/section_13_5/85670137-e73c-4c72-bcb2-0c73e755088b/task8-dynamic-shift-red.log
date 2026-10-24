@@ -1,0 +1,50 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_shift_waits_for_measured_body_settle_before_any_lift ___________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_shift_waits_for_measured_body_settle_before_any_lift(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        value.request_contact_calibration()
+        for _ in range(150):
+            body = {**plant.state.body.data, 'linear_velocity': (.004, 0., 0.)}
+            state = replace(plant.state, body=replace(plant.state.body, data=body))
+            result = value.advance(state, (0., 0., 0.), plant.ros, plant.wall)
+>           assert result.swing_foot is None, 'geometric support is not measured body settle'
+E           AssertionError: geometric support is not measured body settle
+E           assert 'fl_foot' is None
+E            +  where 'fl_foot' = ControlResult(state='CALIBRATING', phase='SWING', swing_foot='fl_foot', generation=0, joint_targets={'fr_hip_joint': 0...ip_joint': 0.05657585590307912, 'rl_thigh_joint': -0.5753267843486221, 'rl_calf_joint': 0.9509188983867107}, reason='').swing_foot
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:293: AssertionError
+________ test_internal_support_shift_reference_has_bounded_acceleration ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_internal_support_shift_reference_has_bounded_acceleration(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        value.request_contact_calibration()
+        positions = [value.reference_body[:2, 3].copy()]
+        for _ in range(150):
+            result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            positions.append(value.reference_body[:2, 3].copy())
+            plant.tick(value, result)
+            if result.swing_foot:
+                break
+        acceleration = np.diff(np.asarray(positions), n=2, axis=0)/(.02*.02)
+>       assert np.linalg.norm(acceleration, axis=1).max() <= .10+1e-8
+E       AssertionError: assert 0.5962508879771878 <= (0.1 + 1e-08)
+E        +  where 0.5962508879771878 = <built-in method max of numpy.ndarray object at 0x72f27c1a26d0>()
+E        +    where <built-in method max of numpy.ndarray object at 0x72f27c1a26d0> = array([0.02839532, 0.16055422, 0.29489403, 0.40222064, 0.48427684,\n       0.54280543, 0.57954918, 0.59625089, 0.594653...59, 0.57649931, 0.59465333, 0.59625089, 0.57954918,\n       0.54280543, 0.48427684, 0.40222064, 0.29489403, 0.16055422]).max
+E        +      where array([0.02839532, 0.16055422, 0.29489403, 0.40222064, 0.48427684,\n       0.54280543, 0.57954918, 0.59625089, 0.594653...59, 0.57649931, 0.59465333, 0.59625089, 0.57954918,\n       0.54280543, 0.48427684, 0.40222064, 0.29489403, 0.16055422]) = <function norm at 0x72f2a57720f0>(array([[-0.02474846, -0.01392149],\n       [-0.13993397, -0.07871557],\n       [-0.25702029, -0.14457889],\n       [-0.35... 0.23742837],\n       [ 0.35056277,  0.19719834],\n       [ 0.25702029,  0.14457889],\n       [ 0.13993397,  0.07871557]]), axis=1)
+E        +        where <function norm at 0x72f2a57720f0> = <module 'numpy.linalg' from '/usr/lib/python3/dist-packages/numpy/linalg/__init__.py'>.norm
+E        +          where <module 'numpy.linalg' from '/usr/lib/python3/dist-packages/numpy/linalg/__init__.py'> = np.linalg
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:310: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_shift_waits_for_measured_body_settle_before_any_lift
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_internal_support_shift_reference_has_bounded_acceleration
+2 failed, 27 deselected in 8.31s

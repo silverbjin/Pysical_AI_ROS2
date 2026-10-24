@@ -21,6 +21,8 @@ def main():
     parser.add_argument('--arm', type=float, nargs=6, default=(0., 1.2, -2., 0., .8, 0.))
     parser.add_argument('--g1-reference-ramp',action='store_true',
                         help='Opt-in Gazebo G1-only 20ms leg reference experiment; no CRAWL admission')
+    parser.add_argument('--g1-contact-allowance',action='store_true',
+                        help='Explicit G1-only DART50um contact allowance comparison; requires reference ramp')
     args = parser.parse_args()
     output = Path(args.output_dir).resolve()
     if output.exists():
@@ -29,11 +31,13 @@ def main():
         parser.error('--urdf and --scene-engine are mutually exclusive')
     if args.g1_reference_ramp and args.scene_engine!='gazebo':
         parser.error('--g1-reference-ramp requires --scene-engine gazebo')
+    if args.g1_contact_allowance and (args.scene_engine!='gazebo' or not args.g1_reference_ramp):
+        parser.error('--g1-contact-allowance requires the Gazebo G1 reference comparison')
     if args.scene_engine:
         from integrated_robot_navigation.scene import materialize_scene
         output.mkdir(parents=True, exist_ok=False)
         scene = materialize_scene(args.scene_engine, 'g1', output/'scene',
-                                  g1_reference_ramp=args.g1_reference_ramp)
+                                  g1_reference_ramp=args.g1_reference_ramp,g1_contact_allowance=args.g1_contact_allowance)
         urdf = Path(scene['robot']['path']).read_text()
     elif args.urdf:
         urdf = Path(args.urdf).read_text()

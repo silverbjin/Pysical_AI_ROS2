@@ -1,0 +1,216 @@
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+______________ test_complete_scalar_native_controls_match_physics ______________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_complete_scalar_native_controls_match_physics(nav_robot_model):
+        xml = navigation_mjcf(nav_robot_model)
+>       assert api().assess_native_controls(records(nav_robot_model, xml), nav_robot_model, xml)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_native_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py:29: AttributeError
+_ test_native_controls_fail_closed_on_wrong_engine_mapping[duplicate_capture] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'duplicate_capture'
+
+    @pytest.mark.parametrize('change', ['duplicate_capture', 'missing_joint', 'duplicate_address',
+        'wrong_gain', 'wrong_unit', 'effort_overflow', 'nonfinite', 'disabled_force_limit'])
+    def test_native_controls_fail_closed_on_wrong_engine_mapping(nav_robot_model, change):
+        xml = navigation_mjcf(nav_robot_model)
+        values = records(nav_robot_model, xml)
+        row, actuator = values[-1], values[-1]['actuators'][0]
+        if change == 'duplicate_capture': row['capture_ns'] = values[-2]['capture_ns']
+        if change == 'missing_joint': row['actuators'].pop()
+        if change == 'duplicate_address': actuator['ctrl_index'] = row['actuators'][1]['ctrl_index']
+        if change == 'wrong_gain': actuator['kp'] *= 2
+        if change == 'wrong_unit': actuator['joint_type'] = 'slide'
+        if change == 'effort_overflow': actuator['actuator_force'] = 1000.
+        if change == 'nonfinite': actuator['ctrl'] = float('nan')
+        if change == 'disabled_force_limit': actuator['force_limited'] = False
+>       assert not api().assess_native_controls(values, nav_robot_model, xml)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_native_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py:46: AttributeError
+___ test_native_controls_fail_closed_on_wrong_engine_mapping[missing_joint] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'missing_joint'
+
+    @pytest.mark.parametrize('change', ['duplicate_capture', 'missing_joint', 'duplicate_address',
+        'wrong_gain', 'wrong_unit', 'effort_overflow', 'nonfinite', 'disabled_force_limit'])
+    def test_native_controls_fail_closed_on_wrong_engine_mapping(nav_robot_model, change):
+        xml = navigation_mjcf(nav_robot_model)
+        values = records(nav_robot_model, xml)
+        row, actuator = values[-1], values[-1]['actuators'][0]
+        if change == 'duplicate_capture': row['capture_ns'] = values[-2]['capture_ns']
+        if change == 'missing_joint': row['actuators'].pop()
+        if change == 'duplicate_address': actuator['ctrl_index'] = row['actuators'][1]['ctrl_index']
+        if change == 'wrong_gain': actuator['kp'] *= 2
+        if change == 'wrong_unit': actuator['joint_type'] = 'slide'
+        if change == 'effort_overflow': actuator['actuator_force'] = 1000.
+        if change == 'nonfinite': actuator['ctrl'] = float('nan')
+        if change == 'disabled_force_limit': actuator['force_limited'] = False
+>       assert not api().assess_native_controls(values, nav_robot_model, xml)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_native_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py:46: AttributeError
+_ test_native_controls_fail_closed_on_wrong_engine_mapping[duplicate_address] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'duplicate_address'
+
+    @pytest.mark.parametrize('change', ['duplicate_capture', 'missing_joint', 'duplicate_address',
+        'wrong_gain', 'wrong_unit', 'effort_overflow', 'nonfinite', 'disabled_force_limit'])
+    def test_native_controls_fail_closed_on_wrong_engine_mapping(nav_robot_model, change):
+        xml = navigation_mjcf(nav_robot_model)
+        values = records(nav_robot_model, xml)
+        row, actuator = values[-1], values[-1]['actuators'][0]
+        if change == 'duplicate_capture': row['capture_ns'] = values[-2]['capture_ns']
+        if change == 'missing_joint': row['actuators'].pop()
+        if change == 'duplicate_address': actuator['ctrl_index'] = row['actuators'][1]['ctrl_index']
+        if change == 'wrong_gain': actuator['kp'] *= 2
+        if change == 'wrong_unit': actuator['joint_type'] = 'slide'
+        if change == 'effort_overflow': actuator['actuator_force'] = 1000.
+        if change == 'nonfinite': actuator['ctrl'] = float('nan')
+        if change == 'disabled_force_limit': actuator['force_limited'] = False
+>       assert not api().assess_native_controls(values, nav_robot_model, xml)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_native_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py:46: AttributeError
+_____ test_native_controls_fail_closed_on_wrong_engine_mapping[wrong_gain] _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'wrong_gain'
+
+    @pytest.mark.parametrize('change', ['duplicate_capture', 'missing_joint', 'duplicate_address',
+        'wrong_gain', 'wrong_unit', 'effort_overflow', 'nonfinite', 'disabled_force_limit'])
+    def test_native_controls_fail_closed_on_wrong_engine_mapping(nav_robot_model, change):
+        xml = navigation_mjcf(nav_robot_model)
+        values = records(nav_robot_model, xml)
+        row, actuator = values[-1], values[-1]['actuators'][0]
+        if change == 'duplicate_capture': row['capture_ns'] = values[-2]['capture_ns']
+        if change == 'missing_joint': row['actuators'].pop()
+        if change == 'duplicate_address': actuator['ctrl_index'] = row['actuators'][1]['ctrl_index']
+        if change == 'wrong_gain': actuator['kp'] *= 2
+        if change == 'wrong_unit': actuator['joint_type'] = 'slide'
+        if change == 'effort_overflow': actuator['actuator_force'] = 1000.
+        if change == 'nonfinite': actuator['ctrl'] = float('nan')
+        if change == 'disabled_force_limit': actuator['force_limited'] = False
+>       assert not api().assess_native_controls(values, nav_robot_model, xml)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_native_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py:46: AttributeError
+_____ test_native_controls_fail_closed_on_wrong_engine_mapping[wrong_unit] _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'wrong_unit'
+
+    @pytest.mark.parametrize('change', ['duplicate_capture', 'missing_joint', 'duplicate_address',
+        'wrong_gain', 'wrong_unit', 'effort_overflow', 'nonfinite', 'disabled_force_limit'])
+    def test_native_controls_fail_closed_on_wrong_engine_mapping(nav_robot_model, change):
+        xml = navigation_mjcf(nav_robot_model)
+        values = records(nav_robot_model, xml)
+        row, actuator = values[-1], values[-1]['actuators'][0]
+        if change == 'duplicate_capture': row['capture_ns'] = values[-2]['capture_ns']
+        if change == 'missing_joint': row['actuators'].pop()
+        if change == 'duplicate_address': actuator['ctrl_index'] = row['actuators'][1]['ctrl_index']
+        if change == 'wrong_gain': actuator['kp'] *= 2
+        if change == 'wrong_unit': actuator['joint_type'] = 'slide'
+        if change == 'effort_overflow': actuator['actuator_force'] = 1000.
+        if change == 'nonfinite': actuator['ctrl'] = float('nan')
+        if change == 'disabled_force_limit': actuator['force_limited'] = False
+>       assert not api().assess_native_controls(values, nav_robot_model, xml)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_native_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py:46: AttributeError
+__ test_native_controls_fail_closed_on_wrong_engine_mapping[effort_overflow] ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'effort_overflow'
+
+    @pytest.mark.parametrize('change', ['duplicate_capture', 'missing_joint', 'duplicate_address',
+        'wrong_gain', 'wrong_unit', 'effort_overflow', 'nonfinite', 'disabled_force_limit'])
+    def test_native_controls_fail_closed_on_wrong_engine_mapping(nav_robot_model, change):
+        xml = navigation_mjcf(nav_robot_model)
+        values = records(nav_robot_model, xml)
+        row, actuator = values[-1], values[-1]['actuators'][0]
+        if change == 'duplicate_capture': row['capture_ns'] = values[-2]['capture_ns']
+        if change == 'missing_joint': row['actuators'].pop()
+        if change == 'duplicate_address': actuator['ctrl_index'] = row['actuators'][1]['ctrl_index']
+        if change == 'wrong_gain': actuator['kp'] *= 2
+        if change == 'wrong_unit': actuator['joint_type'] = 'slide'
+        if change == 'effort_overflow': actuator['actuator_force'] = 1000.
+        if change == 'nonfinite': actuator['ctrl'] = float('nan')
+        if change == 'disabled_force_limit': actuator['force_limited'] = False
+>       assert not api().assess_native_controls(values, nav_robot_model, xml)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_native_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py:46: AttributeError
+_____ test_native_controls_fail_closed_on_wrong_engine_mapping[nonfinite] ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'nonfinite'
+
+    @pytest.mark.parametrize('change', ['duplicate_capture', 'missing_joint', 'duplicate_address',
+        'wrong_gain', 'wrong_unit', 'effort_overflow', 'nonfinite', 'disabled_force_limit'])
+    def test_native_controls_fail_closed_on_wrong_engine_mapping(nav_robot_model, change):
+        xml = navigation_mjcf(nav_robot_model)
+        values = records(nav_robot_model, xml)
+        row, actuator = values[-1], values[-1]['actuators'][0]
+        if change == 'duplicate_capture': row['capture_ns'] = values[-2]['capture_ns']
+        if change == 'missing_joint': row['actuators'].pop()
+        if change == 'duplicate_address': actuator['ctrl_index'] = row['actuators'][1]['ctrl_index']
+        if change == 'wrong_gain': actuator['kp'] *= 2
+        if change == 'wrong_unit': actuator['joint_type'] = 'slide'
+        if change == 'effort_overflow': actuator['actuator_force'] = 1000.
+        if change == 'nonfinite': actuator['ctrl'] = float('nan')
+        if change == 'disabled_force_limit': actuator['force_limited'] = False
+>       assert not api().assess_native_controls(values, nav_robot_model, xml)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_native_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py:46: AttributeError
+_ test_native_controls_fail_closed_on_wrong_engine_mapping[disabled_force_limit] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'disabled_force_limit'
+
+    @pytest.mark.parametrize('change', ['duplicate_capture', 'missing_joint', 'duplicate_address',
+        'wrong_gain', 'wrong_unit', 'effort_overflow', 'nonfinite', 'disabled_force_limit'])
+    def test_native_controls_fail_closed_on_wrong_engine_mapping(nav_robot_model, change):
+        xml = navigation_mjcf(nav_robot_model)
+        values = records(nav_robot_model, xml)
+        row, actuator = values[-1], values[-1]['actuators'][0]
+        if change == 'duplicate_capture': row['capture_ns'] = values[-2]['capture_ns']
+        if change == 'missing_joint': row['actuators'].pop()
+        if change == 'duplicate_address': actuator['ctrl_index'] = row['actuators'][1]['ctrl_index']
+        if change == 'wrong_gain': actuator['kp'] *= 2
+        if change == 'wrong_unit': actuator['joint_type'] = 'slide'
+        if change == 'effort_overflow': actuator['actuator_force'] = 1000.
+        if change == 'nonfinite': actuator['ctrl'] = float('nan')
+        if change == 'disabled_force_limit': actuator['force_limited'] = False
+>       assert not api().assess_native_controls(values, nav_robot_model, xml)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_native_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py:46: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py::test_complete_scalar_native_controls_match_physics
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py::test_native_controls_fail_closed_on_wrong_engine_mapping[duplicate_capture]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py::test_native_controls_fail_closed_on_wrong_engine_mapping[missing_joint]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py::test_native_controls_fail_closed_on_wrong_engine_mapping[duplicate_address]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py::test_native_controls_fail_closed_on_wrong_engine_mapping[wrong_gain]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py::test_native_controls_fail_closed_on_wrong_engine_mapping[wrong_unit]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py::test_native_controls_fail_closed_on_wrong_engine_mapping[effort_overflow]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py::test_native_controls_fail_closed_on_wrong_engine_mapping[nonfinite]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_controls_verdict.py::test_native_controls_fail_closed_on_wrong_engine_mapping[disabled_force_limit]
+9 failed in 9.02s

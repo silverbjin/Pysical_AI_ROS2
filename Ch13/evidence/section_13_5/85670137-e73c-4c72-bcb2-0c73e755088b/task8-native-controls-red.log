@@ -1,0 +1,36 @@
+[2.969s] WARNING:colcon.colcon_core.package_selection:Some selected packages are already built in one or more underlay workspaces:
+	'integrated_robot_navigation_sensors' is in: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_5_85670137-e73c-4c72-bcb2-0c73e755088b/integrated_robot_navigation_sensors
+If a package in a merged underlay workspace is overridden and it installs headers, then all packages in the overlay must sort their include directories by workspace order. Failure to do so may result in build failures or undefined behavior at run time.
+If the overridden package is used by another package in any underlay, then the overriding package in the overlay must be API and ABI compatible or undefined behavior at run time may occur.
+
+If you understand the risks and want to override a package anyways, add the following to the command line:
+	--allow-overriding integrated_robot_navigation_sensors
+
+This may be promoted to an error in a future release of colcon-override-check.
+Starting >>> integrated_robot_navigation_sensors
+--- stderr: integrated_robot_navigation_sensors
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_normalization.cpp: In member function ‘virtual void Normalization_ReadingDoesNotWriteMotorOrPhysicsState_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_normalization.cpp:42:8: error: ‘read_native_controls’ is not a member of ‘nav’
+   42 |   nav::read_native_controls(model.get(), data.get());
+      |        ^~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_normalization.cpp: In member function ‘virtual void Normalization_ActualActuatorControlIsNotInferredFromCommandTopics_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_normalization.cpp:73:29: error: ‘read_native_controls’ is not a member of ‘nav’
+   73 |   const auto samples = nav::read_native_controls(model.get(), data.get());
+      |                             ^~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_normalization.cpp:86:30: error: ‘read_native_controls’ is not a member of ‘nav’
+   86 |   const auto position = nav::read_native_controls(model.get(), data.get());
+      |                              ^~~~~~~~~~~~~~~~~~~~
+gmake[2]: *** [CMakeFiles/test_normalization.dir/build.make:76: CMakeFiles/test_normalization.dir/test/test_normalization.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:391: CMakeFiles/test_normalization.dir/all] Error 2
+gmake[1]: *** Waiting for unfinished jobs....
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< integrated_robot_navigation_sensors [2min 21s, exited with code 2]
+[Processing: integrated_robot_navigation_sensors]
+[Processing: integrated_robot_navigation_sensors]
+[Processing: integrated_robot_navigation_sensors]
+[Processing: integrated_robot_navigation_sensors]
+
+Summary: 0 packages finished [2min 22s]
+  1 package failed: integrated_robot_navigation_sensors
+  1 package had stderr output: integrated_robot_navigation_sensors

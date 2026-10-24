@@ -1,5 +1,71 @@
 # 13.5 저속 crawl 기반 네비게이션 통합 설계
 
+## 종료 자원의 수명: 이미 검증한 공통 구현 재사용 (2026-10-25)
+
+읽기전용스레드진단`2d92e769`는물리G1/실제carry terminal/관절·TF소유권을모두통과했다.
+하지만crawl 종료로그에`exception was never retrieved: cannot use Destroyable because
+destruction was requested`가있어전체FAIL이다. 모든프로세스exit0/회수/잔여없음으로이
+예외를정상종료로위장하지않았다. worker실행중guard를파괴하는설치Jazzy종료순서가원인이다.
+새실제DDS회귀는콜백을실제로정지시킨채실제pool join/guard destroy경계를관찰하여
+guard가먼저파괴되는실패를결정적으로재현했다. 관찰hook은실제연산을대체하지않는다.
+
+relay100용Crawl실행기만기존Ch13 `common.DrainingExecutor`로바꾼다. 이공통구현은
+spin이돌아온뒤먼저실제worker pool을join하고그뒤ROS guard를파괴한다.
+원본커밋`f2fa0eba4c042b00bb70f15b4066869ed370d84f`, 공통파일/외부rclpy수정없음.
+2worker·callback group·기존TimeSource·관절/센서/명령소유권은유지하고native기본은
+SingleThreadedExecutor그대로다. RED1→실제종료/수신/기존13.3프로토콜14PASS12.78초다.
+다음은코드동결후미리정한Gazebo3연속검증이며첫FAIL에서멈춘다. 성공한실행만고르지않는다.
+
+## 구조 재검토: 임시 완화책의 수명과 원래 동작 한계 (2026-10-25)
+
+계산/수신개선을진행했지만`025d4b84`도원래10wall초에FAIL했다. 세착지/복귀후
+STAND후보의남은시간은1.195초였다. 수신freshness는이번에통과했으나직전scan실패의
+원인이해결됐다고보지는않는다. 더작은시간보정을계속더하는대신현재조치의필요성을
+재검토한다. 기존.1m/s²설정은유지된채G1에만내부배율.5가남아있다.
+
+- 이전수치접촉0에서가속도절반은접촉소실/팔속도초과를없애지못했다. 관련원본실패는보존됐다.
+- 50µm실측네건은들기/복귀로진행했고최초실패는원래deadline이었다. 접촉문제의완전해결을
+  확정하지는않지만, 수치접촉경계조치와시간을늘리는임시완화책을구분할근거다.
+- 따라서G1의내부.5배율을제거하고원래설정.1m/s²의동일quintic곡선을사용한다.
+  설정상한을올리는것이아니며일반CRAWL·게인·30Nm·형상/접촉/속도/하중·10초·실제1초
+  안정화는변경하지않는다. duration은기존2.486→약1.758ROS초로돌아간다.
+  기존안전검사와새실제실험으로판별하고실패하면배율을다시순회하지않는다.
+
+참고구현은`legubiao/quadruped_ros2_control`의고정커밋
+`5434c5810d1a7fe223bcfd04550e9d3bfdd4b458`에서직접읽었다.
+[Controller update/FSM](https://github.com/legubiao/quadruped_ros2_control/blob/5434c5810d1a7fe223bcfd04550e9d3bfdd4b458/controllers/unitree_guide_controller/src/UnitreeGuideController.cpp)은
+native update에서모델·추정·명시상태를순서대로갱신한다. 채택할원칙은동작단계와계산·통신
+대기를분리하고한제어소유자로검증하는것이다. 특정로봇의수치/게인이나제어기를복사하지않는다.
+[실행안내](https://github.com/legubiao/quadruped_ros2_control/blob/5434c5810d1a7fe223bcfd04550e9d3bfdd4b458/controllers/unitree_guide_controller/README.md)는
+Jazzy/Harmonic사례를제공하지만KDL성능차이로불안정할수있다고도명시한다.
+pos/vel/effort/KP/KD인터페이스가Ch13position-only와다르고팔추가하중은검증하지않았다.
+[FixedStand의percent전이](https://github.com/legubiao/quadruped_ros2_control/blob/5434c5810d1a7fe223bcfd04550e9d3bfdd4b458/controllers/unitree_guide_controller/src/FSM/StateFixedStand.cpp)는
+우리의실제하중/속도/연속1wall초확인을대체할수없다. 여기서직접해당외부모델을실행한
+것은아니며자료의성공사례와Ch13의실제인수를구분한다. 라이선스Apache-2.0, 소스복사없음.
+
+## 실제 실행 비용의 경계: 기본 QoS 경고 이벤트 (2026-10-25)
+
+`bd8ad3ae`는원래참조복귀/실제착지두표본까지도달했으나10wall초에FAIL했다.
+CPU비용을분리한결과저장된STAND수치kernel은약2ms였고OpenBLAS가아닌Netlib이매핑됐다.
+따라서BLAS스레드설정은바꾸지않았다. 공식launch prefix/filter로소유motion_guard만
+부모cProfile아래시작한`787361fb`도원래deadline FAIL이었다. 이는main-thread wall계측이며
+별도watchdog CPU나전체CPU시간으로해석하지않는다. 이실행은추가필수조건
+`unprofiled_acceptance=false`로G1승격을금지했다. 실제엔진/launch0·회수·강제없음·잔여[]다.
+
+main계측에는`waitable.__add__`407,976회등대기집합항목의반복검사가관측됐다.
+실제QoS오류가그만큼발생했다는뜻은아니다.
+[설치Jazzy와같은공식API](https://github.com/ros2/rclpy/blob/jazzy/rclpy/rclpy/event_handler.py)는
+기본QoS/타입불일치경고를위해별도이벤트를등록한다. 경고로그는현재안전확인프로토콜이
+아니며, 입력age와단일publisher/GID·모델·소유권검사가별도로존재한다.
+
+실제DDS8토픽50Hz 비교에서메시지1,600개가양쪽모두누락없이수신됐고대기항목은34→2,
+프로세스CPU454.14→330.75ms(약27%감소)였다. 이는국소비용측정이며엔진RTF개선이나
+G1성공을증명하지않는다. Ch13신규`dispatch_node.py`는공개`use_default_callbacks=False`
+만사용해이경고전용항목을등록하지않는다. 메시지QoS/주기/콜백/직접제공한이벤트컨테이너는
+유지한다. 실제지정matched이벤트가계속실행되는지, 메시지전수신·입력손실·200ms만료·
+carry terminal·시동/종료를회귀하고새실제엔진으로검증한다. underlying ROS/드라이버/다른장은
+수정하지않고메시지나촬영을버려성공시키지않는다.
+
 ## 동시 수신과 한 제어 주기의 판단 경계 (2026-10-24)
 
 센서 수신 분리는 제어 잠금 대기 문제를 해결하지만, 판단 시각을 읽은 뒤 새 수신을
@@ -39,7 +105,25 @@ sequenceDiagram
 
 ## 승인된 G1 제자리 교정 전용 경로 (2026-10-24)
 
-### 후속 수치 접촉 경계 판별 제안 (2026-10-25, 아직 미구현)
+### 수치 접촉 경계 판별 (2026-10-25, 구현·첫 실측 완료, G1 미통과)
+
+첫50µm 실행 `5b1854b7`은 실제같은PID의DART파일·SHA와 공개getter
+0→0.00005m를1,540개native표본에서확인했다. 기존23+relay1검사를유지하고
+설정계약1개를추가했다. 실제lift는통과했으나요청후10wall초에착지복귀중FAIL했다.
+설정적용성공은G1성공이아니며, 이한번으로접촉문제의완전해결을확정하지않는다.
+native/launch/relay exit0·reaped·강제없음·잔여[]이나물리STOPPED와전체정상인수는
+FAIL이다. 원본84소스와실행ZIP을보존한후다음수정을진행한다.
+
+명령FK와같은촬영의원시하중대조에서초기rest+3mm참조가1.08ROS초멈췄고,
+실제FL하중은최소18.529N이었다. 가상모터참조와물리발중심을같은값으로간주한
+내부3mm/초기floor-.2mm상한이불필요한직렬대기를만들었다. 단순상한제거의관련회귀는
+54통과/10실패였다. 강체이상추종은하중30N에서0으로바뀌어지지이동전에발이떨어졌다.
+이음성결과를보존하고실제엔진으로내보내지않았다. 현재G1전처리는측정관절FK를
+명령body기준으로계산한높이와현재명령높이의차이(추종압축여유)절반이내로만진행한다.
+강체이상추종의여유0이면진행하지않고, 실제압축여유가있을때만해제한다.
+이는실제발높이를대체하지않는다. 원래rest+10mm상한/.002m/s·실제FL10N예비하중·
+네발2N검사와원래rest/10초/실제lift/1wall초안정화는유지한다.
+아래3mm조건은이전가설의역사기록이며현재설계에서는이실측으로대체한다.
 
 `15aaca4a`의20ms실험은 실제입력/적용차이와 native 힘계산오차0을확인했지만
 SHIFT 중팔4속도0.033323rad/s로FAIL했다. 따라서계단참조만이원인이라는가설은
@@ -969,3 +1053,34 @@ header를 변경하지 않는다. 엔진 스텝 내 sensordata/qvel 평가 단�
 스레드 예외는 고착 실패, 종료 시 join 완료 전 ROS 자원과 로그를 해제하지 않는다.
 프레임 신선도 기준·제어권·기존 명령 주기는 바꾸지 않는다. Gazebo의 동일 촬영
 관측 계약은 별도 경로로 검증하며 MuJoCo 결과를 대신 사용하지 않는다.
+
+## 2026-10-25 직렬 실행기 비용과 수명 경계
+
+고정 3회 검증은 첫 10wall초 FAIL에서 중단했다. 물리 곡선의 수치 조합을 순회하지
+않고 설치된 공식 실행기의 성공 시험과 실제 DDS 비용을 비교했다. rclpy7.1.12
+EventsExecutor는 C++ event queue를 사용하고 콜백을 spin 호출 스레드에서 직렬 실행한다.
+callback group의 병렬성을 제공하지 않으므로 보행/독립 팔 결과 수신기에는 적용하지 않는다.
+
+```mermaid
+flowchart LR
+    D["원본 DDS·촬영 시각"] --> E["공식 EventsExecutor\n기존 직렬 navigation 역할"]
+    E --> G["motion_guard / carry / projection\nstartup / Gazebo contacts"]
+    D --> C["crawl DrainingExecutor\n기존 두 worker·분리 그룹"]
+    A["실제 controller 액션"] --> R["독립 팔 RPC receiver\n기존 단일 소유권"]
+    R --> G
+    G --> S["새 작업 차단 → terminal drain"]
+    C --> J["pool join → guard 해제"]
+    S --> X["worker·ROS 자원·context 순서 종료"]
+    J --> X
+```
+
+실제 DDS1,600개 순서·개수 보존 비교에서 CPU345.036→196.143ms였다. 이는 G1 10초
+성공을 대신하지 않는다. 실제 guard 및 액션/종료 시험을 통과한 뒤 설치 bytes를 감사한다.
+공식 event 구현은 MessageInfo가 필요한 콜백에 `(message, info)` tuple 하나를 주며
+기존 Python wait-set 구현은 두 인자를 준다. Ch13 adapter는 원본 객체·required signature·
+동기/비동기 형식을 보존하고 두 호출 형식만 수용한다. 외부 SDK를 수정하거나 metadata를
+합성하지 않는다. 공유 `spin`에는 executor factory만 주입하며 기존 종료 프로토콜을 유지한다.
+
+설치 감사는 navigation뿐 아니라 재사용 runtime/vision의 모든 Python bytes와 selected
+prefix를 묶는다. 외부 symlink·누락·변조는 엔진 시작 전에 거절한다. SDK wrapper와 native
+extension의 경로·SHA·버전도 기록하되 파일 증거를 실제 PID 매핑이라고 부르지 않는다.

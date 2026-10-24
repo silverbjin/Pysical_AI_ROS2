@@ -1,0 +1,31 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_prepare_cli_binds_exact_native_scene_urdf ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_prepare_cli_binds_exact_n0')
+
+    def test_prepare_cli_binds_exact_native_scene_urdf(tmp_path):
+        import hashlib
+        src = Path(__file__).resolve().parents[2]
+        chapter = src.parents[1]
+        environment = dict(os.environ)
+        environment['PYTHONPATH'] = os.pathsep.join(
+            [str(src/'integrated_robot_navigation'), str(src/'integrated_robot_vision'),
+             environment.get('PYTHONPATH', '')])
+        output = tmp_path/'native-candidate'
+        command = [sys.executable, str(chapter/'scripts/prepare_navigation_model_13_5.py'),
+                   '--output-dir', str(output), '--scene-engine', 'mujoco']
+        result = subprocess.run(command, env=environment, capture_output=True, text=True, timeout=60)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: usage: prepare_navigation_model_13_5.py [-h] --output-dir OUTPUT_DIR
+E                                                 [--urdf URDF]
+E                                                 [--arm ARM ARM ARM ARM ARM ARM]
+E         prepare_navigation_model_13_5.py: error: unrecognized arguments: --scene-engine mujoco
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['/home/jinho/ch13_vision_13_4_venv/bin/python', '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-...rm ARM ARM ARM ARM ARM ARM]\nprepare_navigation_model_13_5.py: error: unrecognized arguments: --scene-engine mujoco\n').returncode
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_prepare_navigation_cli.py:42: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_prepare_navigation_cli.py::test_prepare_cli_binds_exact_native_scene_urdf
+1 failed in 10.68s

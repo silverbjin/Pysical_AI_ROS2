@@ -1,0 +1,90 @@
+F.F                                                                      [100%]
+=================================== FAILURES ===================================
+________ test_scene_loader_restores_missing_verified_native_cache_only _________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_scene_loader_restores_mis0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x72af8e43e600>
+
+    def test_scene_loader_restores_missing_verified_native_cache_only(tmp_path, monkeypatch):
+        native_tmp = tmp_path/'native-tmp'
+        native_tmp.mkdir()
+        monkeypatch.setattr(scene.tempfile, 'gettempdir', lambda: str(native_tmp))
+        record = scene.materialize_scene('mujoco', 'g1', tmp_path/'scene')
+        cache = Path(record['native_controllers']['path'])
+        expected = cache.read_bytes()
+        cache.unlink()  # only this test's generated file; persistent bundle is intact
+>       assert scene.load_scene('mujoco', tmp_path/'scene') == record
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_scene_launch.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/scene.py:220: in load_scene
+    if hashlib.sha256(path.read_bytes()).hexdigest() != entry['sha256']:
+                      ^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/pathlib.py:1021: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_scene_loader_restores_mis0/native-tmp/ch13_5_controllers_1927b0a9a09dae57.yaml')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-jinho/pytest-0/test_scene_loader_restores_mis0/native-tmp/ch13_5_controllers_1927b0a9a09dae57.yaml'
+
+/usr/lib/python3.12/pathlib.py:1015: FileNotFoundError
+____________ test_scene_loader_rejects_unowned_native_cache_target _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_scene_loader_rejects_unow0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x72af8e3282c0>
+
+    def test_scene_loader_rejects_unowned_native_cache_target(tmp_path, monkeypatch):
+        native_tmp = tmp_path/'native-tmp'
+        native_tmp.mkdir()
+        monkeypatch.setattr(scene.tempfile, 'gettempdir', lambda: str(native_tmp))
+        record = scene.materialize_scene('mujoco', 'g1', tmp_path/'scene')
+        foreign = tmp_path/'unrelated.yaml'
+        record['native_controllers']['path'] = str(foreign)
+        (tmp_path/'scene/scene.json').write_text(json.dumps(record))
+        with pytest.raises(ValueError, match='native controller.*path'):
+>           scene.load_scene('mujoco', tmp_path/'scene')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_scene_launch.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/scene.py:220: in load_scene
+    if hashlib.sha256(path.read_bytes()).hexdigest() != entry['sha256']:
+                      ^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/pathlib.py:1021: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_scene_loader_rejects_unow0/unrelated.yaml')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-jinho/pytest-0/test_scene_loader_rejects_unow0/unrelated.yaml'
+
+/usr/lib/python3.12/pathlib.py:1015: FileNotFoundError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_scene_launch.py::test_scene_loader_restores_missing_verified_native_cache_only
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_scene_launch.py::test_scene_loader_rejects_unowned_native_cache_target
+2 failed, 1 passed, 3 deselected in 9.06s

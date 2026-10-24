@@ -1,0 +1,36 @@
+...........F.....................................................        [100%]
+=================================== FAILURES ===================================
+___ test_g1_preconditioning_overlaps_shift_but_preserves_rest_and_other_feet ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g1_preconditioning_overlaps_shift_but_preserves_rest_and_other_feet(nav_robot_model):
+        plant=IdealFeedback(nav_robot_model)
+        value=machine(nav_robot_model,plant)
+        value._targets['fl_foot'][2]-=.003  # commanded preload, not a fabricated sensor position
+        original=float(value._targets['fl_foot'][2])
+        held={name:point.copy() for name,point in value._targets.items()}
+        value.request_contact_calibration()
+        saw_progress=saw_unload=False
+        for _ in range(220):
+            result=value.advance(plant.state,(0.,0.,0.),plant.ros,plant.wall)
+            assert result.state!='FAULT',result.reason
+            if value._shift_plan is None and value.phase=='SHIFT' and value._unload_start is None:
+                saw_progress |= value._targets['fl_foot'][2]>original+1e-6
+                assert value._targets['fl_foot'][2]<=original+value.limits['max_unload_height_m']+1e-12
+            for name in nav_robot_model.feet:
+                if name!='fl_foot': assert np.allclose(value._targets[name],held[name],atol=1e-12)
+            plant.tick(value,result)
+            if value._unload_start is not None:
+                saw_unload=True
+                assert value._unload_origin_z==original, 'preconditioning must not renew the10mm unload allowance'
+                assert value.calibration_snapshot()['preconditioning_rest_z']==original
+                break
+>       assert saw_progress, 'G1 still serializes all loaded compression release after SHIFT'
+E       AssertionError: G1 still serializes all loaded compression release after SHIFT
+E       assert False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:84: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_g1_preconditioning_overlaps_shift_but_preserves_rest_and_other_feet
+1 failed, 64 passed in 49.53s

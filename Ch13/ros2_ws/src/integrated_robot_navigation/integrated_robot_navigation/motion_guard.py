@@ -10,7 +10,7 @@ import threading
 import time
 
 import rclpy
-from rclpy.node import Node
+from .dispatch_node import NavigationNode as Node
 from rclpy.clock import Clock
 from rclpy.clock_type import ClockType
 from rclpy.qos import qos_profile_sensor_data
@@ -315,5 +315,5 @@ class MotionGuardNode(Node):
 
 
 def main(args=None):
-    from integrated_robot_vision.execution import run_node
-    run_node(MotionGuardNode, args=args)
+    from .dispatch_node import run_navigation_node
+    run_navigation_node(MotionGuardNode, args=args)

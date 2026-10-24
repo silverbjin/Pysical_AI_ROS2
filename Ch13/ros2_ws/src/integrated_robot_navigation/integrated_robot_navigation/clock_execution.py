@@ -1,11 +1,13 @@
 """Opt-in TimeSource dispatch isolation; never replace or duplicate its clock.
 
-Only public Node subscription/remap and executor APIs are used. The existing
-rclpy TimeSource still owns the one ROS clock subscription and clock updates.
+Node subscription/remap uses public APIs. The existing runtime DrainingExecutor
+owns the localized Jazzy shutdown compatibility hook. The rclpy TimeSource
+still owns the one ROS clock subscription and clock updates.
 """
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
-from rclpy.lifecycle import LifecycleNode
+from rclpy.executors import SingleThreadedExecutor
+from integrated_robot_runtime.common import DrainingExecutor
+from .dispatch_node import NavigationLifecycleNode as LifecycleNode
 from rosgraph_msgs.msg import Clock
 
 
@@ -30,7 +32,7 @@ def make_control_executor(node):
         return SingleThreadedExecutor(context=node.context)
     if mode != 'relay100' or node.get_parameter('validation_mode').value is not True:
         raise ValueError('control_clock isolated executor requires validation_mode')
-    return MultiThreadedExecutor(num_threads=2,context=node.context)
+    return DrainingExecutor(num_threads=2,context=node.context)
 
 
 def run_control_node(node_type,*,args=None):

@@ -1,0 +1,70 @@
+.FF..                                                                    [100%]
+=================================== FAILURES ===================================
+_____ test_actual_owned_exit_is_not_a_privilege_change_or_valid_cpu_sample _____
+
+    def test_actual_owned_exit_is_not_a_privilege_change_or_valid_cpu_sample():
+        # Safe subprocess exec, not fork-with-Python-callbacks after NumPy/ROS imports.
+        child = subprocess.Popen([sys.executable, '-c', 'import sys;sys.stdin.buffer.read(1)'],
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True)
+        try:
+            assert runner.process_metrics(child.pid, child.pid)['pid'] == child.pid
+            child.stdin.write(b'x')
+            child.stdin.flush()
+            os.waitid(os.P_PID, child.pid, os.WEXITED | os.WNOWAIT)
+            with pytest.raises(ProcessLookupError, match='exited'):
+>               runner.process_metrics(child.pid, child.pid)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_process_metrics.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pid = 1101, expected_pgid = 1101
+
+    def process_metrics(pid, expected_pgid, *, proc_root=Path('/proc')):
+        path = Path(proc_root)/str(pid)/'stat'
+        if path.stat().st_uid != os.getuid():
+>           raise RuntimeError('CPU sample ownership changed')
+E           RuntimeError: CPU sample ownership changed
+
+Ch13/scripts/run_navigation_13_5.py:51: RuntimeError
+____ test_metadata_race_skips_only_same_identity_confirmed_exit[same_exit] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_metadata_race_skips_only_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ae29b036d50>
+change = 'same_exit'
+
+    @pytest.mark.parametrize('change', ['same_exit', 'replacement_exit', 'foreign_live'])
+    def test_metadata_race_skips_only_same_identity_confirmed_exit(tmp_path, monkeypatch, change):
+        path = tmp_path/'11'
+        path.mkdir()
+        stat = path/'stat'
+        stat.write_text(_stat_text())
+        original = Path.stat
+        uid = os.getuid()
+        def ownership_at_read(candidate, *args, **kwargs):
+            if candidate == stat:
+                if change != 'foreign_live':
+                    stat.write_text(_stat_text('Z', 124 if change == 'replacement_exit' else 123))
+                return SimpleNamespace(st_uid=uid+1)
+            return original(candidate, *args, **kwargs)
+        monkeypatch.setattr(Path, 'stat', ownership_at_read)
+        if change == 'same_exit':
+            with pytest.raises(ProcessLookupError, match='exited'):
+>               runner.process_metrics(11, 50, proc_root=tmp_path)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_process_metrics.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pid = 11, expected_pgid = 50
+
+    def process_metrics(pid, expected_pgid, *, proc_root=Path('/proc')):
+        path = Path(proc_root)/str(pid)/'stat'
+        if path.stat().st_uid != os.getuid():
+>           raise RuntimeError('CPU sample ownership changed')
+E           RuntimeError: CPU sample ownership changed
+
+Ch13/scripts/run_navigation_13_5.py:51: RuntimeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_process_metrics.py::test_actual_owned_exit_is_not_a_privilege_change_or_valid_cpu_sample
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_process_metrics.py::test_metadata_race_skips_only_same_identity_confirmed_exit[same_exit]
+2 failed, 3 passed in 8.25s

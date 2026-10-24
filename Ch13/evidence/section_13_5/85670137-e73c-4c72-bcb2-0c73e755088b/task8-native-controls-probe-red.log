@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_native_controls_record_keeps_source_capture_and_actual_ctrl _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x76bcd90080b0>
+
+    def test_native_controls_record_keeps_source_capture_and_actual_ctrl(monkeypatch):
+        import json
+        from std_msgs.msg import String
+        import probe_navigation_13_5 as probe
+        rows = []
+        record = SimpleNamespace(stage='stand', native_controls=[], transport_errors=[],
+                                 _write=lambda kind, value: rows.append((kind, value)))
+        payload = dict(schema=1, capture_ns=123, epoch=0, sequence=7,
+                       actuators=[dict(joint_name='fr_hip_joint', ctrl=.1, position=.09)])
+        monkeypatch.setattr(probe.time, 'monotonic_ns', lambda: 4000)
+>       NavigationProbe._controls(record, String(data=json.dumps(payload)))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'NavigationProbe' has no attribute '_controls'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:95: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_native_controls_record_keeps_source_capture_and_actual_ctrl
+1 failed, 6 deselected in 10.09s

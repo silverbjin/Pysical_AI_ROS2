@@ -1,0 +1,47 @@
+.......E
+==================================== ERRORS ====================================
+_ ERROR at setup of test_first_owned_command_preserves_native_initial_preload __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+request = <SubRequest 'crawl_rig' for <Function test_first_owned_command_preserves_native_initial_preload>>
+
+    @pytest.fixture
+    def crawl_rig(nav_robot_model, request):
+        module = importlib.import_module('integrated_robot_navigation.crawl_controller') if importlib.util.find_spec(
+            'integrated_robot_navigation.crawl_controller') else None
+        assert module is not None, 'crawl lifecycle owner missing'
+        profile = prepare_profile(nav_robot_model, CARRY)
+        ctx = Context()
+        rclpy.init(context=ctx)
+        controller = module.CrawlController(nav_robot_model, profile, 'mujoco', context=ctx,
+            parameter_overrides=[Parameter('use_sim_time', value=True),
+                                 Parameter('validation_mode', value=getattr(request, 'param', False))])
+>       value = CrawlRig(controller, nav_robot_model, ctx)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_lifecycle.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_lifecycle.py:23: in __init__
+    super().__init__(controller, model, context)
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:33: in __init__
+    self.executor = make_navigation_executor(guard)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+node = <integrated_robot_navigation.crawl_controller.CrawlController object at 0x7e9d5ab72cf0>
+
+    def make_navigation_executor(node):
+        """Upstream C++ event loop for roles that were already serial callbacks.
+    
+        EventsExecutor ignores callback-group parallelism. Never use it for crawl's
+        isolated clock/sensor workers or the independent arm action receiver.
+        """
+        if not isinstance(node,NavigationNode):
+>           raise ValueError('event dispatch is restricted to ordinary navigation nodes')
+E           ValueError: event dispatch is restricted to ordinary navigation nodes
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/dispatch_node.py:86: ValueError
+=========================== short test summary info ============================
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload_ros.py::test_first_owned_command_preserves_native_initial_preload
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+7 passed, 1 error in 10.84s

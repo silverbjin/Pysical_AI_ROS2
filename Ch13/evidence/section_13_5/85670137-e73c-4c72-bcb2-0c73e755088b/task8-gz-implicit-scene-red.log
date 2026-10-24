@@ -1,0 +1,25 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_gazebo_damping_is_native_model_bound_and_not_double_counted _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_gazebo_damping_is_native_0')
+
+    def test_gazebo_damping_is_native_model_bound_and_not_double_counted(tmp_path):
+        record = api().materialize_scene('gazebo', 'g1', tmp_path/'native_damping')
+        root = ET.parse(record['robot']['path']).getroot()
+        legacy = ET.fromstring(xacro.process_file(str(description_dir()/'urdf/robot_system.urdf.xacro'),
+            mappings={'control_backend': 'gazebo'}).toxml())
+        for joint in root.findall('ros2_control/joint'):
+            name = joint.get('name')
+            original = legacy.find(f"joint[@name='{name}']/dynamics")
+            base = float(original.get('damping', '0')) if original is not None else 0.
+            kd = float(joint.findtext("param[@name='ch13_kd']"))
+>           assert joint.findtext("param[@name='ch13_damping_mode']") == 'native'
+E           assert None == 'native'
+E            +  where None = <built-in method findtext of xml.etree.ElementTree.Element object at 0x7eb7d19d5f80>("param[@name='ch13_damping_mode']")
+E            +    where <built-in method findtext of xml.etree.ElementTree.Element object at 0x7eb7d19d5f80> = <Element 'joint' at 0x7eb7d19d5f80>.findtext
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:117: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py::test_gazebo_damping_is_native_model_bound_and_not_double_counted
+1 failed, 7 deselected in 7.22s

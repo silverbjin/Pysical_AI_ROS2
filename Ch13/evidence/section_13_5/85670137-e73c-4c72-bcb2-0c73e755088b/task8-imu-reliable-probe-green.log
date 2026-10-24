@@ -1,0 +1,28 @@
+F.................................                                       [100%]
+=================================== FAILURES ===================================
+__________ test_native_capture_diagnostic_requests_reliable_transport __________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_native_capture_diagnostic0')
+
+    def test_native_capture_diagnostic_requests_reliable_transport(tmp_path):
+        """Catch a best-effort consumer silently dropping the gyro reference pair."""
+        from probe_navigation_13_5 import NavigationProbe
+        from rclpy.qos import ReliabilityPolicy
+        context = Context()
+        rclpy.init(context=context)
+        probe = NavigationProbe(tmp_path, engine='mujoco', context=context)
+        try:
+            endpoints = probe.get_subscriptions_info_by_topic('/navigation/native_controls')
+            own = [endpoint for endpoint in endpoints if endpoint.node_name == probe.get_name()]
+            assert len(own) == 1
+            assert own[0].qos_profile.reliability == ReliabilityPolicy.RELIABLE
+>           assert own[0].qos_profile.depth == 100  # bounded one-copy diagnostic history
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           assert 0 == 100
+E            +  where 0 = <rclpy.qos.QoSProfile object at 0x7db395c5eea0>.depth
+E            +    where <rclpy.qos.QoSProfile object at 0x7db395c5eea0> = <rclpy.topic_endpoint_info.TopicEndpointInfo object at 0x7db39075a800>.qos_profile
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py:36: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py::test_native_capture_diagnostic_requests_reliable_transport
+1 failed, 33 passed in 28.39s

@@ -1,0 +1,245 @@
+FFFFFFFFFF.F                                                             [100%]
+=================================== FAILURES ===================================
+_____________ test_loaded_reference_slew_and_original_unload_bound _____________
+
+    def test_loaded_reference_slew_and_original_unload_bound():
+>       assert step()==pytest.approx(.01679)
+               ^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:17: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.01675, rest = 0.01675, measured = 0.04, forces = (35.0, 35.0, 35.0, 35.0)
+dt = 0.02
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+________ test_loaded_virtual_reference_is_not_capped_by_physical_floor _________
+
+    def test_loaded_virtual_reference_is_not_capped_by_physical_floor():
+        # Actual Gazebo: target rest+3mm held1.08ROSsec while measured FL>=18.5N.
+        # A virtual preload reference crossing floor does not mean actual lift.
+>       assert step(z=.01975)==pytest.approx(.01979)
+               ^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.01975, rest = 0.01675, measured = 0.04, forces = (35.0, 35.0, 35.0, 35.0)
+dt = 0.02
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+______ test_no_tracking_compression_means_no_early_unload_on_stiff_ground ______
+
+    def test_no_tracking_compression_means_no_early_unload_on_stiff_ground():
+>       assert step(z=.0198,measured=.0198)==.0198
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.0198, rest = 0.01675, measured = 0.0198, forces = (35.0, 35.0, 35.0, 35.0)
+dt = 0.02
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+________ test_low_load_reserve_holds_without_synthesizing_a_new_contact ________
+
+    def test_low_load_reserve_holds_without_synthesizing_a_new_contact():
+>       assert step(forces=(35.,9.,35.,35.))==.01675
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.01675, rest = 0.01675, measured = 0.04, forces = (35.0, 9.0, 35.0, 35.0)
+dt = 0.02
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+_______ test_any_premature_contact_loss_is_failure_not_a_retry[forces0] ________
+
+forces = (35.0, 1.9, 35.0, 35.0)
+
+    @pytest.mark.parametrize('forces',[(35.,1.9,35.,35.),(1.9,35.,35.,35.),(35.,35.,0.,35.)])
+    def test_any_premature_contact_loss_is_failure_not_a_retry(forces):
+        with pytest.raises(ValueError,match='preconditioning support'):
+>           step(forces=forces)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.01675, rest = 0.01675, measured = 0.04, forces = (35.0, 1.9, 35.0, 35.0)
+dt = 0.02
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+_______ test_any_premature_contact_loss_is_failure_not_a_retry[forces1] ________
+
+forces = (1.9, 35.0, 35.0, 35.0)
+
+    @pytest.mark.parametrize('forces',[(35.,1.9,35.,35.),(1.9,35.,35.,35.),(35.,35.,0.,35.)])
+    def test_any_premature_contact_loss_is_failure_not_a_retry(forces):
+        with pytest.raises(ValueError,match='preconditioning support'):
+>           step(forces=forces)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.01675, rest = 0.01675, measured = 0.04, forces = (1.9, 35.0, 35.0, 35.0)
+dt = 0.02
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+_______ test_any_premature_contact_loss_is_failure_not_a_retry[forces2] ________
+
+forces = (35.0, 35.0, 0.0, 35.0)
+
+    @pytest.mark.parametrize('forces',[(35.,1.9,35.,35.),(1.9,35.,35.,35.),(35.,35.,0.,35.)])
+    def test_any_premature_contact_loss_is_failure_not_a_retry(forces):
+        with pytest.raises(ValueError,match='preconditioning support'):
+>           step(forces=forces)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.01675, rest = 0.01675, measured = 0.04, forces = (35.0, 35.0, 0.0, 35.0)
+dt = 0.02
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+___________ test_invalid_time_never_advances_preconditioning[-0.01] ____________
+
+dt = -0.01
+
+    @pytest.mark.parametrize('dt',[-.01,float('nan'),.201])
+    def test_invalid_time_never_advances_preconditioning(dt):
+>       with pytest.raises(ValueError): step(dt=dt)
+                                        ^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.01675, rest = 0.01675, measured = 0.04, forces = (35.0, 35.0, 35.0, 35.0)
+dt = -0.01
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+____________ test_invalid_time_never_advances_preconditioning[nan] _____________
+
+dt = nan
+
+    @pytest.mark.parametrize('dt',[-.01,float('nan'),.201])
+    def test_invalid_time_never_advances_preconditioning(dt):
+>       with pytest.raises(ValueError): step(dt=dt)
+                                        ^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.01675, rest = 0.01675, measured = 0.04, forces = (35.0, 35.0, 35.0, 35.0)
+dt = nan
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+___________ test_invalid_time_never_advances_preconditioning[0.201] ____________
+
+dt = 0.201
+
+    @pytest.mark.parametrize('dt',[-.01,float('nan'),.201])
+    def test_invalid_time_never_advances_preconditioning(dt):
+>       with pytest.raises(ValueError): step(dt=dt)
+                                        ^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+z = 0.01675, rest = 0.01675, measured = 0.04, forces = (35.0, 35.0, 35.0, 35.0)
+dt = 0.201
+
+    def step(z=.01675,rest=.01675,measured=.04,forces=(35.,35.,35.,35.),dt=.02):
+        assert hasattr(calibration,'precondition_loaded_reference'), 'bounded loaded preconditioning missing'
+>       return calibration.precondition_loaded_reference(z=z,rest_z=rest,measured_reference_z=measured,
+            forces=forces,dt=dt,limits=default_limits())
+E       TypeError: precondition_loaded_reference() got an unexpected keyword argument 'measured_reference_z'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:12: TypeError
+___ test_g1_preconditioning_overlaps_shift_but_preserves_rest_and_other_feet ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g1_preconditioning_overlaps_shift_but_preserves_rest_and_other_feet(nav_robot_model):
+        plant=IdealFeedback(nav_robot_model)
+        value=machine(nav_robot_model,plant)
+        value._targets['fl_foot'][2]-=.003  # commanded preload, not a fabricated sensor position
+        original=float(value._targets['fl_foot'][2])
+        held={name:point.copy() for name,point in value._targets.items()}
+        value.request_contact_calibration()
+        saw_progress=saw_unload=False
+        for _ in range(220):
+            result=value.advance(plant.state,(0.,0.,0.),plant.ros,plant.wall)
+>           assert result.state!='FAULT',result.reason
+E           AssertionError: preconditioning support lost before settled unload
+E           assert 'FAULT' != 'FAULT'
+E            +  where 'FAULT' = ControlResult(state='FAULT', phase='SHIFT', swing_foot=None, generation=0, joint_targets=None, reason='preconditioning support lost before settled unload').state
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py:72: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_loaded_reference_slew_and_original_unload_bound
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_loaded_virtual_reference_is_not_capped_by_physical_floor
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_no_tracking_compression_means_no_early_unload_on_stiff_ground
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_low_load_reserve_holds_without_synthesizing_a_new_contact
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_any_premature_contact_loss_is_failure_not_a_retry[forces0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_any_premature_contact_loss_is_failure_not_a_retry[forces1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_any_premature_contact_loss_is_failure_not_a_retry[forces2]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_invalid_time_never_advances_preconditioning[-0.01]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_invalid_time_never_advances_preconditioning[nan]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_invalid_time_never_advances_preconditioning[0.201]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preconditioning.py::test_g1_preconditioning_overlaps_shift_but_preserves_rest_and_other_feet
+11 failed, 1 passed in 11.42s

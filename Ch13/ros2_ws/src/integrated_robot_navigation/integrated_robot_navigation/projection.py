@@ -5,7 +5,7 @@ import math
 import time
 
 import numpy as np
-from rclpy.node import Node
+from .dispatch_node import NavigationNode as Node
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster
@@ -102,5 +102,5 @@ class NavProjection(Node):
 
 
 def main(args=None):
-    from integrated_robot_vision.execution import run_node
-    run_node(NavProjection, args=args)
+    from .dispatch_node import run_navigation_node
+    run_navigation_node(NavProjection, args=args)

@@ -1,0 +1,61 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_probe_ingress_survives_a_blocked_caller_and_joins_before_log_close ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_probe_ingress_survives_a_0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_probe_ingress_survives_a_blocked_caller_and_joins_before_log_close(tmp_path, nav_robot_model):
+>       cls = receiver_type()
+              ^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def receiver_type():
+        import run_navigation_13_5 as runner
+>       assert hasattr(runner, 'ProbeReceiver'), 'independent owned probe receiver missing'
+E       AssertionError: independent owned probe receiver missing
+E       assert False
+E        +  where False = hasattr(<module 'run_navigation_13_5' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py'>, 'ProbeReceiver')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py:20: AssertionError
+_______ test_probe_callback_failure_is_sticky_and_visible_to_the_caller ________
+
+    def test_probe_callback_failure_is_sticky_and_visible_to_the_caller():
+>       cls = receiver_type()
+              ^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def receiver_type():
+        import run_navigation_13_5 as runner
+>       assert hasattr(runner, 'ProbeReceiver'), 'independent owned probe receiver missing'
+E       AssertionError: independent owned probe receiver missing
+E       assert False
+E        +  where False = hasattr(<module 'run_navigation_13_5' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py'>, 'ProbeReceiver')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py:20: AssertionError
+_________ test_unfinished_probe_callback_cannot_be_reported_as_joined __________
+
+    def test_unfinished_probe_callback_cannot_be_reported_as_joined():
+>       cls = receiver_type()
+              ^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def receiver_type():
+        import run_navigation_13_5 as runner
+>       assert hasattr(runner, 'ProbeReceiver'), 'independent owned probe receiver missing'
+E       AssertionError: independent owned probe receiver missing
+E       assert False
+E        +  where False = hasattr(<module 'run_navigation_13_5' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py'>, 'ProbeReceiver')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py:20: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py::test_probe_ingress_survives_a_blocked_caller_and_joins_before_log_close
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py::test_probe_callback_failure_is_sticky_and_visible_to_the_caller
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py::test_unfinished_probe_callback_cannot_be_reported_as_joined
+3 failed in 8.20s

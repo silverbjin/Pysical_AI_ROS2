@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_actual_actuator_stand_holds_feet_and_tracks_without_root_writes _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_actuator_stand_hol0')
+
+    def test_actual_actuator_stand_holds_feet_and_tracks_without_root_writes(tmp_path):
+        scene = materialize_scene('mujoco', 'g1', tmp_path/'physics-component')
+        model = compile_model(Path(scene['robot']['path']).read_text())
+        native = mujoco.MjModel.from_xml_path(scene['world']['path'])
+        data = mujoco.MjData(native)
+        mujoco.mj_resetDataKeyframe(native, data, 0)
+        report = stand_probe(native, data, model, default_limits())
+>       assert report['state'] == 'STAND' and report['duration_s'] >= 5., report
+E       AssertionError: {'duration_s': 3.0800000000010286, 'engine': 'python_mujoco_component_only', 'final_ctrl': {'fl_calf_joint': 0.9643856..._hip_joint': 0.0975551773375094, 'fl_thigh_joint': -0.4158474439010077, 'fr_calf_joint': 1.0267129608911247, ...}, ...}
+E       assert ('FAULT' == 'STAND'
+E         
+E         - STAND
+E         + FAULT)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py:17: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py::test_actual_actuator_stand_holds_feet_and_tracks_without_root_writes
+1 failed in 11.36s

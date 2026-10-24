@@ -82,14 +82,24 @@ def _map(output, boxes):
     return path
 
 
+def native_physics_digest(record):
+    fields=dict(engine=record['engine'],world=record['world']['sha256'],robot=record['robot']['sha256'],
+        robot_sdf=record.get('robot_sdf',{}).get('sha256'),
+        reference=record.get('position_reference_mode','native'),contact=record.get('dart_contact_mode','native'))
+    return hashlib.sha256(json.dumps(fields,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+
+
 def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_file=None,
-                      g1_reference_ramp=False) -> dict:
+                      g1_reference_ramp=False,g1_contact_allowance=False) -> dict:
     scenarios = {'g1', 'g2', 'front', 'diagonal', 'detour', 'blocked', 'cancel', 'intrusion'}
     if engine not in ('mujoco', 'gazebo') or scenario not in scenarios:
         raise ValueError('unknown engine or flat benchmark scenario')
     if (type(g1_reference_ramp) is not bool
             or g1_reference_ramp and (engine!='gazebo' or scenario!='g1')):
         raise ValueError('reference experiment is only for explicit Gazebo G1')
+    if (type(g1_contact_allowance) is not bool or g1_contact_allowance and
+            (engine!='gazebo' or scenario!='g1' or not g1_reference_ramp)):
+        raise ValueError('contact experiment requires the approved Gazebo G1 reference comparison')
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=False)
     share = description_dir()
@@ -137,6 +147,11 @@ def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_f
         for i, collision in enumerate(link.findall('collision')):
             collision.set('name', f"navcol__{link.get('name')}__{i}")
     if engine == 'gazebo':
+        if g1_contact_allowance:
+            observer=urdf_tree.find("gazebo/plugin[@filename='navigation_gazebo_observer']")
+            if observer is None:raise ValueError('G1 native contact observer missing')
+            ET.SubElement(observer,'g1_validation_contact_experiment').text='true'
+            ET.SubElement(observer,'g1_contact_allowance_m').text='0.00005'
         # Use exactly the existing validated navigation position-servo gains,
         # not a second set of constants or a change to legacy description files.
         actuator_model = ET.fromstring(navigation_mjcf(compile_model(
@@ -206,6 +221,7 @@ def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_f
         return dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
     record = dict(schema=1, engine=engine, scenario=scenario, target=target,
         position_reference_mode='g1_ramp20ms' if g1_reference_ramp else 'native',
+        dart_contact_mode='allowance50um' if g1_contact_allowance else 'native',
         localization='native_ground_truth', world=bound(model_path), robot=bound(robot),
         map=bound(map_path), map_image=bound(output/'map.pgm'),
         controllers=bound(output/'controllers.yaml'), native_controllers=bound(short_controller))
@@ -233,6 +249,7 @@ def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_f
         record['foot_collision_map'] = mapping
         record['ground_collision'] = 'ground_plane::link::collision'
         (output/'sdf_conversion.log').write_text(converted.stderr, encoding='utf-8')
+    record['native_physics_sha256']=native_physics_digest(record)
     (output/'scene.json').write_text(json.dumps(record, indent=2)+'\n', encoding='utf-8')
     return record
 
@@ -262,6 +279,21 @@ def load_scene(engine, directory):
             raise ValueError('reference experiment does not match bound Gazebo G1 model')
     elif mode!='native' or ramps or experiment is not None:
         raise ValueError('reference mode cannot hide or relabel native model parameters')
+    contact_mode=record.get('dart_contact_mode','native')
+    trees=[robot]+([ET.parse(record['robot_sdf']['path'])] if engine=='gazebo' else [])
+    for tree in trees:
+        observer=tree.find(".//plugin[@filename='navigation_gazebo_observer']")
+        allowance=None if observer is None else observer.findtext('g1_contact_allowance_m')
+        explicit=None if observer is None else observer.findtext('g1_validation_contact_experiment')
+        if contact_mode=='allowance50um':
+            if (engine!='gazebo' or record.get('scenario')!='g1' or mode!='g1_ramp20ms'
+                    or allowance is None or float(allowance)!=.00005 or explicit!='true'):
+                raise ValueError('contact experiment does not match actual G1 plugin settings')
+        elif contact_mode!='native' or allowance is not None or explicit is not None:
+            raise ValueError('contact settings cannot be hidden in native scene metadata')
+    if ('native_physics_sha256' in record or contact_mode!='native') and (
+            record.get('native_physics_sha256')!=native_physics_digest(record)):
+        raise ValueError('native physics hash mismatch')
     if record['controllers']['sha256'] != record['native_controllers']['sha256']:
         raise ValueError('scene native controller hash mismatch')
     # /tmp is a disposable cache, not durable scene evidence. Restore only our

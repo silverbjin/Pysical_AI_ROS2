@@ -1,0 +1,94 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_world_foot_swing_reference_is_quasistatic_and_still_completes[command0] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (0.0, 0.0, 0.0)
+
+    @pytest.mark.parametrize('command', [(0., 0., 0.), (.01, 0., 0.), (0., 0., .03)])
+    def test_world_foot_swing_reference_is_quasistatic_and_still_completes(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        if command == (0., 0., 0.):
+            value.request_contact_calibration()
+        previous, began = None, None
+        finished = False
+        for _ in range(1500):  # bounded 30s observation, not a fixed cycle success claim
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if result.phase == 'SWING':
+                began = plant.ros if began is None else began
+                position = value._targets[result.swing_foot].copy()
+                if previous is not None:
+>                   assert np.linalg.norm(position-previous)/.02 <= .020000001, \
+                        'quasistatic foot speed must not depend on an arbitrary .8s timer'
+E                   AssertionError: quasistatic foot speed must not depend on an arbitrary .8s timer
+E                   assert (0.0004899208328125008 / 0.02) <= 0.020000001
+E                    +  where 0.0004899208328125008 = <function norm at 0x7a7cae3fd170>((array([0.25      , 0.18      , 0.02339409]) - array([0.25      , 0.18      , 0.02290417])))
+E                    +    where <function norm at 0x7a7cae3fd170> = <module 'numpy.linalg' from '/usr/lib/python3/dist-packages/numpy/linalg/__init__.py'>.norm
+E                    +      where <module 'numpy.linalg' from '/usr/lib/python3/dist-packages/numpy/linalg/__init__.py'> = np.linalg
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_swing_rate.py:24: AssertionError
+_ test_world_foot_swing_reference_is_quasistatic_and_still_completes[command1] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (0.01, 0.0, 0.0)
+
+    @pytest.mark.parametrize('command', [(0., 0., 0.), (.01, 0., 0.), (0., 0., .03)])
+    def test_world_foot_swing_reference_is_quasistatic_and_still_completes(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        if command == (0., 0., 0.):
+            value.request_contact_calibration()
+        previous, began = None, None
+        finished = False
+        for _ in range(1500):  # bounded 30s observation, not a fixed cycle success claim
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if result.phase == 'SWING':
+                began = plant.ros if began is None else began
+                position = value._targets[result.swing_foot].copy()
+                if previous is not None:
+>                   assert np.linalg.norm(position-previous)/.02 <= .020000001, \
+                        'quasistatic foot speed must not depend on an arbitrary .8s timer'
+E                   AssertionError: quasistatic foot speed must not depend on an arbitrary .8s timer
+E                   assert (0.0004965088614480569 / 0.02) <= 0.020000001
+E                    +  where 0.0004965088614480569 = <function norm at 0x7a7cae3fd170>((array([0.25009265, 0.18      , 0.02339409]) - array([0.25001204, 0.18      , 0.02290417])))
+E                    +    where <function norm at 0x7a7cae3fd170> = <module 'numpy.linalg' from '/usr/lib/python3/dist-packages/numpy/linalg/__init__.py'>.norm
+E                    +      where <module 'numpy.linalg' from '/usr/lib/python3/dist-packages/numpy/linalg/__init__.py'> = np.linalg
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_swing_rate.py:24: AssertionError
+_ test_world_foot_swing_reference_is_quasistatic_and_still_completes[command2] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (0.0, 0.0, 0.03)
+
+    @pytest.mark.parametrize('command', [(0., 0., 0.), (.01, 0., 0.), (0., 0., .03)])
+    def test_world_foot_swing_reference_is_quasistatic_and_still_completes(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        if command == (0., 0., 0.):
+            value.request_contact_calibration()
+        previous, began = None, None
+        finished = False
+        for _ in range(1500):  # bounded 30s observation, not a fixed cycle success claim
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if result.phase == 'SWING':
+                began = plant.ros if began is None else began
+                position = value._targets[result.swing_foot].copy()
+                if previous is not None:
+>                   assert np.linalg.norm(position-previous)/.02 <= .020000001, \
+                        'quasistatic foot speed must not depend on an arbitrary .8s timer'
+E                   AssertionError: quasistatic foot speed must not depend on an arbitrary .8s timer
+E                   assert (0.0004955262945754877 / 0.02) <= 0.020000001
+E                    +  where 0.0004955262945754877 = <function norm at 0x7a7cae3fd170>((array([0.24994215, 0.18006285, 0.02339409]) - array([0.24999248, 0.18000816, 0.02290417])))
+E                    +    where <function norm at 0x7a7cae3fd170> = <module 'numpy.linalg' from '/usr/lib/python3/dist-packages/numpy/linalg/__init__.py'>.norm
+E                    +      where <module 'numpy.linalg' from '/usr/lib/python3/dist-packages/numpy/linalg/__init__.py'> = np.linalg
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_swing_rate.py:24: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_swing_rate.py::test_world_foot_swing_reference_is_quasistatic_and_still_completes[command0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_swing_rate.py::test_world_foot_swing_reference_is_quasistatic_and_still_completes[command1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_swing_rate.py::test_world_foot_swing_reference_is_quasistatic_and_still_completes[command2]
+3 failed in 12.98s

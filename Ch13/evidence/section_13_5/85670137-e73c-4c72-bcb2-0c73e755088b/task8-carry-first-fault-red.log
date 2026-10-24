@@ -1,0 +1,39 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_terminal_success_then_actual_settle_for_one_second ____________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7f67c5395040>
+
+    def test_terminal_success_then_actual_settle_for_one_second(carry_rig):
+        rig = carry_rig
+        assert rig.call(rig.prepare).success
+        rig.pump(.12)
+        assert rig.executed.is_set()
+        rig.release.set()
+        rig.pump(.65)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        rig.pump(.6)
+        assert rig.states[-1].ready and rig.gripper_commands, list(rig.manager.diagnostics)
+        assert all(list(msg.data) == [.015, .015] for msg in rig.gripper_commands)
+        rig.error = .04
+        # A changed test-source setting, its actual DDS capture, controller fault,
+        # and this client's status receipt are different asynchronous events.
+        # Do not infer all four from an arbitrary 80ms client sleep. The production
+        # input watchdog and the one-second measured settling rule are unchanged.
+        rig.wait_for(lambda: bool(rig.manager.fault), 'measured carry posture fault', timeout=.5)
+        assert rig.manager.fault == 'measured carry posture lost'
+        with rig.manager.lock:
+            selected = rig.manager.inbox.samples['joints']
+            assert abs(selected.data['position']['arm_joint_2']-rig.manager.profile.arm_q[1]) == pytest.approx(.04)
+        rig.wait_for(lambda: not rig.states[-1].ready
+            and rig.states[-1].fault_reason == 'measured carry posture lost',
+            'received measured posture fault status', timeout=.5)
+        client = rig.peer.create_client(Trigger, '/carry_manager/report')
+>       first = json.loads(rig.call(client).message)['first_fault']
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'first_fault'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:266: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_terminal_success_then_actual_settle_for_one_second
+1 failed, 13 deselected in 27.43s

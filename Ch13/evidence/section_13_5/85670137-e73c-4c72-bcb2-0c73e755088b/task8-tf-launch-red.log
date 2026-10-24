@@ -1,0 +1,62 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow0')
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true',
+                                        tf_provenance_output=str(tmp_path/'tf_provenance.jsonl'))
+        module = launch_file('crawl_system')
+        actions = module.launch_nodes(ctx)
+        nodes = [a for a in actions if isinstance(a, Node)]
+        executables = [a.node_executable for a in nodes]
+>       assert sorted(executables) == sorted(['motion_guard', 'crawl_controller', 'carry_manager',
+                                              'nav_projection', 'crawl_startup', 'tf_provenance'])
+E       AssertionError: assert ['carry_manag...v_projection'] == ['carry_manag...f_provenance']
+E         
+E         Right contains one more item: 'tf_provenance'
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:48: AssertionError
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow1')
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true',
+                                        tf_provenance_output=str(tmp_path/'tf_provenance.jsonl'))
+        module = launch_file('crawl_system')
+        actions = module.launch_nodes(ctx)
+        nodes = [a for a in actions if isinstance(a, Node)]
+        executables = [a.node_executable for a in nodes]
+>       assert sorted(executables) == sorted(['motion_guard', 'crawl_controller', 'carry_manager',
+                                              'nav_projection', 'crawl_startup', 'tf_provenance'])
+E       AssertionError: assert ['carry_manag...v_projection'] == ['carry_manag...f_provenance']
+E         
+E         Right contains one more item: 'tf_provenance'
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:48: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo]
+2 failed, 2 deselected in 9.32s

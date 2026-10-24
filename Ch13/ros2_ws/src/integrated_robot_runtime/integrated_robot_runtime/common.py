@@ -37,7 +37,7 @@ def wait_future(future, timeout, running=lambda: True):
     raise TimeoutError('ROS operation did not finish before its wall-clock deadline')
 
 
-def spin(node_type, threads=4):
+def spin(node_type, threads=4, *, executor_factory=None):
     # Keep the context alive until callbacks and the bounded worker have stopped.
     rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
     stopping = threading.Event()
@@ -48,8 +48,8 @@ def spin(node_type, threads=4):
         node = node_type()
         # Bounded nonblocking callbacks need no Python pool handoff for every
         # high-rate /clock sample. Blocking protocol nodes retain the pool.
-        executor = (SingleThreadedExecutor() if threads == 1
-                    else DrainingExecutor(num_threads=threads))
+        executor = (executor_factory(node) if executor_factory is not None else
+                    SingleThreadedExecutor() if threads == 1 else DrainingExecutor(num_threads=threads))
         executor.add_node(node)
         # A bounded wait also lets Python process SIGINT on otherwise idle nodes.
         while rclpy.ok() and not stopping.is_set():

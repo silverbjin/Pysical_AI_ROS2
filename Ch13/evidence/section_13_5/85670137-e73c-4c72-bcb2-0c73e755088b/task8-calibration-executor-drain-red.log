@@ -1,0 +1,49 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_relay_executor_drains_real_callback_before_destroying_its_guard _____
+
+    def test_relay_executor_drains_real_callback_before_destroying_its_guard():
+        context=Context();rclpy.init(context=context,domain_id=166)
+        node=ControlClockLifecycleNode('shutdown_owner',context=context)
+        node.declare_parameter('control_clock_mode','relay100')
+        node.declare_parameter('validation_mode',True)
+        peer=Node('shutdown_source',context=context)
+        executor=make_control_executor(node);executor.add_node(node)
+        entered,release,pool_join_started,guard_destroyed=Event(),Event(),Event(),Event()
+        failures=[];closer=None
+        # Observe real lifetime boundaries; neither underlying operation is mocked.
+        guard=executor._guard;destroy=guard.destroy
+        def observe_destroy():
+            guard_destroyed.set();return destroy()
+        guard.destroy=observe_destroy
+        pool_shutdown=executor._executor.shutdown
+        def observe_join(*args,**kwargs):
+            pool_join_started.set();return pool_shutdown(*args,**kwargs)
+        executor._executor.shutdown=observe_join
+        def callback(msg):
+            entered.set()
+            assert release.wait(3.),'test callback release missing'
+        node.create_subscription(String,'/shutdown_boundary',callback,10)
+        pub=peer.create_publisher(String,'/shutdown_boundary',10)
+        def shutdown():
+            try:executor.shutdown(timeout_sec=2.)
+            except BaseException as error:failures.append(error)
+        try:
+            end=time.monotonic()+3.
+            while pub.get_subscription_count()!=1 and time.monotonic()<end:executor.spin_once(timeout_sec=.01)
+            assert pub.get_subscription_count()==1
+            pub.publish(String(data='one actual callback'))
+            while not entered.is_set() and time.monotonic()<end:executor.spin_once(timeout_sec=.01)
+            assert entered.is_set()
+            closer=Thread(target=shutdown);closer.start()
+            assert pool_join_started.wait(1.)
+>           assert not guard_destroyed.is_set(),'ROS guard destroyed while a real callback still owns it'
+E           AssertionError: ROS guard destroyed while a real callback still owns it
+E           assert not True
+E            +  where True = is_set()
+E            +    where is_set = <threading.Event at 0x7cc39c10f710: set>.is_set
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_executor_shutdown_ros.py:46: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_executor_shutdown_ros.py::test_relay_executor_drains_real_callback_before_destroying_its_guard
+1 failed in 8.46s

@@ -190,6 +190,14 @@ export MUJOCO_GL=egl
 
 ## Task 9: 실제 Nav2 스택·지도·스무더·충돌 정지
 
+**추가 운영 지시(2026-10-25):** 현재G1/G2 게이트를마무리한뒤아래남은Task는
+성공사례/공식구현을먼저조사하고구현한다. 조사에서는실제사용한ROS배포판·시뮬레이터·
+명령/TF/관절소유권·센서·정지/종료·라이선스·고정커밋을기록한다. 영상/README의
+성공주장과실행가능소스/시험증거를구분하고, 우리시스템과다른동역학/센서/가정은
+그대로이식하지않는다. 한Task당채택할구조와제외할구조·이유를먼저정하고,
+차이를판별하는최소시험→구현→실측으로진행한다. 근거없이설정의모든조합을
+순회하지않으며, 기존인수기준은유지한다.
+
 **Files:** Create `N/config/nav2_params.yaml`, `N/maps/navigation.yaml`, `N/behavior_trees/navigate_crawl.xml`, `N/launch/navigation.launch.py`, `N/test/{test_nav2_configuration.py,test_nav2_bringup_ros.py,test_collision_stop_ros.py}`. 지도 이미지는 scene 생성기의 기계 생성 산출물로 world와 함께 hash 관리한다.
 
 **Interfaces:** 실제 Nav2 planner/controller/BT/lifecycle/smoother, 단일 map→odom profile, nav_base, raw→smoothed→guard의 Twist 경로를 구성한다. launch 인수는 engine/profile/world/map/localization=`native_ground_truth`다.

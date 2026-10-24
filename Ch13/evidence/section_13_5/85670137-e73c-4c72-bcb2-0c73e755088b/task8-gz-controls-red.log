@@ -1,0 +1,49 @@
+[2.955s] WARNING:colcon.colcon_core.package_selection:Some selected packages are already built in one or more underlay workspaces:
+	'integrated_robot_navigation_sensors' is in: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_5_85670137-e73c-4c72-bcb2-0c73e755088b/integrated_robot_navigation_sensors
+If a package in a merged underlay workspace is overridden and it installs headers, then all packages in the overlay must sort their include directories by workspace order. Failure to do so may result in build failures or undefined behavior at run time.
+If the overridden package is used by another package in any underlay, then the overriding package in the overlay must be API and ABI compatible or undefined behavior at run time may occur.
+
+If you understand the risks and want to override a package anyways, add the following to the command line:
+	--allow-overriding integrated_robot_navigation_sensors
+
+This may be promoted to an error in a future release of colcon-override-check.
+Starting >>> integrated_robot_navigation_sensors
+--- stderr: integrated_robot_navigation_sensors
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_observation.cpp: In member function ‘virtual void GazeboControls_ActualScalarComponentsAndJointFrameEffortNotInferredTorque_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_observation.cpp:36:43: warning: ignoring return value of ‘sdf::v14::Errors sdf::v14::JointAxis::SetXyz(const gz::math::v7::Vector3d&)’, declared with attribute ‘nodiscard’ [-Wunused-result]
+   36 |   axis.SetXyz(gz::math::Vector3d(0, 1, 0));
+      |                                           ^
+In file included from /opt/ros/jazzy/opt/gz_sim_vendor/include/gz/sim8/gz/sim/Conversions.hh:50,
+                 from /opt/ros/jazzy/opt/gz_sim_vendor/include/gz/sim8/gz/sim/components/Serialization.hh:37,
+                 from /opt/ros/jazzy/opt/gz_sim_vendor/include/gz/sim8/gz/sim/components/Collision.hh:24,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_observation.cpp:4:
+/opt/ros/jazzy/opt/sdformat_vendor/include/gz/sdformat14/sdf/JointAxis.hh:148:39: note: declared here
+  148 |     public: [[nodiscard]] sdf::Errors SetXyz(
+      |                                       ^~~~~~
+In file included from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest-printers.h:122,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest-matchers.h:49,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/internal/gtest-death-test-internal.h:47,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest-death-test.h:43,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:65,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_observation.cpp:2:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_observation.cpp:41:21: error: ‘read_gazebo_controls’ is not a member of ‘nav’
+   41 |   EXPECT_FALSE(nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(2), 3));
+      |                     ^~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_observation.cpp:50:30: error: ‘read_gazebo_controls’ is not a member of ‘nav’
+   50 |   const auto observed = nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(2), 3);
+      |                              ^~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_observation.cpp:71:10: error: ‘read_gazebo_controls’ is not a member of ‘nav’
+   71 |     nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(3), 4)->data());
+      |          ^~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_observation.cpp:75:21: error: ‘read_gazebo_controls’ is not a member of ‘nav’
+   75 |   EXPECT_THROW(nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(4), 5), std::runtime_error);
+      |                     ^~~~~~~~~~~~~~~~~~~~
+gmake[2]: *** [CMakeFiles/test_gazebo_observation.dir/build.make:76: CMakeFiles/test_gazebo_observation.dir/test/test_gazebo_observation.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:474: CMakeFiles/test_gazebo_observation.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< integrated_robot_navigation_sensors [1min 32s, exited with code 2]
+
+Summary: 0 packages finished [1min 33s]
+  1 package failed: integrated_robot_navigation_sensors
+  1 package had stderr output: integrated_robot_navigation_sensors

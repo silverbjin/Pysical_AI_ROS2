@@ -1,0 +1,68 @@
+....FFF                                                                  [100%]
+=================================== FAILURES ===================================
+______ test_body_transport_trace_keeps_capture_and_clock_domains_separate ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x744f571c7140>
+
+    def test_body_transport_trace_keeps_capture_and_clock_domains_separate(monkeypatch):
+        from nav_msgs.msg import Odometry
+        from integrated_robot_navigation.observations import SensorInbox
+        import probe_navigation_13_5 as probe
+        rows = []
+        record = SimpleNamespace(inbox=SensorInbox(0), errors=[],
+                                 _write=lambda kind, value: rows.append((kind, value)))
+        msg = Odometry(child_frame_id='base_footprint')
+        msg.header.frame_id = 'odom'
+        msg.header.stamp.sec = 1
+        msg.pose.pose.orientation.w = 1.
+        monkeypatch.setattr(probe.time, 'monotonic_ns', lambda: 2000)
+        monkeypatch.setattr(probe.time, 'time_ns', lambda: 5000)
+>       NavigationProbe._sensor(record, 'body', msg, {
+            'source_timestamp': 101, 'received_timestamp': 121})
+E       TypeError: NavigationProbe._sensor() takes 3 positional arguments but 4 were given
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:57: TypeError
+_ test_native_body_source_trace_matches_original_capture_without_republishing __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x744f571e1730>
+
+    def test_native_body_source_trace_matches_original_capture_without_republishing(monkeypatch):
+        from mujoco_ros2_control_msgs.msg import FreeJointState, FreeJointStateArray
+        import probe_navigation_13_5 as probe
+        rows = []
+        record = SimpleNamespace(transport_errors=[],
+                                 _write=lambda kind, value: rows.append((kind, value)))
+        state = FreeJointState(name='base_link')
+        state.pose.header.stamp.sec = 3
+        state.pose.header.frame_id = ''
+        state.pose.pose.orientation.w = 1.
+        monkeypatch.setattr(probe.time, 'monotonic_ns', lambda: 4000)
+        monkeypatch.setattr(probe.time, 'time_ns', lambda: 7000)
+>       NavigationProbe._body_source(record, FreeJointStateArray(free_joints=[state]), {
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            'source_timestamp': 201, 'received_timestamp': 221})
+E       AttributeError: type object 'NavigationProbe' has no attribute '_body_source'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:78: AttributeError
+______________ test_owned_process_cpu_columns_and_start_identity _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_owned_process_cpu_columns0')
+
+    def test_owned_process_cpu_columns_and_start_identity(tmp_path):
+        path = tmp_path/'11'
+        path.mkdir()
+        fields = ['S', '10', '50', '50', '0', '-1', '0', '7', '0', '2', '0',
+                  '40', '10', '0', '0', '20', '0', '3', '0', '123', '4096', '8']
+        (path/'stat').write_text('11 (owned worker) '+' '.join(fields))
+>       assert runner.process_metrics(11, 50, proc_root=tmp_path) == dict(
+               ^^^^^^^^^^^^^^^^^^^^^^
+            pid=11, ppid=10, pgid=50, start_ticks=123, user_ticks=40, system_ticks=10,
+            minor_faults=7, major_faults=2, threads=3, resident_pages=8)
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'process_metrics'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_process_metrics.py:16: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_body_transport_trace_keeps_capture_and_clock_domains_separate
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_native_body_source_trace_matches_original_capture_without_republishing
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_process_metrics.py::test_owned_process_cpu_columns_and_start_identity
+3 failed, 4 passed in 14.20s

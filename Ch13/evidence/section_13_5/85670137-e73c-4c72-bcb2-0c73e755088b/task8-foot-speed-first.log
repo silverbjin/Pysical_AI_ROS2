@@ -1,0 +1,98 @@
+..................FF.........F.....................                      [100%]
+=================================== FAILURES ===================================
+__ test_maximum_command_envelope_remains_finite_and_footprint_bound[command0] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (0.01, 0.0, 0.0)
+
+    @pytest.mark.parametrize('command', [(.01, 0., 0.), (-.01, 0., 0.),
+                                         (0., 0., .03), (.01, 0., .03)])
+    def test_maximum_command_envelope_remains_finite_and_footprint_bound(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        seen = set()
+        for _ in range(2000):
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if result.joint_targets:
+                for name, angle in result.joint_targets.items():
+                    part = name.split('_')[1]
+                    lo, hi = value.limits['gait_joint_bounds'][part]
+                    assert math.isfinite(angle) and lo <= angle <= hi
+            plant.tick(value, result)
+            if result.phase == 'SWING' and result.swing_foot:
+                seen.add(result.swing_foot)
+            if len(seen) == 4:
+                break
+>       assert seen == set(nav_robot_model.feet)
+E       AssertionError: assert {'fl_foot', '...t', 'rr_foot'} == {'fl_foot', '...t', 'rr_foot'}
+E         
+E         Extra items in the right set:
+E         'rl_foot'
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:180: AssertionError
+__ test_maximum_command_envelope_remains_finite_and_footprint_bound[command1] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (-0.01, 0.0, 0.0)
+
+    @pytest.mark.parametrize('command', [(.01, 0., 0.), (-.01, 0., 0.),
+                                         (0., 0., .03), (.01, 0., .03)])
+    def test_maximum_command_envelope_remains_finite_and_footprint_bound(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        seen = set()
+        for _ in range(2000):
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if result.joint_targets:
+                for name, angle in result.joint_targets.items():
+                    part = name.split('_')[1]
+                    lo, hi = value.limits['gait_joint_bounds'][part]
+                    assert math.isfinite(angle) and lo <= angle <= hi
+            plant.tick(value, result)
+            if result.phase == 'SWING' and result.swing_foot:
+                seen.add(result.swing_foot)
+            if len(seen) == 4:
+                break
+>       assert seen == set(nav_robot_model.feet)
+E       AssertionError: assert {'fl_foot', '...t', 'rr_foot'} == {'fl_foot', '...t', 'rr_foot'}
+E         
+E         Extra items in the right set:
+E         'rl_foot'
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:180: AssertionError
+_____ test_contact_calibration_is_one_inplace_lift_not_a_crawl_permission ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_contact_calibration_is_one_inplace_lift_not_a_crawl_permission(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        initial = {name: point.copy() for name, point in value.anchors.items()}
+        assert hasattr(value, 'request_contact_calibration'), 'owned G1 calibration primitive missing'
+        value.request_contact_calibration()
+        saw_lift, completed = False, False
+        for _ in range(250):
+            result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            assert result.state != 'CRAWL'
+            if result.swing_foot:
+                assert result.swing_foot == 'fl_foot'
+                saw_lift = True
+                assert np.allclose(value._targets['fl_foot'][:2], initial['fl_foot'][:2], atol=1e-12)
+            plant.tick(value, result)
+            if saw_lift and result.state == 'STAND':
+                completed = True
+                break
+>       assert completed
+E       assert False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:259: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_maximum_command_envelope_remains_finite_and_footprint_bound[command0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_maximum_command_envelope_remains_finite_and_footprint_bound[command1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_contact_calibration_is_one_inplace_lift_not_a_crawl_permission
+3 failed, 48 passed in 75.88s (0:01:15)

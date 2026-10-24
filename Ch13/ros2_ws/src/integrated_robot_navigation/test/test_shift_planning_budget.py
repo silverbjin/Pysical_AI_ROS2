@@ -7,11 +7,12 @@ from integrated_robot_navigation.carry_profile import default_limits
 from gait_fixture import IdealFeedback
 
 
-def test_support_search_is_sliced_across_fresh_safety_ticks(nav_robot_model, monkeypatch):
+@pytest.mark.parametrize('calibration,candidate_budget',[(True,4),(False,1)])
+def test_support_search_is_sliced_across_fresh_safety_ticks(nav_robot_model, monkeypatch,calibration,candidate_budget):
     plant = IdealFeedback(nav_robot_model)
     machine = gait.CrawlMachine(nav_robot_model, default_limits())
     machine.reset(plant.state, plant.ros, plant.wall)
-    machine.request_contact_calibration()
+    if calibration:machine.request_contact_calibration()
     actual_com = gait.center_of_mass
     evaluations = []
 
@@ -24,11 +25,11 @@ def test_support_search_is_sliced_across_fresh_safety_ticks(nav_robot_model, mon
     moved = False
     for tick in range(45):
         before = len(evaluations)
-        result = machine.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+        result = machine.advance(plant.state, (0., 0., 0.) if calibration else (.001,0.,0.), plant.ros, plant.wall)
         assert result.state != 'FAULT', result.reason
-        # One actual measurement plus at most one candidate evaluation. This
-        # operation budget is independent of host timing or CPU frequency.
-        assert len(evaluations)-before <= 2
+        # One actual measurement plus the bounded role-specific candidate count.
+        # Normal CRAWL stays at one; G1-only arithmetic batching uses four.
+        assert len(evaluations)-before <= 1+candidate_budget
         if tick < 2:
             assert machine.reference_body == pytest.approx(initial, abs=1e-12)
         moved |= np.linalg.norm(machine.reference_body[:2, 3]-initial[:2, 3]) > 1e-5

@@ -20,7 +20,7 @@ import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, ExecuteProcess, Shutdown
 from launch.actions import IncludeLaunchDescription
 from launch.actions import RegisterEventHandler
 from launch.actions import TimerAction
@@ -73,8 +73,11 @@ def navigation_gazebo_action(world, vision):
     if vision:
         command.append('--headless-rendering')
     command.extend([str(world), '--force-version', '8'])
+    # Match the upstream on_exit_shutdown lifecycle: let ProcessExited finish
+    # the launch service rather than racing its async cleanup with parent SIGINT.
     return ExecuteProcess(cmd=command, name='gazebo', shell=False,
-                          additional_env=environment, output='screen')
+                          additional_env=environment, output='screen',
+                          on_exit=Shutdown(reason='owned navigation Gazebo process exited'))
 
 
 def launch_nodes(context):

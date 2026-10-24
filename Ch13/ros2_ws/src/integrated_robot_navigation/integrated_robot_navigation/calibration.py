@@ -7,13 +7,13 @@ from dataclasses import dataclass
 import math
 
 
-def precondition_loaded_reference(*, z, rest_z, floor_z, forces, dt, limits):
+def precondition_loaded_reference(*, z, rest_z, measured_reference_z, forces, dt, limits):
     """Release a little held compression while ALL four measured feet stay loaded.
 
     Not a lift authorization: final tripod/settle/unload checks remain the owner.
     The original rest is immutable and still bounds the complete unload/return.
     """
-    if (not all(math.isfinite(v) for v in (z,rest_z,floor_z,dt)) or not 0<=dt<=.2
+    if (not all(math.isfinite(v) for v in (z,rest_z,measured_reference_z,dt)) or not 0<=dt<=.2
             or len(forces)!=4 or not all(math.isfinite(f) and f>=0 for f in forces)
             or not rest_z<=z<=rest_z+limits['max_unload_height_m']+1e-12):
         raise ValueError('invalid preconditioning reference/time')
@@ -22,7 +22,12 @@ def precondition_loaded_reference(*, z, rest_z, floor_z, forces, dt, limits):
         raise ValueError('preconditioning support lost before settled unload')
     if forces[1]<5*force:
         return float(z)
-    ceiling=min(rest_z+min(.003,limits['max_unload_height_m']),floor_z-.0002)
+    # FK of measured joints in the SAME reference body frame measures the
+    # tracking compression still available. An ideal stiff follower has none.
+    # Consume at most half that gap, retaining actual10N/all-four-load checks.
+    # Neither the reference nor this gap is a physical foot-height observation.
+    ceiling=min(rest_z+limits['max_unload_height_m'],
+                z+.5*max(0.,measured_reference_z-z))
     return float(min(ceiling,z+limits['unload_speed_mps']*dt) if z<ceiling else z)
 
 

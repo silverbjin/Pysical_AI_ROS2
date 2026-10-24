@@ -1,0 +1,43 @@
+........................................................................ [ 13%]
+........................................................................ [ 27%]
+........................................................................ [ 40%]
+........................................................................ [ 54%]
+........................................................................ [ 67%]
+........................................................................ [ 81%]
+............................F
+=================================== FAILURES ===================================
+___________ test_support_search_is_sliced_across_fresh_safety_ticks ____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x797833832660>
+
+    def test_support_search_is_sliced_across_fresh_safety_ticks(nav_robot_model, monkeypatch):
+        plant = IdealFeedback(nav_robot_model)
+        machine = gait.CrawlMachine(nav_robot_model, default_limits())
+        machine.reset(plant.state, plant.ros, plant.wall)
+        machine.request_contact_calibration()
+        actual_com = gait.center_of_mass
+        evaluations = []
+    
+        def measured_cost(*args):
+            evaluations.append(None)
+            return actual_com(*args)
+    
+        monkeypatch.setattr(gait, 'center_of_mass', measured_cost)
+        initial = machine.reference_body.copy()
+        moved = False
+        for tick in range(45):
+            before = len(evaluations)
+            result = machine.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            # One actual measurement plus at most one candidate evaluation. This
+            # operation budget is independent of host timing or CPU frequency.
+>           assert len(evaluations)-before <= 2
+E           assert (5 - 0) <= 2
+E            +  where 5 = len([None, None, None, None, None])
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_shift_planning_budget.py:31: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_shift_planning_budget.py::test_support_search_is_sliced_across_fresh_safety_ticks
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 460 passed in 284.31s (0:04:44)

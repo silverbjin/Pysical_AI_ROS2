@@ -26,6 +26,8 @@
 #include "integrated_robot_navigation_sensors/gazebo_observation.hpp"
 #include "integrated_robot_navigation_sensors/position_reference.hpp"
 #include "integrated_robot_navigation_sensors/contact_detail_window.hpp"
+#include "integrated_robot_navigation_sensors/dart_contact.hpp"
+#include <dart/constraint/ContactConstraint.hpp>
 namespace sim = gz::sim;
 namespace comp = gz::sim::components;
 namespace nav = integrated_robot_navigation_sensors;
@@ -79,6 +81,31 @@ TEST(GazeboControls, NativePluginObservesCommandsBeforePhysicsClearsThem)
   auto * priority = plugin->QueryInterface<sim::ISystemConfigurePriority>();
   ASSERT_NE(priority, nullptr);
   EXPECT_LT(priority->ConfigurePriority(), sim::System::kDefaultPriority);
+}
+
+TEST(G1DartContact, SingleWorldExplicitTransactionUsesActualGetterAndCannotBeClaimedTwice)
+{
+  using Contact=dart::constraint::ContactConstraint;
+  struct Restore {double value;~Restore(){Contact::setErrorAllowance(value);}} restore{Contact::getErrorAllowance()};
+  ASSERT_DOUBLE_EQ(restore.value,0.);
+  for (double invalid : {0.,-.00005,.0001,std::numeric_limits<double>::quiet_NaN()}) {
+    EXPECT_THROW(nav::configure_g1_dart_contact(invalid,1,true),std::runtime_error);
+    EXPECT_DOUBLE_EQ(Contact::getErrorAllowance(),0.);
+  }
+  EXPECT_THROW(nav::configure_g1_dart_contact(.00005,2,true),std::runtime_error);
+  EXPECT_THROW(nav::configure_g1_dart_contact(.00005,1,false),std::runtime_error);
+  EXPECT_DOUBLE_EQ(Contact::getErrorAllowance(),0.);
+  const auto report=nav::configure_g1_dart_contact(.00005,1,true);
+  EXPECT_DOUBLE_EQ(report.before_m,0.);
+  EXPECT_DOUBLE_EQ(report.effective_m,.00005);
+  EXPECT_DOUBLE_EQ(Contact::getErrorAllowance(),.00005);
+  EXPECT_FALSE(report.header_version.empty());
+  EXPECT_NE(report.library_path.find("libdart.so."),std::string::npos);
+  EXPECT_DOUBLE_EQ(nav::inspect_dart_contact().effective_m,.00005);
+  // Test utility restores its process only; production has no reset/retry API.
+  Contact::setErrorAllowance(0.);
+  EXPECT_THROW(nav::configure_g1_dart_contact(.00005,1,true),std::runtime_error);
+  EXPECT_DOUBLE_EQ(Contact::getErrorAllowance(),0.);
 }
 
 TEST(GazeboContactDiagnostic, OneFootLossOpensABoundedNativeWindowRatherThanHidingBehindTripodSupport)

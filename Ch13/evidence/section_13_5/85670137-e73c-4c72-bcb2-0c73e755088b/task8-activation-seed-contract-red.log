@@ -1,0 +1,82 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____ test_cold_handoff_requires_one_finite_declared_position_seed[missing] _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = 'missing'
+
+    @pytest.mark.parametrize('bad', ['missing', 'nan', 'duplicate'])
+    def test_cold_handoff_requires_one_finite_declared_position_seed(nav_robot_model, bad):
+        from integrated_robot_navigation import model as model_api
+        tree = ET.fromstring(nav_robot_model.urdf)
+        control = tree.find('ros2_control')
+        joint = control.find("joint[@name='fr_calf_joint']")
+        initial = joint.find("state_interface[@name='position']/param[@name='initial_value']")
+        if bad == 'missing':
+            joint.find("state_interface[@name='position']").remove(initial)
+        elif bad == 'nan':
+            initial.text = 'nan'
+        else:
+            control.append(ET.fromstring(ET.tostring(joint)))
+        changed = replace(nav_robot_model, urdf=ET.tostring(tree, encoding='unicode'))
+        with pytest.raises(ValueError, match='initial leg'):
+>           model_api.initial_leg_targets(changed)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'integrated_robot_navigation.model' has no attribute 'initial_leg_targets'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py:60: AttributeError
+______ test_cold_handoff_requires_one_finite_declared_position_seed[nan] _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = 'nan'
+
+    @pytest.mark.parametrize('bad', ['missing', 'nan', 'duplicate'])
+    def test_cold_handoff_requires_one_finite_declared_position_seed(nav_robot_model, bad):
+        from integrated_robot_navigation import model as model_api
+        tree = ET.fromstring(nav_robot_model.urdf)
+        control = tree.find('ros2_control')
+        joint = control.find("joint[@name='fr_calf_joint']")
+        initial = joint.find("state_interface[@name='position']/param[@name='initial_value']")
+        if bad == 'missing':
+            joint.find("state_interface[@name='position']").remove(initial)
+        elif bad == 'nan':
+            initial.text = 'nan'
+        else:
+            control.append(ET.fromstring(ET.tostring(joint)))
+        changed = replace(nav_robot_model, urdf=ET.tostring(tree, encoding='unicode'))
+        with pytest.raises(ValueError, match='initial leg'):
+>           model_api.initial_leg_targets(changed)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'integrated_robot_navigation.model' has no attribute 'initial_leg_targets'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py:60: AttributeError
+___ test_cold_handoff_requires_one_finite_declared_position_seed[duplicate] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = 'duplicate'
+
+    @pytest.mark.parametrize('bad', ['missing', 'nan', 'duplicate'])
+    def test_cold_handoff_requires_one_finite_declared_position_seed(nav_robot_model, bad):
+        from integrated_robot_navigation import model as model_api
+        tree = ET.fromstring(nav_robot_model.urdf)
+        control = tree.find('ros2_control')
+        joint = control.find("joint[@name='fr_calf_joint']")
+        initial = joint.find("state_interface[@name='position']/param[@name='initial_value']")
+        if bad == 'missing':
+            joint.find("state_interface[@name='position']").remove(initial)
+        elif bad == 'nan':
+            initial.text = 'nan'
+        else:
+            control.append(ET.fromstring(ET.tostring(joint)))
+        changed = replace(nav_robot_model, urdf=ET.tostring(tree, encoding='unicode'))
+        with pytest.raises(ValueError, match='initial leg'):
+>           model_api.initial_leg_targets(changed)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'integrated_robot_navigation.model' has no attribute 'initial_leg_targets'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py:60: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py::test_cold_handoff_requires_one_finite_declared_position_seed[missing]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py::test_cold_handoff_requires_one_finite_declared_position_seed[nan]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py::test_cold_handoff_requires_one_finite_declared_position_seed[duplicate]
+3 failed, 4 deselected in 11.88s

@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_actual_carry_survives_contact_calibration_without_root_writes ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_carry_survives_con0')
+
+    def test_actual_carry_survives_contact_calibration_without_root_writes(tmp_path):
+        scene = materialize_scene('mujoco', 'g1', tmp_path/'calibration-component')
+        model = compile_model(Path(scene['robot']['path']).read_text())
+        native = mujoco.MjModel.from_xml_path(scene['world']['path'])
+        data = mujoco.MjData(native)
+        mujoco.mj_resetDataKeyframe(native, data, 0)
+        report = calibration_probe(native, data, model, default_limits())
+>       assert report['completed'], report
+E       AssertionError: {'completed': False, 'duration_s': 10.99999999999923, 'engine': 'python_mujoco_component_only', 'maximum_carry_error_rad': 0.03213164663778478, ...}
+E       assert False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py::test_actual_carry_survives_contact_calibration_without_root_writes
+1 failed, 1 deselected in 11.51s

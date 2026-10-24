@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "integrated_robot_navigation_sensors/gazebo_observation.hpp"
 #include "integrated_robot_navigation_sensors/contact_detail_window.hpp"
+#include "integrated_robot_navigation_sensors/dart_contact.hpp"
+#include <gz/sim/components/World.hh>
 #include <gz/sim/System.hh>
 #include <gz/plugin/Register.hh>
 #include <gz/transport/Node.hh>
@@ -32,10 +34,26 @@ public:
     return gz::sim::System::kDefaultPriority-1;
   }
   void Configure(const gz::sim::Entity & entity,
-    const std::shared_ptr<const sdf::Element> &, gz::sim::EntityComponentManager & ecm,
+    const std::shared_ptr<const sdf::Element> & settings, gz::sim::EntityComponentManager & ecm,
     gz::sim::EventManager &) override
   {
     model_ = entity;
+    const bool allowance=settings && settings->HasElement("g1_contact_allowance_m");
+    const bool explicit_flag=settings && settings->HasElement("g1_validation_contact_experiment");
+    if (allowance!=explicit_flag) {throw std::runtime_error("incomplete G1 contact experiment settings");}
+    if (allowance) {
+      size_t worlds=0;
+      ecm.Each<gz::sim::components::World>([&](gz::sim::Entity,const gz::sim::components::World *) {
+        ++worlds;return true;
+      });
+      const double requested=settings->Get<double>("g1_contact_allowance_m");
+      const auto actual=configure_g1_dart_contact(requested,worlds,
+        settings->Get<bool>("g1_validation_contact_experiment"));
+      dart_contact_=nlohmann::json{{"schema",1},{"mode","allowance50um"},
+        {"requested_m",requested},{"before_m",actual.before_m},{"effective_m",actual.effective_m},
+        {"world_count",worlds},{"explicit_g1",true},
+        {"header_version",actual.header_version},{"library_path",actual.library_path}};
+    }
     request_gazebo_observations(model_, ecm);
     com_ = node_.Advertise<gz::msgs::Pose>("/navigation/native_com");
     feet_ = node_.Advertise<gz::msgs::Pose_V>("/navigation/native_feet");
@@ -81,6 +99,12 @@ public:
         // Previous completed PostUpdates, each with its own original capture.
         // Batching avoids a new 500Hz Python/ROS subscriber. Never interpolate.
         packet["body_references"] = body_references_;
+        if (dart_contact_) {
+          if (inspect_dart_contact().effective_m!=(*dart_contact_)["effective_m"].get<double>()) {
+            throw std::runtime_error("DART contact allowance changed after configuration");
+          }
+          packet["dart_contact_configuration"]=*dart_contact_;
+        }
         gz::msgs::StringMsg message;
         message.set_data(packet.dump());
         controls_.Publish(message);
@@ -154,6 +178,7 @@ private:
   uint64_t body_sequence_{0};
   std::vector<nlohmann::json> body_references_;
   ContactDetailWindow contact_detail_;
+  std::optional<nlohmann::json> dart_contact_;
   std::optional<std::chrono::steady_clock::duration> last_body_;
   std::optional<std::chrono::steady_clock::duration> last_seen_, last_publish_;
   std::optional<std::chrono::steady_clock::duration> last_controls_publish_;

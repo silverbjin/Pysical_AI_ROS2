@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_future_guard_waits_for_local_clock_without_retagging_or_renewing_receipt _
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x7c9677095a30>
+
+    def test_future_guard_waits_for_local_clock_without_retagging_or_renewing_receipt(crawl_rig):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(.08)
+        node = rig.guard
+        with node.lock:
+            previous = deepcopy(node.gate)
+            stamp = previous.header.stamp.sec*1_000_000_000+previous.header.stamp.nanosec
+            future = deepcopy(previous)
+            future.header.stamp.sec, future.header.stamp.nanosec = divmod(stamp+2_000_000, 1_000_000_000)
+            future.state = 'STOP'
+            node._gate(future)  # deterministic production callback/clock ordering
+>           assert node._gate_valid(stamp, time.monotonic_ns()) == (True, '')
+E           AssertionError: assert (False, 'guard:ros_age') == (True, '')
+E             
+E             At index 0 diff: False != True
+E             Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_guard_clock_order.py:22: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_guard_clock_order.py::test_future_guard_waits_for_local_clock_without_retagging_or_renewing_receipt
+1 failed in 12.13s

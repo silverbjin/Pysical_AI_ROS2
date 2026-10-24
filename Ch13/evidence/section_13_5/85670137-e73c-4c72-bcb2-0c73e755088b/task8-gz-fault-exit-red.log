@@ -1,0 +1,87 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_ready_contact_adapter_handles_own_sigint_as_normal_exit _________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_ready_contact_adapter_han0')
+
+    def test_ready_contact_adapter_handles_own_sigint_as_normal_exit(tmp_path):
+        materialize_scene('gazebo', 'g1', tmp_path/'scene')
+        context = Context()
+        rclpy.init(context=context)
+        peer = rclpy.create_node('adapter_exit_peer', context=context)
+        executor = SingleThreadedExecutor(context=context)
+        executor.add_node(peer)
+        client = peer.create_client(GetParameters, '/gazebo_contact_adapter/get_parameters')
+        env = dict(os.environ)
+        env['PYTHONPATH'] = str(Path(__file__).resolve().parents[1])+os.pathsep+env.get('PYTHONPATH', '')
+        log_path = tmp_path/'adapter-process.log'
+        process = None
+        try:
+            with log_path.open('w') as log:
+                process = subprocess.Popen([sys.executable, '-c',
+                    'from integrated_robot_navigation.gazebo_contacts import main; main()',
+                    '--ros-args', '-p', 'scene_dir:='+str(tmp_path/'scene')],
+                    env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                assert client.wait_for_service(timeout_sec=12.), log_path.read_text()
+                request = client.call_async(GetParameters.Request(names=['scene_dir']))
+                executor.spin_until_future_complete(request, timeout_sec=3.)
+                assert request.done() and request.result().values[0].string_value == str(tmp_path/'scene')
+                assert process.poll() is None
+                process.send_signal(signal.SIGINT)  # only this owned ready adapter PID
+                process.wait(timeout=5.)
+>           assert process.returncode == 0, log_path.read_text()
+E           AssertionError: Traceback (most recent call last):
+E               File "<string>", line 1, in <module>
+E               File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gazebo_contacts.py", line 169, in main
+E                 rclpy.spin(node)
+E               File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 247, in spin
+E                 executor.spin_once()
+E               File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 926, in spin_once
+E                 self._spin_once_impl(timeout_sec)
+E               File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 907, in _spin_once_impl
+E                 handler, entity, node = self.wait_for_ready_callbacks(
+E                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 877, in wait_for_ready_callbacks
+E                 return next(self._cb_iter)
+E                        ^^^^^^^^^^^^^^^^^^^
+E               File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 781, in _wait_for_ready_callbacks
+E                 wait_set.wait(timeout_nsec)
+E             KeyboardInterrupt
+E             
+E           assert -2 == 0
+E            +  where -2 = <Popen: returncode: -2 args: ['/home/jinho/ch13_vision_13_4_venv/bin/python'...>.returncode
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_adapter_exit.py:41: AssertionError
+_______ test_first_fault_reports_selected_capture_and_is_not_overwritten _______
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x7a475230fd10>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7a475230f770>
+
+    def test_first_fault_reports_selected_capture_and_is_not_overwritten(crawl_rig, monkeypatch):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(.1)
+        original = test_motion_guard_ros.bundle
+    
+        def unsupported(model):
+            value = original(model)
+            return replace(value, contacts=replace(value.contacts,
+                data={**value.contacts.data, 'forces': (0., 30., 0., 30.),
+                      'touching': (False, True, False, True)}))
+    
+        monkeypatch.setattr(test_motion_guard_ros, 'bundle', unsupported)
+        rig.pump(.12)
+        assert rig.crawl_states[-1].fault_reason == 'current measured support lost'
+        client = rig.node.create_client(Trigger, '/crawl_controller/report')
+>       assert client.wait_for_service(timeout_sec=1.), 'selected fault snapshot service missing'
+E       AssertionError: selected fault snapshot service missing
+E       assert False
+E        +  where False = wait_for_service(timeout_sec=1.0)
+E        +    where wait_for_service = <rclpy.client.Client object at 0x7a4754a8b4d0>.wait_for_service
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py:29: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_adapter_exit.py::test_ready_contact_adapter_handles_own_sigint_as_normal_exit
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py::test_first_fault_reports_selected_capture_and_is_not_overwritten
+2 failed in 17.23s

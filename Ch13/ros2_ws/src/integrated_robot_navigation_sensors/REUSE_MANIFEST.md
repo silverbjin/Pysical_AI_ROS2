@@ -2,6 +2,17 @@
 
 이 패키지는 13.5절을 위해 작성한 Apache-2.0 코드다. 외부 checkout과 앞 장 원본은 수정하지 않는다.
 
+`dart_contact.hpp/.cpp`, `navigation_dart_contact_probe`는 사용자승인2026-10-25의
+G1 전용 수치접촉비교를 위한 Ch13 신규코드다(기준checkpoint `3fd278c6078d2e941a60d07476d7866b2ecea598`).
+설치 `gz_dartsim_vendor`/DART6.13.2의공개 `ContactConstraint` getter/setter와공식
+CMake `dart` target에link한다. [DART6.13.2 API 구현](https://github.com/dartsim/dart/blob/v6.13.2/dart/constraint/ContactConstraint.cpp)은
+참조만했고BSD구현파일을복사·수정하지않았다. `dladdr`/canonical경로는실제getter
+provider와header버전을대조하며파일/시스템설정을바꾸지않는다.
+기본모드는관측만하며setter를호출하지않는다. opt-in만소유한단일world프로세스의
+초기0을실제조회한뒤50µm로1회설정한다. 중복소유자·잘못된범위·예상밖초기값은
+거부하고reset/retry API를제공하지않는다. 설정값은모든native진단packet에서검증한다.
+이설정은기존읽기전용센서와구분된명시적물리설정이며일반CRAWL로자동승격하지않는다.
+
 G1 검증 모드의20ms 연속참조와 `PositionReference`는 Ch13 신규코드다(기준
 `7f321ebb4141089a09e06d5c646ac83d180fc906`). 사용자승인에 따라기존 position backend의
 다리12관절만 명시적으로 opt-in한다. Gazebo8.15 공개 `Component`/`Factory`/

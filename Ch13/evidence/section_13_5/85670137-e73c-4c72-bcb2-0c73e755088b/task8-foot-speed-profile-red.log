@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_preparation_cannot_weaken_safety_contract[max_swing_speed_mps-0.021] ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+key = 'max_swing_speed_mps', value = 0.021
+
+    @pytest.mark.parametrize('key,value', [
+        ('footprint_margin_m', .049), ('sensor_max_age_s', .201),
+        ('max_roll_pitch', .16), ('max_vx', .011),
+        ('max_swing_speed_mps', .021),
+    ])
+    def test_preparation_cannot_weaken_safety_contract(nav_robot_model, key, value):
+        module = api()
+        limits = module.default_limits()
+        limits[key] = value
+>       with pytest.raises(ValueError, match='limits'):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py:65: Failed
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_profile.py::test_preparation_cannot_weaken_safety_contract[max_swing_speed_mps-0.021]
+1 failed, 11 deselected in 14.02s

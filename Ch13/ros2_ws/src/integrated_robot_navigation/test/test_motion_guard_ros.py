@@ -25,11 +25,12 @@ from guard_fixture import bundle, CARRY
 
 
 class Rig:
-    def __init__(self, guard, model, context):
+    def __init__(self, guard, model, context, *, executor_factory=None):
         self.guard = guard
         self.model = model
         self.node = Node('guard_test_producer', context=context)
-        self.executor = SingleThreadedExecutor(context=context)
+        from integrated_robot_navigation.dispatch_node import make_navigation_executor
+        self.executor = (executor_factory or make_navigation_executor)(guard)
         self.executor.add_node(self.node)
         self.executor.add_node(guard)
         self.start = time.monotonic()

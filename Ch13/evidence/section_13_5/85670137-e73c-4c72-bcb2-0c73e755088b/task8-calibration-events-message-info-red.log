@@ -1,0 +1,29 @@
+F
+=================================== FAILURES ===================================
+_ test_actual_message_info_callback_receives_original_dds_metadata_and_capture _
+
+    def test_actual_message_info_callback_receives_original_dds_metadata_and_capture():
+        context=Context();rclpy.init(context=context,domain_id=167)
+        node=api.NavigationNode('info_owner',context=context)
+        peer=Node('info_source',context=context);executor=api.make_navigation_executor(node);received=[]
+        def receive(msg,info):received.append((msg,info))
+        try:
+            executor.add_node(node);executor.add_node(peer)
+            node.create_subscription(PointStamped,'/events_original_info',receive,10)
+            publisher=peer.create_publisher(PointStamped,'/events_original_info',10)
+            until=time.monotonic()+3.
+            while publisher.get_subscription_count()!=1 and time.monotonic()<until:executor.spin_once(timeout_sec=.01)
+            assert publisher.get_subscription_count()==1
+            msg=PointStamped();msg.header.frame_id='original';msg.header.stamp=Time(sec=3,nanosec=42)
+            publisher.publish(msg)
+>           while not received and time.monotonic()<until:executor.spin_once(timeout_sec=.01)
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           SystemError: null argument to internal routine
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_events_executor_ros.py:82: SystemError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792879521.275046976] [info_owner]: Serial navigation callbacks use EventsExecutor
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_events_executor_ros.py::test_actual_message_info_callback_receives_original_dds_metadata_and_capture
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 2 deselected in 8.88s
