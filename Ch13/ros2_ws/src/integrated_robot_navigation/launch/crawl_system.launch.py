@@ -25,6 +25,8 @@ def launch_nodes(context):
     if clock_mode == 'relay100' and raw_validation != 'true':
         raise ValueError('control_clock relay experiment requires validation_mode; no CRAWL admission')
     record = load_scene(engine, directory)
+    if record.get('position_reference_mode','native')!='native' and raw_validation!='true':
+        raise ValueError('reference experiment requires validation_mode; no CRAWL admission')
     model = compile_model(Path(record['robot']['path']).read_text())
     profile = CarryProfile(**json.loads(Path(profile_path).read_text()))
     _validate_limits(profile.limits)

@@ -19,16 +19,21 @@ def main():
     parser.add_argument('--scene-engine', choices=('mujoco', 'gazebo'),
                         help='Prepare a bound flat G1 scene and its exact URDF candidate; never validates it')
     parser.add_argument('--arm', type=float, nargs=6, default=(0., 1.2, -2., 0., .8, 0.))
+    parser.add_argument('--g1-reference-ramp',action='store_true',
+                        help='Opt-in Gazebo G1-only 20ms leg reference experiment; no CRAWL admission')
     args = parser.parse_args()
     output = Path(args.output_dir).resolve()
     if output.exists():
         parser.error('output directory already exists; refusing overwrite')
     if args.urdf and args.scene_engine:
         parser.error('--urdf and --scene-engine are mutually exclusive')
+    if args.g1_reference_ramp and args.scene_engine!='gazebo':
+        parser.error('--g1-reference-ramp requires --scene-engine gazebo')
     if args.scene_engine:
         from integrated_robot_navigation.scene import materialize_scene
         output.mkdir(parents=True, exist_ok=False)
-        scene = materialize_scene(args.scene_engine, 'g1', output/'scene')
+        scene = materialize_scene(args.scene_engine, 'g1', output/'scene',
+                                  g1_reference_ramp=args.g1_reference_ramp)
         urdf = Path(scene['robot']['path']).read_text()
     elif args.urdf:
         urdf = Path(args.urdf).read_text()

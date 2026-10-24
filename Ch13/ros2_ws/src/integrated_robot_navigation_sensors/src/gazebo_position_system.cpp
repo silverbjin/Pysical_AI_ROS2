@@ -18,6 +18,7 @@
 #include <vector>
 #include <optional>
 #include <limits>
+#include "integrated_robot_navigation_sensors/position_reference.hpp"
 
 namespace integrated_robot_navigation_sensors
 {
@@ -34,6 +35,8 @@ class PositionPDSystem final : public gz_ros2_control::GazeboSimSystemInterface
     double lower, upper, effort, kp, kd;
     double position, velocity{0.}, command, hold;
     bool active{false};
+    double ramp_seconds{0.}, applied{0.}, ramp_from{0.}, requested{0.};
+    std::optional<int64_t> ramp_start;
   };
   std::vector<Joint> joints_;
   gz::sim::EntityComponentManager * ecm_{nullptr};
@@ -70,6 +73,12 @@ public:
     std::vector<Joint> checked;
     std::set<std::string> names;
     try {
+      const auto option = info.hardware_parameters.find("ch13_g1_reference_experiment");
+      const bool experiment = option != info.hardware_parameters.end();
+      if (experiment && option->second != "true") {
+        throw std::runtime_error("explicit G1 reference experiment flag required");
+      }
+      size_t ramps = 0;
       for (const auto & source : info.joints) {
         if (!names.insert(source.name).second || source.command_interfaces.size() != 1 ||
           source.command_interfaces[0].name != "position" || source.state_interfaces.size() != 2) {
@@ -114,7 +123,20 @@ public:
         }
         checked.push_back(Joint{source.name, entity, lower, upper, effort, kp, kd,
           initial, 0., initial, initial, false});
+        auto & joint = checked.back();
+        joint.applied = joint.ramp_from = joint.requested = initial;
+        const auto ramp = source.parameters.find("ch13_reference_ramp_s");
+        if (ramp != source.parameters.end()) {
+          const bool leg = source.name.rfind("fr_",0)==0 || source.name.rfind("fl_",0)==0 ||
+            source.name.rfind("rr_",0)==0 || source.name.rfind("rl_",0)==0;
+          if (!experiment || !leg || std::abs(number(ramp->second)-.02)>1e-12) {
+            throw std::runtime_error("only explicit G1 leg20ms reference is supported");
+          }
+          joint.ramp_seconds = .02;
+          ++ramps;
+        }
       }
+      if (experiment && !ramps) {throw std::runtime_error("empty reference experiment");}
     } catch (const std::exception & error) {
       RCLCPP_ERROR(node->get_logger(), "PositionPDSystem initialization rejected: %s", error.what());
       return false;
@@ -136,6 +158,9 @@ public:
       }
       ecm.CreateComponent(joint.entity, comp::JointPositionReset({joint.position}));
       ecm.CreateComponent(joint.entity, comp::JointForceCmd({0.}));
+      if (joint.ramp_seconds>0.) {
+        ecm.CreateComponent(joint.entity, PositionReference({joint.command,joint.applied,joint.ramp_seconds,0.}));
+      }
     }
     return true;
   }
@@ -211,7 +236,7 @@ public:
     if (read(time, period) != Return::OK) {return Return::ERROR;}
     if (!measured_) {return Return::OK;}
     std::vector<double> forces;
-    for (const auto & joint : joints_) {
+    for (auto & joint : joints_) {
       if (ecm_->Component<comp::JointVelocityCmd>(joint.entity)) {return fault("competing native velocity owner");}
       const double target = joint.active ? joint.command : joint.hold;
       if (!std::isfinite(target) || target < joint.lower || target > joint.upper) {
@@ -220,14 +245,34 @@ public:
       // DART integrates the declared native damper implicitly. Adding -kd*qd
       // here is explicit derivative feedback and would double-count damping.
       // This cap applies to external position force, not passive/contact wrench.
-      const double force = joint.kp*(target-joint.position);
+      if (joint.ramp_seconds == 0. || !joint.active) {
+        joint.applied = joint.ramp_from = joint.requested = target;
+        joint.ramp_start.reset();
+      } else {
+        if (joint.ramp_start) {
+          const double elapsed = (time.nanoseconds()-*joint.ramp_start)/1e9;
+          const double weight = std::clamp(elapsed/joint.ramp_seconds,0.,1.);
+          joint.applied = joint.ramp_from*(1.-weight)+joint.requested*weight;
+        }
+        if (target != joint.requested) {
+          joint.ramp_from = joint.applied;
+          joint.requested = target;
+          joint.ramp_start = time.nanoseconds();
+        }
+      }
+      const double force = joint.kp*(joint.applied-joint.position);
       if (!std::isfinite(force)) {return fault("nonfinite internal effort");}
       forces.push_back(std::clamp(force, -joint.effort, joint.effort));
     }
     for (size_t i = 0; i < joints_.size(); ++i) {
       auto & joint = joints_[i];
-      if (joint.active) {joint.hold = joint.command;}
+      if (joint.active) {joint.hold = joint.applied;}
       ecm_->SetComponentData<comp::JointForceCmd>(joint.entity, {forces[i]});
+      if (joint.ramp_seconds>0.) {
+        ecm_->SetComponentData<PositionReference>(joint.entity,
+          {joint.active ? joint.command : joint.hold,joint.applied,joint.ramp_seconds,
+            static_cast<double>(time.nanoseconds())});
+      }
     }
     return Return::OK;
   }

@@ -64,9 +64,13 @@ class SensorInbox:
         while len(self.pending[key]) > 10:
             del self.pending[key][min(self.pending[key])]
 
-    def bundle(self, ros_ns):
+    def bundle(self, ros_ns, *, wall_ns=None):
         for key, candidates in self.pending.items():
-            eligible = [stamp for stamp in candidates if stamp <= ros_ns]
+            # Concurrent ingress may deliver a capture <= this decision's ROS
+            # time AFTER its wall evaluation time. Keep that original receipt
+            # pending for the next decision, not as a negative-age replacement.
+            eligible = [stamp for stamp,sample in candidates.items() if stamp <= ros_ns
+                        and (wall_ns is None or sample.received_ns <= wall_ns)]
             if eligible:
                 latest = max(eligible)
                 self.samples[key] = candidates[latest]

@@ -1,6 +1,7 @@
 """Break: timer-only descent pushes a loaded foot, then snaps its reference.
 
 Ideal feedback tests the command boundary, not native landing dynamics.
+Exercise the normal CRAWL curve explicitly; G1 now owns a separate trajectory.
 """
 from dataclasses import replace
 import numpy as np
@@ -14,15 +15,14 @@ from integrated_robot_navigation.leg_kinematics import ik_leg
 def descending_swing(model):
     plant = IdealFeedback(model)
     value = machine(model, plant)
-    value.request_contact_calibration()
     for _ in range(450):
-        result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+        result = value.advance(plant.state, (.0001, 0., 0.), plant.ros, plant.wall)
         assert result.state != 'FAULT', result.reason
         if (result.phase == 'SWING' and
                 (plant.ros-value._phase_start)/1e9 >= .7*value._swing_duration):
             return plant, value, result
         plant.tick(value, result)
-    pytest.fail('descending single-foot calibration not reached')
+    pytest.fail('descending normal CRAWL swing not reached')
 
 
 def contact(plant, loaded):
@@ -37,7 +37,7 @@ def test_measured_early_contact_stops_descent_without_waiting_for_swing_timer(na
     plant, value, previous = descending_swing(nav_robot_model)
     before = value._targets['fl_foot'].copy()
     contact(plant, True)
-    current = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+    current = value.advance(plant.state, (.0001, 0., 0.), plant.ros, plant.wall)
     assert current.phase == 'TOUCHDOWN', 'actual landing must preempt timed downward swing'
     assert np.allclose(value._targets['fl_foot'], before, atol=1e-12)
     assert np.allclose(list(current.joint_targets.values()), list(previous.joint_targets.values()), atol=1e-12)
@@ -63,7 +63,7 @@ def test_touchdown_never_rewinds_command_to_floor_or_measured_center(nav_robot_m
     for _ in range(iterations):
         plant.tick(follow=False)
         contact(plant, case == 'measured_compliance')
-        current = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+        current = value.advance(plant.state, (.0001, 0., 0.), plant.ros, plant.wall)
         assert current.state != 'FAULT', current.reason
     if case == 'measured_compliance':
         assert current.phase == 'SETTLE'

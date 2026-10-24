@@ -21,13 +21,14 @@ def receiver_type():
     return runner.ProbeReceiver
 
 
-def test_native_capture_diagnostic_requests_reliable_transport(tmp_path):
+@pytest.mark.parametrize('engine',['mujoco','gazebo'])
+def test_native_capture_diagnostic_requests_reliable_transport(tmp_path,engine):
     """Catch a best-effort consumer silently dropping the gyro reference pair."""
     from probe_navigation_13_5 import NavigationProbe
     from rclpy.qos import ReliabilityPolicy
     context = Context()
     rclpy.init(context=context)
-    probe = NavigationProbe(tmp_path, engine='mujoco', context=context)
+    probe = NavigationProbe(tmp_path, engine=engine, context=context)
     try:
         endpoints = probe.get_subscriptions_info_by_topic('/navigation/native_controls')
         own = [endpoint for endpoint in endpoints if endpoint.node_name == probe.get_name()]

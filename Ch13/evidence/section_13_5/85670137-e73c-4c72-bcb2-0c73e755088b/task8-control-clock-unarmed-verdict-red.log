@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_clock_assessor_denies_unarmed_run_even_if_publications_are_valid _____
+
+    def test_clock_assessor_denies_unarmed_run_even_if_publications_are_valid():
+        rows = [row for row in good_rows() if row['event'] != 'armed']
+>       assert not runner.assess_control_clock_trace(rows)['passed'], 'unarmed bootstrap is not operational acceptance'
+E       AssertionError: unarmed bootstrap is not operational acceptance
+E       assert not True
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_clock_runner.py:44: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_clock_runner.py::test_clock_assessor_denies_unarmed_run_even_if_publications_are_valid
+1 failed, 19 deselected in 9.55s

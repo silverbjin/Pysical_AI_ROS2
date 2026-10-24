@@ -1,0 +1,61 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_original_clock_can_update_while_default_control_group_is_busy ______
+
+    def test_original_clock_can_update_while_default_control_group_is_busy():
+        context = Context()
+        rclpy.init(context=context)
+        node = CrawlController(context=context,
+            cli_args=['--ros-args','-r','/clock:=/navigation/control_clock'],
+            parameter_overrides=[Parameter('use_sim_time',value=True),
+                Parameter('validation_mode',value=True),Parameter('control_clock_mode',value='relay100')])
+        peer = Node('clock_dispatch_peer',context=context)
+        executor = MultiThreadedExecutor(num_threads=2,context=context)
+        entered, release, finished = Event(), Event(), Event()
+        def controlled_work(request,response):
+            entered.set()
+            release.wait(1.)
+            finished.set()
+            response.success = True
+            return response
+        node.create_service(Trigger,'/clock_dispatch_test_work',controlled_work)
+        source = peer.create_publisher(Clock,'/navigation/control_clock',qos_profile_sensor_data)
+        client = peer.create_client(Trigger,'/clock_dispatch_test_work')
+        executor.add_node(node); executor.add_node(peer)
+        thread = Thread(target=executor.spin)
+        thread.start()
+        def publish_until(stamp,predicate,seconds):
+            deadline = time.monotonic()+seconds
+            while not predicate() and time.monotonic() < deadline:
+                msg = Clock()
+                msg.clock.sec = stamp
+                source.publish(msg)
+                time.sleep(.005)
+            return predicate()
+        try:
+            assert client.wait_for_service(timeout_sec=1.)
+            assert publish_until(1,lambda: node.get_clock().now().nanoseconds == 1000000000,1.)
+            future = client.call_async(Trigger.Request())
+            assert entered.wait(1.)
+>           assert publish_until(2,lambda: node.get_clock().now().nanoseconds == 2000000000,.15), \
+                'real clock callback starved behind the mutually-exclusive control group'
+E               AssertionError: real clock callback starved behind the mutually-exclusive control group
+E               assert False
+E                +  where False = <function test_original_clock_can_update_while_default_control_group_is_busy.<locals>.publish_until at 0x760e1df7a340>(2, <function test_original_clock_can_update_while_default_control_group_is_busy.<locals>.<lambda> at 0x760e1df7a840>, 0.15)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_clock_dispatch.py:55: AssertionError
+_ test_native_executor_keeps_single_worker_and_relay_requires_explicit_validation _
+
+    def test_native_executor_keeps_single_worker_and_relay_requires_explicit_validation():
+>       assert importlib.util.find_spec('integrated_robot_navigation.clock_execution'), 'owned executor selection missing'
+E       AssertionError: owned executor selection missing
+E       assert None
+E        +  where None = <function find_spec at 0x760e51fc0720>('integrated_robot_navigation.clock_execution')
+E        +    where <function find_spec at 0x760e51fc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_clock_dispatch.py:72: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_clock_dispatch.py::test_original_clock_can_update_while_default_control_group_is_busy
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_clock_dispatch.py::test_native_executor_keeps_single_worker_and_relay_requires_explicit_validation
+2 failed in 9.35s

@@ -124,7 +124,7 @@ def test_gazebo_controls_actual_dds_subscription_preserves_distinct_native_schem
     from rclpy.context import Context
     from rclpy.executors import SingleThreadedExecutor
     from rclpy.node import Node
-    from rclpy.qos import qos_profile_sensor_data
+    from rclpy.qos import QoSProfile
     from std_msgs.msg import String
     context = Context()
     rclpy.init(context=context)
@@ -133,7 +133,8 @@ def test_gazebo_controls_actual_dds_subscription_preserves_distinct_native_schem
     source = Node('native_controls_test_producer', context=context)
     executor.add_node(receiver)
     executor.add_node(source)
-    pub = source.create_publisher(String, '/navigation/native_controls', qos_profile_sensor_data)
+    # Match the installed bridge's actually discovered RELIABLE offer.
+    pub = source.create_publisher(String, '/navigation/native_controls', QoSProfile(depth=100))
     payload = dict(schema=2, engine='gazebo', capture_ns=123000000, epoch=0, sequence=7,
         joints=[dict(name='fr_hip_joint', position=.12, velocity=-.3, velocity_command=-.7,
                      projected_transmitted_effort=-2.5, applied_generalized_force=None)])

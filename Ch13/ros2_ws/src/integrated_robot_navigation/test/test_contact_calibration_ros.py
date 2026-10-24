@@ -27,6 +27,7 @@ def test_inplace_calibration_requires_validation_mode_and_measured_carry(crawl_r
     assert not call().success  # bootstrap was intentionally before ready carry
     rig.ready = True
     rig.pump(.06)
+    before_request = time.monotonic_ns()
     response = call()
     assert response.success is rig.guard.validation_mode
     rig.pump(.08)
@@ -34,3 +35,7 @@ def test_inplace_calibration_requires_validation_mode_and_measured_carry(crawl_r
     assert rig.crawl_states[-1].state != 'CRAWL'
     if response.success:
         assert rig.crawl_states[-1].state == 'CALIBRATING'
+        assert hasattr(rig.guard.machine,'calibration_snapshot'), 'original request time/budget report missing'
+        snapshot = rig.guard.machine.calibration_snapshot()
+        assert before_request<=snapshot['request']['wall_ns']<=time.monotonic_ns()
+        assert snapshot['request']['deadline_wall_ns']==snapshot['request']['wall_ns']+10_000_000_000

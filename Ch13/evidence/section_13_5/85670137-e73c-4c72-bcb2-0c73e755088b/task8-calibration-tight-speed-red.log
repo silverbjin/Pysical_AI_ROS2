@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_tighter_configured_speed_is_not_overridden_by_default_unload_rate ____
+
+    def test_tighter_configured_speed_is_not_overridden_by_default_unload_rate():
+        limits = default_limits()
+        limits['max_swing_speed_mps'] = .001
+        value = trajectory(limits=limits)
+        previous = .029
+        for index in range(1,4):
+            result = tick(value,index,center=.027)
+>           assert abs(result.z-previous)/.02<=.001000001
+E           AssertionError: assert (3.600000000000131e-05 / 0.02) <= 0.001000001
+E            +  where 3.600000000000131e-05 = abs((0.029036000000000003 - 0.029))
+E            +    where 0.029036000000000003 = CalibrationStep(z=0.029036000000000003, phase='SWING', complete=False).z
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py:115: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py::test_tighter_configured_speed_is_not_overridden_by_default_unload_rate
+1 failed, 10 deselected in 11.50s

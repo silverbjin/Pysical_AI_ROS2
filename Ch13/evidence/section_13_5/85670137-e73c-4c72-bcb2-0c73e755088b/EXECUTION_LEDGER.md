@@ -1,11 +1,305 @@
 # 13.5 실행 원장
 
+## 2026-10-25 접촉 경계 실측·가설 판별 (Task8 미완료)
+
+- 전체navigation `task8-calibration-reference-ramp-full.log`:432PASS309.90초.
+  post-step관측회귀후 S전체49PASS11.1초/감사8PASS,
+  `task8-calibration-contact-event-post-native-{build,test}.log`, `...-install-audit.json`.
+  앞선진단창만의S49PASS와구분한다. 이전strictreader는PostUpdate에서Physics가비운
+  명령을필수로요구할위험이있어실제실행전에수정했다. compile REDtooManyArguments를
+  기록한뒤기본pre-step명령검증은엄격히유지하고debug post-step만null을허용했다.
+- `15aaca4a-0333-4f16-a46f-abcf2e8bc93f`, result
+  `7f18d4dc-9bbd-4a7d-bc96-2cfd29021cc4`:FAIL. 20ms연속참조는실제native16,776개
+  다리참조기록에서입력-적용차이최대0.00166527rad/힘계산오차0으로확인했으나,
+  carry최초fault ROS25.150/wall12681324325088ns,선택arm4속도0.0333227>0.02.
+  SHIFT/vertical=null. 전센서/IMU444고유·누락0은PASS. 정지·deactivate·terminal·
+  소비자/relay종료확인/native0launch0relay0/reaped/noforce/residual[]. 전체normal_exit
+  실패유지. 80소스ZIP21,298,121bytes/SHA256
+  `e6e6254cb1cb0ef80c5c8be5778d2279356eeb9df33a16a8aaa8b311c32d4197`.
+- 원시이벤트추가 `3d830070-5d58-47c3-9db1-4a15c0835319`, result
+  `06086e6c-f09d-4cab-9948-3da3f2105d9f`:FAIL. 31개2ms이벤트를확보했다.
+  carry최초fault ROS25.912/wall13734345549422ns,선택joint25.910초가원생post상태의
+  모든관절속도와정확히일치했다. 팔최대속도는0.02미만이나그리퍼0.00550265m/s가
+  기존0.005를초과했다. 직전25.908초에는팔2/4의짧은속도충격도남았다.
+  모든실패를팔4나callback원인으로통일하지않는다. 센서freshness/contact/IMU/stability
+  통과와carry/lift/최종소유권/normal_exit실패를그대로보존했다. 실제정지·deactivate·
+  terminal·소비자/relay단계성공/native0launch0relay0/reaped/noforce/residual[].
+  81소스ZIP21,273,931bytes/SHA256
+  `7a525fe3788114fba7efe62b7b8773c0227bf30887f50b4102a5c8f9a4707569`.
+- 보조분석은원본수정없이각실행폴더에별도JSON으로보존했다.
+  `contact-event-postmortem.json`(원시wrench/깊이/관절상태),
+  `phase-contact-postmortem.json`(정적5,000촬영gap0/교정640촬영gap4),
+  `event-body-fit-postmortem.json`(네발실측중심+실측관절FK로root rigid fit,
+  최대잔차1.337e-15m/2ms위치2차차분최대2.52586m/s²),
+  `contact-gap-transition-postmortem.json`(모든발의직전구바닥0.7–3.1nm위/다음pair0/
+  0.19–0.36mm침투/다음step복원). nativeIMU나runtime pose를만들어내지않았다.
+- source DART6.13.2의기본ErrorAllowance0을확인하고,별도vendor공개getter 조회도0.
+  `task8-calibration-dart-contact-default.json` 및CMake/ldd/바이너리SHA기록.
+  최초pkg-config두시도는vendor경로/eigen별칭의존문제로실패했다. 외부설정이나파일을
+  고치지않고기존gz_dartsim_vendor/DART CMake target으로조회했다. 엔진설정변경없음.
+  실제G1접촉허용오차0→50µm비교는2026-10-25사용자가승인했다. 이checkpoint에는
+  아직구현하지않았으며후속테스트우선수정·실측을진행한다. 실제값조회/실험필수검사를
+  추가하고원래모든required_checks를유지한다. 일반보행승인·3연속·최종인수는미완료다.
+
+
+## 2026-10-24 재개: 원래 지지 참조 미복귀와 진단 전송 설정 판별
+
+- 실제 MuJoCo `293d0ff3-1321-4de9-997e-5069b7fde889`, resultUUID
+  `ac3a8fe9-a3ff-4b9b-8c1e-566ea24a0ee3`: **G1 23/23PASS**. 원본 preload
+  복귀·실제carry settle·실제terminal·관절/TF소유권·센서·엔진/runtime정상종료 확인.
+  native/launchexit0·parent_reaped·probejoin·noforce·residual[]였다. IMU712고유촬영/
+  누락0/최대gyro오차0.0079749173rad/s, lift15고유촬영. Gazebo/G2/Nav2통과가아니다.
+  새plannedreturn 전체navigation **425PASS282.69초**(`task8-calibration-preload-return-full.log`).
+  당시79runtime소스/evidence ZIP `task8-preload-return-mujoco-293d0ff3.zip`
+  9,921,948bytes/SHA256`6af9b6e86db4bfc9aea961f259da7d77738b029a74ae4781e6ce80562b5c3748`.
+- 사용자승인후 G1 검증모드에만20ms연속참조비교를구현중이다. 실제기존 PositionPDSystem
+  추가최소회귀는 RED3FAIL/4PASS→GREEN7PASS136ms. 기본gain/힘상한/위치·속도쓰지않음/
+  소유권시험도함께통과했다. 중간새목표는당시적용참조부터시작하고 비활성화는적용중참조를
+  유지한다. rollback은원래stickyfault/힘0이다. 팔·그리퍼/ramp.01/명시적flag없음은거부.
+- G1장면 RED5(옵션미구현)/8.17초→관련13PASS10.78초; metadata위장과일반launch
+  진입 RED2/5PASS8.92초→관련23PASS17.99초. 기본장면·게인/감쇠·전체물리link/joint
+  동일성을검사했고 opt-in생성값12관절/.02와실제modelhash바인딩을확인했다.
+- 실제적용참조진단 REDmissingheader54.5초→GREEN native7PASS131ms.
+  Ch13전용컴포넌트는입력/적용참조/기간/write시각을저장한다. physics가소비하는
+  위치/속도명령컴포넌트가아니다. 기존observer에서읽는JSON과전체S검사·8감사는
+  후속고정설치검증중이다. 아직새Gazebo실행성공이나일반CRAWL승인증거가없다.
+
+- 원본preload복귀 Nbuild15.1초/감사8PASS 후 실제Gazebo
+  `e2cb2cc1-96ca-4689-8c6f-439975d3c2c4`, resultUUID
+  `648600ba-08b5-476b-9fae-aac41f2f4061`: **FAIL**. 새수직복귀 전 SHIFT에서
+  carry 최초fault ROS22.902/wall11116585075450ns. 선택joint22.898초의
+  arm_joint_4 속도0.03319615rad/s>기존0.02. Crawl first_fault=null,
+  first_stop ROS22.928 `calibration_carry_not_ready`, vertical=null.
+  따라서 복귀 경로 수정의 실제 성공/실패 판별까지 도달한 실행으로 세지 않는다.
+- 2ms원생 접촉 후분석:22.896초 RL pair0/힘0/중심z0.0197366m,
+  22.898초 FL pair0/힘0/중심z0.0197458m, 다음22.900초 네발pair1로 복원.
+  이때3발은하중을유지해 축약summary만있으며 fullpair상세가 있다고 주장하지 않는다.
+  정규화50Hz 접촉/support검사는 통과했다. 네발50Hz기록만으로 원생2ms단절을
+  부정할수없고, 시각적으로 바닥에가까운 발을공중/정상접촉으로 임의대체하지 않는다.
+  물리 접촉/저주기참조 적용의 상관은 후보이며 인과/단일 root cause 확정은 아니다.
+- 물리STOPPED/deactivate/typedterminal/소비자/relay단계는 모두성공,
+  native/launch/relay 실제exit0/reaped/noforce/residual[] 확인. 그럼에도 초기fault로
+  전체normal_runtime/engine 판정false·sensor_freshnessfalse·contact_liftfalse 등
+  기존 required_checks 실패를 그대로 보존했다. IMU453고유촬영/누락0/최대gyro오차
+  0.000007263634rad/s다. 원본79runtime소스 ZIP
+  `task8-control-clock-e2cb2cc1.zip`18,941,062bytes/SHA256
+  `892f903a10488ed0b1cb05e5719e80c943bf547cfb42d4d69748f2a2c652b8be`.
+- 별도 통신 결함: 두engine 프로필로 확장한 실제DDS QoS 최소회귀는
+  `task8-calibration-native-reference-qos-red.log`1FAIL/1PASS6.44초.
+  설치bridge의실제RELIABLE 제공에 맞춰 진단기록기만 양engine depth100/RELIABLE로
+  수정했다. 실제Gazebo DDS fixture도관측된제공설정으로맞췄다. 제어센서 QoS/시각/age,
+  누락fail기준은변경없다. 관련17PASS11.64초(`...qos-green.log`). 드문누락의후보를
+  제거하는수정이며 모든유실원인해결이나 접촉/팔충격원인수정으로과장하지않는다.
+
+- 일반 landing fixture 수정 후 `task8-calibration-full-after-landing-fixture.log`:
+  전체 navigation **419PASS298.44초**. 이는 새 planned-return 구현 전 고정본이다.
+- 사용자가 G1 원본 preload까지 유계 복귀 재설계·검증을 승인했다. 별도 새 branch나
+  전체 계획을 다시 만들지 않고 현재 Task8에 적용했다. 신규 최소 회귀
+  `task8-calibration-preload-return-red.log`:3FAIL/1PASS8.18초로 접촉 시 참조속도
+  불연속·측정 안정화 전 소유권 해제를 재현했다. 최소 수정 후4PASS6.70초.
+- owner 연결 RED(`task8-calibration-owner-settle-red.log`):4FAIL/13PASS15.08초.
+  실제 owner의1wall초 판정이 끝나도 소유권을 해제하지 않는1건과, 승인 전 접촉 즉시
+  느린 seek/참조 endpoint 전 완료를 전제한 G1 전용 시험3건이었다. 일반 CRAWL
+  assertion은 유지하고 G1 시험에 원래 endpoint·원래 하중/고유촬영 확인을 반영했다.
+  `task8-calibration-preload-return-related.log`: **65PASS53.59초**.
+  정상 CRAWL 조기접촉 정지·연속성, 별도0.002m/s 탐색, 교정 서비스, 원본deadline,
+  endpoint에서 속도0·기존 속도/가속도 상한·중복촬영 거부·소유권 유지/실제owner확인을 포함한다.
+  새 실제 Gazebo 판별 전이며 해당65건을 전체 인수 성공으로 세지 않는다.
+
+- 실제 Gazebo `bea603b2-d810-42c5-8612-eb992da14d0c`, resultUUID
+  `3ced1bf3-d831-4042-bba2-1c4a95965c18`: **FAIL**. 요청wall8505512887062ns,
+  deadline8515512887062ns. SWING wall8512721591874ns, TOUCHDOWN
+  wall8513381115145ns, STAND 후보 wall8514998469272ns(9.486wall초).
+  실제 lift와4N/고유3촬영 재접촉은 통과했으나 후보 참조z0.024328724m는
+  원래rest0.016755124m에 돌아오지 않았다. 첫 STAND ROS32.740의 FR calf 오차
+  0.03954502157rad>0.03, 속도0.0007829rad/s; native 힘 -29.7272946Nm/상한30.
+  전체 sensor/IMU/contact/lift/stability 통과와 최종 carry settle 실패를 구분한다.
+- 물리STOPPED/runtime_exit=false를 보존했다. deactivate/typedterminal/소비자/relay
+  정리는 성공, 실제native0/launch0/relay0/reaped/noforce/residual[]였다.
+  원본79runtime소스 ZIP `task8-control-clock-bea603b2.zip`28,544,869bytes,
+  SHA256 `1e277072ff551b99cecb2698a9d90f29fd5a20c8cfa580ae81d6a5c64e7459d7`.
+  `calibration-stand-feasibility.json`은 첫 STAND 실측 및 제한된25개 오프라인 IK
+  후보 분석이다. 일반적 불가능성 증명이나 실제 새 엔진 실행으로 취급하지 않는다.
+- `task8-calibration-full-checkpoint.log`: 전체 navigation 416PASS/3FAIL238.82초.
+  3건 모두 `test_landing_continuity.py`가 G1을 요청한 뒤 일반 CRAWL의
+  `_swing_duration`을 읽은 fixture 오류다. 실제 작은 CRAWL 명령으로 경로를 고쳐
+  원래 조기 접촉 정지·연속성·0.002m/s assertion을 그대로 유지했다.
+  `task8-calibration-normal-landing-fixture-green.log`: 관련37PASS27.59초.
+  전체 재검증은 별도 로그에 남긴다. 실패 로그를 덮어쓰지 않았다.
+- 최초 `task8-calibration-bridge-qos.json/log`: explicit rclpy Context와 global
+  spin_once 혼용으로 진단 helper 실패. 자식 PID8777 정리가 누락됐다.
+  `task8-calibration-bridge-qos-cleanup.json`: UID/정확한 명령/실행파일 해시를
+  대조한 뒤 해당 PID에만 SIGINT, /proc 부재 확인. 직접 자식이 아니므로 returncode나
+  정상 회수를 만들어 기록하지 않았다. 엔진 정상 종료 PASS로 취급하지 않는다.
+- 새 `task8-calibration-bridge-qos-context-fixed.json/log`: 자신의 Context의
+  SingleThreadedExecutor 사용, finally에서 항상 직접 자식 SIGINT/wait 보장.
+  PID8881의 실제 설치 bridge 진단: publisher 1개, RELIABLE/VOLATILE,
+  discovery depth0은 unknown. exit0/owned_exit_confirmed=true. 실제 엔진/모터 명령 없음,
+  helper·자식만 domain163, 정상 시스템 domain159 유지. bridge executable SHA256
+  `c913a164072ee795bad4f7598d2a8b945e24723e20461cc2941fbbb091980c80`.
+  BEST_EFFORT 기록기와의 차이를 다음 최소 회귀로 검사하며 누락 원인 확정은 아니다.
+
+## 2026-10-24 승인된 G1 전용 교정 구현·첫 실제 실패
+
+- 전처리 N설치14.0초/8감사PASS 후 실제Gazebo `db492b97-d4db-4551-9a5a-673d3f14522c`,
+  resultUUID `1d800be7-c113-48bb-9b5a-56e6f6b81791`: **FAIL**이지만새경로에서
+  실제contact_lift검사통과/TOUCHDOWN도달을확인했다. 요청ROS24.968/wall8054469850151ns,
+  SWING30.792/wall8061541316810ns(7.071wall초),TOUCHDOWN31.330/wall8062222829678ns
+  (7.753wall초). helper의실측6mm/고유3촬영은31.284/31.304/31.324초였다.
+- 원래deadline8064469850151ns에서최초faultROS33.226/wall8064481103460ns.
+  마지막FL실측중심z.0199812/하중2.69719N,내부4N복원확인이안됐고landingcaptures=[],
+  참조z.0253903/속도-.002/rest.0167551. 최종1wall초settle은아직시작하지않았다.
+  접촉·센서·IMU·stability검사들은이번실행에서통과했지만전체인수로과장하지않는다.
+- physicalSTOPPED/runtime_exit=false,그외deactivate/typedterminal/소비자/relay정리성공,
+  native0/launch0/relay0/reaped/noforce/residual[]를그대로보존했다. 원본79runtime소스ZIP
+  `task8-control-clock-db492b97.zip`27,632,812bytes,
+  SHA256`5c8448994ed86d03d37c795cecb3d11f83ea85f4b7d65dbabb8af3000d2a5b2e`.
+- 다음병목은공중의floor+2mm근접도접촉seek속도로줄이던내부조건이다. RED1/5.70초:
+  하중0인데복귀속도.002에묶였다. 높이조건만제거→관련32PASS24.98초. 기존공중
+  최대.02/동일slew·원본restbound는유지하고실제2N하중에서즉시fastdescent를멈춘다.
+  접촉후.002/4N/고유3촬영/owner1wall초/원래10wall초를바꾸지않았다. 다음실제검증전이다.
+
+- G1만peak가속도를.05로낮춘관련41시험PASS68.52초/N설치20.3초/감사8PASS 후
+  실제Gazebo `1823b29e-189e-4768-8210-fab3affe7540`, resultUUID
+  `d6f7c56f-ec84-4775-a6b6-b35f5fdccc62`: **FAIL**. 초기SHIFT접촉/팔자세상실이
+  먼저발생하지않았고duration2.4861856ROS초/본unload24.600초까지진행했으나,
+  요청ROS21.710/wall1827200294096ns의10wall초deadline에서실패했다.
+  최초faultROS28.618/wall1837210858419ns,FL목표z.0248431/rest.0167551로8.088mm,
+  verticalhelper는아직진입전이다. 간헐접촉문제해결확정이나G1성공으로세지않는다.
+- IMU기준촬영25.840초1건누락/전체sensor freshness실패도보존했다. carry최초fault는
+  ROS28.640의`crawl:model/fault`로Crawl deadline후였다. physicalSTOPPED/runtime_exit
+  false,그외deactivate/typedterminal/소비자/relay정리성공/native0/launch0/relay0/
+  reaped/noforce/residual[]확인. 소스79고정ZIP `task8-control-clock-1823b29e.zip`
+  24,657,082bytes/SHA256`b97dbf07efa82608439c973b8702d7922cdda39b53a64bb7f96e9066afa74efc`.
+  사용자작업재개시ZIP전체바이트해시를재확인했다. 기존실행기세션ID는이미닫혀있었다.
+- 다음은네발하중유지중기존압축참조를SHIFT와겹치는전처리다. RED10/8.75초→
+  관련48PASS46.91초(일반보행/PythonMuJoCo구성요소/ROS포함). FL10Nreserve/네발각2N/
+  기존.002m/s/원본rest+3mm와초기floor-.2mm중작은상한을유지한다. 조기접촉손실은
+  실패이며본unload의tripod·정지100ms와전체10mm예산은원본rest에서검사한다.
+  이전보행index가남아도명시적G1은FL을선택하도록매핑회귀도추가했다.
+  실제안전성·10wall초성공은아직검증하지않았다. 일반CRAWL/게인/한계완화없음.
+
+- 진단축약 REDcompile→GREEN4/45ms, 최종S+N빌드1분37초/S전체45시험14.6초/
+  8패키지감사PASS. 동일fixture10,000회에서body7,553.75ns/168.33bytes,
+  body+요약31,634.83ns/759.78bytes perstep. 실제RTF개선량의대체증거는아니다.
+- 물리궤적을바꾸지않은실제Gazebo `68c22106-3776-473a-a607-5d907ec7bf4d`,
+  resultUUID `1aa4fe76-28c4-492f-a535-ec73744ba6fe`: **FAIL**. SHIFT/unload전
+  원생접촉상실을재현했다. FL22.924ROS초에원생pair수0/힘0/중심z.0196766m,
+  직전22.922초는41.8794N/z.0200m, 다음22.926초는pair1/50.7362N이었다.
+  3발하중이있어서상세조건(<3발)은아니며fullpair자료는없다. 원생요약의0pair를
+  정규화결함이나실제airborne으로위장하지않는다. 정규화FL0은원생관측과일치했다.
+  나머지3발의측정지지polygon에서현재CoM이안전하지않아kernel중단이정당했다.
+- Crawl최초fault ROS22.938/wall879348958510ns `current measured support lost`;
+  Carry최초fault같은ROS/wall879355833312ns `measured carry posture lost`.
+  carry가선택한joint22.930초의팔qd.0331773/.0342230rad/s는기존.02를초과했다.
+  원생촬영과노드관측벽시각이달라노드실행순서를물리인과로대체하지않는다.
+- 이번IMUframe은통과했고정적RTF.6623(직전fullraw.6510)이었다. 축약만으로
+  전체RTF/접촉문제가해결되지않았으며동일최종전수검증도아니다. 전체sensor freshness/
+  contact support/carry/normalexit실패는그대로남겼다. STOPPED/runtime_exit=false,
+  deactivate/typedterminal/소비자/relay정리성공/native0/launch0/relay0/reaped/noforce/
+  residual[]보존. 원본79runtime소스ZIP `task8-control-clock-68c22106.zip`
+  19,366,426bytes/SHA256`deb4cce131f73fa1aaecd0bfb69f0cf1c3fd014aa7beae6a53de8d70e60884bc`.
+- 다음물리단일변수실험: G1에서만같은형상/CoM목표를sqrt(2)배시간에실행해peak
+  가속도.05m/s²(기존상한.1의절반)로줄인다. 일반CRAWL/게인/limits/10wall초는
+  유지한다. 참조의수학회귀RED1/10.16초→관련회귀진행중. 접촉단절이줄어드는지
+  검증할가설이지확정원인/수정완료가아니며,전처리병행후보는동시에구현하지않는다.
+
+- 판단경계 수정본 N설치22.8초/8패키지감사PASS 후 실제Gazebo
+  `8b101e20-537a-447a-bab7-0921b79ab10c`, result UUID
+  `6f82cbfa-02c3-4d31-aee0-22a9cce180e4`: **FAIL contact_calibration**.
+  이번에는 음수age/support상실이 최초실패가아니라 원래10wall초의교정deadline이었다.
+  요청ROS20.940/wall623871522699ns→최초faultROS27.254/wall633876319704ns.
+  SHIFT의unload_start23.006초, 원본restz.0167551→목표z.0252551로8.5mm를
+  .002m/s에가깝게계속진행했다. 따라서몸체settled때문에자주멈췄다는가설을지지하지않는다.
+  실제FLforce<2N은비동기probe기준끝직전이고5mm실제lift는없었다. 새verticalhelper는
+  아직진입전이며 generic unload비용을포함한전체G1예산재검토가필요하다.
+- 센서/접촉/기본물리/시계계약은통과했으나 IMU기준촬영22.760초1건이없었다.
+  원생controls sequence1137→1140 사이1138/1139 packet누락이있고, 해당packet의
+  2ms기준묶음에속한시각이다. gyro값을보간하거나인수항목을삭제하지않았다.
+  contact 상세추가packet 평균32,763자/교정317packet,전체native_controls.json은
+  114,821,715bytes였다. 이값만으로전송누락이나전체RTF원인을확정하지않는다.
+- 별도읽기전용ECM fixture10,000회에서body기준경로7,136.96ns/168.33bytes,
+  body+fullraw접촉경로96,186.89ns/1,210.78bytes per step이었다. 실제Gazebo
+  CPU/RTF의대체측정이아니다. `task8-calibration-observer-cost.json/.sha256`와
+  재현helper를남겼다. 다음은정상시요약/지지상실시raw상세로진단payload만줄이는
+  TDD이며, 필수gyro/접촉원생시각·50Hzpacket/실제인수조건은그대로다.
+- measuredSTOPPED/runtime_exit=false는유지했다. deactivate/typedterminal/소비자/
+  relay정리는성공했고native0/launch0/relay0/reaped/noforce/residual[]였다.
+  원본79runtime소스·실행ZIP `task8-control-clock-8b101e20.zip`32,933,779bytes,
+  SHA256`b399a8e3cf269d0badb56f534a95ea14c9b6ef303a3a9b43acc30539783dda04`.
+
+- 후속2ms raw접촉 계측은 누락함수compile RED→네이티브ECM/plugin4PASS19ms,
+  sensors전체45건PASS15.6초/8패키지설치감사PASS였다. 기존50Hzpacket에batch하며
+  제어·힘·접촉 판정·일반CRAWL게인을 바꾸지 않았다.
+- 실제Gazebo `d1136df9-b6b0-4e4a-80a7-79378a5d30e6`, result UUID
+  `0e0b1196-30e6-430c-a878-ba00fef4ca4f`: **FAIL**. 이번에는 물리support상실이
+  아니라 교정 중 `calibration_carry:wall_age`로 먼저STOP했다(ROS24.002초,
+  wall440194094423ns). 최초kernel fault는null이다. raw접촉은 이 정지창에서
+  네발모두pair/하중이 있었으며 이전23d 접촉단절 원인을 재현한것으로 세지 않는다.
+  최초분석기는first_fault없음을검출해파일생성을거절했고, 이후명시적`--first-stop`
+  분석만 `contact-substep-postmortem.json`에기록했다(아래ZIP후추가분석).
+- 이번 STOPPED/deactivate/typedterminal/소비자·relay·native/launch0/reaped/noforce/
+  residual[]는 확인했다. 원본result의normal_runtime/enginecheck는false로보존했다.
+  정확한79runtime소스·원본고정ZIP `task8-control-clock-d1136df9.zip`27,712,222bytes,
+  SHA256`6cf9e5d5b85d7414f5943f9fb732e53b08599c4a893c03b6ceae1b8e9248fbe1`.
+- 첫stop에고정된carry는23.988ROS초/receipt440163880161ns(판단보다30.214262ms앞)
+  로유효했다. tick이sensor bundle을선택한뒤교정carry에서다시선택하는경계가있었다.
+  판단이후새수신을같은ROS시각으로평가하면음수wallage로실패한다. 기존API최소회귀
+  `task8-calibration-negative-age-red.log`에서동일reason으로1FAIL11.90초를재현했다.
+  실제거부후보owner receipt는기존실행에기록되지않았으므로독립probe시각으로대체하지않는다.
+- 수정: Inbox/guard선택은고정ROS/wall cutoff를사용하고tick은carry/물리/firststop에
+  같은bundle을사용한다. 늦은후보원본receipt보존/다음tick평가/200ms만료/중복lease금지/
+  원래fault의고착은유지한다. API경계RED8/기존3PASS14.24초→관련ROS26PASS47.53초,
+  보행·교정·PythonMuJoCo component·추가만료회귀60PASS57.63초. 전체N/실제G1아님.
+  `task8-calibration-decision-native` 설치감사후새고정소스실측으로진행한다.
+
+- 사용자에게 교정 전용 lift-return/시간 예산 재설계·검증을 승인받았다. 일반 CRAWL
+  궤적/게인·10wall초·기존실제5mm/고유3촬영·속도/하중/안정화 기준은 유지했다.
+- `calibration.py` pure reference RED10→GREEN10/9.82초. 통합 RED3/기존1PASS는
+  기존19.253mm 보행 bump·하중 해제 확인 중 목표 정지·원본요청 예산 보고 누락이었다.
+  수정 후 관련48PASS64.90초, Python MuJoCo3.3.7 component 포함26PASS47.95초.
+  실제ROS/C++MuJoCo3.12 G1 또는 전체13.5 성공 증거로 혼동하지 않는다.
+- 더 낮은 설정 속도.001m/s가 초기 해제.002로 덮이는 결함 RED1→seek=min(speed,unload)
+  수정. 교정 phase origin/잔여예산 기준 시각도 RED 각각1→관련22PASS29.77초로 검증했다.
+- 첫 실제Gazebo `5b47123d-fa60-4558-a58a-8a8ee1053847`, result UUID
+  `6c4ecc65-e2a8-44b9-ba78-58571c201066`: **FAIL**, measured_startup에서
+  `guard:wall_age`202.236736ms. 교정 전용 경로에 진입하지 않았으므로 궤적의
+  성공·실패나10초 완료를 판단할 수 없다. 독립probe는 실패20.095422ms 전
+  새guard2.712초를 받았으나 owner선택은2.548초였다. 최초fault null/stop은guardwall.
+- 이 실행은 모든 정리 단계(STOPPED/deactivate/액션 drain/소비자·relay·native/launch0/
+  회수/강제정리없음/잔여[])를 확인했다. 전체 필수검사 FAIL은 그대로 보존했다.
+  원본79runtime소스·준비장면·실행/시험/설치 고정본 `task8-control-clock-5b47123d.zip`
+  3,017,534bytes/SHA256`6258edddaa5382c3ce5ea6ba3d0edad3c54516c0cc827277037b64837f11d510`.
+- 원인은 상태 피드백 중guard구독만 default제어 그룹/모델잠금에 남은 경계로 좁혔다.
+  실제DDS RED1/3PASS13.36초→같은sensor_group/짧은inbox잠금, selection/해석은
+  제어 소유자에 남김→관련26PASS60.35초. QoS/주기/200ms 한계·토픽/명령 소유권은
+  바꾸지 않았다. 원본 callback-entry receipt를 보존하며 cleanup/first_stop snapshot도 보호했다.
+- 후속 소스N설치17.5초/8패키지 감사PASS. 실제Gazebo `23d7439a-9574-4cee-aca4-5363e868e634`,
+  result UUID `b8d73a50-d43b-4992-a22e-1c8c00f3d66b`: **FAIL contact_calibration**。
+  SHIFT 중 ROS25.410초에 `current measured support lost`. 선택된25.404초 접촉은
+  `[41.7091,41.5385,0,0]N`이었다. unload/새 vertical helper는 아직 시작 전이다.
+  따라서 새 들기·복귀 궤적을 실제 검증했다고 표시하지 않는다.
+- 접촉력0은50Hz 보존창에서 단일 고유 촬영이며 전후 rear하중은 약33–35N이다.
+  무하중시 fallback인 rear발 중심z는.0197729/.0197763m로 반지름.02m보다 낮다.
+  이것만으로 실제 들림·관측 결함 중 하나를 단정하지 않는다. 원생 비포화P-law로
+  추론한12다리 목표의50Hz 최대 차분속도.1028765rad/s; callback/정확한2ms명령
+  이력으로 위장하지 않는다. `contact-loss-postmortem.json`은 판정 후 추가 분석이며
+  먼저 고정한ZIP에는 포함되지 않는다. 원본FAIL은 변경하지 않았다.
+- STOPPED 실측 실패/runtime_exit=false를 보존했다. deactivate/액션 terminal drain/
+  소비자·relay종료는 확인했고 native/launch/relay실제exit0, reaped/noforce/residual[]였다.
+  모든프로세스0을 정상 물리 정지로 바꾸지 않는다. 원본79runtime소스·증거ZIP
+  `task8-control-clock-23d7439a.zip`15,053,721bytes,
+  SHA256`ac58e7c7db9d8d3a864e08f5b14c8ab1456081ccabe9bc4036d5beb2a192ebc2`.
+- 다음 판별은 원본2ms post-step의 raw접촉 pair/깊이/wrench/발중심을 기존50Hz
+  native진단에 batch하는 읽기 전용 계측이다. 접촉 필터·임계값·일반CRAWL게인·
+  10wall초를 바꾸지 않는다. 새 actual 실행은 설치 감사/소유정리 후에만 진행한다.
+
 ## 2026-10-24 수정본 전체 회귀 및 MuJoCo 기본 경로
 
 - 고정 수정본 navigation385PASS324.10초(`task8-control-clock-mailbox-full.log`), sensors45건(CTest wrapper포함)PASS10.7초(`task8-control-clock-mailbox-sensors-final.log`), 선택8패키지 소스/설치 감사PASS. 마지막 검증에서 재빌드/런타임 수정 없음.
 - 동일78runtime 소스의 새 MuJoCo `c1ae8cd3-a240-4145-88bc-0cfd719a4033`, result UUID`de49988a-170c-48b7-9209-9d681fe7da92`: 기본native/single_worker G1 **23/23PASS**. 실제typedterminal/physicalsettle/IMU810고유·누락0·최대오차.0031418598rad/s/lift57고유. engine/runtime/launch0, receiverjoined,parentreaped,noforce,residual[]. relay100 또는G2/Nav2 성공으로 세지 않는다.
 - 소스+MuJoCo 원본/준비 장면/최신 전체회귀/계측+Gazebo 시간예산 후분석을 `task8-control-clock-mailbox-mujoco-regression.zip`11,214,240bytes,SHA`089541abbb20c33c3f44fa9ca0ef316b01493e867279ddbcb544c848dc17a338`에 보존. 실행과 현재 source manifest 일치/member 해시 재독 검증. 원본 삭제 없음.
-- Gazebo 후분석 최초5mm lift9.404706273wall초/최대lift.0102151m. 센서 비동기 후분석이며 정확한 owner replay가 아니다. 일반SWING 재사용 교정 구조의 예산 재설계가 다음 선택이다. G1 전용lift-return 제안은 사용자 답변 대기이며, 물리 궤적/게인/10wall·실제lift·속도·하중·settle 한계를 변경하지 않았다.
+- Gazebo 후분석 최초5mm lift9.404706273wall초/최대lift.0102151m. 센서 비동기 후분석이며 정확한 owner replay가 아니다. 당시 G1 전용lift-return 제안은 사용자 답변 대기였다. 이후 승인·진행은 위 최신 항목에 기록하며, 일반CRAWL게인/10wall·실제lift·속도·하중·settle 한계는 유지한다.
 - 작성자 자체 검토: model→mailbox 잠금 순서/ingress에서Machine 직접변이 없음/기존Clock구독하나/원본receipt/최초fault와publish경계/정상종료 의미를 재확인. 서브에이전트나 독립리뷰를 사용한 것으로 표시하지 않는다. 전체13.5 미완료, main/PR/push 없음.
 
 ## 2026-10-24 메일박스 격리 실측 — 이전 센서 실패 미관측, 전체 인수는 FAIL

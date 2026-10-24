@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "integrated_robot_navigation_sensors/gazebo_observation.hpp"
+#include "integrated_robot_navigation_sensors/position_reference.hpp"
 #include <gz/sim/Util.hh>
 #include <gz/sim/Model.hh>
 #include <gz/sim/Link.hh>
@@ -19,6 +20,7 @@
 #include <gz/sim/components/JointForceCmd.hh>
 #include <gz/sim/components/JointTransmittedWrench.hh>
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <set>
@@ -64,7 +66,7 @@ void point(gz::msgs::Vector3d * target, const gz::math::Vector3d & value)
 }
 std::optional<gz::msgs::StringMsg> read_gazebo_controls(gz::sim::Entity model,
   const gz::sim::EntityComponentManager & ecm,
-  std::chrono::steady_clock::duration stamp, uint64_t sequence)
+  std::chrono::steady_clock::duration stamp, uint64_t sequence, bool require_commands)
 {
   using Json = nlohmann::json;
   Json rows = Json::array();
@@ -94,7 +96,7 @@ std::optional<gz::msgs::StringMsg> read_gazebo_controls(gz::sim::Entity model,
       const bool has_velocity = velocity && !velocity->Data().empty();
       const bool has_force = force && !force->Data().empty();
       if (!q || q->Data().empty() || !qd || qd->Data().empty() || !wrench ||
-        (!has_velocity && !has_force)) {ready = false; return true;}
+        (require_commands && !has_velocity && !has_force)) {ready = false; return true;}
       const auto a = axis->Data().Xyz();
       const auto & w = wrench->Data();
       const std::vector<double> torque{w.torque().x(), w.torque().y(), w.torque().z()};
@@ -123,6 +125,16 @@ std::optional<gz::msgs::StringMsg> read_gazebo_controls(gz::sim::Entity model,
         {"transmitted_force_joint", transmitted_force}, {"transmitted_torque_joint", torque},
         {"projected_transmitted_effort", a.X()*projected[0]+a.Y()*projected[1]+a.Z()*projected[2]},
         {"applied_generalized_force", applied}});
+      if (const auto * reference=ecm.Component<PositionReference>(entity)) {
+        const auto & values=reference->Data();
+        if (values.size()!=4 || !std::all_of(values.begin(),values.end(),
+            [](double value) {return std::isfinite(value);}) || values[3]<0.) {
+          throw std::runtime_error("invalid native position reference diagnostic");
+        }
+        rows.back()["position_reference"]={{"source_input",values[0]},
+          {"applied",values[1]},{"ramp_s",values[2]},
+          {"write_capture_ns",static_cast<int64_t>(values[3])}};
+      }
       return true;
     });
   if (!ready || rows.empty()) {return std::nullopt;}
@@ -175,6 +187,75 @@ std::optional<gz::msgs::StringMsg> read_gazebo_body_reference(gz::sim::Entity mo
   result.set_data(nlohmann::json{{"capture_ns",ns},{"epoch",0},{"sequence",sequence},
     {"frame_id","base_footprint"},{"source","gazebo_ecm_world_angular_velocity"},
     {"entity",canonical},{"angular_velocity",{body.X(),body.Y(),body.Z()}}}.dump());
+  return result;
+}
+std::optional<gz::msgs::StringMsg> read_gazebo_contact_reference(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager & ecm, std::chrono::steady_clock::duration stamp,
+  bool compact_when_supported)
+{
+  using Json = nlohmann::json;
+  const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stamp).count();
+  if (ns < 0) {throw std::runtime_error("negative native contact capture");}
+  const std::array<std::string,4> feet{"fr_foot","fl_foot","rr_foot","rl_foot"};
+  std::array<const comp::ContactSensorData *,4> sources{};
+  std::array<gz::sim::Entity,4> entities{};
+  std::array<gz::math::Vector3d,4> centers;
+  std::array<double,4> loads{};
+  ecm.Each<comp::Collision,comp::Name,comp::ContactSensorData>(
+    [&](const gz::sim::Entity & entity,const comp::Collision *,const comp::Name * name,
+      const comp::ContactSensorData * data) {
+      if (!descendant(entity,model,ecm)) {return true;}
+      for (size_t i=0;i<feet.size();++i) {
+        if (name->Data().find("navcol__"+feet[i]+"__0")==std::string::npos) {continue;}
+        if (sources[i]) {throw std::runtime_error("ambiguous native diagnostic foot collision");}
+        const auto center = gz::sim::worldPose(entity,ecm).Pos();
+        if (!center.IsFinite()) {throw std::runtime_error("nonfinite native diagnostic foot center");}
+        sources[i]=data; entities[i]=entity; centers[i]=center;
+        for (const auto & pair : data->Data().contact()) {
+          for (const auto & wrench : pair.wrench()) {
+            const auto & fa = wrench.body_1_wrench().force();
+            const auto & fb = wrench.body_2_wrench().force();
+            for (auto value : {fa.x(),fa.y(),fa.z(),fb.x(),fb.y(),fb.z()}) {
+              if (!std::isfinite(value)) {throw std::runtime_error("nonfinite native diagnostic force");}
+            }
+            loads[i]+=std::abs(fa.z());
+          }
+        }
+      }
+      return true;
+    });
+  for (auto source : sources) {if (!source) {return std::nullopt;}}
+  // This raw load heuristic selects diagnostic detail ONLY. It is not the
+  // ground-mapped, deduplicated FootContacts support/acceptance calculation.
+  const auto loaded=std::count_if(loads.begin(),loads.end(),[](double force){return force>=2.;});
+  const bool details=!compact_when_supported || loaded<3;
+  Json rows=Json::array();
+  for (size_t i=0;i<feet.size();++i) {
+    const auto & center=centers[i];
+    Json row{{"name",feet[i]},{"entity",entities[i]},
+      {"center_world",{center.X(),center.Y(),center.Z()}},
+      {"pair_count",sources[i]->Data().contact_size()},{"sum_abs_force1_world_z_n",loads[i]}};
+    if (details) {
+      Json pairs=Json::array();
+      for (const auto & pair : sources[i]->Data().contact()) {
+        Json positions=Json::array(),depths=Json::array(),a=Json::array(),b=Json::array();
+        for (const auto & p : pair.position()) {positions.push_back({p.x(),p.y(),p.z()});}
+        for (auto depth : pair.depth()) {depths.push_back(depth);}
+        for (const auto & wrench : pair.wrench()) {
+          const auto & fa=wrench.body_1_wrench().force(); const auto & fb=wrench.body_2_wrench().force();
+          a.push_back({fa.x(),fa.y(),fa.z()}); b.push_back({fb.x(),fb.y(),fb.z()});
+        }
+        pairs.push_back(Json{{"collision1_id",pair.collision1().id()},
+          {"collision2_id",pair.collision2().id()},{"positions_world",positions},
+          {"depths",depths},{"force1_world",a},{"force2_world",b}});
+      }
+      row["pairs"]=std::move(pairs);
+    }
+    rows.push_back(std::move(row));
+  }
+  gz::msgs::StringMsg result;
+  result.set_data(Json{{"capture_ns",ns},{"sample_phase","post_physics"},
+    {"source","gazebo_ecm_raw_contact_sensor_data"},{"details_included",details},{"feet",rows}}.dump());
   return result;
 }
 GazeboObservation read_gazebo_observations(gz::sim::Entity model,

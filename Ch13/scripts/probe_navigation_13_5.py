@@ -100,9 +100,11 @@ class NavigationProbe(Node):
             from mujoco_ros2_control_msgs.msg import FreeJointStateArray
             self.create_subscription(FreeJointStateArray, '/native/free_joint_states',
                 lambda msg, info: self._dispatch(self._body_source, msg, info), qos)
+        # Both native MuJoCo and the installed Gazebo bridge offer RELIABLE.
+        # Keep per-capture gyro references separate from best-effort sensors.
         self.create_subscription(String, '/navigation/native_controls',
             lambda msg: self._dispatch(self._controls, msg),
-            QoSProfile(depth=100) if engine == 'mujoco' else qos)
+            QoSProfile(depth=100))
         self.create_subscription(PoseStamped, '/navigation/native_com',
             lambda msg: self._dispatch(self._com, msg), qos)
         for key in ('crawl', 'carry', 'guard', 'startup'):

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "integrated_robot_navigation_sensors/gazebo_observation.hpp"
+#include "integrated_robot_navigation_sensors/contact_detail_window.hpp"
 #include <gz/sim/System.hh>
 #include <gz/plugin/Register.hh>
 #include <gz/transport/Node.hh>
@@ -106,7 +107,33 @@ public:
         const auto reference = read_gazebo_body_reference(model_,ecm,info.simTime,body_sequence_+1);
         if (!reference) {throw std::runtime_error("native instantaneous body reference unavailable");}
         if (body_references_.size() >= 64) {throw std::runtime_error("native body reference batch overflow");}
-        body_references_.push_back(nlohmann::json::parse(reference->data()));
+        auto packet = nlohmann::json::parse(reference->data());
+        const auto contacts = read_gazebo_contact_reference(model_,ecm,info.simTime,true);
+        if (!contacts) {throw std::runtime_error("native raw contact reference unavailable");}
+        packet["raw_contacts"] = nlohmann::json::parse(contacts->data());
+        unsigned loaded_mask=0,index=0;
+        for (const auto & foot : packet["raw_contacts"]["feet"]) {
+          if (foot["sum_abs_force1_world_z_n"].get<double>()>=2.) {loaded_mask|=1u<<index;}
+          ++index;
+        }
+        const bool event=contact_detail_.observe(loaded_mask);
+        packet["contact_event_window"]=event;
+        if (event) {
+          if (!packet["raw_contacts"]["details_included"].get<bool>()) {
+            const auto details=read_gazebo_contact_reference(model_,ecm,info.simTime,false);
+            if (!details) {throw std::runtime_error("contact event detail unavailable");}
+            packet["raw_contacts"]=nlohmann::json::parse(details->data());
+          }
+          const auto joints=read_gazebo_controls(model_,ecm,info.simTime,controls_sequence_,false);
+          if (!joints) {throw std::runtime_error("contact event joint snapshot unavailable");}
+          auto snapshot=nlohmann::json::parse(joints->data());
+          snapshot["sample_phase"]="post_physics_debug";
+          snapshot["state_capture_ns"]=packet["capture_ns"];
+          // Forces/references were applied BEFORE this completed step. Each
+          // reference retains its actual write_capture_ns; do not relabel it.
+          packet["contact_event_joints"]=std::move(snapshot);
+        }
+        body_references_.push_back(std::move(packet));
         ++body_sequence_;
         last_body_ = info.simTime;
       }
@@ -126,6 +153,7 @@ private:
   uint64_t controls_sequence_{0};
   uint64_t body_sequence_{0};
   std::vector<nlohmann::json> body_references_;
+  ContactDetailWindow contact_detail_;
   std::optional<std::chrono::steady_clock::duration> last_body_;
   std::optional<std::chrono::steady_clock::duration> last_seen_, last_publish_;
   std::optional<std::chrono::steady_clock::duration> last_controls_publish_;

@@ -1,0 +1,29 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_native_capture_diagnostic_requests_reliable_transport[gazebo] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-5/test_native_capture_diagnostic1')
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine',['mujoco','gazebo'])
+    def test_native_capture_diagnostic_requests_reliable_transport(tmp_path,engine):
+        """Catch a best-effort consumer silently dropping the gyro reference pair."""
+        from probe_navigation_13_5 import NavigationProbe
+        from rclpy.qos import ReliabilityPolicy
+        context = Context()
+        rclpy.init(context=context)
+        probe = NavigationProbe(tmp_path, engine=engine, context=context)
+        try:
+            endpoints = probe.get_subscriptions_info_by_topic('/navigation/native_controls')
+            own = [endpoint for endpoint in endpoints if endpoint.node_name == probe.get_name()]
+            assert len(own) == 1
+>           assert own[0].qos_profile.reliability == ReliabilityPolicy.RELIABLE
+E           AssertionError: assert <ReliabilityPolicy.BEST_EFFORT: 2> == <ReliabilityPolicy.RELIABLE: 1>
+E            +  where <ReliabilityPolicy.BEST_EFFORT: 2> = <rclpy.qos.QoSProfile object at 0x794ca3c5e810>.reliability
+E            +    where <rclpy.qos.QoSProfile object at 0x794ca3c5e810> = <rclpy.topic_endpoint_info.TopicEndpointInfo object at 0x794ca3cd1660>.qos_profile
+E            +  and   <ReliabilityPolicy.RELIABLE: 1> = <enum 'ReliabilityPolicy'>.RELIABLE
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py:36: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py::test_native_capture_diagnostic_requests_reliable_transport[gazebo]
+1 failed, 1 passed in 6.44s

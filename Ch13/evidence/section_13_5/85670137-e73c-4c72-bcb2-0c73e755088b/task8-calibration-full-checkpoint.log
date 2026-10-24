@@ -1,0 +1,94 @@
+........................................................................ [ 17%]
+........................................................................ [ 34%]
+........................................................................ [ 51%]
+...............................................FFF...................... [ 68%]
+........................................................................ [ 85%]
+...........................................................              [100%]
+=================================== FAILURES ===================================
+__ test_measured_early_contact_stops_descent_without_waiting_for_swing_timer ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_measured_early_contact_stops_descent_without_waiting_for_swing_timer(nav_robot_model):
+>       plant, value, previous = descending_swing(nav_robot_model)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_landing_continuity.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def descending_swing(model):
+        plant = IdealFeedback(model)
+        value = machine(model, plant)
+        value.request_contact_calibration()
+        for _ in range(450):
+            result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if (result.phase == 'SWING' and
+>                   (plant.ros-value._phase_start)/1e9 >= .7*value._swing_duration):
+                                                             ^^^^^^^^^^^^^^^^^^^^^
+E                   AttributeError: 'CrawlMachine' object has no attribute '_swing_duration'. Did you mean: '_shift_duration'?
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_landing_continuity.py:22: AttributeError
+_ test_touchdown_never_rewinds_command_to_floor_or_measured_center[measured_compliance] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+case = 'measured_compliance'
+
+    @pytest.mark.parametrize('case', ['measured_compliance', 'contact_rebound'])
+    def test_touchdown_never_rewinds_command_to_floor_or_measured_center(nav_robot_model, case):
+>       plant, value, previous = descending_swing(nav_robot_model)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_landing_continuity.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def descending_swing(model):
+        plant = IdealFeedback(model)
+        value = machine(model, plant)
+        value.request_contact_calibration()
+        for _ in range(450):
+            result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if (result.phase == 'SWING' and
+>                   (plant.ros-value._phase_start)/1e9 >= .7*value._swing_duration):
+                                                             ^^^^^^^^^^^^^^^^^^^^^
+E                   AttributeError: 'CrawlMachine' object has no attribute '_swing_duration'. Did you mean: '_shift_duration'?
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_landing_continuity.py:22: AttributeError
+_ test_touchdown_never_rewinds_command_to_floor_or_measured_center[contact_rebound] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+case = 'contact_rebound'
+
+    @pytest.mark.parametrize('case', ['measured_compliance', 'contact_rebound'])
+    def test_touchdown_never_rewinds_command_to_floor_or_measured_center(nav_robot_model, case):
+>       plant, value, previous = descending_swing(nav_robot_model)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_landing_continuity.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def descending_swing(model):
+        plant = IdealFeedback(model)
+        value = machine(model, plant)
+        value.request_contact_calibration()
+        for _ in range(450):
+            result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if (result.phase == 'SWING' and
+>                   (plant.ros-value._phase_start)/1e9 >= .7*value._swing_duration):
+                                                             ^^^^^^^^^^^^^^^^^^^^^
+E                   AttributeError: 'CrawlMachine' object has no attribute '_swing_duration'. Did you mean: '_shift_duration'?
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_landing_continuity.py:22: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_landing_continuity.py::test_measured_early_contact_stops_descent_without_waiting_for_swing_timer
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_landing_continuity.py::test_touchdown_never_rewinds_command_to_floor_or_measured_center[measured_compliance]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_landing_continuity.py::test_touchdown_never_rewinds_command_to_floor_or_measured_center[contact_rebound]
+3 failed, 416 passed in 238.82s (0:03:58)

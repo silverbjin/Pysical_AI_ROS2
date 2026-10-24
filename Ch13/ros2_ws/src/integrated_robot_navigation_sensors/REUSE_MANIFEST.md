@@ -2,6 +2,21 @@
 
 이 패키지는 13.5절을 위해 작성한 Apache-2.0 코드다. 외부 checkout과 앞 장 원본은 수정하지 않는다.
 
+G1 검증 모드의20ms 연속참조와 `PositionReference`는 Ch13 신규코드다(기준
+`7f321ebb4141089a09e06d5c646ac83d180fc906`). 사용자승인에 따라기존 position backend의
+다리12관절만 명시적으로 opt-in한다. Gazebo8.15 공개 `Component`/`Factory`/
+`VectorDoubleSerializer` API에 link/include하며 외부구현 파일을복사하지 않았다.
+별도 Ch13 타입의진단 component는입력/적용참조/기간/실제write시각만저장하며 물리
+위치·속도명령 component가아니다. 기존 observer가읽어 기록하고 새명령소유자나
+thread를추가하지않는다. 기본모드·팔/그리퍼·게인/감쇠·힘상한은그대로다.
+실제엔진/G1전체검증전까지기본보행설정으로승격하지않는다.
+
+`ContactDetailWindow`는 한발 raw 하중상실 edge와 뒤10개 native step의 원본pair/
+wrench/깊이·관절상태·실제적용참조를기존batch에보존하는 Ch13 신규진단이다.
+장기airborne마다상세량을계속늘리지않고회복만으로새window를열지않는다.
+명령/원래contact acceptance/센서stamp·receipt를바꾸지않으며 controller fault를
+제어하거나복구하지않는다. 기존raw요약과<3발하중상세기록은유지한다.
+
 | 대상 | 참조·재사용한 출처 | 고정 기준 / 방식 |
 |---|---|---|
 | 플러그인 base ABI | `mujoco_ros2_control_plugins` | 외부 underlay commit `c261f5552edf124d1000a23fb25b6c07cadeb807`; 헤더에 link, 원본 복사·수정 없음 |
@@ -103,3 +118,15 @@ component를 사용한다. `EnableVelocityChecks`는 원생 readback 요청이�
 외부 코드 복사·underlay 수정 없음. 원본 의미 비교 출처는
 [8.15.0 OdometryPublisher](https://github.com/gazebosim/gz-sim/blob/gz-sim8_8.15.0/src/systems/odometry_publisher/OdometryPublisher.cc)와
 [8.15.0 Imu](https://github.com/gazebosim/gz-sim/blob/gz-sim8_8.15.0/src/systems/imu/Imu.cc)다.
+
+2026-10-24 원생접촉 진단 확장도 Ch13 자체 구현이다(기준HEAD7f321eb).
+동일 PostUpdate의 ContactSensorData 원본 pair ID/position/depth/world wrench와
+발 collision center를 기존 body reference batch에 첨부한다. 새 ROS 구독이나
+제어·접촉 판정·시각 변경은 없다. 빈 pair와 기하학적 바닥 관통을 구분하고,
+접촉력을 보간·평균·복구하지 않는다. 기존50Hz 판정은 그대로 유지한다.
+
+후속진단payload는같은2ms원본의발중심/원시pair수/|Fz|합을항상남기되,
+raw하중2N이상발이셋미만일때만pair/position/depth/양측wrench상세를첨부한다.
+이는진단상세선택용휴리스틱이며ground매핑/중복제거된FootContacts지지판정을
+대체하지않는다. 정상구간의상세누락은`details_included=false`로명시하고
+기준gyro/원본시각/주기/기존접촉판정은삭제하거나줄이지않았다. 외부복사없음.

@@ -67,6 +67,7 @@ target_link_libraries(navigation_gazebo_observer PRIVATE navigation_gazebo_obser
   gz-plugin2::gz-plugin2)
 install(TARGETS navigation_gazebo_observation navigation_gazebo_observer LIBRARY DESTINATION lib)
 add_library(navigation_position_system SHARED src/gazebo_position_system.cpp)
+target_include_directories(navigation_position_system PRIVATE include)
 target_link_libraries(navigation_position_system PRIVATE gz_ros2_control::gz_ros2_control-system
   hardware_interface::hardware_interface pluginlib::pluginlib rclcpp::rclcpp)
 install(TARGETS navigation_position_system LIBRARY DESTINATION lib)
@@ -108,7 +109,7 @@ if(BUILD_TESTING)
     GZ_NAV_OBSERVER_LIBRARY="$<TARGET_FILE:navigation_gazebo_observer>")
   add_dependencies(test_gazebo_observation navigation_gazebo_observer)
   ament_add_gtest(test_gazebo_position_system test/test_gazebo_position_system.cpp TIMEOUT 30)
-  target_include_directories(test_gazebo_position_system PRIVATE ${gz_ros2_control_INCLUDE_DIRS})
+  target_include_directories(test_gazebo_position_system PRIVATE include ${gz_ros2_control_INCLUDE_DIRS})
   target_link_libraries(test_gazebo_position_system gz-sim8::gz-sim8
     gz_ros2_control::gz_ros2_control-system hardware_interface::hardware_interface
     pluginlib::pluginlib rclcpp::rclcpp)

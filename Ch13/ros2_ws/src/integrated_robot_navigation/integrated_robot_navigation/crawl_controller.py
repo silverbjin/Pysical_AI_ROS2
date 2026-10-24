@@ -77,7 +77,8 @@ class CrawlController(ControlClockLifecycleNode):
                 self._sensor(stream, msg)
             self.create_subscription(kind, topic, receive, qos_profile_sensor_data,
                                      callback_group=self.sensor_group)
-        self.create_subscription(MotionState, '/navigation/guard_state', self._gate, 10)
+        self.create_subscription(MotionState, '/navigation/guard_state', self._gate, 10,
+                                 callback_group=self.sensor_group)
         self.create_subscription(Twist, '/navigation/cmd_vel', self._command, 10)
         self.create_service(Trigger, '~/calibrate_contact', self._calibrate_contact)
         self.create_service(Trigger, '~/report', self._report)
@@ -99,16 +100,16 @@ class CrawlController(ControlClockLifecycleNode):
                 if self.active and self._ingress_fault is None:
                     self._ingress_fault = key+':'+str(error)
 
-    def _bundle_snapshot(self, ros_ns):
+    def _bundle_snapshot(self, ros_ns, wall_ns=None):
         with self.inbox_lock:
-            return self.inbox.bundle(ros_ns)
+            return self.inbox.bundle(ros_ns,wall_ns=wall_ns)
 
     def _gate(self, msg):
         entry_wall_ns = time.monotonic_ns()
-        with self.lock:
+        with self.inbox_lock:
             if not self.closing:
                 stamp = msg.header.stamp.sec*1_000_000_000+msg.header.stamp.nanosec
-                receipt = time.monotonic_ns()
+                receipt = entry_wall_ns
                 previous = -1 if self.gate is None else (
                     self.gate.header.stamp.sec*1_000_000_000+self.gate.header.stamp.nanosec)
                 if stamp > previous:
@@ -154,19 +155,21 @@ class CrawlController(ControlClockLifecycleNode):
             self.get_logger().error('crawl configure rejected: '+str(error))
             return TransitionCallbackReturn.FAILURE
 
-    def _select_gate(self, ros_ns):
+    def _select_gate(self, ros_ns, *, wall_ns=None):
         # Independent /clock and status subscriptions need not dispatch in
         # capture order. Hold a future candidate, never retag or use it early.
-        eligible = [stamp for stamp in self._gate_pending if stamp <= ros_ns]
-        if eligible:
-            latest = max(eligible)
-            self.gate, self.gate_receipt = self._gate_pending[latest]
-            for stamp in list(self._gate_pending):
-                if stamp <= latest:
-                    del self._gate_pending[stamp]
+        with self.inbox_lock:
+            eligible = [stamp for stamp,(_,receipt) in self._gate_pending.items()
+                        if stamp <= ros_ns and (wall_ns is None or receipt <= wall_ns)]
+            if eligible:
+                latest = max(eligible)
+                self.gate, self.gate_receipt = self._gate_pending[latest]
+                for stamp in list(self._gate_pending):
+                    if stamp <= latest:
+                        del self._gate_pending[stamp]
 
     def _gate_valid(self, ros_ns, wall_ns):
-        self._select_gate(ros_ns)
+        self._select_gate(ros_ns,wall_ns=wall_ns)
         if self.gate is None:
             return False, 'missing_guard'
         sample = Sample(self.gate.header.stamp.sec*1_000_000_000+self.gate.header.stamp.nanosec,
@@ -182,8 +185,10 @@ class CrawlController(ControlClockLifecycleNode):
             return False, 'guard_owner'
         return True, ''
 
-    def _calibration_carry(self, ros_ns, wall_ns):
-        sample = self._bundle_snapshot(ros_ns).carry
+    def _calibration_carry(self, ros_ns, wall_ns, *, bundle=None):
+        # A control tick must validate the SAME selected carry sample as its
+        # other measurements and first-stop report. Never reselect mid-tick.
+        sample = (self._bundle_snapshot(ros_ns,wall_ns) if bundle is None else bundle).carry
         ok, reason = sample_valid(sample, ros_ns, wall_ns, self.inbox.epoch, max_age_ns=200_000_000)
         if not ok:
             return False, 'calibration_carry:'+reason
@@ -205,7 +210,7 @@ class CrawlController(ControlClockLifecycleNode):
                 response.message = reason or carry_reason or 'STAND gate required'
                 return response
             try:
-                self.machine.request_contact_calibration()
+                self.machine.request_contact_calibration(ros_ns=ros_ns,wall_ns=wall_ns)
                 self._last_stand_ready = False
                 response.success = True
                 response.message = 'one in-place FL contact calibration reserved; no CRAWL permission'
@@ -219,7 +224,7 @@ class CrawlController(ControlClockLifecycleNode):
                 if self._ingress_fault is not None:
                     return TransitionCallbackReturn.FAILURE
             ros_ns, wall_ns = self.get_clock().now().nanoseconds, time.monotonic_ns()
-            self._select_gate(ros_ns)
+            self._select_gate(ros_ns,wall_ns=wall_ns)
             if self.machine is None or self.gate is None:
                 return TransitionCallbackReturn.FAILURE
             self.generation = self.gate.generation
@@ -231,7 +236,7 @@ class CrawlController(ControlClockLifecycleNode):
             if self.count_publishers('/leg_position_controller/commands') != 1:
                 self.get_logger().warning('activate requires sole leg command owner')
                 return TransitionCallbackReturn.FAILURE
-            self.machine.reset(self._bundle_snapshot(ros_ns), ros_ns, wall_ns,
+            self.machine.reset(self._bundle_snapshot(ros_ns,wall_ns), ros_ns, wall_ns,
                                held_targets=self._held_targets)
             if self.machine.state == 'FAULT':
                 self.get_logger().warning('activate missing/invalid feedback: '+self.machine.reason)
@@ -263,9 +268,10 @@ class CrawlController(ControlClockLifecycleNode):
                 self.active = False
                 self._ingress_fault = None
                 self.inbox.clear(self.get_clock().now().nanoseconds)
+                self.gate = None
+                self._gate_pending.clear()
             self.machine = None
-            self.command, self.gate = None, None
-            self._gate_pending.clear()
+            self.command = None
             return super().on_cleanup(state)
 
     def on_shutdown(self, state):
@@ -290,7 +296,10 @@ class CrawlController(ControlClockLifecycleNode):
             return False
         if self._stand_since is None:
             self._stand_since = now
-        return now-self._stand_since >= int(limits['settle_s']*1e9)
+        settled = now-self._stand_since >= int(limits['settle_s']*1e9)
+        if settled and self.machine.calibrating:
+            self.machine.confirm_contact_calibration(wall_ns=now)
+        return settled
 
     def _report(self, request, response):
         with self.lock:
@@ -307,6 +316,7 @@ class CrawlController(ControlClockLifecycleNode):
                 shift_duration_s=getattr(machine, '_shift_duration', None),
                 unload_start_ns=getattr(machine, '_unload_start', None),
                 unload_origin_z=getattr(machine, '_unload_origin_z', None),
+                calibration=machine.calibration_snapshot(),
                 reference_body=machine.reference_body.tolist(),
                 targets={key: value.tolist() for key, value in getattr(machine, '_targets', {}).items()},
                 floor=dict(getattr(machine, 'floor', {})),
@@ -356,7 +366,7 @@ class CrawlController(ControlClockLifecycleNode):
                     ros_ns, wall_ns = self.get_clock().now().nanoseconds, time.monotonic_ns()
                     try:
                         _, _, _, loads, points, com = self.machine._measure(
-                            self._bundle_snapshot(ros_ns), ros_ns, wall_ns)
+                            self._bundle_snapshot(ros_ns,wall_ns), ros_ns, wall_ns)
                         valid, _ = self._gate_valid(ros_ns, wall_ns)
                         if (valid and self.gate.state in ('STAND', 'HOLD')
                                 and self.machine._margin(com, loads, points) >= self.machine.limits['min_support_margin_m']):
@@ -370,7 +380,7 @@ class CrawlController(ControlClockLifecycleNode):
             self.clock_read_span = dict(started_wall_ns=clock_read_started,
                 finished_wall_ns=wall_ns, ros_ns=ros_ns,
                 dispatch_started_wall_ns=self.tick_dispatch_started_ns)
-            bundle = self._bundle_snapshot(ros_ns)
+            bundle = self._bundle_snapshot(ros_ns,wall_ns)
             with self.inbox_lock:
                 if self._ingress_fault is not None:
                     self.machine._fail(self._ingress_fault)
@@ -381,7 +391,7 @@ class CrawlController(ControlClockLifecycleNode):
                 self.stop_reason = self.stop_reason or reason or self.gate.fault_reason or 'guard_fault'
                 self.machine.request_stop(urgent=True)
             if self.machine.calibrating:
-                carry, why = self._calibration_carry(ros_ns, wall_ns)
+                carry, why = self._calibration_carry(ros_ns, wall_ns,bundle=bundle)
                 if not carry or not valid or self.gate.state != 'STAND':
                     self.stop_reason = self.stop_reason or why or 'calibration_STAND_gate_lost'
                     self.machine.request_stop(urgent=True)
@@ -401,6 +411,8 @@ class CrawlController(ControlClockLifecycleNode):
             elif self.machine.state == 'CRAWL':
                 self.machine.request_stop(urgent=self.gate is None or bool(self.gate.fault_reason))
             if self.stop_reason and self.first_stop is None:
+                with self.inbox_lock:
+                    guard_receipts = list(self.guard_receipts)
                 guard = None if self.gate is None else dict(
                     stamp_ns=self.gate.header.stamp.sec*1_000_000_000+self.gate.header.stamp.nanosec,
                     received_ns=self.gate_receipt, state=self.gate.state,
@@ -408,7 +420,7 @@ class CrawlController(ControlClockLifecycleNode):
                     ready=self.gate.ready, fault_reason=self.gate.fault_reason)
                 self.first_stop = dict(scope='first_tick_observing_stop_reason', reason=self.stop_reason,
                     ros_ns=ros_ns, wall_ns=wall_ns, guard=guard, samples=asdict(bundle),
-                    guard_receipts=list(self.guard_receipts), tick_spans=list(self.tick_spans),
+                    guard_receipts=guard_receipts, tick_spans=list(self.tick_spans),
                     held_targets=dict(self._held_targets), state=self.machine.state)
             before = dict(state=self.machine.state, phase=self.machine.phase,
                           swing_foot=self.machine.swing_foot)
@@ -433,6 +445,7 @@ class CrawlController(ControlClockLifecycleNode):
                         ingress_snapshot_wall_ns=ingress_snapshot['wall_ns'],
                         pending_capture_receipts=ingress_snapshot['pending_capture_receipts'],
                         tick_spans=list(self.tick_spans),
+                        calibration=self.machine.calibration_snapshot(),
                         state_before=before, transition_during_advance=before['state'] != 'FAULT',
                         reference_body=self.machine.reference_body.tolist(),
                         targets={name: value.tolist() for name, value in self.machine._targets.items()},

@@ -1,0 +1,44 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_g1_measures_small_inplace_lift_then_returns_without_full_walk_bump ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g1_measures_small_inplace_lift_then_returns_without_full_walk_bump(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model,plant)
+        origin = value.floor['fl_foot']
+        value.request_contact_calibration()
+        previous, held = None,None
+        maximum, saw_return, done = 0.,False,False
+        for _ in range(400):
+            result = value.advance(plant.state,(0.,0.,0.),plant.ros,plant.wall)
+            assert result.state!='FAULT',result.reason
+            if result.phase=='SWING' and held is None:
+                held = {name:point.copy() for name,point in value._targets.items()}
+            if held is not None:
+                for name in nav_robot_model.feet:
+                    if name!='fl_foot': assert np.allclose(value._targets[name],held[name],atol=1e-12)
+                point = value._targets['fl_foot']
+                assert np.allclose(point[:2],held['fl_foot'][:2],atol=1e-12)
+                if previous is not None: assert np.linalg.norm(point-previous)/.02<=.020000001
+                previous = point.copy()
+                maximum = max(maximum,float(point[2]-origin))
+            saw_return |= result.phase=='TOUCHDOWN'
+            plant.tick(value,result)
+            if held is not None and result.state=='STAND':
+                done = True
+                break
+        assert done and saw_return
+        assert .006<=maximum<=.010, 'G1 must not execute the unrelated full20mm walking bump'
+        snapshot = value.calibration_snapshot()
+        assert len(snapshot['vertical']['lift_captures'])==3
+>       assert value._phase_start==snapshot['stages'][-1]['ros_ns'], 'reported phase origin must follow real transition'
+E       AssertionError: reported phase origin must follow real transition
+E       assert 3940000000 == 4960000000
+E        +  where 3940000000 = <integrated_robot_navigation.gait.CrawlMachine object at 0x7cad7bb86630>._phase_start
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_gait.py:37: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_gait.py::test_g1_measures_small_inplace_lift_then_returns_without_full_walk_bump
+1 failed, 1 deselected in 11.59s

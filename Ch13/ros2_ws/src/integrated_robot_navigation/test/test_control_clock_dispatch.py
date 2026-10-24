@@ -15,12 +15,12 @@ from rclpy.qos import qos_profile_sensor_data
 from rosgraph_msgs.msg import Clock
 from std_srvs.srv import Trigger
 from geometry_msgs.msg import Point
-from integrated_robot_interfaces.msg import FootContacts
+from integrated_robot_interfaces.msg import FootContacts,MotionState
 
 from integrated_robot_navigation.crawl_controller import CrawlController
 
 
-@pytest.mark.parametrize('observe', ['clock', 'contacts'])
+@pytest.mark.parametrize('observe', ['clock', 'contacts', 'guard'])
 def test_ingress_can_update_while_default_control_group_owns_model_lock(observe):
     context = Context()
     rclpy.init(context=context)
@@ -43,6 +43,7 @@ def test_ingress_can_update_while_default_control_group_owns_model_lock(observe)
     node.create_service(Trigger,'/clock_dispatch_test_work',controlled_work)
     source = peer.create_publisher(Clock,'/navigation/control_clock',qos_profile_sensor_data)
     contacts = peer.create_publisher(FootContacts,'/navigation/foot_contacts',qos_profile_sensor_data)
+    guard = peer.create_publisher(MotionState,'/navigation/guard_state',10)
     client = peer.create_client(Trigger,'/clock_dispatch_test_work')
     executor.add_node(node); executor.add_node(peer)
     thread = Thread(target=executor.spin)
@@ -67,7 +68,7 @@ def test_ingress_can_update_while_default_control_group_owns_model_lock(observe)
         if observe == 'clock':
             assert publish_until(2,lambda: node.get_clock().now().nanoseconds == 2000000000,.15), \
                 'real clock callback starved behind the mutually-exclusive control group'
-        else:
+        elif observe == 'contacts':
             msg = FootContacts(names=['FL','FR','RL','RR'], normal_forces=[30.]*4,
                 touching=[True]*4, points=[Point(z=-.4) for _ in range(4)])
             msg.header.stamp.sec = 1
@@ -82,6 +83,22 @@ def test_ingress_can_update_while_default_control_group_owns_model_lock(observe)
             assert sample.data['forces'] == (30.,30.,30.,30.)
             assert before <= sample.received_ns <= time.monotonic_ns()
             assert node.machine is None and not node.active, 'ingress must not configure/activate a machine'
+        else:
+            msg = MotionState(state='FAULT',generation=3,model_sha256='original-model',
+                              fault_reason='original fault must remain visible')
+            msg.header.stamp.sec = 1
+            msg.header.frame_id = 'base_link'
+            before = time.monotonic_ns()
+            deadline = time.monotonic()+.15
+            while not node.guard_receipts and time.monotonic()<deadline:
+                guard.publish(msg)
+                time.sleep(.005)
+            assert node.guard_receipts, 'state feedback must not starve behind model/control callbacks'
+            cached,receipt = node._gate_pending[1000000000]
+            assert cached.generation==3 and cached.model_sha256=='original-model'
+            assert cached.fault_reason=='original fault must remain visible'
+            assert before<=receipt<=time.monotonic_ns()
+            assert node.gate is None and node.machine is None, 'ingress cannot select/interpret the mode'
         assert not finished.is_set(), 'ingress must not depend on completing the blocked work'
         release.set()
         deadline = time.monotonic()+1.

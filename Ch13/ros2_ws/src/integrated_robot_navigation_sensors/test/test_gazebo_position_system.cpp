@@ -12,6 +12,7 @@
 #include <gz/sim/components/JointForceCmd.hh>
 #include <gz/sim/components/Pose.hh>
 #include <limits>
+#include "integrated_robot_navigation_sensors/position_reference.hpp"
 
 namespace comp = gz::sim::components;
 using Base = gz_ros2_control::GazeboSimSystemInterface;
@@ -134,4 +135,82 @@ TEST(NativePositionSystem, MissingNativeDampingCannotActivateAnExplicitDerivativ
   f.ecm.SetComponentData<comp::JointAxis>(f.joints.at("hip"), axis);
   EXPECT_FALSE(system->initSim(f.node, f.joints, f.info, f.ecm, 100));
   EXPECT_FALSE(f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip")));
+}
+
+static void g1_reference(PositionFixture & f)
+{
+  f.info.hardware_parameters["ch13_g1_reference_experiment"] = "true";
+  f.info.joints[0].name = "fr_hip_joint";
+  f.joints["fr_hip_joint"] = f.joints.at("hip");
+  f.info.joints[0].parameters["ch13_reference_ramp_s"] = "0.02";
+}
+
+TEST(NativePositionSystem, OptInG1LegReferenceIsContinuousWithoutChangingNativeGainsOrForceCap)
+{
+  pluginlib::ClassLoader<Base> loader("gz_ros2_control", "gz_ros2_control::GazeboSimSystemInterface");
+  auto system = loader.createSharedInstance("integrated_robot_navigation_sensors/PositionPDSystem");
+  PositionFixture f; g1_reference(f);
+  ASSERT_TRUE(system->initSim(f.node, f.joints, f.info, f.ecm, 100));
+  auto commands = system->export_command_interfaces();
+  ASSERT_EQ(system->perform_command_mode_switch({"fr_hip_joint/position"}, {}), Return::OK);
+  f.measurements();
+  f.ecm.SetComponentData<comp::JointPosition>(f.joints.at("hip"), {.1});
+  ASSERT_TRUE(commands[0].set_value(.12));
+  for (const auto [ns, force] : std::vector<std::pair<int64_t,double>>{
+      {1000000000,0.}, {1002000000,.2}, {1010000000,1.}, {1020000000,2.}}) {
+    ASSERT_EQ(system->write(rclcpp::Time(ns), rclcpp::Duration::from_seconds(.002)), Return::OK);
+    EXPECT_NEAR(f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0), force, 1e-12);
+    const auto * trace=f.ecm.Component<integrated_robot_navigation_sensors::PositionReference>(f.joints.at("hip"));
+    ASSERT_NE(trace,nullptr);
+    ASSERT_EQ(trace->Data().size(),4u);
+    EXPECT_DOUBLE_EQ(trace->Data()[0],.12);
+    EXPECT_NEAR(trace->Data()[1],.1+force/100.,1e-12);
+    EXPECT_DOUBLE_EQ(trace->Data()[2],.02);
+    EXPECT_DOUBLE_EQ(trace->Data()[3],static_cast<double>(ns));
+  }
+  ASSERT_TRUE(commands[0].set_value(.8));
+  ASSERT_EQ(system->write(rclcpp::Time(1040000000), rclcpp::Duration::from_seconds(.002)), Return::OK);
+  ASSERT_EQ(system->write(rclcpp::Time(1060000000), rclcpp::Duration::from_seconds(.002)), Return::OK);
+  EXPECT_DOUBLE_EQ(f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0), 5.);
+  EXPECT_FALSE(f.ecm.Component<comp::JointVelocityCmd>(f.joints.at("hip")));
+  EXPECT_EQ(f.ecm.Component<comp::Pose>(f.root)->Data(), gz::math::Pose3d(1,2,.45,0,0,0));
+}
+
+TEST(NativePositionSystem, NewTargetAndDeactivateHoldTheAppliedReferenceRatherThanJumpingToPendingEndpoint)
+{
+  pluginlib::ClassLoader<Base> loader("gz_ros2_control", "gz_ros2_control::GazeboSimSystemInterface");
+  auto system = loader.createSharedInstance("integrated_robot_navigation_sensors/PositionPDSystem");
+  PositionFixture f; g1_reference(f);
+  ASSERT_TRUE(system->initSim(f.node, f.joints, f.info, f.ecm, 100));
+  auto commands = system->export_command_interfaces();
+  ASSERT_EQ(system->perform_command_mode_switch({"fr_hip_joint/position"}, {}), Return::OK);
+  f.measurements(); f.ecm.SetComponentData<comp::JointPosition>(f.joints.at("hip"), {.1});
+  commands[0].set_value(.12);
+  ASSERT_EQ(system->write(rclcpp::Time(1000000000), rclcpp::Duration::from_seconds(.002)), Return::OK);
+  commands[0].set_value(.13);
+  ASSERT_EQ(system->write(rclcpp::Time(1010000000), rclcpp::Duration::from_seconds(.002)), Return::OK);
+  EXPECT_NEAR(f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0),1.,1e-12);
+  ASSERT_EQ(system->perform_command_mode_switch({}, {"fr_hip_joint/position"}), Return::OK);
+  ASSERT_EQ(system->write(rclcpp::Time(1020000000), rclcpp::Duration::from_seconds(.002)), Return::OK);
+  EXPECT_NEAR(f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0),1.,1e-12);
+  ASSERT_EQ(system->perform_command_mode_switch({"fr_hip_joint/position"}, {}), Return::OK);
+  EXPECT_NEAR(commands[0].get_optional<double>().value(),.11,1e-12);
+  ASSERT_EQ(system->write(rclcpp::Time(1030000000), rclcpp::Duration::from_seconds(.002)), Return::OK);
+  EXPECT_NEAR(f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0),1.,1e-12);
+  EXPECT_EQ(system->write(rclcpp::Time(1020000000), rclcpp::Duration::from_seconds(.002)), Return::ERROR);
+  EXPECT_DOUBLE_EQ(f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0),0.);
+}
+
+TEST(NativePositionSystem, ReferenceExperimentCannotEnableSilentlyOrAffectArmAndFingerCommands)
+{
+  pluginlib::ClassLoader<Base> loader("gz_ros2_control", "gz_ros2_control::GazeboSimSystemInterface");
+  for (int invalid : {0,1,2}) {
+    auto system = loader.createSharedInstance("integrated_robot_navigation_sensors/PositionPDSystem");
+    PositionFixture f; g1_reference(f);
+    if (invalid==0) {f.info.hardware_parameters.clear();}
+    if (invalid==1) {f.info.joints[0].parameters["ch13_reference_ramp_s"]="0.01";}
+    if (invalid==2) {f.info.joints[1].parameters["ch13_reference_ramp_s"]="0.02";}
+    EXPECT_FALSE(system->initSim(f.node, f.joints, f.info, f.ecm, 100));
+    EXPECT_FALSE(f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip")));
+  }
 }

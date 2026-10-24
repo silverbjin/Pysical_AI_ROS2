@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_airborne_return_is_not_mistaken_for_loaded_seek_by_height_alone _____
+
+    def test_airborne_return_is_not_mistaken_for_loaded_seek_by_height_alone():
+        value=trajectory()
+        for index in range(1,4): tick(value,index,center=.027)
+        previous=value.z
+        speeds=[]
+        for index in range(4,15):
+            result=tick(value,index,center=.0215,forces=(30.,0.,30.,30.))
+            speeds.append((previous-result.z)/.02)
+            assert not result.complete and result.phase=='TOUCHDOWN'
+            assert .017<=result.z<=.040
+            previous=result.z
+>       assert max(speeds)>.01, 'airborne proximity incorrectly selects the2mm/s loaded-contact seek'
+E       AssertionError: airborne proximity incorrectly selects the2mm/s loaded-contact seek
+E       assert 0.0019999999999999185 > 0.01
+E        +  where 0.0019999999999999185 = max([0.0019999999999999185, 0.0019999999999999185, 0.0019999999999999185, 0.0019999999999999185, 0.0019999999999999185, 0.0019999999999999185, ...])
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py:79: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py::test_airborne_return_is_not_mistaken_for_loaded_seek_by_height_alone
+1 failed in 5.70s

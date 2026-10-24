@@ -1,0 +1,49 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_first_fault_reports_selected_capture_and_is_not_overwritten _______
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x74505ec6ca10>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x74505ef111c0>
+
+    def test_first_fault_reports_selected_capture_and_is_not_overwritten(crawl_rig, monkeypatch):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(.1)
+        original = test_motion_guard_ros.bundle
+    
+        def unsupported(model):
+            value = original(model)
+            return replace(value, contacts=replace(value.contacts,
+                data={**value.contacts.data, 'forces': (0., 30., 0., 30.),
+                      'touching': (False, True, False, True)}))
+    
+        monkeypatch.setattr(test_motion_guard_ros, 'bundle', unsupported)
+        rig.pump(.12)
+        assert rig.crawl_states[-1].fault_reason == 'current measured support lost'
+        client = rig.node.create_client(Trigger, '/crawl_controller/report')
+        assert client.wait_for_service(timeout_sec=1.), 'selected fault snapshot service missing'
+    
+        def report():
+            future = client.call_async(Trigger.Request())
+            deadline = time.monotonic()+1.
+            while not future.done() and time.monotonic() < deadline:
+                rig.pump(.02)
+            assert future.done() and future.result().success
+            return json.loads(future.result().message)['first_fault']
+    
+        snapshot = report()
+        assert snapshot['reason'] == 'current measured support lost'
+        assert snapshot['scope'] == 'first_tick_observing_fault'
+        assert snapshot['transition_during_advance'] is True
+        assert snapshot['samples']['contacts']['data']['forces'] == [0., 30., 0., 30.]
+        assert snapshot['samples']['contacts']['stamp_ns'] <= snapshot['ros_ns']
+        assert snapshot['model_sha256'] == rig.model.model_sha256
+>       clock = snapshot['clock_read_span']
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'clock_read_span'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py:68: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py::test_first_fault_reports_selected_capture_and_is_not_overwritten
+1 failed, 2 deselected in 12.85s

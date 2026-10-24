@@ -1,0 +1,64 @@
+.....FF                                                                  [100%]
+=================================== FAILURES ===================================
+____________ test_scene_metadata_cannot_hide_a_ramped_native_model _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-10/test_scene_metadata_cannot_hid0')
+
+    def test_scene_metadata_cannot_hide_a_ramped_native_model(tmp_path):
+        import json
+        from integrated_robot_navigation.scene import load_scene
+        record=materialize_scene('gazebo','g1',tmp_path/'ramped',g1_reference_ramp=True)
+        record['position_reference_mode']='native'
+        (tmp_path/'ramped/scene.json').write_text(json.dumps(record))
+>       with pytest.raises(ValueError,match='reference'):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py:48: Failed
+_______________ test_ramped_scene_cannot_launch_as_normal_crawl ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-10/test_ramped_scene_cannot_launc0')
+
+    def test_ramped_scene_cannot_launch_as_normal_crawl(tmp_path):
+        import importlib.util
+        from pathlib import Path
+        from launch import LaunchContext
+        record=materialize_scene('gazebo','g1',tmp_path/'ramped',g1_reference_ramp=True)
+        file=Path(__file__).resolve().parents[1]/'launch/crawl_system.launch.py'
+        spec=importlib.util.spec_from_file_location('g1_reference_launch',file)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        context=LaunchContext()
+        context.launch_configurations.update(engine='gazebo',navigation_scene=str(tmp_path/'ramped'),
+            carry_profile=str(tmp_path/'not-yet-read.json'),validation_mode='false')
+        with pytest.raises(ValueError,match='reference.*validation'):
+>           module.launch_nodes(context)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/launch/crawl_system.launch.py:29: in launch_nodes
+    profile = CarryProfile(**json.loads(Path(profile_path).read_text()))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/pathlib.py:1029: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/tmp/pytest-of-jinho/pytest-10/test_ramped_scene_cannot_launc0/not-yet-read.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-jinho/pytest-10/test_ramped_scene_cannot_launc0/not-yet-read.json'
+
+/usr/lib/python3.12/pathlib.py:1015: FileNotFoundError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py::test_scene_metadata_cannot_hide_a_ramped_native_model
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py::test_ramped_scene_cannot_launch_as_normal_crawl
+2 failed, 5 passed in 8.92s

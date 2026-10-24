@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_deadline_is_original_request_budget_not_new_swing_budget _________
+
+    def test_deadline_is_original_request_budget_not_new_swing_budget():
+        value = trajectory(wall=19_950_000_000,deadline=20_000_000_000)
+        result = value.advance(ros_ns=1_020_000_000,wall_ns=19_970_000_000,
+            center_z=.027,forces=(30.,0.,30.,30.),capture_ns=1_020_000_000)
+        assert not result.complete
+        snapshot = value.snapshot()
+>       assert snapshot['last_update_wall_ns']==19_970_000_000
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'last_update_wall_ns'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py:104: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py::test_deadline_is_original_request_budget_not_new_swing_budget
+1 failed, 10 deselected in 10.98s

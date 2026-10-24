@@ -82,10 +82,14 @@ def _map(output, boxes):
     return path
 
 
-def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_file=None) -> dict:
+def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_file=None,
+                      g1_reference_ramp=False) -> dict:
     scenarios = {'g1', 'g2', 'front', 'diagonal', 'detour', 'blocked', 'cancel', 'intrusion'}
     if engine not in ('mujoco', 'gazebo') or scenario not in scenarios:
         raise ValueError('unknown engine or flat benchmark scenario')
+    if (type(g1_reference_ramp) is not bool
+            or g1_reference_ramp and (engine!='gazebo' or scenario!='g1')):
+        raise ValueError('reference experiment is only for explicit Gazebo G1')
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=False)
     share = description_dir()
@@ -140,6 +144,8 @@ def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_f
         actuators = {a.get('joint'): a for a in actuator_model.findall('actuator/position')}
         control = urdf_tree.find('ros2_control')
         control.find('hardware/plugin').text = 'integrated_robot_navigation_sensors/PositionPDSystem'
+        if g1_reference_ramp:
+            ET.SubElement(control.find('hardware'),'param',name='ch13_g1_reference_experiment').text='true'
         for joint in control.findall('joint'):
             actuator = actuators[joint.get('name')]
             ET.SubElement(joint, 'param', name='ch13_kp').text = actuator.get('kp')
@@ -156,6 +162,8 @@ def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_f
             ET.SubElement(joint, 'param', name='ch13_damping_mode').text = 'native'
             ET.SubElement(joint, 'param', name='ch13_base_damping').text = str(base_damping)
             ET.SubElement(joint, 'param', name='ch13_native_damping').text = str(native_damping)
+            if g1_reference_ramp and joint.get('name').startswith(('fr_','fl_','rr_','rl_')):
+                ET.SubElement(joint,'param',name='ch13_reference_ramp_s').text='0.02'
     urdf = ET.tostring(urdf_tree, encoding='unicode')
     robot.write_text(urdf, encoding='utf-8')
     if engine == 'mujoco':
@@ -197,6 +205,7 @@ def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_f
     def bound(path):
         return dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
     record = dict(schema=1, engine=engine, scenario=scenario, target=target,
+        position_reference_mode='g1_ramp20ms' if g1_reference_ramp else 'native',
         localization='native_ground_truth', world=bound(model_path), robot=bound(robot),
         map=bound(map_path), map_image=bound(output/'map.pgm'),
         controllers=bound(output/'controllers.yaml'), native_controllers=bound(short_controller))
@@ -243,6 +252,16 @@ def load_scene(engine, directory):
             raise ValueError('scene path outside bundle')
         if hashlib.sha256(path.read_bytes()).hexdigest() != entry['sha256']:
             raise ValueError('scene bound file hash mismatch: '+key)
+    robot=ET.parse(record['robot']['path'])
+    ramps=robot.findall("ros2_control/joint/param[@name='ch13_reference_ramp_s']")
+    experiment=robot.find("ros2_control/hardware/param[@name='ch13_g1_reference_experiment']")
+    mode=record.get('position_reference_mode','native')
+    if mode=='g1_ramp20ms':
+        if (engine!='gazebo' or record.get('scenario')!='g1' or len(ramps)!=12
+                or any(p.text!='0.02' for p in ramps) or experiment is None or experiment.text!='true'):
+            raise ValueError('reference experiment does not match bound Gazebo G1 model')
+    elif mode!='native' or ramps or experiment is not None:
+        raise ValueError('reference mode cannot hide or relabel native model parameters')
     if record['controllers']['sha256'] != record['native_controllers']['sha256']:
         raise ValueError('scene native controller hash mismatch')
     # /tmp is a disposable cache, not durable scene evidence. Restore only our

@@ -2,6 +2,22 @@
 
 ## 13.5 추가 — 구현 진행 중
 
+- G1 전용 native 명령 연속 적용은 기존 Ch13 `PositionPDSystem`의 opt-in 확장이다.
+  Gazebo8.15 공개 `Component`/`Factory`/`VectorDoubleSerializer`를 사용하는
+  Ch13 신규 `position_reference.hpp`는 진단용 입력/적용값·write시각을 보관하며
+  외부 구현 파일 복사나 physics 위치/속도 쓰기가 아니다. 기본설정·일반CRAWL·
+  팔/그리퍼·게인/감쇠/힘상한은 유지한다. `scene.py`가 생성 URDF·메타데이터를 묶고
+  `crawl_system.launch.py`가 validation 외 사용을 거부한다. 기준 HEAD7f321ebb,
+  사용자 승인2026-10-24. 외부 underlay/드라이버/권한 변경은 없다.
+
+- G1의 `calibration.py`와 `CrawlMachine.confirm_contact_calibration`은 Ch13 신규
+  코드다(재설계 기준 HEAD `7f321ebb4141089a09e06d5c646ac83d180fc906`). 사용자 승인에
+  따라 초기 상승 참조를 기존 가속도 상한으로 감속한 뒤, 원래 rest까지 해석적
+  삼각형/사다리꼴 속도곡선으로 복귀한다. 외부 궤적 라이브러리나 제어기 소스 복사는
+  없다. 기존 `CrawlController._stand_ready`의 실제1wall초 판정이 성공한 뒤에만
+  G1 소유권을 해제하며 원래10wall초 deadline을 유지한다. 일반 CRAWL·게인·
+  액추에이터/TF 소유권은 바꾸지 않는다. 순수/이상추종/ROS 회귀는 실제 물리 인수가 아니다.
+
 - navigation 전용 Gazebo direct-child 실행은 설치된 `ros_gz_sim/launch/gz_sim.launch.py`의
   `GazeboRosPaths.get_paths()`와 실행 파일 조회 함수를 import해 기존 plugin/resource
   환경을 그대로 재사용한다. 외부 launcher를 복사·수정하지 않는다. Ch13에서만
@@ -222,3 +238,20 @@ TimeSource 내부 필드 접근이 없다. 기존 Ch13 `integrated_robot_vision.
 후속 `crawl_controller.py` 센서 메일박스 분리는 같은 Ch13 `SensorInbox`/immutable
 `Sample`을 재사용한 신규 코드다. 별도 센서 그룹·메일박스 잠금과 오류 latch를 추가하되
 상태 전이/관절 명령 소유자는 하나이며 외부 소스를 추가 복사하지 않았다.
+
+## 13.5 G1 전용 교정 경로
+
+`integrated_robot_navigation/calibration.py`와 전용 경계·통합 시험은 Ch13 신규 코드다.
+기준`7f321eb`의 `CrawlMachine`/`Sample`/기존 measured STAND settle을 재사용하고,
+G1에서만 실측 lift-return 경로로 분기한다. 일반 CRAWL 곡선/게인, 외부·앞 장 코드는
+복사하거나 수정하지 않았다. Python MuJoCo component와 실제 ROS 엔진 인수를 분리해
+기록하며, 출처를 숨긴 외부 controller 구현을 새로 포함하지 않는다.
+
+동시수신 판단 경계 수정은 같은Ch13 `SensorInbox`/`Sample`을 재사용한신규코드다.
+ROS/wall cutoff선택과동일tick bundle공유를추가하며외부소스복사·receipt/stamp
+변환은없다. 원생Gazebo2ms접촉batch는센서패키지자체REUSE에별도로기록했다.
+
+G1의loadedpreconditioning참조함수도동일Ch13로컬신규코드다. 원본heldrest와
+초기floor/실측하중을사용하며일반CRAWL이나외부PD게인을복사·수정하지않는다.
+기준7f321eb의모델·접촉검증·unload상한을재사용하고원본rest를전처리후에
+새로정하지않는다. 명시적FL요청의관절/force인덱스회귀를함께보존한다.

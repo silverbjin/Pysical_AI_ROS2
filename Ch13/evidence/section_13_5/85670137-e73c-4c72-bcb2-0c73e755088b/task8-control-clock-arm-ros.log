@@ -1,0 +1,34 @@
+Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from RelayRig
+[ RUN      ] RelayRig.WireOutputsAreUnchangedSourceSubsetWithBoundedPublicationCadence
+[       OK ] RelayRig.WireOutputsAreUnchangedSourceSubsetWithBoundedPublicationCadence (558 ms)
+[ RUN      ] RelayRig.PauseLatchesFaultAndSourceResumeCannotReactivate
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_control_clock_ros.cpp:97: Failure
+Value of: client->wait_for_service(1s)
+  Actual: false
+Expected: true
+
+[  FAILED  ] RelayRig.PauseLatchesFaultAndSourceResumeCannotReactivate (1279 ms)
+[ RUN      ] RelayRig.BootstrapPauseBeforeArmingDoesNotLatchOperationalFault
+[ERROR] [1792826756.050424401] [navigation_control_clock]: control clock sticky fault: source_stalled
+unknown file: Failure
+C++ exception with description "[json.exception.out_of_range.403] key 'armed' not found" thrown in the test body.
+
+[  FAILED  ] RelayRig.BootstrapPauseBeforeArmingDoesNotLatchOperationalFault (479 ms)
+[ RUN      ] RelayRig.StopServiceClosesOutstandingWorkBeforeAcknowledging
+[       OK ] RelayRig.StopServiceClosesOutstandingWorkBeforeAcknowledging (397 ms)
+[ RUN      ] RelayRig.CompetingDestinationOwnerFailsWithoutForwarding
+[ERROR] [1792826756.681725427] [navigation_control_clock]: control clock sticky fault: destination_count
+[       OK ] RelayRig.CompetingDestinationOwnerFailsWithoutForwarding (366 ms)
+[----------] 5 tests from RelayRig (3088 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (3091 ms total)
+[  PASSED  ] 3 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] RelayRig.PauseLatchesFaultAndSourceResumeCannotReactivate
+[  FAILED  ] RelayRig.BootstrapPauseBeforeArmingDoesNotLatchOperationalFault
+
+ 2 FAILED TESTS

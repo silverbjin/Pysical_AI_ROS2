@@ -1,0 +1,199 @@
+[1.431s] WARNING:colcon.colcon_core.package_selection:Some selected packages are already built in one or more underlay workspaces:
+	'integrated_robot_navigation_sensors' is in: /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors
+If a package in a merged underlay workspace is overridden and it installs headers, then all packages in the overlay must sort their include directories by workspace order. Failure to do so may result in build failures or undefined behavior at run time.
+If the overridden package is used by another package in any underlay, then the overriding package in the overlay must be API and ABI compatible or undefined behavior at run time may occur.
+
+If you understand the risks and want to override a package anyways, add the following to the command line:
+	--allow-overriding integrated_robot_navigation_sensors
+
+This may be promoted to an error in a future release of colcon-override-check.
+Starting >>> integrated_robot_navigation_sensors
+--- stderr: integrated_robot_navigation_sensors
+CMake Deprecation Warning at /opt/ros/jazzy/share/tl_expected/cmake/tl_expectedConfig.cmake:37 (message):
+  Package 'tl_expected' is deprecated (This package will be removed in ROS 2
+  Lyrical Luth.
+
+        Use tl/expected.hpp from libexpected-dev,
+        or rcpputils/tl_expected/expected.hpp if the system header is not available)
+Call Stack (most recent call first):
+  /opt/ros/jazzy/share/parameter_traits/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/parameter_traits/cmake/parameter_traitsConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/controller_manager/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/controller_manager/cmake/controller_managerConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/gz_ros2_control/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/gz_ros2_control/cmake/gz_ros2_controlConfig.cmake:41 (include)
+  CMakeLists.txt:19 (find_package)
+
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp: In member function ‘virtual void NativePositionSystem_BoundedDampedEffortActualStatesAndNoRootOrVelocityWrites_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:77:52: warning: ‘virtual std::vector<hardware_interface::CommandInterface> hardware_interface::HardwareComponentInterface::export_command_interfaces()’ is deprecated: Replaced by vector<CommandInterface::SharedPtr> on_export_command_interfaces() method. Exporting is handled by the Framework. [-Wdeprecated-declarations]
+   77 |   auto commands = system->export_command_interfaces();
+      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+In file included from /opt/ros/jazzy/include/hardware_interface/hardware_interface/system_interface.hpp:18,
+                 from /opt/ros/jazzy/include/gz_ros2_control/gz_ros2_control/gz_system_interface.hpp:27,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:4:
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/hardware_component_interface.hpp:212:3: note: declared here
+  212 |   export_command_interfaces();
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:78:48: warning: ‘virtual std::vector<hardware_interface::StateInterface> hardware_interface::HardwareComponentInterface::export_state_interfaces()’ is deprecated: Replaced by vector<StateInterface::ConstSharedPtr> on_export_state_interfaces() method. Exporting is handled by the Framework. [-Wdeprecated-declarations]
+   78 |   auto states = system->export_state_interfaces();
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/hardware_component_interface.hpp:177:3: note: declared here
+  177 |   export_state_interfaces();
+      |   ^~~~~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp: In member function ‘virtual void NativePositionSystem_CommandHandleExportCannotCreateASecondWriter_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:122:49: warning: ‘virtual std::vector<hardware_interface::CommandInterface> hardware_interface::HardwareComponentInterface::export_command_interfaces()’ is deprecated: Replaced by vector<CommandInterface::SharedPtr> on_export_command_interfaces() method. Exporting is handled by the Framework. [-Wdeprecated-declarations]
+  122 |   auto owned = system->export_command_interfaces();
+      |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/hardware_component_interface.hpp:212:3: note: declared here
+  212 |   export_command_interfaces();
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest-printers.h:122,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest-matchers.h:49,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/internal/gtest-death-test-internal.h:47,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest-death-test.h:43,
+                 from /opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:65,
+                 from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:3:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:124:48: warning: ‘virtual std::vector<hardware_interface::CommandInterface> hardware_interface::HardwareComponentInterface::export_command_interfaces()’ is deprecated: Replaced by vector<CommandInterface::SharedPtr> on_export_command_interfaces() method. Exporting is handled by the Framework. [-Wdeprecated-declarations]
+  124 |   EXPECT_TRUE(system->export_command_interfaces().empty());
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/hardware_component_interface.hpp:212:3: note: declared here
+  212 |   export_command_interfaces();
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp: In member function ‘virtual void NativePositionSystem_OptInG1LegReferenceIsContinuousWithoutChangingNativeGainsOrForceCap_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:153:52: warning: ‘virtual std::vector<hardware_interface::CommandInterface> hardware_interface::HardwareComponentInterface::export_command_interfaces()’ is deprecated: Replaced by vector<CommandInterface::SharedPtr> on_export_command_interfaces() method. Exporting is handled by the Framework. [-Wdeprecated-declarations]
+  153 |   auto commands = system->export_command_interfaces();
+      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/hardware_component_interface.hpp:212:3: note: declared here
+  212 |   export_command_interfaces();
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp: In member function ‘virtual void NativePositionSystem_NewTargetAndDeactivateHoldTheAppliedReferenceRatherThanJumpingToPendingEndpoint_Test::TestBody()’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:177:52: warning: ‘virtual std::vector<hardware_interface::CommandInterface> hardware_interface::HardwareComponentInterface::export_command_interfaces()’ is deprecated: Replaced by vector<CommandInterface::SharedPtr> on_export_command_interfaces() method. Exporting is handled by the Framework. [-Wdeprecated-declarations]
+  177 |   auto commands = system->export_command_interfaces();
+      |                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/hardware_component_interface.hpp:212:3: note: declared here
+  212 |   export_command_interfaces();
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:180:24: warning: ignoring return value of ‘bool hardware_interface::Handle::set_value(const T&) [with T = double]’, declared with attribute ‘nodiscard’ [-Wunused-result]
+  180 |   commands[0].set_value(.12);
+      |   ~~~~~~~~~~~~~~~~~~~~~^~~~~
+In file included from /opt/ros/jazzy/include/hardware_interface/hardware_interface/hardware_component_interface.hpp:28:
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/handle.hpp:511:22: note: declared here
+  511 |   [[nodiscard]] bool set_value(const T & value)
+      |                      ^~~~~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:182:24: warning: ignoring return value of ‘bool hardware_interface::Handle::set_value(const T&) [with T = double]’, declared with attribute ‘nodiscard’ [-Wunused-result]
+  182 |   commands[0].set_value(.13);
+      |   ~~~~~~~~~~~~~~~~~~~~~^~~~~
+/opt/ros/jazzy/include/hardware_interface/hardware_interface/handle.hpp:511:22: note: declared here
+  511 |   [[nodiscard]] bool set_value(const T & value)
+      |                      ^~~~~~~~~
+---
+Finished <<< integrated_robot_navigation_sensors [1min 20s]
+
+Summary: 1 package finished [1min 21s]
+  1 package had stderr output: integrated_robot_navigation_sensors
+Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+[==========] Running 7 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 7 tests from NativePositionSystem
+[ RUN      ] NativePositionSystem.BoundedDampedEffortActualStatesAndNoRootOrVelocityWrites
+[ERROR] [1792851328.131864673] [navigation_position_system_test]: PositionPDSystem sticky fault: nonfinite or out-of-bound position command
+[       OK ] NativePositionSystem.BoundedDampedEffortActualStatesAndNoRootOrVelocityWrites (36 ms)
+[ RUN      ] NativePositionSystem.InvalidContractCannotPartiallyInitializeOrClaimNativeCommands
+[ERROR] [1792851328.146288422] [navigation_position_system_test]: PositionPDSystem initialization rejected: finite scalar parameter required
+[       OK ] NativePositionSystem.InvalidContractCannotPartiallyInitializeOrClaimNativeCommands (10 ms)
+[ RUN      ] NativePositionSystem.CommandHandleExportCannotCreateASecondWriter
+[       OK ] NativePositionSystem.CommandHandleExportCannotCreateASecondWriter (8 ms)
+[ RUN      ] NativePositionSystem.MissingNativeDampingCannotActivateAnExplicitDerivativeFallback
+[ERROR] [1792851328.166201718] [navigation_position_system_test]: PositionPDSystem initialization rejected: model-bound native damping required; no explicit fallback
+[       OK ] NativePositionSystem.MissingNativeDampingCannotActivateAnExplicitDerivativeFallback (8 ms)
+[ RUN      ] NativePositionSystem.OptInG1LegReferenceIsContinuousWithoutChangingNativeGainsOrForceCap
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:161: Failure
+The difference between f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) and force is 1.9999999999999991, which exceeds 1e-12, where
+f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) evaluates to 1.9999999999999991,
+force evaluates to 0, and
+1e-12 evaluates to 9.9999999999999998e-13.
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:161: Failure
+The difference between f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) and force is 1.7999999999999992, which exceeds 1e-12, where
+f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) evaluates to 1.9999999999999991,
+force evaluates to 0.20000000000000001, and
+1e-12 evaluates to 9.9999999999999998e-13.
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:161: Failure
+The difference between f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) and force is 0.99999999999999911, which exceeds 1e-12, where
+f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) evaluates to 1.9999999999999991,
+force evaluates to 1, and
+1e-12 evaluates to 9.9999999999999998e-13.
+
+[  FAILED  ] NativePositionSystem.OptInG1LegReferenceIsContinuousWithoutChangingNativeGainsOrForceCap (10 ms)
+[ RUN      ] NativePositionSystem.NewTargetAndDeactivateHoldTheAppliedReferenceRatherThanJumpingToPendingEndpoint
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:184: Failure
+The difference between f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) and 1. is 2, which exceeds 1e-12, where
+f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) evaluates to 3,
+1. evaluates to 1, and
+1e-12 evaluates to 9.9999999999999998e-13.
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:187: Failure
+The difference between f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) and 1. is 2, which exceeds 1e-12, where
+f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) evaluates to 3,
+1. evaluates to 1, and
+1e-12 evaluates to 9.9999999999999998e-13.
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:189: Failure
+The difference between commands[0].get_optional<double>().value() and .11 is 0.020000000000000004, which exceeds 1e-12, where
+commands[0].get_optional<double>().value() evaluates to 0.13,
+.11 evaluates to 0.11, and
+1e-12 evaluates to 9.9999999999999998e-13.
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:191: Failure
+The difference between f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) and 1. is 2, which exceeds 1e-12, where
+f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))->Data().at(0) evaluates to 3,
+1. evaluates to 1, and
+1e-12 evaluates to 9.9999999999999998e-13.
+
+[ERROR] [1792851328.190002393] [navigation_position_system_test]: PositionPDSystem sticky fault: clock rollback
+[  FAILED  ] NativePositionSystem.NewTargetAndDeactivateHoldTheAppliedReferenceRatherThanJumpingToPendingEndpoint (10 ms)
+[ RUN      ] NativePositionSystem.ReferenceExperimentCannotEnableSilentlyOrAffectArmAndFingerCommands
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:205: Failure
+Value of: system->initSim(f.node, f.joints, f.info, f.ecm, 100)
+  Actual: true
+Expected: false
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:206: Failure
+Value of: f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))
+  Actual: true
+Expected: false
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:205: Failure
+Value of: system->initSim(f.node, f.joints, f.info, f.ecm, 100)
+  Actual: true
+Expected: false
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:206: Failure
+Value of: f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))
+  Actual: true
+Expected: false
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:205: Failure
+Value of: system->initSim(f.node, f.joints, f.info, f.ecm, 100)
+  Actual: true
+Expected: false
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_position_system.cpp:206: Failure
+Value of: f.ecm.Component<comp::JointForceCmd>(f.joints.at("hip"))
+  Actual: true
+Expected: false
+
+[  FAILED  ] NativePositionSystem.ReferenceExperimentCannotEnableSilentlyOrAffectArmAndFingerCommands (27 ms)
+[----------] 7 tests from NativePositionSystem (121 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 1 test suite ran. (125 ms total)
+[  PASSED  ] 4 tests.
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] NativePositionSystem.OptInG1LegReferenceIsContinuousWithoutChangingNativeGainsOrForceCap
+[  FAILED  ] NativePositionSystem.NewTargetAndDeactivateHoldTheAppliedReferenceRatherThanJumpingToPendingEndpoint
+[  FAILED  ] NativePositionSystem.ReferenceExperimentCannotEnableSilentlyOrAffectArmAndFingerCommands
+
+ 3 FAILED TESTS

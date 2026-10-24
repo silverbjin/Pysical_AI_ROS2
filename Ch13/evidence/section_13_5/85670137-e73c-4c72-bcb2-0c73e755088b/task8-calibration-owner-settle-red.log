@@ -1,0 +1,95 @@
+....F..FFF.......                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_owner_releases_calibration_only_after_full_measured_wall_settle _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_owner_releases_calibration_only_after_full_measured_wall_settle(nav_robot_model):
+        import rclpy
+        from rclpy.context import Context
+        from integrated_robot_navigation.crawl_controller import CrawlController
+        plant,value,result=stand_candidate(nav_robot_model)
+        # Let the ideal follower's final nonzero joint velocity become quiet.
+        plant.tick(value,result)
+        context=Context()
+        rclpy.init(context=context)
+        node=CrawlController(context=context)
+        try:
+            node.machine=value
+            start=plant.wall
+            for elapsed in (0,200_000_000,999_999_999):
+                assert not node._stand_ready(plant.state,result,start+elapsed)
+                assert value.calibrating
+            assert node._stand_ready(plant.state,result,start+1_000_000_000)
+>           assert not value.calibrating, 'the actual owner never confirmed the successful measured lease'
+E           AssertionError: the actual owner never confirmed the successful measured lease
+E           assert not True
+E            +  where True = <integrated_robot_navigation.gait.CrawlMachine object at 0x7eb1979c61b0>.calibrating
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preload_return.py:98: AssertionError
+_____ test_reference_speed_envelope_and_real_landing_not_timer_completion ______
+
+    def test_reference_speed_envelope_and_real_landing_not_timer_completion():
+        value = trajectory()
+        previous = .029
+        for index in range(1,27):
+            result = tick(value,index,center=.027 if index<=3 else .030)
+            assert abs(result.z-previous)/.02 <= .020000001
+            assert .017 <= result.z <= .040
+            assert not result.complete
+            previous = result.z
+        assert result.phase == 'TOUCHDOWN'
+        for index in range(27,60):
+            result = tick(value,index,center=.020,forces=(30.,3.,30.,30.))
+>           assert abs(result.z-previous)/.02 <= .002000001, 'near-ground/contact seek uses slow rate'
+E           AssertionError: near-ground/contact seek uses slow rate
+E           assert (0.00040000000000000105 / 0.02) <= 0.002000001
+E            +  where 0.00040000000000000105 = abs((0.021779999999999997 - 0.02218))
+E            +    where 0.021779999999999997 = CalibrationStep(z=0.021779999999999997, phase='TOUCHDOWN', complete=False).z
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py:58: AssertionError
+_____ test_airborne_return_is_not_mistaken_for_loaded_seek_by_height_alone _____
+
+    def test_airborne_return_is_not_mistaken_for_loaded_seek_by_height_alone():
+        value=trajectory()
+        for index in range(1,4): tick(value,index,center=.027)
+        previous=value.z
+        speeds=[]
+        for index in range(4,15):
+            result=tick(value,index,center=.0215,forces=(30.,0.,30.,30.))
+            speeds.append((previous-result.z)/.02)
+            assert not result.complete and result.phase=='TOUCHDOWN'
+            assert .017<=result.z<=.040
+            previous=result.z
+        assert max(speeds)>.01, 'airborne proximity incorrectly selects the2mm/s loaded-contact seek'
+        assert max(speeds)<=.020000001
+        result=tick(value,15,center=.020,forces=(30.,2.5,30.,30.))
+>       assert 0<=previous-result.z<=.002*.02000001, 'real contact must stop fast descent immediately'
+E       AssertionError: real contact must stop fast descent immediately
+E       assert (0.026979999999999997 - 0.02658) <= (0.002 * 0.02000001)
+E        +  where 0.02658 = CalibrationStep(z=0.02658, phase='TOUCHDOWN', complete=False).z
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py:82: AssertionError
+_______ test_duplicate_landing_or_other_foot_unloaded_is_not_completion ________
+
+    def test_duplicate_landing_or_other_foot_unloaded_is_not_completion():
+        value = trajectory()
+        for index in range(1,4): tick(value,index,center=.027)
+        tick(value,4,center=.020,forces=(30.,5.,30.,30.))
+        for index in range(5,9):
+            assert not tick(value,index,center=.020,forces=(30.,5.,30.,30.),capture=1_080_000_000).complete
+        assert not tick(value,9,center=.020,forces=(30.,5.,0.,30.)).complete
+        for index in (10,11):
+            assert not tick(value,index,center=.020,forces=(30.,5.,30.,30.)).complete
+>       assert tick(value,12,center=.020,forces=(30.,5.,30.,30.)).complete
+E       AssertionError: assert False
+E        +  where False = CalibrationStep(z=0.02778, phase='TOUCHDOWN', complete=False).complete
+E        +    where CalibrationStep(z=0.02778, phase='TOUCHDOWN', complete=False) = tick(<integrated_robot_navigation.calibration.InPlaceCalibration object at 0x7eb1978a12e0>, 12, center=0.02, forces=(30.0, 5.0, 30.0, 30.0))
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py:95: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preload_return.py::test_owner_releases_calibration_only_after_full_measured_wall_settle
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py::test_reference_speed_envelope_and_real_landing_not_timer_completion
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py::test_airborne_return_is_not_mistaken_for_loaded_seek_by_height_alone
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py::test_duplicate_landing_or_other_foot_unloaded_is_not_completion
+4 failed, 13 passed in 15.08s

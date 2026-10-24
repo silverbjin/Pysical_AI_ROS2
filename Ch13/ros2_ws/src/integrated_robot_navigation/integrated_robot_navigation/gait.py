@@ -5,6 +5,7 @@ Ideal-feedback tests cannot validate physical tracking; both native gates remain
 mandatory. No simulator API, root setter, force override, or command odom exists.
 """
 import math
+from copy import deepcopy
 
 import numpy as np
 
@@ -13,6 +14,7 @@ from .leg_kinematics import fk_leg, ik_leg
 from .projection import body_rotation
 from .samples import ControlResult, sample_valid
 from .support import center_of_mass, support_margin
+from .calibration import InPlaceCalibration, precondition_loaded_reference
 
 
 def blend(value):
@@ -36,6 +38,9 @@ class CrawlMachine:
         self.swing_foot = None
         self._initialized = False
         self._shift_plan = None
+        self._calibration_request = self._calibration_vertical = None
+        self._calibration_rest_z = None
+        self._calibration_stages, self._calibration_sources = [],None
 
     def _result(self, targets=None):
         return ControlResult(self.state, self.phase, self.swing_foot,
@@ -87,6 +92,9 @@ class CrawlMachine:
 
     def reset(self, bundle, ros_ns, wall_ns, *, held_targets=None):
         self._shift_plan = None
+        self._calibration_request = self._calibration_vertical = None
+        self._calibration_rest_z = None
+        self._calibration_stages, self._calibration_sources = [],None
         self.generation += 1
         self.state, self.phase, self.reason = 'STAND', 'STAND', ''
         self.stopping = self.urgent = False
@@ -133,10 +141,40 @@ class CrawlMachine:
         self.stopping, self.urgent = True, self.urgent or bool(urgent)
         self._explicit_stop = True
 
-    def request_contact_calibration(self):
+    def request_contact_calibration(self, *, ros_ns=None, wall_ns=None):
         if not self._initialized or self.state != 'STAND' or self.stopping or self.calibrating:
             raise ValueError('contact calibration requires idle measured STAND')
         self.calibrating = True
+        self._index = 0  # G1's explicit FL request agrees with its force index1
+        self._calibration_rest_z = float(self._targets['fl_foot'][2])
+        self._calibration_vertical = None
+        self._calibration_request = None if wall_ns is None else dict(
+            ros_ns=ros_ns,wall_ns=wall_ns,deadline_wall_ns=wall_ns+10_000_000_000)
+        self._calibration_stages, self._calibration_sources = [],None
+
+    def confirm_contact_calibration(self, *, wall_ns):
+        """Called only by the command owner's measured one-wall-second gate."""
+        if (not self.calibrating or self.stopping or self.state!='STAND'
+                or self._calibration_vertical is None or self._calibration_vertical.phase!='STAND'):
+            raise ValueError('calibration measured STAND confirmation unavailable')
+        if wall_ns>=self._calibration_request['deadline_wall_ns']:
+            raise ValueError('calibration original wall deadline')
+        self.calibrating = False
+
+    def _record_calibration(self, bundle, ros_ns, wall_ns):
+        self._calibration_sources = {key:dict(stamp_ns=getattr(bundle,key).stamp_ns,
+            received_ns=getattr(bundle,key).received_ns) for key in ('joints','body','contacts')}
+        if not self._calibration_stages or self._calibration_stages[-1]['phase']!=self.phase:
+            self._calibration_stages.append(dict(phase=self.phase,ros_ns=ros_ns,wall_ns=wall_ns))
+
+    def calibration_snapshot(self):
+        if self._calibration_request is None:
+            return None
+        return deepcopy(dict(request=self._calibration_request,stages=self._calibration_stages,
+            selected_sources=self._calibration_sources,
+            preconditioning_rest_z=self._calibration_rest_z,
+            shift_accel_budget_mps2=getattr(self,'_shift_accel_budget',None),
+            vertical=self._calibration_vertical.snapshot() if self._calibration_vertical else None))
 
     def _margin(self, com, loads, points, exclude=None):
         support = [points[n] for n in self.model.feet if loads[n] and n != exclude]
@@ -211,8 +249,9 @@ class CrawlMachine:
         # Quintic blend has peak |d²s/du²| = 10*sqrt(3)/3. Bound the
         # *internal* support translation, not just the incoming cmd_vel ramp.
         distance = float(np.linalg.norm(self._offset_goal-self._offset_start))
+        self._shift_accel_budget = self.limits['max_support_shift_accel_mps2']*(.5 if self.calibrating else 1.)
         self._shift_duration = max(.7, math.sqrt((10.*math.sqrt(3.)/3.)*distance/
-            self.limits['max_support_shift_accel_mps2']))
+            self._shift_accel_budget))
 
     def _effective_command(self, command):
         vx, _, wz = command
@@ -303,7 +342,15 @@ class CrawlMachine:
                     raise ValueError('stance slip')
             if self._margin(com, loads, points) < self.limits['min_support_margin_m']:
                 raise ValueError('current measured support lost')
-            if self.calibrating and self.state == 'STAND' and not self.stopping:
+            if self.calibrating:
+                if self._calibration_request is None:
+                    self._calibration_request = dict(ros_ns=ros_ns,wall_ns=wall_ns,
+                        deadline_wall_ns=wall_ns+10_000_000_000)
+                if wall_ns>=self._calibration_request['deadline_wall_ns']:
+                    raise ValueError('calibration original wall deadline')
+                self._record_calibration(bundle,ros_ns,wall_ns)
+            if (self.calibrating and self.state == 'STAND' and not self.stopping
+                    and self._calibration_vertical is None):
                 self.state = 'CALIBRATING'
                 self._begin_shift(com, loads, points, ros_ns, q)
             if self._paused and not self._explicit_stop and self.state == 'STOPPED' and command != (0., 0., 0.):
@@ -320,8 +367,9 @@ class CrawlMachine:
                 self._stop(bundle, centers, loads, ros_ns)
             elif command == (0., 0., 0.) and self.state == 'STAND':
                 # Bootstrap stance can precede carry; only leg targets are emitted.
-                weight = blend((ros_ns-self._stand_start)/2e9)
-                self.reference_body[2, 3] = self._stand_start_z*(1-weight)+self.limits['nominal_body_height_m']*weight
+                if not self.calibrating:
+                    weight = blend((ros_ns-self._stand_start)/2e9)
+                    self.reference_body[2, 3] = self._stand_start_z*(1-weight)+self.limits['nominal_body_height_m']*weight
             else:
                 if self.state == 'STAND':
                     self.state = 'CRAWL'
@@ -336,6 +384,22 @@ class CrawlMachine:
                         self._phase_start = ros_ns
                     else:
                         return self._result(self._solve(q, True))
+                if self.calibrating and self._calibration_vertical is not None:
+                    foot = self.ORDER[self._index]
+                    if self._margin(com,loads,points,foot)<self.limits['min_support_margin_m']:
+                        raise ValueError('calibration three-stance support lost')
+                    step = self._calibration_vertical.advance(ros_ns=ros_ns,wall_ns=wall_ns,
+                        center_z=float(centers[foot][2]),forces=bundle.contacts.data['forces'],
+                        capture_ns=bundle.contacts.stamp_ns)
+                    if step.phase!=self.phase:
+                        self._phase_start = ros_ns
+                    self._targets[foot][2],self.phase = step.z,step.phase
+                    self._record_calibration(bundle,ros_ns,wall_ns)
+                    if step.complete:
+                        self.state,self.phase,self.swing_foot = 'STAND','STAND',None
+                        self.travel,self.offset = self.reference_body.copy(),np.zeros(2)
+                        self._stand_start,self._stand_start_z = ros_ns,self.reference_body[2,3]
+                    return self._result(self._solve(q,self.state!='STAND'))
                 vx, wz = self._effective_command(command)
                 elapsed = (ros_ns-self._phase_start)/1e9
                 # Progress is phase-bounded: physical support waits do not
@@ -363,6 +427,11 @@ class CrawlMachine:
                 if self.phase == 'SHIFT':
                     weight = blend(elapsed/self._shift_duration)
                     self.offset = self._offset_start*(1-weight)+self._offset_goal*weight
+                    if self.calibrating and self._unload_start is None:
+                        self._targets[foot][2] = precondition_loaded_reference(
+                            z=float(self._targets[foot][2]),rest_z=self._calibration_rest_z,
+                            floor_z=self.floor[foot],forces=bundle.contacts.data['forces'],
+                            dt=dt,limits=self.limits)
                     # The phase travel budget has ended before unloading. Check
                     # actual settled motion, not command=0 or geometric CoM alone.
                     measured_v = np.asarray(bundle.body.data['linear_velocity'])
@@ -379,10 +448,11 @@ class CrawlMachine:
                     if (self._unload_start is None and self._shift_settled_start is not None
                             and ros_ns-self._shift_settled_start >= 100_000_000):
                         self._unload_start = ros_ns
-                        self._unload_origin_z = self._targets[foot][2]
+                        self._unload_origin_z = (self._calibration_rest_z if self.calibrating
+                                                 else self._targets[foot][2])
                         self.swing_foot = foot  # same owner must also land during an unload STOP
                     if self._unload_start is not None:
-                        if settled and loads[foot]:
+                        if settled and (loads[foot] or self.calibrating):
                             height = self._targets[foot][2]-self._unload_origin_z
                             if height >= self.limits['max_unload_height_m']-1e-12:
                                 raise ValueError('measured unload height bound reached')
@@ -398,6 +468,13 @@ class CrawlMachine:
                             raise ValueError('measured unload timeout')
                     if self._unloaded_since is not None and ros_ns-self._unloaded_since >= 100_000_000:
                         self.phase, self.swing_foot, self._phase_start = 'SWING', foot, ros_ns
+                        if self.calibrating:
+                            self._calibration_vertical = InPlaceCalibration(
+                                start_z=float(self._targets[foot][2]),rest_z=self._unload_origin_z,
+                                baseline_z=self.floor[foot],limits=self.limits,ros_ns=ros_ns,wall_ns=wall_ns,
+                                deadline_wall_ns=self._calibration_request['deadline_wall_ns'])
+                            self._record_calibration(bundle,ros_ns,wall_ns)
+                            return self._result(self._solve(q,True))
                         self._swing_start = self._targets[foot].copy()
                         theta = wz*self.limits['cycle_s']
                         rotation = np.array([[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]])
