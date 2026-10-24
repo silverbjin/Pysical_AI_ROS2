@@ -1,0 +1,124 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_native_observer_stop_requires_exact_success_reply[0-data: true\n-True] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x778ed22ea1b0>
+code = 0, stdout = 'data: true\n', expected = True
+
+    @pytest.mark.parametrize('code,stdout,expected',[(0,'data: true\n',True),
+        (0,'data: false\n',False),(1,'data: true\n',False),(0,'',False),
+        (0,'not_data: true\n',False)])
+    def test_native_observer_stop_requires_exact_success_reply(monkeypatch,code,stdout,expected):
+        import run_navigation_13_5 as runner
+        calls = []
+        def cli(command,**kwargs):
+            calls.append((command,kwargs))
+            return SimpleNamespace(returncode=code,stdout=stdout,stderr='')
+        monkeypatch.setattr(runner.subprocess,'run',cli)
+>       result = runner.stop_gazebo_observer()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'stop_gazebo_observer'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py:17: AttributeError
+_ test_native_observer_stop_requires_exact_success_reply[0-data: false\n-False] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x778ed233f140>
+code = 0, stdout = 'data: false\n', expected = False
+
+    @pytest.mark.parametrize('code,stdout,expected',[(0,'data: true\n',True),
+        (0,'data: false\n',False),(1,'data: true\n',False),(0,'',False),
+        (0,'not_data: true\n',False)])
+    def test_native_observer_stop_requires_exact_success_reply(monkeypatch,code,stdout,expected):
+        import run_navigation_13_5 as runner
+        calls = []
+        def cli(command,**kwargs):
+            calls.append((command,kwargs))
+            return SimpleNamespace(returncode=code,stdout=stdout,stderr='')
+        monkeypatch.setattr(runner.subprocess,'run',cli)
+>       result = runner.stop_gazebo_observer()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'stop_gazebo_observer'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py:17: AttributeError
+_ test_native_observer_stop_requires_exact_success_reply[1-data: true\n-False] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x778ed233f080>
+code = 1, stdout = 'data: true\n', expected = False
+
+    @pytest.mark.parametrize('code,stdout,expected',[(0,'data: true\n',True),
+        (0,'data: false\n',False),(1,'data: true\n',False),(0,'',False),
+        (0,'not_data: true\n',False)])
+    def test_native_observer_stop_requires_exact_success_reply(monkeypatch,code,stdout,expected):
+        import run_navigation_13_5 as runner
+        calls = []
+        def cli(command,**kwargs):
+            calls.append((command,kwargs))
+            return SimpleNamespace(returncode=code,stdout=stdout,stderr='')
+        monkeypatch.setattr(runner.subprocess,'run',cli)
+>       result = runner.stop_gazebo_observer()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'stop_gazebo_observer'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py:17: AttributeError
+_______ test_native_observer_stop_requires_exact_success_reply[0--False] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x778ed22b0a70>
+code = 0, stdout = '', expected = False
+
+    @pytest.mark.parametrize('code,stdout,expected',[(0,'data: true\n',True),
+        (0,'data: false\n',False),(1,'data: true\n',False),(0,'',False),
+        (0,'not_data: true\n',False)])
+    def test_native_observer_stop_requires_exact_success_reply(monkeypatch,code,stdout,expected):
+        import run_navigation_13_5 as runner
+        calls = []
+        def cli(command,**kwargs):
+            calls.append((command,kwargs))
+            return SimpleNamespace(returncode=code,stdout=stdout,stderr='')
+        monkeypatch.setattr(runner.subprocess,'run',cli)
+>       result = runner.stop_gazebo_observer()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'stop_gazebo_observer'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py:17: AttributeError
+_ test_native_observer_stop_requires_exact_success_reply[0-not_data: true\n-False] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x778ed233e690>
+code = 0, stdout = 'not_data: true\n', expected = False
+
+    @pytest.mark.parametrize('code,stdout,expected',[(0,'data: true\n',True),
+        (0,'data: false\n',False),(1,'data: true\n',False),(0,'',False),
+        (0,'not_data: true\n',False)])
+    def test_native_observer_stop_requires_exact_success_reply(monkeypatch,code,stdout,expected):
+        import run_navigation_13_5 as runner
+        calls = []
+        def cli(command,**kwargs):
+            calls.append((command,kwargs))
+            return SimpleNamespace(returncode=code,stdout=stdout,stderr='')
+        monkeypatch.setattr(runner.subprocess,'run',cli)
+>       result = runner.stop_gazebo_observer()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'stop_gazebo_observer'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py:17: AttributeError
+_______ test_observer_stop_timeout_is_failed_evidence_not_engine_success _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x778ed22b09b0>
+
+    def test_observer_stop_timeout_is_failed_evidence_not_engine_success(monkeypatch):
+        import run_navigation_13_5 as runner
+        def cli(*args,**kwargs):
+            raise subprocess.TimeoutExpired(args[0],5.)
+        monkeypatch.setattr(runner.subprocess,'run',cli)
+>       result = runner.stop_gazebo_observer()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'stop_gazebo_observer'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py:29: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py::test_native_observer_stop_requires_exact_success_reply[0-data: true\n-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py::test_native_observer_stop_requires_exact_success_reply[0-data: false\n-False]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py::test_native_observer_stop_requires_exact_success_reply[1-data: true\n-False]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py::test_native_observer_stop_requires_exact_success_reply[0--False]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py::test_native_observer_stop_requires_exact_success_reply[0-not_data: true\n-False]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_observer_stop.py::test_observer_stop_timeout_is_failed_evidence_not_engine_success
+6 failed in 11.09s

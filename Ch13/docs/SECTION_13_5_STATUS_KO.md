@@ -1,6 +1,6 @@
 # 13.5 현재 상태·재개 지점
 
-확인일: 2026-10-24. 기준 커밋 `b26bcfb`, 브랜치 `feat/ch13-section-13-5`.
+확인일: 2026-10-24. 보존 체크포인트 `abcc057`, 브랜치 `feat/ch13-section-13-5`.
 Tasks1–7은 커밋됐고 Task8은 미완료다. Nav2 종단 인수·13.5 push는 아직 하지 않았다.
 이 문서는 최신 재개 요약이며, 과거 실패는 evidence의 `EXECUTION_LEDGER.md`에 보존한다.
 
@@ -26,6 +26,25 @@ Tasks1–7은 커밋됐고 Task8은 미완료다. Nav2 종단 인수·13.5 push�
 | 8E native 출처·결과·정상 종료·profile 승인 | 미완료 |
 
 ## 현재 결함과 다음 판별
+
+2026-10-24 후속: native Gazebo 직접 PID/라이브러리 inode·device·SHA 확인을 추가했고,
+힘/감쇠/단위/단일 명령 메타데이터 관련35시험 통과 및 과거 실제3기록 대조를 마쳤다.
+운반의 최초 실패와 독립 관측을 함께 요구하는 판정51관련시험, native 관찰기 stop ACK를
+실제 엔진 종료와 구분하는17관련시험도 통과했다. 실제GZ G1 성공으로 센 것은 아니다.
+Gazebo IMU는 latest 캐시뿐 아니라 이동평균 odometry를 순간 정답으로 삼던 의미 오류를
+확인했다. [순간 native 기준 설계](SECTION_13_5_IMU_REFERENCE_KO.md)에 따라 C++
+읽기 전용 기준을 구현·검증 중이다. 물리적 carry 속도/10wall초 교정 실패와 G2/Nav2는
+남아 있다. [제어 시계 중계안](SECTION_13_5_CONTROL_CLOCK_PROPOSAL_KO.md)은 미구현이며
+사용자 선택 대기 중이다. gain·한계·시계·센서 설정 변경은 적용하지 않았다.
+
+후속 새 실제GZ `f5eff9bc`에서 순간기준 IMU410개/누락0/최대0.0000342422rad/s와
+native 관찰기 송신차단·같은 native PID1141의 exit0·runtime 정상 종료를 확인했다.
+하지만 전체G1은 여전히 FAIL이다. 자세 이동 중 실제 팔속도0.0261044473rad/s가
+기존0.02를 넘었고 lift를 완료하지 못했다. 조건 완화·자동재시도 없이 원본을 남겼다.
+
+최신 strict 판정기의 전체 navigation pytest는343통과/315.05초다. native 센서
+colcon 보고28건(CTest wrapper포함)/실패0,8패키지설치감사와 구분해 기록했다.
+출처·리뷰·압축 보존본 안내는 `SECTION_13_5_NATIVE_REFERENCE_REVIEW_KO.md`를 참조한다.
 
 **최신:** 동일 snapshot 대조와 진단 양단 신뢰 전송 수정 후 실제 MuJoCo
 `6f390aa7-0b81-4f3b-9711-18de43e2b9dc`는 **G1 필수23개 전부 PASS**했다.

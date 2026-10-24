@@ -82,3 +82,12 @@ ECM q/qd/전달 wrench를 적용 후 상태로 위장하지 않는다. 접촉/Co
 관측을 유지한다. 두 단계는 동일 stop mutex를 사용하며 자동 재개하지 않는다.
 
 코어 fixture의 실제 물리 kernel 시험, ROS 플러그인 발행 시험, ECM 시험은 각각 기록한다. 이 시험 통과는 전체 로봇 G1/G2 또는 Nav2 종단 성공을 대체하지 않는다. 실제 엔진 인수는 별도 runner에서 수행한다.
+
+Gazebo 순간 body reference 확장은 Ch13 자체 구현이다. 설치8.15.0의 공개
+Model::CanonicalLink/Link::EnableVelocityChecks 계약과 WorldAngularVelocity/WorldPose
+component를 사용한다. `EnableVelocityChecks`는 원생 readback 요청이며 속도 setter가
+아니다. PostUpdate에서 world→canonical body 회전을 수행하고 기존50Hz 진단에
+원본2ms capture batch를 붙인다. gyro/평균 odometry를 복제하지 않는다.
+외부 코드 복사·underlay 수정 없음. 원본 의미 비교 출처는
+[8.15.0 OdometryPublisher](https://github.com/gazebosim/gz-sim/blob/gz-sim8_8.15.0/src/systems/odometry_publisher/OdometryPublisher.cc)와
+[8.15.0 Imu](https://github.com/gazebosim/gz-sim/blob/gz-sim8_8.15.0/src/systems/imu/Imu.cc)다.

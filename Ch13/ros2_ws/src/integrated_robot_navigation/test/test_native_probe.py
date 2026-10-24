@@ -46,7 +46,7 @@ def test_body_transport_trace_keeps_capture_and_clock_domains_separate(monkeypat
     from integrated_robot_navigation.observations import SensorInbox
     import probe_navigation_13_5 as probe
     rows = []
-    record = SimpleNamespace(inbox=SensorInbox(0), errors=[],
+    record = SimpleNamespace(engine='gazebo',body_references=[],inbox=SensorInbox(0), errors=[],
                              _write=lambda kind, value: rows.append((kind, value)))
     msg = Odometry(child_frame_id='base_footprint')
     msg.header.frame_id = 'odom'
@@ -61,6 +61,25 @@ def test_body_transport_trace_keeps_capture_and_clock_domains_separate(monkeypat
     assert sample['stamp_ns'] == 1_000_000_000 and sample['received_ns'] == 2000
     assert transport == dict(stamp_ns=1_000_000_000, received_ns=2000,
         callback_system_ns=5000, source_system_ns=101, rmw_received_system_ns=121)
+
+
+def test_gazebo_body_reference_keeps_each_native_capture_independent_of_imu():
+    from nav_msgs.msg import Odometry
+    from integrated_robot_navigation.observations import SensorInbox
+    record = SimpleNamespace(engine='gazebo',body_references=[],inbox=SensorInbox(0),errors=[],
+        _write=lambda *_: None)
+    msg = Odometry(child_frame_id='base_footprint')
+    msg.header.frame_id = 'odom'
+    msg.header.stamp.sec = 1
+    msg.pose.pose.orientation.w = 1.
+    msg.twist.twist.angular.x = .1
+    NavigationProbe._sensor(record,'body',msg)
+    msg.header.stamp.sec = 2
+    msg.twist.twist.angular.x = .2
+    NavigationProbe._sensor(record,'body',msg)
+    assert record.body_references == [dict(capture_ns=i*1_000_000_000,epoch=0,
+        sequence=i*1_000_000_000,frame_id='base_footprint',source='gazebo_native_odometry',
+        angular_velocity=[value,0.,0.]) for i,value in [(1,.1),(2,.2)]]
 
 
 def test_native_body_source_trace_matches_original_capture_without_republishing(monkeypatch):

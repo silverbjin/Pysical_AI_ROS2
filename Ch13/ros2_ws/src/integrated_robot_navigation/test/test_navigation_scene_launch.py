@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 from launch import LaunchContext
+from launch.actions import ExecuteProcess, IncludeLaunchDescription
+from launch.utilities import perform_substitutions
 from launch_ros.actions import Node
 from launch_ros.utilities import evaluate_parameters
 
@@ -40,6 +42,44 @@ def test_navigation_launch_uses_exact_scene_urdf(tmp_path, monkeypatch, engine):
                   for p in evaluate_parameters(ctx, action._Node__parameters) if isinstance(p, dict)]
     descriptions = [p['robot_description'] for p in parameters if 'robot_description' in p]
     assert descriptions and all(value == Path(record['robot']['path']).read_text() for value in descriptions)
+
+
+def test_navigation_gazebo_launch_owns_engine_pid_not_shell_wrapper(tmp_path, monkeypatch):
+    record = scene.materialize_scene('gazebo', 'g1', tmp_path/'scene with spaces')
+    module = launch_module('gazebo')
+    original = module.get_package_share_directory
+    monkeypatch.setattr(module, 'get_package_share_directory', lambda name:
+        str(description_dir()) if name == 'integrated_robot_description' else original(name))
+    ctx = LaunchContext()
+    ctx.launch_configurations.update(dict(vision_enabled='true', navigation_enabled='true',
+        navigation_scene=str(tmp_path/'scene with spaces'), world='',
+        navigation_bridge=str(Path(__file__).resolve().parents[1]/'config/navigation_bridge.yaml')))
+    actions = module.launch_nodes(ctx)
+    native = [action for action in actions if isinstance(action, ExecuteProcess)
+              and not isinstance(action, Node)]
+    assert len(native) == 1, 'native engine must be a direct launch child, not an included shell'
+    executable = native[0].process_description
+    assert native[0].shell is False
+    command = [perform_substitutions(ctx, part) for part in executable.cmd]
+    assert Path(command[0]).name.startswith('ruby')
+    assert Path(command[1]).name == 'gz' and command[2:5] == ['sim', '-r', '-s']
+    assert '--headless-rendering' in command
+    assert command.count(record['world']['path']) == 1  # one argv, even with spaces
+    index = command.index('--force-version')
+    assert command[index+1] == '8'
+
+
+def test_legacy_gazebo_keeps_the_upstream_launch_path(monkeypatch):
+    module = launch_module('gazebo')
+    original = module.get_package_share_directory
+    monkeypatch.setattr(module, 'get_package_share_directory', lambda name:
+        str(description_dir()) if name == 'integrated_robot_description' else original(name))
+    ctx = LaunchContext()
+    ctx.launch_configurations.update(dict(vision_enabled='true', navigation_enabled='false', world=''))
+    actions = module.launch_nodes(ctx)
+    assert len([action for action in actions if isinstance(action, IncludeLaunchDescription)]) == 1
+    assert not [action for action in actions if isinstance(action, ExecuteProcess)
+                and not isinstance(action, Node)]
 
 
 def test_scene_loader_rejects_changed_bound_model(tmp_path):

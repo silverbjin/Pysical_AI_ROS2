@@ -1,0 +1,304 @@
+FFFFFFFFFF                                                               [100%]
+=================================== FAILURES ===================================
+__ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[] ___
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = ''
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+_ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[selected_speed] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'selected_speed'
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+_ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[selected_age] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'selected_age'
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+_ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[missing_owner] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'missing_owner'
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+_ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[missing_first_fault] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'missing_first_fault'
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+_ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[wrong_model] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'wrong_model'
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+_ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[wrong_generation] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'wrong_generation'
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+_ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[not_ready] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'not_ready'
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+_ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[receiver] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'receiver'
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+_ test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[unconfirmed_result] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'unconfirmed_result'
+
+    @pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+        'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+    def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+        # The probe's 30+ samples are all healthy. A different selected capture can
+        # still have tripped the command owner's immutable first-fault record.
+        owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+            model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+            terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+        if fault.startswith('selected_'):
+            owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+                first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+        elif fault == 'missing_owner': owner = None
+        elif fault == 'missing_first_fault': owner.pop('first_fault')
+        elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+        elif fault == 'wrong_generation': owner['generation'] = 1
+        elif fault == 'not_ready': owner['state'] = 'MOVING'
+        elif fault == 'receiver': owner['receiver_healthy'] = False
+        elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+        assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+>       result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_admission'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:217: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[selected_speed]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[selected_age]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[missing_owner]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[missing_first_fault]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[wrong_model]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[wrong_generation]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[not_ready]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[receiver]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe[unconfirmed_result]
+10 failed, 30 deselected in 12.59s

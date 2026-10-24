@@ -11,6 +11,7 @@ import pytest
 
 from guard_fixture import bundle
 from integrated_robot_navigation.leg_kinematics import ik_leg
+from integrated_robot_navigation.model import compile_model
 from integrated_robot_navigation.support import center_of_mass
 from test_native_verdicts import api
 
@@ -74,7 +75,11 @@ def observed(nav_robot_model):
     frames += [row(i, 'stand', 'STAND') for i in range(101)]  # 10s, unique samples
     frames += [row(i, 'calibrate', 'CALIBRATING', 'SWING', True) for i in range(111, 114)]
     frames += [row(i, 'calibrate', 'STAND') for i in range(114, 118)]
+    references = [dict(capture_ns=row['samples']['imu']['stamp_ns'],epoch=0,
+        sequence=row['samples']['imu']['sequence'],frame_id='base_link',
+        source='mujoco_free_joint_qvel',angular_velocity=[0.,0.,0.]) for row in frames]
     return dict(root_source='native_ground_truth', urdf=model.urdf, frames=frames,
+        native_body_references=references,
         phases={'stand': dict(ros_duration_s=10., wall_duration_s=10.)})
 
 
@@ -170,6 +175,16 @@ def test_imu_uses_same_capture_native_qvel_not_later_body_cache(observed, fault)
         assert result['gyro_reference_unique_captures'] == len(references)
 
 
+@pytest.mark.parametrize('references',[None,[]])
+def test_even_synchronous_body_cache_cannot_replace_missing_native_reference(observed,references):
+    if references is not None:
+        observed['native_body_references'] = references
+    else:
+        observed.pop('native_body_references',None)
+    result = api().assess_g1_sensors(observed,WORLD,'mujoco')
+    assert result['checks']['imu_frame'] is False
+
+
 @pytest.mark.parametrize('fault', ['', 'arm_error', 'arm_speed', 'gripper_error',
                                    'gripper_speed', 'age', 'ready_only', 'duplicates'])
 def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
@@ -192,3 +207,63 @@ def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
             sample['stamp_ns'] = 1_000_000_000
     result = api().assess_carry_hold(observed, (0., 1.2, -2., 0., .8, 0.))
     assert result['passed'] is (fault == ''), result
+
+
+@pytest.mark.parametrize('fault', ['', 'missing', 'stamp', 'axis', 'nan', 'frame', 'epoch', 'source','odometry_only'])
+def test_gazebo_imu_matches_instantaneous_native_capture_not_filtered_odometry(observed,fault):
+    references = []
+    for row in observed['frames']:
+        imu = row['samples']['imu']
+        if row['stage'] == 'calibrate':
+            imu['data']['angular_velocity'] = (.01,-.01,.002)
+            row['samples']['body']['stamp_ns'] += 34_000_000
+            row['samples']['body']['data']['angular_velocity'] = (.01,.03,.002)
+        references.append(dict(capture_ns=imu['stamp_ns'],epoch=0,sequence=imu['sequence'],
+            frame_id='base_footprint',source='gazebo_ecm_world_angular_velocity',
+            angular_velocity=list(imu['data']['angular_velocity'])))
+    if fault == 'missing': references.pop()
+    elif fault == 'stamp': references[-1]['capture_ns'] += 1
+    elif fault == 'axis': references[-1]['angular_velocity'] = (.01,.010001,.002)
+    elif fault == 'nan': references[-1]['angular_velocity'] = (float('nan'),0.,0.)
+    elif fault == 'frame': references[-1]['frame_id'] = 'odom'
+    elif fault == 'epoch': references[-1]['epoch'] = 1
+    elif fault == 'source': references[-1]['source'] = 'copied_imu'
+    elif fault == 'odometry_only':
+        for reference in references: reference['source'] = 'gazebo_native_odometry'
+    observed['native_body_references'] = references
+    world = '''<sdf><world>'''+''.join(
+        f'<model name="{name}"><link><collision><pose>{pose} 0 0 0</pose>'
+        f'<geometry><box><size>{size}</size></box></geometry></collision></link></model>'
+        for name,pose,size in [('north','0 4.7 .6','9.4 .1 1.2'),
+            ('south','0 -4.7 .6','9.4 .1 1.2'),('east','4.7 0 .6','.1 9.4 1.2'),
+            ('west','-4.7 0 .6','.1 9.4 1.2')])+'''</world></sdf>'''
+    result = api().assess_g1_sensors(observed,world,'gazebo')
+    assert result['checks']['imu_frame'] is (fault == ''), result
+    if fault == '': assert result['max_gyro_body_error_rps'] == 0.
+
+
+@pytest.mark.parametrize('fault', ['', 'selected_speed', 'selected_age', 'missing_owner',
+    'missing_first_fault', 'wrong_model', 'wrong_generation', 'not_ready', 'receiver', 'unconfirmed_result'])
+def test_carry_admission_cannot_erase_owner_first_failure_with_sparse_probe(observed, fault):
+    # The probe's 30+ samples are all healthy. A different selected capture can
+    # still have tripped the command owner's immutable first-fault record.
+    owner = dict(state='READY', fault='', first_fault=None, receiver_healthy=True,
+        model_sha256=compile_model(observed['urdf']).model_sha256, generation=0,
+        terminal=True, result_future_done=True, result_status=4, result_error_code=0, pending_uuid=None)
+    if fault.startswith('selected_'):
+        owner.update(state='FAULT',fault='carry:arm_speed' if fault == 'selected_speed' else 'joints:wall_age',
+            first_fault=dict(scope='selected_cache_at_first_failure', reason=fault, ros_ns=123))
+    elif fault == 'missing_owner': owner = None
+    elif fault == 'missing_first_fault': owner.pop('first_fault')
+    elif fault == 'wrong_model': owner['model_sha256'] = '0'*64
+    elif fault == 'wrong_generation': owner['generation'] = 1
+    elif fault == 'not_ready': owner['state'] = 'MOVING'
+    elif fault == 'receiver': owner['receiver_healthy'] = False
+    elif fault == 'unconfirmed_result': owner['result_future_done'] = False
+    assert api().assess_carry_hold(observed,(0.,1.2,-2.,0.,.8,0.))['passed'] is True
+    result = api().assess_carry_admission(observed,(0.,1.2,-2.,0.,.8,0.),owner)
+    assert result['passed'] is (fault == ''), result
+    assert result['raw_measurements_passed'] is True
+    assert result['owner_passed'] is (fault == '')
+    if fault.startswith('selected_'):
+        assert result['owner_first_fault'] == owner['first_fault']

@@ -85,6 +85,7 @@ class NavigationProbe(Node):
         self.tf_api = {}
         self.transport_errors = []
         self.engine, self.native_controls = engine, []
+        self.body_references = []
         self.stage, self.ignore_faults = 'bootstrap', False
         self.missing = Counter()
         self.raw = (directory/'observations.jsonl').open('w', encoding='utf-8')
@@ -145,6 +146,13 @@ class NavigationProbe(Node):
             self._write(key, asdict(value))
             if key == 'body':
                 self._write('body_transport', transport_receipt(value.stamp_ns, receipt, system_ns, info))
+                if self.engine == 'gazebo':
+                    if len(self.body_references) >= 20000:
+                        raise ValueError('native body reference capacity')
+                    self.body_references.append(dict(capture_ns=value.stamp_ns,epoch=value.epoch,
+                        sequence=value.sequence,frame_id=value.data['child_frame_id'],
+                        source='gazebo_native_odometry',
+                        angular_velocity=list(value.data['angular_velocity'])))
         except (ValueError, TypeError) as error:
             self.errors.append(key+':'+str(error))
 

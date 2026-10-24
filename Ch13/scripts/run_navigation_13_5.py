@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import signal
 import subprocess
@@ -31,17 +32,79 @@ from run_vision_13_4 import (clean_shutdown, mapped_owned_library, owned_gazebo_
 from verify_all_13_4 import audit_installed_paths
 from verify_vision_13_4 import EvidenceRun, file_digest
 from verify_navigation_13_5 import (FRAME_REQUIRED, assess_frames, assess_tf_ownership,
-    assess_native_controls, carry_terminal, normal_teardown, engine_returncodes,
-    assess_g1_sensors, assess_carry_hold, operational_frames)
+    assess_native_controls, assess_gazebo_controls, carry_terminal, normal_teardown, engine_returncodes,
+    assess_g1_sensors, assess_carry_admission, operational_frames)
 
 
 def save(path, value):
     path.write_text(json.dumps(value, indent=2, allow_nan=False)+'\n', encoding='utf-8')
 
 
-def process_identity(pid):
-    stat = (Path('/proc')/str(pid)/'stat').read_text().rsplit(')', 1)[1].split()
+def stop_gazebo_observer():
+    """Stop native egress before engine destruction; ACK is NOT an exit proof."""
+    command = ['gz','service','-s','/navigation/stop_native_observer',
+        '--reqtype','gz.msgs.Empty','--reptype','gz.msgs.Boolean','--timeout','2000','--req','']
+    try:
+        response = subprocess.run(command,capture_output=True,text=True,timeout=5.)
+        return dict(command=command,returncode=response.returncode,stdout=response.stdout,
+            stderr=response.stderr,confirmed=response.returncode == 0 and
+            re.search(r'^\s*data:\s*true\s*$',response.stdout,re.MULTILINE) is not None)
+    except (subprocess.TimeoutExpired,OSError) as error:
+        return dict(command=command,confirmed=False,error=repr(error))
+
+
+def process_identity(pid, *, proc_root=Path('/proc')):
+    stat = (proc_root/str(pid)/'stat').read_text().rsplit(')', 1)[1].split()
     return dict(pid=pid, ppid=int(stat[1]), pgid=int(stat[2]), start_ticks=int(stat[19]))
+
+
+def attest_gazebo_libraries(process, members, expected, *, proc_root=Path('/proc')):
+    """Bind bytes/inode/device to the same live direct native child, not a shell."""
+    required = {'libnavigation_gazebo_observer.so', 'libnavigation_gazebo_observation.so',
+                'libnavigation_position_system.so'}
+    try:
+        if len(members) != 1 or len(expected) != 3:
+            raise ValueError('one native child and three libraries required')
+        member = members[0]
+        directory = proc_root/str(member['pid'])
+        identity = process_identity(member['pid'], proc_root=proc_root)
+        if (directory.stat().st_uid != os.getuid() or identity['ppid'] != process.pid
+                or identity['pgid'] != process.pid or any(identity[k] != member[k] for k in identity)
+                or not is_gazebo_command((directory/'cmdline').read_bytes())):
+            raise ValueError('native process ownership/identity changed')
+        paths = {Path(item['path']).name: Path(item['path']).resolve(strict=True) for item in expected}
+        if set(paths) != required:
+            raise ValueError('wrong selected libraries')
+        stats = {}
+        for item in expected:
+            path = Path(item['path']).resolve(strict=True)
+            stat = path.stat()
+            stats[path] = (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns)
+            if file_digest(path) != item['sha256']:
+                raise ValueError('selected bytes changed')
+        seen = {name: set() for name in required}
+        for line in (directory/'maps').read_text().splitlines():
+            fields = line.split(maxsplit=5)
+            if len(fields) != 6 or Path(fields[5]).name not in required:
+                continue
+            path = Path(fields[5]).resolve(strict=True)
+            name = Path(fields[5]).name
+            major, minor = (int(value,16) for value in fields[3].split(':'))
+            if (path != paths[name] or int(fields[4]) != stats[path][1]
+                    or os.makedev(major,minor) != stats[path][0]):
+                raise ValueError('mapped path/inode/device differs')
+            seen[name].add(path)
+        if any(seen[name] != {paths[name]} for name in required):
+            raise ValueError('missing native mappings')
+        if process_identity(member['pid'], proc_root=proc_root) != identity:
+            raise ValueError('native PID changed during observation')
+        for path, before in stats.items():
+            after = path.stat()
+            if (after.st_dev,after.st_ino,after.st_size,after.st_mtime_ns) != before:
+                raise ValueError('selected library changed during observation')
+        return dict(**identity, libraries=expected, scope='live_native_mapping_not_exit_proof')
+    except (OSError, ValueError, KeyError, TypeError, IndexError) as error:
+        raise RuntimeError('Gazebo native library attestation: '+str(error)) from error
 
 
 def process_metrics(pid, expected_pgid, *, proc_root=Path('/proc')):
@@ -102,6 +165,22 @@ def runtime_git_identity(repo, source_paths):
                                        '--', *('./'+p for p in paths)], cwd=repo, text=True))
 
 
+def audit_description_launches(repo, share):
+    """A changed source launch cannot silently execute stale installed bytes."""
+    source = repo/'Ch13/ros2_ws/src/integrated_robot_description/launch'
+    hashes = {}
+    for engine in ('mujoco', 'gazebo'):
+        original, installed = source/(engine+'.launch.py'), share/'launch'/(engine+'.launch.py')
+        try:
+            if (not installed.resolve(strict=True).is_relative_to(share.resolve())
+                    or original.read_bytes() != installed.read_bytes()):
+                raise RuntimeError('description launch source/install mismatch: '+engine)
+        except OSError as error:
+            raise RuntimeError('description launch missing: '+engine) from error
+        hashes[str(original.relative_to(repo))] = file_digest(original)
+    return hashes
+
+
 def audit_runtime(repo, output):
     prefix = Path(get_package_prefix('integrated_robot_navigation')).resolve().parent
     audit = audit_installed_paths(prefix, repo)
@@ -122,6 +201,14 @@ def audit_runtime(repo, output):
                     raise RuntimeError('share source/install mismatch: '+str(path))
                 hashes[str(path.relative_to(repo))] = file_digest(path)
     audit['integrated_robot_navigation'] = dict(module=str(installed), source_hashes=hashes)
+    description = Path(get_package_share_directory('integrated_robot_description'))
+    if not description.resolve().is_relative_to(prefix):
+        raise RuntimeError('description launch outside selected prefix')
+    hashes.update(audit_description_launches(repo, description))
+    audit['integrated_robot_description']['launch_source_verified'] = True
+    upstream_gz = Path(get_package_share_directory('ros_gz_sim'))/'launch/gz_sim.launch.py'
+    audit['integrated_robot_description']['upstream_gazebo_launcher'] = dict(
+        path=str(upstream_gz.resolve()), sha256=file_digest(upstream_gz))
     sensors = Path(get_package_prefix('integrated_robot_navigation_sensors'))
     manifest = json.loads((sensors/'share/integrated_robot_navigation_sensors/source_manifest.json').read_text())
     for relative, expected in manifest.items():
@@ -137,6 +224,14 @@ def audit_runtime(repo, output):
     if not observer.is_relative_to(sensors):
         raise RuntimeError('TF observer outside selected package prefix')
     sensor_probe.update(tf_observer_path=str(observer), tf_observer_sha256=file_digest(observer))
+    libraries = []
+    for name in ('libnavigation_gazebo_observer.so', 'libnavigation_gazebo_observation.so',
+                 'libnavigation_position_system.so'):
+        library = (sensors/'lib'/name).resolve(strict=True)
+        if not library.is_relative_to(sensors.resolve()):
+            raise RuntimeError('Gazebo library outside selected sensor prefix')
+        libraries.append(dict(path=str(library), sha256=file_digest(library)))
+    sensor_probe['gazebo_libraries'] = libraries
     audit['integrated_robot_navigation_sensors'] = sensor_probe
     for path in (repo/'Ch13/scripts').glob('*.py'):
         hashes[str(path.relative_to(repo))] = file_digest(path)
@@ -299,6 +394,10 @@ def run(args):
             report = json.loads(call(probe.carry_report, Trigger.Request()).message)
             save(root/'action_results.json', report)
             checks['carry_terminal_received'] = carry_terminal(report)
+            if args.engine == 'gazebo':
+                save(root/'native_mapping.json', attest_gazebo_libraries(
+                    process, list(engine_members.values()), sensor['gazebo_libraries']))
+                checks['native_library_loaded'] = True
             rejection = call(probe.mode, SetMode.Request(mode='CRAWL'))
             checks['unvalidated_crawl_rejected'] = not rejection.accepted
             started_ros, started_wall = probe.get_clock().now().nanoseconds, time.monotonic_ns()
@@ -331,11 +430,15 @@ def run(args):
             if args.engine == 'mujoco':
                 save(root/'native_mapping.json', mapped_owned_library(process, sensor['library']))
                 checks['native_library_loaded'] = True
+            else:
+                save(root/'native_mapping_final.json', attest_gazebo_libraries(
+                    process, list(engine_members.values()), sensor['gazebo_libraries']))
         except BaseException as error:
             (root/'error_traceback.txt').write_text(traceback.format_exc(), encoding='utf-8')
             evidence.result['failure_phase'] = evidence.result['phase']
             evidence.fail(type(error).__name__+': '+str(error))
         finally:
+            carry_owner_report = None
             if probe:
                 probe.set_stage('shutdown', ignore_faults=True)
             if process and process.poll() is None and probe and executor:
@@ -350,7 +453,8 @@ def run(args):
                     report = call(probe.carry_report, Trigger.Request())
                     if not report.success:
                         raise RuntimeError('carry report rejected')
-                    save(root/'carry_failure_report.json', json.loads(report.message))
+                    carry_owner_report = json.loads(report.message)
+                    save(root/'carry_failure_report.json', carry_owner_report)
                 except Exception as error:
                     evidence.fail('carry diagnostic capture: '+repr(error))
                 try:
@@ -373,14 +477,18 @@ def run(args):
                 try:
                     if args.engine == 'gazebo' and process.poll() is None:
                         members = owned_gazebo_members(process)
+                        teardown['native_observer_stop'] = stop_gazebo_observer()
+                        if not teardown['native_observer_stop']['confirmed']:
+                            evidence.fail('native observer egress stop unconfirmed')
                         teardown['gazebo_pause'] = quiesce_gazebo('section_13_5')
                         response = subprocess.run(['gz', 'service', '-s', '/server_control', '--reqtype',
                             'gz.msgs.ServerControl', '--reptype', 'gz.msgs.Boolean', '--timeout', '2000',
                             '--req', 'stop: true'], capture_output=True, text=True, timeout=5.)
                         teardown['gazebo_stop'] = dict(returncode=response.returncode, stdout=response.stdout)
-                        teardown['engine_exit'] = bool(members) and teardown['gazebo_pause']['confirmed'] and (
+                        teardown['engine_exit'] = (teardown['native_observer_stop']['confirmed']
+                            and bool(members) and teardown['gazebo_pause']['confirmed'] and (
                             response.returncode == 0 and 'data: true' in response.stdout
-                            and wait_owned_members_exit(process, members, timeout=8.))
+                            and wait_owned_members_exit(process, members, timeout=8.)))
                     cleanup = stop_owned_group(process)
                     teardown.update(cleanup, launch_returncode=process.poll(), parent_reaped=process.poll() is not None)
                     if args.engine == 'mujoco':
@@ -405,13 +513,20 @@ def run(args):
                         dict(value['body_reference'], capture_ns=value['capture_ns'],
                              epoch=value['epoch'], sequence=value['sequence'])
                         for value in probe.native_controls if 'body_reference' in value]
+                else:
+                    # Odometry is a filtered pose-difference estimate, not the
+                    # instantaneous independent physics reference for the IMU.
+                    observations['odometry_body_references'] = probe.body_references
+                    observations['native_body_references'] = [reference
+                        for packet in probe.native_controls
+                        for reference in packet.get('body_references',[])]
                 save(root/'frames.json', observations)
                 save(root/'all_frames.json', dict(root_source='native_ground_truth', frames=probe.frames))
                 checks.update(assess_frames(observations, profile.limits))
                 sensor_report = assess_g1_sensors(observations, Path(scene['world']['path']).read_text(), args.engine)
                 save(root/'g1_sensor_assessment.json', sensor_report)
                 checks.update(sensor_report['checks'])
-                carry_report = assess_carry_hold(observations, profile.arm_q)
+                carry_report = assess_carry_admission(observations, profile.arm_q, carry_owner_report)
                 save(root/'carry_hold_assessment.json', carry_report)
                 checks['carry_measured_settle'] = (checks.get('carry_measured_settle') is True
                                                   and carry_report['passed'])
@@ -420,6 +535,14 @@ def run(args):
                         and not probe.transport_errors and assess_native_controls(
                             [row for row in probe.native_controls if row['stage'] in ('stand', 'calibrate')],
                             model, Path(scene['world']['path']).read_text()))
+                else:
+                    control_report = {}
+                    measured = assess_gazebo_controls(
+                        [row for row in probe.native_controls if row['stage'] in ('stand','calibrate')],
+                        model,Path(scene['world']['path']).read_text(),report=control_report)
+                    save(root/'native_controls_assessment.json',control_report)
+                    checks['native_ctrl_observed'] = (checks.get('native_library_loaded') is True
+                        and not probe.transport_errors and measured)
                 save(root/'probe_diagnostics.json', dict(errors=probe.errors, missing=dict(probe.missing),
                     final_states=probe.motion, all_frames=len(probe.frames), tf_python_api=probe.tf_api,
                     transport_errors=probe.transport_errors))

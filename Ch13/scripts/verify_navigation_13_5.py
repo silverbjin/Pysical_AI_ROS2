@@ -63,6 +63,28 @@ def assess_carry_hold(observations, arm_q):
         return report
 
 
+def assess_carry_admission(observations, arm_q, owner_report):
+    """Sparse independent measurements AND the command owner's full failure history.
+
+    A successful trajectory result is necessary, but cannot erase a later
+    selected-cache fault. Missing pre-cleanup owner evidence fails closed.
+    """
+    report = assess_carry_hold(observations,arm_q)
+    report.update(raw_measurements_passed=report['passed'], owner_passed=False,
+                  owner_first_fault=None)
+    try:
+        owner_ok = (owner_report['state'] == 'READY' and owner_report['fault'] == ''
+            and owner_report['first_fault'] is None and owner_report['receiver_healthy'] is True
+            and owner_report['model_sha256'] == compile_model(observations['urdf']).model_sha256
+            and type(owner_report['generation']) is int and owner_report['generation'] == 0
+            and carry_terminal(owner_report))
+        report.update(owner_passed=owner_ok,owner_first_fault=owner_report['first_fault'])
+    except (TypeError,KeyError,ValueError,ET.ParseError):
+        pass
+    report['passed'] = bool(report['raw_measurements_passed'] and report['owner_passed'])
+    return report
+
+
 def _room_boxes(xml, engine):
     tree, boxes = ET.fromstring(xml), []
     for name in ('north', 'south', 'east', 'west'):
@@ -166,6 +188,18 @@ def assess_g1_sensors(observations, world_xml, engine):
                 or static[-1]['wall_ns']-static[0]['wall_ns'] < 9_600_000_000):
             return report
         model, boxes = compile_model(observations['urdf']), _room_boxes(world_xml, engine)
+        if engine == 'gazebo' and observations.get('native_body_references'):
+            # The native canonical body is base_footprint. Compare with the
+            # base_link IMU only when the actual model makes these frames equal.
+            fixed = ET.fromstring(model.urdf).find("joint[@name='base_footprint_joint']")
+            if (fixed is None or fixed.get('type') != 'fixed'
+                    or fixed.find('parent').get('link') != 'base_footprint'
+                    or fixed.find('child').get('link') != 'base_link'):
+                raise ValueError('native canonical/IMU frame attachment mismatch')
+            origin = fixed.find('origin')
+            if origin is not None and any(float(value) != 0. for key in ('xyz','rpy')
+                    for value in origin.get(key,'0 0 0').split()):
+                raise ValueError('native canonical/IMU frames are not identical')
         weight = sum(mass for mass, _ in model.masses.values())*9.81
         force_ok, imu_ok, scan_ok, clear = True, True, True, True
         weight_errors, accel_errors, gyro_errors, scan_errors = [], [], [], []
@@ -204,19 +238,17 @@ def assess_g1_sensors(observations, world_xml, engine):
             capture = imu_sample['stamp_ns']
             gyro_captures.add(capture)
             reference = body_references.get(capture)
-            if engine == 'mujoco' and (body_references or capture != samples['body']['stamp_ns']):
-                if reference is None:
-                    missing_gyro_references.add(capture)
-                    imu_ok = False
-                    expected_gyro = np.full(3, np.nan)
-                else:
-                    expected_gyro = np.asarray(reference['angular_velocity'], dtype=float)
-                    imu_ok &= (reference['source'] == 'mujoco_free_joint_qvel'
-                        and reference['frame_id'] == 'base_link' and reference['epoch'] == 0
-                        and type(reference['sequence']) is int and reference['sequence'] >= 0)
+            if reference is None:
+                missing_gyro_references.add(capture)
+                imu_ok = False
+                expected_gyro = np.full(3, np.nan)
             else:
-                # Synthetic synchronous fixtures and the Gazebo adapter contract.
-                expected_gyro = np.asarray(body['angular_velocity'], dtype=float)
+                expected_gyro = np.asarray(reference['angular_velocity'], dtype=float)
+                source, frame = (('mujoco_free_joint_qvel','base_link') if engine == 'mujoco'
+                                 else ('gazebo_ecm_world_angular_velocity','base_footprint'))
+                imu_ok &= (reference['source'] == source
+                    and reference['frame_id'] == frame and reference['epoch'] == 0
+                    and type(reference['sequence']) is int and reference['sequence'] >= 0)
             actual_gyro = np.asarray(imu['angular_velocity'], dtype=float)
             if expected_gyro.shape != (3,) or actual_gyro.shape != (3,):
                 raise ValueError('three gyro axes required')
@@ -306,6 +338,105 @@ def carry_terminal(record):
     return (record.get('terminal') is True and record.get('result_future_done') is True
             and record.get('result_status') == 4 and record.get('result_error_code') == 0
             and record.get('pending_uuid', 'missing') is None)
+
+
+def assess_gazebo_controls(records, model, world_xml, *, report=None):
+    """Validate scalar external P-force metadata, NOT passive/transmitted force caps.
+
+    Caller must separately bind source/library/PID and message ownership. These
+    arithmetic checks alone cannot turn JSON fixtures into native task success.
+    """
+    detail = report if report is not None else {}
+    detail.clear()
+    detail.update(passed=False, scope='raw_scalar_force_metadata_not_origin_or_task_success',
+                  records=len(records), capture_ns=None, joint=None)
+
+    def require(condition, reason):
+        if not condition:
+            raise ValueError(reason)
+
+    def finite(values):
+        return all(type(value) in (int, float) and math.isfinite(value) for value in values)
+
+    try:
+        tree = ET.fromstring(model.urdf)
+        control = tree.find('ros2_control')
+        require(control.find('hardware/plugin').text ==
+                'integrated_robot_navigation_sensors/PositionPDSystem', 'wrong hardware producer')
+        physical = {joint.get('name'): joint for joint in tree.findall('joint')}
+        parameters = {joint.get('name'): {p.get('name'): p.text for p in joint.findall('param')}
+                      for joint in control.findall('joint')}
+        step = float(ET.fromstring(world_xml).find('world/physics/max_step_size').text)
+        require(math.isfinite(step) and step > 0., 'invalid bound physics step')
+        step_ns = round(step*1e9)
+        require(len(records) >= 30 and set(parameters) == set(model.limits), 'missing controls/joints')
+        last_capture, last_sequence, entities = -1, -1, None
+        for packet in records:
+            detail['capture_ns'], detail['joint'] = packet['capture_ns'], None
+            require(packet['schema'] == 2 and packet['engine'] == 'gazebo'
+                and type(packet['epoch']) is int and packet['epoch'] == 0, 'wrong native schema/epoch')
+            require(type(packet['capture_ns']) is int and packet['capture_ns'] > last_capture
+                and type(packet['sequence']) is int and packet['sequence'] > last_sequence,
+                'nonmonotonic capture/sequence')
+            require(packet['sample_phase'] == 'pre_physics'
+                and type(packet['step_ns']) is int and packet['step_ns'] == step_ns
+                and type(packet['state_capture_ns']) is int
+                and packet['state_capture_ns'] == packet['capture_ns']-step_ns
+                and packet['state_capture_ns'] >= 0, 'wrong physics phase/time')
+            last_capture, last_sequence = packet['capture_ns'], packet['sequence']
+            values = packet['joints']
+            require(len(values) == len(model.limits)
+                and {value['name'] for value in values} == set(model.limits), 'missing/duplicate native joints')
+            mapping = {value['name']: value['entity'] for value in values}
+            require(all(type(value) is int and value > 0 for value in mapping.values())
+                and len(set(mapping.values())) == len(mapping), 'invalid/duplicate joint entity')
+            require(entities is None or entities == mapping, 'native joint identity changed')
+            entities = mapping
+            for value in values:
+                name = value['name']
+                detail['joint'] = name
+                element, params = physical[name], parameters[name]
+                low, high, speed, effort = model.limits[name]
+                slide = element.get('type') == 'prismatic'
+                require(value['type'] == ('slide' if slide else 'hinge')
+                    and value['position_unit'] == ('m' if slide else 'rad')
+                    and value['velocity_unit'] == ('m/s' if slide else 'rad/s')
+                    and value['effort_unit'] == ('N' if slide else 'Nm'), 'wrong native units')
+                scalars = [value[key] for key in ('position','velocity','lower','upper','velocity_limit',
+                    'effort_limit','native_damping','force_command','projected_transmitted_effort')]
+                require(finite(scalars), 'nonfinite scalar native value')
+                require(value['velocity_command'] is None, 'competing native velocity command')
+                for key, expected in (('lower',low),('upper',high),('velocity_limit',speed),('effort_limit',effort)):
+                    require(math.isclose(value[key],expected,rel_tol=1e-9,abs_tol=1e-8), 'native limit mismatch:'+key)
+                require(low-1e-8 <= value['position'] <= high+1e-8
+                    and abs(value['velocity']) <= speed+1e-8, 'native state outside physical limits')
+                require(abs(value['force_command']) <= effort+1e-8, 'external P-force cap exceeded')
+                base, native, kd, kp = (float(params[key]) for key in
+                    ('ch13_base_damping','ch13_native_damping','ch13_kd','ch13_kp'))
+                declared = float(element.find('dynamics').get('damping'))
+                require(finite([base,native,kd,kp]) and base >= 0. and kd > 0. and kp > 0.
+                    and params['ch13_damping_mode'] == 'native'
+                    and math.isclose(native,base+kd,rel_tol=1e-9,abs_tol=1e-8)
+                    and math.isclose(declared,native,rel_tol=1e-9,abs_tol=1e-8)
+                    and math.isclose(value['native_damping'],native,rel_tol=1e-9,abs_tol=1e-8),
+                    'native damping/source mismatch')
+                axis = value['axis_joint']
+                expected_axis = list(map(float,element.find('axis').get('xyz').split()))
+                require(len(axis) == 3 and finite(axis) and np.allclose(axis,expected_axis,atol=1e-10,rtol=0.),
+                        'native joint axis mismatch')
+                force, torque = value['transmitted_force_joint'], value['transmitted_torque_joint']
+                require(len(force) == len(torque) == 3 and finite(force+torque), 'invalid transmitted wrench')
+                projected = float(np.dot(axis,force if slide else torque))
+                require(math.isclose(value['projected_transmitted_effort'],projected,rel_tol=1e-9,abs_tol=1e-8),
+                        'joint-frame wrench projection mismatch')
+                applied = value['applied_generalized_force']
+                require(applied is None or finite([applied]), 'invalid optional applied force')
+                # Passive damping/contact wrench is not the bounded P actuator.
+        detail.update(passed=True, reason='', joint=None)
+        return True
+    except (ValueError, TypeError, KeyError, IndexError, AttributeError, ET.ParseError) as error:
+        detail['reason'] = str(error)
+        return False
 
 
 def assess_native_controls(records, model, mjcf):

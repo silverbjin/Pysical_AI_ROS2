@@ -2,6 +2,13 @@
 
 ## 13.5 추가 — 구현 진행 중
 
+- navigation 전용 Gazebo direct-child 실행은 설치된 `ros_gz_sim/launch/gz_sim.launch.py`의
+  `GazeboRosPaths.get_paths()`와 실행 파일 조회 함수를 import해 기존 plugin/resource
+  환경을 그대로 재사용한다. 외부 launcher를 복사·수정하지 않는다. Ch13에서만
+  인수를 분리한 `ExecuteProcess(shell=False)`로 Ruby/native 엔진을 직접 소유한다.
+  기존13.4/일반 launch는 기존 IncludeLaunchDescription 경로를 유지한다. runtime
+  감사에 source/설치 description launch 두 파일의 bytes와 외부 helper 경로/SHA를 기록한다.
+
 - CoM의 측정 단위 공통경로 캐시·하중 이동의 협력식 탐색·Crawl guard 미래 시각 선택과
   최초 실패 snapshot은 Ch13 신규 코드다. 변환 계산은 기존 Ch13
   `integrated_robot_vision.kinematics.KinematicChain`의 고정 compiled tuple 계약

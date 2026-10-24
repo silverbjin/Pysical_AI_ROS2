@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "integrated_robot_navigation_sensors/gazebo_observation.hpp"
 #include <gz/sim/Util.hh>
+#include <gz/sim/Model.hh>
+#include <gz/sim/Link.hh>
+#include <gz/sim/components/AngularVelocity.hh>
+#include <gz/sim/components/Pose.hh>
 #include <gz/sim/components/Collision.hh>
 #include <gz/sim/components/ContactSensorData.hh>
 #include <gz/sim/components/Inertial.hh>
@@ -131,6 +135,11 @@ std::optional<gz::msgs::StringMsg> read_gazebo_controls(gz::sim::Entity model,
 }
 void request_gazebo_observations(gz::sim::Entity model, gz::sim::EntityComponentManager & ecm)
 {
+  const auto canonical = gz::sim::Model(model).CanonicalLink(ecm);
+  if (canonical != gz::sim::kNullEntity) {
+    // Requests native readback components only. No velocity/force setters.
+    gz::sim::Link(canonical).EnableVelocityChecks(ecm);
+  }
   std::vector<gz::sim::Entity> requested;
   ecm.Each<comp::Collision>([&](const gz::sim::Entity & entity, const comp::Collision *) {
     if (descendant(entity, model, ecm) && !ecm.Component<comp::ContactSensorData>(entity)) {
@@ -139,6 +148,34 @@ void request_gazebo_observations(gz::sim::Entity model, gz::sim::EntityComponent
     return true;
   });
   for (auto entity : requested) {ecm.CreateComponent(entity, comp::ContactSensorData());}
+}
+std::optional<gz::msgs::StringMsg> read_gazebo_body_reference(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager & ecm,
+  std::chrono::steady_clock::duration stamp, uint64_t sequence)
+{
+  const auto canonical = gz::sim::Model(model).CanonicalLink(ecm);
+  if (canonical == gz::sim::kNullEntity) {return std::nullopt;}
+  const auto * name = ecm.Component<comp::Name>(canonical);
+  if (!name || name->Data() != "base_footprint") {
+    throw std::runtime_error("native canonical frame is not base_footprint");
+  }
+  const auto * velocity = ecm.Component<comp::WorldAngularVelocity>(canonical);
+  const auto * pose = ecm.Component<comp::WorldPose>(canonical);
+  if (!velocity || !pose) {return std::nullopt;}
+  const auto & rotation = pose->Data().Rot();
+  const double norm = rotation.W()*rotation.W()+rotation.X()*rotation.X()+
+    rotation.Y()*rotation.Y()+rotation.Z()*rotation.Z();
+  const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stamp).count();
+  if (ns < 0 || !velocity->Data().IsFinite() || !pose->Data().IsFinite() ||
+    !std::isfinite(norm) || std::abs(norm-1.) > 1e-9) {
+    throw std::runtime_error("invalid native body reference time/velocity/pose");
+  }
+  const auto body = rotation.RotateVectorReverse(velocity->Data());
+  gz::msgs::StringMsg result;
+  result.set_data(nlohmann::json{{"capture_ns",ns},{"epoch",0},{"sequence",sequence},
+    {"frame_id","base_footprint"},{"source","gazebo_ecm_world_angular_velocity"},
+    {"entity",canonical},{"angular_velocity",{body.X(),body.Y(),body.Z()}}}.dump());
+  return result;
 }
 GazeboObservation read_gazebo_observations(gz::sim::Entity model,
   const gz::sim::EntityComponentManager & ecm, std::chrono::steady_clock::duration stamp)

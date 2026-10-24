@@ -13,13 +13,14 @@
 # limitations under the License.
 
 import hashlib
+import importlib.util
 import os
 from pathlib import Path
 import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, ExecuteProcess
 from launch.actions import IncludeLaunchDescription
 from launch.actions import RegisterEventHandler
 from launch.actions import TimerAction
@@ -46,6 +47,34 @@ def materialize_controller_config(source, *, vision=False):
         temporary.write_bytes(data)
         temporary.replace(target)
     return str(target)
+
+
+def navigation_gazebo_action(world, vision):
+    """Direct Ruby/native server PID; preserve upstream resource/plugin paths.
+
+    Only the opt-in navigation scene uses this. Legacy 13.4 still includes the
+    upstream launch unchanged. Import its installed path helper, never copy or
+    patch the external launcher merely to remove its shell=True wrapper.
+    """
+    launcher = Path(get_package_share_directory('ros_gz_sim'))/'launch/gz_sim.launch.py'
+    spec = importlib.util.spec_from_file_location('_ch13_gazebo_paths', launcher)
+    upstream = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(upstream)
+    model_paths, plugin_paths = upstream.GazeboRosPaths.get_paths()
+    environment = {
+        'GZ_SIM_SYSTEM_PLUGIN_PATH': os.pathsep.join([
+            os.environ.get('GZ_SIM_SYSTEM_PLUGIN_PATH', ''),
+            os.environ.get('LD_LIBRARY_PATH', ''), plugin_paths]),
+        'GZ_SIM_RESOURCE_PATH': os.pathsep.join([
+            os.environ.get('GZ_SIM_RESOURCE_PATH', ''), model_paths]),
+    }
+    command = [upstream.get_executable_path('ruby'), upstream.get_executable_path('gz'),
+               'sim', '-r', '-s']
+    if vision:
+        command.append('--headless-rendering')
+    command.extend([str(world), '--force-version', '8'])
+    return ExecuteProcess(cmd=command, name='gazebo', shell=False,
+                          additional_env=environment, output='screen')
 
 
 def launch_nodes(context):
@@ -94,6 +123,8 @@ def launch_nodes(context):
         launch_arguments={
             'gz_args': ['-r -s ', '--headless-rendering ' if vision else '', world]}.items(),
     )
+    if scene:
+        gazebo = navigation_gazebo_action(world, vision)
     state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',

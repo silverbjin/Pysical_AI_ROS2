@@ -10,6 +10,7 @@
 #include <mutex>
 #include <optional>
 #include <nlohmann/json.hpp>
+#include <vector>
 
 namespace integrated_robot_navigation_sensors
 {
@@ -76,9 +77,13 @@ public:
         packet["sample_phase"] = "pre_physics";
         packet["state_capture_ns"] = capture_ns-step_ns;
         packet["step_ns"] = step_ns;
+        // Previous completed PostUpdates, each with its own original capture.
+        // Batching avoids a new 500Hz Python/ROS subscriber. Never interpolate.
+        packet["body_references"] = body_references_;
         gz::msgs::StringMsg message;
         message.set_data(packet.dump());
         controls_.Publish(message);
+        body_references_.clear();
         controls_seen_ = true;
         ++controls_sequence_;
         last_controls_publish_ = info.simTime;
@@ -95,9 +100,17 @@ public:
     if (info.dt < std::chrono::steady_clock::duration::zero() ||
       (last_seen_ && info.simTime < *last_seen_)) {state_->stopped = true;}
     last_seen_ = info.simTime;
-    if (state_->stopped || info.paused || (last_publish_ &&
-      info.simTime-*last_publish_ < std::chrono::milliseconds(20))) {return;}
+    if (state_->stopped || info.paused) {return;}
     try {
+      if (controls_seen_ && (!last_body_ || info.simTime > *last_body_)) {
+        const auto reference = read_gazebo_body_reference(model_,ecm,info.simTime,body_sequence_+1);
+        if (!reference) {throw std::runtime_error("native instantaneous body reference unavailable");}
+        if (body_references_.size() >= 64) {throw std::runtime_error("native body reference batch overflow");}
+        body_references_.push_back(nlohmann::json::parse(reference->data()));
+        ++body_sequence_;
+        last_body_ = info.simTime;
+      }
+      if (last_publish_ && info.simTime-*last_publish_ < std::chrono::milliseconds(20)) {return;}
       const auto observation = read_gazebo_observations(model_, ecm, info.simTime);
       com_.Publish(observation.com); feet_.Publish(observation.feet);
       contacts_.Publish(observation.contacts); last_publish_ = info.simTime;
@@ -111,6 +124,9 @@ private:
   bool requested_{false};
   bool controls_seen_{false};
   uint64_t controls_sequence_{0};
+  uint64_t body_sequence_{0};
+  std::vector<nlohmann::json> body_references_;
+  std::optional<std::chrono::steady_clock::duration> last_body_;
   std::optional<std::chrono::steady_clock::duration> last_seen_, last_publish_;
   std::optional<std::chrono::steady_clock::duration> last_controls_publish_;
   std::shared_ptr<EgressState> state_{std::make_shared<EgressState>()};

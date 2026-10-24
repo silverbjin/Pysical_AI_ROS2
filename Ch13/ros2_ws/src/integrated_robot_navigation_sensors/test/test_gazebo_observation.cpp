@@ -16,6 +16,10 @@
 #include <gz/sim/components/JointVelocity.hh>
 #include <gz/sim/components/JointVelocityCmd.hh>
 #include <gz/sim/components/JointTransmittedWrench.hh>
+#include <gz/sim/components/CanonicalLink.hh>
+#include <gz/sim/components/AngularVelocity.hh>
+#include <cmath>
+#include <limits>
 #include <nlohmann/json.hpp>
 #include <gz/plugin/Loader.hh>
 #include <gz/sim/System.hh>
@@ -23,6 +27,43 @@
 namespace sim = gz::sim;
 namespace comp = gz::sim::components;
 namespace nav = integrated_robot_navigation_sensors;
+
+TEST(GazeboBodyReference, InstantWorldVelocityRotatesToBodyWithoutReadingGyroOrWritingState)
+{
+  sim::EntityComponentManager ecm;
+  const auto robot = ecm.CreateEntity();
+  ecm.CreateComponent(robot,comp::Model());
+  const auto link = ecm.CreateEntity();
+  ecm.SetParentEntity(link,robot);
+  ecm.CreateComponent(link,comp::ParentEntity(robot));
+  ecm.CreateComponent(link,comp::Link());
+  ecm.CreateComponent(link,comp::CanonicalLink());
+  ecm.CreateComponent(link,comp::Name("base_footprint"));
+  ecm.CreateComponent(link,comp::WorldPose(gz::math::Pose3d(1,2,3,0,0,M_PI_2)));
+  EXPECT_FALSE(nav::read_gazebo_body_reference(robot,ecm,std::chrono::seconds(3),9));
+  ecm.CreateComponent(link,comp::WorldAngularVelocity(gz::math::Vector3d(.2,.1,.3)));
+  // Deliberately unrelated local/sensor value; reading it would make the test fail.
+  ecm.CreateComponent(link,comp::AngularVelocity(gz::math::Vector3d(99,98,97)));
+  const auto result = nav::read_gazebo_body_reference(robot,ecm,std::chrono::seconds(3),9);
+  ASSERT_TRUE(result);
+  const auto reference = nlohmann::json::parse(result->data());
+  EXPECT_EQ(reference.at("capture_ns"),3000000000);
+  EXPECT_EQ(reference.at("sequence"),9);
+  EXPECT_EQ(reference.at("epoch"),0);
+  EXPECT_EQ(reference.at("frame_id"),"base_footprint");
+  EXPECT_EQ(reference.at("source"),"gazebo_ecm_world_angular_velocity");
+  EXPECT_NEAR(reference.at("angular_velocity").at(0).get<double>(),.1,1e-12);
+  EXPECT_NEAR(reference.at("angular_velocity").at(1).get<double>(),-.2,1e-12);
+  EXPECT_NEAR(reference.at("angular_velocity").at(2).get<double>(),.3,1e-12);
+  EXPECT_EQ(ecm.Component<comp::WorldAngularVelocity>(link)->Data(),gz::math::Vector3d(.2,.1,.3));
+  EXPECT_EQ(ecm.Component<comp::AngularVelocity>(link)->Data(),gz::math::Vector3d(99,98,97));
+  ecm.SetComponentData<comp::Name>(link,"different_base");
+  EXPECT_THROW(nav::read_gazebo_body_reference(robot,ecm,std::chrono::seconds(3),9),std::runtime_error);
+  ecm.SetComponentData<comp::Name>(link,"base_footprint");
+  ecm.SetComponentData<comp::WorldAngularVelocity>(link,
+    gz::math::Vector3d(std::numeric_limits<double>::quiet_NaN(),0,0));
+  EXPECT_THROW(nav::read_gazebo_body_reference(robot,ecm,std::chrono::seconds(3),9),std::runtime_error);
+}
 
 TEST(GazeboControls, NativePluginObservesCommandsBeforePhysicsClearsThem)
 {

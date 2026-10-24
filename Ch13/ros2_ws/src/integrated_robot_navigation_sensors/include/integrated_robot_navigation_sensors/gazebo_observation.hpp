@@ -17,6 +17,10 @@ struct GazeboObservation
   gz::msgs::Contacts contacts;
 };
 void request_gazebo_observations(gz::sim::Entity model, gz::sim::EntityComponentManager &);
+// Independent completed-step body reference, never gyro/odometry/command data.
+std::optional<gz::msgs::StringMsg> read_gazebo_body_reference(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager &, std::chrono::steady_clock::duration stamp,
+  uint64_t sequence);
 // Empty until actual state and native command components are populated. No writes.
 std::optional<gz::msgs::StringMsg> read_gazebo_controls(gz::sim::Entity model,
   const gz::sim::EntityComponentManager &, std::chrono::steady_clock::duration stamp,

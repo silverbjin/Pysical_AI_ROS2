@@ -1,5 +1,151 @@
 # 13.5 실행 원장
 
+## 2026-10-24 재개 — native 판정 보완과 IMU 가설 교정
+
+- 마지막 엄격 판정기로 `task8-strict-reference-navigation-full.log`
+  **343passed/315.05초**. S colcon test-result28건(CTest wrapper포함)/실패0와
+  frozen8패키지 감사는 별도 범위다. wholeCh13/13.3/13.4matrix/G2 성공으로 합치지 않는다.
+  실패 원본 로그 `task8-gazebo-imu-history-red.log:60`의 pytest diff공백은 의도적으로
+  보존했다. 로그를 제외한 staged 코드/문서 diff--check를 별도 확인한다.
+
+- 1차 전체N 회귀 `task8-instant-reference-navigation-full.log`341passed321.89초,
+  S28native통과와 합해 해당 범위369건이었다. 이후 자체 리뷰에서 동기 캐시 fallback을
+  발견해 별도 RED2실패9.21초→관련62passed23.87초로 닫았다. 실제 f5 입력의 strict
+  postmortem도410/누락0/오차0.0000342422를 유지하고 기준 삭제 음성을 거부했다.
+  원본 FAIL과 그 시점 검증기/source hash는 변경하지 않았다.
+- f5 조건부 역산 사후 분석:44native records/힘 포화0/팔목표 최대 오차
+  1.35525e-20rad. arm2속도0.02610445,arm3속도0.02364773. 다리 역산목표20ms 차분
+  0.00150797rad, odometry기반world속도 차분 가속도최대0.186899m/s². 이 값은
+  모든 native2ms 명령 또는 순간 IMU가속도라고 부르지 않는다. `carry-excitation-analysis.json`
+  원본 설명을 유지하며 팔 목표 소유권보다 base excitation 가설을 우선 검토한다.
+- 한 실행의 정확한 보존본 `task8-gazebo-instantaneous-f5eff9bc.zip`14,278,979bytes/
+  SHA256 `8afa141de8e1ef8a4fe0e5fc813913eaed38fa5cdc37366c3b13ebc97177c17c`.
+  source71·실제FAIL/evidence/scene·시험 로그를 ZIP member별 재독 SHA 확인했다.
+  원본/과거 실패/native 원본 삭제 없음. ZIP 후의 strict 순수 판정 변경은 현재 Git과
+  별도 `task8-strict-native-reference-f5eff9bc.json`에 구분했다. 상세 복원/리뷰 안내는
+  `Ch13/docs/SECTION_13_5_NATIVE_REFERENCE_REVIEW_KO.md`다.
+
+- 새 실제 GZ `f5eff9bc-cc1a-49f1-a3d9-fc158b9b43db`는 **전체 FAIL 유지**:
+  contact_calibration 중 carry `measured carry posture lost`, raw팔최대속도
+  0.0261044473rad/s >0.02, 실제 lift0이다. 사라진 callback으로 추정하지 않는다.
+  순간 ECM 기준은 **IMU410고유 capture/누락0/최대오차0.0000342422rad/s**로 통과했다.
+  native scalar force538records/라이브러리 매핑/센서 신선도 등도 통과했지만 G1
+  완료가 아니다. `joint_tf_ownership=false`는 성공 끝의 owner_attestation 단계에
+  도달하지 못해 독립 graph 확인을 완성하지 못한 상태이며, 새 충돌의 증거가 아니다.
+- 실제 종료: native관찰기 stopACK true → pause true → nativePID1141/부모1138
+  **같은 PID exit0**, runtime/engine true, launch0, receiver joined, noforce/reaped/
+  residual[] 확인. 실제 engine정리와바이트복사22파일의 `storage-copy-ledger.json`을
+  확인한 뒤 다음 시험으로 넘어갔다. native원본도 보존했다. 추가clock계측기 없음,
+  scopedLP2는 직전비교와 같으며 기본 채택 아님. source/설치 manifest는 해당UUID다.
+- 순간기준 첫 build는 28native tests 통과했으나 build도중 REUSE수정 때문에 설치
+  감사가 실패했다. 이를 무시하지 않았다. frozen 재build87초/native28 tests0실패/
+  8패키지감사 통과 후 위 실제실행을 했다. 평균기준거부 포함 Python49passed27.75초.
+
+- `task8-gazebo-controls-verdict-red.log` 누락 API15실패 뒤 GREEN35passed/13.53초.
+  기존 be485/5dbc/571의68/851/539개 native packets를 새 메타데이터 검증기에 대입해
+  모두 일치했다. 각 `native_controls_postmortem.json`에 입력·검증기SHA와 제한된 범위를
+  적었다. 원본 result/manifest/실패는 수정하지 않았다.
+- 운반 회귀 첫 RED는 test import 누락10실패였다. 이를 고친 confirmed RED10실패는
+  실제 누락된 admission API였다. `task8-carry-owner-verdict-green.log`51passed/24.64초.
+  이제 독립 raw 관측이 정상이어도 소유자 first_fault/FAULT/불명 결과/모델·세대 불일치가
+  있으면 세부 carry 판정도 FAIL이다. 실제571의 raw만 PASS였던 맹점을 재현했다.
+- GZ exact odometry history 첫 RED2fail7pass → 관련64passed/33.18초. **불충분한
+  가설로 판정**: 5dbc는682개누락0/최대0.01930168이지만571은435개누락0/0.04321401.
+  후자의 carry raw true/owner false도 확인했다. be485는 정적10초 미달 및 owner wall-age
+  fault로 계속 FAIL. `capture-and-owner-postmortem.json`의 hash는 그 시점 검증기에
+  해당하며 새 엔진 인수가 아니다. 뒤의 원본 소스 조사로 odometry는 평균, IMU는
+  순간 component임을 확인했고 odometry를 IMU 정답으로 허용하는 분기는 철회했다.
+- `task8-gazebo-instant-reference-red.log`2fail7pass/11.88초는 순간 기준 미지원 및
+  평균 기준의 잘못된 허용을 각각 검출했다. native C++ 첫 RED는 헤더 위치 오류였고,
+  confirmed RED는 `read_gazebo_body_reference` 미선언 컴파일 실패다. runtime assertion
+  RED라고 부르지 않는다. 새 구현·실제 재측정 전에는 해결됐다고 선언하지 않는다.
+- `task8-gazebo-observer-stop-red.log` API부재6실패 → GREEN17passed/8.59초.
+  기존 stop service로 관찰기 송신부터 막고 pause/server stop을 수행한다. ACK는 종료
+  증거가 아니며 실제 native PID exit0/회수/강제없음/잔여없음을 계속 별도 요구한다.
+
+## Gazebo 시간 예산 후속 판별 — checkpoint abcc057 이후
+
+- description 직접 PID 빌드44.1초/확장8패키지 source-install 감사 통과 후
+  `5dbc1a36-6153-4fc8-83c6-3cea70449459` 실제GZ 실행:
+  launch1141 → **직접 native child1144**, 실제3library 매핑도PID1144이며 같은PID의
+  launch 종료 로그0을 수집했다. launch0·runtime exit true·강제 없음·회수·잔여[]이다.
+  `/bin/sh` 종료나 stop ACK를 native 정상 종료로 대신 세지 않았다. 전체 G1은 여전히
+  **FAIL**(10wall 교정 시간; IMU 비동기 cache 대조 오차0.02350rad/s도 남음)이다.
+  native 기록 helper의 기존 `no_runtime_or_model_changes`는 helper가 코드를 편집하지
+  않는다는 뜻이었다. 이 실행은 직전과 달리 description/script source가 바뀐 직접PID
+  회귀이며, 실제source manifest가 이를 기록한다. 이후 helper metadata는 `purpose`와
+  `driver_does_not_edit_runtime_or_model`로 명확히 구분한다. 원본 FAIL/ledger는 수정하지 않는다.
+- 원생 library 검증 TDD `task8-gazebo-library-attest-red.log`: API 누락9실패8.42초.
+  파일 경로·device/inode·실제 bytes SHA와 동일 PID/PPID/PGID/start tick·명령을 결합하고
+  전후 identity/파일 변경을 거절한다. inode/device 교체 사례를 추가한 관련 회귀
+  `task8-gazebo-library-attest-green.log`: **27통과10.85초**. 이는 fixture 산술 검증이며
+  실제 mapper 성공으로 대체하지 않는다. 다음 실제 실행에서는 초기 READY 직후와 최종
+  성공 구간의 매핑을 별도로 수집한다. source/설치8감사를 재확인했다.
+- CPU 가설 격리 domain219 진단: 최초 도구는 Jazzy에 없는 qos_profile_clock import로
+  시작 전 실패했다(엔진/자식 없음). 공개 QoSProfile로 교정했다.
+  `clock-cost-diagnostic-2e76ac26-...json`의53.1%/17.5%는 **프로파일러 포함** 값으로
+  운영 비용으로 인용하지 않는다. 오버헤드를 분리한
+  `clock-cost-diagnostic-956e5e3d-085d-4fc1-9f3e-816d4c3c38bc.json`은 무계측3초에서
+  500Hz idle ROS 수신19.2515%,50Hz6.50234%(one-core process CPU)다.
+  계측 구간의 callback1500/150회로 주기 차이를 확인했지만 이는 합성 clock fixture이며
+  실제 엔진 입력 빈도·전체 실패 근인을 증명하지 않는다. 프로파일 함수 시간은 계측
+  오버헤드/코루틴 집계 영향을 포함하므로 절대 CPU 귀속으로 사용하지 않는다.
+- 추가 Python 고주파 수신기로 실제 엔진을 더 부하 주지 않도록 읽기 전용 C++ clock
+  계측기를 별도 사용자 build 영역에 만들었다(로봇 runtime 패키지/underlay 수정 아님).
+  `clock-rate-fixture-6993765f-d4af-4eaa-9309-ae142404218f` domain219에서2458메시지/
+  499.990Hz·publisher1·rollback0을 확인했다. 이것도 native 엔진 증거가 아니다.
+  다음 실제GZ의 정적 구간에서만5초 계측하고 원본stamp 간격/GID·실행 binary/source SHA·
+  진단 프로세스 CPU/종료를 기록한다. 시계 relay·속도/가속도/시간 상한 변경은 아직 없다.
+
+- native 기록 비교 `571bdbe2-1fad-47fa-b209-fab9f96afe49` **FAIL**: SHIFT에서
+  실제 carry arm2속도0.023103694rad/s>기존0.02. 동일 owner 선택joint stamp/판정ROS
+  22.328초, arm3속도0.01841648 등 다른 팔은 기준 안이었다. 감쇠/게인/시간/힘 기준
+  변경 없이 재발했으므로 저장 위치만의 해결이 아니다. 정적 관측9.98ROS/13.214146wall,
+  RTF0.75525는 직전0.67148보다 높았지만 새 효과를 확정할 반복 인수는 아니다.
+  calibration은0.78ROS만 관측돼10wall 완료 예산 비교는 중도 실패로 검열됐다.
+  원본 native evidence20파일을 저장소로 byte/SHA 일치 복사했고 원본도 유지했다.
+  runtime/launch0·강제 없음·회수·잔여[]·probe join 확인.
+- `carry-excitation-analysis.json`: 실패 전후46 native snapshot 모두 비포화이며
+  P법칙으로 **추정한** 팔 목표의 carry 목표 대비 오차 최대3.4e-21rad다.
+  명령 토픽을 실제 native 명령으로 위장하지 않았으며 직접 command 관측은 아니다.
+  다리 추정 목표 최대20ms차0.00200065rad, 회전 basis를 WORLD로 맞춘 몸체 속도
+  차분 최대0.180245m/s²를 관측했다. 이는 실제 IMU 가속도나 모든 물리 스텝의 추적이
+  아니므로 그 자체로 근인 확정/인수 판정에 사용하지 않는다. 단순 팔 목표 상실 가설은
+  뒷받침되지 않았다. 무조건 gain 증대/속도 상한 완화는 하지 않는다.
+- Task8 종료 출처 보강 TDD: `task8-direct-gazebo-child-red.log` 직접 child 없음으로
+ 1실패11.34초; `task8-description-runtime-audit-red.log` source/install 감사 누락4실패
+ 8.27초. navigation opt-in만 shell=False argv 실행으로 바꿨고 공식 설치 helper를
+ import해 plugin/resource 환경을 보존했다. 첫GREEN은 테스트가 잘못된 공개 API 위치
+ Executable.shell을 읽어1실패21통과17.69초였다. 올바른 ExecuteLocal.shell로 고친
+ 관련 회귀 `task8-direct-gazebo-child-fixed.log`는 **23통과15.80초**.
+ 기존13.4 경로 보존, 공백 포함 world 단일 argv, 변경/누락/소스 symlink 설치 거절을
+ 함께 검사했다. 실제 PID 매핑+exit 수집은 아직 실행 전이며 description 재빌드/감사 중이다.
+
+- 로컬 `abcc057b8a2317d6034092abf15b969a270a2383`은 WIP 체크포인트이며 push하지
+  않았다. 기존 Task8 source/tests와 MuJoCo3연속 G1 PASS 요약·69source 바이트 보존본을
+  포함한다. 최종 Task8/G2/Nav2 완료로 표시하지 않았다. 사용자13.4교육 문서는
+  stage/수정하지 않았고 원본 실패 raw도 로컬에 모두 유지한다.
+- 설치8패키지 감사를 재확인한 뒤 `2e09eeac-7f06-4ff8-ae72-49b66f980472` 실제GZ를
+  LP_NUM_THREADS=2 프로세스 한정으로 실행했다. native PID1131/start6676의 실제
+  환경과3library 매핑을 수집했으며 root 최대59threads였다. **FAIL**: 원래10wall초
+  교정 제한에 도달했다. 이 실행에서는 carry READY/first_fault=null이지만 이를
+  과거 간헐 팔 속도 결함의 해결로 단정하지 않는다. 관측 정적 구간9.98ROS/14.862648wall,
+  교정 구간6.478ROS/10.135101wall로 RTF0.67148/0.63916이다. 이전default 약0.69보다
+  개선을 입증하지 못했으므로 LP2를 기본으로 채택하지 않는다.
+- 최초 제한 도달 보고서: ROS24.008초, CALIBRATING/SHIFT/FL unload, unload시작19.650초,
+  경과4.358초·명령 높이8.684mm 증가·FL 하중2.33117N으로 기존2N 미만 조건 미충족.
+  지지·속도 조건 없이 시각만으로 발을 들지 않았고 기존 max10mm/2mm/s도 유지했다.
+  all process0·강제 없음·회수·잔여[]·probe join 확인. STOPPED 미확정으로 runtime
+  정상 인수는 실패다. wrapper exit와 service ACK를 실제 native PID 정상 exit 증명으로
+  대체하지 않으며 direct native exit 증거 보강은 여전히 미완료다.
+- Ruling: `_validate_limits`의 unload_speed_mps 상한0.002를 올리거나10wall 기준을
+  늘리지 않는다. 다음 판별은 같은 LP2/소스/설치/모델에서 **실행 기록 위치만**
+  `/home/jinho/ch13_5_completion_.../evidence`로 바꾼다. 준비 장면은 기존처럼 저장소
+  evidence에 두고 실제 운전 중 raw/system/process/driver 기록만 native 영역에 쓴다.
+  종료 후 원본 native 파일을 그대로 보존하고 새 저장소 UUID로 byte/SHA 일치 복사한다.
+  `storage-copy-ledger.json`은 실제 command root와 복사 출처를 명시한다. 위치 효과의
+  실험이며 runtime 수정·driver 변경·자료 제외·제어 한계 완화가 아니다.
+
 ## 최신 판별: 검사기 수신 소유권과 IMU 촬영 대조
 
 - 최신 navigation 전체 회귀 `task8-imu-capture-navigation-full.log`:
