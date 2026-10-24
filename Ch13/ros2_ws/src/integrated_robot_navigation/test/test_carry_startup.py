@@ -18,7 +18,7 @@ from integrated_robot_interfaces.srv import SetMode
 
 
 @pytest.mark.parametrize('case', ['delayed', 'wrong_claims', 'foreign_owner', 'carry_rejected',
-                                 'bootstrap_empty', 'bootstrap_wrong_model'])
+                                 'bootstrap_empty', 'bootstrap_wrong_model', 'clock_arm', 'clock_arm_rejected'])
 def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks(robot_model, tmp_path, case):
     assert importlib.util.find_spec('integrated_robot_navigation.startup'), 'startup sequencer missing'
     module = importlib.import_module('integrated_robot_navigation.startup')
@@ -27,8 +27,11 @@ def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks(robot_
     peer = Node('startup_service_peer', context=ctx)
     model_path = tmp_path/'robot.urdf'
     model_path.write_text(robot_model.urdf)
+    relay_case = case in ('clock_arm', 'clock_arm_rejected')
     node = module.StartupManager(context=ctx, parameter_overrides=[
-        Parameter('model_file', value=str(model_path))])
+        Parameter('model_file', value=str(model_path)),
+        Parameter('control_clock_mode', value='relay100' if relay_case else 'native'),
+        Parameter('validation_mode', value=relay_case)])
     executor = SingleThreadedExecutor(context=ctx)
     executor.add_node(peer)
     executor.add_node(node)
@@ -76,10 +79,17 @@ def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks(robot_
         response.message = 'arm action server unavailable' if not response.success else 'reserved'
         return response
 
+    def arm_clock(request, response):
+        calls.append(('clock', 'arm'))
+        response.success = case != 'clock_arm_rejected'
+        response.message = 'clock not fresh' if not response.success else 'armed once'
+        return response
+
     peer.create_service(SetMode, '/navigation/set_mode', mode)
     peer.create_service(ChangeState, '/crawl_controller/change_state', lifecycle)
     peer.create_service(Trigger, '/carry_manager/prepare', prepare)
     peer.create_service(ListControllers, '/controller_manager/list_controllers', controllers)
+    peer.create_service(Trigger, '/navigation_control_clock/arm', arm_clock)
     pubs = {key: peer.create_publisher(MotionState, '/navigation/'+key+'_state', 10)
             for key in ('guard', 'crawl', 'carry')}
     peer.create_subscription(MotionState, '/navigation/startup_state', states.append, 10)
@@ -117,6 +127,7 @@ def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks(robot_
         assert ('lifecycle', Transition.TRANSITION_ACTIVATE) not in calls, \
             'measured feedback must not substitute for active controller claims'
         assert ('carry', 'prepare') not in calls
+        assert ('clock', 'arm') not in calls, 'no arming before measured feedback and real claims'
         controllers_active = True
         pump(.4)
         if case in ('wrong_claims', 'foreign_owner'):
@@ -124,6 +135,16 @@ def test_startup_waits_for_measured_stand_then_carry_and_never_auto_walks(robot_
             assert 'interface' in states[-1].fault_reason
             assert ('lifecycle', Transition.TRANSITION_ACTIVATE) not in calls
             return
+        if relay_case:
+            assert calls.count(('clock', 'arm')) == 1, 'explicit one-shot clock arming missing'
+            if case == 'clock_arm_rejected':
+                assert states[-1].state == 'FAULT' and 'clock not fresh' in states[-1].fault_reason
+                count = len(calls)
+                pump(.3)
+                assert len(calls) == count
+                assert ('lifecycle', Transition.TRANSITION_ACTIVATE) not in calls
+                return
+            assert calls.index(('clock','arm')) < calls.index(('lifecycle',Transition.TRANSITION_ACTIVATE))
         assert calls[-1] == ('lifecycle', Transition.TRANSITION_ACTIVATE)
         stand_ready = True
         pump(.25)

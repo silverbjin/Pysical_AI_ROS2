@@ -118,6 +118,8 @@ class NavigationProbe(Node):
         self.carry_report = self.create_client(Trigger, '/carry_manager/report')
         self.carry_stop = self.create_client(Trigger, '/carry_manager/stop')
         self.native_stop = self.create_client(Trigger, '/navigation/stop_native_sensors')
+        self.control_clock_report = self.create_client(Trigger, '/navigation_control_clock/report')
+        self.control_clock_stop = self.create_client(Trigger, '/navigation_control_clock/stop')
         self.create_timer(.02, lambda: self._dispatch(self._frame))
 
     def _dispatch(self, callback, *args):

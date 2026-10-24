@@ -1,6 +1,6 @@
 # 13.5 현재 상태·재개 지점
 
-확인일: 2026-10-24. 보존 체크포인트 `abcc057`, 브랜치 `feat/ch13-section-13-5`.
+확인일: 2026-10-24. 이번 실측의 기준 HEAD `6be20f7`, 브랜치 `feat/ch13-section-13-5`.
 Tasks1–7은 커밋됐고 Task8은 미완료다. Nav2 종단 인수·13.5 push는 아직 하지 않았다.
 이 문서는 최신 재개 요약이며, 과거 실패는 evidence의 `EXECUTION_LEDGER.md`에 보존한다.
 
@@ -27,6 +27,31 @@ Tasks1–7은 커밋됐고 Task8은 미완료다. Nav2 종단 인수·13.5 push�
 
 ## 현재 결함과 다음 판별
 
+`44a97d81`의 contacts wall age208.58ms를 실제 DDS 최소 재현으로 확인한 뒤,
+relay100 검증 모드의 센서 그룹/메일박스 잠금만 분리했다. 상태 머신·라이프사이클·
+관절 명령은 제어 소유자 하나에 남긴다. 오류 latch와 최종 발행 경계를 원자화했다.
+navigation 전체385PASS/324.10초, sensors45건(CTest wrapper포함)PASS/10.7초,
+선택8패키지 소스·설치 감사PASS다. 전체Ch13/최종Nav2 인수 통과라는 뜻은 아니다.
+
+- 같은78개 runtime 소스로 새 MuJoCo `c1ae8cd3`의 실제 G1은23/23PASS다.
+  실제 terminal/정상runtime·engine 종료/부모회수/강제정리 없음/잔여[]를 확인했다.
+  IMU810개 고유 촬영/누락0/최대오차0.00314186rad/s, lift57개 고유 촬영이다.
+- 새 Gazebo `5f2a8463`은 정적·carry terminal/settle·센서·접촉/lift·IMU·clock을
+  통과했지만,10wall초 교정 종료 시 아직SWING이어서 **전체FAIL**이다. 보고 당시
+  controller 최초fault/stop은null이며 이전 센서 결함은 이 실행에서 관측되지 않았다.
+  실제5mm lift 최초 확인9.4047wall초, 관측 최대lift10.215mm다. 원본 비동기
+  probe 후분석이며 정확한 owner 궤적 재생이나 새 PASS로 취급하지 않는다.
+- Gazebo의 소비자/중계/nativePID1140/launch는 실제exit0·회수·잔여[]였지만,
+  물리STOPPED/deactivate 미확정으로 정상시스템 종료 필수검사는FAIL로 유지했다.
+- 검증본 보존: Gazebo ZIP SHA`3979b0af242b5d4b54ac8c884928a5805e471dddb063ae6e5d90d7dfe2447b62`,
+  MuJoCo/최신 전체회귀 ZIP SHA`089541abbb20c33c3f44fa9ca0ef316b01493e867279ddbcb544c848dc17a338`.
+  원본 실패·성공은 모두 남긴다. 세부 파일명과 명령은 실행 원장/각 manifest에 있다.
+
+다음 설계 선택은 G1 제자리 교정에 일반 보행용SWING을 재사용하는 대신 전용 lift-return
+궤적/시간 예산을 둘지 여부다. 기존10wall초·실제lift·속도/하중·안정화 기준과 일반CRAWL
+궤적/게인은 유지하는 방향을 사용자에게 제안했다. 아직 구현하거나 승인으로 가정하지
+않았다. G2/Nav2·13.5 push는 보류 중이며, 권한 상승이 필요한 상태는 아니다.
+
 2026-10-24 후속: native Gazebo 직접 PID/라이브러리 inode·device·SHA 확인을 추가했고,
 힘/감쇠/단위/단일 명령 메타데이터 관련35시험 통과 및 과거 실제3기록 대조를 마쳤다.
 운반의 최초 실패와 독립 관측을 함께 요구하는 판정51관련시험, native 관찰기 stop ACK를
@@ -34,8 +59,9 @@ Tasks1–7은 커밋됐고 Task8은 미완료다. Nav2 종단 인수·13.5 push�
 Gazebo IMU는 latest 캐시뿐 아니라 이동평균 odometry를 순간 정답으로 삼던 의미 오류를
 확인했다. [순간 native 기준 설계](SECTION_13_5_IMU_REFERENCE_KO.md)에 따라 C++
 읽기 전용 기준을 구현·검증 중이다. 물리적 carry 속도/10wall초 교정 실패와 G2/Nav2는
-남아 있다. [제어 시계 중계안](SECTION_13_5_CONTROL_CLOCK_PROPOSAL_KO.md)은 미구현이며
-사용자 선택 대기 중이다. gain·한계·시계·센서 설정 변경은 적용하지 않았다.
+남아 있다. [제어 시계 중계 실험](SECTION_13_5_CONTROL_CLOCK_PROPOSAL_KO.md)은
+사용자가 승인해 opt-in100Hz 검증 전용 구현·시험 중이다. 기본 native 경로·물리 게인·
+안전 한계·원본 시계·센서는 유지한다. 실제 실험 성공이나 CRAWL 승인으로 간주하지 않는다.
 
 후속 새 실제GZ `f5eff9bc`에서 순간기준 IMU410개/누락0/최대0.0000342422rad/s와
 native 관찰기 송신차단·같은 native PID1141의 exit0·runtime 정상 종료를 확인했다.

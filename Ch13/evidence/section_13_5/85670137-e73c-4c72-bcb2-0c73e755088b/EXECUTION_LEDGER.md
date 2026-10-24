@@ -1,5 +1,51 @@
 # 13.5 실행 원장
 
+## 2026-10-24 수정본 전체 회귀 및 MuJoCo 기본 경로
+
+- 고정 수정본 navigation385PASS324.10초(`task8-control-clock-mailbox-full.log`), sensors45건(CTest wrapper포함)PASS10.7초(`task8-control-clock-mailbox-sensors-final.log`), 선택8패키지 소스/설치 감사PASS. 마지막 검증에서 재빌드/런타임 수정 없음.
+- 동일78runtime 소스의 새 MuJoCo `c1ae8cd3-a240-4145-88bc-0cfd719a4033`, result UUID`de49988a-170c-48b7-9209-9d681fe7da92`: 기본native/single_worker G1 **23/23PASS**. 실제typedterminal/physicalsettle/IMU810고유·누락0·최대오차.0031418598rad/s/lift57고유. engine/runtime/launch0, receiverjoined,parentreaped,noforce,residual[]. relay100 또는G2/Nav2 성공으로 세지 않는다.
+- 소스+MuJoCo 원본/준비 장면/최신 전체회귀/계측+Gazebo 시간예산 후분석을 `task8-control-clock-mailbox-mujoco-regression.zip`11,214,240bytes,SHA`089541abbb20c33c3f44fa9ca0ef316b01493e867279ddbcb544c848dc17a338`에 보존. 실행과 현재 source manifest 일치/member 해시 재독 검증. 원본 삭제 없음.
+- Gazebo 후분석 최초5mm lift9.404706273wall초/최대lift.0102151m. 센서 비동기 후분석이며 정확한 owner replay가 아니다. 일반SWING 재사용 교정 구조의 예산 재설계가 다음 선택이다. G1 전용lift-return 제안은 사용자 답변 대기이며, 물리 궤적/게인/10wall·실제lift·속도·하중·settle 한계를 변경하지 않았다.
+- 작성자 자체 검토: model→mailbox 잠금 순서/ingress에서Machine 직접변이 없음/기존Clock구독하나/원본receipt/최초fault와publish경계/정상종료 의미를 재확인. 서브에이전트나 독립리뷰를 사용한 것으로 표시하지 않는다. 전체13.5 미완료, main/PR/push 없음.
+
+## 2026-10-24 메일박스 격리 실측 — 이전 센서 실패 미관측, 전체 인수는 FAIL
+
+- actual44a97d81의 소유자 contacts wall208.579433ms/clockread36,561ns/독립 ingress 정상에서 최소 DDS 재현으로 default 제어 그룹+모델 잠금 병목을 판별했다. clock은 통과/contacts는 실패(1FAIL/2PASS11.69초), malformed input 경계1FAIL11.92초를 먼저 보존했다.
+- relay100 검증 모드만 별도 센서 그룹/메일박스 잠금을 적용했다. 모델·라이프사이클·모터 발행은 제어 소유자 하나이며 오류 latch 확인과 최종 발행을 같은 메일박스 경계로 묶었다. native 기본 그룹/단일 실행기·촬영/시계·50Hz·안전 수치는 유지했다. 관련31PASS68.93초+N설치18.9초+8패키지 감사PASS.
+- 새 실제 Gazebo `5f2a8463-2ae6-4bdd-acef-50e28e853a48`, result `3a2522c8-6905-4254-a873-6452a5554e6d`: 기존23+1 모두 유지, 전체FAIL. 정적/실제 carry terminal/settle/센서/접촉/발 lift/IMU/clock 통과, 교정10wall초 안에 착지/settle 미완료. controller 최초fault/stop null, 마지막CALIBRATING/SWING. 이전결함의3회 연속 성공이나G1완료가 아니다.
+- 시계4020고유/최소10.134392ms/최초receipt→발행최대23.636744ms/4개MotionState양의stamp lineage누락0. 교정8.2ROS/10.1205wall(RTF.8102), Crawl94.00%/17threads. 정적9.98ROS/12.6246wall(RTF.7905), Crawl91.44%. CPU 개선 완료 주장 없음.
+- STOPPED/deactivate 미확정FAIL을 유지하면서 consumers stop/relay ACK+actual0/native1140actual0/launch0/parentreaped/receiverjoined/noforce/residual[] 확인. 최초 종료 실패를 성공한 PID 반환으로 대체하지 않았다.
+- 실행/78소스/준비 장면/시험/설치 고정본 `task8-control-clock-5f2a8463.zip`20,149,669bytes,SHA256 `3979b0af242b5d4b54ac8c884928a5805e471dddb063ae6e5d90d7dfe2447b62`; 원본은 삭제하지 않았다.
+- 별도 CPU fixture inherited1.094ms/tick vs BLAS1 1.072ms/tick, 양쪽3threads. 실제 CPU 병목을 BLAS 탓으로 단정할 수 없어 스레드 설정을 바꾸지 않았다. 원본 `task8-sensor-cpu-characterization.json`은 물리 판정이 아니다.
+
+## 2026-10-24 승인된100Hz 중계 실험 — 첫 실제 실패 보존
+
+- 사용자가 고수준5개 노드 검증 전용 중계를 승인했다. native 기본/원본 엔진·TF·센서·
+  probe 시각/50Hz steady 제어/200·300ms 원래 계약은 변경하지 않았다.
+  source/rate/owner/close TDD→관련44통과→동결N366·S42보고(CTest wrapper포함)통과,
+  선택8패키지 설치 감사 후 첫 실제Gazebo를 실행했다.
+- `925d70ff-642d-458d-b34c-619248b18ab8`, result UUID
+  `2fba0266-f5ff-44a2-9f52-eb0591f6c690`: 전체FAIL. 첫4ms 전달 뒤 시동 중200ms
+  중단을 운전 손실로 간주해 중계가 고착됐다. JSB 활성화 전이며 carry/stand 단계에
+  도달하지 못했다. CPU 개선이나 기존 물리 결함 해결을 판단할 수 없는 실행이다.
+  accepted inputs1로 callback 부재를 단정하지 않는다. 실제 graph는 정확히5개였고
+  relay PID1156/start127768/exe·lib SHA를 확인했다. native PID1140 exit0/launch0,
+  noforce/reaped/residual[]지만 relay1·STOPPED 미확정이라 정상 필수 검사는FAIL이다.
+- 원본77source·scene·실패·검증을 `task8-control-clock-925d70ff.zip`에 보존,
+  13,187,215bytes/SHA949c2f1f2249a58826b8efb0f763608763a7818ba6c29fb0b7cf9fb9009ffa46.
+  모든 member 재독 해시 확인. 원본/native원본도 유지. 기본 경로로 되돌려 성공 실행만
+  고르거나 중단 시간을 늘리는 조치는 하지 않았다.
+- Ruling: 원본 양의 첫 tick을 운전 활성으로 취급하지 않는다. 기존 StartupManager가
+  fresh센서/guard/실제claims 뒤, 다리 활성화 전에 one-shot clock arm한다. 원본 receipt
+  200ms 기준은 arm 때도 검사·갱신 금지. ACK 뒤 readiness 재확인. 운전200ms 고착·
+  시동45s·재시도 금지 유지. bootstrap에도 source/rollback 오류 고착은 항상 적용한다.
+  최소RED bootstrap1/기존8통과→10통과, 실제 startup RED2→8통과, unarmed판정RED1,
+  수정 관련46통과60.58초. 현재 전체N 재검증은 아직 하지 않았다.
+- 직접 ROS 시험에서 설치된 이전 lib가 build RPATH보다 먼저 로드된 도구 오류3통과/
+  2실패를 보존했다. `~/arm`·`armed`가 없어 판별. 도구의 해당 프로세스만 build-lib
+  우선/ldd기록으로 수정. 실제 설치 감사 경계는 유지한다. 새 동결 설치/센서 전체
+  회귀/감사 중이며 다음 실제 실행 전에는 다른 엔진을 시작하지 않는다.
+
 ## 2026-10-24 재개 — native 판정 보완과 IMU 가설 교정
 
 - 마지막 엄격 판정기로 `task8-strict-reference-navigation-full.log`

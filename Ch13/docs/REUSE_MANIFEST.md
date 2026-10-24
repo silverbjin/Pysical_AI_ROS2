@@ -204,3 +204,21 @@ Apache-2.0/BSD-3-Clause 저작권·라이선스를 보존하고 Ch13 namespace/p
 `verify_architecture_13_3.py`의 합성 목표 전달 순서와 `test_architecture_probe_time.py`는
 Ch13 작성 코드이며 제3자 복사는 없다. 해당 두 파일만의 해시 차이와 원본·설치 동일성은
 `legacy-clock-final/frozen-source.json` 및 `after-audit.json`으로 별도 검증한다.
+
+## 13.5 승인된 시계 중계 추가 출처
+
+`integrated_robot_navigation_sensors/control_clock_*`는 Ch13 신규 Apache-2.0 구현이다.
+기준 `6be20f7`의 `tf_provenance_main.cpp` exclusive-create/쓰기/파일 수명 패턴을
+최소 적응하고 공개 Jazzy `rclcpp`/`rosgraph_msgs`/`std_srvs` API를 사용했다.
+외부 코드 복사·앞 장·underlay 변경 없음. 기본 시계를 바꾸지 않는 검증 전용 경계와
+실제 시험 상태는 `SECTION_13_5_CONTROL_CLOCK_PROPOSAL_KO.md`에 기록한다.
+
+`integrated_robot_navigation/clock_execution.py`는 Ch13 신규 코드다. 설치 Jazzy
+`rclpy/time_source.py`를 읽어 callback 등록 방식을 확인했고, 공개 Node 구독 생성·
+topic resolve·callback group/executor API만 사용한다. 외부 소스 복사/수정 및
+TimeSource 내부 필드 접근이 없다. 기존 Ch13 `integrated_robot_vision.execution.run_node`
+(기준6be20f7)의 constructor/SIGINT/자원 회수 소유자를 import 재사용한다. native
+단일 실행기와13.4 원본은 그대로 두고 opt-in13.5 Crawl의 Clock dispatch를 분리한다.
+후속 `crawl_controller.py` 센서 메일박스 분리는 같은 Ch13 `SensorInbox`/immutable
+`Sample`을 재사용한 신규 코드다. 별도 센서 그룹·메일박스 잠금과 오류 latch를 추가하되
+상태 전이/관절 명령 소유자는 하나이며 외부 소스를 추가 복사하지 않았다.

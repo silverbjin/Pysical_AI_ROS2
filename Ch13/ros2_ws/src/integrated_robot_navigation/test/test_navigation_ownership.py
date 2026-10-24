@@ -86,6 +86,45 @@ def test_validation_mode_denies_crawl_even_with_validated_admission(nav_robot_mo
         ctx.try_shutdown()
 
 
+@pytest.mark.parametrize('mode,validation,allowed', [
+    ('native', 'false', True), ('relay100', 'true', True),
+    ('relay100', 'false', False), ('unbounded', 'true', False)])
+def test_control_clock_mode_only_remaps_five_validation_consumers(tmp_path, mode, validation, allowed):
+    """Break: opt-in leaks into engine/TF clocks, defaults, or CRAWL admission."""
+    from integrated_robot_navigation.model import compile_model
+    record = scene.materialize_scene('gazebo', 'g1', tmp_path/'scene')
+    model = compile_model(Path(record['robot']['path']).read_text())
+    profile = tmp_path/'profile.json'
+    profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+    ctx = LaunchContext()
+    ctx.launch_configurations.update(engine='gazebo', navigation_scene=str(tmp_path/'scene'),
+        carry_profile=str(profile), validation_mode=validation, control_clock_mode=mode,
+        control_clock_output=str(tmp_path/'control_clock.jsonl'),
+        tf_provenance_output=str(tmp_path/'tf_provenance.jsonl'))
+    module = launch_file('crawl_system')
+    if not allowed:
+        with pytest.raises(ValueError, match='control_clock'):
+            module.launch_nodes(ctx)
+        return
+    nodes = [a for a in module.launch_nodes(ctx) if isinstance(a, Node)]
+    consumers = {'motion_guard', 'crawl_controller', 'carry_manager', 'nav_projection', 'crawl_startup'}
+    relays = [a for a in nodes if a.node_executable == 'control_clock_relay']
+    assert len(relays) == (1 if mode == 'relay100' else 0)
+    for action in nodes:
+        if action.node_executable in ('crawl_controller','crawl_startup'):
+            parameters = evaluate_parameters(ctx,action._Node__parameters)
+            assert any(p.get('control_clock_mode') == mode for p in parameters if isinstance(p,dict))
+        remaps = [(perform_substitutions(ctx, a), perform_substitutions(ctx, b))
+                  for a, b in action._Node__remappings]
+        want = [('/clock', '/navigation/control_clock')] if (
+            mode == 'relay100' and action.node_executable in consumers) else []
+        assert remaps == want
+        if action in relays:
+            values = evaluate_parameters(ctx, action._Node__parameters)
+            assert any(p.get('use_sim_time') is False for p in values if isinstance(p, dict))
+    assert {a.node_executable for a in nodes if a.node_executable in consumers} == consumers
+
+
 @pytest.mark.parametrize('crawl_rig', [True], indirect=True)
 def test_validation_mode_leg_owner_rejects_external_crawl_flag(crawl_rig):
     rig = crawl_rig

@@ -40,6 +40,75 @@ def save(path, value):
     path.write_text(json.dumps(value, indent=2, allow_nan=False)+'\n', encoding='utf-8')
 
 
+def control_clock_launch_arguments(mode, root):
+    if mode == 'native':
+        return []
+    if mode != 'relay100':
+        raise ValueError('unknown control_clock_mode')
+    return ['control_clock_mode:=relay100', 'control_clock_output:='+str(root/'control_clock.jsonl')]
+
+
+def assess_control_clock_graph(graph):
+    consumers = {'motion_guard', 'crawl_controller', 'carry_manager', 'nav_projection', 'crawl_startup'}
+    return (len(graph.get('source_publishers', [])) == 1
+        and graph.get('relay_publishers') == ['navigation_control_clock']
+        and len(graph.get('relay_subscribers', [])) == 5
+        and set(graph['relay_subscribers']) == consumers
+        and not consumers.intersection(graph.get('source_subscribers', []))
+        and 'navigation_control_clock' in graph.get('source_subscribers', []))
+
+
+def assess_control_clock_trace(rows):
+    result = dict(passed=False, scope='producer_trace_not_independent_wire_proof', publications=0)
+    try:
+        if not rows or rows[-1]['event'] != 'closed' or any(
+                row['event'] not in ('publish','armed') for row in rows[:-1]):
+            raise ValueError('missing close, fault, or post-close publication')
+        report = rows[-1]['report']
+        if (report['mode'] != 'relay100' or report['fault'] or report['closing'] is not True
+                or report.get('armed') is not True):
+            raise ValueError('unhealthy final relay report')
+        arms = [row for row in rows if row['event'] == 'armed']
+        if len(arms) != 1:
+            raise ValueError('one explicit operational arm event required')
+        armed = arms[0]
+        state = armed['report']
+        if (state['armed'] is not True or state['fault'] or state['closing']
+                or state['mode'] != 'relay100' or state['gid'] != report['gid']
+                or state['last_source_capture_ns'] <= 0
+                or not 0 <= armed['wall_ns']-state['last_source_receipt_ns'] <= 200000000):
+            raise ValueError('arm did not bind a fresh positive original clock')
+        publications = [row for row in rows if row['event'] == 'publish']
+        event_walls = [row['published_wall_ns'] if row['event'] == 'publish' else row['wall_ns'] for row in rows]
+        if event_walls != sorted(event_walls):
+            raise ValueError('relay event chronology changed')
+        previous = None
+        for index, row in enumerate(publications, 1):
+            stamp, wall = row['capture_ns'], row['published_wall_ns']
+            if (not all(type(row[key]) is int for key in ('capture_ns','sec','nanosec',
+                    'received_wall_ns','published_wall_ns','inputs','outputs'))
+                    or row['sec'] < 0 or not 0 <= row['nanosec'] < 1000000000
+                    or stamp != row['sec']*1000000000+row['nanosec']
+                    or not 0 <= wall-row['received_wall_ns'] <= 200000000
+                    or row['outputs'] != index or row['inputs'] < index
+                    or not row['gid'] or row['gid'] != report['gid']):
+                raise ValueError('invalid original time, receipt lease, identity, or count')
+            if previous and (stamp <= previous['capture_ns']
+                    or wall-previous['published_wall_ns'] < 10000000
+                    or row['inputs'] <= previous['inputs']):
+                raise ValueError('clock/rate/count rollback')
+            previous = row
+        if not previous or report['outputs'] != len(publications) or report['inputs'] < previous['inputs']:
+            raise ValueError('missing or inconsistent publications')
+        if rows[-1]['wall_ns'] < previous['published_wall_ns']:
+            raise ValueError('close predates publication')
+        result.update(passed=True, publications=len(publications), armed_wall_ns=armed['wall_ns'],
+            max_receipt_age_ns=max(row['published_wall_ns']-row['received_wall_ns'] for row in publications))
+    except (KeyError, TypeError, ValueError, IndexError) as error:
+        result['error'] = str(error)
+    return result
+
+
 def stop_gazebo_observer():
     """Stop native egress before engine destruction; ACK is NOT an exit proof."""
     command = ['gz','service','-s','/navigation/stop_native_observer',
@@ -56,6 +125,40 @@ def stop_gazebo_observer():
 def process_identity(pid, *, proc_root=Path('/proc')):
     stat = (proc_root/str(pid)/'stat').read_text().rsplit(')', 1)[1].split()
     return dict(pid=pid, ppid=int(stat[1]), pgid=int(stat[2]), start_ticks=int(stat[19]))
+
+
+def attest_control_clock(process, pid, expected, *, proc_root=Path('/proc')):
+    """Observe live owned PID and mapped library. This is not an exit proof."""
+    try:
+        directory = proc_root/str(pid)
+        identity = process_identity(pid, proc_root=proc_root)
+        actual = (directory/'exe').resolve(strict=True)
+        library = Path(expected['control_clock_library']).resolve(strict=True)
+        before = library.stat()
+        if (directory.stat().st_uid != os.getuid() or identity['ppid'] != process.pid
+                or identity['pgid'] != process.pid or str(actual) != expected['control_clock_path']
+                or file_digest(actual) != expected['control_clock_sha256']
+                or file_digest(library) != expected['control_clock_library_sha256']):
+            raise ValueError('owned relay identity or installed bytes differ')
+        found = False
+        for line in (directory/'maps').read_text().splitlines():
+            fields = line.split(maxsplit=5)
+            if len(fields) != 6 or Path(fields[5]).name != library.name:
+                continue
+            major, minor = (int(part,16) for part in fields[3].split(':'))
+            if (Path(fields[5]).resolve(strict=True) != library or int(fields[4]) != before.st_ino
+                    or os.makedev(major,minor) != before.st_dev):
+                raise ValueError('mapped relay library differs')
+            found = True
+        after = library.stat()
+        if (not found or process_identity(pid, proc_root=proc_root) != identity
+                or (before.st_dev,before.st_ino,before.st_size,before.st_mtime_ns) !=
+                   (after.st_dev,after.st_ino,after.st_size,after.st_mtime_ns)):
+            raise ValueError('missing or changed relay mapping')
+        return dict(**identity, executable=str(actual), sha256=expected['control_clock_sha256'],
+            library=str(library), library_sha256=expected['control_clock_library_sha256'])
+    except (OSError, KeyError, TypeError, ValueError, IndexError) as error:
+        raise RuntimeError('control clock attestation: '+str(error)) from error
 
 
 def attest_gazebo_libraries(process, members, expected, *, proc_root=Path('/proc')):
@@ -224,6 +327,13 @@ def audit_runtime(repo, output):
     if not observer.is_relative_to(sensors):
         raise RuntimeError('TF observer outside selected package prefix')
     sensor_probe.update(tf_observer_path=str(observer), tf_observer_sha256=file_digest(observer))
+    clock = (sensors/'lib/integrated_robot_navigation_sensors/control_clock_relay').resolve(strict=True)
+    clock_library = (sensors/'lib/libnavigation_control_clock.so').resolve(strict=True)
+    if not clock.is_relative_to(sensors.resolve()) or not clock_library.is_relative_to(sensors.resolve()):
+        raise RuntimeError('control clock outside selected package prefix')
+    sensor_probe.update(control_clock_path=str(clock), control_clock_sha256=file_digest(clock),
+                        control_clock_library=str(clock_library),
+                        control_clock_library_sha256=file_digest(clock_library))
     libraries = []
     for name in ('libnavigation_gazebo_observer.so', 'libnavigation_gazebo_observation.so',
                  'libnavigation_position_system.so'):
@@ -264,6 +374,34 @@ def stop_runtime(process):
         process, [row['pid'] for row in members], timeout=8.))
 
 
+def shutdown_runtime_in_order(*, measured_stop, deactivate, carry_terminal, consumers_stop,
+                              native_stop=None, clock_stop=None):
+    """Preserve failed safety stages, still release consumers before their clock.
+
+    No retries, synthetic terminal results, or false normal-exit substitution.
+    Engine shutdown/parent exit status remain separate caller responsibilities.
+    """
+    steps, errors = {}, []
+    for name, operation in (('measured_stop',measured_stop), ('deactivate',deactivate),
+            ('carry_terminal',carry_terminal), ('native_stop',native_stop),
+            ('consumers_stop',consumers_stop), ('clock_stop',clock_stop)):
+        if operation is None:
+            continue
+        if name == 'clock_stop' and steps.get('consumers_stop') is not True:
+            steps[name] = False
+            errors.append(dict(step=name,error='consumer exit unconfirmed; clock retained'))
+            continue
+        try:
+            if operation() is not True:
+                raise RuntimeError('stage result was not explicitly confirmed')
+            steps[name] = True
+        except Exception as error:
+            steps[name] = False
+            errors.append(dict(step=name,error=repr(error)))
+    return dict(steps=steps, errors=errors, consumers_exited=steps.get('consumers_stop') is True,
+                runtime_exit=bool(steps) and all(value is True for value in steps.values()))
+
+
 def run(args):
     if args.scenario != 'sensors-carry':
         raise RuntimeError('G2 execution is not enabled before the native G1 gate is implemented and passed')
@@ -271,6 +409,10 @@ def run(args):
     root.mkdir(parents=True, exist_ok=False)
     required = G1_REQUIRED | FRAME_REQUIRED | {'contact_lift', 'native_ctrl_observed',
                                              'native_library_loaded', 'tf_observer_owned'}
+    clock_mode = getattr(args, 'control_clock_mode', 'native')
+    clock_arguments = control_clock_launch_arguments(clock_mode, root)
+    if clock_mode == 'relay100':
+        required = required | {'control_clock_contract'}  # never remove any original check
     with EvidenceRun(root, required) as evidence:
         evidence.result.update(kind='native', gate='G1', engine=args.engine,
                                engine_started=False, phase='preflight_scene',
@@ -282,6 +424,8 @@ def run(args):
         phase_measurements = {}
         engine_members = {}
         observer_members = {}
+        clock_members = {}
+        clock_graph_passed = False
         ownership_graph_single = False
         stopping = Event()
         previous = signal.signal(signal.SIGINT, lambda *_: stopping.set())
@@ -300,8 +444,10 @@ def run(args):
             command = ['ros2', 'launch', 'integrated_robot_navigation', 'crawl_system.launch.py',
                 'engine:='+args.engine, 'navigation_scene:='+str(Path(args.scene_dir).resolve()),
                 'carry_profile:='+str(Path(args.profile).resolve()), 'validation_mode:=true',
-                'tf_provenance_output:='+str(root/'tf_provenance.jsonl')]
+                'tf_provenance_output:='+str(root/'tf_provenance.jsonl'), *clock_arguments]
             evidence.result.update(command=command, model_sha256=model.model_sha256,
+                execution_mode=dict(control_clock=clock_mode, validation_only=True,
+                    crawl_clock_dispatch='isolated_2worker' if clock_mode == 'relay100' else 'single_worker'),
                 config_sha256=profile.config_sha256, physics_sha256=profile.physics_sha256,
                 scene=scene, environment={key: os.environ.get(key) for key in (
                     'ROS_DOMAIN_ID', 'MUJOCO_GL', 'OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'LP_NUM_THREADS')})
@@ -354,6 +500,10 @@ def run(args):
                             continue
                         command_line = (Path('/proc')/str(pid)/'cmdline').read_bytes()
                         executable = Path(os.fsdecode(command_line.split(b'\0')[0]))
+                        if executable.name == 'control_clock_relay' and pid not in clock_members:
+                            clock_members[pid] = attest_control_clock(process, pid, sensor)
+                            evidence.result['control_clock_members'] = list(clock_members.values())
+                            evidence.save()
                         if executable.name == 'tf_provenance' and pid not in observer_members:
                             actual = (Path('/proc')/str(pid)/'exe').resolve(strict=True)
                             if (str(actual) != sensor['tf_observer_path']
@@ -390,6 +540,16 @@ def run(args):
                 return future.result()
 
             wait(lambda: probe.motion.get('startup', {}).get('ready') is True, 55., 'measured startup')
+            if clock_mode == 'relay100':
+                graph = dict(
+                    source_publishers=[row.node_name for row in probe.get_publishers_info_by_topic('/clock')],
+                    relay_publishers=[row.node_name for row in probe.get_publishers_info_by_topic('/navigation/control_clock')],
+                    source_subscribers=[row.node_name for row in probe.get_subscriptions_info_by_topic('/clock')],
+                    relay_subscribers=[row.node_name for row in probe.get_subscriptions_info_by_topic('/navigation/control_clock')])
+                clock_graph_passed = assess_control_clock_graph(graph)
+                save(root/'control_clock_graph.json', dict(graph=graph, passed=clock_graph_passed))
+                if not clock_graph_passed or len(clock_members) != 1:
+                    raise RuntimeError('control clock consumer scope or actual process ownership differs')
             checks['carry_measured_settle'] = True
             report = json.loads(call(probe.carry_report, Trigger.Request()).message)
             save(root/'action_results.json', report)
@@ -442,6 +602,15 @@ def run(args):
             if probe:
                 probe.set_stage('shutdown', ignore_faults=True)
             if process and process.poll() is None and probe and executor:
+                if clock_mode == 'relay100' and not (root/'control_clock_graph.json').exists():
+                    graph = dict(
+                        source_publishers=[row.node_name for row in probe.get_publishers_info_by_topic('/clock')],
+                        relay_publishers=[row.node_name for row in probe.get_publishers_info_by_topic('/navigation/control_clock')],
+                        source_subscribers=[row.node_name for row in probe.get_subscriptions_info_by_topic('/clock')],
+                        relay_subscribers=[row.node_name for row in probe.get_subscriptions_info_by_topic('/navigation/control_clock')])
+                    clock_graph_passed = assess_control_clock_graph(graph)
+                    save(root/'control_clock_graph.json', dict(graph=graph, passed=clock_graph_passed,
+                        scope='failure_diagnostic_not_startup_success'))
                 try:
                     report = call(probe.crawl_report, Trigger.Request())
                     if not report.success:
@@ -457,22 +626,59 @@ def run(args):
                     save(root/'carry_failure_report.json', carry_owner_report)
                 except Exception as error:
                     evidence.fail('carry diagnostic capture: '+repr(error))
-                try:
-                    call(probe.mode, SetMode.Request(mode='STOP'))
+                def measured_stop():
+                    response = call(probe.mode, SetMode.Request(mode='STOP'))
+                    if not response.accepted:
+                        raise RuntimeError('STOP mode request rejected: '+response.message)
                     wait(lambda: probe.motion.get('crawl', {}).get('stopped') is True, 3., 'shutdown measured stop')
-                    call(probe.lifecycle, ChangeState.Request(transition=Transition(id=Transition.TRANSITION_DEACTIVATE)))
-                    call(probe.carry_stop, Trigger.Request())
+                    return True
+
+                def deactivate():
+                    return call(probe.lifecycle, ChangeState.Request(
+                        transition=Transition(id=Transition.TRANSITION_DEACTIVATE))).success
+
+                def carry_terminal_stop():
+                    response = call(probe.carry_stop, Trigger.Request())
+                    if not response.success:
+                        raise RuntimeError('carry stop rejected: '+response.message)
                     report = json.loads(call(probe.carry_report, Trigger.Request()).message)
                     save(root/'shutdown_action_results.json', report)
                     if report['pending_uuid'] is not None:
                         raise RuntimeError('shutdown action result remains unconfirmed')
-                    if args.engine == 'mujoco':
-                        response = call(probe.native_stop, Trigger.Request())
-                        teardown['native_sensor_worker_joined'] = response.success
+                    return True  # no outstanding owner; not an assertion of successful grasp/action
+
+                def native_stop():
+                    response = call(probe.native_stop, Trigger.Request())
+                    teardown['native_sensor_worker_joined'] = response.success
+                    return response.success
+
+                def consumers_stop():
                     teardown['runtime_stop'] = stop_runtime(process)
-                    teardown['runtime_exit'] = teardown['runtime_stop']['confirmed']
-                except Exception as error:
-                    evidence.fail('runtime stop: '+repr(error))
+                    return teardown['runtime_stop']['confirmed']
+
+                def clock_stop():
+                    if len(clock_members) != 1:
+                        raise RuntimeError('relay process identity missing')
+                    before = call(probe.control_clock_report, Trigger.Request())
+                    save(root/'control_clock_before_stop.json', json.loads(before.message))
+                    stopped = call(probe.control_clock_stop, Trigger.Request())
+                    teardown['control_clock_stop_ack'] = stopped.success
+                    save(root/'control_clock_stop.json', json.loads(stopped.message))
+                    for pid, member in clock_members.items():
+                        if attest_control_clock(process,pid,sensor) != member:
+                            raise RuntimeError('control clock PID/library changed before stop')
+                        os.kill(pid, signal.SIGINT)
+                    teardown['control_clock_exit_observed'] = wait_owned_members_exit(
+                        process, list(clock_members), timeout=8.)
+                    return stopped.success and teardown['control_clock_exit_observed']
+
+                shutdown = shutdown_runtime_in_order(measured_stop=measured_stop,
+                    deactivate=deactivate, carry_terminal=carry_terminal_stop,
+                    native_stop=native_stop if args.engine == 'mujoco' else None,
+                    consumers_stop=consumers_stop, clock_stop=clock_stop if clock_mode == 'relay100' else None)
+                teardown.update(runtime_shutdown=shutdown, runtime_exit=shutdown['runtime_exit'])
+                for error in shutdown['errors']:
+                    evidence.fail('runtime stop/'+error['step']+': '+error['error'])
             if process:
                 try:
                     if args.engine == 'gazebo' and process.poll() is None:
@@ -558,6 +764,20 @@ def run(args):
             teardown['tf_observer_members'] = list(observer_members.values())
             observer_codes = engine_returncodes(content, list(observer_members))
             teardown['tf_observer_returncodes'] = observer_codes
+            if clock_mode == 'relay100':
+                clock_codes = engine_returncodes(content, list(clock_members))
+                teardown.update(control_clock_members=list(clock_members.values()),
+                                control_clock_returncodes=clock_codes)
+                try:
+                    rows = [json.loads(line) for line in (root/'control_clock.jsonl').read_text().splitlines()]
+                    assessment = assess_control_clock_trace(rows)
+                except (OSError, ValueError) as error:
+                    assessment = dict(passed=False, error=repr(error))
+                save(root/'control_clock_assessment.json', assessment)
+                checks['control_clock_contract'] = (assessment['passed'] and clock_graph_passed
+                    and len(clock_members) == 1 and clock_codes == [0]
+                    and teardown.get('control_clock_stop_ack') is True
+                    and teardown.get('control_clock_exit_observed') is True)
             checks['tf_observer_owned'] = (len(observer_members) == 1 and observer_codes == [0])
             try:
                 records = [json.loads(line) for line in (root/'tf_provenance.jsonl').read_text().splitlines()]
@@ -567,6 +787,10 @@ def run(args):
                 checks['joint_tf_ownership'] = False
             clean = (normal_teardown(teardown) and teardown.get('probe_receiver_joined') is True
                      and clean_shutdown([teardown], teardown.get('launch_returncode'), content))
+            if clock_mode == 'relay100':
+                clean = (clean and len(clock_members) == 1 and clock_codes == [0]
+                    and teardown.get('control_clock_stop_ack') is True
+                    and teardown.get('control_clock_exit_observed') is True)
             checks.update(normal_runtime_exit=clean and teardown.get('runtime_exit') is True,
                 normal_engine_exit=clean and teardown.get('engine_exit') is True,
                 parent_reaped=teardown.get('parent_reaped') is True,
@@ -585,6 +809,7 @@ def main():
     parser.add_argument('--scene-dir', required=True)
     parser.add_argument('--profile', required=True)
     parser.add_argument('--output-dir', required=True)
+    parser.add_argument('--control-clock-mode', choices=('native', 'relay100'), default='native')
     args = parser.parse_args()
     run(args)
     return 0

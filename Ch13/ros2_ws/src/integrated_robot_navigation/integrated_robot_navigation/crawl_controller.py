@@ -8,7 +8,8 @@ from pathlib import Path
 import threading
 import time
 
-from rclpy.lifecycle import LifecycleNode, TransitionCallbackReturn
+from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.clock import Clock
 from rclpy.clock_type import ClockType
 from rclpy.qos import qos_profile_sensor_data
@@ -24,17 +25,27 @@ from .gait import CrawlMachine
 from .model import compile_model, initial_leg_targets
 from .observations import SensorInbox, sensor_sample
 from .samples import Sample, sample_valid
+from .clock_execution import ControlClockLifecycleNode
 
 
-class CrawlController(LifecycleNode):
+class CrawlController(ControlClockLifecycleNode):
     def __init__(self, model=None, profile=None, engine=None, **kwargs):
         super().__init__('crawl_controller', **kwargs)
         self.model_file = self.declare_parameter('model_file', '').value
         self.profile_file = self.declare_parameter('carry_profile', '').value
         self.validation_mode = self.declare_parameter('validation_mode', False).value
+        self.clock_mode = self.declare_parameter('control_clock_mode', 'native').value
+        if self.clock_mode not in ('native','relay100') or (self.clock_mode == 'relay100' and not self.validation_mode):
+            super().destroy_node()
+            raise ValueError('control_clock_mode experiment requires validation_mode')
         self.engine = engine or self.declare_parameter('engine', 'mujoco').value
         self.model, self.profile = model, profile
         self.lock = threading.RLock()
+        # Lock order: model owner -> mailbox. Receivers never acquire the
+        # model lock or mutate CrawlMachine, including malformed input paths.
+        self.inbox_lock = threading.RLock()
+        self._ingress_fault = None
+        self.sensor_group = MutuallyExclusiveCallbackGroup() if self.clock_mode == 'relay100' else None
         self.inbox = SensorInbox(0)
         self.machine = None
         self.active = self.closing = False
@@ -50,6 +61,9 @@ class CrawlController(LifecycleNode):
         self.first_fault = None
         self.first_stop = None
         self.guard_receipts, self.tick_spans = deque(maxlen=16), deque(maxlen=16)
+        self.contact_ingress = deque(maxlen=16)
+        self.clock_read_span = None
+        self.tick_dispatch_started_ns = None
         self._gate_owner = None
         self._held_targets, self._held_model_sha = None, None
         self.legs = self.create_lifecycle_publisher(Float64MultiArray,
@@ -61,7 +75,8 @@ class CrawlController(LifecycleNode):
             ('scan', LaserScan, '/scan'), ('carry', MotionState, '/navigation/carry_state')):
             def receive(msg, stream=key):
                 self._sensor(stream, msg)
-            self.create_subscription(kind, topic, receive, qos_profile_sensor_data)
+            self.create_subscription(kind, topic, receive, qos_profile_sensor_data,
+                                     callback_group=self.sensor_group)
         self.create_subscription(MotionState, '/navigation/guard_state', self._gate, 10)
         self.create_subscription(Twist, '/navigation/cmd_vel', self._command, 10)
         self.create_service(Trigger, '~/calibrate_contact', self._calibrate_contact)
@@ -69,15 +84,24 @@ class CrawlController(LifecycleNode):
         self.create_timer(.02, self._dispatch_tick, clock=Clock(clock_type=ClockType.STEADY_TIME))
 
     def _sensor(self, key, msg):
-        try:
-            sample = sensor_sample(key, msg, time.monotonic_ns(), self.inbox.epoch)
-            with self.lock:
+        receipt = time.monotonic_ns()
+        with self.inbox_lock:
+            if self.closing:
+                return
+            try:
+                sample = sensor_sample(key, msg, receipt, self.inbox.epoch)
                 if not self.closing:
                     self.inbox.receive(key, sample)
-        except (ValueError, TypeError) as error:
-            with self.lock:
-                if self.active and self.machine:
-                    self.machine._fail(key+':'+str(error))
+                    if key == 'contacts':
+                        self.contact_ingress.append(dict(stamp_ns=sample.stamp_ns,
+                            received_wall_ns=sample.received_ns, cache_admitted_wall_ns=time.monotonic_ns()))
+            except (ValueError, TypeError) as error:
+                if self.active and self._ingress_fault is None:
+                    self._ingress_fault = key+':'+str(error)
+
+    def _bundle_snapshot(self, ros_ns):
+        with self.inbox_lock:
+            return self.inbox.bundle(ros_ns)
 
     def _gate(self, msg):
         entry_wall_ns = time.monotonic_ns()
@@ -159,7 +183,7 @@ class CrawlController(LifecycleNode):
         return True, ''
 
     def _calibration_carry(self, ros_ns, wall_ns):
-        sample = self.inbox.bundle(ros_ns).carry
+        sample = self._bundle_snapshot(ros_ns).carry
         ok, reason = sample_valid(sample, ros_ns, wall_ns, self.inbox.epoch, max_age_ns=200_000_000)
         if not ok:
             return False, 'calibration_carry:'+reason
@@ -191,6 +215,9 @@ class CrawlController(LifecycleNode):
 
     def on_activate(self, state):
         with self.lock:
+            with self.inbox_lock:
+                if self._ingress_fault is not None:
+                    return TransitionCallbackReturn.FAILURE
             ros_ns, wall_ns = self.get_clock().now().nanoseconds, time.monotonic_ns()
             self._select_gate(ros_ns)
             if self.machine is None or self.gate is None:
@@ -204,7 +231,7 @@ class CrawlController(LifecycleNode):
             if self.count_publishers('/leg_position_controller/commands') != 1:
                 self.get_logger().warning('activate requires sole leg command owner')
                 return TransitionCallbackReturn.FAILURE
-            self.machine.reset(self.inbox.bundle(ros_ns), ros_ns, wall_ns,
+            self.machine.reset(self._bundle_snapshot(ros_ns), ros_ns, wall_ns,
                                held_targets=self._held_targets)
             if self.machine.state == 'FAULT':
                 self.get_logger().warning('activate missing/invalid feedback: '+self.machine.reason)
@@ -216,7 +243,8 @@ class CrawlController(LifecycleNode):
             self._last_stand_ready = False
             self.cutoff_system, self.last_command_source = time.time_ns(), -1
             result = super().on_activate(state)
-            self.active = result == TransitionCallbackReturn.SUCCESS
+            with self.inbox_lock:
+                self.active = result == TransitionCallbackReturn.SUCCESS
             return result
 
     def on_deactivate(self, state):
@@ -225,21 +253,25 @@ class CrawlController(LifecycleNode):
                 self.machine.request_stop(urgent=False)
                 self.stop_reason = self.stop_reason or 'deactivation_requires_measured_stop'
                 return TransitionCallbackReturn.FAILURE
-            self.active = False
+            with self.inbox_lock:
+                self.active = False
             return super().on_deactivate(state)
 
     def on_cleanup(self, state):
         with self.lock:
-            self.active = False
+            with self.inbox_lock:
+                self.active = False
+                self._ingress_fault = None
+                self.inbox.clear(self.get_clock().now().nanoseconds)
             self.machine = None
             self.command, self.gate = None, None
             self._gate_pending.clear()
-            self.inbox.clear(self.get_clock().now().nanoseconds)
             return super().on_cleanup(state)
 
     def on_shutdown(self, state):
         with self.lock:
-            self.active = False
+            with self.inbox_lock:
+                self.active = False
             return super().on_shutdown(state)
 
     def _stand_ready(self, bundle, result, now):
@@ -262,6 +294,9 @@ class CrawlController(LifecycleNode):
 
     def _report(self, request, response):
         with self.lock:
+            with self.inbox_lock:
+                selected = {key: asdict(self.inbox.samples[key]) if self.inbox.samples[key] else None
+                            for key in ('body', 'contacts')}
             machine = self.machine
             current = None if machine is None else dict(
                 scope='selected_cache_at_report_not_new_sensor_capture',
@@ -276,8 +311,7 @@ class CrawlController(LifecycleNode):
                 targets={key: value.tolist() for key, value in getattr(machine, '_targets', {}).items()},
                 floor=dict(getattr(machine, 'floor', {})),
                 last_published_leg_targets=dict(self._held_targets or {}),
-                selected_body=asdict(self.inbox.samples['body']) if self.inbox.samples['body'] else None,
-                selected_contacts=asdict(self.inbox.samples['contacts']) if self.inbox.samples['contacts'] else None)
+                selected_body=selected['body'], selected_contacts=selected['contacts'])
             response.success = True
             response.message = json.dumps(dict(model_sha256=self.model.model_sha256 if self.model else '',
                 generation=self.generation, active=self.active, first_fault=self.first_fault,
@@ -305,6 +339,7 @@ class CrawlController(LifecycleNode):
 
     def _dispatch_tick(self):
         started = time.monotonic_ns()
+        self.tick_dispatch_started_ns = started
         try:
             self._tick()
         finally:
@@ -321,7 +356,7 @@ class CrawlController(LifecycleNode):
                     ros_ns, wall_ns = self.get_clock().now().nanoseconds, time.monotonic_ns()
                     try:
                         _, _, _, loads, points, com = self.machine._measure(
-                            self.inbox.bundle(ros_ns), ros_ns, wall_ns)
+                            self._bundle_snapshot(ros_ns), ros_ns, wall_ns)
                         valid, _ = self._gate_valid(ros_ns, wall_ns)
                         if (valid and self.gate.state in ('STAND', 'HOLD')
                                 and self.machine._margin(com, loads, points) >= self.machine.limits['min_support_margin_m']):
@@ -330,8 +365,15 @@ class CrawlController(LifecycleNode):
                         pass  # absence before activation is waiting, not a motor command or recovery
                 self._publish_status(bootstrap_phase=phase if not self.machine or self.machine.state != 'FAULT' else '')
                 return
+            clock_read_started = time.monotonic_ns()
             ros_ns, wall_ns = self.get_clock().now().nanoseconds, time.monotonic_ns()
-            bundle = self.inbox.bundle(ros_ns)
+            self.clock_read_span = dict(started_wall_ns=clock_read_started,
+                finished_wall_ns=wall_ns, ros_ns=ros_ns,
+                dispatch_started_wall_ns=self.tick_dispatch_started_ns)
+            bundle = self._bundle_snapshot(ros_ns)
+            with self.inbox_lock:
+                if self._ingress_fault is not None:
+                    self.machine._fail(self._ingress_fault)
             if self.count_publishers('/leg_position_controller/commands') != 1:
                 self.machine._fail('owner:legs')
             valid, reason = self._gate_valid(ros_ns, wall_ns)
@@ -371,31 +413,46 @@ class CrawlController(LifecycleNode):
             before = dict(state=self.machine.state, phase=self.machine.phase,
                           swing_foot=self.machine.swing_foot)
             result = self.machine.advance(bundle, command, ros_ns, wall_ns)
-            if result.state == 'FAULT' and self.first_fault is None:
-                self.first_fault = dict(scope='first_tick_observing_fault', reason=result.reason,
-                    ros_ns=ros_ns, wall_ns=wall_ns, generation=self.generation,
-                    model_sha256=self.model.model_sha256, samples=asdict(bundle),
-                    state_before=before, transition_during_advance=before['state'] != 'FAULT',
-                    reference_body=self.machine.reference_body.tolist(),
-                    targets={name: value.tolist() for name, value in self.machine._targets.items()},
-                    phase_context={name: getattr(self.machine, name, None) for name in
-                        ('_phase_start', '_shift_duration', '_shift_settled_start', '_unload_start')})
             ready = False
-            if result.joint_targets is not None:
-                self.legs.publish(Float64MultiArray(data=[result.joint_targets[n] for n in self.model.joint_names]))
-                # Preserve this owner's last command across lifecycle inactivity;
-                # never replace an existing spring preload with loaded encoders.
-                self._held_targets = dict(result.joint_targets)
-                ready = self._stand_ready(bundle, result, wall_ns)
+            with self.inbox_lock:
+                # Fault observation, first snapshot and final publication share
+                # one mailbox boundary; the model still has only this owner.
+                if self._ingress_fault is not None:
+                    result = self.machine._fail(self._ingress_fault)
+                if result.state == 'FAULT' and self.first_fault is None:
+                    ingress_snapshot = dict(wall_ns=time.monotonic_ns(),
+                        contact_ingress=list(self.contact_ingress),
+                        pending_capture_receipts={key: [dict(stamp_ns=sample.stamp_ns,
+                            received_ns=sample.received_ns) for _, sample in sorted(pending.items())]
+                            for key, pending in self.inbox.pending.items()})
+                    self.first_fault = dict(scope='first_tick_observing_fault', reason=result.reason,
+                        ros_ns=ros_ns, wall_ns=wall_ns, generation=self.generation,
+                        model_sha256=self.model.model_sha256, samples=asdict(bundle),
+                        clock_read_span=dict(self.clock_read_span),
+                        contact_ingress=ingress_snapshot['contact_ingress'],
+                        ingress_snapshot_wall_ns=ingress_snapshot['wall_ns'],
+                        pending_capture_receipts=ingress_snapshot['pending_capture_receipts'],
+                        tick_spans=list(self.tick_spans),
+                        state_before=before, transition_during_advance=before['state'] != 'FAULT',
+                        reference_body=self.machine.reference_body.tolist(),
+                        targets={name: value.tolist() for name, value in self.machine._targets.items()},
+                        phase_context={name: getattr(self.machine, name, None) for name in
+                            ('_phase_start', '_shift_duration', '_shift_settled_start', '_unload_start')})
+                if result.joint_targets is not None:
+                    self.legs.publish(Float64MultiArray(data=[result.joint_targets[n] for n in self.model.joint_names]))
+                    # Preserve this owner's spring preload across inactivity.
+                    self._held_targets = dict(result.joint_targets)
+                    ready = self._stand_ready(bundle, result, wall_ns)
             self._last_stand_ready = ready
             self._publish_status(result, ready)
 
     def destroy_node(self):
         with self.lock:
-            self.closing, self.active = True, False
+            with self.inbox_lock:
+                self.closing, self.active = True, False
         return super().destroy_node()
 
 
 def main(args=None):
-    from integrated_robot_vision.execution import run_node
-    run_node(CrawlController, args=args)
+    from .clock_execution import run_control_node
+    run_control_node(CrawlController,args=args)

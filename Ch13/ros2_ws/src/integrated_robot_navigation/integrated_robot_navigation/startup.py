@@ -20,6 +20,11 @@ class StartupManager(Node):
     def __init__(self, **kwargs):
         super().__init__('crawl_startup', **kwargs)
         try:
+            clock_mode = self.declare_parameter('control_clock_mode', 'native').value
+            validation = self.declare_parameter('validation_mode', False).value
+            if clock_mode not in ('native', 'relay100') or (clock_mode == 'relay100' and not validation):
+                raise ValueError('control_clock_mode experiment requires validation_mode')
+            self.clock_mode, self.clock_armed = clock_mode, False
             model_file = self.declare_parameter('model_file', '').value
             self.contract = compile_model(Path(model_file).read_text())
             arms = tuple('arm_joint_'+str(i) for i in range(1, 7))
@@ -44,6 +49,7 @@ class StartupManager(Node):
         self.lifecycle = self.create_client(ChangeState, '/crawl_controller/change_state')
         self.prepare = self.create_client(Trigger, '/carry_manager/prepare')
         self.controllers = self.create_client(ListControllers, '/controller_manager/list_controllers')
+        self.clock_arm = self.create_client(Trigger, '/navigation_control_clock/arm') if clock_mode == 'relay100' else None
         self.status = self.create_publisher(MotionState, '/navigation/startup_state', 10)
         for key in self.messages:
             self.create_subscription(MotionState, '/navigation/'+key+'_state',
@@ -154,7 +160,15 @@ class StartupManager(Node):
                             and crawl['state'] == 'INACTIVE'
                             and crawl['phase'] == 'BOOTSTRAP_FEEDBACK_READY'
                             and self._controllers_ready()):
-                        self._transition(Transition.TRANSITION_ACTIVATE, 'ACTIVATING')
+                        if self.clock_arm is not None and not self.clock_armed:
+                            if self.clock_arm.service_is_ready():
+                                self.future = self.clock_arm.call_async(Trigger.Request())
+                                self.state = 'ARMING_CLOCK'
+                        else:
+                            self._transition(Transition.TRANSITION_ACTIVATE, 'ACTIVATING')
+                elif self.state == 'ARMING_CLOCK' and self._result('success'):
+                    self.clock_armed = True
+                    self.state = 'WAIT_FEEDBACK'  # recheck fresh sensors/claims before activation
                 elif self.state == 'ACTIVATING' and self._result('success'):
                     self.state = 'WAIT_STAND'
                 elif self.state == 'WAIT_STAND':

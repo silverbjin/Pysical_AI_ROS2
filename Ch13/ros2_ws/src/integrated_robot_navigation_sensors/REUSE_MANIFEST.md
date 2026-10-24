@@ -18,6 +18,18 @@
 
 ## 안전·수명 계약
 
+- `control_clock_gate/relay/main`은 승인된13.5 검증 전용 신규 Apache-2.0 구현이다.
+  기존 `tf_provenance_main.cpp`(기준6be20f7)의 exclusive 파일/일반 사용자 종료 패턴과
+  공개 Jazzy `rclcpp::MessageInfo`, `rosgraph_msgs::Clock`, `std_srvs::Trigger` API를
+  참조했다. 외부 소스 복사·underlay 수정 없음. 10ms wall timer는 원본 `/clock`의
+  마지막 유효 메시지만 별도 토픽에 복사한다. time 생성·보간·전역 재발행 없음.
+  단일 executor가 상태·ROS 자원·trace 파일을 소유하며 source GID/graph 단일성,
+  rollback은 항상, 명시적 운전 arm 이후 source 진행200ms 중단은 고착 실패다.
+  기존 StartupManager가 실제 센서/claim을 확인하고 다리 활성화 전에 one-shot arm한다.
+  arm 자체도 원본 첫 receipt200ms 내의 양의 시각만 허용하고 lease를 갱신하지 않는다.
+  bootstrap 때 임의 시간을 만들거나 stale pending 후보를 발행하지 않는다. stop 뒤 재개하지 않으며
+  소비자 정리 후 stop/실제 프로세스 exit와 회수를 각각 검증한다.
+
 - schema1 진단의 `body_reference`는 같은 immutable snapshot의 free-root
   `qvel[dofadr+3:dofadr+6]`을 BODY 각속도로 읽는다. gyro `sensordata`를 답으로
   재사용하거나 세계 좌표로 중복 회전하지 않는다. 원생 주소·free root·유한값을

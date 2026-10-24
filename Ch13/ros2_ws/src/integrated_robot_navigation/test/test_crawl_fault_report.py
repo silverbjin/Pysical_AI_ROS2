@@ -65,6 +65,18 @@ def test_first_fault_reports_selected_capture_and_is_not_overwritten(crawl_rig, 
     assert snapshot['samples']['contacts']['data']['forces'] == [0., 30., 0., 30.]
     assert snapshot['samples']['contacts']['stamp_ns'] <= snapshot['ros_ns']
     assert snapshot['model_sha256'] == rig.model.model_sha256
+    clock = snapshot['clock_read_span']
+    assert clock['ros_ns'] == snapshot['ros_ns']
+    assert clock['finished_wall_ns'] == snapshot['wall_ns']
+    assert clock['started_wall_ns'] <= clock['finished_wall_ns']
+    assert snapshot['contact_ingress']
+    assert all(row['received_wall_ns'] <= row['cache_admitted_wall_ns']
+               for row in snapshot['contact_ingress'])
+    assert set(snapshot['pending_capture_receipts']) == set(rig.guard.inbox.pending)
+    assert snapshot['ingress_snapshot_wall_ns'] >= snapshot['wall_ns']
+    assert snapshot['tick_spans']
+    assert all(row['received_ns'] <= snapshot['ingress_snapshot_wall_ns']
+               for values in snapshot['pending_capture_receipts'].values() for row in values)
     count = len(rig.commands)
     monkeypatch.setattr(test_motion_guard_ros, 'bundle', original)
     rig.pump(.1)
