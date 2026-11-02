@@ -12,6 +12,8 @@ def entry(p,relative):
  b=p.read_bytes();return {'path':p.relative_to(relative).as_posix(),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}
 current=[entry(p,root) for p in sorted(paths)]
 if lock.get('acceptance',{}).get('R3')=='NOT_STARTED':lock['r2']['source_files']=current
+elif lock.get('acceptance',{}).get('R4','').startswith('DEVELOPMENT_PASS'):lock.setdefault('r5',{})['source_files']=current
+elif 'R4' in lock.get('status',''):lock.setdefault('r4',{})['source_files']=current
 else:lock.setdefault('r3',{})['source_files']=current
 lock['current_source_files']=current
 lockpath.write_text(json.dumps(lock,indent=2)+'\n',encoding='utf-8')

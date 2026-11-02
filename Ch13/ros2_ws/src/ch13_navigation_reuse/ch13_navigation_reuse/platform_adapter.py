@@ -186,13 +186,14 @@ def main():
             try:executor.spin()
             except BaseException:rx_error.append(traceback.format_exc());node.guard.trip('RX_FAILED')
         rx=threading.Thread(target=spin,name='reuse_ros_rx');rx.start()
-        original_viewer=p.viewer;original_step=upstream.mujoco.mj_step;start=time.monotonic();step_count=0;last_decision=None;max_ratio=0.;timing=[];previous_exit=time.monotonic();previous_cpu=time.thread_time()
+        real_joint_hinge=3 # MuJoCo mjJNT_HINGE
+        original_viewer=p.viewer;original_step=upstream.mujoco.mj_step;start=time.monotonic();step_count=0;last_decision=None;max_ratio=0.;max_joint_violation=0.;limited=(p.mjModel.jnt_limited.astype(bool)&(p.mjModel.jnt_type==real_joint_hinge));joint_adr=p.mjModel.jnt_qposadr[limited];joint_bounds=p.mjModel.jnt_range[limited];timing=[];previous_exit=time.monotonic();previous_cpu=time.thread_time()
         class Viewer:
             def __getattr__(self,name):return getattr(original_viewer,name)
             def is_running(self):return not node.stop_requested and p.mjData.time<args.max_sim_s and original_viewer.is_running()
         p.viewer=Viewer()
         def step(model,data,*a,**kw):
-            nonlocal step_count,last_decision,max_ratio,previous_exit,previous_cpu
+            nonlocal step_count,last_decision,max_ratio,max_joint_violation,previous_exit,previous_cpu
             begin=time.monotonic();cpu_begin=time.thread_time()
             def record(stage,wall,cpu):
                 span=time.monotonic()-wall
@@ -206,6 +207,7 @@ def main():
             ratio=float(np.max(abs(data.actuator_force)/caps[:,1]));max_ratio=max(max_ratio,ratio)
             if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all() or not np.isfinite(ratio) or ratio>1+1e-8:raise RuntimeError('nonfinite state or original actuator cap violation')
             q,v,state,tilt=node.capture(p,round(data.time*1e9),wall,d)
+            values=q[joint_adr];max_joint_violation=max(max_joint_violation,float(np.max(joint_bounds[:,0]-values,initial=0.)),float(np.max(values-joint_bounds[:,1],initial=0.)))
             if q[2]<.12 or tilt>math.pi/4:raise RuntimeError('fall bound')
             if sensors is not None:
                 for contact in data.contact:
@@ -221,7 +223,7 @@ def main():
         upstream.mujoco.mj_step=step
         try:p.run()
         finally:upstream.mujoco.mj_step=original_step
-        S.update(step_outliers=timing,result='COMPLETED',normal_shutdown_requested=node.stop_requested,sim_s=float(p.mjData.time),wall_s=time.monotonic()-start,physics_steps=step_count,max_force_cap_ratio=max_ratio,final_mode=node.guard.mode,final_fault=node.guard.fault,arm_events=node.events,rx_error=rx_error,actual_pose=p.mjData.qpos[:7].tolist())
+        S.update(step_outliers=timing,result='COMPLETED',normal_shutdown_requested=node.stop_requested,sim_s=float(p.mjData.time),wall_s=time.monotonic()-start,physics_steps=step_count,max_force_cap_ratio=max_ratio,max_native_joint_violation_rad=max_joint_violation,final_mode=node.guard.mode,final_fault=node.guard.fault,arm_events=node.events,rx_error=rx_error,actual_pose=p.mjData.qpos[:7].tolist())
         if not node.stop_requested or rx_error:raise RuntimeError('unrequested engine end or ROS receiver failure')
     except BaseException:S['error']=traceback.format_exc();S['result']='ERROR'
     finally:

@@ -34,6 +34,8 @@ class CameraWorker:
   ctx=mp.get_context('spawn');self.requests=ctx.Queue(maxsize=1);self.results=ctx.Queue(maxsize=2);self.ready=ctx.Event();self.stop=ctx.Event()
   self.process=ctx.Process(target=render_process,args=(model,initial_q.copy(),self.requests,self.results,self.ready,self.stop),name='reuse_rgbd_renderer')
   self.process.start();self.worker_pid=self.process.pid
+  from multiprocessing import resource_tracker
+  self.tracker_pid=resource_tracker._resource_tracker._pid
   self.thread=threading.Thread(target=self.receive,name='reuse_rgbd_rx');self.thread.start()
   if not self.ready.wait(15.):self.close();raise RuntimeError('camera process warmup deadline')
   if not self.process.is_alive() or self.error:self.close();raise RuntimeError(self.error or 'camera process startup failure')

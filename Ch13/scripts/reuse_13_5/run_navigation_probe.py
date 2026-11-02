@@ -92,7 +92,9 @@ def main():
     text=(out/'launch.log').read_text();owned=[int(x) for x in re.findall(r'process started with pid \[(\d+)\]',text)];victims=[]
     for pid in owned:
      cmd=(Path('/proc')/str(pid)/'cmdline').read_bytes().split(b'\0') if (Path('/proc')/str(pid)/'cmdline').exists() else []
-     if b'ch13_navigation_reuse.navigation_boundary' in cmd:victims.append(pid)
+     if b'ch13_navigation_reuse.navigation_boundary' in cmd:
+      assert int((Path('/proc')/str(pid)/'stat').read_text().split(') ',1)[1].split()[1])==launch.pid,'boundary parent ownership mismatch'
+      victims.append(pid)
     assert len(victims)==1,'owned boundary identity';paused_pid=victims[0];os.kill(paused_pid,signal.SIGSTOP);S['injected_boundary_pid']=paused_pid;S['injection']='owned_publisher_pause_with_identity_preserved'
     assert until(lambda:gateway.get('mode')=='FAULT',2),'raw loss did not latch';receipt=gateway['source_receipts']['raw']['receipt_wall'];S['raw_expiry_decision_latency_s']=gateway['decision_wall']-receipt;assert S['raw_expiry_decision_latency_s']<=.35
     os.kill(paused_pid,signal.SIGCONT);paused_pid=None;until(lambda:False,.2);assert gateway.get('mode')=='FAULT';S['no_auto_resume_after_raw_return']=True
