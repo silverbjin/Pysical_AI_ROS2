@@ -26,7 +26,7 @@ class Platform(Node):
         super().__init__('ch13_reuse_platform')
         self.lock=threading.RLock();self.guard=Guard(required=('safe',),control='safe')
         self.stationary_ready=False;self.stationary_start=None;self.last_capture_wall=None;self.pending_arm=0.;self.last_arm_wall=-1e9
-        self.stop_requested=False;self.last_state=None;self.previous_mode=None;self.events=[]
+        self.allow_tf_broadcasters=False;self.stop_requested=False;self.last_state=None;self.previous_mode=None;self.events=[]
         self.clock_pub=self.create_publisher(Clock,'/clock',1)
         self.base_pub=self.create_publisher(Odometry,N+'/engine_state',1)
         self.nav_pub=self.create_publisher(Odometry,N+'/odometry',1)
@@ -76,12 +76,16 @@ class Platform(Node):
     def ready_now(self):
         return self.stationary_ready and self.last_capture_wall is not None and 0<=time.monotonic()-self.last_capture_wall<=.30
     def monitor(self):
+        queried_wall=time.monotonic()
+        counts={'clock':self.count_publishers('/clock'),'safe':self.count_publishers(N+'/cmd_vel_safe'),'relay':self.count_publishers(N+'/ingress/platform')}
+        if not self.allow_tf_broadcasters:counts['tf']=self.count_publishers('/tf')
         with self.lock:
-            now=time.monotonic()
-            self.guard.graph({'clock':self.count_publishers('/clock'),'safe':self.count_publishers(N+'/cmd_vel_safe'),'relay':self.count_publishers(N+'/ingress/platform'),'tf':self.count_publishers('/tf')},now)
-            decision=self.guard.output(now)
-            self.status_pub.publish(String(data=json.dumps({'mode':decision.mode,'fault':decision.fault,'stationary_ready':self.ready_now(),'clock_ns':self.guard.clock_ns,'vx':decision.vx,'wz':decision.wz,'arm_joint1_target':self.pending_arm,'counts':self.guard.counts})))
-            if self.previous_mode!=decision.mode:self.get_logger().info('mode='+decision.mode+' '+decision.fault);self.previous_mode=decision.mode
+            now=time.monotonic();self.guard.graph(counts,queried_wall);decision=self.guard.output(now)
+            status={'mode':decision.mode,'fault':decision.fault,'stationary_ready':self.ready_now(),'clock_ns':self.guard.clock_ns,'vx':decision.vx,'wz':decision.wz,'arm_joint1_target':self.pending_arm,'counts':self.guard.counts}
+            changed=self.previous_mode!=decision.mode;self.previous_mode=decision.mode
+        # DDS graph/publish/log operations may block; never hold the physics-state lock.
+        self.status_pub.publish(String(data=json.dumps(status)))
+        if changed:self.get_logger().info('mode='+decision.mode+' '+decision.fault)
     def engine_command(self,sim_ns):
         with self.lock:
             self.guard.clock(sim_ns,time.monotonic(),'owned_engine')
@@ -128,12 +132,13 @@ class Platform(Node):
             rp=Rotation.from_quat(np.roll(p.mjData.xquat[parent],-1));rc=Rotation.from_quat(np.roll(p.mjData.xquat[body],-1))
             position=rp.inv().apply(p.mjData.xpos[body]-p.mjData.xpos[parent]);quat=(rp.inv()*rc).as_quat()
             transforms.append(tf('reuse/'+p.mjModel.body(parent).name,'reuse/'+p.mjModel.body(body).name,position,quat))
+        if hasattr(p,'_ch13_sensors'):transforms.extend(p._ch13_sensors.transforms(tf))
         self.tf_pub.publish(TFMessage(transforms=transforms))
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--repo-root',required=True);parser.add_argument('--max-sim-s',type=float,default=40.);parser.add_argument('--report',required=True);args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--repo-root',required=True);parser.add_argument('--max-sim-s',type=float,default=40.);parser.add_argument('--report',required=True);parser.add_argument('--scene',choices=['free','obstacle','blocked','vision']);args=parser.parse_args()
     root=Path(args.repo_root).resolve();report=Path(args.report);report.parent.mkdir(parents=True,exist_ok=True)
-    S={'pid':os.getpid(),'ppid':os.getppid(),'result':'ERROR','normal_shutdown_requested':False};node=p=None;executor=None;rx=None;owned_threads=[];rows=[];last_window=[]
+    S={'pid':os.getpid(),'ppid':os.getppid(),'result':'ERROR','normal_shutdown_requested':False};node=p=None;executor=None;rx=None;owned_threads=[];rows=[];last_window=[];sensors=None
     import fcntl
     lockfile=(root.parent/'ch13_reuse_engine.lock').open('a+')
     try:
@@ -145,6 +150,18 @@ def main():
         assert hashlib.sha256(helper.read_bytes()).hexdigest()==lock['corrected_deployment_profile']['source_helper_sha256'],'installed correction hash mismatch'
         spec=importlib.util.spec_from_file_location('ch13_pinned_corrections',helper);correction=importlib.util.module_from_spec(spec);spec.loader.exec_module(correction)
         sys.path.insert(0,str(up/'deploy'));import play_mujoco as upstream
+        if args.scene:
+            import mujoco as real_mujoco
+            from .scene import make_model
+            from .sensors import HeadlessViewer,SensorSuite
+            class ModelLoader:
+                @staticmethod
+                def from_xml_path(path):return make_model(path,args.scene)
+            class MujocoProxy:
+                MjModel=ModelLoader
+                viewer=types.SimpleNamespace(launch_passive=lambda *a,**kw:HeadlessViewer())
+                def __getattr__(self,name):return getattr(real_mujoco,name)
+            upstream.mujoco=MujocoProxy()
         closed=threading.Event();saved_input=builtins.input
         def close_console(*a):closed.set();return 'closeConsole'
         threads_before=set(threading.enumerate());builtins.input=close_console
@@ -155,37 +172,54 @@ def main():
         source=textwrap.dedent(inspect.getsource(upstream.PlayMujoco.run));source=correction.consistent_walking_run_source(source)
         namespace=dict(upstream.PlayMujoco.run.__globals__);exec(compile(source,'ch13_pinned_run','exec'),namespace);p.run=types.MethodType(namespace['run'],p);p._ch13_mujoco=upstream.mujoco
         assert tuple(p.mjModel.joint(i).name for i in range(1,p.mjModel.njnt))==JOINT_NAMES
-        rclpy.init(args=[]);node=Platform();executor=SingleThreadedExecutor();executor.add_node(node);rx_error=[]
+        if args.scene:sensors=SensorSuite(p.mjModel,p.mjData,args.scene,report.parent);p._ch13_sensors=sensors
+        rclpy.init(args=[]);node=Platform();node.allow_tf_broadcasters=bool(args.scene)
+        if sensors is not None:sensors.attach(node)
+        executor=SingleThreadedExecutor();executor.add_node(node);rx_error=[]
         def spin():
             try:executor.spin()
             except BaseException:rx_error.append(traceback.format_exc());node.guard.trip('RX_FAILED')
         rx=threading.Thread(target=spin,name='reuse_ros_rx');rx.start()
-        original_viewer=p.viewer;original_step=upstream.mujoco.mj_step;start=time.monotonic();step_count=0;last_decision=None;max_ratio=0.
+        original_viewer=p.viewer;original_step=upstream.mujoco.mj_step;start=time.monotonic();step_count=0;last_decision=None;max_ratio=0.;timing=[];previous_exit=time.monotonic();previous_cpu=time.thread_time()
         class Viewer:
             def __getattr__(self,name):return getattr(original_viewer,name)
             def is_running(self):return not node.stop_requested and p.mjData.time<args.max_sim_s and original_viewer.is_running()
         p.viewer=Viewer()
         def step(model,data,*a,**kw):
-            nonlocal step_count,last_decision,max_ratio
+            nonlocal step_count,last_decision,max_ratio,previous_exit,previous_cpu
+            begin=time.monotonic();cpu_begin=time.thread_time()
+            def record(stage,wall,cpu):
+                span=time.monotonic()-wall
+                if span>.1 and len(timing)<50:timing.append({'stage':stage,'sim_s':float(data.time),'wall_s':span,'thread_cpu_s':time.thread_time()-cpu})
+            record('upstream_loop',previous_exit,previous_cpu)
             sim_ns=max(1,round(data.time*1e9));d,arm=node.engine_command(sim_ns);last_decision=d
+            record('engine_command_lock',begin,cpu_begin);marker=time.monotonic();cpu_marker=time.thread_time()
             p.ref_base_lin_vel_H[:]=[d.vx,0.,0.];p.ref_base_ang_yaw_dot=d.wz;p.desired_joint_pos_arm[0]=arm
             data.ctrl[12:18]=p.desired_joint_pos_arm
-            original_step(model,data,*a,**kw);step_count+=1;wall=time.monotonic()
+            original_step(model,data,*a,**kw);record('physics',marker,cpu_marker);marker=time.monotonic();cpu_marker=time.thread_time();step_count+=1;wall=time.monotonic()
             ratio=float(np.max(abs(data.actuator_force)/caps[:,1]));max_ratio=max(max_ratio,ratio)
             if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all() or not np.isfinite(ratio) or ratio>1+1e-8:raise RuntimeError('nonfinite state or original actuator cap violation')
             q,v,state,tilt=node.capture(p,round(data.time*1e9),wall,d)
             if q[2]<.12 or tilt>math.pi/4:raise RuntimeError('fall bound')
+            if sensors is not None:
+                for contact in data.contact:
+                    a,b=map(int,contact.geom)
+                    if (model.geom_group[a]==5 and model.geom_bodyid[b]>0) or (model.geom_group[b]==5 and model.geom_bodyid[a]>0):raise RuntimeError('robot/environment obstacle collision')
+                sensors.step(p,state)
+            record('capture_sensor',marker,cpu_marker);marker=time.monotonic();cpu_marker=time.thread_time()
             row={'sim_s':float(data.time),'wall':wall,'qpos':q.tolist(),'qvel':v.tolist(),'vx':d.vx,'wz':d.wz,'mode':d.mode,'fault':d.fault,'arm_target':p.desired_joint_pos_arm.copy().tolist()}
             last_window.append(row)
             if len(last_window)>1200:del last_window[:200]
             if step_count%10==0:rows.append(row);node.publish_state(p,state)
+            record('state_publish',marker,cpu_marker);previous_exit=time.monotonic();previous_cpu=time.thread_time()
         upstream.mujoco.mj_step=step
         try:p.run()
         finally:upstream.mujoco.mj_step=original_step
-        S.update(result='COMPLETED',normal_shutdown_requested=node.stop_requested,sim_s=float(p.mjData.time),wall_s=time.monotonic()-start,physics_steps=step_count,max_force_cap_ratio=max_ratio,final_mode=node.guard.mode,final_fault=node.guard.fault,arm_events=node.events,rx_error=rx_error,actual_pose=p.mjData.qpos[:7].tolist())
+        S.update(step_outliers=timing,result='COMPLETED',normal_shutdown_requested=node.stop_requested,sim_s=float(p.mjData.time),wall_s=time.monotonic()-start,physics_steps=step_count,max_force_cap_ratio=max_ratio,final_mode=node.guard.mode,final_fault=node.guard.fault,arm_events=node.events,rx_error=rx_error,actual_pose=p.mjData.qpos[:7].tolist())
         if not node.stop_requested or rx_error:raise RuntimeError('unrequested engine end or ROS receiver failure')
     except BaseException:S['error']=traceback.format_exc();S['result']='ERROR'
     finally:
+        if sensors is not None:sensors.close()
         if p is not None:p.viewer.close()
         if executor is not None:executor.shutdown(timeout_sec=2.)
         if rx is not None:rx.join(2.)
