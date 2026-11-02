@@ -70,7 +70,6 @@ def main():
     until(lambda:False,.1)
   for name in ['navigation/enable','navigation/require_vision','navigation/release','navigation/idle','platform/arm','gateway/arm','platform/shutdown']:
    full=N+'/'+name;client=node.create_client(Trigger,full);clients[full]=client;assert until(client.service_is_ready,3),'missing admission service '+full
-  response=call('platform/arm');assert response.success,response.message
   target=[.65,0.,0.]
   if args.case=='obstacle':target=[2.25,0.,0.]
   if args.case=='blocked':target=[2.25,0.,0.]
@@ -90,10 +89,11 @@ def main():
    assert boundary.get('phase')=='ACTIVE' and boundary.get('output_held') and gateway.get('ready_for_arm'),'controller not prepared at zero'
    S['motion_admission']={'boundary_phase':boundary['phase'],'held':boundary['output_held'],'gateway_before':gateway['mode'],'controller_stamp_ns':boundary['stamp_ns']}
    response=call('gateway/arm');assert response.success,response.message;S['motion_admission']['gateway_arm_wall']=time.monotonic()
+   response=call('platform/arm');assert response.success,response.message;S['motion_admission']['platform_arm_wall']=time.monotonic()
    response=call('navigation/release');assert response.success,response.message;S['motion_admission']['release_wall']=time.monotonic();S['motion_release_sim_ns']=clock_ns
   else:S['motion_not_released_terminal']=result_future.result().status
   if args.case in ['cancel','raw_loss']:
-   assert until(lambda:clock_ns-S['motion_release_sim_ns']>=2_000_000_000 and boundary.get('phase')=='ACTIVE',12),'no active movement before injection'
+   assert until(lambda:clock_ns-S['motion_release_sim_ns']>=2_000_000_000 and boundary.get('phase')=='ACTIVE' and not platform.get('fault') and math.hypot(state.pose.pose.position.x-start_xy[0],state.pose.pose.position.y-start_xy[1])>.03,12),'no active movement before injection'
    if args.case=='raw_loss':
     text=(out/'launch.log').read_text();owned=[int(x) for x in re.findall(r'process started with pid \[(\d+)\]',text)];victims=[]
     for pid in owned:
@@ -106,9 +106,9 @@ def main():
     os.kill(paused_pid,signal.SIGCONT);paused_pid=None;until(lambda:False,.2);assert gateway.get('mode')=='FAULT';S['no_auto_resume_after_raw_return']=True
    canceled=goal_handle.cancel_goal_async();assert until(canceled.done,3),'cancel ACK deadline';S['cancel_ack']=bool(canceled.result().goals_canceling);assert S['cancel_ack']
   if args.case not in ['cancel','raw_loss']:
-   assert until(lambda:result_future.done() or boundary.get('phase')=='FAULT' or gateway.get('mode')=='FAULT',240),'NavigateToPose terminal deadline'
+   assert until(lambda:result_future.done() or boundary.get('phase')=='FAULT' or gateway.get('mode')=='FAULT' or bool(platform.get('fault')),240),'NavigateToPose terminal deadline'
    if not result_future.done():
-    S['safety_fault_before_terminal']={'boundary':boundary.get('fault'),'gateway':gateway.get('fault')};canceled=goal_handle.cancel_goal_async();assert until(canceled.done,3);assert until(result_future.done,3),'terminal missing after safety cancellation'
+    S['safety_fault_before_terminal']={'boundary':boundary.get('fault'),'gateway':gateway.get('fault'),'platform':platform.get('fault')};canceled=goal_handle.cancel_goal_async();assert until(canceled.done,3);assert until(result_future.done,3),'terminal missing after safety cancellation'
   assert until(result_future.done,3),'NavigateToPose terminal deadline';terminal=result_future.result();S['terminal_status']=terminal.status;S['terminal_sim_ns']=clock_ns
   expected=6 if args.case=='blocked' else (5 if args.case in ['cancel','raw_loss'] else 4);assert terminal.status==expected,('unexpected terminal',terminal.status,boundary,gateway)
   assert clock_ns-start_sim<=90_000_000_000,'navigation sim budget'

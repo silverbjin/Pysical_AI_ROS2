@@ -1,5 +1,6 @@
 """ROS2 command ownership and safety boundary; no policy or actuator control."""
 import json,math,time
+from dataclasses import replace
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
@@ -32,7 +33,7 @@ def valid_joints(msg):
 
 class CommandGateway(Node):
     def __init__(self):
-        super().__init__('ch13_reuse_gateway');self.guard=Guard();self.pending=FutureInbox();self.previous_mode=None
+        super().__init__('ch13_reuse_gateway');self.guard=Guard();self.pending=FutureInbox();self.previous_mode=None;self.safe_watermark_ns=0
         self.safe=self.create_publisher(TwistStamped,N+'/cmd_vel_safe',1)
         self.status=self.create_publisher(String,N+'/gateway/status',1)
         self.create_subscription(String,N+'/ingress/gateway',self.on_packet,16)
@@ -67,16 +68,20 @@ class CommandGateway(Node):
         v=msg.twist.linear;w=msg.twist.angular
         self.guard.command(ns(msg.header.stamp),info['receipt_wall'],gid(info),(v.x,v.y,v.z,w.x,w.y,w.z),msg.header.frame_id)
     def on_arm(self,request,response):
-        response.success=self.guard.arm(time.monotonic());response.message=json.dumps({'mode':self.guard.mode,'fault':self.guard.fault,'counts':self.guard.counts,'observed':list(self.guard.samples)})
+        response.success=self.guard.samples.get('raw',(0,))[0]>=self.safe_watermark_ns and self.guard.arm(time.monotonic());response.message=json.dumps({'mode':self.guard.mode,'fault':self.guard.fault,'counts':self.guard.counts,'observed':list(self.guard.samples)})
         return response
     def on_reset(self,request,response):
         self.guard.reset();self.pending=FutureInbox();response.success=True;response.message='DISARMED: fresh zero input/state and explicit arm required';return response
     def tick(self):
         now=time.monotonic();self.drain(now)
         self.guard.graph({'clock':self.count_publishers('/clock'),'raw':self.count_publishers(N+'/cmd_vel_raw'),'base':self.count_publishers(N+'/engine_state'),'joints':self.count_publishers(N+'/joint_states'),'relay':self.count_publishers(N+'/ingress/gateway')},now)
-        d=self.guard.output(now);msg=TwistStamped();set_stamp(msg.header.stamp,d.stamp_ns);msg.header.frame_id='reuse/nav_base';msg.twist.linear.x=d.vx;msg.twist.angular.z=d.wz
-        if d.stamp_ns>0:self.safe.publish(msg)
-        self.status.publish(String(data=json.dumps({'mode':d.mode,'fault':d.fault,'stamp_ns':d.stamp_ns,'clock_ns':self.guard.clock_ns,'origin':'source_command' if d.mode=='ARMED' else 'generated_safety_zero','decision_wall':now,'source_receipts':{k:{'stamp_ns':v[0],'receipt_wall':v[1],'gid':v[2]} for k,v in self.guard.samples.items()},'counts':self.guard.counts,'ready_for_arm':self.guard.mode=='DISARMED' and self.guard._fresh(now) and self.guard.values==(0.,0.)})))
+        d=self.guard.output(now)
+        if d.mode=='DISARMED':
+            raw=self.guard.samples.get('raw');stamp=max(self.safe_watermark_ns,raw[0] if raw else d.stamp_ns)
+            d=replace(d,stamp_ns=stamp) # zero only; freeze rather than launder an older native control stamp
+        msg=TwistStamped();set_stamp(msg.header.stamp,d.stamp_ns);msg.header.frame_id='reuse/nav_base';msg.twist.linear.x=d.vx;msg.twist.angular.z=d.wz
+        if d.stamp_ns>0:self.safe.publish(msg);self.safe_watermark_ns=max(self.safe_watermark_ns,d.stamp_ns)
+        self.status.publish(String(data=json.dumps({'mode':d.mode,'fault':d.fault,'stamp_ns':d.stamp_ns,'clock_ns':self.guard.clock_ns,'origin':'source_command' if d.mode=='ARMED' else 'generated_safety_zero','decision_wall':now,'source_receipts':{k:{'stamp_ns':v[0],'receipt_wall':v[1],'gid':v[2]} for k,v in self.guard.samples.items()},'counts':self.guard.counts,'safe_watermark_ns':self.safe_watermark_ns,'ready_for_arm':self.guard.mode=='DISARMED' and self.guard._fresh(now) and self.guard.values==(0.,0.) and self.guard.samples.get('raw',(0,))[0]>=self.safe_watermark_ns})))
         if self.previous_mode!=d.mode:self.get_logger().info('mode='+d.mode+' '+d.fault);self.previous_mode=d.mode
 
 def main(args=None):

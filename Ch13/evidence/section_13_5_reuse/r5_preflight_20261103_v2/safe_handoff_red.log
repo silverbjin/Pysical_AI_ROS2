@@ -1,0 +1,19 @@
+test_delayed_raw_zero_arm_never_regresses_safe_header (test_safe_handoff.SafeHandoffTests.test_delayed_raw_zero_arm_never_regresses_safe_header) ... [WARN] [1793634915.456739399] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793634915.458062199] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[INFO] [1793634915.800804599] [ch13_reuse_gateway]: mode=DISARMED 
+[INFO] [1793634915.976483299] [ch13_reuse_gateway]: mode=ARMED 
+FAIL
+
+======================================================================
+FAIL: test_delayed_raw_zero_arm_never_regresses_safe_header (test_safe_handoff.SafeHandoffTests.test_delayed_raw_zero_arm_never_regresses_safe_header)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_safe_handoff.py", line 10, in test_delayed_raw_zero_arm_never_regresses_safe_header
+    stamps=[ns(m.header.stamp) for m in fixture.outputs];self.assertTrue(all(b>=a for a,b in zip(stamps,stamps[1:])),str(stamps));self.assertEqual(fixture.status.get('fault'),'')
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : [2020000000, 2040000000, 2060000000, 2080000000, 2100000000, 2120000000, 2040000000, 2040000000, 2060000000, 2080000000, 2100000000, 2120000000, 2140000000, 2160000000, 2180000000, 2200000000]
+
+----------------------------------------------------------------------
+Ran 1 test in 2.240s
+
+FAILED (failures=1)

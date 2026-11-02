@@ -38,7 +38,7 @@ class WireTests(unittest.TestCase):
         j=JointState();j.header.stamp=c.clock;j.name=[f'{leg}_{joint}_joint' for leg in ['FL','FR','RL','RR'] for joint in ['hip','thigh','calf']]+[f'joint{i}' for i in range(1,9)];j.position=[0.]*20;j.velocity=[0.]*20;
         if self.joints_enabled:self.joints.publish(j)
         if self.raw:
-            x=TwistStamped();x.header.stamp=c.clock;x.header.frame_id='reuse/nav_base';x.twist.linear.x=getattr(self,'vx',0.);self.cmd.publish(x)
+            x=TwistStamped();raw_stamp=stamp_ns-getattr(self,'raw_delay_ns',0);x.header.stamp=Time(sec=raw_stamp//1_000_000_000,nanosec=raw_stamp%1_000_000_000);x.header.frame_id='reuse/nav_base';x.twist.linear.x=getattr(self,'vx',0.);self.cmd.publish(x)
     def until(self, predicate, timeout=2.):
         end=time.monotonic()+timeout
         while time.monotonic()<end:
