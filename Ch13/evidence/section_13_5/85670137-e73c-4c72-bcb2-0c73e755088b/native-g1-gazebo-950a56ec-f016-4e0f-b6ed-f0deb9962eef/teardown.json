@@ -1,0 +1,77 @@
+{
+  "gazebo_pause": {
+    "confirmed": true,
+    "started_ns": 348788326037,
+    "commands": [
+      [
+        "gz",
+        "service",
+        "-s",
+        "/world/section_13_5/control",
+        "--reqtype",
+        "gz.msgs.WorldControl",
+        "--reptype",
+        "gz.msgs.Boolean",
+        "--timeout",
+        "2000",
+        "--req",
+        "pause: true"
+      ],
+      [
+        "gz",
+        "topic",
+        "-e",
+        "-t",
+        "/world/section_13_5/stats",
+        "-n",
+        "1",
+        "--json-output"
+      ]
+    ],
+    "pause": {
+      "returncode": 0,
+      "stdout": "data: true\n\n",
+      "stderr": ""
+    },
+    "stats": {
+      "returncode": 0,
+      "stdout": "{\"simTime\":{\"sec\":\"21\",\"nsec\":76000000},\"realTime\":{\"sec\":\"52\",\"nsec\":350356488},\"paused\":true,\"iterations\":\"10538\",\"stepSize\":{}}\n",
+      "stderr": ""
+    },
+    "finished_ns": 349588804780
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "engine_exit": true,
+  "forced_cleanup": false,
+  "residual_live_pids": [],
+  "launch_returncode": 0,
+  "parent_reaped": true,
+  "engine_members": [
+    {
+      "pid": 1266,
+      "ppid": 1263,
+      "pgid": 1263,
+      "start_ticks": 29424,
+      "command": "/bin/sh -c ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim -r -s --headless-rendering /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-gazebo-950a56ec-f016-4e0f-b6ed-f0deb9962eef-prepared/scene/world.sdf --force-version 8 "
+    }
+  ],
+  "engine_returncodes": [
+    0
+  ],
+  "tf_observer_members": [
+    {
+      "pid": 1281,
+      "ppid": 1263,
+      "pgid": 1263,
+      "start_ticks": 29428,
+      "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/tf_provenance",
+      "sha256": "726b3b5ca9b3c96cb35ce70779c996c97edc22678e8da27d67be663d07dbff6c"
+    }
+  ],
+  "tf_observer_returncodes": [
+    0
+  ]
+}

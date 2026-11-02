@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 1019, in run
+    wait(lambda: probe.motion.get('crawl', {}).get('state') == 'STAND'
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 951, in wait
+    step()
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 943, in step
+    if not probe.ignore_faults and probe.fault():
+                                   ^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/split_observer_13_5.py", line 290, in fault
+    self.observer.check()
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/native_observer_13_5.py", line 216, in check
+    if self.runtime_fault and not allow_runtime_fault:raise RuntimeError('observer runtime fault: '+str(self.runtime_fault))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: observer runtime fault: {'reason': 'crawl_state:calibration original wall deadline', 'ros_ns': 31360000000, 'stage': 'calibrate', 'wall_ns': 14725476284410}

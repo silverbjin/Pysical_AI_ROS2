@@ -1,0 +1,77 @@
+{
+  "gazebo_pause": {
+    "confirmed": true,
+    "started_ns": 363606962655,
+    "commands": [
+      [
+        "gz",
+        "service",
+        "-s",
+        "/world/section_13_5/control",
+        "--reqtype",
+        "gz.msgs.WorldControl",
+        "--reptype",
+        "gz.msgs.Boolean",
+        "--timeout",
+        "2000",
+        "--req",
+        "pause: true"
+      ],
+      [
+        "gz",
+        "topic",
+        "-e",
+        "-t",
+        "/world/section_13_5/stats",
+        "-n",
+        "1",
+        "--json-output"
+      ]
+    ],
+    "pause": {
+      "returncode": 0,
+      "stdout": "data: true\n\n",
+      "stderr": ""
+    },
+    "stats": {
+      "returncode": 0,
+      "stdout": "{\"simTime\":{\"sec\":\"2\",\"nsec\":492000000},\"realTime\":{\"sec\":\"19\",\"nsec\":579750123},\"paused\":true,\"iterations\":\"1246\",\"stepSize\":{}}\n",
+      "stderr": ""
+    },
+    "finished_ns": 366043541627
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "engine_exit": false,
+  "forced_cleanup": true,
+  "residual_live_pids": [],
+  "launch_returncode": 0,
+  "parent_reaped": true,
+  "engine_members": [
+    {
+      "pid": 1192,
+      "ppid": 1189,
+      "pgid": 1189,
+      "start_ticks": 33908,
+      "command": "/bin/sh -c ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim -r -s --headless-rendering /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-gazebo-4d5bf634-812b-4b17-b9f5-a061824a471b-prepared/scene/world.sdf --force-version 8 "
+    }
+  ],
+  "engine_returncodes": [
+    -15
+  ],
+  "tf_observer_members": [
+    {
+      "pid": 1205,
+      "ppid": 1189,
+      "pgid": 1189,
+      "start_ticks": 33914,
+      "executable": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_5_85670137-e73c-4c72-bcb2-0c73e755088b/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/tf_provenance",
+      "sha256": "726b3b5ca9b3c96cb35ce70779c996c97edc22678e8da27d67be663d07dbff6c"
+    }
+  ],
+  "tf_observer_returncodes": [
+    0
+  ]
+}

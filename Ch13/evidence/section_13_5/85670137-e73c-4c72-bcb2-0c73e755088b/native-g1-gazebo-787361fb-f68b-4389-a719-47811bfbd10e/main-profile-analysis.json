@@ -1,0 +1,745 @@
+{
+  "scope": "owned_motion_guard_MAIN_thread_wall_profile_NOT_watchdog_or_CPU_time",
+  "profile_sha256": "fce44094994702882d1e441f385a2127f9db1dc89b432f20c2b9af097e65618b",
+  "launch_command": [
+    "ros2",
+    "launch",
+    "integrated_robot_navigation",
+    "crawl_system.launch.py",
+    "engine:=gazebo",
+    "navigation_scene:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-gazebo-787361fb-f68b-4389-a719-47811bfbd10e-prepared/scene",
+    "carry_profile:=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-gazebo-787361fb-f68b-4389-a719-47811bfbd10e-prepared/carry_profile.json",
+    "validation_mode:=true",
+    "tf_provenance_output:=/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-787361fb-f68b-4389-a719-47811bfbd10e/tf_provenance.jsonl",
+    "control_clock_mode:=relay100",
+    "control_clock_output:=/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-787361fb-f68b-4389-a719-47811bfbd10e/control_clock.jsonl",
+    "launch-prefix:=/home/jinho/ch13_vision_13_4_venv/bin/python -m cProfile -o /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-787361fb-f68b-4389-a719-47811bfbd10e/motion_guard.prof",
+    "launch-prefix-filter:=^motion_guard$"
+  ],
+  "total_calls": 26308196,
+  "total_profile_wall_s": 38.67424207899995,
+  "top_own": [
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py",
+      "line": 467,
+      "name": "_take_subscription",
+      "calls": 15176,
+      "primitive_calls": 198,
+      "own_wall_s": 4.4897921190000005,
+      "cumulative_wall_s": 0.038109466
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/context.py",
+      "line": 109,
+      "name": "ok",
+      "calls": 18367,
+      "primitive_calls": 2,
+      "own_wall_s": 3.628118692,
+      "cumulative_wall_s": 5.2899e-05
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/waitable.py",
+      "line": 37,
+      "name": "__add__",
+      "calls": 407976,
+      "primitive_calls": 407976,
+      "own_wall_s": 2.76172873,
+      "cumulative_wall_s": 5.015404582
+    },
+    {
+      "file": "/usr/lib/python3.12/contextlib.py",
+      "line": 511,
+      "name": "enter_context",
+      "calls": 419455,
+      "primitive_calls": 28,
+      "own_wall_s": 2.196136586,
+      "cumulative_wall_s": 0.0033314710000000003
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.getattr>",
+      "calls": 4922548,
+      "primitive_calls": 4922548,
+      "own_wall_s": 1.356580257,
+      "cumulative_wall_s": 1.3570821400000002
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/callback_groups.py",
+      "line": 101,
+      "name": "can_execute",
+      "calls": 730250,
+      "primitive_calls": 730250,
+      "own_wall_s": 1.25531046,
+      "cumulative_wall_s": 1.5010240540000002
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/event_handler.py",
+      "line": 127,
+      "name": "__enter__",
+      "calls": 407976,
+      "primitive_calls": 407976,
+      "own_wall_s": 1.222744904,
+      "cumulative_wall_s": 1.222744904
+    },
+    {
+      "file": "/usr/lib/python3.12/contextlib.py",
+      "line": 543,
+      "name": "_push_cm_exit",
+      "calls": 781954,
+      "primitive_calls": 781954,
+      "own_wall_s": 0.9670468700000001,
+      "cumulative_wall_s": 2.347281257
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.setattr>",
+      "calls": 2450957,
+      "primitive_calls": 2450957,
+      "own_wall_s": 0.788500363,
+      "cumulative_wall_s": 0.7889872370000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'acquire' of '_thread.lock' objects>",
+      "calls": 23439,
+      "primitive_calls": 2,
+      "own_wall_s": 0.6829471880000001,
+      "cumulative_wall_s": 1.3830000000000001e-06
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/event_handler.py",
+      "line": 118,
+      "name": "get_num_entities",
+      "calls": 407976,
+      "primitive_calls": 407976,
+      "own_wall_s": 0.6663060670000001,
+      "cumulative_wall_s": 0.8061213620000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'extend' of 'list' objects>",
+      "calls": 85308,
+      "primitive_calls": 85308,
+      "own_wall_s": 0.651426736,
+      "cumulative_wall_s": 2.902923508
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.compile>",
+      "calls": 254,
+      "primitive_calls": 254,
+      "own_wall_s": 0.64545872,
+      "cumulative_wall_s": 0.64545872
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py",
+      "line": 614,
+      "name": "can_execute",
+      "calls": 713958,
+      "primitive_calls": 713958,
+      "own_wall_s": 0.6438327300000001,
+      "cumulative_wall_s": 2.0452580350000003
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method rclpy._rclpy_pybind11.rclpy_get_publishers_info_by_topic>",
+      "calls": 10800,
+      "primitive_calls": 10800,
+      "own_wall_s": 0.621386581,
+      "cumulative_wall_s": 0.7421380390000001
+    },
+    {
+      "file": "/usr/lib/python3.12/contextlib.py",
+      "line": 548,
+      "name": "_push_exit_callback",
+      "calls": 781954,
+      "primitive_calls": 781954,
+      "own_wall_s": 0.5618526930000001,
+      "cumulative_wall_s": 0.8600694720000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/publisher.py",
+      "line": 60,
+      "name": "publish",
+      "calls": 2452,
+      "primitive_calls": 1,
+      "own_wall_s": 0.544035079,
+      "cumulative_wall_s": 0.00044799900000000003
+    },
+    {
+      "file": "/usr/lib/python3.12/contextlib.py",
+      "line": 471,
+      "name": "_create_exit_wrapper",
+      "calls": 781954,
+      "primitive_calls": 781954,
+      "own_wall_s": 0.5246072230000001,
+      "cumulative_wall_s": 0.5246072230000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py",
+      "line": 623,
+      "name": "_wait_for_ready_callbacks",
+      "calls": 16292,
+      "primitive_calls": 0,
+      "own_wall_s": 0.488976159,
+      "cumulative_wall_s": 0.0
+    },
+    {
+      "file": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/observations.py",
+      "line": 14,
+      "name": "sensor_sample",
+      "calls": 10906,
+      "primitive_calls": 10906,
+      "own_wall_s": 0.441984292,
+      "cumulative_wall_s": 1.1680478060000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/guard_condition.py",
+      "line": 32,
+      "name": "trigger",
+      "calls": 31343,
+      "primitive_calls": 12,
+      "own_wall_s": 0.422722627,
+      "cumulative_wall_s": 0.0023711450000000003
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.next>",
+      "calls": 16490,
+      "primitive_calls": 198,
+      "own_wall_s": 0.378625508,
+      "cumulative_wall_s": 0.004359386000000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/timer.py",
+      "line": 86,
+      "name": "timer_period_ns",
+      "calls": 11369,
+      "primitive_calls": 11369,
+      "own_wall_s": 0.359637229,
+      "cumulative_wall_s": 0.37854962600000003
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'append' of 'list' objects>",
+      "calls": 827230,
+      "primitive_calls": 827230,
+      "own_wall_s": 0.341616866,
+      "cumulative_wall_s": 0.341616866
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method '__exit__' of '_thread.lock' objects>",
+      "calls": 929498,
+      "primitive_calls": 929498,
+      "own_wall_s": 0.340275783,
+      "cumulative_wall_s": 0.340275783
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'append' of 'collections.deque' objects>",
+      "calls": 784263,
+      "primitive_calls": 784263,
+      "own_wall_s": 0.29989291,
+      "cumulative_wall_s": 0.29989291
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/waitable.py",
+      "line": 26,
+      "name": "__init__",
+      "calls": 832951,
+      "primitive_calls": 832951,
+      "own_wall_s": 0.284226176,
+      "cumulative_wall_s": 0.284226176
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'get' of 'dict' objects>",
+      "calls": 573999,
+      "primitive_calls": 573999,
+      "own_wall_s": 0.262414399,
+      "cumulative_wall_s": 0.262414399
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'pop' of 'collections.deque' objects>",
+      "calls": 781954,
+      "primitive_calls": 781954,
+      "own_wall_s": 0.262159969,
+      "cumulative_wall_s": 0.262159969
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.isinstance>",
+      "calls": 632918,
+      "primitive_calls": 632918,
+      "own_wall_s": 0.24798247,
+      "cumulative_wall_s": 0.24798247
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/builtin_interfaces/msg/_time.py",
+      "line": 82,
+      "name": "__init__",
+      "calls": 45952,
+      "primitive_calls": 45952,
+      "own_wall_s": 0.244540114,
+      "cumulative_wall_s": 0.325940004
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py",
+      "line": 278,
+      "name": "waitables",
+      "calls": 849950,
+      "primitive_calls": 849950,
+      "own_wall_s": 0.234833599,
+      "cumulative_wall_s": 0.234833599
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/std_msgs/msg/_header.py",
+      "line": 86,
+      "name": "__init__",
+      "calls": 24120,
+      "primitive_calls": 24120,
+      "own_wall_s": 0.233057124,
+      "cumulative_wall_s": 0.528922193
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/event_handler.py",
+      "line": 131,
+      "name": "__exit__",
+      "calls": 16999,
+      "primitive_calls": 1,
+      "own_wall_s": 0.232968679,
+      "cumulative_wall_s": 2.0368000000000002e-05
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py",
+      "line": 559,
+      "name": "_make_handler",
+      "calls": 16292,
+      "primitive_calls": 16292,
+      "own_wall_s": 0.22504177900000003,
+      "cumulative_wall_s": 0.7817966420000001
+    },
+    {
+      "file": "/usr/lib/python3.12/inspect.py",
+      "line": 384,
+      "name": "_has_code_flag",
+      "calls": 32584,
+      "primitive_calls": 32584,
+      "own_wall_s": 0.182154633,
+      "cumulative_wall_s": 0.342378778
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/topic_endpoint_info.py",
+      "line": 46,
+      "name": "__init__",
+      "calls": 8148,
+      "primitive_calls": 7582,
+      "own_wall_s": 0.180220617,
+      "cumulative_wall_s": 1.162620879
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method posix.stat>",
+      "calls": 3978,
+      "primitive_calls": 3978,
+      "own_wall_s": 0.16705192700000002,
+      "cumulative_wall_s": 0.16705192700000002
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/qos.py",
+      "line": 76,
+      "name": "__init__",
+      "calls": 8165,
+      "primitive_calls": 8165,
+      "own_wall_s": 0.167030753,
+      "cumulative_wall_s": 0.516654185
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 1390,
+      "name": "_handle_fromlist",
+      "calls": 84231,
+      "primitive_calls": 84000,
+      "own_wall_s": 0.162556965,
+      "cumulative_wall_s": 0.5835779750000001
+    }
+  ],
+  "top_cumulative": [
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/waitable.py",
+      "line": 37,
+      "name": "__add__",
+      "calls": 407976,
+      "primitive_calls": 407976,
+      "own_wall_s": 2.76172873,
+      "cumulative_wall_s": 5.015404582
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'extend' of 'list' objects>",
+      "calls": 85308,
+      "primitive_calls": 85308,
+      "own_wall_s": 0.651426736,
+      "cumulative_wall_s": 2.902923508
+    },
+    {
+      "file": "/usr/lib/python3.12/contextlib.py",
+      "line": 543,
+      "name": "_push_cm_exit",
+      "calls": 781954,
+      "primitive_calls": 781954,
+      "own_wall_s": 0.9670468700000001,
+      "cumulative_wall_s": 2.347281257
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py",
+      "line": 614,
+      "name": "can_execute",
+      "calls": 713958,
+      "primitive_calls": 713958,
+      "own_wall_s": 0.6438327300000001,
+      "cumulative_wall_s": 2.0452580350000003
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py",
+      "line": 479,
+      "name": "_execute",
+      "calls": 15208,
+      "primitive_calls": 9970,
+      "own_wall_s": 0.081739717,
+      "cumulative_wall_s": 1.8228530020000002
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 480,
+      "name": "_call_with_frames_removed",
+      "calls": 1448,
+      "primitive_calls": 47,
+      "own_wall_s": 0.012490910000000001,
+      "cumulative_wall_s": 1.7299698270000001
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 989,
+      "name": "exec_module",
+      "calls": 483,
+      "primitive_calls": 8,
+      "own_wall_s": 0.002422071,
+      "cumulative_wall_s": 1.7190040020000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/callback_groups.py",
+      "line": 101,
+      "name": "can_execute",
+      "calls": 730250,
+      "primitive_calls": 730250,
+      "own_wall_s": 1.25531046,
+      "cumulative_wall_s": 1.5010240540000002
+    },
+    {
+      "file": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/motion_guard.py",
+      "line": 234,
+      "name": "_sensor",
+      "calls": 10906,
+      "primitive_calls": 10906,
+      "own_wall_s": 0.11162535400000001,
+      "cumulative_wall_s": 1.390607468
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.getattr>",
+      "calls": 4922548,
+      "primitive_calls": 4922548,
+      "own_wall_s": 1.356580257,
+      "cumulative_wall_s": 1.3570821400000002
+    },
+    {
+      "file": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/motion_guard.py",
+      "line": 1,
+      "name": "<module>",
+      "calls": 1,
+      "primitive_calls": 1,
+      "own_wall_s": 0.000150771,
+      "cumulative_wall_s": 1.283413868
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/event_handler.py",
+      "line": 127,
+      "name": "__enter__",
+      "calls": 407976,
+      "primitive_calls": 407976,
+      "own_wall_s": 1.222744904,
+      "cumulative_wall_s": 1.222744904
+    },
+    {
+      "file": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/observations.py",
+      "line": 14,
+      "name": "sensor_sample",
+      "calls": 10906,
+      "primitive_calls": 10906,
+      "own_wall_s": 0.441984292,
+      "cumulative_wall_s": 1.1680478060000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/topic_endpoint_info.py",
+      "line": 46,
+      "name": "__init__",
+      "calls": 8148,
+      "primitive_calls": 7582,
+      "own_wall_s": 0.180220617,
+      "cumulative_wall_s": 1.162620879
+    },
+    {
+      "file": "/usr/lib/python3.12/contextlib.py",
+      "line": 548,
+      "name": "_push_exit_callback",
+      "calls": 781954,
+      "primitive_calls": 781954,
+      "own_wall_s": 0.5618526930000001,
+      "cumulative_wall_s": 0.8600694720000001
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1062,
+      "name": "get_code",
+      "calls": 483,
+      "primitive_calls": 483,
+      "own_wall_s": 0.010092643,
+      "cumulative_wall_s": 0.823894243
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/event_handler.py",
+      "line": 118,
+      "name": "get_num_entities",
+      "calls": 407976,
+      "primitive_calls": 407976,
+      "own_wall_s": 0.6663060670000001,
+      "cumulative_wall_s": 0.8061213620000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.setattr>",
+      "calls": 2450957,
+      "primitive_calls": 2450957,
+      "own_wall_s": 0.788500363,
+      "cumulative_wall_s": 0.7889872370000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py",
+      "line": 559,
+      "name": "_make_handler",
+      "calls": 16292,
+      "primitive_calls": 16292,
+      "own_wall_s": 0.22504177900000003,
+      "cumulative_wall_s": 0.7817966420000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method rclpy._rclpy_pybind11.rclpy_get_publishers_info_by_topic>",
+      "calls": 10800,
+      "primitive_calls": 10800,
+      "own_wall_s": 0.621386581,
+      "cumulative_wall_s": 0.7421380390000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py",
+      "line": 1,
+      "name": "<module>",
+      "calls": 1,
+      "primitive_calls": 1,
+      "own_wall_s": 0.00017758900000000002,
+      "cumulative_wall_s": 0.7010559900000001
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1054,
+      "name": "source_to_code",
+      "calls": 233,
+      "primitive_calls": 233,
+      "own_wall_s": 0.0009090280000000001,
+      "cumulative_wall_s": 0.656066173
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.compile>",
+      "calls": 254,
+      "primitive_calls": 254,
+      "own_wall_s": 0.64545872,
+      "cumulative_wall_s": 0.64545872
+    },
+    {
+      "file": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/motion_guard.py",
+      "line": 187,
+      "name": "<lambda>",
+      "calls": 353,
+      "primitive_calls": 353,
+      "own_wall_s": 0.001560771,
+      "cumulative_wall_s": 0.614747736
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 1390,
+      "name": "_handle_fromlist",
+      "calls": 84231,
+      "primitive_calls": 84000,
+      "own_wall_s": 0.162556965,
+      "cumulative_wall_s": 0.5835779750000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/topic_endpoint_info.py",
+      "line": 166,
+      "name": "qos_profile",
+      "calls": 8149,
+      "primitive_calls": 8149,
+      "own_wall_s": 0.056855201,
+      "cumulative_wall_s": 0.578493558
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/std_msgs/msg/_header.py",
+      "line": 86,
+      "name": "__init__",
+      "calls": 24120,
+      "primitive_calls": 24120,
+      "own_wall_s": 0.233057124,
+      "cumulative_wall_s": 0.528922193
+    },
+    {
+      "file": "/usr/lib/python3.12/contextlib.py",
+      "line": 471,
+      "name": "_create_exit_wrapper",
+      "calls": 781954,
+      "primitive_calls": 781954,
+      "own_wall_s": 0.5246072230000001,
+      "cumulative_wall_s": 0.5246072230000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/qos.py",
+      "line": 76,
+      "name": "__init__",
+      "calls": 8165,
+      "primitive_calls": 8165,
+      "own_wall_s": 0.167030753,
+      "cumulative_wall_s": 0.516654185
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/task.py",
+      "line": 229,
+      "name": "__init__",
+      "calls": 16292,
+      "primitive_calls": 16292,
+      "own_wall_s": 0.15482282,
+      "cumulative_wall_s": 0.5138264260000001
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/timer.py",
+      "line": 30,
+      "name": "__init__",
+      "calls": 11369,
+      "primitive_calls": 11369,
+      "own_wall_s": 0.085820954,
+      "cumulative_wall_s": 0.508456707
+    },
+    {
+      "file": "/usr/lib/python3.12/inspect.py",
+      "line": 420,
+      "name": "iscoroutinefunction",
+      "calls": 32584,
+      "primitive_calls": 32584,
+      "own_wall_s": 0.060752464000000006,
+      "cumulative_wall_s": 0.491548101
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/nav_msgs/msg/_odometry.py",
+      "line": 100,
+      "name": "__init__",
+      "calls": 1696,
+      "primitive_calls": 1696,
+      "own_wall_s": 0.053837542,
+      "cumulative_wall_s": 0.420137391
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.__import__>",
+      "calls": 403,
+      "primitive_calls": 34,
+      "own_wall_s": 0.000726394,
+      "cumulative_wall_s": 0.39645320700000003
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/timer.py",
+      "line": 86,
+      "name": "timer_period_ns",
+      "calls": 11369,
+      "primitive_calls": 11369,
+      "own_wall_s": 0.359637229,
+      "cumulative_wall_s": 0.37854962600000003
+    },
+    {
+      "file": "/usr/lib/python3.12/inspect.py",
+      "line": 384,
+      "name": "_has_code_flag",
+      "calls": 32584,
+      "primitive_calls": 32584,
+      "own_wall_s": 0.182154633,
+      "cumulative_wall_s": 0.342378778
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'append' of 'list' objects>",
+      "calls": 827230,
+      "primitive_calls": 827230,
+      "own_wall_s": 0.341616866,
+      "cumulative_wall_s": 0.341616866
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method '__exit__' of '_thread.lock' objects>",
+      "calls": 929498,
+      "primitive_calls": 929498,
+      "own_wall_s": 0.340275783,
+      "cumulative_wall_s": 0.340275783
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/builtin_interfaces/msg/_time.py",
+      "line": 82,
+      "name": "__init__",
+      "calls": 45952,
+      "primitive_calls": 45952,
+      "own_wall_s": 0.244540114,
+      "cumulative_wall_s": 0.325940004
+    },
+    {
+      "file": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/time_source.py",
+      "line": 123,
+      "name": "clock_callback",
+      "calls": 4303,
+      "primitive_calls": 4303,
+      "own_wall_s": 0.019142626000000003,
+      "cumulative_wall_s": 0.32157783
+    }
+  ]
+}
