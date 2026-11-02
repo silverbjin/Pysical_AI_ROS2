@@ -8,14 +8,33 @@ if ROS:
 @unittest.skipUnless(ROS,'requires Jazzy')
 class ProcessCleanupTests(unittest.TestCase):
  def test_gateway_sigterm_has_normal_exit(self):
-  p=subprocess.Popen([sys.executable,'-m','ch13_navigation_reuse.command_gateway'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+  p=subprocess.Popen([sys.executable,'-m','ch13_navigation_reuse.command_gateway'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
   rclpy.init();n=Node('reuse_shutdown_probe')
   try:
    client=n.create_client(Trigger,'/ch13/reuse/gateway/arm');self.assertTrue(client.wait_for_service(timeout_sec=5.))
-   p.terminate();self.assertEqual(p.wait(timeout=3.),0)
+   p.terminate();output=p.communicate(timeout=3.)[0];self.assertEqual(p.returncode,0,output)
   finally:
    if p.poll() is None:p.kill();p.wait(timeout=3.)
    n.destroy_node();rclpy.shutdown()
+ def test_sigterm_during_constructor_exits_normally(self):
+  import os
+  code="""
+import os,signal,time,rclpy
+import ch13_navigation_reuse.command_gateway as gateway
+original=gateway.CommandGateway.create_service
+def create(self,kind,name,callback,*args,**kwargs):
+    service=original(self,kind,name,callback,*args,**kwargs)
+    if name.endswith('/gateway/arm'):
+        os.kill(os.getpid(),signal.SIGTERM)
+        end=time.monotonic()+1
+        while rclpy.ok() and time.monotonic()<end:time.sleep(.001)
+    return service
+gateway.CommandGateway.create_service=create
+gateway.main()
+"""
+  env=dict(os.environ);env['PYTHONPATH']=str(Path(__file__).resolve().parents[1])+os.pathsep+env.get('PYTHONPATH','')
+  p=subprocess.run([sys.executable,'-c',code],env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=5.)
+  self.assertEqual(p.returncode,0,p.stdout)
 @unittest.skipUnless(ROS,'requires Jazzy')
 class StartupStampTests(unittest.TestCase):
  def test_no_unstamped_startup_command_before_engine_clock(self):

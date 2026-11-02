@@ -3,6 +3,7 @@ import json,math,time
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
+from rclpy._rclpy_pybind11 import RCLError
 from rclpy.clock import Clock as TimerClock
 from rclpy.clock_type import ClockType
 from geometry_msgs.msg import TwistStamped
@@ -61,8 +62,15 @@ class CommandGateway(Node):
         if self.previous_mode!=d.mode:self.get_logger().info('mode='+d.mode+' '+d.fault);self.previous_mode=d.mode
 
 def main(args=None):
-    rclpy.init(args=args);node=CommandGateway()
-    try:rclpy.spin(node)
+    node=None
+    try:
+        rclpy.init(args=args);node=CommandGateway();rclpy.spin(node)
     except (KeyboardInterrupt,ExternalShutdownException):pass
-    finally:node.destroy_node();rclpy.try_shutdown()
+    except RCLError:
+        # A signal can invalidate the context after a service becomes discoverable
+        # but before construction finishes. Unrelated live-context errors still fail.
+        if rclpy.ok():raise
+    finally:
+        if node is not None:node.destroy_node()
+        rclpy.try_shutdown()
 if __name__=='__main__':main()

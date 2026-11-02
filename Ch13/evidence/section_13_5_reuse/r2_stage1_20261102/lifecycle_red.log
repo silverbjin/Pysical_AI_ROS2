@@ -1,0 +1,35 @@
+test_gateway_sigterm_has_normal_exit (test_process_cleanup.ProcessCleanupTests.test_gateway_sigterm_has_normal_exit) ... [WARN] [1793613757.083650064] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793613757.084737664] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+ok
+test_sigterm_during_constructor_exits_normally (test_process_cleanup.ProcessCleanupTests.test_sigterm_during_constructor_exits_normally) ... FAIL
+test_no_unstamped_startup_command_before_engine_clock (test_process_cleanup.StartupStampTests.test_no_unstamped_startup_command_before_engine_clock) ... [WARN] [1793613762.534431365] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793613762.535290266] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[INFO] [1793613762.782809270] [ch13_reuse_gateway]: mode=DISARMED 
+ok
+
+======================================================================
+FAIL: test_sigterm_during_constructor_exits_normally (test_process_cleanup.ProcessCleanupTests.test_sigterm_during_constructor_exits_normally)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_process_cleanup.py", line 37, in test_sigterm_during_constructor_exits_normally
+    self.assertEqual(p.returncode,0,p.stdout)
+AssertionError: 1 != 0 : [WARN] [1793613761.900892854] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793613761.900927254] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+Traceback (most recent call last):
+  File "<string>", line 13, in <module>
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/command_gateway.py", line 64, in main
+    rclpy.init(args=args);node=CommandGateway()
+                               ^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/command_gateway.py", line 29, in __init__
+    self.create_service(Trigger,N+'/gateway/reset',self.on_reset)
+  File "<string>", line 6, in create
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py", line 1732, in create_service
+    service_impl = _rclpy.Service(
+                   ^^^^^^^^^^^^^^^
+rclpy._rclpy_pybind11.RCLError: failed to create service: rcl node's context is invalid, at ./src/rcl/node.c:404
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 6.027s
+
+FAILED (failures=1)
