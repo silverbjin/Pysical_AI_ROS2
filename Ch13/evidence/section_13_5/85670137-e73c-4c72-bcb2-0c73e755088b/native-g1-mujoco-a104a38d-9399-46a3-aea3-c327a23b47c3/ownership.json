@@ -1,0 +1,852 @@
+{
+  "topics": {
+    "/clock": [
+      {
+        "node": "//mujoco_ros2_control_node",
+        "gid": "010fb405e50775390000000000004a03"
+      }
+    ],
+    "/joint_states": [
+      {
+        "node": "//joint_state_broadcaster",
+        "gid": "010fb405e5077539000000000000e503"
+      }
+    ],
+    "/odom": [
+      {
+        "node": "//native_pose_adapter",
+        "gid": "010fb405e7071fca0000000000001303"
+      }
+    ],
+    "/navigation/odom": [
+      {
+        "node": "//nav_projection",
+        "gid": "010fb405ec079a8e0000000000001403"
+      }
+    ],
+    "/scan": [
+      {
+        "node": "//mujoco_ros2_control_node",
+        "gid": "010fb405e50775390000000000005b03"
+      }
+    ],
+    "/navigation/imu": [
+      {
+        "node": "//mujoco_ros2_control_node",
+        "gid": "010fb405e50775390000000000005a03"
+      }
+    ],
+    "/navigation/foot_contacts": [
+      {
+        "node": "//mujoco_ros2_control_node",
+        "gid": "010fb405e50775390000000000005903"
+      }
+    ],
+    "/navigation/native_com": [
+      {
+        "node": "//mujoco_ros2_control_node",
+        "gid": "010fb405e50775390000000000005c03"
+      }
+    ],
+    "/navigation/carry_state": [
+      {
+        "node": "//carry_manager",
+        "gid": "010fb405eb077d6f0000000000001403"
+      }
+    ],
+    "/leg_position_controller/commands": [
+      {
+        "node": "//crawl_controller",
+        "gid": "010fb405ea07e0280000000000002203"
+      }
+    ],
+    "/gripper_position_controller/commands": [
+      {
+        "node": "//carry_manager",
+        "gid": "010fb405eb077d6f0000000000001503"
+      }
+    ],
+    "/navigation/cmd_vel": [
+      {
+        "node": "//motion_guard",
+        "gid": "010fb405e907e8b10000000000001403"
+      }
+    ],
+    "/navigation/native_controls": [
+      {
+        "node": "//mujoco_ros2_control_node",
+        "gid": "010fb405e50775390000000000005d03"
+      }
+    ]
+  },
+  "transforms": [
+    {
+      "child": "rr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36393999999
+    },
+    {
+      "child": "rr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_hip_link",
+      "stamp_ns": 36393999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36403999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36403999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36423999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36423999999
+    },
+    {
+      "child": "arm_link_1",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_base_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "arm_link_2",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_1",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "arm_link_3",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_2",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "arm_link_4",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_3",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "arm_link_5",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_4",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "arm_link_6",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_5",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "fl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_thigh_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "fl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "fl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_hip_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "fr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_thigh_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "fr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "fr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_hip_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "gripper_left_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "gripper_right_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "rl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_thigh_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "rl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "rl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_hip_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "rr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_thigh_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "rr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "rr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_hip_link",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36443999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36463999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36463999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36483999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36483999999
+    },
+    {
+      "child": "arm_link_1",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_base_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "arm_link_2",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_1",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "arm_link_3",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_2",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "arm_link_4",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_3",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "arm_link_5",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_4",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "arm_link_6",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_5",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "fl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_thigh_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "fl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "fl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_hip_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "fr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_thigh_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "fr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "fr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_hip_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "gripper_left_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "gripper_right_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "rl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_thigh_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "rl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "rl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_hip_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "rr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_thigh_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "rr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "rr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_hip_link",
+      "stamp_ns": 36493999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36503999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36503999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36523999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36523999999
+    },
+    {
+      "child": "arm_link_1",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_base_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "arm_link_2",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_1",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "arm_link_3",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_2",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "arm_link_4",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_3",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "arm_link_5",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_4",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "arm_link_6",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_5",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "fl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_thigh_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "fl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "fl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_hip_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "fr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_thigh_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "fr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "fr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_hip_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "gripper_left_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "gripper_right_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "rl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_thigh_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "rl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "rl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_hip_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "rr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_thigh_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "rr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "rr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_hip_link",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36543999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36563999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36563999999
+    },
+    {
+      "child": "arm_link_1",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_base_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "arm_link_2",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_1",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "arm_link_3",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_2",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "arm_link_4",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_3",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "arm_link_5",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_4",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "arm_link_6",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_5",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "fl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_thigh_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "fl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "fl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_hip_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "fr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_thigh_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "fr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "fr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_hip_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "gripper_left_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "gripper_right_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "rl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_thigh_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "rl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "rl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_hip_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "rr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_thigh_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "rr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "rr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_hip_link",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36593999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36613999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36613999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36633999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36633999999
+    },
+    {
+      "child": "arm_link_1",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_base_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "arm_link_2",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_1",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "arm_link_3",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_2",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "arm_link_4",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_3",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "arm_link_5",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_4",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "arm_link_6",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "arm_link_5",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "fl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_thigh_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "fl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "fl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fl_hip_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "fr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_thigh_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "fr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "fr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "fr_hip_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "gripper_left_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "gripper_right_finger",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "gripper_base_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "rl_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_thigh_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "rl_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "rl_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rl_hip_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "rr_calf_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_thigh_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "rr_hip_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "base_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "rr_thigh_link",
+      "gid": "010fb405e6072e050000000000001503",
+      "parent": "rr_hip_link",
+      "stamp_ns": 36643999999
+    },
+    {
+      "child": "base_footprint",
+      "gid": "010fb405e7071fca0000000000001403",
+      "parent": "odom",
+      "stamp_ns": 36653999999
+    },
+    {
+      "child": "nav_base",
+      "gid": "010fb405ec079a8e0000000000001503",
+      "parent": "odom",
+      "stamp_ns": 36653999999
+    }
+  ]
+}
