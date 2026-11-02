@@ -46,7 +46,7 @@ bash "$reuse_repo/Ch13/scripts/reuse_13_5/env_r2.sh" "$reuse_repo/Ch13/scripts/r
 bash "$reuse_repo/Ch13/scripts/reuse_13_5/env_r2.sh" -m unittest discover -s "$reuse_repo/Ch13/ros2_ws/src/ch13_navigation_reuse/test" -v
 ```
 
-현재45개검사와설치launch실제전진·회전·정지·손실·회수가성공했다. [최신단계3보고서](SECTION_13_5_REUSE_R2_STAGE_3_KO.md)에완료범위와실패보존·게시대기를분리했다. 기존Task8/R1실패를새PASS로바꾸지않는다.
+현재45개검사와설치launch실제전진·회전·정지·손실·회수가성공했다. [최신단계3보고서](SECTION_13_5_REUSE_R2_STAGE_3_KO.md)에완료범위와실패보존을분리했다. [게시완료기록](SECTION_13_5_REUSE_R2_STAGE_4_PUBLICATION_KO.md)도확인한다. 기존Task8/R1실패를새PASS로바꾸지않는다.
 
 
 ROS launch CLI는 시스템Python을 사용하며 추론/노드의Python은 launch의 `python` 인자로 기존venv를 쓴다. probe는 이를 각각 지정한다. 직접CLI실행시 `/usr/bin/python3 /opt/ros/jazzy/bin/ros2 launch ...`를 사용한다. launch의exit0만으로성공을판정하지않고engine.json의COMPLETED/normal_shutdown_requested와정착·probe·자식회수결과를모두확인한다.

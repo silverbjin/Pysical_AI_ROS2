@@ -1,3 +1,5 @@
+> **게시 완료:** 사용자 목적지 승인 후 단계별 push와 원격 SHA 대조를 완료했다. [최신 게시 보고서](SECTION_13_5_REUSE_R2_STAGE_4_PUBLICATION_KO.md). 아래 대기 문구는 작성 당시 기록이다.
+
 > 2026-11-02 후속 지시로 단계별 보고서·commit/push로 게시 규칙을 변경했다. [최신 완료 보고서](SECTION_13_5_REUSE_R2_STAGE_3_KO.md). 기술 작업 완료, push는 목적지 승인 대기.
 
 # R2 최소 ROS2 연결 실행 계획
