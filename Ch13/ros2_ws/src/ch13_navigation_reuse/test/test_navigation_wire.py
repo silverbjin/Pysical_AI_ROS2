@@ -21,7 +21,7 @@ class NavigationWireTests(unittest.TestCase):
   rclpy.init();self.b=NavigationBoundary();self.n=Node('reuse_navigation_wire_probe');self.ns=2_000_000_000;self.nav_on=True;self.scan_on=True;self.vision_on=False;self.status={};self.outputs=[];self.nav_stamps=[]
   self.cp=self.n.create_publisher(Clock,'/clock',1);self.np=self.n.create_publisher(TwistStamped,N+'/nav_cmd',1);self.sp=self.n.create_publisher(TwistStamped,N+'/smoothed_cmd',1);self.lp=self.n.create_publisher(LaserScan,N+'/scan',1);self.tp=self.n.create_publisher(TFMessage,'/tf',1);self.hp=self.n.create_publisher(String,N+'/vision/health',1)
   self.n.create_subscription(TwistStamped,N+'/cmd_vel_raw',lambda m:self.outputs.append(m),10);self.n.create_subscription(String,N+'/navigation/status',lambda m:setattr(self,'status',json.loads(m.data)),10)
-  self.n.create_timer(.02,self.send);self.ex=SingleThreadedExecutor();self.ex.add_node(self.b);self.ex.add_node(self.n);self.t=threading.Thread(target=self.ex.spin);self.t.start()
+  self.n.create_timer(.02,self.send,clock=__import__('rclpy.clock',fromlist=['Clock']).Clock(clock_type=__import__('rclpy.clock_type',fromlist=['ClockType']).ClockType.STEADY_TIME));self.ex=SingleThreadedExecutor();self.ex.add_node(self.b);self.ex.add_node(self.n);self.t=threading.Thread(target=self.ex.spin);self.t.start()
  def send(self):
   self.ns+=20_000_000;c=Clock();set_stamp(c.clock,self.ns);self.cp.publish(c)
   if self.nav_on:
@@ -40,12 +40,18 @@ class NavigationWireTests(unittest.TestCase):
    if predicate():return True
    time.sleep(.01)
   return False
- def active(self):
+ def prepare(self):
   self.assertTrue(self.until(lambda:self.b.c.g._fresh(time.monotonic()) and self.b.c.frames_ready()))
   client=self.n.create_client(Trigger,N+'/navigation/enable');self.assertTrue(client.wait_for_service(timeout_sec=2.));f=client.call_async(Trigger.Request());self.assertTrue(self.until(f.done));self.assertTrue(f.result().success)
   self.assertTrue(self.until(lambda:self.status.get('phase')=='ACTIVE'))
+ def active(self):
+  self.prepare()
+  client=self.n.create_client(Trigger,N+'/navigation/release');self.assertTrue(client.wait_for_service(timeout_sec=2.));f=client.call_async(Trigger.Request());self.assertTrue(self.until(f.done));self.assertTrue(f.result().success)
  def fault(self):
   self.assertTrue(self.until(lambda:self.status.get('phase')=='FAULT'));self.assertTrue(self.until(lambda:self.outputs[-1].twist.linear.x==0.))
+ def test_prepared_navigation_holds_zero_until_explicit_release(self):
+  self.prepare();time.sleep(.1);self.assertEqual(self.outputs[-1].twist.linear.x,0.)
+  client=self.n.create_client(Trigger,N+'/navigation/release');self.assertTrue(client.wait_for_service(timeout_sec=2.));f=client.call_async(Trigger.Request());self.assertTrue(self.until(f.done));self.assertTrue(f.result().success);self.assertTrue(self.until(lambda:self.outputs[-1].twist.linear.x>.05))
  def test_smoother_output_keeps_controller_stamp(self):
   self.active();self.assertTrue(self.until(lambda:self.outputs and self.outputs[-1].twist.linear.x>.05));self.assertIn(ns(self.outputs[-1].header.stamp),self.nav_stamps)
  def test_controller_loss_cannot_be_hidden_by_smoother(self):

@@ -10,6 +10,9 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.clock import Clock as TimerClock
 from rclpy.clock_type import ClockType
 from std_msgs.msg import String
+from sensor_msgs.msg import Image,CameraInfo
+from rclpy.qos import QoSProfile,ReliabilityPolicy
+from .camera_native import CameraLink
 from geometry_msgs.msg import PointStamped
 from .command_gateway import N,ns,set_stamp
 from .wire import decode
@@ -20,11 +23,28 @@ def matrix(t):
  q=t.transform.rotation;p=t.transform.translation;a=np.eye(4);a[:3,:3]=Rotation.from_quat([q.x,q.y,q.z,q.w]).as_matrix();a[:3,3]=[p.x,p.y,p.z];return a
 class VisionObserver(Node):
  def __init__(self,inference_hz=10.):
-  super().__init__('ch13_reuse_vision_observer');self.cache=FrameCache();self.clock_ns=0;self.clock_wall=None;self.fault='';self.relay={};self.tf_owners={};self.transforms={};self.map_odom=None;self.last_health=0;self.health_rows=[];self.last_processed=0;self.last_processed_wall=-1e9;self.inference_hz=inference_hz;self.rows=[];self.last_accepted=None;self.rejected=Counter()
+  super().__init__('ch13_reuse_vision_observer');self.cache=FrameCache();self.camera_link=CameraLink();self.receipt_rows=[];self.clock_ns=0;self.clock_wall=None;self.fault='';self.relay={};self.tf_owners={};self.transforms={};self.map_odom=None;self.last_health=0;self.health_rows=[];self.last_processed=0;self.last_processed_wall=-1e9;self.inference_hz=inference_hz;self.rows=[];self.last_accepted=None;self.rejected=Counter()
   self.observation=self.create_publisher(String,N+'/vision/observation',1);self.point=self.create_publisher(PointStamped,N+'/observed_target',1);self.health=self.create_publisher(String,N+'/vision/health',1);self.status=self.create_publisher(String,N+'/vision/status',1)
+  camera_qos=QoSProfile(depth=2,reliability=ReliabilityPolicy.RELIABLE)
+  for kind,typ,topic in [('rgb',Image,'rgb'),('depth',Image,'depth'),('camera_info',CameraInfo,'camera_info'),('camera_meta',String,'camera_capture')]:self.create_subscription(typ,N+'/'+topic,lambda m,k=kind:self.native(k,m),camera_qos)
   self.create_subscription(String,N+'/ingress/vision',lambda m:self.packet(m,'camera'),16);self.create_subscription(String,N+'/ingress/navigation',lambda m:self.packet(m,'navigation'),16);self.create_timer(.02,self.tick,clock=TimerClock(clock_type=ClockType.STEADY_TIME))
+ def native(self,kind,message):
+  try:
+   matched=self.camera_link.native(kind,message)
+   if matched:self.camera_frame(*matched)
+  except (ValueError,TypeError,KeyError) as exc:self.fault=str(exc)
+ def camera_frame(self,key,m,i):
+  if key=='camera_meta':payload=json.loads(m.data);stamp=int(payload['capture_ns'])
+  else:
+   if m.header.frame_id!='reuse/camera_optical' or m.width!=320 or m.height!=240:raise ValueError('camera calibration frame/dimensions')
+   stamp=ns(m.header.stamp);payload=m
+  if self.cache.insert(key,stamp,i['receipt_wall'],i['publisher_gid'].hex(),payload):self.receipt_rows.append({'kind':key,'capture_ns':stamp,'receipt_wall':i['receipt_wall'],'native_receipt_wall':i['native_receipt_wall'],'canonical_sha256':i['canonical_sha256'],'canonical_bytes':i['canonical_bytes'],'publisher_gid':i['publisher_gid'].hex(),'relay_gid':i['relay_gid'],'source_timestamp':i['source_timestamp']})
  def packet(self,packet,channel):
   try:
+   if channel=='camera':
+    matched=self.camera_link.receipt(packet.data)
+    if matched:self.camera_frame(*matched)
+    return
    key,m,i=decode(packet.data)
    if channel in self.relay and self.relay[channel]!=i['relay_gid']:raise ValueError('relay owner replaced')
    self.relay[channel]=i['relay_gid'];gid=i['publisher_gid'].hex()
@@ -45,12 +65,6 @@ class VisionObserver(Node):
      if len(set(ts))!=1:raise ValueError('incoherent capture TF')
      self.transforms[ts[0]]=self.map_odom@matrix(edges[needed[0]])@matrix(edges[needed[1]])@matrix(edges[needed[2]])
      while len(self.transforms)>120:del self.transforms[min(self.transforms)]
-   elif key in ['rgb','depth','camera_info','camera_meta']:
-    if key=='camera_meta':payload=json.loads(m.data);stamp=int(payload['capture_ns'])
-    else:
-     if m.header.frame_id!='reuse/camera_optical' or m.width!=320 or m.height!=240:raise ValueError('camera calibration frame/dimensions')
-     stamp=ns(m.header.stamp);payload=m
-    self.cache.insert(key,stamp,i['receipt_wall'],gid,payload)
   except (ValueError,TypeError,KeyError) as exc:self.fault=str(exc)
  def tick(self):
   now=time.monotonic()
@@ -92,5 +106,5 @@ def main():
  finally:
   if node.last_accepted is not None:
    rgb,depth,meta=node.last_accepted;write_rgb(out/'last_accepted_rgb.png',rgb);np.save(out/'last_accepted_depth.npy',depth);(out/'last_accepted_observation.json').write_text(json.dumps(meta,indent=2)+'\n')
-  (out/'camera_health.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.health_rows));(out/'vision_observations.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.rows));(out/'vision_summary.json').write_text(json.dumps({'inference_cap_wall_hz':node.inference_hz,'accepted':len(node.rows),'fault':node.fault or node.cache.fault,'rejected':dict(node.rejected)},indent=2)+'\n');node.destroy_node();rclpy.try_shutdown()
+  (out/'camera_receipts.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.receipt_rows));(out/'camera_health.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.health_rows));(out/'vision_observations.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.rows));(out/'vision_summary.json').write_text(json.dumps({'inference_cap_wall_hz':node.inference_hz,'accepted':len(node.rows),'fault':node.fault or node.cache.fault,'rejected':dict(node.rejected)},indent=2)+'\n');node.destroy_node();rclpy.try_shutdown()
 if __name__=='__main__':main()

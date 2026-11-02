@@ -12,6 +12,8 @@
 #include <tf2_msgs/msg/tf_message.hpp>
 #include <rosgraph_msgs/msg/clock.hpp>
 #include <time.h>
+#include <openssl/sha.h>
+#include "camera_canonical.hpp"
 #include <string>
 #include <vector>
 static std::string hex(const uint8_t* data,size_t n) {
@@ -43,6 +45,19 @@ class Ingress:public rclcpp::Node {
         destination->publish(packet);
       }));
   }
+  template<class T> void connect_camera(const std::string& key,const std::string& topic) {
+    subscriptions_.push_back(create_subscription<T>(topic,rclcpp::QoS(2).reliable(),
+      [this,key](typename T::ConstSharedPtr message,const rclcpp::MessageInfo& info) {
+        timespec receipt{};clock_gettime(CLOCK_MONOTONIC,&receipt);
+        const auto wall_ns=int64_t(receipt.tv_sec)*1000000000LL+receipt.tv_nsec;
+        camera1::Bytes bytes;try{bytes=camera1::fields(*message);}catch(const std::length_error&){return;}
+        if(bytes.size()>524288)return;
+        unsigned char digest[SHA256_DIGEST_LENGTH];SHA256(bytes.data(),bytes.size(),digest);
+        const auto& rmw=info.get_rmw_message_info();const auto relay_gid=vision_->get_gid();Packet packet;
+        packet.data="camera1|"+key+"|"+hex(rmw.publisher_gid.data,RMW_GID_STORAGE_SIZE)+"|"+hex(relay_gid.data,RMW_GID_STORAGE_SIZE)+"|"+std::to_string(wall_ns)+"|"+std::to_string(rmw.source_timestamp)+"|"+hex(digest,SHA256_DIGEST_LENGTH)+"|"+std::to_string(bytes.size());
+        vision_->publish(packet); // metadata only; original native image is never forwarded/restamped
+      }));
+  }
 public:
   Ingress():Node("ch13_reuse_ingress") {
     gateway_=create_publisher<Packet>("/ch13/reuse/ingress/gateway",16);
@@ -55,10 +70,10 @@ public:
     connect<sensor_msgs::msg::LaserScan>("scan","/ch13/reuse/scan",navigation_);
     connect<tf2_msgs::msg::TFMessage>("tf","/tf",navigation_);
     connect<tf2_msgs::msg::TFMessage>("tf_static","/tf_static",navigation_,rclcpp::QoS(1).transient_local().reliable());
-    connect<sensor_msgs::msg::Image>("rgb","/ch13/reuse/rgb",vision_,rclcpp::QoS(2).reliable());
-    connect<sensor_msgs::msg::Image>("depth","/ch13/reuse/depth",vision_,rclcpp::QoS(2).reliable());
-    connect<sensor_msgs::msg::CameraInfo>("camera_info","/ch13/reuse/camera_info",vision_,rclcpp::QoS(2).reliable());
-    connect<std_msgs::msg::String>("camera_meta","/ch13/reuse/camera_capture",vision_,rclcpp::QoS(2).reliable());
+    connect_camera<sensor_msgs::msg::Image>("rgb","/ch13/reuse/rgb");
+    connect_camera<sensor_msgs::msg::Image>("depth","/ch13/reuse/depth");
+    connect_camera<sensor_msgs::msg::CameraInfo>("camera_info","/ch13/reuse/camera_info");
+    connect_camera<std_msgs::msg::String>("camera_meta","/ch13/reuse/camera_capture");
     connect<std_msgs::msg::String>("vision_health","/ch13/reuse/vision/health",navigation_);
     connect<rosgraph_msgs::msg::Clock>("clock","/clock",gateway_);
     connect<nav_msgs::msg::Odometry>("base","/ch13/reuse/engine_state",gateway_);

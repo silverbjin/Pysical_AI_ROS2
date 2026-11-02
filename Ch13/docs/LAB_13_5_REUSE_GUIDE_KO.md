@@ -31,7 +31,7 @@ bash Ch13/scripts/reuse_13_5/run_navigation.sh free "$PWD/Ch13/evidence/section_
 
 ## 13.5.3 명령·상태·TF 계약
 
-Nav2 raw 출력을 upstream에 직접 연결하지 않는다. controller→smoother→navigation boundary→gateway→platform 경로를 읽고, `config/platform.yaml`의 단위·축·상한을 확인한다. vx/wz는 각각 최대0.20m/s·0.20rad/s, vy는0이다. 명령 ramp 상한은 몸체 가속도의 실측 보장이 아니다.
+Nav2 raw 출력을 upstream에 직접 연결하지 않는다. controller→smoother→navigation boundary→gateway→platform 경로를 읽고, `config/platform.yaml`의 단위·축·상한을 확인한다. vx/wz는 각각 최대0.20m/s·0.20rad/s, vy는0이다. 명령 ramp 상한은 몸체 가속도의 실측 보장이 아니다. 실행기는 먼저 실제 controller/smoother의 신선한 입력을 받으면서 zero를 유지하고, gateway 재무장과 명시적 release 후에만 움직인다. 준비 중의 경로 실패는 움직임을 해제하지 않는다.
 
 `/ch13/reuse/engine_state`는 실제3D 상태, `/ch13/reuse/odometry`는 지도 이동용 투영이다. TF에서 nav_base→base의 높이와 roll/pitch가 남는지 확인한다. map→odom은 알려진 장면과 engine ground truth를 사용하는 교육 profile이다. localization을 완성했다거나 AMCL/SLAM을 시험했다고 표현하지 않는다.
 
@@ -55,7 +55,7 @@ bash Ch13/scripts/reuse_13_5/run_navigation.sh vision "$PWD/Ch13/evidence/sectio
 
 320×240 RGB-D를 실제 상태 복사본에서 촬영한다. 카메라는 고해상도 장식 mesh 대신 원본 충돌 형상을 보여주는 교육용 화면이다. 실제 환경과 로봇 가림 근사를 렌더링하며, 장면 좌표를 비전 관측이라고 발행하지 않는다. 붉은 작업물의 보이는 표면을 색 영역과 depth로 검출한다. 일반 물체 인식은 별도 확장이다.
 
-capture 상한15wallHz와 기본 처리 상한10wallHz를 구분한다. 위 명령은 문서에서 허용한15Hz 처리 선택을 명시하며 최종 인수의 선택값도15Hz다. 기본10Hz의 전체 접근 성공으로 전이하지 않는다. 느린 시뮬레이터에서는 실제 wall FPS가 낮아질 수 있으며300ms 만료를 늘려 성공으로 바꾸지 않는다. 완전한 RGB-D의 생존 확인과 물체 인식 주기를 구분하고, goal 승인·최종 인계에는 계속 신선한 검출을 요구한다. source header를 now로 고치지 않는다. 저장 RGB·depth, calibration과 과거 TF로 관측점을 재계산할 수 있다. 기존13.4 geometry를 재사용했어도 새 카메라 시험은 별도로 수행한다.
+capture 상한15wallHz와 기본 처리 상한10wallHz를 구분한다. 위 명령은 문서에서 허용한15Hz 처리 선택을 명시하며 최종 인수의 선택값도15Hz다. 기본10Hz의 전체 접근 성공으로 전이하지 않는다. 느린 시뮬레이터에서는 실제 wall FPS가 낮아질 수 있으며300ms 만료를 늘려 성공으로 바꾸지 않는다. 완전한 RGB-D의 생존 확인과 물체 인식 주기를 구분하고, goal 승인·최종 인계에는 계속 신선한 검출을 요구한다. source header를 now로 고치지 않는다. 큰 원본 영상은 native ROS로 직접 수신하고 C++가 실제로 받은 동일 샘플의 전체 필드 SHA256·GID·최초 receipt와 대조한다. camera_receipts.jsonl에 이 대응을 남긴다. 저장 RGB·depth, calibration과 과거 TF로 관측점을 재계산할 수 있고, 저장 픽셀의 canonical SHA도 원본 C++ receipt와 다시 비교한다. 기존13.4 geometry를 재사용했어도 새 카메라 시험은 별도로 수행한다.
 
 실제 팔 체인과 joint limit·collision으로 위치 IK를 풀고 footprint와 지도, 실제 Nav2 경로 비용을 더해 접근 후보를 선택한다. 목표까지0.4m라는 상수를 보편값으로 사용하지 않는다. 후보 계산 뒤 새 촬영을 받아 목표의 유효성을 다시 확인하고, 그 원본 촬영 시각을 goal header에 남긴다.
 

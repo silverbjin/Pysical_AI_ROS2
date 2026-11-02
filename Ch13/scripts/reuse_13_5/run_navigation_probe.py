@@ -68,10 +68,9 @@ def main():
     if response.current_state.id==3:break
     assert time.monotonic()<end,'Nav2 lifecycle not ACTIVE: '+name
     until(lambda:False,.1)
-  if args.case=='vision':
-   for name in ['navigation/enable','navigation/require_vision']:
-    full=N+'/'+name;client=node.create_client(Trigger,full);clients[full]=client;assert until(client.service_is_ready,3),'missing admission service '+full
-  for name in ['platform/arm','gateway/arm']:response=call(name);assert response.success,response.message
+  for name in ['navigation/enable','navigation/require_vision','navigation/release','navigation/idle','platform/arm','gateway/arm','platform/shutdown']:
+   full=N+'/'+name;client=node.create_client(Trigger,full);clients[full]=client;assert until(client.service_is_ready,3),'missing admission service '+full
+  response=call('platform/arm');assert response.success,response.message
   target=[.65,0.,0.]
   if args.case=='obstacle':target=[2.25,0.,0.]
   if args.case=='blocked':target=[2.25,0.,0.]
@@ -86,8 +85,15 @@ def main():
   goal=NavigateToPose.Goal();goal.pose.header.frame_id='reuse/map';set_stamp(goal.pose.header.stamp,vision_record['source_observation']['capture_ns'] if vision_record is not None else clock_ns);goal.pose.pose.position.x=target[0];goal.pose.pose.position.y=target[1];goal.pose.pose.orientation.z=math.sin(target[2]/2);goal.pose.pose.orientation.w=math.cos(target[2]/2)
   S['goal_header_stamp_ns']=ns(goal.pose.header.stamp)
   sent=action.send_goal_async(goal);assert until(sent.done,5),'goal admission deadline';goal_handle=sent.result();assert goal_handle.accepted,'Nav2 goal rejected';result_future=goal_handle.get_result_async();S['events'].append({'event':'goal_accepted','sim_ns':clock_ns,'wall':time.monotonic()})
+  assert until(lambda:result_future.done() or boundary.get('phase')=='FAULT' or (boundary.get('phase')=='ACTIVE' and boundary.get('output_held') and gateway.get('ready_for_arm')),5),'controller preparation deadline'
+  if not result_future.done():
+   assert boundary.get('phase')=='ACTIVE' and boundary.get('output_held') and gateway.get('ready_for_arm'),'controller not prepared at zero'
+   S['motion_admission']={'boundary_phase':boundary['phase'],'held':boundary['output_held'],'gateway_before':gateway['mode'],'controller_stamp_ns':boundary['stamp_ns']}
+   response=call('gateway/arm');assert response.success,response.message;S['motion_admission']['gateway_arm_wall']=time.monotonic()
+   response=call('navigation/release');assert response.success,response.message;S['motion_admission']['release_wall']=time.monotonic();S['motion_release_sim_ns']=clock_ns
+  else:S['motion_not_released_terminal']=result_future.result().status
   if args.case in ['cancel','raw_loss']:
-   assert until(lambda:clock_ns-start_sim>=2_000_000_000 and boundary.get('phase')=='ACTIVE',12),'no active movement before injection'
+   assert until(lambda:clock_ns-S['motion_release_sim_ns']>=2_000_000_000 and boundary.get('phase')=='ACTIVE',12),'no active movement before injection'
    if args.case=='raw_loss':
     text=(out/'launch.log').read_text();owned=[int(x) for x in re.findall(r'process started with pid \[(\d+)\]',text)];victims=[]
     for pid in owned:
