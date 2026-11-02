@@ -169,9 +169,23 @@ public:
         last_body_ = info.simTime;
       }
       if (last_publish_ && info.simTime-*last_publish_ < std::chrono::milliseconds(20)) {return;}
+      const auto wall_now=[](){return std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();};
+      const auto generated_started=wall_now();
       const auto observation = read_gazebo_observations(model_, ecm, info.simTime);
-      com_.Publish(observation.com); feet_.Publish(observation.feet);
-      contacts_.Publish(observation.contacts); last_publish_ = info.simTime;
+      const auto generated_finished=wall_now();
+      com_.Publish(observation.com);
+      const auto feet_started=wall_now();feet_.Publish(observation.feet);const auto feet_returned=wall_now();
+      const auto contact_started=wall_now();contacts_.Publish(observation.contacts);const auto contact_returned=wall_now();
+      const auto capture=std::chrono::duration_cast<std::chrono::nanoseconds>(info.simTime).count();
+      if(!body_references_.empty() && body_references_.back().at("capture_ns")==capture){
+        body_references_.back()["contact_publication"]={{"capture_ns",capture},{"epoch",0},
+          {"scope","native_generation_and_transport_handoff_not_ROS_delivery"},
+          {"generated_started_wall_ns",generated_started},{"generated_finished_wall_ns",generated_finished},
+          {"feet_publish_started_wall_ns",feet_started},{"feet_publish_returned_wall_ns",feet_returned},
+          {"contacts_publish_started_wall_ns",contact_started},{"contacts_publish_returned_wall_ns",contact_returned}};
+      }
+      last_publish_ = info.simTime;
     } catch (const std::exception & error) {
       state_->stopped = true;
       gzerr << "Navigation observation failed closed; restart required: " << error.what() << '\n';

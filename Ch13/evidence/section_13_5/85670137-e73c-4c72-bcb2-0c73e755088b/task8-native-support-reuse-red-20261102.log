@@ -1,0 +1,25 @@
+F
+=================================== FAILURES ===================================
+______ test_static_support_reuses_verified_native_terms_with_same_optimum ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71c82f65de80>
+
+    def test_static_support_reuses_verified_native_terms_with_same_optimum(monkeypatch):
+        from integrated_robot_navigation import contact_equilibrium
+        c,model,m,mass=configured()
+        try:
+            com=mass(model,c['joints'],m.reference_body)
+            args=dict(model=model,joints=c['joints'],body_pose=m.reference_body,points=c['points'],active_feet=model.feet,com=com)
+            old=contact_equilibrium.static_support(**args)
+            assert old['feasible']
+            def forbidden(*args,**kwargs):raise AssertionError('Python URDF contact/gravity repeated')
+            monkeypatch.setattr(contact_equilibrium,'leg_terms',forbidden)
+>           direct=contact_equilibrium.static_support(**args,terms_evaluator=mass.contact_terms)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: static_support() got an unexpected keyword argument 'terms_evaluator'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_crawl_geometry_reuse.py:60: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_crawl_geometry_reuse.py::test_static_support_reuses_verified_native_terms_with_same_optimum
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 25.71s

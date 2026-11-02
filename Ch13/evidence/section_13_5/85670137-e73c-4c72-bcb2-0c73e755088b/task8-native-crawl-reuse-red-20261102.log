@@ -1,0 +1,22 @@
+F
+=================================== FAILURES ===================================
+_ test_current_crawl_ik_reuses_owned_native_geometry_without_python_collision_repeat _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x775495f91c70>
+
+    def test_current_crawl_ik_reuses_owned_native_geometry_without_python_collision_repeat(monkeypatch):
+        import integrated_robot_navigation.gait as gait
+        c,model,m,mass=configured();old=CrawlMachine(model,c['limits'])
+        old.reference_body=m.reference_body.copy();old._targets=m._targets;old.state='CRAWL'
+        try:
+            expected=old._solve(c['joints'],True)
+>           assert m._kinematics_evaluator is m._reference_geometry
+E           assert None is <integrated_robot_navigation.native_reference.NativeReferenceEnvelope object at 0x775495fe71a0>
+E            +  where None = <integrated_robot_navigation.gait.CrawlMachine object at 0x7754a29c3410>._kinematics_evaluator
+E            +  and   <integrated_robot_navigation.native_reference.NativeReferenceEnvelope object at 0x775495fe71a0> = <integrated_robot_navigation.gait.CrawlMachine object at 0x7754a29c3410>._reference_geometry
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_crawl_geometry_reuse.py:25: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_crawl_geometry_reuse.py::test_current_crawl_ik_reuses_owned_native_geometry_without_python_collision_repeat
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 23.35s

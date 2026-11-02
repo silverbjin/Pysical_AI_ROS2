@@ -57,6 +57,7 @@ class CrawlMachine:
         self.load_receipt_mode=load_receipt_mode
         self._load_transfer=None
         self._reference_geometry=None
+        self._actuation_evaluator=None
         if load_transfer_policy=='stance_admittance':
             from .contact_transfer import StanceLoadTransfer
             self._load_transfer=StanceLoadTransfer(model)
@@ -65,6 +66,14 @@ class CrawlMachine:
                 from .load_process import SpatialLoadProcess
                 from .native_reference import NativeReferenceEnvelope
                 self._reference_geometry=NativeReferenceEnvelope(model,limits)
+                if load_result_timing=='same_cycle' and self._kinematics_evaluator is None:
+                    # One immutable plan, one owner/close; no additional cache.
+                    self._kinematics_evaluator=self._reference_geometry
+                if load_result_timing=='same_cycle':
+                    from .native_equilibrium import NativeEquilibrium
+                    try:self._actuation_evaluator=NativeEquilibrium(model.urdf)
+                    except BaseException:
+                        self._reference_geometry.close();raise
                 self._load_transfer=SpatialLoadProcess(model,expected_library_sha256=(
                     mass_evaluator.provenance['library_sha256'] if mass_evaluator is not None else None),
                     command_space='stance_xyz',limits=limits,
@@ -112,6 +121,7 @@ class CrawlMachine:
         self._touchdown_time_credit_ns = 0
         self._fault_landing_foot = None
         self._fault_hold_observation = False
+        self._fault_transport_first_sample = False
         self.fault_stop_confirmed = False
         self._fault_settle_origin = self._fault_capture = None
         self._fault_capture_count = 0
@@ -160,6 +170,7 @@ class CrawlMachine:
                 self._reference_geometry.close()
             if self._kinematics_evaluator is not None and self._kinematics_evaluator is not self._reference_geometry:
                 self._kinematics_evaluator.close()
+            if self._actuation_evaluator is not None:self._actuation_evaluator.close()
 
     def _fail(self, reason):
         self._discard_load_transfer()
@@ -169,7 +180,10 @@ class CrawlMachine:
             self.fault_recovery_stage='WAIT_SAFE_ENTRY'
             return self._result()
         self._shift_plan = None
-        self._fault_hold_observation=(not self.calibrating and ((self.phase=='SHIFT' and (
+        self._fault_transport_first_sample=(self.load_result_timing=='same_cycle'
+            and not self.calibrating and self.phase=='SHIFT' and self.swing_foot is None
+            and self._unload_start is None and reason=='contacts:wall_age')
+        self._fault_hold_observation=(self._fault_transport_first_sample or not self.calibrating and ((self.phase=='SHIFT' and (
             (self.swing_foot is None and self._unload_start is None
                 and reason=='shift timeout; measured support/settle not gained')
             or (self.swing_foot is not None and self._unload_start is not None
@@ -260,6 +274,7 @@ class CrawlMachine:
         self.planning_reference_envelope=None
         self._fault_landing_foot = None
         self._fault_hold_observation = self.fault_stop_confirmed = False
+        self._fault_transport_first_sample = False
         self._fault_settle_origin = self._fault_capture = None
         self._fault_capture_count = 0
         self._calibration_request = self._calibration_vertical = None
@@ -479,6 +494,14 @@ class CrawlMachine:
             measured_com=np.asarray(com).copy() if self.state=='CRAWL' and not self.calibrating else None,
             command=command)
 
+    def _reference_constraints(self,joints,body,targets,*,selected,future_targets):
+        if self.load_result_timing=='same_cycle' and self._reference_geometry is not None:
+            return self._reference_geometry.evaluate(joints=joints,body=body,targets=targets,
+                envelope=self.planning_reference_envelope,selected=selected,future_targets=future_targets)
+        from .reference_envelope import reference_constraints
+        return reference_constraints(self.model,self.limits,joints,body,targets,
+            self.planning_reference_envelope,selected=selected,future_targets=future_targets)
+
     def _plan_shift(self, direction, support, desired_margin, joints, reference_body, *, measured_com=None,
                     command=(0.,0.,0.)):
         """At most one full IK/CoM candidate per next(); no actuator writes.
@@ -516,9 +539,8 @@ class CrawlMachine:
             body[:3,:3]=np.array([[c,-s,0.],[s,c,0.],[0.,0.,1.]])@body[:3,:3]
             moved=future_targets if horizon_budget is not None else None
             if self.planning_reference_envelope is not None and motion and progress==1.:
-                from .reference_envelope import reference_constraints
-                q,clear,bounds=reference_constraints(self.model,self.limits,joints,body,
-                    self._targets if moved is None else moved,self.planning_reference_envelope,
+                q,clear,bounds=self._reference_constraints(joints,body,
+                    self._targets if moved is None else moved,
                     selected=self.ORDER[self._index],future_targets=future_targets)
                 if np.min(clear)<0. or np.min(bounds)<0.:
                     raise ValueError('planned reference envelope clearance/bounds')
@@ -657,9 +679,17 @@ class CrawlMachine:
             return None
         from .contact_equilibrium import static_support
         self.support_feasibility_evaluations+=1
-        return static_support(self.model,joints,body,points,
+        options={}
+        if self.load_result_timing=='same_cycle':
+            terms=getattr(self._mass_evaluator,'contact_terms',None)
+            if terms is not None:options['terms_evaluator']=terms
+            if self._actuation_evaluator is not None:
+                options['actuation_evaluator']=self._actuation_evaluator.contact_command_terms
+        result=static_support(self.model,joints,body,points,
             tuple(f for f in self.model.feet if f!=self.ORDER[self._index]) if active is None else active,
-            com=com,min_force=self.limits['min_contact_force_n'])
+            com=com,min_force=self.limits['min_contact_force_n'],**options)
+        self._observe_stage('model_support_actuation')
+        return result
 
     def _constrained_shift(self,support,margin,joints,reference,measured,baseline,vx,wz,future_targets):
         contact_points=self._planning_contact_points
@@ -690,10 +720,8 @@ class CrawlMachine:
                 for part,value in zip(('hip','thigh','calf'),angles):
                     lo,hi=self.limits['gait_joint_bounds'][part];bounds.extend((value-lo,hi-value))
             if self.planning_reference_envelope is not None and progress==1.:
-                from .reference_envelope import reference_constraints
-                q,clear,bounds=reference_constraints(self.model,self.limits,joints,body,
-                    targets,self.planning_reference_envelope,selected=self.ORDER[self._index],
-                    future_targets=future_targets)
+                q,clear,bounds=self._reference_constraints(joints,body,targets,
+                    selected=self.ORDER[self._index],future_targets=future_targets)
             com=np.asarray((self._mass_evaluator or center_of_mass)(self.model,q,body))
             if measured is not None:com=measured+com-baseline
             margins=np.einsum('ij,ij->i',normals,com[:2]-points)-margin
@@ -1086,9 +1114,11 @@ class CrawlMachine:
         foot_targets=self._targets if foot_targets is None else foot_targets
         solved=None
         if self._kinematics_evaluator is not None:
-            solved=self._kinematics_evaluator.evaluate(joints=q,body=body,targets=foot_targets,
+            solved,clear,_=self._kinematics_evaluator.evaluate(joints=q,body=body,targets=foot_targets,
                 envelope={f:(p[2],p[2]) for f,p in foot_targets.items()},
-                selected=self.model.feet[0],future_targets=foot_targets)[0]
+                selected=self.model.feet[0],future_targets=foot_targets)
+            if moving and self.state=='CRAWL' and not self.calibrating and np.min(clear)<0.:
+                raise ValueError('thigh/trunk collision clearance')
         else:inverse=np.linalg.inv(body)
         targets = {}
         for foot in self.model.feet:
@@ -1097,7 +1127,7 @@ class CrawlMachine:
                 point = inverse @ np.array((*foot_targets[foot], 1.))
                 result = ik_leg(self.model, foot, tuple(point[:3]), tuple(q[n] for n in names))
             else:result=tuple(solved[n] for n in names)
-            if (moving and self.state=='CRAWL' and not self.calibrating
+            if (solved is None and moving and self.state=='CRAWL' and not self.calibrating
                     and thigh_trunk_clearance(self.model,foot,result)<.0001):
                 raise ValueError('thigh/trunk collision clearance')
             for name, value, part in zip(names, result, ('hip', 'thigh', 'calf')):
@@ -1154,13 +1184,21 @@ class CrawlMachine:
         """Read-only settling after an explicit stop of a held SHIFT fault.
 
         Keep FAULT/reason/generation and never solve or emit new motor targets.
-        Any invalid/stale support or clock permanently closes this observation;
-        later transport recovery cannot grant a stop acknowledgement.
+        A held SHIFT transport fault may begin one fresh read-only window on
+        explicit stop. Any invalid/stale support or clock closes that window;
+        later transport recovery cannot reopen a failed observation.
         """
         if not self._fault_hold_observation or not self._explicit_stop:
             return self._result()
         try:
             if command!=(0.,0.,0.):raise ValueError('fault stop requires zero command')
+            if getattr(self,'_fault_transport_first_sample',False):
+                # Explicit shutdown begins a NEW read-only measurement window.
+                # Never change the fault/generation, a receipt, or a motor target.
+                if ros_ns<self._last_ros or wall_ns<self._last_wall:
+                    raise ValueError('fault stop clock rollback')
+                self._last_ros,self._last_wall,self._progress_wall=ros_ns,wall_ns,wall_ns
+                self._fault_transport_first_sample=False
             if (ros_ns<self._last_ros or wall_ns<self._last_wall
                     or ros_ns-self._last_ros>200_000_000):
                 raise ValueError('fault stop clock gap/rollback')

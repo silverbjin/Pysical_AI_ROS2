@@ -108,3 +108,37 @@ def test_invalid_fault_stop_observation_never_resumes_on_later_fresh_feedback(na
     assert not getattr(value,'fault_stop_confirmed',False)
     for index in range(65):tick(value,plant,index)
     assert not getattr(value,'fault_stop_confirmed',False), 'invalidated fault observation recovered automatically'
+
+
+def test_explicit_stop_can_measure_fresh_held_shift_after_contact_age_fault_without_motion(nav_robot_model):
+    value,plant=shifting(nav_robot_model,(.01,0.,0.));value.load_result_timing='same_cycle'
+    assert value.phase=='SHIFT' and value.swing_foot is None and value._unload_start is None
+    value._fail('contacts:wall_age');plant.tick(follow=False)
+    held=deepcopy(value._targets);generation=value.generation
+    for index in range(55):tick(value,plant,index)
+    assert not value.fault_stop_confirmed
+    value.request_stop(urgent=True)
+    ros=value._last_ros+400_000_000;wall=value._last_wall+400_000_000
+    first=value.advance(sample_at(plant.state,ros,wall),(0.,0.,0.),ros,wall,reference_permitted=False)
+    assert first.state=='FAULT' and first.joint_targets is None and not value.fault_stop_confirmed
+    for index in range(55):
+        result=tick(value,plant,index)
+        assert result.state=='FAULT' and result.reason=='contacts:wall_age' and result.generation==generation
+        assert result.joint_targets is None
+        assert all(np.array_equal(p,value._targets[f]) for f,p in held.items())
+    assert value.fault_stop_confirmed
+
+
+@pytest.mark.parametrize('invalid',['stale','support','rollback'])
+def test_contact_age_stop_first_fresh_window_never_retries_invalid_input(nav_robot_model,invalid):
+    value,plant=shifting(nav_robot_model,(.01,0.,0.));value.load_result_timing='same_cycle'
+    value._fail('contacts:wall_age');plant.tick(follow=False);value.request_stop(urgent=True)
+    ros=value._last_ros+400_000_000;wall=value._last_wall+400_000_000
+    if invalid=='rollback':ros=value._last_ros-1
+    bundle=sample_at(plant.state,ros,wall)
+    if invalid=='stale':bundle=replace(bundle,contacts=replace(bundle.contacts,received_ns=wall-200_000_001))
+    elif invalid=='support':bundle=replace(bundle,contacts=replace(bundle.contacts,data={**bundle.contacts.data,'forces':(0.,30.,30.,30.),'touching':(False,True,True,True)}))
+    result=value.advance(bundle,(0.,0.,0.),ros,wall,reference_permitted=False)
+    assert result.state=='FAULT' and result.joint_targets is None
+    for index in range(65):tick(value,plant,index)
+    assert not value.fault_stop_confirmed

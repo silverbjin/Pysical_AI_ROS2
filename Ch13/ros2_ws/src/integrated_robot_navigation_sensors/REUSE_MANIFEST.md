@@ -287,3 +287,27 @@ diagnostic and is not represented as measured output torque. Actual hardware
 clamping and its20/30Nm leg caps are unchanged. This local quasistatic predictor
 is not an exact transient or full-path proof; measured release remains required.
 No worker, cache, warmstart, fallback, retry or command owner was added.
+
+## 2026-11-02 static actuator affine terms from the same energy model
+
+`ch13_equilibrium_terms` ABI1 exposes the already verified full inertia/gravity/
+implicit-damping map at exact supplied contact points for support planning.
+It reuses Plan::state, adds no new physical parameters or external dependencies,
+and retains finite/rigid/SPD/model-size/10ms checks. The original response ABI
+still uses differentiated sphere-plane geometry and is unchanged. All20 original
+actuator caps are returned unmodified. Independent URDF energy arithmetic and
+the preserved DART oracle bind the original failed267 posture; no measured data
+is fitted or relabelled. Existing QPMAD vendor and physical engine remain.
+
+## 2026-11-02 contact/clock capture boundary
+
+Actual DDS delayed-Clock regression reproduces loss of both exact-capture inputs
+before numerical submission, without a physics engine or control load. Future
+captures now remain bounded/pending until original ROS Clock catches up; the
+clock callback may release them. They are never used early or restamped, and
+original200ms dual-age expiry/duplicate receipts/rollback stop remain. Existing
+bounded metadata connects native generation/transport-call return, DDS original
+source/receive MessageInfo, callback entry, pair selection/publication and
+controller cache admission by capture/epoch/sequence. Native publish return
+is explicitly not subscriber delivery. No new worker, dependency, command
+authority, physics parameter, full-frame log stream or clock write was added.

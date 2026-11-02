@@ -1,0 +1,54 @@
+F
+=================================== FAILURES ===================================
+______ test_actual_adapter_preserves_pair_until_original_clock_catches_up ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_adapter_preserves_0')
+
+    def test_actual_adapter_preserves_pair_until_original_clock_catches_up(tmp_path):
+        scene=tmp_path/'scene';materialize_scene('gazebo','g1',scene,g1_reference_ramp=True,g1_contact_allowance=True)
+        record=load_scene('gazebo',str(scene));source=Path(__file__).resolve().parents[1]
+        code='import sys;sys.path.insert(0,'+repr(str(source))+');from integrated_robot_navigation.gazebo_contacts import main;main(args='+repr(['--ros-args','-p','scene_dir:='+str(scene),'-p','use_sim_time:=true'])+');print("NORMAL_DDS_PAIR_EXIT",flush=True)'
+        context=Context();rclpy.init(context=context);peer=Node('pair_clock_peer',context=context);executor=SingleThreadedExecutor(context=context);executor.add_node(peer)
+        contacts,feet=pair();contacts.contacts[0].collision1.name=next(iter(record['foot_collision_map']))
+        pubs=[peer.create_publisher(type(contacts),'/navigation/native_contacts',qos_profile_sensor_data),peer.create_publisher(type(feet),'/navigation/native_feet',qos_profile_sensor_data),peer.create_publisher(Clock,'/clock',qos_profile_sensor_data)]
+        output=[];peer.create_subscription(FootContacts,'/navigation/foot_contacts',output.append,qos_profile_sensor_data)
+        client=peer.create_client(Trigger,'/gazebo_contact_adapter/report');process=None;trace={}
+        def pump(seconds):
+            end=time.monotonic()+seconds
+            while time.monotonic()<end:executor.spin_once(timeout_sec=.01)
+        def snapshot():
+            future=client.call_async(Trigger.Request());end=time.monotonic()+2.
+            while not future.done() and time.monotonic()<end:executor.spin_once(timeout_sec=.01)
+            assert future.done();return json.loads(future.result().message)
+        try:
+            with (tmp_path/'stdout.log').open('w') as stdout,(tmp_path/'stderr.log').open('w') as stderr:
+                process=subprocess.Popen([sys.executable,'-c',code],stdout=stdout,stderr=stderr,start_new_session=True)
+                assert client.wait_for_service(timeout_sec=8.)
+                end=time.monotonic()+3.
+                while not all(p.get_subscription_count() for p in pubs) and time.monotonic()<end:pump(.02)
+                assert all(p.get_subscription_count() for p in pubs)
+                clock=Clock();clock.clock.sec=3;clock.clock.nanosec=990_000_000;pubs[2].publish(clock)
+                end=time.monotonic()+2.
+                while time.monotonic()<end:
+                    if snapshot()['observed_clock_ns']==3_990_000_000:break
+                    pump(.01)
+                assert snapshot()['observed_clock_ns']==3_990_000_000
+                pump(.05);pubs[0].publish(contacts);pubs[1].publish(feet)
+                end=time.monotonic()+2.
+                while time.monotonic()<end:
+                    state=snapshot()
+                    if state['counts']['contacts']==state['counts']['feet']==1:break
+                    pump(.01)
+                trace['before_clock']=snapshot();assert not output
+                clock.clock.sec=4;clock.clock.nanosec=10_000_000;pubs[2].publish(clock)
+                pump(.08);trace['after_clock']=snapshot();trace['outputs']=len(output)
+>               assert len(output)==1,trace
+E               AssertionError: {'after_clock': {'counts': {'contacts': 1, 'feet': 1}, 'delivery_trace': [{'capture_ns': 4000000000, 'event': 'input',... -10000000, ...}], 'duplicates': {'contacts': 0, 'feet': 0}, 'expired': {'contacts': 1, 'feet': 1}, ...}, 'outputs': 0}
+E               assert 0 == 1
+E                +  where 0 = len([])
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_clock_pair_ros.py:53: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_clock_pair_ros.py::test_actual_adapter_preserves_pair_until_original_clock_catches_up
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 25.34s

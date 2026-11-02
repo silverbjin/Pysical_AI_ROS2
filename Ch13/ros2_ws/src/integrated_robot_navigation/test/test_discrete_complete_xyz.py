@@ -66,6 +66,8 @@ def test_discrete_actual_child_verifies_library_and_normal_receipt_close():
         reply=worker.transact(f['args'],{'generation':0})
         assert reply['context']=={'generation':0} and reply['job_id']==1
         assert worker.last_model['equilibrium_library_sha256']==ready['equilibrium_library_sha256']
+        assert worker.snapshot()['force_model']==ready['force_model']
+        assert worker.snapshot()['equilibrium_library_sha256']==ready['equilibrium_library_sha256']
         assert worker.last_model['all_actuator_caps_validated'] is True
         assert worker.last_transaction['wall_ns']<=10_000_000
         assert assess_numeric_jobs(worker.snapshot())

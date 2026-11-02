@@ -56,13 +56,17 @@ def equilibrium_library_path():
 
 class NativeEquilibrium:
     def __init__(self,urdf):
-        self.plan=equilibrium_plan(urdf);self.names=tuple(self.plan['names']);self.nq=len(self.names)
+        self._urdf=urdf;self.plan=equilibrium_plan(urdf);self.names=tuple(self.plan['names']);self.nq=len(self.names)
         path=equilibrium_library_path()
         lib=ctypes.CDLL(str(path));ptr=ctypes.POINTER(ctypes.c_double)
         lib.ch13_equilibrium_create.argtypes=[ctypes.c_char_p,ctypes.c_char_p,ctypes.c_size_t];lib.ch13_equilibrium_create.restype=ctypes.c_void_p
         lib.ch13_equilibrium_destroy.argtypes=[ctypes.c_void_p];lib.ch13_equilibrium_destroy.restype=None
         lib.ch13_equilibrium_evaluate.argtypes=[ctypes.c_void_p,ptr,ctypes.c_size_t,ptr,ctypes.c_size_t,ctypes.c_char_p,ctypes.c_size_t]
         lib.ch13_equilibrium_evaluate.restype=ctypes.c_int
+        lib.ch13_equilibrium_terms_abi_version.restype=ctypes.c_int
+        if lib.ch13_equilibrium_terms_abi_version()!=1:raise ValueError('equilibrium terms ABI mismatch')
+        lib.ch13_equilibrium_terms.argtypes=[ctypes.c_void_p,ptr,ctypes.c_size_t,ptr,ctypes.c_size_t,ctypes.c_char_p,ctypes.c_size_t]
+        lib.ch13_equilibrium_terms.restype=ctypes.c_int
         payload=json.dumps(self.plan,allow_nan=False).encode();error=ctypes.create_string_buffer(1024)
         handle=lib.ch13_equilibrium_create(payload,error,len(error))
         if not handle:raise ValueError('equilibrium plan: '+error.value.decode())
@@ -78,6 +82,23 @@ class NativeEquilibrium:
         if code:raise ValueError('equilibrium: '+error.value.decode())
         return dict(force_derivative=output[:144].reshape(12,12).copy(),position_derivative=output[144:-4].reshape(self.nq+6,12).copy(),
             mass_kg=output[-4],linear_residual=output[-3],wall_ns=output[-2],cpu_ns=output[-1])
+
+    def contact_command_terms(self,model,joints,body_pose,points):
+        if not self._finalize.alive:raise RuntimeError('equilibrium closed')
+        feet=('fr_foot','fl_foot','rr_foot','rl_foot')
+        if model.urdf!=self._urdf or tuple(model.feet)!=feet or set(points)!=set(feet):raise ValueError('equilibrium terms model binding')
+        if np.shape(body_pose)!=(4,4):raise ValueError('equilibrium terms body dimensions')
+        values=np.ascontiguousarray([joints[n] for n in self.names]+list(np.asarray(body_pose).ravel())+
+            list(np.asarray([points[f] for f in feet]).ravel()),dtype=np.float64)
+        if values.size!=self.nq+28 or not np.isfinite(values).all():raise ValueError('equilibrium terms finite dimensions')
+        output=np.empty(14*self.nq);ptr=ctypes.POINTER(ctypes.c_double);error=ctypes.create_string_buffer(1024)
+        if self._library.ch13_equilibrium_terms(self._handle,values.ctypes.data_as(ptr),values.size,
+                output.ctypes.data_as(ptr),output.size,error,len(error)):
+            raise ValueError('equilibrium command terms: '+error.value.decode())
+        if not np.isfinite(output).all():raise ValueError('nonfinite equilibrium command terms')
+        return dict(names=self.names,feet=feet,gravity=output[:self.nq].copy(),
+            force_to_command=output[self.nq:13*self.nq].reshape(self.nq,12).copy(),effort=output[13*self.nq:].copy(),
+            model='gazebo_discrete_equilibrium_v1',library_sha256=self.provenance['library_sha256'])
 
     def close(self):self._finalize()
     def __enter__(self):return self
