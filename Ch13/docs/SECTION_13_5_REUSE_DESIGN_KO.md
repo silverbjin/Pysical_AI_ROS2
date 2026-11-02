@@ -18,9 +18,9 @@ engine의 실제 qpos/qvel에서 상태를 발행한다. `map→odom`은 알려�
 
 ## 비전과 팔 작업영역
 
-카메라는 실제 qpos의 불변 복사본에서 MuJoCo Renderer로 RGB와 축방향 depth를 만든다. 320×240, capture 상한15wallHz, 관측 처리 상한10wallHz(15 선택)를 구분해 기록한다. 별도 renderer worker의 최신 단일 슬롯을 사용하고 촬영·TF의 원본 sim 시각과 capture wall을 보존한다. 장식용 고해상도 robot mesh(group2)는 제외하고 원본 collision 형상(group3), 바닥과 실제 환경(group5)을 촬영하는 **충돌 형상 기반 교육용 화면**이다. 로봇 가림은 이 근사 형상에 따른다. 물리·충돌 모델은 바뀌지 않는다. Mesa 렌더링 스레드 제한은 해당 프로세스 환경에만 적용한다.
+카메라는 실제 qpos의 불변 복사본에서 MuJoCo Renderer로 RGB와 축방향 depth를 만든다. 320×240, capture 상한15wallHz, 관측 처리 상한10wallHz(15 선택)를 구분해 기록한다. 별도 renderer 프로세스의 최신 단일 요청 슬롯·유계 결과 큐을 사용하고 촬영·TF의 원본 sim 시각과 capture wall을 보존한다. 장식용 고해상도 robot mesh(group2)는 제외하고 원본 collision 형상(group3), 바닥과 실제 환경(group5)을 촬영하는 **충돌 형상 기반 교육용 화면**이다. 로봇 가림은 이 근사 형상에 따른다. 물리·충돌 모델은 바뀌지 않는다. Mesa 렌더링 스레드 제한은 해당 프로세스 환경에만 적용한다. 촬영 프로세스 exit0와 수신 thread join을 별도로 검사한다.
 
-붉은 작업물의 색 영역과 실제 depth를 기존13.4 `integrated_robot_vision` geometry/contracts로 역투영한다. YOLO·일반 물체 인식·물체 중심 정답 입력을 주장하지 않는다. 관측점은 보이는 표면이다. RGB 원본 hash, calibration, 과거 TF 행렬, capture/최초 receipt를 증거에 남기며 저장 RGB/NPY에서 점을 독립 재계산한다. 기본 age는300ms, 과거TF는100ms다.
+붉은 작업물의 색 영역과 실제 depth를 기존13.4 `integrated_robot_vision` geometry/contracts로 역투영한다. YOLO·일반 물체 인식·물체 중심 정답 입력을 주장하지 않는다. 관측점은 보이는 표면이다. RGB 원본 hash, calibration, 과거 TF 행렬, capture/최초 receipt를 증거에 남기며 저장 RGB/NPY에서 점을 독립 재계산한다. 기본 age는300ms, 과거TF는100ms다. 완전한 RGB-D·hash·calibration·과거TF의 카메라 생존 확인은 인식 cap과 분리한다. 물체 점의 승인·최종 READY에는 별도 신선한 검출이 필수다. 검출에서 물체를 잃으면 고장을 latch하고 카메라 health 갱신을 멈춘다. 고정 작업물 접근이며 동적 물체 추적을 주장하지 않는다.
 
 팔 mount와 고정 관절 규약을 읽어 position-only IK, joint limit, 충돌, footprint와 실제 Nav2 ComputePathToPose 비용으로 후보를 평가한다. 체인 길이 약0.885m에서 여유를 뺀 거리와 방향 후보를 사용하며 보편적인0.4m를 복사하지 않는다. IK는 별도 scratch data에서만 계산한다. 최종 실제 root와 관절에서도 다시 확인한다. 팔 실행·파지·MoveIt·전신 동시 최적화는13.6 후속 범위다.
 

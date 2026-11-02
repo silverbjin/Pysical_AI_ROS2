@@ -1,7 +1,7 @@
 """Audit actual installed Python/data/binary bytes before a physical replay."""
 from pathlib import Path
-import hashlib,importlib,json,sys,subprocess
-from ament_index_python.packages import get_package_share_directory
+import hashlib,importlib,json,sys,subprocess,os
+from ament_index_python.packages import get_package_share_directory,get_package_prefix
 root=Path(__file__).resolve().parents[3]
 source=root/'Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse'
 share=Path(get_package_share_directory('ch13_navigation_reuse'))
@@ -15,7 +15,7 @@ pairs=[(root/'Ch13/scripts/reuse_13_5/reproduce_upstream.py',share/'upstream_cor
 pairs += [(p,share/folder/p.name) for folder in ['config','launch'] for p in (source.parent/folder).glob('*') if p.is_file()]
 for p,installed in pairs:
  assert p.read_bytes()==installed.read_bytes();rows.append({'source':str(p),'installed':str(installed),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
-a=Path('/home/jinho/ch13_reuse_r2_build/build/ch13_reuse_wire/ingress');b=Path('/home/jinho/ch13_reuse_r2_build/install/ch13_reuse_wire/lib/ch13_reuse_wire/ingress')
+prefix=Path(get_package_prefix('ch13_reuse_wire'));a=prefix.parents[1]/'build/ch13_reuse_wire/ingress';b=prefix/'lib/ch13_reuse_wire/ingress'
 sections={}
 for section in ['.text','.rodata']:
  x=subprocess.check_output(['objcopy','-O','binary','--only-section='+section,str(a),'/dev/stdout'])

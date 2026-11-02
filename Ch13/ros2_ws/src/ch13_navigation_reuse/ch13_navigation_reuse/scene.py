@@ -7,7 +7,8 @@ SCAN_POS=np.array([.4,0.,.25]);CAM_POS=np.array([.4,0.,.25])
 OPTICAL_R=np.array([[0.,0.,1.],[-1.,0.,0.],[0.,-1.,0.]])
 def layout(profile):
  walls=[('wall_left',[-2.,0.,.4],[.05,2.5,.4]),('wall_right',[4.,0.,.4],[.05,2.5,.4]),('wall_bottom',[1.,-2.5,.4],[3.,.05,.4]),('wall_top',[1.,2.5,.4],[3.,.05,.4])]
- if profile in ('obstacle','blocked'):walls.append(('obstacle',[1.2,0.,.4],[.14,.23,.4]))
+ if profile=='obstacle':walls.append(('obstacle',[1.2,0.,.4],[.14,.23,.4]))
+ if profile=='blocked':walls.append(('barrier',[1.2,0.,.4],[.14,2.5,.4]))
  if profile=='vision':walls.extend([('target',[1.8,0.,.55],[.05,.05,.05]),('pedestal',[1.8,0.,.25],[.035,.035,.25])])
  return walls
 

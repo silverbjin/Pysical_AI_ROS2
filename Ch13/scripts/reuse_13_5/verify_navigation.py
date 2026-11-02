@@ -10,7 +10,7 @@ if s['terminal_status']==4:
  actual=e['actual_pose'];target=s['target'];heading=math.atan2(2*(actual[3]*actual[6]+actual[4]*actual[5]),1-2*(actual[5]**2+actual[6]**2));checks['actual_goal_position']=math.hypot(actual[0]-target[0],actual[1]-target[1])<=.1;checks['actual_goal_yaw']=abs(math.atan2(math.sin(heading-target[2]),math.cos(heading-target[2])))<=.1
 if s['case']=='vision':
  vision=[json.loads(x) for x in (out/'vision_observations.jsonl').read_text().splitlines()];captures={x['capture_ns']:x for x in json.loads((out/'sensor_summary.json').read_text())['captures']};ready=s.get('ready_for_manipulation',{});admission=s['vision_admission']['source_observation']
- checks['camera_worker_join']=e.get('camera_worker_joined') and json.loads((out/'sensor_summary.json').read_text()).get('camera_worker_error','')==''
+ sensor=json.loads((out/'sensor_summary.json').read_text());checks['camera_worker_join']=e.get('camera_worker_joined') and sensor.get('camera_worker_error','')=='' and sensor.get('camera_worker_exit_code')==0 and not (Path('/proc')/str(sensor.get('camera_worker_pid'))).exists()
  from ch13_navigation_reuse.image_artifact import read_rgb
  from ch13_navigation_reuse.vision_geometry import red_point
  saved=json.loads((out/'last_accepted_observation.json').read_text());rgb=read_rgb(out/'last_accepted_rgb.png');depth=np.load(out/'last_accepted_depth.npy');optical,_=red_point(rgb,depth,saved['calibration']);transform=np.asarray(saved['T_map_camera']);recomputed=transform[:3,:3]@optical+transform[:3,3];checks['retained_rgbd_point_recomputed']=np.allclose(recomputed,saved['point'],atol=1e-6)

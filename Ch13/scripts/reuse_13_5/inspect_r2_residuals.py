@@ -1,7 +1,7 @@
 from pathlib import Path
 import fcntl,json,sys,os
 report=Path(sys.argv[1]);found=[]
-modules={'ch13_navigation_reuse.command_gateway','ch13_navigation_reuse.platform_adapter'}
+modules={'ch13_navigation_reuse.'+x for x in ['command_gateway','platform_adapter','navigation_boundary','world_map','vision_approach']}
 for p in Path('/proc').glob('[0-9]*'):
  try:
   args=(p/'cmdline').read_bytes().split(b'\0');args=[x.decode(errors='replace') for x in args if x]

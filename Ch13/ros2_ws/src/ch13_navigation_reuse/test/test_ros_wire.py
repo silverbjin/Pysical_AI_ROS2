@@ -20,12 +20,12 @@ N='/ch13/reuse'
 @unittest.skipUnless(ROS,'requires Jazzy local DDS')
 class WireTests(unittest.TestCase):
     def setUp(self):
-        self.relay=subprocess.Popen(['/home/jinho/ch13_reuse_r2_build/install/ch13_reuse_wire/lib/ch13_reuse_wire/ingress'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        self.relay=subprocess.Popen([__import__('ament_index_python.packages',fromlist=['get_package_prefix']).get_package_prefix('ch13_reuse_wire')+'/lib/ch13_reuse_wire/ingress'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         rclpy.init();self.g=CommandGateway();self.n=Node('reuse_wire_probe');self.outputs=[];self.status={};self.ns=2_000_000_000;self.raw=True;self.rollback=False;self.paused=False;self.base_enabled=True;self.joints_enabled=True;self.future_base=False
         self.clock=self.n.create_publisher(Clock,'/clock',1);self.base=self.n.create_publisher(Odometry,N+'/engine_state',1);self.joints=self.n.create_publisher(JointState,N+'/joint_states',1);self.cmd=self.n.create_publisher(TwistStamped,N+'/cmd_vel_raw',1)
         self.n.create_subscription(TwistStamped,N+'/cmd_vel_safe',lambda x:self.outputs.append(x),10)
         self.n.create_subscription(String,N+'/gateway/status',lambda x:setattr(self,'status',json.loads(x.data)),10)
-        self.timer=self.n.create_timer(.02,self.send)
+        self.timer=self.n.create_timer(.02,self.send,clock=__import__('rclpy.clock',fromlist=['Clock']).Clock(clock_type=__import__('rclpy.clock_type',fromlist=['ClockType']).ClockType.STEADY_TIME))
         self.ex=SingleThreadedExecutor();self.ex.add_node(self.g);self.ex.add_node(self.n);self.t=threading.Thread(target=self.ex.spin);self.t.start()
     def send(self):
         if not self.paused:self.ns+=20_000_000

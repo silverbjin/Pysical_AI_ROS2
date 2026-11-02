@@ -17,12 +17,12 @@ from run_r2_probe import service_call
 
 def yaw(q):return math.atan2(2*(q.w*q.z+q.x*q.y),1-2*(q.y*q.y+q.z*q.z))
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True);ap.add_argument('--case',choices=['free','obstacle','blocked','cancel','raw_loss','vision'],default='free');args=ap.parse_args()
+ ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True);ap.add_argument('--vision-hz',type=int,choices=[10,15],default=10);ap.add_argument('--case',choices=['free','obstacle','blocked','cancel','raw_loss','vision'],default='free');args=ap.parse_args()
  root=Path(args.repo_root);out=Path(args.evidence);out.mkdir(parents=True,exist_ok=True);scene=args.case if args.case in ['obstacle','blocked','vision'] else 'free'
- S={'result':'FAIL','case':args.case,'events':[]};node=None;launch=None;log=None;goal_handle=None;result_future=None;clock_ns=0;state=None;gateway={};platform={};boundary={};poses=[];plans=[];clients={};observation=None;joints=None;grid=None;vision_status={};arm_model=None;vision_record=None
+ S={'result':'FAIL','case':args.case,'events':[]};node=None;launch=None;log=None;goal_handle=None;result_future=None;clock_ns=0;state=None;gateway={};platform={};boundary={};poses=[];plans=[];clients={};observation=None;joints=None;grid=None;vision_status={};arm_model=None;vision_record=None;paused_pid=None
  try:
   (out/'boot_id.txt').write_text(Path('/proc/sys/kernel/random/boot_id').read_text());log=(out/'launch.log').open('w')
-  launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch','ch13_navigation_reuse','navigation.launch.py','repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:='+scene],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+  launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch','ch13_navigation_reuse','navigation.launch.py','repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:='+scene,'vision_inference_hz:='+str(args.vision_hz)],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
   rclpy.init();node=Node('ch13_reuse_navigation_probe');action=ActionClient(node,NavigateToPose,'/navigate_to_pose')
   def on_clock(m):
    nonlocal clock_ns
@@ -74,7 +74,7 @@ def main():
   for name in ['platform/arm','gateway/arm']:response=call(name);assert response.success,response.message
   target=[.65,0.,0.]
   if args.case=='obstacle':target=[2.25,0.,0.]
-  if args.case=='blocked':target=[1.2,0.,0.]
+  if args.case=='blocked':target=[2.25,0.,0.]
   if args.case in ['cancel','raw_loss']:target=[2.5,0.,0.]
   if args.case=='vision':
    from vision_mission import select_goal
@@ -93,8 +93,9 @@ def main():
     for pid in owned:
      cmd=(Path('/proc')/str(pid)/'cmdline').read_bytes().split(b'\0') if (Path('/proc')/str(pid)/'cmdline').exists() else []
      if b'ch13_navigation_reuse.navigation_boundary' in cmd:victims.append(pid)
-    assert len(victims)==1,'owned boundary identity';os.kill(victims[0],signal.SIGTERM);S['injected_boundary_pid']=victims[0]
+    assert len(victims)==1,'owned boundary identity';paused_pid=victims[0];os.kill(paused_pid,signal.SIGSTOP);S['injected_boundary_pid']=paused_pid;S['injection']='owned_publisher_pause_with_identity_preserved'
     assert until(lambda:gateway.get('mode')=='FAULT',2),'raw loss did not latch';receipt=gateway['source_receipts']['raw']['receipt_wall'];S['raw_expiry_decision_latency_s']=gateway['decision_wall']-receipt;assert S['raw_expiry_decision_latency_s']<=.35
+    os.kill(paused_pid,signal.SIGCONT);paused_pid=None;until(lambda:False,.2);assert gateway.get('mode')=='FAULT';S['no_auto_resume_after_raw_return']=True
    canceled=goal_handle.cancel_goal_async();assert until(canceled.done,3),'cancel ACK deadline';S['cancel_ack']=bool(canceled.result().goals_canceling);assert S['cancel_ack']
   if args.case not in ['cancel','raw_loss']:
    assert until(lambda:result_future.done() or boundary.get('phase')=='FAULT' or gateway.get('mode')=='FAULT',240),'NavigateToPose terminal deadline'
@@ -121,6 +122,9 @@ def main():
   S['plan_count']=len(plans);S['max_abs_y_m']=max(abs(p['y']) for p in poses);response=call('platform/shutdown');assert response.success,response.message;launch.wait(timeout=12);assert launch.returncode==0;S['engine']=json.loads((out/'engine.json').read_text());assert S['engine']['normal_shutdown_requested'] and S['engine']['rx_joined'] and S['engine']['upstream_threads_joined'];S['result']='PASS'
  except BaseException:S['error']=traceback.format_exc()
  finally:
+  if paused_pid is not None:
+   try:os.kill(paused_pid,signal.SIGCONT)
+   except ProcessLookupError:pass
   S['gateway_last']=gateway;S['platform_last']=platform;S['navigation_last']=boundary;S['vision_last']=vision_status
   if node is not None and launch is not None and launch.poll() is None:
    try:

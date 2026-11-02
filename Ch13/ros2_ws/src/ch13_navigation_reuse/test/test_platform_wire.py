@@ -15,7 +15,7 @@ if ROS:
 @unittest.skipUnless(ROS,'requires Jazzy DDS')
 class PlatformWireTests(unittest.TestCase):
  def setUp(self):
-  self.relay=subprocess.Popen(['/home/jinho/ch13_reuse_r2_build/install/ch13_reuse_wire/lib/ch13_reuse_wire/ingress'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+  self.relay=subprocess.Popen([__import__('ament_index_python.packages',fromlist=['get_package_prefix']).get_package_prefix('ch13_reuse_wire')+'/lib/ch13_reuse_wire/ingress'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
   rclpy.init();self.p=Platform();self.n=Node('reuse_safe_wire_probe');self.ns=2_000_000_000;self.sending=True;self.paused=False;self.vx=0.;self.decision=None
   self.pub=self.n.create_publisher(TwistStamped,N+'/cmd_vel_safe',1)
   self.n.create_timer(.02,self.send);self.ex=SingleThreadedExecutor();self.ex.add_node(self.p);self.ex.add_node(self.n);self.thread=threading.Thread(target=self.ex.spin);self.thread.start()

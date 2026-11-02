@@ -17,7 +17,7 @@ if ROS:
 @unittest.skipUnless(ROS,'requires actual Jazzy DDS')
 class NavigationWireTests(unittest.TestCase):
  def setUp(self):
-  self.relay=subprocess.Popen(['/home/jinho/ch13_reuse_r2_build/install/ch13_reuse_wire/lib/ch13_reuse_wire/ingress'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+  self.relay=subprocess.Popen([__import__('ament_index_python.packages',fromlist=['get_package_prefix']).get_package_prefix('ch13_reuse_wire')+'/lib/ch13_reuse_wire/ingress'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
   rclpy.init();self.b=NavigationBoundary();self.n=Node('reuse_navigation_wire_probe');self.ns=2_000_000_000;self.nav_on=True;self.scan_on=True;self.vision_on=False;self.status={};self.outputs=[];self.nav_stamps=[]
   self.cp=self.n.create_publisher(Clock,'/clock',1);self.np=self.n.create_publisher(TwistStamped,N+'/nav_cmd',1);self.sp=self.n.create_publisher(TwistStamped,N+'/smoothed_cmd',1);self.lp=self.n.create_publisher(LaserScan,N+'/scan',1);self.tp=self.n.create_publisher(TFMessage,'/tf',1);self.hp=self.n.create_publisher(String,N+'/vision/health',1)
   self.n.create_subscription(TwistStamped,N+'/cmd_vel_raw',lambda m:self.outputs.append(m),10);self.n.create_subscription(String,N+'/navigation/status',lambda m:setattr(self,'status',json.loads(m.data)),10)
