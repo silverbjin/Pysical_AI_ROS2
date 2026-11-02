@@ -28,3 +28,5 @@ terminal4는 성공,5는 실제 취소,6은 도달 불가 종료다. blocked는 
 최종 신규89개 검사27.817s, 기존 관련 순수 회귀50개1.74s, 새 isolated 설치32항목과 외부94자산 hash 감사 PASS다. 전체500Hz 관측에서 original torque cap ratio는1.0 이하이고 native hinge 제한 soft overrun은 최대0.000526rad 미만이었다. 카메라·원본 RX/worker·부모·launch 자식61개를 정상 회수했고 촬영 worker와 tracker PID도 소멸했다. 여섯 실행 모두 post residual/engine lock PASS다.
 
 실행별 engine sim/wall 시간은 원본 engine.json에 기록한다. 빌드·검사·실행을 동시에 돌리지 않았다. 능동 분석 공수의 정확한 합계를 날짜 차이로 산출하지 않는다. v1/v2 실패와 취소 검증 누락은 별도 보고서/추가 재분석으로 보존했다. 최종 publisher의 local/remote SHA 대조는 게시 확인 보고서가 기록한다.
+
+[최종 게시 확인과 SHA 대조](SECTION_13_5_REUSE_R5_PUBLICATION_KO.md)를 완료했다.
