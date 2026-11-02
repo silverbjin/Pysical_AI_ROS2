@@ -1,0 +1,119 @@
+F
+=================================== FAILURES ===================================
+___ test_failed_journal_stays_failed_but_cleanup_rpc_receiver_remains_alive ____
+
+>   timer=probe.create_timer(.01,lambda:probe._dispatch(overflow),clock=Clock(clock_type=ClockType.STEADY_TIME))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py:131: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/scripts/probe_navigation_13_5.py:328: in _dispatch
+    try:callback(*args)
+        ^^^^^^^^^^^^^^^
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py:130: in overflow
+    for index in range(257):probe._write('overflow_fixture',dict(index=index))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ch13/scripts/probe_navigation_13_5.py:372: in _write
+    if self.journal is not None:self.journal.submit(encoded)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ch13/scripts/probe_navigation_13_5.py:62: in submit
+    self.condition.notify_all();self._check()
+                                ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <probe_navigation_13_5.EvidenceJournal object at 0x7a76b4c1df70>
+
+    def _check(self):
+>       if self.error is not None:raise RuntimeError('observation journal failed: '+self.error)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: observation journal failed: journal capacity exceeded
+
+Ch13/scripts/probe_navigation_13_5.py:52: RuntimeError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_failed_journal_stays_fail0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7a76b4f05820>
+
+    def test_failed_journal_stays_failed_but_cleanup_rpc_receiver_remains_alive(tmp_path,monkeypatch):
+        from rclpy.node import Node
+        from rclpy.executors import SingleThreadedExecutor
+        from rclpy.clock import Clock
+        from rclpy.clock_type import ClockType
+        from std_srvs.srv import Trigger
+        from probe_navigation_13_5 import ProbeReceiver
+        context=Context();rclpy.init(context=context)
+        probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+        peer=Node('probe_cleanup_rpc_peer',context=context)
+        peer_executor=SingleThreadedExecutor(context=context);peer_executor.add_node(peer)
+        release=threading.Event();original=probe.raw.write;receiver=None
+        def blocked(value):
+            assert release.wait(3.)
+            return original(value)
+        monkeypatch.setattr(probe.raw,'write',blocked)
+        def reply(request,response):
+            response.success=True;response.message='explicit cleanup acknowledgement'
+            return response
+        peer.create_service(Trigger,'/probe_cleanup_rpc_fixture',reply)
+        client=probe.create_client(Trigger,'/probe_cleanup_rpc_fixture')
+        def overflow():
+            timer.cancel()
+            for index in range(257):probe._write('overflow_fixture',dict(index=index))
+        timer=probe.create_timer(.01,lambda:probe._dispatch(overflow),clock=Clock(clock_type=ClockType.STEADY_TIME))
+        try:
+            receiver=ProbeReceiver(probe)
+            deadline=time.monotonic()+1.
+            while not probe.journal.report()['error'] and time.monotonic()<deadline:time.sleep(.005)
+            assert 'capacity' in probe.fault()
+            time.sleep(.02)
+            receiver.check() # sticky recording failure must not kill the RPC executor
+            assert receiver.thread.is_alive()
+            deadline=time.monotonic()+1.
+            while not client.service_is_ready() and time.monotonic()<deadline:
+                peer_executor.spin_once(timeout_sec=.005)
+            assert client.service_is_ready()
+            future=client.call_async(Trigger.Request())
+            while not future.done() and time.monotonic()<deadline:
+>               peer_executor.spin_once(timeout_sec=.005);receiver.check()
+                                                          ^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py:146: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <probe_navigation_13_5.ProbeReceiver object at 0x7a76c3ad7410>
+
+    def check(self):
+        if self.recording_receiver is not None:self.recording_receiver.check()
+        if self.error is not None:
+>           raise RuntimeError('probe receiver callback failed: '+repr(self.error)) from self.error
+E           RuntimeError: probe receiver callback failed: RuntimeError('observation journal failed: journal capacity exceeded')
+
+Ch13/scripts/probe_navigation_13_5.py:164: RuntimeError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792950600.909462352] [navigation_native_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792950600.941483759] [navigation_probe_recording]: Serial navigation callbacks use EventsExecutor
+[FATAL] [1792950600.954212907] [navigation_native_probe]: Exception in 'timers' callback: observation journal failed: journal capacity exceeded
+[WARN] [1792950600.980956168] [navigation_native_probe]: Error occurred at:
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py", line 131, in <lambda>
+    timer=probe.create_timer(.01,lambda:probe._dispatch(overflow),clock=Clock(clock_type=ClockType.STEADY_TIME))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 328, in _dispatch
+    try:callback(*args)
+        ^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py", line 130, in overflow
+    for index in range(257):probe._write('overflow_fixture',dict(index=index))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 372, in _write
+    if self.journal is not None:self.journal.submit(encoded)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 62, in submit
+    self.condition.notify_all();self._check()
+                                ^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 52, in _check
+    if self.error is not None:raise RuntimeError('observation journal failed: '+self.error)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py::test_failed_journal_stays_failed_but_cleanup_rpc_receiver_remains_alive
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.14s

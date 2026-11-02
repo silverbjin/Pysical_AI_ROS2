@@ -1,0 +1,106 @@
+FFF.                                                                     [100%]
+=================================== FAILURES ===================================
+___ test_g1_measures_small_inplace_lift_then_returns_without_full_walk_bump ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g1_measures_small_inplace_lift_then_returns_without_full_walk_bump(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model,plant)
+        origin = value.floor['fl_foot']
+        value.request_contact_calibration()
+        previous, held = None,None
+        maximum, saw_return, done = 0.,False,False
+        for _ in range(400):
+            result = value.advance(plant.state,(0.,0.,0.),plant.ros,plant.wall)
+            assert result.state!='FAULT',result.reason
+            if result.phase=='SWING' and held is None:
+                held = {name:point.copy() for name,point in value._targets.items()}
+            if held is not None:
+                for name in nav_robot_model.feet:
+                    if name!='fl_foot': assert np.allclose(value._targets[name],held[name],atol=1e-12)
+                point = value._targets['fl_foot']
+                assert np.allclose(point[:2],held['fl_foot'][:2],atol=1e-12)
+                if previous is not None: assert np.linalg.norm(point-previous)/.02<=.020000001
+                previous = point.copy()
+                maximum = max(maximum,float(point[2]-origin))
+            saw_return |= result.phase=='TOUCHDOWN'
+            plant.tick(value,result)
+            if held is not None and result.state=='STAND':
+                done = True
+                break
+        assert done and saw_return
+>       assert .006<=maximum<=.010, 'G1 must not execute the unrelated full20mm walking bump'
+E       AssertionError: G1 must not execute the unrelated full20mm walking bump
+E       assert 0.01925330783379839 <= 0.01
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_gait.py:34: AssertionError
+_____ test_g1_unload_keeps_bounded_progress_during_low_force_confirmation ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g1_unload_keeps_bounded_progress_during_low_force_confirmation(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model,plant)
+        value.request_contact_calibration()
+        for _ in range(400):
+            result = value.advance(plant.state,(0.,0.,0.),plant.ros,plant.wall)
+            assert result.state!='FAULT',result.reason
+            plant.tick(value,result)
+            if result.phase=='SHIFT' and not plant.state.contacts.data['touching'][1]: break
+        else: raise AssertionError('test fixture never unloaded selected foot')
+        before = value._targets['fl_foot'][2]
+        result = value.advance(plant.state,(0.,0.,0.),plant.ros,plant.wall)
+        after = value._targets['fl_foot'][2]
+        assert result.phase=='SHIFT', '100ms confirmation cannot be bypassed'
+>       assert 0<after-before<=.002*.02000001, 'do not stall on either side of the2N boundary'
+E       AssertionError: do not stall on either side of the2N boundary
+E       assert 0 < (0.02272871905481358 - 0.02272871905481358)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_gait.py:55: AssertionError
+__ test_inplace_calibration_requires_validation_mode_and_measured_carry[True] __
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x74070181ef30>
+
+    @pytest.mark.parametrize('crawl_rig', [True, False], indirect=True)
+    def test_inplace_calibration_requires_validation_mode_and_measured_carry(crawl_rig):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(1.15)
+        assert rig.crawl_states[-1].stopped
+        client = rig.node.create_client(Trigger, '/crawl_controller/calibrate_contact')
+        assert client.wait_for_service(timeout_sec=1.)
+    
+        def call():
+            future = client.call_async(Trigger.Request())
+            end = time.monotonic()+1.
+            while not future.done() and time.monotonic() < end:
+                rig.pump(.02)
+            assert future.done()
+            return future.result()
+    
+        assert not call().success  # bootstrap was intentionally before ready carry
+        rig.ready = True
+        rig.pump(.06)
+        before_request = time.monotonic_ns()
+        response = call()
+        assert response.success is rig.guard.validation_mode
+        rig.pump(.08)
+        assert rig.node.count_publishers('/leg_position_controller/commands') == 1
+        assert rig.crawl_states[-1].state != 'CRAWL'
+        if response.success:
+            assert rig.crawl_states[-1].state == 'CALIBRATING'
+>           assert hasattr(rig.guard.machine,'calibration_snapshot'), 'original request time/budget report missing'
+E           AssertionError: original request time/budget report missing
+E           assert False
+E            +  where False = hasattr(<integrated_robot_navigation.gait.CrawlMachine object at 0x74070181da60>, 'calibration_snapshot')
+E            +    where <integrated_robot_navigation.gait.CrawlMachine object at 0x74070181da60> = <integrated_robot_navigation.crawl_controller.CrawlController object at 0x740701528ad0>.machine
+E            +      where <integrated_robot_navigation.crawl_controller.CrawlController object at 0x740701528ad0> = <test_crawl_lifecycle.CrawlRig object at 0x74070181ef30>.guard
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_calibration_ros.py:38: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_gait.py::test_g1_measures_small_inplace_lift_then_returns_without_full_walk_bump
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_gait.py::test_g1_unload_keeps_bounded_progress_during_low_force_confirmation
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_calibration_ros.py::test_inplace_calibration_requires_validation_mode_and_measured_carry[True]
+3 failed, 1 passed in 20.35s

@@ -1,0 +1,58 @@
+[INFO] [1792950167.165445804] [navigation_native_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792950167.166730958] [navigation_probe_recording]: Serial navigation callbacks use EventsExecutor
+[FATAL] [1792950172.453834135] [navigation_probe_recording]: Exception in 'subscriptions' callback: observation journal failed: journal capacity exceeded
+[FATAL] [1792950172.520742619] [navigation_native_probe]: Exception in 'subscriptions' callback: observation journal failed: journal capacity exceeded
+[WARN] [1792950172.672010786] [navigation_probe_recording]: Error occurred at:
+  File "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/dispatch_node.py", line 53, in invoke
+    def invoke(*args):return callback(*unpack(args))
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 247, in <lambda>
+    lambda msg, info: self._dispatch(self._controls, msg, info),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 328, in _dispatch
+    try:callback(*args)
+        ^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 441, in _controls
+    self._write('native_controls', value)
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 372, in _write
+    if self.journal is not None:self.journal.submit(encoded)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 58, in submit
+    self._check()
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 52, in _check
+    if self.error is not None:raise RuntimeError('observation journal failed: '+self.error)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[WARN] [1792950172.757049969] [navigation_native_probe]: Error occurred at:
+  File "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/dispatch_node.py", line 53, in invoke
+    def invoke(*args):return callback(*unpack(args))
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 239, in <lambda>
+    lambda msg, info, stream=key: self._dispatch(self._sensor, stream, msg, info), qos)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 328, in _dispatch
+    try:callback(*args)
+        ^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 391, in _sensor
+    self._write(key, asdict(value))
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 372, in _write
+    if self.journal is not None:self.journal.submit(encoded)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 62, in submit
+    self.condition.notify_all();self._check()
+                                ^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 52, in _check
+    if self.error is not None:raise RuntimeError('observation journal failed: '+self.error)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 1077, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 1072, in main
+    run(args)
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 1056, in run
+    evidence.finish(checks)
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/verify_vision_13_4.py", line 245, in finish
+    raise RuntimeError('required checks/artifacts incomplete, stale, or failed')
+RuntimeError: required checks/artifacts incomplete, stale, or failed

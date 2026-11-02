@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_contacts_report_unexpected_nonfoot_collision _______________
+
+    def test_contacts_report_unexpected_nonfoot_collision():
+        contacts = messages.FootContacts()
+>       assert hasattr(contacts, 'unexpected_contacts'), 'non-foot collision wire field missing'
+E       AssertionError: non-foot collision wire field missing
+E       assert False
+E        +  where False = hasattr(integrated_robot_interfaces.msg.FootContacts(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=0, nanos...try_msgs.msg.Point(x=0.0, y=0.0, z=0.0)], normal_forces=array([0., 0., 0., 0.]), touching=[False, False, False, False]), 'unexpected_contacts')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py:51: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py::test_contacts_report_unexpected_nonfoot_collision
+1 failed, 3 deselected in 2.21s

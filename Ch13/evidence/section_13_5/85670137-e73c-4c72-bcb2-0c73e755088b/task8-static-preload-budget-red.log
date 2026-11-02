@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_calf_measured_static_load_fits_three_centiradian_readiness ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_calf_measured_static_load_fits_three_centiradian_readiness(nav_robot_model):
+        # Run64989f80, last5ROSs of recorded bootstrap: max front calf position
+        # force17.75Nm, below the unchanged30Nm cap. Round UP to18Nm for this
+        # design-budget test. This arithmetic is NOT native G1/G2 acceptance.
+        xml = ET.fromstring(navigation_mjcf(nav_robot_model))
+        for prefix in ('fr', 'fl', 'rr', 'rl'):
+            motor = xml.find(f"actuator/position[@joint='{prefix}_calf_joint']")
+>           assert 18./float(motor.get('kp')) <= .03
+E           AssertionError: assert (18.0 / 500.0) <= 0.03
+E            +  where 500.0 = float('500.0')
+E            +    where '500.0' = <built-in method get of xml.etree.ElementTree.Element object at 0x7b4eca74ac50>('kp')
+E            +      where <built-in method get of xml.etree.ElementTree.Element object at 0x7b4eca74ac50> = <Element 'position' at 0x7b4eca74ac50>.get
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_static_preload_budget.py:14: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_static_preload_budget.py::test_calf_measured_static_load_fits_three_centiradian_readiness
+1 failed in 12.07s

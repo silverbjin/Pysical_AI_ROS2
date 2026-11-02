@@ -1,0 +1,71 @@
+test_completed_native_proof_does_not_need_a_second_copy_ledger (test_native_component_plan.ComponentProofTests.test_completed_native_proof_does_not_need_a_second_copy_ledger) ... ERROR
+test_foreign_proof_cannot_select_a_native_trial (test_native_component_plan.ComponentProofTests.test_foreign_proof_cannot_select_a_native_trial) ... ERROR
+test_symlink_proof_is_rejected (test_native_component_plan.ComponentProofTests.test_symlink_proof_is_rejected) ... ERROR
+
+======================================================================
+ERROR: test_completed_native_proof_does_not_need_a_second_copy_ledger (test_native_component_plan.ComponentProofTests.test_completed_native_proof_does_not_need_a_second_copy_ledger)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_native_component_plan.py", line 13, in test_completed_native_proof_does_not_need_a_second_copy_ledger
+    self.assertEqual(component_proof(proof,native),proof)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/native_component_plan.py", line 8, in component_proof
+    return canonical_result(proof.resolve().parent,native)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/archive_native_storage.py", line 52, in canonical_result
+    ledger=json.loads((root/'storage-copy-ledger.json').read_text())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmp1kpwdssq/evidence/native-g1-gazebo-example/storage-copy-ledger.json'
+
+======================================================================
+ERROR: test_foreign_proof_cannot_select_a_native_trial (test_native_component_plan.ComponentProofTests.test_foreign_proof_cannot_select_a_native_trial)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_native_component_plan.py", line 20, in test_foreign_proof_cannot_select_a_native_trial
+    with self.assertRaises(RuntimeError):component_proof(proof,native)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/native_component_plan.py", line 8, in component_proof
+    return canonical_result(proof.resolve().parent,native)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/archive_native_storage.py", line 52, in canonical_result
+    ledger=json.loads((root/'storage-copy-ledger.json').read_text())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmp9ysjq6h2/foreign/storage-copy-ledger.json'
+
+======================================================================
+ERROR: test_symlink_proof_is_rejected (test_native_component_plan.ComponentProofTests.test_symlink_proof_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_native_component_plan.py", line 28, in test_symlink_proof_is_rejected
+    with self.assertRaises(RuntimeError):component_proof(proof,native)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/native_component_plan.py", line 8, in component_proof
+    return canonical_result(proof.resolve().parent,native)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/archive_native_storage.py", line 52, in canonical_result
+    ledger=json.loads((root/'storage-copy-ledger.json').read_text())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpwndlt0du/evidence/native-g1-gazebo-example/storage-copy-ledger.json'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.093s
+
+FAILED (errors=3)

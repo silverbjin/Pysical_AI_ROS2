@@ -1,0 +1,44 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___________ test_unknown_measurement_stage_is_not_silently_filtered ____________
+
+    def test_unknown_measurement_stage_is_not_silently_filtered():
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:128: Failed
+________ test_static_phase_must_really_run_ten_seconds[ros_duration_s] _________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+field = 'ros_duration_s'
+
+    @pytest.mark.parametrize('field', ['ros_duration_s', 'wall_duration_s'])
+    def test_static_phase_must_really_run_ten_seconds(observed, field):
+        observed['phases']['stand'][field] = 9.999
+>       assert not any(api().assess_g1_sensors(observed, WORLD, 'mujoco')['checks'].values())
+E       AssertionError: assert not True
+E        +  where True = any(dict_values([True, True, True, True, True]))
+E        +    where dict_values([True, True, True, True, True]) = <built-in method values of dict object at 0x777919eff400>()
+E        +      where <built-in method values of dict object at 0x777919eff400> = {'carry_collision_free': True, 'contact_frames_force': True, 'contact_lift': True, 'imu_frame': True, ...}.values
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:135: AssertionError
+________ test_static_phase_must_really_run_ten_seconds[wall_duration_s] ________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+field = 'wall_duration_s'
+
+    @pytest.mark.parametrize('field', ['ros_duration_s', 'wall_duration_s'])
+    def test_static_phase_must_really_run_ten_seconds(observed, field):
+        observed['phases']['stand'][field] = 9.999
+>       assert not any(api().assess_g1_sensors(observed, WORLD, 'mujoco')['checks'].values())
+E       AssertionError: assert not True
+E        +  where True = any(dict_values([True, True, True, True, True]))
+E        +    where dict_values([True, True, True, True, True]) = <built-in method values of dict object at 0x777919ce9240>()
+E        +      where <built-in method values of dict object at 0x777919ce9240> = {'carry_collision_free': True, 'contact_frames_force': True, 'contact_lift': True, 'imu_frame': True, ...}.values
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:135: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_unknown_measurement_stage_is_not_silently_filtered
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_static_phase_must_really_run_ten_seconds[ros_duration_s]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_static_phase_must_really_run_ten_seconds[wall_duration_s]
+3 failed, 20 deselected in 8.31s

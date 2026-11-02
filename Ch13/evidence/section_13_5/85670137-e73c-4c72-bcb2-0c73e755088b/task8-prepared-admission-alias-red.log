@@ -1,0 +1,23 @@
+F
+=================================== FAILURES ===================================
+________ test_repointed_result_alias_cannot_keep_old_prepared_authority ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-40/test_repointed_result_alias_ca0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_repointed_result_alias_cannot_keep_old_prepared_authority(tmp_path,nav_robot_model):
+        api=module();profile=candidate(tmp_path,nav_robot_model)
+        alias=tmp_path/'result-alias.json';alias.symlink_to(tmp_path/'result.json')
+        profile=replace(profile,native_evidence={'mujoco':dict(path=str(alias),sha256=sha(alias))})
+        receipt=api.prepare_admission(profile,nav_robot_model,'mujoco')
+        assert receipt.check(profile,nav_robot_model,'mujoco')[0] is True
+        other=tmp_path/'other.json';other.write_text('{}')
+        alias.unlink();alias.symlink_to(other)
+>       assert receipt.check(profile,nav_robot_model,'mujoco')[0] is False
+E       assert True is False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_prepared_admission.py:64: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_prepared_admission.py::test_repointed_result_alias_cannot_keep_old_prepared_authority
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 deselected in 9.62s

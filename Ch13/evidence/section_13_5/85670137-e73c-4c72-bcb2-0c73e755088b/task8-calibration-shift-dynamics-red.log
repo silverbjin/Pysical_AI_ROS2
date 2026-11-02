@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_g1_uses_half_acceleration_without_changing_normal_shift_geometry_or_limits _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g1_uses_half_acceleration_without_changing_normal_shift_geometry_or_limits(nav_robot_model):
+        plant=IdealFeedback(nav_robot_model)
+        normal,calibration=(machine(nav_robot_model,plant) for _ in range(2))
+        calibration.request_contact_calibration()
+        for value in (normal,calibration):
+            q,_,_,loads,points,com=value._measure(plant.state,plant.ros,plant.wall)
+            value._begin_shift(com,loads,points,plant.ros,q)
+            list(value._shift_plan)
+        assert np.allclose(normal._offset_goal,calibration._offset_goal,atol=1e-12)
+        assert normal.limits==calibration.limits
+>       assert math.isclose(calibration._shift_duration/normal._shift_duration,math.sqrt(2),rel_tol=1e-9)
+E       assert False
+E        +  where False = <built-in function isclose>((1.713466661352792 / 1.713466661352792), 1.4142135623730951, rel_tol=1e-09)
+E        +    where <built-in function isclose> = math.isclose
+E        +    and   1.713466661352792 = <integrated_robot_navigation.gait.CrawlMachine object at 0x791d661c39b0>._shift_duration
+E        +    and   1.713466661352792 = <integrated_robot_navigation.gait.CrawlMachine object at 0x791d65a4d730>._shift_duration
+E        +    and   1.4142135623730951 = <built-in function sqrt>(2)
+E        +      where <built-in function sqrt> = math.sqrt
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_shift_dynamics.py:18: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_shift_dynamics.py::test_g1_uses_half_acceleration_without_changing_normal_shift_geometry_or_limits
+1 failed in 10.16s

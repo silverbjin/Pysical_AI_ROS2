@@ -1,0 +1,37 @@
+F
+=================================== FAILURES ===================================
+_ test_contact_during_return_brakes_then_finishes_same_preload_within_original_budget _
+
+    def test_contact_during_return_brakes_then_finishes_same_preload_within_original_budget():
+        request_ros=26757999999
+        request_wall=3145750468071
+        start_ros=31071999999
+        start_wall=request_wall+(start_ros-request_ros)
+        limits=default_limits()
+        profile=InPlaceCalibration(start_z=.031800535064822624,
+            rest_z=.017607735064822827,baseline_z=.01871437788833158,limits=limits,
+            ros_ns=start_ros,wall_ns=start_wall,deadline_wall_ns=request_wall+10_000_000_000)
+        profile.phase='TOUCHDOWN';profile.velocity=.02
+        contact_ros=32478000000
+        last_velocity=profile.velocity
+        loaded_maximum=0.
+        for i in range(1,300):
+            now=start_ros+i*20_000_000
+            loaded=now>=contact_ros
+            step=profile.advance(ros_ns=now,wall_ns=start_wall+i*20_000_000,
+                center_z=profile.baseline_z,forces=(30.,10.49 if loaded else 0.,30.,30.),capture_ns=now)
+            assert abs(profile.velocity-last_velocity)/.02<=.20000001
+            last_velocity=profile.velocity
+            if now>=contact_ros+400_000_000:
+                loaded_maximum=max(loaded_maximum,-profile.velocity)
+            if step.complete:break
+>       assert loaded_maximum<=2*limits['unload_speed_mps']+1e-10, \
+            'the planned reference still cruises10mm/s after a loaded touchdown'
+E       AssertionError: the planned reference still cruises10mm/s after a loaded touchdown
+E       assert 0.009792082641258273 <= ((2 * 0.002) + 1e-10)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_loaded_return.py:30: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_loaded_return.py::test_contact_during_return_brakes_then_finishes_same_preload_within_original_budget
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 11.06s

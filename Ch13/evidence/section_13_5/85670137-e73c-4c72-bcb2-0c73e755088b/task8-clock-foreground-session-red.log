@@ -1,0 +1,26 @@
+F
+=================================== FAILURES ===================================
+_ test_foreground_session_proves_own_uid_pid_and_init_and_closes_without_signal _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_foreground_session_proves0')
+
+    def test_foreground_session_proves_own_uid_pid_and_init_and_closes_without_signal(tmp_path):
+>       module=api()
+               ^^^^^
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_distro_session.py:10: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('distro_session'), 'owned foreground distro lifetime missing'
+E       AssertionError: owned foreground distro lifetime missing
+E       assert None
+E        +  where None = <function find_spec at 0x737e994bc720>('distro_session')
+E        +    where <function find_spec at 0x737e994bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_distro_session.py:6: AssertionError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_distro_session.py::test_foreground_session_proves_own_uid_pid_and_init_and_closes_without_signal
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 0.20s

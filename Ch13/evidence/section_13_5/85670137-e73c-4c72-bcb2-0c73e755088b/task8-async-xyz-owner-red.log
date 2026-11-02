@@ -1,0 +1,18 @@
+F
+=================================== FAILURES ===================================
+____ test_xyz_submission_uses_owned_transition_origins_and_future_geometry _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_xyz_submission_uses_owned_transition_origins_and_future_geometry(nav_robot_model):
+        m,b,q,p,points,f=ready_xyz(nav_robot_model)
+        m._transfer_stance_load(b,q,p,points,f,.02)
+        args=m._load_transfer.requests[0]
+>       assert 'reference_xyz' in args and 'reference_z' not in args
+E       AssertionError: assert ('reference_xyz' in {'allowed_z': {'fl_foot': (0.01120871905481364, 0.031208719054813643), 'fr_foot': (0.01120871905481364, 0.031208719054...mmand_joints': {'arm_joint_1': 0.0, 'arm_joint_2': 1.2, 'arm_joint_3': -2.0, 'arm_joint_4': 0.0, ...}, 'dt': 0.02, ...})
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_xyz_owner.py:30: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_xyz_owner.py::test_xyz_submission_uses_owned_transition_origins_and_future_geometry
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 20.38s

@@ -1,0 +1,171 @@
+FFFFFFFFFFF                                                              [100%]
+=================================== FAILURES ===================================
+______ test_exact_sent_input_is_owned_json_and_survives_a_rejected_result ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_exact_sent_input_is_owned_json_and_survives_a_rejected_result(nav_robot_model):
+        model,args=inputs(nav_robot_model);worker=api()(model);worker.prepare()
+        args['forces_world']={f:[0.,0.,100000.] for f in model.feet}
+        try:
+            worker.submit(args,dict(generation=11));args['dt']=.1
+            with pytest.raises(ValueError):take(worker)
+>           assert worker.last_input['dt']==.02
+                   ^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SpatialLoadProcess' object has no attribute 'last_input'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:170: AttributeError
+__________ test_job_acceptance_is_distinct_from_process_exit[change0] __________
+
+change = {}
+
+    @pytest.mark.parametrize('change',[{},dict(failed=1),dict(fault='cancelled solve failed'),
+        dict(pending=True),dict(submitted=3),dict(completed=0,discarded=2),dict(submitted=True)])
+    def test_job_acceptance_is_distinct_from_process_exit(change):
+        from integrated_robot_navigation import load_process as module
+>       assert hasattr(module,'assess_numeric_jobs'), 'normal exit is not mathematical success'
+E       AssertionError: normal exit is not mathematical success
+E       assert False
+E        +  where False = hasattr(<module 'integrated_robot_navigation.load_process' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f88...94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py'>, 'assess_numeric_jobs')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:182: AssertionError
+__________ test_job_acceptance_is_distinct_from_process_exit[change1] __________
+
+change = {'failed': 1}
+
+    @pytest.mark.parametrize('change',[{},dict(failed=1),dict(fault='cancelled solve failed'),
+        dict(pending=True),dict(submitted=3),dict(completed=0,discarded=2),dict(submitted=True)])
+    def test_job_acceptance_is_distinct_from_process_exit(change):
+        from integrated_robot_navigation import load_process as module
+>       assert hasattr(module,'assess_numeric_jobs'), 'normal exit is not mathematical success'
+E       AssertionError: normal exit is not mathematical success
+E       assert False
+E        +  where False = hasattr(<module 'integrated_robot_navigation.load_process' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f88...94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py'>, 'assess_numeric_jobs')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:182: AssertionError
+__________ test_job_acceptance_is_distinct_from_process_exit[change2] __________
+
+change = {'fault': 'cancelled solve failed'}
+
+    @pytest.mark.parametrize('change',[{},dict(failed=1),dict(fault='cancelled solve failed'),
+        dict(pending=True),dict(submitted=3),dict(completed=0,discarded=2),dict(submitted=True)])
+    def test_job_acceptance_is_distinct_from_process_exit(change):
+        from integrated_robot_navigation import load_process as module
+>       assert hasattr(module,'assess_numeric_jobs'), 'normal exit is not mathematical success'
+E       AssertionError: normal exit is not mathematical success
+E       assert False
+E        +  where False = hasattr(<module 'integrated_robot_navigation.load_process' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f88...94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py'>, 'assess_numeric_jobs')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:182: AssertionError
+__________ test_job_acceptance_is_distinct_from_process_exit[change3] __________
+
+change = {'pending': True}
+
+    @pytest.mark.parametrize('change',[{},dict(failed=1),dict(fault='cancelled solve failed'),
+        dict(pending=True),dict(submitted=3),dict(completed=0,discarded=2),dict(submitted=True)])
+    def test_job_acceptance_is_distinct_from_process_exit(change):
+        from integrated_robot_navigation import load_process as module
+>       assert hasattr(module,'assess_numeric_jobs'), 'normal exit is not mathematical success'
+E       AssertionError: normal exit is not mathematical success
+E       assert False
+E        +  where False = hasattr(<module 'integrated_robot_navigation.load_process' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f88...94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py'>, 'assess_numeric_jobs')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:182: AssertionError
+__________ test_job_acceptance_is_distinct_from_process_exit[change4] __________
+
+change = {'submitted': 3}
+
+    @pytest.mark.parametrize('change',[{},dict(failed=1),dict(fault='cancelled solve failed'),
+        dict(pending=True),dict(submitted=3),dict(completed=0,discarded=2),dict(submitted=True)])
+    def test_job_acceptance_is_distinct_from_process_exit(change):
+        from integrated_robot_navigation import load_process as module
+>       assert hasattr(module,'assess_numeric_jobs'), 'normal exit is not mathematical success'
+E       AssertionError: normal exit is not mathematical success
+E       assert False
+E        +  where False = hasattr(<module 'integrated_robot_navigation.load_process' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f88...94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py'>, 'assess_numeric_jobs')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:182: AssertionError
+__________ test_job_acceptance_is_distinct_from_process_exit[change5] __________
+
+change = {'completed': 0, 'discarded': 2}
+
+    @pytest.mark.parametrize('change',[{},dict(failed=1),dict(fault='cancelled solve failed'),
+        dict(pending=True),dict(submitted=3),dict(completed=0,discarded=2),dict(submitted=True)])
+    def test_job_acceptance_is_distinct_from_process_exit(change):
+        from integrated_robot_navigation import load_process as module
+>       assert hasattr(module,'assess_numeric_jobs'), 'normal exit is not mathematical success'
+E       AssertionError: normal exit is not mathematical success
+E       assert False
+E        +  where False = hasattr(<module 'integrated_robot_navigation.load_process' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f88...94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py'>, 'assess_numeric_jobs')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:182: AssertionError
+__________ test_job_acceptance_is_distinct_from_process_exit[change6] __________
+
+change = {'submitted': True}
+
+    @pytest.mark.parametrize('change',[{},dict(failed=1),dict(fault='cancelled solve failed'),
+        dict(pending=True),dict(submitted=3),dict(completed=0,discarded=2),dict(submitted=True)])
+    def test_job_acceptance_is_distinct_from_process_exit(change):
+        from integrated_robot_navigation import load_process as module
+>       assert hasattr(module,'assess_numeric_jobs'), 'normal exit is not mathematical success'
+E       AssertionError: normal exit is not mathematical success
+E       assert False
+E        +  where False = hasattr(<module 'integrated_robot_navigation.load_process' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f88...94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py'>, 'assess_numeric_jobs')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:182: AssertionError
+_____ test_zero_velocity_pause_invalidates_the_inflight_numeric_reference ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_zero_velocity_pause_invalidates_the_inflight_numeric_reference(nav_robot_model):
+        m,b,q,p,points,f=ready(nav_robot_model)
+        m._transfer_stance_load(b,q,p,points,f,.02)
+        result=m.advance(b,(0.,0.,0.),m._last_ros,m._last_wall)
+        assert result.state!='FAULT',result.reason
+>       assert m._paused and m._load_transfer.discards==1
+E       assert (True and 0 == 1)
+E        +  where True = <integrated_robot_navigation.gait.CrawlMachine object at 0x7b87edb47c20>._paused
+E        +  and   0 = <test_async_load_owner.NumericPeer object at 0x7b87c07ab890>.discards
+E        +    where <test_async_load_owner.NumericPeer object at 0x7b87c07ab890> = <integrated_robot_navigation.gait.CrawlMachine object at 0x7b87edb47c20>._load_transfer
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py:137: AssertionError
+____ test_cancelled_capture_cannot_be_submitted_again_without_new_feedback _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_cancelled_capture_cannot_be_submitted_again_without_new_feedback(nav_robot_model):
+        m,b,q,p,points,f=ready(nav_robot_model)
+        m._transfer_stance_load(b,q,p,points,f,.02);m._discard_load_transfer()
+        m._transfer_stance_load(b,q,p,points,f,.02)
+>       assert len(m._load_transfer.requests)==1
+E       AssertionError: assert 2 == 1
+E        +  where 2 = len([{'allowed_z': {'fl_foot': (0.01120871905481364, 0.031208719054813643), 'fr_foot': (0.01120871905481364, 0.03120871905...mand_joints': {'arm_joint_1': 0.0, 'arm_joint_2': 1.2, 'arm_joint_3': -2.0, 'arm_joint_4': 0.0, ...}, 'dt': 0.02, ...}])
+E        +    where [{'allowed_z': {'fl_foot': (0.01120871905481364, 0.031208719054813643), 'fr_foot': (0.01120871905481364, 0.03120871905...mand_joints': {'arm_joint_1': 0.0, 'arm_joint_2': 1.2, 'arm_joint_3': -2.0, 'arm_joint_4': 0.0, ...}, 'dt': 0.02, ...}] = <test_async_load_owner.NumericPeer object at 0x7b87c03d1fa0>.requests
+E        +      where <test_async_load_owner.NumericPeer object at 0x7b87c03d1fa0> = <integrated_robot_navigation.gait.CrawlMachine object at 0x7b87c02327e0>._load_transfer
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py:144: AssertionError
+___ test_gazebo_g2_requires_numerical_close_without_relabelling_other_roles ____
+
+    def test_gazebo_g2_requires_numerical_close_without_relabelling_other_roles():
+        for scenario in ('crawl-cycle','crawl-reverse'):
+            required=runner.g2_required_checks('relay100','allowance50um','gazebo',scenario)
+>           assert {'numeric_worker_normal_close','numeric_worker_job_contract'}<=required
+E           AssertionError: assert {'numeric_wor...normal_close'} <= frozenset({'b..._force', ...})
+E             
+E             Extra items in the left set:
+E             'numeric_worker_job_contract'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_numeric_worker_acceptance.py:11: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_exact_sent_input_is_owned_json_and_survives_a_rejected_result
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_job_acceptance_is_distinct_from_process_exit[change0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_job_acceptance_is_distinct_from_process_exit[change1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_job_acceptance_is_distinct_from_process_exit[change2]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_job_acceptance_is_distinct_from_process_exit[change3]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_job_acceptance_is_distinct_from_process_exit[change4]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_job_acceptance_is_distinct_from_process_exit[change5]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_job_acceptance_is_distinct_from_process_exit[change6]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py::test_zero_velocity_pause_invalidates_the_inflight_numeric_reference
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py::test_cancelled_capture_cannot_be_submitted_again_without_new_feedback
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_numeric_worker_acceptance.py::test_gazebo_g2_requires_numerical_close_without_relabelling_other_roles
+11 failed, 35 deselected in 24.31s

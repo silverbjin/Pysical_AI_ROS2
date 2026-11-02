@@ -1,0 +1,26 @@
+<sdf version="1.10"><world name="coupled_position_force"><gravity>0 0 -9.81</gravity>
+<physics name="two_ms" type="ignored"><max_step_size>.002</max_step_size><real_time_factor>0</real_time_factor></physics>
+<plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"><engine><filename>gz-physics-dartsim-plugin</filename></engine></plugin>
+<model name="ground"><static>true</static><link name="ground"><collision name="ground"><geometry><plane><normal>0 0 1</normal><size>10 10</size></plane></geometry></collision></link></model>
+<model name="four_supports"><pose>0 0 .3 0 0 0</pose><link name="trunk"><inertial><mass>1</mass><inertia><ixx>.02</ixx><iyy>.03</iyy><izz>.04</izz></inertia></inertial></link>
+<link name="fr_foot"><pose>0.25 -0.15 -.2 0 0 0</pose>
+ <inertial><mass>.1</mass><inertia><ixx>.000016</ixx><iyy>.000016</iyy><izz>.000016</izz></inertia></inertial>
+ <collision name="fr_tip"><geometry><sphere><radius>.02</radius></sphere></geometry></collision></link>
+ <joint name="fr_slide" type="prismatic"><parent>trunk</parent><child>fr_foot</child>
+ <axis><xyz>0 0 1</xyz><limit><lower>-.1</lower><upper>.1</upper><effort>30</effort><velocity>1</velocity></limit>
+ <dynamics><damping>10.954451150103322</damping><friction>0</friction></dynamics></axis></joint><link name="fl_foot"><pose>0.25 0.15 -.2 0 0 0</pose>
+ <inertial><mass>.1</mass><inertia><ixx>.000016</ixx><iyy>.000016</iyy><izz>.000016</izz></inertia></inertial>
+ <collision name="fl_tip"><geometry><sphere><radius>.02</radius></sphere></geometry></collision></link>
+ <joint name="fl_slide" type="prismatic"><parent>trunk</parent><child>fl_foot</child>
+ <axis><xyz>0 0 1</xyz><limit><lower>-.1</lower><upper>.1</upper><effort>30</effort><velocity>1</velocity></limit>
+ <dynamics><damping>10.954451150103322</damping><friction>0</friction></dynamics></axis></joint><link name="rr_foot"><pose>-0.25 -0.15 -.2 0 0 0</pose>
+ <inertial><mass>.1</mass><inertia><ixx>.000016</ixx><iyy>.000016</iyy><izz>.000016</izz></inertia></inertial>
+ <collision name="rr_tip"><geometry><sphere><radius>.02</radius></sphere></geometry></collision></link>
+ <joint name="rr_slide" type="prismatic"><parent>trunk</parent><child>rr_foot</child>
+ <axis><xyz>0 0 1</xyz><limit><lower>-.1</lower><upper>.1</upper><effort>30</effort><velocity>1</velocity></limit>
+ <dynamics><damping>10.954451150103322</damping><friction>0</friction></dynamics></axis></joint><link name="rl_foot"><pose>-0.25 0.15 -.2 0 0 0</pose>
+ <inertial><mass>.1</mass><inertia><ixx>.000016</ixx><iyy>.000016</iyy><izz>.000016</izz></inertia></inertial>
+ <collision name="rl_tip"><geometry><sphere><radius>.02</radius></sphere></geometry></collision></link>
+ <joint name="rl_slide" type="prismatic"><parent>trunk</parent><child>rl_foot</child>
+ <axis><xyz>0 0 1</xyz><limit><lower>-.1</lower><upper>.1</upper><effort>30</effort><velocity>1</velocity></limit>
+ <dynamics><damping>10.954451150103322</damping><friction>0</friction></dynamics></axis></joint></model></world></sdf>

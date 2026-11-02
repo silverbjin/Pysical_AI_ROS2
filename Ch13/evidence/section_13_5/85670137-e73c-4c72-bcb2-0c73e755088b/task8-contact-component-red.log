@@ -1,0 +1,28 @@
+F
+=================================== FAILURES ===================================
+_________ test_four_observed_unload_lift_return_sequences_are_required _________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_four_observed_unload_lift_return_sequences_are_required(nav_robot_model):
+>       value=tracker(nav_robot_model);r=1_000_000_000;w=10_000_000_000
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_component.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def tracker(model):
+>       assert importlib.util.find_spec('integrated_robot_navigation.contact_component'), 'bounded contact-component observer missing'
+E       AssertionError: bounded contact-component observer missing
+E       assert None
+E        +  where None = <function find_spec at 0x7caa722bc720>('integrated_robot_navigation.contact_component')
+E        +    where <function find_spec at 0x7caa722bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_component.py:25: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_component.py::test_four_observed_unload_lift_return_sequences_are_required
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 19.69s

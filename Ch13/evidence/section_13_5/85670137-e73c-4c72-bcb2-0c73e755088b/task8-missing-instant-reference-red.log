@@ -1,0 +1,38 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_even_synchronous_body_cache_cannot_replace_missing_native_reference[None] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+references = None
+
+    @pytest.mark.parametrize('references',[None,[]])
+    def test_even_synchronous_body_cache_cannot_replace_missing_native_reference(observed,references):
+        if references is not None:
+            observed['native_body_references'] = references
+        else:
+            observed.pop('native_body_references',None)
+        result = api().assess_g1_sensors(observed,WORLD,'mujoco')
+>       assert result['checks']['imu_frame'] is False
+E       assert True is False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:181: AssertionError
+_ test_even_synchronous_body_cache_cannot_replace_missing_native_reference[references1] _
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl... [], 'phases': {'stand': {'ros_duration_s': 10.0, 'wall_duration_s': 10.0}}, 'root_source': 'native_ground_truth', ...}
+references = []
+
+    @pytest.mark.parametrize('references',[None,[]])
+    def test_even_synchronous_body_cache_cannot_replace_missing_native_reference(observed,references):
+        if references is not None:
+            observed['native_body_references'] = references
+        else:
+            observed.pop('native_body_references',None)
+        result = api().assess_g1_sensors(observed,WORLD,'mujoco')
+>       assert result['checks']['imu_frame'] is False
+E       assert True is False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:181: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_even_synchronous_body_cache_cannot_replace_missing_native_reference[None]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_even_synchronous_body_cache_cannot_replace_missing_native_reference[references1]
+2 failed, 49 deselected in 9.21s

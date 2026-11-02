@@ -1,0 +1,46 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_owned_nodes_keep_qos_and_complete_messages_with_fewer_warning_waitables[False] _
+
+lifecycle = False
+
+    @pytest.mark.parametrize('lifecycle',[False,True])
+    def test_owned_nodes_keep_qos_and_complete_messages_with_fewer_warning_waitables(lifecycle):
+>       assert importlib.util.find_spec('integrated_robot_navigation.dispatch_node'),'bounded event policy missing'
+E       AssertionError: bounded event policy missing
+E       assert None
+E        +  where None = <function find_spec at 0x77ade42bc720>('integrated_robot_navigation.dispatch_node')
+E        +    where <function find_spec at 0x77ade42bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dispatch_events_ros.py:17: AssertionError
+_ test_owned_nodes_keep_qos_and_complete_messages_with_fewer_warning_waitables[True] _
+
+lifecycle = True
+
+    @pytest.mark.parametrize('lifecycle',[False,True])
+    def test_owned_nodes_keep_qos_and_complete_messages_with_fewer_warning_waitables(lifecycle):
+>       assert importlib.util.find_spec('integrated_robot_navigation.dispatch_node'),'bounded event policy missing'
+E       AssertionError: bounded event policy missing
+E       assert None
+E        +  where None = <function find_spec at 0x77ade42bc720>('integrated_robot_navigation.dispatch_node')
+E        +    where <function find_spec at 0x77ade42bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dispatch_events_ros.py:17: AssertionError
+___________ test_explicit_matched_callback_is_preserved_and_executed ___________
+
+    def test_explicit_matched_callback_is_preserved_and_executed():
+>       assert importlib.util.find_spec('integrated_robot_navigation.dispatch_node'),'bounded event policy missing'
+E       AssertionError: bounded event policy missing
+E       assert None
+E        +  where None = <function find_spec at 0x77ade42bc720>('integrated_robot_navigation.dispatch_node')
+E        +    where <function find_spec at 0x77ade42bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dispatch_events_ros.py:44: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dispatch_events_ros.py::test_owned_nodes_keep_qos_and_complete_messages_with_fewer_warning_waitables[False]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dispatch_events_ros.py::test_owned_nodes_keep_qos_and_complete_messages_with_fewer_warning_waitables[True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dispatch_events_ros.py::test_explicit_matched_callback_is_preserved_and_executed
+3 failed in 7.52s

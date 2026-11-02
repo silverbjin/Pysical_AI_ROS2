@@ -1,0 +1,38 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_git_identity_keeps_dirty_and_untracked_runtime_files_not_evidence ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-1/test_git_identity_keeps_dirty_0')
+
+    def test_git_identity_keeps_dirty_and_untracked_runtime_files_not_evidence(tmp_path):
+        subprocess.run(['git', 'init', '-q', str(tmp_path)], check=True)
+        source = tmp_path/'source.py'
+        source.write_text('old\n')
+        subprocess.run(['git', 'add', 'source.py'], cwd=tmp_path, check=True)
+        subprocess.run(['git', '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid',
+                        'commit', '-qm', 'fixture'], cwd=tmp_path, check=True)
+        head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=tmp_path, text=True).strip()
+        source.write_text('changed\n')
+        (tmp_path/'new.py').write_text('new\n')
+        (tmp_path/'evidence').mkdir()
+        (tmp_path/'evidence/old-run.log').write_text('not executable runtime source\n')
+>       result = runner.runtime_git_identity(tmp_path, ['source.py', 'new.py'])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'runtime_git_identity'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_git_scope.py:24: AttributeError
+__________ test_empty_scope_cannot_fall_back_to_full_repository_walk ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-1/test_empty_scope_cannot_fall_b0')
+
+    def test_empty_scope_cannot_fall_back_to_full_repository_walk(tmp_path):
+        with pytest.raises(ValueError, match='runtime source scope'):
+>           runner.runtime_git_identity(tmp_path, [])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'run_navigation_13_5' has no attribute 'runtime_git_identity'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_git_scope.py:33: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_git_scope.py::test_git_identity_keeps_dirty_and_untracked_runtime_files_not_evidence
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_git_scope.py::test_empty_scope_cannot_fall_back_to_full_repository_walk
+2 failed in 11.70s

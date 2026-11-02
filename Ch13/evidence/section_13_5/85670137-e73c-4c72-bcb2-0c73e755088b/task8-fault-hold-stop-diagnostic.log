@@ -1,0 +1,28 @@
+F
+=================================== FAILURES ===================================
+_ test_shift_timeout_stop_confirms_fresh_settle_without_emitting_targets_or_clearing_fault _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_shift_timeout_stop_confirms_fresh_settle_without_emitting_targets_or_clearing_fault(nav_robot_model):
+        value,plant=held_fault(nav_robot_model)
+        held=value.reference_body.copy();targets=deepcopy(value._targets);generation=value.generation
+        value.request_stop(urgent=True)
+        for index in range(55):
+            result=tick(value,plant,index)
+            assert result.state=='FAULT' and result.reason==REASON and result.generation==generation
+            assert result.joint_targets is None, 'fault observation issued a motor reference'
+            assert np.array_equal(value.reference_body,held)
+            assert all(np.array_equal(point,value._targets[name]) for name,point in targets.items())
+            if index<50:assert not getattr(value,'fault_stop_confirmed',False)
+>       assert getattr(value,'fault_stop_confirmed',False), (value._fault_hold_observation,
+            value._fault_settle_origin,value._fault_capture_count,plant.state.body.data)
+E       AssertionError: (True, None, 0, {'angular_velocity': (0.0, 0.0, 0.0), 'child_frame_id': 'base_footprint', 'linear_velocity': (-0.015695350276265164, -0.010326108561178859, 0.0), 'orientation': (0.0, 0.0, 0.0, 1.0), ...})
+E       assert False
+E        +  where False = getattr(<integrated_robot_navigation.gait.CrawlMachine object at 0x7282841c9ac0>, 'fault_stop_confirmed', False)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_hold_stop.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_hold_stop.py::test_shift_timeout_stop_confirms_fresh_settle_without_emitting_targets_or_clearing_fault
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 16.71s

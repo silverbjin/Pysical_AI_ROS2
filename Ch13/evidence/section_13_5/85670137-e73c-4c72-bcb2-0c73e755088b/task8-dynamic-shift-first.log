@@ -1,0 +1,103 @@
+..F..........FF...............F                                          [100%]
+=================================== FAILURES ===================================
+______ test_one_swing_order_and_measured_support_margin_in_ideal_feedback ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_one_swing_order_and_measured_support_margin_in_ideal_feedback(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        order = []
+        last = None
+        for _ in range(550):
+            result = value.advance(plant.state, (.001, 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if result.swing_foot is not None:
+                if result.swing_foot != last:
+                    order.append(result.swing_foot)
+                    last = result.swing_foot
+                stance = [p for name, p, force in zip(nav_robot_model.feet,
+                    plant.state.contacts.data['points'], plant.state.contacts.data['forces'])
+                    if name != result.swing_foot and force >= 2.]
+                com = center_of_mass(nav_robot_model, plant.state.joints.data['position'], plant.pose)
+                assert len(stance) >= 3 and support_margin(com, stance) >= .01-1e-9
+            plant.tick(value, result)
+            assert sum(not t for t in plant.state.contacts.data['touching']) <= 1
+            if len(order) == 4:
+                break
+>       assert order == ['fl_foot', 'rr_foot', 'fr_foot', 'rl_foot']
+E       AssertionError: assert ['fl_foot', '...t', 'fr_foot'] == ['fl_foot', '...t', 'rl_foot']
+E         
+E         Right contains one more item: 'rl_foot'
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:62: AssertionError
+__ test_maximum_command_envelope_remains_finite_and_footprint_bound[command1] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (-0.01, 0.0, 0.0)
+
+    @pytest.mark.parametrize('command', [(.01, 0., 0.), (-.01, 0., 0.),
+                                         (0., 0., .03), (.01, 0., .03)])
+    def test_maximum_command_envelope_remains_finite_and_footprint_bound(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        for _ in range(450):
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+>           assert result.state != 'FAULT', result.reason
+E           AssertionError: current measured support lost
+E           assert 'FAULT' != 'FAULT'
+E            +  where 'FAULT' = ControlResult(state='FAULT', phase='SWING', swing_foot=None, generation=0, joint_targets=None, reason='current measured support lost').state
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:166: AssertionError
+__ test_maximum_command_envelope_remains_finite_and_footprint_bound[command2] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (0.0, 0.0, 0.03)
+
+    @pytest.mark.parametrize('command', [(.01, 0., 0.), (-.01, 0., 0.),
+                                         (0., 0., .03), (.01, 0., .03)])
+    def test_maximum_command_envelope_remains_finite_and_footprint_bound(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        for _ in range(450):
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+>           assert result.state != 'FAULT', result.reason
+E           AssertionError: ik footprint joint bound
+E           assert 'FAULT' != 'FAULT'
+E            +  where 'FAULT' = ControlResult(state='FAULT', phase='SHIFT', swing_foot=None, generation=0, joint_targets=None, reason='ik footprint joint bound').state
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:166: AssertionError
+______ test_actual_carry_survives_contact_calibration_without_root_writes ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_carry_survives_con0')
+
+    def test_actual_carry_survives_contact_calibration_without_root_writes(tmp_path):
+        scene = materialize_scene('mujoco', 'g1', tmp_path/'calibration-component')
+        model = compile_model(Path(scene['robot']['path']).read_text())
+        native = mujoco.MjModel.from_xml_path(scene['world']['path'])
+        data = mujoco.MjData(native)
+        mujoco.mj_resetDataKeyframe(native, data, 0)
+        report = calibration_probe(native, data, model, default_limits())
+>       assert report['completed'], json.dumps(report, indent=2)
+E       AssertionError: {
+E           "engine": "python_mujoco_component_only",
+E           "version": "3.3.7",
+E           "state": "FAULT",
+E           "reason": "current measured support lost",
+E           "completed": false,
+E           "duration_s": 12.179999999998577,
+E           "maximum_carry_error_rad": 0.030221497120561214,
+E           "maximum_carry_velocity_rps": 0.05180588397181961,
+E           "maximum_gripper_error_m": 0.0006075356779739749,
+E           "maximum_gripper_velocity_mps": 0.01918855211554175
+E         }
+E       assert False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py:35: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_one_swing_order_and_measured_support_margin_in_ideal_feedback
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_maximum_command_envelope_remains_finite_and_footprint_bound[command1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_maximum_command_envelope_remains_finite_and_footprint_bound[command2]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py::test_actual_carry_survives_contact_calibration_without_root_writes
+4 failed, 27 passed in 30.57s

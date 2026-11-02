@@ -1,0 +1,75 @@
+F
+=================================== FAILURES ===================================
+_ test_shorter_application_interval_scales_one_certified_segment_without_changing_rate _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_shorter_application_interval_scales_one_certified_segment_without_changing_rate(nav_robot_model):
+        m,b,q,p,points,f=ready_xyz(nav_robot_model);m._load_transfer.last_model['linear_origin_feasible']=True
+        before=deepcopy(m._targets);m._transfer_stance_load(b,q,p,points,f,.02)
+        complete_xyz(m,f);b=next_capture(m,b,2_500_000)
+>       m._transfer_stance_load(b,q,p,points,f,.02)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_xyz_owner.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:714: in _transfer_stance_load
+    return self._transfer_spatial_async(bundle,joints,pose,points,foot,dt,vectors)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.gait.CrawlMachine object at 0x7e481e5b8560>
+bundle = SensorBundle(joints=Sample(stamp_ns=1022500000, received_ns=10022500000, epoch=0, sequence=1022500000, frame_id='base_...={'ready': True, 'generation': 0, 'model_sha256': '845e57a97d2dd10a6963304d4f4baf628de208993fedf46c5239c39f839e4032'}))
+joints = {'arm_joint_1': 0.0, 'arm_joint_2': 1.2, 'arm_joint_3': -2.0, 'arm_joint_4': 0.0, ...}
+pose = array([[1.  , 0.  , 0.  , 0.  ],
+       [0.  , 1.  , 0.  , 0.  ],
+       [0.  , 0.  , 1.  , 0.46],
+       [0.  , 0.  , 0.  , 1.  ]])
+points = {'fl_foot': (0.25, 0.18, 0.0), 'fr_foot': (0.25, -0.18, 0.0), 'rl_foot': (-0.25, 0.18, 0.0), 'rr_foot': (-0.25, -0.18, 0.0)}
+foot = 'rr_foot', dt = 0.02
+vectors = array([[-0.        , -0.        , 37.30277025],
+       [ 3.46814468,  0.        , 44.26485853],
+       [ 0.        , -3.21480509, 37.30277025],
+       [-3.46814468,  3.21480509, 30.34068197]])
+
+    def _transfer_spatial_async(self,bundle,joints,pose,points,foot,dt,vectors):
+        worker=self._load_transfer;context=self._load_context(bundle,foot,dt)
+        try:
+            reply=worker.poll(now_wall_ns=self._last_wall)
+            if reply is None:
+                if not worker.snapshot()['pending'] and context['capture']!=self._load_submitted_capture:
+                    worker.submit(self._spatial_arguments(joints,pose,points,foot,dt,vectors),context)
+                    self._load_submitted_capture=context['capture']
+                    outcome='submitted'
+                else:outcome=('waiting_for_numeric_result' if worker.snapshot()['pending'] else 'awaiting_new_capture')
+                self.load_transfer_observation.update(outcome=outcome,worker=worker.snapshot(),
+                    numeric_input=deepcopy(getattr(worker,'last_input',None)),
+                    original_snapshot=deepcopy(getattr(worker,'last_context',None)))
+                return True
+            original=reply['context']
+            keys=('generation','foot','reference')+(('geometry',) if 'geometry' in context else ())
+            if any(original[key]!=context[key] for key in keys):
+                raise ValueError('transition optimization result ownership/reference mismatch')
+            for stamp,receipt,epoch in original['samples'].values():
+                if (epoch!=self.epoch or not 0<=self._last_ros-stamp<=200_000_000
+                        or not 0<=max(self._last_wall,reply['received_wall_ns'])-receipt<=200_000_000):
+                    raise ValueError('transition optimization stale original snapshot')
+            delta=reply['delta']
+            xyz=getattr(worker,'command_space','height')=='stance_xyz'
+            values=np.asarray([delta[f] for f in self.model.feet],dtype=float)
+            if (set(delta)!=set(self.model.feet) or values.shape!=((4,3) if xyz else (4,))
+                    or not np.isfinite(values).all()):
+                raise ValueError('transition optimization result vector shape')
+            magnitudes=np.linalg.norm(values,axis=1) if xyz else np.abs(values)
+            if np.max(magnitudes)>self.limits['unload_speed_mps']*original['dt']+1e-12:
+                raise ValueError('transition optimization result height rate')
+            elapsed=min(self._last_ros-original['requested_ros_ns'],
+                self._last_wall-original['requested_wall_ns'])/1e9
+            if elapsed<0. or np.max(magnitudes)>self.limits['unload_speed_mps']*elapsed+1e-12:
+>               raise ValueError('transition optimization elapsed reference rate')
+E               ValueError: transition optimization elapsed reference rate
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:826: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_xyz_owner.py::test_shorter_application_interval_scales_one_certified_segment_without_changing_rate
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 7 deselected in 16.04s

@@ -1,0 +1,41 @@
+Running main() from ./googletest/src/gtest_main.cc
+[==========] Running 9 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 9 tests from ControlClockGate
+[ RUN      ] ControlClockGate.BootstrapGapDoesNotPretendControlHasAlreadyActivated
+Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_control_clock_gate.cpp:14: Failure
+Value of: gate.fault().empty()
+  Actual: false
+Expected: true
+
+Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_control_clock_gate.cpp:16: Failure
+Value of: gate.poll(1400000000, 1, 1)
+  Actual: false
+Expected: true
+
+[  FAILED  ] ControlClockGate.BootstrapGapDoesNotPretendControlHasAlreadyActivated (1 ms)
+[ RUN      ] ControlClockGate.OriginalValuesOnlyAndAtMost100Hz
+[       OK ] ControlClockGate.OriginalValuesOnlyAndAtMost100Hz (0 ms)
+[ RUN      ] ControlClockGate.DuplicateInputCannotRenewProgressLeaseOrRepublish
+[       OK ] ControlClockGate.DuplicateInputCannotRenewProgressLeaseOrRepublish (0 ms)
+[ RUN      ] ControlClockGate.PauseBeforeFirstPositiveStampDoesNotInventTime
+[       OK ] ControlClockGate.PauseBeforeFirstPositiveStampDoesNotInventTime (0 ms)
+[ RUN      ] ControlClockGate.RollbackAndAuthorityChangeAreSticky
+[       OK ] ControlClockGate.RollbackAndAuthorityChangeAreSticky (0 ms)
+[ RUN      ] ControlClockGate.MissingMultipleOrCompetingPublishersFailClosed
+[       OK ] ControlClockGate.MissingMultipleOrCompetingPublishersFailClosed (0 ms)
+[ RUN      ] ControlClockGate.InvalidStampIdentityAndWallRollbackFailClosed
+[       OK ] ControlClockGate.InvalidStampIdentityAndWallRollbackFailClosed (0 ms)
+[ RUN      ] ControlClockGate.LateNewInputCannotHideExpiredProgressLease
+[       OK ] ControlClockGate.LateNewInputCannotHideExpiredProgressLease (0 ms)
+[ RUN      ] ControlClockGate.CloseBlocksOutstandingAndFutureInputs
+[       OK ] ControlClockGate.CloseBlocksOutstandingAndFutureInputs (0 ms)
+[----------] 9 tests from ControlClockGate (10 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test suite ran. (14 ms total)
+[  PASSED  ] 8 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ControlClockGate.BootstrapGapDoesNotPretendControlHasAlreadyActivated
+
+ 1 FAILED TEST

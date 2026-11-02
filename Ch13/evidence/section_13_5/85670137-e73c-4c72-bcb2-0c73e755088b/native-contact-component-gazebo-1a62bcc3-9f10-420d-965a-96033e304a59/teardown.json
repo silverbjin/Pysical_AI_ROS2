@@ -1,0 +1,274 @@
+{
+  "finalization_complete": true,
+  "command_source_joined": true,
+  "runtime_stop": {
+    "members": [
+      {
+        "pid": 45229,
+        "ppid": 45221,
+        "pgid": 45221,
+        "start_ticks": 957489,
+        "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_vision/lib/integrated_robot_vision/native_pose_adapter"
+      },
+      {
+        "pid": 45230,
+        "ppid": 45221,
+        "pgid": 45221,
+        "start_ticks": 957489,
+        "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/gazebo_contact_adapter"
+      },
+      {
+        "pid": 45231,
+        "ppid": 45221,
+        "pgid": 45221,
+        "start_ticks": 957490,
+        "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/motion_guard"
+      },
+      {
+        "pid": 45232,
+        "ppid": 45221,
+        "pgid": 45221,
+        "start_ticks": 957490,
+        "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/crawl_controller"
+      },
+      {
+        "pid": 45233,
+        "ppid": 45221,
+        "pgid": 45221,
+        "start_ticks": 957491,
+        "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/carry_manager"
+      },
+      {
+        "pid": 45237,
+        "ppid": 45221,
+        "pgid": 45221,
+        "start_ticks": 957492,
+        "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/nav_projection"
+      },
+      {
+        "pid": 45239,
+        "ppid": 45221,
+        "pgid": 45221,
+        "start_ticks": 957493,
+        "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/crawl_startup"
+      },
+      {
+        "pid": 45252,
+        "ppid": 45221,
+        "pgid": 45221,
+        "start_ticks": 957495,
+        "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/tf_provenance"
+      }
+    ],
+    "confirmed": true
+  },
+  "control_clock_stop_ack": true,
+  "control_clock_exit_observed": true,
+  "runtime_shutdown": {
+    "steps": {
+      "measured_stop": true,
+      "deactivate": true,
+      "carry_terminal": true,
+      "numeric_stop": true,
+      "consumers_stop": true,
+      "clock_stop": true
+    },
+    "errors": [],
+    "consumers_exited": true,
+    "runtime_exit": true
+  },
+  "runtime_exit": true,
+  "native_observer_stop": {
+    "command": [
+      "gz",
+      "service",
+      "-s",
+      "/navigation/stop_native_observer",
+      "--reqtype",
+      "gz.msgs.Empty",
+      "--reptype",
+      "gz.msgs.Boolean",
+      "--timeout",
+      "2000",
+      "--req",
+      ""
+    ],
+    "returncode": 0,
+    "stdout": "data: true\n\n",
+    "stderr": "",
+    "confirmed": true
+  },
+  "gazebo_pause": {
+    "confirmed": true,
+    "started_ns": 9627381996796,
+    "commands": [
+      [
+        "gz",
+        "service",
+        "-s",
+        "/world/section_13_5/control",
+        "--reqtype",
+        "gz.msgs.WorldControl",
+        "--reptype",
+        "gz.msgs.Boolean",
+        "--timeout",
+        "2000",
+        "--req",
+        "pause: true"
+      ],
+      [
+        "gz",
+        "topic",
+        "-e",
+        "-t",
+        "/world/section_13_5/stats",
+        "-n",
+        "1",
+        "--json-output"
+      ]
+    ],
+    "pause": {
+      "returncode": 0,
+      "stdout": "data: true\n\n",
+      "stderr": ""
+    },
+    "stats": {
+      "returncode": 0,
+      "stdout": "{\"simTime\":{\"sec\":\"41\",\"nsec\":396000000},\"realTime\":{\"sec\":\"51\",\"nsec\":496356425},\"paused\":true,\"iterations\":\"20698\",\"stepSize\":{}}\n",
+      "stderr": ""
+    },
+    "finished_ns": 9627963075274
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "engine_exit": true,
+  "launch_event_exit": {
+    "confirmed": true,
+    "returncode": 0,
+    "timed_out": false,
+    "signal_sent": false
+  },
+  "forced_cleanup": false,
+  "residual_live_pids": [],
+  "launch_returncode": 0,
+  "parent_reaped": true,
+  "probe_receiver_joined": true,
+  "probe_receivers": {
+    "node": "navigation_mission_probe",
+    "thread_ident": 138275046020800,
+    "thread_native_id": 45219,
+    "dispatch": "continuous_native",
+    "thread_alive": false,
+    "closed": true,
+    "error": null,
+    "recording": null,
+    "ingress": {
+      "node": "navigation_mission_ingress",
+      "thread_ident": 138275054413504,
+      "thread_native_id": 45218,
+      "dispatch": "continuous_native",
+      "thread_alive": false,
+      "closed": true,
+      "error": null,
+      "recording": null,
+      "ingress": null
+    }
+  },
+  "full_observer_process": {
+    "failure": "",
+    "journal": {
+      "error": "",
+      "joined": true,
+      "max_bytes": 8388608,
+      "max_records": 256,
+      "pending_bytes": 0,
+      "pending_records": 0,
+      "submitted": 31644,
+      "written": 31644
+    },
+    "receiver": {
+      "closed": true,
+      "executor": "rclcpp_single_threaded"
+    },
+    "ros_closed": true,
+    "runtime_fault": {
+      "reason": "crawl_state:transition optimization worker: transition optimization complete XYZ: complete XYZ nonlinear servo residual code=2",
+      "ros_ns": 38122000000,
+      "stage": "forward",
+      "wall_ns": 9623926926726
+    },
+    "recording": {
+      "engine": "gazebo",
+      "records": 31644,
+      "raw_sha256": "7e880e1ad92376bb08eb41b3ce4ade18c361c097dc64a59f7894f1b9b008a89b",
+      "raw_size": 83659621,
+      "scope": "original_cdr_original_native_receipt_complete_prefix_replay",
+      "json_sha256": "534cc6d4545cbad2cd1f75748cde535930ff1e0e61429dd9516d2a3ccfc494cd"
+    },
+    "identity": {
+      "backend": "native_cdr",
+      "node_ready_wall_ns": 9572996584612,
+      "pid": 45189,
+      "uid": 1000,
+      "pgid": 45189,
+      "start_ticks": 957295,
+      "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/navigation_evidence_recorder",
+      "executable_sha256": "c27bec9986370e781b12ace15e4414c293524d61886ffd864f1c7bb474b56d7a",
+      "source_manifest_sha256": "fbb81796be2e3bcfe1e2f038bec5f0b3d34542dfe122761d430c0f0c7e126324",
+      "module_files": {
+        "integrated_robot_navigation": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/__init__.py",
+        "integrated_robot_runtime": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_runtime/lib/python3.12/site-packages/integrated_robot_runtime/__init__.py",
+        "integrated_robot_vision": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_vision/lib/python3.12/site-packages/integrated_robot_vision/__init__.py"
+      },
+      "spawn_requested_wall_ns": 9572946929219,
+      "parent_ready_received_wall_ns": 9572996769912
+    },
+    "joined": true,
+    "exitcode": 0,
+    "ipc_requests": 4,
+    "error": null
+  },
+  "journal_writer_joined": true,
+  "engine_members": [
+    {
+      "pid": 45224,
+      "ppid": 45221,
+      "pgid": 45221,
+      "start_ticks": 957489,
+      "command": "/usr/bin/ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim -r -s --headless-rendering /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-779b5286-2b9c-4bcf-8648-3880ca07d9f3-prepared/scene/world.sdf --force-version 8 "
+    }
+  ],
+  "engine_returncodes": [
+    0
+  ],
+  "tf_observer_members": [
+    {
+      "pid": 45252,
+      "ppid": 45221,
+      "pgid": 45221,
+      "start_ticks": 957495,
+      "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/tf_provenance",
+      "sha256": "83999d83db5115183ab88138972822d66a5c251db95aad01013c5efa28b5ec39"
+    }
+  ],
+  "tf_observer_returncodes": [
+    0
+  ],
+  "control_clock_members": [
+    {
+      "pid": 45242,
+      "ppid": 45221,
+      "pgid": 45221,
+      "start_ticks": 957494,
+      "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/control_clock_relay",
+      "sha256": "2babee0b1bbeb38686494206befd61bdf6dec3071567533b34ca9d4db3facb9f",
+      "library": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/libnavigation_control_clock.so",
+      "library_sha256": "1dce2de06539c828754c8c7de5db5607ffe9a47bfb96eff136a0130fd6beacdb"
+    }
+  ],
+  "control_clock_returncodes": [
+    0
+  ]
+}

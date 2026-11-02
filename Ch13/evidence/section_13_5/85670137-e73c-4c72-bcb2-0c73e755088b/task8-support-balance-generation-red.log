@@ -1,0 +1,22 @@
+F
+=================================== FAILURES ===================================
+______ test_manual_reset_does_not_rebind_a_previous_generation_load_plan _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_manual_reset_does_not_rebind_a_previous_generation_load_plan(nav_robot_model):
+        value,_,_=planned(nav_robot_model,'stance_admittance')
+        assert value.load_balance_plan is not None
+        old_generation=value.generation
+        plant=IdealFeedback(value.model)
+        value.reset(plant.state,plant.ros,plant.wall)
+        assert value.generation==old_generation+1 and value.state!='FAULT'
+>       assert value.load_balance_plan is None
+E       AssertionError: assert {'candidates': [{'fractions': [0.08434988339762578, 0.4984630847587816, 0.4171870318435926], 'margin_m': 0.02500913763...25, 'path_rejection': None, 'proposed_fractions': [0.23530882306608059, 0.39719459439087346, 0.36749658254304596], ...} is None
+E        +  where {'candidates': [{'fractions': [0.08434988339762578, 0.4984630847587816, 0.4171870318435926], 'margin_m': 0.02500913763...25, 'path_rejection': None, 'proposed_fractions': [0.23530882306608059, 0.39719459439087346, 0.36749658254304596], ...} = <integrated_robot_navigation.gait.CrawlMachine object at 0x7a26b1f00aa0>.load_balance_plan
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support_load_balance_plan.py:78: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support_load_balance_plan.py::test_manual_reset_does_not_rebind_a_previous_generation_load_plan
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 2 deselected in 16.90s

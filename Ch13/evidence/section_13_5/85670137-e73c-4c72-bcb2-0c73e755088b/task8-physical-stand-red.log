@@ -1,0 +1,69 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_actual_actuator_stand_holds_feet_and_tracks_without_root_writes _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_actuator_stand_hol0')
+
+    def test_actual_actuator_stand_holds_feet_and_tracks_without_root_writes(tmp_path):
+        scene = materialize_scene('mujoco', 'g1', tmp_path/'physics-component')
+        model = compile_model(Path(scene['robot']['path']).read_text())
+        native = mujoco.MjModel.from_xml_path(scene['world']['path'])
+        data = mujoco.MjData(native)
+        mujoco.mj_resetDataKeyframe(native, data, 0)
+>       report = stand_probe(native, data, model, default_limits())
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/native_physics_fixture.py:68: in stand_probe
+    bundle = measured_bundle(native, data, model)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+native = <mujoco._structs.MjModel object at 0x7feaeab1e970>
+data = <mujoco._structs.MjData object at 0x7feaeab1cef0>
+model = ModelContract(model_sha256='a7c480ddcb6ca7b75da27c604b630f1169a821edb649b1559b4723e766777ac5', joint_names=('fr_hip_jo...ame="initial_value">0.015</param></state_interface><state_interface name="velocity" /></joint></ros2_control></robot>')
+
+    def measured_bundle(native, data, model):
+        mujoco.mj_forward(native, data)
+        stamp, receipt = int(round(data.time*1e9)), time.monotonic_ns()
+        def sample(frame, value):
+            return Sample(stamp, receipt, 0, stamp, frame, value)
+        position, velocity = {}, {}
+        for name in model.limits:
+            joint = native.joint(name)
+            position[name] = float(data.qpos[joint.qposadr[0]])
+            velocity[name] = float(data.qvel[joint.dofadr[0]])
+        base = native.body('base_link').id
+        root = next(i for i in range(native.njnt) if native.jnt_type[i] == mujoco.mjtJoint.mjJNT_FREE)
+        adr = native.jnt_dofadr[root]
+        rotation = data.xmat[base].reshape(3, 3)
+        w, x, y, z = data.xquat[base]
+        body = dict(position=data.xpos[base].tolist(), orientation=(x, y, z, w),
+            linear_velocity=(rotation.T @ data.qvel[adr:adr+3]).tolist(),
+            angular_velocity=data.qvel[adr+3:adr+6].tolist(), child_frame_id='base_footprint')
+        ground = native.geom('ground').id
+        feet = [native.body(foot).id for foot in model.feet]
+        forces, points, weighted = np.zeros(4), np.zeros((4, 3)), np.zeros(4)
+        unexpected = 0
+        for contact in data.contact:
+            if contact.efc_address < 0:
+                continue
+            index, side = None, 0
+            for i, foot in enumerate(feet):
+                if contact.geom[0] == ground and native.geom_bodyid[contact.geom[1]] == foot:
+                    index, side = i, 1
+                elif contact.geom[1] == ground and native.geom_bodyid[contact.geom[0]] == foot:
+                    index, side = i, -1
+            if index is None:
+                unexpected += 1
+                continue
+            wrench = np.zeros(6)
+>           mujoco.mj_contactForce(native, data, contact.id, wrench)
+                                                 ^^^^^^^^^^
+E           AttributeError: 'mujoco._structs.MjContact' object has no attribute 'id'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/native_physics_fixture.py:48: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py::test_actual_actuator_stand_holds_feet_and_tracks_without_root_writes
+1 failed in 8.53s

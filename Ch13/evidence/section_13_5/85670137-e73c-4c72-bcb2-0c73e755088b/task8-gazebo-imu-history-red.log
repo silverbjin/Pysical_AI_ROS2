@@ -1,0 +1,68 @@
+F.......F                                                                [100%]
+=================================== FAILURES ===================================
+___ test_gazebo_imu_matches_exact_native_odometry_capture_not_latest_cache[] ___
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl.....], 'phases': {'stand': {'ros_duration_s': 10.0, 'wall_duration_s': 10.0}}, 'root_source': 'native_ground_truth', ...}
+fault = ''
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'stamp', 'axis', 'nan', 'frame', 'epoch', 'source'])
+    def test_gazebo_imu_matches_exact_native_odometry_capture_not_latest_cache(observed,fault):
+        references = []
+        for row in observed['frames']:
+            imu = row['samples']['imu']
+            if row['stage'] == 'calibrate':
+                imu['data']['angular_velocity'] = (.01,-.01,.002)
+                row['samples']['body']['stamp_ns'] += 34_000_000
+                row['samples']['body']['data']['angular_velocity'] = (.01,.03,.002)
+            references.append(dict(capture_ns=imu['stamp_ns'],epoch=0,sequence=imu['sequence'],
+                frame_id='base_footprint',source='gazebo_native_odometry',
+                angular_velocity=list(imu['data']['angular_velocity'])))
+        if fault == 'missing': references.pop()
+        elif fault == 'stamp': references[-1]['capture_ns'] += 1
+        elif fault == 'axis': references[-1]['angular_velocity'] = (.01,.010001,.002)
+        elif fault == 'nan': references[-1]['angular_velocity'] = (float('nan'),0.,0.)
+        elif fault == 'frame': references[-1]['frame_id'] = 'odom'
+        elif fault == 'epoch': references[-1]['epoch'] = 1
+        elif fault == 'source': references[-1]['source'] = 'copied_imu'
+        observed['native_body_references'] = references
+        world = '''<sdf><world>'''+''.join(
+            f'<model name="{name}"><link><collision><pose>{pose} 0 0 0</pose>'
+            f'<geometry><box><size>{size}</size></box></geometry></collision></link></model>'
+            for name,pose,size in [('north','0 4.7 .6','9.4 .1 1.2'),
+                ('south','0 -4.7 .6','9.4 .1 1.2'),('east','4.7 0 .6','.1 9.4 1.2'),
+                ('west','-4.7 0 .6','.1 9.4 1.2')])+'''</world></sdf>'''
+        result = api().assess_g1_sensors(observed,world,'gazebo')
+>       assert result['checks']['imu_frame'] is (fault == ''), result
+E       AssertionError: {'checks': {'carry_collision_free': True, 'contact_frames_force': True, 'contact_lift': True, 'imu_frame': False, ...}...149.211081, 'geometry_scope': 'offline_fixed_root_URDF_at_measured_joints', 'gyro_reference_unique_captures': 108, ...}
+E       assert False is ('' == '')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:225: AssertionError
+___ test_gazebo_body_reference_keeps_each_native_capture_independent_of_imu ____
+
+    def test_gazebo_body_reference_keeps_each_native_capture_independent_of_imu():
+        from nav_msgs.msg import Odometry
+        from integrated_robot_navigation.observations import SensorInbox
+        record = SimpleNamespace(engine='gazebo',body_references=[],inbox=SensorInbox(0),errors=[],
+            _write=lambda *_: None)
+        msg = Odometry(child_frame_id='base_footprint')
+        msg.header.frame_id = 'odom'
+        msg.header.stamp.sec = 1
+        msg.pose.pose.orientation.w = 1.
+        msg.twist.twist.angular.x = .1
+        NavigationProbe._sensor(record,'body',msg)
+        msg.header.stamp.sec = 2
+        msg.twist.twist.angular.x = .2
+        NavigationProbe._sensor(record,'body',msg)
+>       assert record.body_references == [dict(capture_ns=i*1_000_000_000,epoch=0,
+            sequence=i*1_000_000_000,frame_id='base_footprint',source='gazebo_native_odometry',
+            angular_velocity=[value,0.,0.]) for i,value in [(1,.1),(2,.2)]]
+E       AssertionError: assert [] == [{'angular_ve...tprint', ...}]
+E         
+E         Right contains 2 more items, first extra item: {'angular_velocity': [0.1, 0.0, 0.0], 'capture_ns': 1000000000, 'epoch': 0, 'frame_id': 'base_footprint', ...}
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:80: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_gazebo_imu_matches_exact_native_odometry_capture_not_latest_cache[]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_gazebo_body_reference_keeps_each_native_capture_independent_of_imu
+2 failed, 7 passed, 51 deselected in 14.86s

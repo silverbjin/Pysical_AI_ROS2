@@ -1,0 +1,18 @@
+F
+=================================== FAILURES ===================================
+_______ test_closed_runner_rotates_old_raw_and_preserves_current_failure _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-3/test_closed_runner_rotates_old0')
+
+    def test_closed_runner_rotates_old_raw_and_preserves_current_failure(tmp_path):
+        old=trial(tmp_path/'old');current=trial(tmp_path/'current')
+        original=(current/'result.json').read_bytes()
+>       result=runner.finalize_evidence_retention(current)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'finalize_evidence_retention'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_retention_runner.py:24: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_retention_runner.py::test_closed_runner_rotates_old_raw_and_preserves_current_failure
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 15.43s

@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_report_exposes_live_phase_and_preload_targets_before_any_fault ______
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x78a0696d05f0>
+
+    def test_report_exposes_live_phase_and_preload_targets_before_any_fault(crawl_rig):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(.08)
+        client = rig.node.create_client(Trigger, '/crawl_controller/report')
+        assert client.wait_for_service(timeout_sec=1.)
+        future = client.call_async(Trigger.Request())
+        deadline = time.monotonic()+1.
+        while not future.done() and time.monotonic() < deadline:
+            rig.pump(.02)
+        assert future.done() and future.result().success
+        report = json.loads(future.result().message)
+>       current = report['current']
+                  ^^^^^^^^^^^^^^^^^
+E       KeyError: 'current'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py:25: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py::test_report_exposes_live_phase_and_preload_targets_before_any_fault
+1 failed, 2 deselected in 10.49s

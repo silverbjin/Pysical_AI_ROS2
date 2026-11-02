@@ -1,0 +1,50 @@
+........................................................................ [ 12%]
+........................................................................ [ 24%]
+........................................................................ [ 36%]
+........................................................................ [ 48%]
+........................................................................ [ 60%]
+........................................................................ [ 72%]
+........................................................................ [ 84%]
+........................................................................ [ 96%]
+.....................                                                    [100%]
+=============================== warnings summary ===============================
+test/test_control_clock_dispatch.py::test_ingress_can_update_while_default_control_group_owns_model_lock[contacts]
+  Warning: Exception in thread Thread-28 (spin)
+  
+  Traceback (most recent call last):
+    File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+      self.run()
+    File "/usr/lib/python3.12/threading.py", line 1010, in run
+      self._target(*self._args, **self._kwargs)
+    File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 359, in spin
+      self._spin_once_impl()
+    File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 1002, in _spin_once_impl
+      self._executor.submit(handler)
+    File "/usr/lib/python3.12/concurrent/futures/thread.py", line 170, in submit
+      raise RuntimeError('cannot schedule new futures after shutdown')
+  RuntimeError: cannot schedule new futures after shutdown
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+test/test_control_clock_runner.py::test_clock_assessor_rejects_each_failed_contract[gid]
+  Warning: coroutine 'Executor._make_handler.<locals>.handler' was never awaited
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/task8-intermittent-navigation-boundary-full.xml -
+============================= slowest 12 durations =============================
+12.90s call     test/test_crawl_turn_clearance.py::test_full_turn_keeps_nonadjacent_thighs_clear_of_trunk[-0.03]
+12.77s call     test/test_crawl_turn_clearance.py::test_full_turn_keeps_nonadjacent_thighs_clear_of_trunk[0.03]
+11.29s call     test/test_carry_manager_ros.py::test_actual_terminal_success_does_not_cover_stuck_arm
+8.62s call     test/test_calibration_preconditioning.py::test_loaded_reference_slew_and_original_unload_bound
+8.42s setup    test/test_carry_manager_ros.py::test_stand_required_before_any_carry_goal
+7.24s call     test/test_probe_receiver_execution.py::test_probe_ingress_survives_a_blocked_caller_and_joins_before_log_close
+6.92s setup    test/test_carry_manager_ros.py::test_report_exposes_received_typed_result_not_only_status
+6.90s setup    test/test_carry_manager_ros.py::test_actual_feedback_loss_still_cancels_and_retains_lease_until_result
+6.60s setup    test/test_carry_manager_ros.py::test_terminal_success_then_actual_settle_for_one_second
+6.43s setup    test/test_carry_manager_ros.py::test_foreign_real_action_cannot_become_this_carry_lease
+6.43s setup    test/test_carry_manager_ros.py::test_actual_velocity_prevents_settle_even_after_terminal
+6.37s setup    test/test_carry_manager_ros.py::test_actual_terminal_success_does_not_cover_stuck_arm
+597 passed, 2 warnings in 392.63s (0:06:32)

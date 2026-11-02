@@ -1,0 +1,52 @@
+F.F                                                                      [100%]
+=================================== FAILURES ===================================
+__ test_g1_retains_original_shift_geometry_and_configured_acceleration_bound ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g1_retains_original_shift_geometry_and_configured_acceleration_bound(nav_robot_model):
+        plant=IdealFeedback(nav_robot_model)
+        normal,calibration=(machine(nav_robot_model,plant) for _ in range(2))
+        calibration.request_contact_calibration()
+        for value in (normal,calibration):
+            q,_,_,loads,points,com=value._measure(plant.state,plant.ros,plant.wall)
+            value._begin_shift(com,loads,points,plant.ros,q)
+            list(value._shift_plan)
+        assert np.allclose(normal._offset_goal,calibration._offset_goal,atol=1e-12)
+        assert normal.limits==calibration.limits
+>       assert math.isclose(calibration._shift_duration/normal._shift_duration,1.,rel_tol=1e-9)
+E       assert False
+E        +  where False = <built-in function isclose>((2.4232077911592658 / 1.713466661352792), 1.0, rel_tol=1e-09)
+E        +    where <built-in function isclose> = math.isclose
+E        +    and   2.4232077911592658 = <integrated_robot_navigation.gait.CrawlMachine object at 0x7d89c335c8c0>._shift_duration
+E        +    and   1.713466661352792 = <integrated_robot_navigation.gait.CrawlMachine object at 0x7d89c1e771d0>._shift_duration
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_shift_dynamics.py:18: AssertionError
+_ test_batched_g1_retains_identical_goal_duration_and_starts_curve_only_after_planning _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_batched_g1_retains_identical_goal_duration_and_starts_curve_only_after_planning(nav_robot_model):
+        plant=IdealFeedback(nav_robot_model)
+        expected=prepared(nav_robot_model,plant,True);list(expected._shift_plan)
+        actual=prepared(nav_robot_model,plant,True)
+        for _ in range(20):
+            result=actual.advance(plant.state,(0.,0.,0.),plant.ros,plant.wall)
+            assert result.state!='FAULT',result.reason
+            if actual._shift_plan is None:
+                assert actual._phase_start==plant.ros
+                break
+            assert np.array_equal(actual.offset,actual._offset_start)
+            plant.tick(actual,result)
+        else:raise AssertionError('bounded G1 planner never completed')
+        assert np.array_equal(actual._offset_goal,expected._offset_goal)
+        assert actual._shift_duration==expected._shift_duration
+>       assert actual._shift_accel_budget==expected._shift_accel_budget==.1
+E       assert 0.05 == 0.1
+E        +  where 0.05 = <integrated_robot_navigation.gait.CrawlMachine object at 0x7d89b659a660>._shift_accel_budget
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_planning_budget.py:48: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_shift_dynamics.py::test_g1_retains_original_shift_geometry_and_configured_acceleration_bound
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_planning_budget.py::test_batched_g1_retains_identical_goal_duration_and_starts_curve_only_after_planning
+2 failed, 1 passed in 10.60s

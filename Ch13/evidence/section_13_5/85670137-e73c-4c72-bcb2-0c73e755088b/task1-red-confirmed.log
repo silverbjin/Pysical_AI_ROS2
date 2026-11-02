@@ -1,0 +1,340 @@
+FFFFFFFFFFFFFFF                                                          [100%]
+=================================== FAILURES ===================================
+_________________________ test_contact_wire_roundtrip __________________________
+
+    def test_contact_wire_roundtrip():
+>       assert hasattr(messages, 'FootContacts'), 'FootContacts IDL is missing'
+E       AssertionError: FootContacts IDL is missing
+E       assert False
+E        +  where False = hasattr(messages, 'FootContacts')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py:8: AssertionError
+_________ test_approach_wire_keeps_source_capture_separate_from_target _________
+
+    def test_approach_wire_keeps_source_capture_separate_from_target():
+>       assert hasattr(actions, 'ApproachObject'), 'ApproachObject IDL is missing'
+E       AssertionError: ApproachObject IDL is missing
+E       assert False
+E        +  where False = hasattr(actions, 'ApproachObject')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py:25: AssertionError
+_________________________ test_motion_state_roundtrip __________________________
+
+    def test_motion_state_roundtrip():
+>       assert hasattr(messages, 'MotionState'), 'MotionState IDL is missing'
+E       AssertionError: MotionState IDL is missing
+E       assert False
+E        +  where False = hasattr(messages, 'MotionState')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py:39: AssertionError
+_______________________ test_named_actual_robot_contract _______________________
+
+urdf = '<?xml version="1.0" ?><!-- =================================================================================== --><!-... name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'
+
+    def test_named_actual_robot_contract(urdf):
+>       model = model_api().compile_model(urdf)
+                ^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model.py:21: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model.py:10: in model_api
+    assert importlib.util.find_spec('integrated_robot_navigation.model'), 'model compiler missing'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.model', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+___ test_epoch_and_names_reject_invalid_model[name="fr_foot"-name="fl_foot"] ___
+
+urdf = '<?xml version="1.0" ?><!-- =================================================================================== --><!-... name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'
+old = 'name="fr_foot"', new = 'name="fl_foot"'
+
+    @pytest.mark.parametrize('old,new', [
+        ('name="fr_foot"', 'name="fl_foot"'),
+        ('parent link="fr_calf_link"', 'parent link="nonexistent"'),
+    ])
+    def test_epoch_and_names_reject_invalid_model(urdf, old, new):
+        with pytest.raises(ValueError):
+>           model_api().compile_model(urdf.replace(old, new))
+            ^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model.py:10: in model_api
+    assert importlib.util.find_spec('integrated_robot_navigation.model'), 'model compiler missing'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.model', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+_ test_epoch_and_names_reject_invalid_model[parent link="fr_calf_link"-parent link="nonexistent"] _
+
+urdf = '<?xml version="1.0" ?><!-- =================================================================================== --><!-... name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'
+old = 'parent link="fr_calf_link"', new = 'parent link="nonexistent"'
+
+    @pytest.mark.parametrize('old,new', [
+        ('name="fr_foot"', 'name="fl_foot"'),
+        ('parent link="fr_calf_link"', 'parent link="nonexistent"'),
+    ])
+    def test_epoch_and_names_reject_invalid_model(urdf, old, new):
+        with pytest.raises(ValueError):
+>           model_api().compile_model(urdf.replace(old, new))
+            ^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model.py:10: in model_api
+    assert importlib.util.find_spec('integrated_robot_navigation.model'), 'model compiler missing'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.model', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+___________________ test_duplicate_does_not_refresh_receipt ____________________
+
+    def test_duplicate_does_not_refresh_receipt():
+>       api = sample_api()
+              ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:9: in sample_api
+    spec = importlib.util.find_spec('integrated_robot_navigation.samples')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.samples', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+_________________ test_reject_invalid_samples[changes0-epoch] __________________
+
+changes = {'epoch': 3}, reason = 'epoch'
+
+    @pytest.mark.parametrize('changes,reason', [
+        ({'epoch': 3}, 'epoch'), ({'stamp_ns': 1_000_000_001}, 'ros_age'),
+        ({'received_ns': 10_000_000_001}, 'wall_age'),
+        ({'data': (float('nan'),)}, 'nonfinite'),
+        ({'data': (float('inf'),)}, 'nonfinite'), ({'frame_id': ''}, 'frame'),
+    ])
+    def test_reject_invalid_samples(changes, reason):
+>       api = sample_api()
+              ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:9: in sample_api
+    spec = importlib.util.find_spec('integrated_robot_navigation.samples')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.samples', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+________________ test_reject_invalid_samples[changes1-ros_age] _________________
+
+changes = {'stamp_ns': 1000000001}, reason = 'ros_age'
+
+    @pytest.mark.parametrize('changes,reason', [
+        ({'epoch': 3}, 'epoch'), ({'stamp_ns': 1_000_000_001}, 'ros_age'),
+        ({'received_ns': 10_000_000_001}, 'wall_age'),
+        ({'data': (float('nan'),)}, 'nonfinite'),
+        ({'data': (float('inf'),)}, 'nonfinite'), ({'frame_id': ''}, 'frame'),
+    ])
+    def test_reject_invalid_samples(changes, reason):
+>       api = sample_api()
+              ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:9: in sample_api
+    spec = importlib.util.find_spec('integrated_robot_navigation.samples')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.samples', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+________________ test_reject_invalid_samples[changes2-wall_age] ________________
+
+changes = {'received_ns': 10000000001}, reason = 'wall_age'
+
+    @pytest.mark.parametrize('changes,reason', [
+        ({'epoch': 3}, 'epoch'), ({'stamp_ns': 1_000_000_001}, 'ros_age'),
+        ({'received_ns': 10_000_000_001}, 'wall_age'),
+        ({'data': (float('nan'),)}, 'nonfinite'),
+        ({'data': (float('inf'),)}, 'nonfinite'), ({'frame_id': ''}, 'frame'),
+    ])
+    def test_reject_invalid_samples(changes, reason):
+>       api = sample_api()
+              ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:9: in sample_api
+    spec = importlib.util.find_spec('integrated_robot_navigation.samples')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.samples', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+_______________ test_reject_invalid_samples[changes3-nonfinite] ________________
+
+changes = {'data': (nan,)}, reason = 'nonfinite'
+
+    @pytest.mark.parametrize('changes,reason', [
+        ({'epoch': 3}, 'epoch'), ({'stamp_ns': 1_000_000_001}, 'ros_age'),
+        ({'received_ns': 10_000_000_001}, 'wall_age'),
+        ({'data': (float('nan'),)}, 'nonfinite'),
+        ({'data': (float('inf'),)}, 'nonfinite'), ({'frame_id': ''}, 'frame'),
+    ])
+    def test_reject_invalid_samples(changes, reason):
+>       api = sample_api()
+              ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:9: in sample_api
+    spec = importlib.util.find_spec('integrated_robot_navigation.samples')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.samples', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+_______________ test_reject_invalid_samples[changes4-nonfinite] ________________
+
+changes = {'data': (inf,)}, reason = 'nonfinite'
+
+    @pytest.mark.parametrize('changes,reason', [
+        ({'epoch': 3}, 'epoch'), ({'stamp_ns': 1_000_000_001}, 'ros_age'),
+        ({'received_ns': 10_000_000_001}, 'wall_age'),
+        ({'data': (float('nan'),)}, 'nonfinite'),
+        ({'data': (float('inf'),)}, 'nonfinite'), ({'frame_id': ''}, 'frame'),
+    ])
+    def test_reject_invalid_samples(changes, reason):
+>       api = sample_api()
+              ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:9: in sample_api
+    spec = importlib.util.find_spec('integrated_robot_navigation.samples')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.samples', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+_________________ test_reject_invalid_samples[changes5-frame] __________________
+
+changes = {'frame_id': ''}, reason = 'frame'
+
+    @pytest.mark.parametrize('changes,reason', [
+        ({'epoch': 3}, 'epoch'), ({'stamp_ns': 1_000_000_001}, 'ros_age'),
+        ({'received_ns': 10_000_000_001}, 'wall_age'),
+        ({'data': (float('nan'),)}, 'nonfinite'),
+        ({'data': (float('inf'),)}, 'nonfinite'), ({'frame_id': ''}, 'frame'),
+    ])
+    def test_reject_invalid_samples(changes, reason):
+>       api = sample_api()
+              ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:9: in sample_api
+    spec = importlib.util.find_spec('integrated_robot_navigation.samples')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.samples', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+_____________________ test_age_boundary_and_missing_bundle _____________________
+
+    def test_age_boundary_and_missing_bundle():
+>       api = sample_api()
+              ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:9: in sample_api
+    spec = importlib.util.find_spec('integrated_robot_navigation.samples')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.samples', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+____________ test_epoch_reset_and_out_of_order_never_replace_newer _____________
+
+    def test_epoch_reset_and_out_of_order_never_replace_newer():
+>       api = sample_api()
+              ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py:9: in sample_api
+    spec = importlib.util.find_spec('integrated_robot_navigation.samples')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'integrated_robot_navigation.samples', package = None
+
+>   ???
+E   ModuleNotFoundError: No module named 'integrated_robot_navigation'
+
+<frozen importlib.util>:92: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py::test_contact_wire_roundtrip
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py::test_approach_wire_keeps_source_capture_separate_from_target
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_interfaces.py::test_motion_state_roundtrip
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model.py::test_named_actual_robot_contract
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model.py::test_epoch_and_names_reject_invalid_model[name="fr_foot"-name="fl_foot"]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model.py::test_epoch_and_names_reject_invalid_model[parent link="fr_calf_link"-parent link="nonexistent"]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_duplicate_does_not_refresh_receipt
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes0-epoch]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes1-ros_age]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes2-wall_age]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes3-nonfinite]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes4-nonfinite]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_reject_invalid_samples[changes5-frame]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_age_boundary_and_missing_bundle
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_samples.py::test_epoch_reset_and_out_of_order_never_replace_newer
+15 failed in 3.30s

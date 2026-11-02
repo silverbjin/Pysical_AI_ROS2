@@ -9,6 +9,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/PickObject.action"
   "srv/SetMode.srv"
   "msg/TrackedTarget.msg"
+  "msg/FootContacts.msg"
+  "msg/MotionState.msg"
+  "action/ApproachObject.action"
   DEPENDENCIES geometry_msgs std_msgs builtin_interfaces
 )
 ament_export_dependencies(rosidl_default_runtime)

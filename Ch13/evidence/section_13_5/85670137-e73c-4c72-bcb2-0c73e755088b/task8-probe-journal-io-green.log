@@ -1,0 +1,84 @@
+.....F
+=================================== FAILURES ===================================
+_ test_g2_archive_is_bounded_live_and_restores_every_original_record_after_join _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_g2_archive_is_bounded_liv0')
+
+    def test_g2_archive_is_bounded_live_and_restores_every_original_record_after_join(tmp_path):
+        context=Context();rclpy.init(context=context);probe=None
+        callbacks=tuple(gc.callbacks)
+        try:
+            probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+            for index in range(600):
+                row=dict(ros_ns=index,wall_ns=index+10,stage='forward',samples={'original':index})
+>               probe._write('frame',row);probe.frames.append(row)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_bounded_history.py:17: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/scripts/probe_navigation_13_5.py:333: in _write
+    if self.journal is not None:self.journal.submit(encoded)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ch13/scripts/probe_navigation_13_5.py:61: in submit
+    self.condition.notify_all();self._check()
+                                ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <probe_navigation_13_5.EvidenceJournal object at 0x78ed2872f1a0>
+
+    def _check(self):
+>       if self.error is not None:raise RuntimeError('observation journal failed: '+self.error)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: observation journal failed: journal capacity exceeded
+
+Ch13/scripts/probe_navigation_13_5.py:51: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_g2_archive_is_bounded_liv0')
+
+    def test_g2_archive_is_bounded_live_and_restores_every_original_record_after_join(tmp_path):
+        context=Context();rclpy.init(context=context);probe=None
+        callbacks=tuple(gc.callbacks)
+        try:
+            probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+            for index in range(600):
+                row=dict(ros_ns=index,wall_ns=index+10,stage='forward',samples={'original':index})
+                probe._write('frame',row);probe.frames.append(row)
+                row=dict(capture_ns=index,sequence=index,stage='forward',original={'value':index})
+                probe._write('native_controls',row);probe.native_controls.append(row)
+            assert len(probe.frames)<=128 and len(probe.native_controls)<=128
+            assert probe.latest_frame()['ros_ns']==599
+            with pytest.raises(RuntimeError,match='joined'):probe.restore_history(receiver_joined=False)
+            probe.restore_history(receiver_joined=True)
+            assert [row['ros_ns'] for row in probe.frames]==list(range(600))
+            assert [row['capture_ns'] for row in probe.native_controls]==list(range(600))
+            assert probe.native_controls[0]['original']=={'value':0}
+            assert tuple(gc.callbacks)==callbacks,'global diagnostic callback leaked after live observation'
+        finally:
+>           if probe is not None:probe.close_log();probe.destroy_node()
+                                 ^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_bounded_history.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/scripts/probe_navigation_13_5.py:516: in close_log
+    self.flush_log(final=True)
+Ch13/scripts/probe_navigation_13_5.py:520: in flush_log
+    if final:self.journal.close()
+             ^^^^^^^^^^^^^^^^^^^^
+Ch13/scripts/probe_navigation_13_5.py:112: in close
+    self._check()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <probe_navigation_13_5.EvidenceJournal object at 0x78ed2872f1a0>
+
+    def _check(self):
+>       if self.error is not None:raise RuntimeError('observation journal failed: '+self.error)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: observation journal failed: journal capacity exceeded
+
+Ch13/scripts/probe_navigation_13_5.py:51: RuntimeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_bounded_history.py::test_g2_archive_is_bounded_live_and_restores_every_original_record_after_join
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 5 passed in 15.63s

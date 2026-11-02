@@ -1,0 +1,37 @@
+F
+=================================== FAILURES ===================================
+______ test_native_ingress_keeps_original_receipts_while_main_queue_waits ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_native_ingress_keeps_orig0')
+
+    def test_native_ingress_keeps_original_receipts_while_main_queue_waits(tmp_path):
+        context=Context();rclpy.init(context=context)
+        probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+        peer=Node('isolated_probe_input_peer',context=context)
+        publisher=peer.create_publisher(FootContacts,'/navigation/foot_contacts',qos_profile_sensor_data)
+        entered,release=threading.Event(),threading.Event();receiver=None
+        def blocked():
+            timer.cancel();entered.set();assert release.wait(3.)
+        timer=probe.create_timer(.01,blocked,clock=Clock(clock_type=ClockType.STEADY_TIME))
+        try:
+            receiver=ProbeReceiver(probe);assert entered.wait(1.)
+            message=FootContacts();message.header.frame_id='odom'
+            message.names=['fr_foot','fl_foot','rr_foot','rl_foot']
+            sent=time.monotonic_ns();message.header.stamp.sec=17;message.sequence=77
+            deadline=time.monotonic()+.15;selected=None
+            while time.monotonic()<deadline:
+                publisher.publish(message);time.sleep(.005)
+                with probe._lock:selected=probe.inbox.pending['contacts'].get(17_000_000_000)
+                if selected is not None:break
+>           assert selected is not None,'native capture waited behind the blocked main queue'
+E           AssertionError: native capture waited behind the blocked main queue
+E           assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_ingress_isolation.py:34: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792984628.725514866] [navigation_native_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792984628.756903688] [navigation_probe_recording]: Serial navigation callbacks use EventsExecutor
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_ingress_isolation.py::test_native_ingress_keeps_original_receipts_while_main_queue_waits
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.17s

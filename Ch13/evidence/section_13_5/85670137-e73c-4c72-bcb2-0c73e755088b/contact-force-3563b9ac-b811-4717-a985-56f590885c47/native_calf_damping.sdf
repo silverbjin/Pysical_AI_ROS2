@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<sdf version="1.10">
+  <world name="force_semantics">
+    <gravity>0 0 0</gravity><model name="ground"><static>true</static><link name="ground"><collision name="ground"><geometry><plane><normal>0 0 1</normal><size>10 10</size></plane></geometry></collision></link></model>
+    <physics name="fixed_2ms" type="ignored">
+      <max_step_size>0.002</max_step_size>
+      <real_time_factor>0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics">
+      <engine><filename>gz-physics-dartsim-plugin</filename></engine>
+    </plugin>
+    <model name="known_inertia"><pose>0 0 0.2 0 0 0</pose>
+      <link name="rotor">
+        <collision name="tip"><pose>0.1 0 -0.19 0 0 0</pose><geometry><sphere><radius>0.01</radius></sphere></geometry></collision><inertial>
+          <mass>1</mass>
+          <inertia><ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz></inertia>
+        </inertial>
+      </link>
+      <joint name="drive" type="revolute">
+        <parent>world</parent><child>rotor</child>
+        <axis>
+          <xyz>0 1 0</xyz>
+          <limit><lower>-100</lower><upper>100</upper><effort>10</effort><velocity>100</velocity></limit>
+          <dynamics><damping>10.954451150103322</damping><friction>0</friction></dynamics>
+        </axis>
+      </joint>
+    </model>
+  </world>
+</sdf>

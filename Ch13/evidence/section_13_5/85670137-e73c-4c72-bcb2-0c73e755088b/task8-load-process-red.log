@@ -1,0 +1,27 @@
+F
+=================================== FAILURES ===================================
+_________ test_prepare_is_numeric_only_idempotent_and_normally_reaped __________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_prepare_is_numeric_only_idempotent_and_normally_reaped(nav_robot_model):
+>       model,_=inputs(nav_robot_model);worker=api()(model)
+                                               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.load_process'), \
+            'numerical execution still shares the ROS callback interpreter'
+E       AssertionError: numerical execution still shares the ROS callback interpreter
+E       assert None
+E        +  where None = <function find_spec at 0x7f71d19c0720>('integrated_robot_navigation.load_process')
+E        +    where <function find_spec at 0x7f71d19c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:10: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_prepare_is_numeric_only_idempotent_and_normally_reaped
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 13.22s

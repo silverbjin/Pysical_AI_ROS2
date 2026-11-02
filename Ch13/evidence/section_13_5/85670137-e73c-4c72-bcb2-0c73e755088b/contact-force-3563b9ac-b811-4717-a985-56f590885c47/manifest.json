@@ -1,0 +1,220 @@
+{
+  "scope": "contact_damping_semantics_not_robot_acceptance",
+  "inputs": {
+    "force_probe.cpp": "3d17a6381bec69d8793ff7a14383fe35f8a1df754c3b23d3963679ed82aad154",
+    "force_probe.sdf": "caefe645919f74cd623510a235a8aa51f1f8e390952080e47e28446aeec9fbda",
+    "inspect_existing_boundaries.py": "85489071da7a0d00a256495b8373cbfe80299c821139088bdf4ac7310a054d10",
+    "run_constraint_probe.py": "80bad45e45c11a77f3de96e9505714142841b70bca289f83026ff83c60ae7381",
+    "run_contact_probe.py": "4f5b3ae9b6d97be8cc5d0fc747b2a72e50dbcfcd49308dacf7db3426d66ae707",
+    "run_probe.py": "bb0ccec60e3f4c092b26abf00f00b9465215ad9c9a2ca1871add0f2f343ad2f7"
+  },
+  "conditions_predefined": {
+    "no_damping": 0.0,
+    "native_calf_damping": 10.954451150103322
+  },
+  "commands": [
+    {
+      "label": "build",
+      "argv": [
+        "g++",
+        "-O2",
+        "-std=c++17",
+        "/mnt/c/Users/Jinho/Documents/Codex/2026-11-02/13-5-2026-11-02-task8/work/force_probe/force_probe.cpp",
+        "-o",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/contact-force-3563b9ac-b811-4717-a985-56f590885c47/force_probe",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/sim8",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/cmake3",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/sdformat14",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/math7",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/utils2",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/plugin2",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/transport13",
+        "-I/usr/include/uuid",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/msgs10",
+        "-I/usr/include/pgm-5.3",
+        "-I/usr/include/libxml2",
+        "-I/usr/include/x86_64-linux-gnu",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/common5",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/fuel_tools9",
+        "-I/usr/include/jsoncpp",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/gui8",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/rendering8",
+        "-DQT_CORE_LIB",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
+        "-I/usr/include/x86_64-linux-gnu/qt5",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtQuick",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtGui",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtQml",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtNetwork",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtQmlModels",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtQuickControls2",
+        "-DQT_WIDGETS_LIB",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
+        "-DQT_QUICKCONTROLS2_LIB",
+        "-DQT_QUICK_LIB",
+        "-DQT_GUI_LIB",
+        "-DQT_QMLMODELS_LIB",
+        "-DQT_QML_LIB",
+        "-DQT_NETWORK_LIB",
+        "-DQT_CORE_LIB",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/physics7",
+        "-I/usr/include/eigen3",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/sensors8",
+        "-isystem",
+        "/usr/include/mit-krb5",
+        "-std=c++17",
+        "-L/usr/lib/x86_64-linux-gnu/pkgconfig/../../../lib/x86_64-linux-gnu",
+        "-lgz-sim8",
+        "-lgz-fuel_tools9",
+        "-lgz-gui8",
+        "-lQt5Widgets",
+        "-lQt5QuickControls2",
+        "-lQt5Quick",
+        "-lQt5Gui",
+        "-lQt5QmlModels",
+        "-lQt5Qml",
+        "-lQt5Network",
+        "-lQt5Core",
+        "-lgz-physics7",
+        "-lgz-sensors8",
+        "-lgz-transport13",
+        "-lgz-msgs10",
+        "-lsdformat14",
+        "-ltinyxml2",
+        "-lgz-rendering8",
+        "-lgz-common5",
+        "-luuid",
+        "-lgz-plugin2",
+        "-lGL",
+        "-lgz-math7",
+        "-lgz-utils2",
+        "-lprotobuf"
+      ]
+    },
+    {
+      "label": "no_damping",
+      "argv": [
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/contact-force-3563b9ac-b811-4717-a985-56f590885c47/force_probe",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/contact-force-3563b9ac-b811-4717-a985-56f590885c47/no_damping.sdf",
+        "contact_static"
+      ]
+    },
+    {
+      "label": "native_calf_damping",
+      "argv": [
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/contact-force-3563b9ac-b811-4717-a985-56f590885c47/force_probe",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/contact-force-3563b9ac-b811-4717-a985-56f590885c47/native_calf_damping.sdf",
+        "contact_static"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "label": "build",
+      "returncode": 0
+    },
+    {
+      "label": "no_damping",
+      "returncode": 0
+    },
+    {
+      "label": "native_calf_damping",
+      "returncode": 0
+    }
+  ],
+  "binary_sha256": "8b9e6801a9b0fc791efee54f7ce8b40568fbf11ce6f07f230718667c645a3bfb",
+  "summary": {
+    "no_damping": {
+      "first_drive": [
+        {
+          "step": "10",
+          "time_ns": "22000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.20000000000000001",
+          "wrench_y_nm": "1",
+          "contact_z_n": "0"
+        },
+        {
+          "step": "11",
+          "time_ns": "24000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "-0.0019886947427853463",
+          "wrench_y_nm": "1",
+          "contact_z_n": "60.375577285314883"
+        },
+        {
+          "step": "12",
+          "time_ns": "26000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "-0.0019748560012473049",
+          "wrench_y_nm": "1",
+          "contact_z_n": "30.035988209636759"
+        }
+      ],
+      "last": {
+        "step": "1009",
+        "time_ns": "2020000000",
+        "dt_ns": "2000000",
+        "post_command_nm": "0",
+        "velocity_rad_s": "-5.9547757316757988e-07",
+        "wrench_y_nm": "1",
+        "contact_z_n": "12.977403452390938"
+      }
+    },
+    "native_calf_damping": {
+      "first_drive": [
+        {
+          "step": "10",
+          "time_ns": "22000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.062678433158982333",
+          "wrench_y_nm": "0.31339216579491169",
+          "contact_z_n": "0"
+        },
+        {
+          "step": "11",
+          "time_ns": "24000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "-0.00062437019547124939",
+          "wrench_y_nm": "0.098214649581625457",
+          "contact_z_n": "12.446966775932065"
+        },
+        {
+          "step": "12",
+          "time_ns": "26000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "-0.00061872044251523595",
+          "wrench_y_nm": "0.31553565313318527",
+          "contact_z_n": "9.4690696926878299"
+        }
+      ],
+      "last": {
+        "step": "1009",
+        "time_ns": "2020000000",
+        "dt_ns": "2000000",
+        "post_command_nm": "0",
+        "velocity_rad_s": "-1.8665348366919687e-07",
+        "wrench_y_nm": "0.31339280980352774",
+        "contact_z_n": "4.0671970152004722"
+      }
+    }
+  },
+  "residual_process_lines": [],
+  "output_sha256": {
+    "no_damping.stdout": "f579665ef68a867b817b109c9f4e1da8d57fd8edf9f469ce9c261dcdded85451",
+    "native_calf_damping.sdf": "fd89179a5375eed400f2bc901d2a5b141d6e4c0487a9d683b31f918955aa835a",
+    "build.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "no_damping.sdf": "684c45057066979a5cee1f319b1b00a41315e1afe5296eb8e53541d513bf1e59",
+    "force_probe": "8b9e6801a9b0fc791efee54f7ce8b40568fbf11ce6f07f230718667c645a3bfb",
+    "no_damping.stderr": "0a27529400185c40a49a413b4e7040fcaf60d46cdcd9a44ab179c20b579af2e2",
+    "native_calf_damping.stderr": "3a556d3ba18a631c1fb7cd518fe305fc2b8c2817616785b4e3e3b2cf2a3d1ea7",
+    "native_calf_damping.stdout": "538334155b26d0adbac717463fa5decd30478291a6c09e2272e89154b15d5589",
+    "build.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

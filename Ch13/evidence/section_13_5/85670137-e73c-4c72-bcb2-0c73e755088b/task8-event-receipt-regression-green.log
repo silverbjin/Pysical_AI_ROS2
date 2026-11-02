@@ -1,0 +1,143 @@
+.F
+=================================== FAILURES ===================================
+_______ test_one_outstanding_job_preserves_context_and_yields_no_command _______
+
+self = <integrated_robot_navigation.load_process.SpatialLoadProcess object at 0x78a2ade05ac0>
+
+    def poll(self,*,now_wall_ns=None):
+        if self._ready is not None and not self._closed and self._process.poll() is not None:
+            self._fault='numerical worker exited before close'
+            raise ValueError('transition optimization worker: '+self._fault)
+        if self._pending is None:return None
+        if self._fault:raise ValueError('numerical worker latched: '+self._fault)
+        now=time.monotonic_ns() if now_wall_ns is None else now_wall_ns
+        try:
+            job=self._pending
+            if not job['discarded'] and now<job['submitted_wall_ns']:
+                raise ValueError('transition optimization dispatch deadline')
+            if self._receipts is not None:
+                complete=self._receipts.take()
+                if complete is None:
+                    if not job['discarded'] and not 0<=now-job['submitted_wall_ns']<=DISPATCH_NS:
+                        raise ValueError('transition optimization dispatch deadline')
+                    return None
+                message,received=complete
+            else:
+                if not job['discarded'] and not 0<=now-job['submitted_wall_ns']<=DISPATCH_NS:
+                    raise ValueError('transition optimization dispatch deadline')
+                message=self._receive_once()
+                if message is None:return None
+                received=time.monotonic_ns()
+            if message.get('kind')!='result' or message.get('id')!=job['id']:
+                raise ValueError('numerical result identity mismatch')
+            consumed=max(now,time.monotonic_ns()) if self._receipts is not None else received
+            # Identity has been validated and the frame has been consumed.
+            # Retire its transport lifetime even when it is too late to use.
+            # Otherwise close can receive STOPPED with a permanently pending
+            # job whose sole reply was already removed from the stream.
+            self._pending=None;self.last_attempt=message.get('attempt')
+            self._last_reply=dict(id=job['id'],submitted_wall_ns=job['submitted_wall_ns'],
+                poll_started_wall_ns=now,received_wall_ns=received,
+                computed_wall_ns=message.get('computed_wall_ns'),ok=message.get('ok') is True,
+                numeric_error=None if message.get('ok') is True else str(message.get('error','numerical result failed')),
+                dispatch_deadline_ns=DISPATCH_NS,receipt_mode=self.receipt_mode,
+                consumed_wall_ns=consumed)
+            if message.get('ok') is not True:self._failed+=1
+            if not job['discarded'] and not 0<=received-job['submitted_wall_ns']<=DISPATCH_NS:
+                self._discarded+=1;job['discarded']=True
+                raise ValueError('transition optimization dispatch deadline')
+            if (self._receipts is not None and not job['discarded']
+                    and not 0<=consumed-job['submitted_wall_ns']<=CONSUMPTION_NS):
+                self._discarded+=1;job['discarded']=True
+                raise ValueError('transition optimization consumed result wall age')
+            if message.get('ok') is not True:
+>               raise ValueError(str(message.get('error','numerical result failed')))
+E               ValueError: transition optimization time budget
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py:264: ValueError
+
+The above exception was the direct cause of the following exception:
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_one_outstanding_job_preserves_context_and_yields_no_command(nav_robot_model):
+        model,args=inputs(nav_robot_model);worker=api()(model);worker.prepare()
+        context=dict(generation=7,foot=args['foot'],capture_ros_ns=123,capture_wall_ns=456)
+        try:
+            worker.submit(args,context)
+            with pytest.raises(ValueError,match='outstanding'):worker.submit(args,dict(context,generation=8))
+>           result=take(worker)
+                   ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:20: in take
+    result=worker.poll()
+           ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.load_process.SpatialLoadProcess object at 0x78a2ade05ac0>
+
+    def poll(self,*,now_wall_ns=None):
+        if self._ready is not None and not self._closed and self._process.poll() is not None:
+            self._fault='numerical worker exited before close'
+            raise ValueError('transition optimization worker: '+self._fault)
+        if self._pending is None:return None
+        if self._fault:raise ValueError('numerical worker latched: '+self._fault)
+        now=time.monotonic_ns() if now_wall_ns is None else now_wall_ns
+        try:
+            job=self._pending
+            if not job['discarded'] and now<job['submitted_wall_ns']:
+                raise ValueError('transition optimization dispatch deadline')
+            if self._receipts is not None:
+                complete=self._receipts.take()
+                if complete is None:
+                    if not job['discarded'] and not 0<=now-job['submitted_wall_ns']<=DISPATCH_NS:
+                        raise ValueError('transition optimization dispatch deadline')
+                    return None
+                message,received=complete
+            else:
+                if not job['discarded'] and not 0<=now-job['submitted_wall_ns']<=DISPATCH_NS:
+                    raise ValueError('transition optimization dispatch deadline')
+                message=self._receive_once()
+                if message is None:return None
+                received=time.monotonic_ns()
+            if message.get('kind')!='result' or message.get('id')!=job['id']:
+                raise ValueError('numerical result identity mismatch')
+            consumed=max(now,time.monotonic_ns()) if self._receipts is not None else received
+            # Identity has been validated and the frame has been consumed.
+            # Retire its transport lifetime even when it is too late to use.
+            # Otherwise close can receive STOPPED with a permanently pending
+            # job whose sole reply was already removed from the stream.
+            self._pending=None;self.last_attempt=message.get('attempt')
+            self._last_reply=dict(id=job['id'],submitted_wall_ns=job['submitted_wall_ns'],
+                poll_started_wall_ns=now,received_wall_ns=received,
+                computed_wall_ns=message.get('computed_wall_ns'),ok=message.get('ok') is True,
+                numeric_error=None if message.get('ok') is True else str(message.get('error','numerical result failed')),
+                dispatch_deadline_ns=DISPATCH_NS,receipt_mode=self.receipt_mode,
+                consumed_wall_ns=consumed)
+            if message.get('ok') is not True:self._failed+=1
+            if not job['discarded'] and not 0<=received-job['submitted_wall_ns']<=DISPATCH_NS:
+                self._discarded+=1;job['discarded']=True
+                raise ValueError('transition optimization dispatch deadline')
+            if (self._receipts is not None and not job['discarded']
+                    and not 0<=consumed-job['submitted_wall_ns']<=CONSUMPTION_NS):
+                self._discarded+=1;job['discarded']=True
+                raise ValueError('transition optimization consumed result wall age')
+            if message.get('ok') is not True:
+                raise ValueError(str(message.get('error','numerical result failed')))
+            if job['discarded']:return None
+            self._completed+=1;self.last_model=message['model']
+            return dict(delta=message['delta'],context=job['context'],job_id=job['id'],
+                submitted_wall_ns=job['submitted_wall_ns'],received_wall_ns=received,
+                computed_wall_ns=message['computed_wall_ns'],numeric_input=job['numeric_input'])
+        except (ValueError,OSError,json.JSONDecodeError) as error:
+            self._fault=str(error)
+>           raise ValueError('transition optimization worker: '+str(error)) from error
+E           ValueError: transition optimization worker: transition optimization time budget
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py:272: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_one_outstanding_job_preserves_context_and_yields_no_command
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 passed in 62.44s (0:01:02)

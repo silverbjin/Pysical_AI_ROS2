@@ -1,0 +1,46 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_prismatic_gripper_does_not_use_arm_radian_tolerances[0.003-0.0] _____
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7676ac9d6cc0>
+error = 0.003, velocity = 0.0
+
+    @pytest.mark.parametrize('error,velocity', [(.003, 0.), (0., .006)])
+    def test_prismatic_gripper_does_not_use_arm_radian_tolerances(carry_rig, error, velocity):
+        rig = carry_rig
+        rig.gripper_error, rig.gripper_velocity = error, velocity
+        rig.pump(.04)
+        assert rig.call(rig.prepare).success
+        rig.release.set()
+        rig.pump(1.2)
+        assert rig.manager.record.terminal
+>       assert not rig.states[-1].ready, '3mm error or 6mm/s is not the measured unloaded gripper hold'
+E       AssertionError: 3mm error or 6mm/s is not the measured unloaded gripper hold
+E       assert not True
+E        +  where True = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=179266427...879100d29b24d667b17d93aa71282cadc', state='READY', phase='', swing_foot='', ready=True, stopped=False, fault_reason='').ready
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:239: AssertionError
+_____ test_prismatic_gripper_does_not_use_arm_radian_tolerances[0.0-0.006] _____
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7676ac645e80>
+error = 0.0, velocity = 0.006
+
+    @pytest.mark.parametrize('error,velocity', [(.003, 0.), (0., .006)])
+    def test_prismatic_gripper_does_not_use_arm_radian_tolerances(carry_rig, error, velocity):
+        rig = carry_rig
+        rig.gripper_error, rig.gripper_velocity = error, velocity
+        rig.pump(.04)
+        assert rig.call(rig.prepare).success
+        rig.release.set()
+        rig.pump(1.2)
+        assert rig.manager.record.terminal
+>       assert not rig.states[-1].ready, '3mm error or 6mm/s is not the measured unloaded gripper hold'
+E       AssertionError: 3mm error or 6mm/s is not the measured unloaded gripper hold
+E       assert not True
+E        +  where True = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=179266427...879100d29b24d667b17d93aa71282cadc', state='READY', phase='', swing_foot='', ready=True, stopped=False, fault_reason='').ready
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:239: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_prismatic_gripper_does_not_use_arm_radian_tolerances[0.003-0.0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_prismatic_gripper_does_not_use_arm_radian_tolerances[0.0-0.006]
+2 failed, 9 deselected in 12.74s

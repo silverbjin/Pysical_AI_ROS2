@@ -1,0 +1,124 @@
+F
+=================================== FAILURES ===================================
+_______ test_worker_closes_ros_without_decoding_or_pickling_full_history _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_worker_closes_ros_without0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x747735331970>
+
+    def test_worker_closes_ros_without_decoding_or_pickling_full_history(tmp_path,monkeypatch):
+        import rclpy
+        events=[]
+        class Probe:
+            def __init__(self,directory,**kwargs):
+                self.journal_path=Path(directory)/'observations.jsonl'
+                self.journal_path.write_text(json.dumps(dict(kind='frame',value={'original':7}))+'\n')
+                self.journal_counts=Counter(frame=1)
+                self.frames=deque([{'original':7}],maxlen=128)
+                self.native_controls=[];self.transforms=[];self.body_references=[]
+                self.errors=[];self.transport_errors=[];self.tf_api={};self.gc_spans=[]
+                self.journal=SimpleNamespace(report=lambda:dict(joined=True,error=None,submitted=1,written=1))
+            def fault(self):return None
+            def restore_history(self,**kwargs):
+                raise AssertionError('whole history decoded inside process join budget')
+            def close_log(self):events.append('journal_closed')
+            def timing_snapshot(self):return {}
+            def destroy_node(self):events.append('ros_destroyed')
+        class Receiver:
+            def __init__(self,node):pass
+            def check(self):pass
+            def shutdown(self,**kwargs):events.append('receiver_joined');return True
+            def report(self):return dict(closed=True)
+        class Connection:
+            def send(self,value):pass
+            def poll(self,*args):return True
+            def recv(self):return ('stop',None)
+            def close(self):events.append('ipc_closed')
+        monkeypatch.setattr(module,'NavigationProbe',Probe)
+        monkeypatch.setattr(module,'ProbeReceiver',Receiver)
+        monkeypatch.setattr(module,'_modules',lambda:{})
+        monkeypatch.setattr(module.os,'setsid',lambda:None)
+        monkeypatch.setattr(rclpy,'init',lambda **kwargs:None)
+        monkeypatch.setattr(rclpy,'ok',lambda:True)
+        monkeypatch.setattr(rclpy,'try_shutdown',lambda:events.append('context_closed'))
+>       module._observe(str(tmp_path),'gazebo',Connection())
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observer_finalization.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = '/tmp/pytest-of-jinho/pytest-0/test_worker_closes_ros_without0'
+engine = 'gazebo'
+connection = <test_observer_finalization.test_worker_closes_ros_without_decoding_or_pickling_full_history.<locals>.Connection object at 0x7477544fb710>
+
+    def _observe(directory,engine,connection):
+        import rclpy
+        from rclpy.signals import SignalHandlerOptions
+        entry_wall_ns=time.monotonic_ns()
+        os.setsid()  # Owned observer, independent of the console/engine groups.
+        root=Path(directory);node=receiver=None;failure=None;runtime_fault=None;ipc=0;joined=False
+        stat=Path('/proc/self/stat').read_text().rsplit(')',1)[1].split()
+        identity=dict(pid=os.getpid(),ppid=os.getppid(),uid=os.getuid(),pgid=os.getpgrp(),
+            start_ticks=int(stat[19]),executable=sys.executable,module_files=_modules(),
+            worker_entry_wall_ns=entry_wall_ns)
+        try:
+            rclpy.init(args=[],signal_handler_options=SignalHandlerOptions.NO)
+            node=NavigationProbe(root,engine=engine,bounded_history=True)
+            identity['node_ready_wall_ns']=time.monotonic_ns()
+            receiver=ProbeReceiver(node)
+            identity['receiver_ready_wall_ns']=time.monotonic_ns()
+            with (root/'observer_startup.json').open('x') as output:json.dump(identity,output,indent=2)
+            connection.send(('ready',identity))
+            notice_sent=False
+            while True:
+                receiver.check()
+                fault=node.fault()
+                if fault and not node.ignore_faults and not notice_sent:
+                    runtime_fault=dict(reason=fault,stage=node.stage,
+                        ros_ns=node.get_clock().now().nanoseconds,wall_ns=time.monotonic_ns())
+                    connection.send(('fault',runtime_fault));notice_sent=True
+                if not connection.poll(.01):continue
+                command,value=connection.recv();ipc+=1
+                if command=='stage':
+                    node.set_stage(value,ignore_faults=True if value=='shutdown' else None)
+                    connection.send(('stage',value))
+                elif command=='transforms':connection.send(('transforms',node.transform_snapshot()))
+                elif command=='stop':break
+                else:raise ValueError('unknown observer command')
+        except BaseException as error:
+            failure=repr(error)
+            try:connection.send(('error',failure))
+            except (OSError,EOFError):pass
+        finally:
+            if receiver:
+                joined=receiver.shutdown(timeout_sec=2.)
+                if not joined:
+                    failure=failure or 'observer receiver shutdown exceeded original deadline'
+                    # A missed join is permanently failed. Retain live ROS resources
+                    # until the current callbacks finish; never kill or restart them.
+                    while not receiver.shutdown(timeout_sec=.1):pass
+                    joined=True
+            if node and joined:
+                try:
+                    node.restore_history(receiver_joined=True)
+                    snapshot={name:getattr(node,name) for name in (
+                        'frames','native_controls','body_references','transforms','errors',
+                        'transport_errors','tf_api')}
+                    target=root/'observer_snapshot.pickle'
+                    with target.open('xb') as output:pickle.dump(snapshot,output,protocol=5)
+                    node.close_log()
+                    report=dict(identity=identity,receiver=receiver.report(),journal=node.journal.report(),
+                        ipc_requests=ipc,failure=failure,runtime_fault=runtime_fault,snapshot=target.name,
+                        snapshot_size=target.stat().st_size,snapshot_sha256=_digest(target))
+                    with (root/'observer_process_report.json').open('x') as output:json.dump(report,output,indent=2)
+                    node.destroy_node()
+                except BaseException as error:failure=failure or repr(error)
+            if rclpy.ok() and joined:rclpy.try_shutdown()
+            connection.close()
+>       if failure:raise SystemExit(1)
+                   ^^^^^^^^^^^^^^^^^^^
+E       SystemExit: 1
+
+Ch13/scripts/split_observer_13_5.py:91: SystemExit
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observer_finalization.py::test_worker_closes_ros_without_decoding_or_pickling_full_history
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 10.21s

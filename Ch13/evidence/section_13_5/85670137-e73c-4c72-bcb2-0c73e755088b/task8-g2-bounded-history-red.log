@@ -1,0 +1,30 @@
+F
+=================================== FAILURES ===================================
+_ test_g2_archive_is_bounded_live_and_restores_every_original_record_after_join _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-50/test_g2_archive_is_bounded_liv0')
+
+    def test_g2_archive_is_bounded_live_and_restores_every_original_record_after_join(tmp_path):
+        context=Context();rclpy.init(context=context);probe=None
+        callbacks=tuple(gc.callbacks)
+        try:
+>           probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_bounded_history.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <probe_navigation_13_5.NavigationProbe object at 0x7b6aec13f800>
+directory = PosixPath('/tmp/pytest-of-jinho/pytest-50/test_g2_archive_is_bounded_liv0')
+engine = 'gazebo'
+kwargs = {'bounded_history': True, 'context': <rclpy.context.Context object at 0x7b6aec13f650>}
+
+    def __init__(self, directory, engine='mujoco', **kwargs):
+>       super().__init__('navigation_native_probe', parameter_overrides=[Parameter('use_sim_time', value=True)], **kwargs)
+E       TypeError: Node.__init__() got an unexpected keyword argument 'bounded_history'
+
+Ch13/scripts/probe_navigation_13_5.py:79: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_bounded_history.py::test_g2_archive_is_bounded_live_and_restores_every_original_record_after_join
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 7.68s

@@ -1,0 +1,124 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___________ test_description_launch_source_install_bytes_are_bound[] ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-1/test_description_launch_source0')
+fault = ''
+
+    @pytest.mark.parametrize('fault', ['', 'changed', 'missing', 'source_symlink'])
+    def test_description_launch_source_install_bytes_are_bound(tmp_path, fault):
+        repo, share = tmp_path/'repo', tmp_path/'install/share/integrated_robot_description'
+        source = repo/'Ch13/ros2_ws/src/integrated_robot_description/launch'
+        source.mkdir(parents=True)
+        (share/'launch').mkdir(parents=True)
+        for engine in ('mujoco', 'gazebo'):
+            content = ('# '+engine+' fixture\n').encode()
+            (source/(engine+'.launch.py')).write_bytes(content)
+            (share/'launch'/(engine+'.launch.py')).write_bytes(content)
+        target = share/'launch/gazebo.launch.py'
+        if fault == 'changed':
+            target.write_text('# stale launch\n')
+        elif fault == 'missing':
+            target.unlink()
+        elif fault == 'source_symlink':
+            target.unlink()
+            target.symlink_to(source/'gazebo.launch.py')
+>       assert hasattr(runner, 'audit_description_launches'), 'description launch byte audit missing'
+E       AssertionError: description launch byte audit missing
+E       assert False
+E        +  where False = hasattr(runner, 'audit_description_launches')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_description_runtime_audit.py:29: AssertionError
+_______ test_description_launch_source_install_bytes_are_bound[changed] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-1/test_description_launch_source1')
+fault = 'changed'
+
+    @pytest.mark.parametrize('fault', ['', 'changed', 'missing', 'source_symlink'])
+    def test_description_launch_source_install_bytes_are_bound(tmp_path, fault):
+        repo, share = tmp_path/'repo', tmp_path/'install/share/integrated_robot_description'
+        source = repo/'Ch13/ros2_ws/src/integrated_robot_description/launch'
+        source.mkdir(parents=True)
+        (share/'launch').mkdir(parents=True)
+        for engine in ('mujoco', 'gazebo'):
+            content = ('# '+engine+' fixture\n').encode()
+            (source/(engine+'.launch.py')).write_bytes(content)
+            (share/'launch'/(engine+'.launch.py')).write_bytes(content)
+        target = share/'launch/gazebo.launch.py'
+        if fault == 'changed':
+            target.write_text('# stale launch\n')
+        elif fault == 'missing':
+            target.unlink()
+        elif fault == 'source_symlink':
+            target.unlink()
+            target.symlink_to(source/'gazebo.launch.py')
+>       assert hasattr(runner, 'audit_description_launches'), 'description launch byte audit missing'
+E       AssertionError: description launch byte audit missing
+E       assert False
+E        +  where False = hasattr(runner, 'audit_description_launches')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_description_runtime_audit.py:29: AssertionError
+_______ test_description_launch_source_install_bytes_are_bound[missing] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-1/test_description_launch_source2')
+fault = 'missing'
+
+    @pytest.mark.parametrize('fault', ['', 'changed', 'missing', 'source_symlink'])
+    def test_description_launch_source_install_bytes_are_bound(tmp_path, fault):
+        repo, share = tmp_path/'repo', tmp_path/'install/share/integrated_robot_description'
+        source = repo/'Ch13/ros2_ws/src/integrated_robot_description/launch'
+        source.mkdir(parents=True)
+        (share/'launch').mkdir(parents=True)
+        for engine in ('mujoco', 'gazebo'):
+            content = ('# '+engine+' fixture\n').encode()
+            (source/(engine+'.launch.py')).write_bytes(content)
+            (share/'launch'/(engine+'.launch.py')).write_bytes(content)
+        target = share/'launch/gazebo.launch.py'
+        if fault == 'changed':
+            target.write_text('# stale launch\n')
+        elif fault == 'missing':
+            target.unlink()
+        elif fault == 'source_symlink':
+            target.unlink()
+            target.symlink_to(source/'gazebo.launch.py')
+>       assert hasattr(runner, 'audit_description_launches'), 'description launch byte audit missing'
+E       AssertionError: description launch byte audit missing
+E       assert False
+E        +  where False = hasattr(runner, 'audit_description_launches')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_description_runtime_audit.py:29: AssertionError
+____ test_description_launch_source_install_bytes_are_bound[source_symlink] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-1/test_description_launch_source3')
+fault = 'source_symlink'
+
+    @pytest.mark.parametrize('fault', ['', 'changed', 'missing', 'source_symlink'])
+    def test_description_launch_source_install_bytes_are_bound(tmp_path, fault):
+        repo, share = tmp_path/'repo', tmp_path/'install/share/integrated_robot_description'
+        source = repo/'Ch13/ros2_ws/src/integrated_robot_description/launch'
+        source.mkdir(parents=True)
+        (share/'launch').mkdir(parents=True)
+        for engine in ('mujoco', 'gazebo'):
+            content = ('# '+engine+' fixture\n').encode()
+            (source/(engine+'.launch.py')).write_bytes(content)
+            (share/'launch'/(engine+'.launch.py')).write_bytes(content)
+        target = share/'launch/gazebo.launch.py'
+        if fault == 'changed':
+            target.write_text('# stale launch\n')
+        elif fault == 'missing':
+            target.unlink()
+        elif fault == 'source_symlink':
+            target.unlink()
+            target.symlink_to(source/'gazebo.launch.py')
+>       assert hasattr(runner, 'audit_description_launches'), 'description launch byte audit missing'
+E       AssertionError: description launch byte audit missing
+E       assert False
+E        +  where False = hasattr(runner, 'audit_description_launches')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_description_runtime_audit.py:29: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_description_runtime_audit.py::test_description_launch_source_install_bytes_are_bound[]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_description_runtime_audit.py::test_description_launch_source_install_bytes_are_bound[changed]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_description_runtime_audit.py::test_description_launch_source_install_bytes_are_bound[missing]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_description_runtime_audit.py::test_description_launch_source_install_bytes_are_bound[source_symlink]
+4 failed in 8.27s

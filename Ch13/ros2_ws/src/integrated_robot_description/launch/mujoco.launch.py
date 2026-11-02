@@ -102,14 +102,28 @@ def launch_nodes(context):
     share = get_package_share_directory('integrated_robot_description')
     vision = LaunchConfiguration('vision_enabled').perform(context).lower() == 'true'
     backend = LaunchConfiguration('vision_camera_backend', default='upstream').perform(context)
+    navigation = LaunchConfiguration('navigation_enabled', default='false').perform(context).lower() == 'true'
+    scene = None
+    if navigation:
+        from integrated_robot_navigation.scene import load_scene
+        scene = load_scene('mujoco', LaunchConfiguration('navigation_scene').perform(context))
+        if not vision or backend != 'snapshot':
+            raise ValueError('navigation requires vision and the owned snapshot camera')
     camera_config = camera_plugin_config(share, vision, backend)
+    if navigation:
+        camera_config = LaunchConfiguration('navigation_plugins').perform(context)
     if vision and backend == 'snapshot':
         probe_snapshot_plugin(Path(get_package_prefix('integrated_robot_camera')))
     xacro_path = os.path.join(share, 'urdf', 'robot_system.urdf.xacro')
     model_path = LaunchConfiguration('model_path').perform(context) or os.path.join(
         share, 'mujoco', 'vision_fixture.xml' if vision else 'robot_system.xml')
+    if scene:
+        requested = LaunchConfiguration('model_path').perform(context)
+        if requested and Path(requested).resolve() != Path(scene['world']['path']).resolve():
+            raise ValueError('navigation model_path must match bound scene')
+        model_path = scene['world']['path']
     controllers = materialize_controller_config(
-        os.path.join(share, 'config', 'controllers.yaml'),
+        scene['controllers']['path'] if scene else os.path.join(share, 'config', 'controllers.yaml'),
         camera_config,
         trace_options=trace if vision and backend == 'snapshot' else None,
         vision=vision,
@@ -124,6 +138,8 @@ def launch_nodes(context):
         ),
         value_type=str,
     )
+    if scene:
+        description = ParameterValue(Path(scene['robot']['path']).read_text(), value_type=str)
     control_node = Node(
         package='mujoco_ros2_control',
         executable='ros2_control_node',
@@ -153,10 +169,10 @@ def launch_nodes(context):
     nodes = [control_node, state_publisher, TimerAction(period=3.0, actions=spawners)]
     if vision:
         nodes.append(Node(package='integrated_robot_vision', executable='native_pose_adapter',
-                          parameters=[{'engine': 'mujoco', 'use_sim_time': True}]))
+                          parameters=[{'engine': 'mujoco', 'use_sim_time': not navigation}]))
         nodes.append(Node(package='integrated_robot_vision',
                           executable='native_camera_info_adapter',
-                          parameters=[{'use_sim_time': True}]))
+                          parameters=[{'use_sim_time': not navigation}]))
     return nodes
 
 
@@ -168,4 +184,7 @@ def generate_launch_description():
                               DeclareLaunchArgument('model_path', default_value=''),
                               DeclareLaunchArgument('trace_enabled', default_value='false'),
                               DeclareLaunchArgument('trace_run_id', default_value=''),
+                              DeclareLaunchArgument('navigation_enabled', default_value='false'),
+                              DeclareLaunchArgument('navigation_scene', default_value=''),
+                              DeclareLaunchArgument('navigation_plugins', default_value=''),
                               OpaqueFunction(function=launch_nodes)])

@@ -1,0 +1,34 @@
+F
+=================================== FAILURES ===================================
+___________ test_cyclic_capture_rejects_without_unbounded_validation ___________
+
+    def test_cyclic_capture_rejects_without_unbounded_validation():
+        import signal
+        cyclic=[];cyclic.append(cyclic)
+        def deadline(*args):raise TimeoutError('cyclic capture validation did not terminate')
+        previous=signal.signal(signal.SIGALRM,deadline)
+        try:
+            signal.setitimer(signal.ITIMER_REAL,.2)
+            with pytest.raises(ValueError,match='cycl'):
+>               codec().encode_record(dict(kind='frame',value=cyclic))
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observer_capture_journal.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/scripts/observer_journal_13_5.py:32: in encode_record
+    _primitive(row)
+Ch13/scripts/observer_journal_13_5.py:24: in _primitive
+    elif kind in (list,tuple):pending.extend(item)
+                              ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (14, <frame at 0x788f7d81a6c0, file '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/observer_journal_13_5.py', line 24, code _primitive>)
+
+>   def deadline(*args):raise TimeoutError('cyclic capture validation did not terminate')
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TimeoutError: cyclic capture validation did not terminate
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observer_capture_journal.py:87: TimeoutError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observer_capture_journal.py::test_cyclic_capture_rejects_without_unbounded_validation
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 16.32s

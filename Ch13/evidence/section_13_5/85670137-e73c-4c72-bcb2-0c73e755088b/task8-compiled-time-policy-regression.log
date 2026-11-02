@@ -1,0 +1,32 @@
+........................F
+=================================== FAILURES ===================================
+__ test_actual_first_transition_keeps_the_preoptimization_mathematical_result __
+
+    def test_actual_first_transition_keeps_the_preoptimization_mathematical_result():
+        from integrated_robot_navigation.model import compile_model
+        data=json.loads((Path(__file__).parent/'fixtures/native_26a3_spatial_budget.json').read_text())
+        model=compile_model(data['urdf']);value=api()(model)
+>       result=value.step(**data['args'])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_load_transition.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_transition.py:107: in step
+    budget('spatial_response')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+checkpoint = 'spatial_response'
+
+    def budget(checkpoint):
+        wall=time.perf_counter_ns()-started
+        self.last_attempt['stages'][checkpoint]=dict(wall_ns=wall,thread_cpu_ns=thread_time_ns()-cpu)
+        if wall>10_000_000:
+            self.last_attempt['rejected_at']=checkpoint
+>           raise ValueError('transition optimization time budget')
+E           ValueError: transition optimization time budget
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_transition.py:82: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_load_transition.py::test_actual_first_transition_keeps_the_preoptimization_mathematical_result
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 24 passed in 179.86s (0:02:59)

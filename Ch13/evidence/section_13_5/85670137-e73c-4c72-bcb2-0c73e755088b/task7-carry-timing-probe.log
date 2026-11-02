@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_terminal_success_then_actual_settle_for_one_second ____________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x78695034a960>
+
+    def test_terminal_success_then_actual_settle_for_one_second(carry_rig):
+        rig = carry_rig
+        assert rig.call(rig.prepare).success
+        rig.pump(.12)
+        assert rig.executed.is_set()
+        rig.release.set()
+        rig.pump(.65)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        rig.pump(.6)
+        assert rig.states[-1].ready and rig.gripper_commands, list(rig.manager.diagnostics)
+>       assert all(msg.data == [.015, .015] for msg in rig.gripper_commands)
+E       assert False
+E        +  where False = all(<generator object test_terminal_success_then_actual_settle_for_one_second.<locals>.<genexpr> at 0x78693837e670>)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:174: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_terminal_success_then_actual_settle_for_one_second
+1 failed in 12.80s

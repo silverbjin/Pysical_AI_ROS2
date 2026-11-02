@@ -1,0 +1,33 @@
+Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_control_clock_gate.cpp: In member function ‘virtual void ControlClockGate_MissingMultipleOrCompetingPublishersFailClosed_Test::TestBody()’:
+Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_control_clock_gate.cpp:58:19: warning: loop variable ‘counts’ creates a copy from type ‘const std::pair<int, int>’ [-Wrange-loop-construct]
+   58 |   for (const auto counts : {std::pair<int,int>{0,1}, {2,1}, {1,2}, {1,0}}) {
+      |                   ^~~~~~
+Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_control_clock_gate.cpp:58:19: note: use reference type to prevent copying
+   58 |   for (const auto counts : {std::pair<int,int>{0,1}, {2,1}, {1,2}, {1,0}}) {
+      |                   ^~~~~~
+      |                   &
+Running main() from ./googletest/src/gtest_main.cc
+[==========] Running 8 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 8 tests from ControlClockGate
+[ RUN      ] ControlClockGate.OriginalValuesOnlyAndAtMost100Hz
+[       OK ] ControlClockGate.OriginalValuesOnlyAndAtMost100Hz (0 ms)
+[ RUN      ] ControlClockGate.DuplicateInputCannotRenewProgressLeaseOrRepublish
+[       OK ] ControlClockGate.DuplicateInputCannotRenewProgressLeaseOrRepublish (0 ms)
+[ RUN      ] ControlClockGate.PauseBeforeFirstPositiveStampDoesNotInventTime
+[       OK ] ControlClockGate.PauseBeforeFirstPositiveStampDoesNotInventTime (0 ms)
+[ RUN      ] ControlClockGate.RollbackAndAuthorityChangeAreSticky
+[       OK ] ControlClockGate.RollbackAndAuthorityChangeAreSticky (0 ms)
+[ RUN      ] ControlClockGate.MissingMultipleOrCompetingPublishersFailClosed
+[       OK ] ControlClockGate.MissingMultipleOrCompetingPublishersFailClosed (0 ms)
+[ RUN      ] ControlClockGate.InvalidStampIdentityAndWallRollbackFailClosed
+[       OK ] ControlClockGate.InvalidStampIdentityAndWallRollbackFailClosed (0 ms)
+[ RUN      ] ControlClockGate.LateNewInputCannotHideExpiredProgressLease
+[       OK ] ControlClockGate.LateNewInputCannotHideExpiredProgressLease (0 ms)
+[ RUN      ] ControlClockGate.CloseBlocksOutstandingAndFutureInputs
+[       OK ] ControlClockGate.CloseBlocksOutstandingAndFutureInputs (0 ms)
+[----------] 8 tests from ControlClockGate (15 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 1 test suite ran. (20 ms total)
+[  PASSED  ] 8 tests.

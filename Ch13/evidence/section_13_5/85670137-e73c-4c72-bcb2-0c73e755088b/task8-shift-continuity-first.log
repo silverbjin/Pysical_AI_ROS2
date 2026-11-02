@@ -1,0 +1,32 @@
+............................F                                            [100%]
+=================================== FAILURES ===================================
+______ test_actual_carry_survives_contact_calibration_without_root_writes ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_carry_survives_con0')
+
+    def test_actual_carry_survives_contact_calibration_without_root_writes(tmp_path):
+        scene = materialize_scene('mujoco', 'g1', tmp_path/'calibration-component')
+        model = compile_model(Path(scene['robot']['path']).read_text())
+        native = mujoco.MjModel.from_xml_path(scene['world']['path'])
+        data = mujoco.MjData(native)
+        mujoco.mj_resetDataKeyframe(native, data, 0)
+        report = calibration_probe(native, data, model, default_limits())
+>       assert report['completed'], json.dumps(report, indent=2)
+E       AssertionError: {
+E           "engine": "python_mujoco_component_only",
+E           "version": "3.3.7",
+E           "state": "FAULT",
+E           "reason": "current measured support lost",
+E           "completed": false,
+E           "duration_s": 10.99999999999923,
+E           "maximum_carry_error_rad": 0.03207490637893873,
+E           "maximum_carry_velocity_rps": 0.054235349090229895,
+E           "maximum_gripper_error_m": 0.0006368826595394735,
+E           "maximum_gripper_velocity_mps": 0.020123240570951204
+E         }
+E       assert False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py:35: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_physics.py::test_actual_carry_survives_contact_calibration_without_root_writes
+1 failed, 28 passed in 35.33s

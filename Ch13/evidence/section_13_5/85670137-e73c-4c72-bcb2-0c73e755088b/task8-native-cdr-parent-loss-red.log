@@ -1,0 +1,36 @@
+F
+=================================== FAILURES ===================================
+_________ test_native_parent_connection_loss_drains_and_remains_failed _________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_native_parent_connection_0')
+
+    def test_native_parent_connection_loss_drains_and_remains_failed(tmp_path):
+        owner=api().NativeObserverProcess(tmp_path,engine='gazebo')
+        owner.process.stdin.close()
+        try:
+>           with pytest.raises(RuntimeError):owner.finish(timeout_sec=10.)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py:155: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <native_observer_13_5.NativeObserverProcess object at 0x7168469d8f20>
+
+    def finish(self,*,timeout_sec):
+        import subprocess
+        from split_observer_13_5 import _digest
+        if self.finished:
+            if self.error:raise RuntimeError(self.error)
+            return self.data
+        if not self.stop_sent:
+            if self.process.poll() is None:
+                try:
+>                   self.process.stdin.write(b'["stop",null]\n');self.process.stdin.flush();self.ipc_requests+=1
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   ValueError: write to closed file
+
+Ch13/scripts/native_observer_13_5.py:222: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py::test_native_parent_connection_loss_drains_and_remains_failed
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 13 deselected in 12.47s

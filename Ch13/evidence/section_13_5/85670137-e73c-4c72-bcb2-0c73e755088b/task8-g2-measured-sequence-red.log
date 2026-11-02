@@ -1,0 +1,28 @@
+F
+=================================== FAILURES ===================================
+______ test_snapshot_uses_native_body_and_rejects_capture_or_wall_expiry _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_snapshot_uses_native_body_and_rejects_capture_or_wall_expiry(nav_robot_model):
+        value=bundle(nav_robot_model);frame=dict(samples=asdict(value),crawl=dict(stopped=True))
+        body=value.body
+>       result=api().movement_snapshot(frame,body.stamp_ns,body.received_ns,default_limits())
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_sequence.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.g2_sequence'),'measured G2 sequence missing'
+E       AssertionError: measured G2 sequence missing
+E       assert None
+E        +  where None = <function find_spec at 0x720ee00bc720>('integrated_robot_navigation.g2_sequence')
+E        +    where <function find_spec at 0x720ee00bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_sequence.py:11: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_sequence.py::test_snapshot_uses_native_body_and_rejects_capture_or_wall_expiry
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 8.86s

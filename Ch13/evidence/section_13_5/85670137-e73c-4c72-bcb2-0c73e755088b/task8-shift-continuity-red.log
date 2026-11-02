@@ -1,0 +1,56 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___ test_zero_elapsed_shift_preserves_tilt_and_joint_target_continuity[True] ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+calibrating = True
+
+    @pytest.mark.parametrize('calibrating', [True, False])
+    def test_zero_elapsed_shift_preserves_tilt_and_joint_target_continuity(nav_robot_model, calibrating):
+        """A yaw command cannot instantaneously erase the standing roll/pitch."""
+        plant = IdealFeedback(nav_robot_model)
+        body = {**plant.state.body.data, 'orientation': (0., math.sin(.02), 0., math.cos(.02))}
+        plant.state = replace(plant.state, body=replace(plant.state.body, data=body))
+        value = machine(nav_robot_model, plant)
+        before = value._solve(plant.state.joints.data['position'], False)
+        rotation = value.reference_body[:3, :3].copy()
+        if calibrating:
+            value.request_contact_calibration()
+        result = value.advance(plant.state, (0., 0., 0.) if calibrating else (.001, 0., 0.),
+                               plant.ros, plant.wall)
+        assert result.state != 'FAULT', result.reason
+>       assert np.allclose(value.reference_body[:3, :3], rotation, atol=1e-12)
+E       assert False
+E        +  where False = <function allclose at 0x78c20fdedef0>(array([[ 1., -0.,  0.],\n       [ 0.,  1.,  0.],\n       [ 0.,  0.,  1.]]), array([[ 0.99920011,  0.        ,  0.03998933],\n       [ 0.        ,  1.        ,  0.        ],\n       [-0.03998933,  0.        ,  0.99920011]]), atol=1e-12)
+E        +    where <function allclose at 0x78c20fdedef0> = np.allclose
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:281: AssertionError
+__ test_zero_elapsed_shift_preserves_tilt_and_joint_target_continuity[False] ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+calibrating = False
+
+    @pytest.mark.parametrize('calibrating', [True, False])
+    def test_zero_elapsed_shift_preserves_tilt_and_joint_target_continuity(nav_robot_model, calibrating):
+        """A yaw command cannot instantaneously erase the standing roll/pitch."""
+        plant = IdealFeedback(nav_robot_model)
+        body = {**plant.state.body.data, 'orientation': (0., math.sin(.02), 0., math.cos(.02))}
+        plant.state = replace(plant.state, body=replace(plant.state.body, data=body))
+        value = machine(nav_robot_model, plant)
+        before = value._solve(plant.state.joints.data['position'], False)
+        rotation = value.reference_body[:3, :3].copy()
+        if calibrating:
+            value.request_contact_calibration()
+        result = value.advance(plant.state, (0., 0., 0.) if calibrating else (.001, 0., 0.),
+                               plant.ros, plant.wall)
+        assert result.state != 'FAULT', result.reason
+>       assert np.allclose(value.reference_body[:3, :3], rotation, atol=1e-12)
+E       assert False
+E        +  where False = <function allclose at 0x78c20fdedef0>(array([[ 1., -0.,  0.],\n       [ 0.,  1.,  0.],\n       [ 0.,  0.,  1.]]), array([[ 0.99920011,  0.        ,  0.03998933],\n       [ 0.        ,  1.        ,  0.        ],\n       [-0.03998933,  0.        ,  0.99920011]]), atol=1e-12)
+E        +    where <function allclose at 0x78c20fdedef0> = np.allclose
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:281: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_zero_elapsed_shift_preserves_tilt_and_joint_target_continuity[True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_zero_elapsed_shift_preserves_tilt_and_joint_target_continuity[False]
+2 failed, 25 deselected in 10.43s

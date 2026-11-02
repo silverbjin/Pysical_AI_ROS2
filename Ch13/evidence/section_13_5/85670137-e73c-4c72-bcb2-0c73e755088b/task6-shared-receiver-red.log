@@ -1,0 +1,63 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___________ test_future_capture_waits_without_renewing_first_receipt ___________
+
+    def test_future_capture_waits_without_renewing_first_receipt():
+>       inbox = api().SensorInbox(0)
+                ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.observations'), 'shared receiver missing'
+E       AssertionError: shared receiver missing
+E       assert None
+E        +  where None = <function find_spec at 0x7c2cd87c0720>('integrated_robot_navigation.observations')
+E        +    where <function find_spec at 0x7c2cd87c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:10: AssertionError
+_________ test_clear_rejects_pre_reset_capture_even_if_delivered_late __________
+
+    def test_clear_rejects_pre_reset_capture_even_if_delivered_late():
+>       inbox = api().SensorInbox(0)
+                ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.observations'), 'shared receiver missing'
+E       AssertionError: shared receiver missing
+E       assert None
+E        +  where None = <function find_spec at 0x7c2cd87c0720>('integrated_robot_navigation.observations')
+E        +    where <function find_spec at 0x7c2cd87c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:10: AssertionError
+_______ test_scan_no_hit_is_explicit_not_zero_or_infinite_canonical_data _______
+
+    def test_scan_no_hit_is_explicit_not_zero_or_infinite_canonical_data():
+        message = LaserScan(range_min=.05, range_max=10., ranges=[float('inf'), .5])
+        message.header.stamp.sec, message.header.frame_id = 4, 'lidar_link'
+>       sample = api().sensor_sample('scan', message, 10_000_000_000, 0)
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.observations'), 'shared receiver missing'
+E       AssertionError: shared receiver missing
+E       assert None
+E        +  where None = <function find_spec at 0x7c2cd87c0720>('integrated_robot_navigation.observations')
+E        +    where <function find_spec at 0x7c2cd87c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:10: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py::test_future_capture_waits_without_renewing_first_receipt
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py::test_clear_rejects_pre_reset_capture_even_if_delivered_late
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py::test_scan_no_hit_is_explicit_not_zero_or_infinite_canonical_data
+3 failed in 4.68s

@@ -1,0 +1,273 @@
+...F.....F..F                                                            [100%]
+=================================== FAILURES ===================================
+________ test_raw_loss_latches_even_when_smoother_and_sensors_are_fresh ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_raw_loss_latches_even_when_smoother_and_sensors_are_fresh(nav_robot_model):
+        model = nav_robot_model
+        guard = armed(model)
+        raw = command()
+>       assert guard.evaluate(bundle(model), raw, command(), 1_000_000_000, 10_000_000_000) == (
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            (.006, 0., .01), '')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.motion_guard.MotionGuard object at 0x75364fb9d490>
+bundle = SensorBundle(joints=Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=1000000000, frame_id='base_...={'ready': True, 'generation': 0, 'model_sha256': 'b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc'}))
+raw = Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=10000000000, frame_id='nav_base', data=(0.006, 0.0, 0.01))
+smoothed = Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=10000000000, frame_id='nav_base', data=(0.006, 0.0, 0.01))
+ros_ns = 1000000000, wall_ns = 10000000000
+
+    def evaluate(self, bundle: SensorBundle, raw: Sample, smoothed: Sample,
+                 ros_ns: int, wall_ns: int) -> tuple[Vec3, str]:
+        if (self.last_ros is not None and ros_ns < self.last_ros or
+                self.last_wall is not None and wall_ns < self.last_wall):
+            self.restart_required = True
+            return self.fail('clock_rollback')
+        if self.last_ros is None or ros_ns > self.last_ros:
+            self.progress_wall = wall_ns
+        self.last_ros, self.last_wall = ros_ns, wall_ns
+        if self.fault:
+            return ZERO, self.fault
+        if self.mode != 'CRAWL':
+            return ZERO, ''
+        # Raw is independent of the smoother and is checked first.
+        for name, value in (('raw', raw), ('smoothed', smoothed)):
+            ok, reason = sample_valid(value, ros_ns, wall_ns, self.generation,
+                                      max_age_ns=200_000_000)
+            if not ok:
+                return self.fail(name+':'+reason)
+            if (value.frame_id != 'nav_base' or len(value.data) != 3
+                    or abs(value.data[0]) > self.limits['max_vx']
+                    or value.data[1] != 0. or abs(value.data[2]) > self.limits['max_wz']):
+                return self.fail(name+':command_limit_or_frame')
+        if wall_ns-self.progress_wall > 200_000_000:
+            return self.fail('clock_paused')
+        for name in OWNERS:
+            if self.owners.get(name) != 1:
+                return self.fail('owner:'+name)
+        ok, reason = validate_bundle(bundle, ros_ns, wall_ns, self.engine_epoch)
+        if not ok:
+            return self.fail(reason)
+        try:
+            carry = bundle.carry.data
+            if (carry['ready'] is not True or carry['generation'] != self.generation
+                    or carry['model_sha256'] != self.model.model_sha256):
+                return self.fail('carry:not_ready_or_binding')
+            q, qd = bundle.joints.data['position'], bundle.joints.data['velocity']
+            if set(q) != set(self.model.limits) or set(qd) != set(q):
+                return self.fail('joints:names')
+            for name, value in q.items():
+                lo, hi, velocity, _ = self.model.limits[name]
+                if not lo <= value <= hi or abs(qd[name]) > velocity:
+                    return self.fail('joints:physical_limit')
+            for i, target in enumerate(self.carry_q, 1):
+                name = f'arm_joint_{i}'
+                if (abs(q[name]-target) > self.limits['carry_error_rad']
+                        or abs(qd[name]) > self.limits['carry_velocity_rps']):
+                    return self.fail('carry:measured_drift')
+            if bundle.body.frame_id != 'odom' or bundle.body.data['child_frame_id'] != 'base_footprint':
+                return self.fail('body:frame')
+            _, (roll, pitch, _) = body_rotation(bundle.body.data)
+            z = bundle.body.data['position'][2]
+            if (max(abs(roll), abs(pitch)) > self.limits['max_roll_pitch']
+                    or not self.limits['min_body_height_m'] <= z <= self.limits['max_body_height_m']):
+                return self.fail('body:stability')
+            contacts = bundle.contacts.data
+            if (bundle.contacts.frame_id != 'odom'
+>                   or tuple(contacts['names']) != self.model.foot_links
+                                                   ^^^^^^^^^^^^^^^^^^^^^
+                    or contacts['unexpected_contacts'] != 0):
+E                   AttributeError: 'ModelContract' object has no attribute 'foot_links'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/motion_guard.py:108: AttributeError
+__________ test_measured_faults_zero_without_smoother_ramp[collision] __________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+fault = 'collision'
+
+    @pytest.mark.parametrize('fault', ['carry', 'scan', 'joint', 'body', 'collision', 'owner', 'limit'])
+    def test_measured_faults_zero_without_smoother_ramp(nav_robot_model, fault):
+        model = nav_robot_model
+        guard = armed(model)
+        state, raw, smooth = bundle(model), command(), command()
+        if fault == 'carry':
+            state = replace(state, carry=replace(state.carry, data={**state.carry.data, 'ready': False}))
+        elif fault == 'scan':
+            state = replace(state, scan=replace(state.scan, received_ns=9_600_000_000))
+        elif fault == 'joint':
+            data = {**state.joints.data, 'position': {**state.joints.data['position'], 'arm_joint_2': 1.24}}
+            state = replace(state, joints=replace(state.joints, data=data))
+        elif fault == 'body':
+            state = replace(state, body=replace(state.body, data={**state.body.data, 'position': (0., 0., .2)}))
+        elif fault == 'collision':
+            state = replace(state, contacts=replace(state.contacts, data={**state.contacts.data,
+                                                                          'unexpected_contacts': 1}))
+        elif fault == 'owner':
+            guard.observe_owners({name: (2 if name == 'raw' else 1) for name in OWNERS})
+        elif fault == 'limit':
+            smooth = replace(smooth, data=(.011, 0., 0.))
+>       output, reason = guard.evaluate(state, raw, smooth, 1_000_000_000, 10_000_000_000)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.motion_guard.MotionGuard object at 0x75364e0e6ff0>
+bundle = SensorBundle(joints=Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=1000000000, frame_id='base_...={'ready': True, 'generation': 0, 'model_sha256': 'b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc'}))
+raw = Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=10000000000, frame_id='nav_base', data=(0.006, 0.0, 0.01))
+smoothed = Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=10000000000, frame_id='nav_base', data=(0.006, 0.0, 0.01))
+ros_ns = 1000000000, wall_ns = 10000000000
+
+    def evaluate(self, bundle: SensorBundle, raw: Sample, smoothed: Sample,
+                 ros_ns: int, wall_ns: int) -> tuple[Vec3, str]:
+        if (self.last_ros is not None and ros_ns < self.last_ros or
+                self.last_wall is not None and wall_ns < self.last_wall):
+            self.restart_required = True
+            return self.fail('clock_rollback')
+        if self.last_ros is None or ros_ns > self.last_ros:
+            self.progress_wall = wall_ns
+        self.last_ros, self.last_wall = ros_ns, wall_ns
+        if self.fault:
+            return ZERO, self.fault
+        if self.mode != 'CRAWL':
+            return ZERO, ''
+        # Raw is independent of the smoother and is checked first.
+        for name, value in (('raw', raw), ('smoothed', smoothed)):
+            ok, reason = sample_valid(value, ros_ns, wall_ns, self.generation,
+                                      max_age_ns=200_000_000)
+            if not ok:
+                return self.fail(name+':'+reason)
+            if (value.frame_id != 'nav_base' or len(value.data) != 3
+                    or abs(value.data[0]) > self.limits['max_vx']
+                    or value.data[1] != 0. or abs(value.data[2]) > self.limits['max_wz']):
+                return self.fail(name+':command_limit_or_frame')
+        if wall_ns-self.progress_wall > 200_000_000:
+            return self.fail('clock_paused')
+        for name in OWNERS:
+            if self.owners.get(name) != 1:
+                return self.fail('owner:'+name)
+        ok, reason = validate_bundle(bundle, ros_ns, wall_ns, self.engine_epoch)
+        if not ok:
+            return self.fail(reason)
+        try:
+            carry = bundle.carry.data
+            if (carry['ready'] is not True or carry['generation'] != self.generation
+                    or carry['model_sha256'] != self.model.model_sha256):
+                return self.fail('carry:not_ready_or_binding')
+            q, qd = bundle.joints.data['position'], bundle.joints.data['velocity']
+            if set(q) != set(self.model.limits) or set(qd) != set(q):
+                return self.fail('joints:names')
+            for name, value in q.items():
+                lo, hi, velocity, _ = self.model.limits[name]
+                if not lo <= value <= hi or abs(qd[name]) > velocity:
+                    return self.fail('joints:physical_limit')
+            for i, target in enumerate(self.carry_q, 1):
+                name = f'arm_joint_{i}'
+                if (abs(q[name]-target) > self.limits['carry_error_rad']
+                        or abs(qd[name]) > self.limits['carry_velocity_rps']):
+                    return self.fail('carry:measured_drift')
+            if bundle.body.frame_id != 'odom' or bundle.body.data['child_frame_id'] != 'base_footprint':
+                return self.fail('body:frame')
+            _, (roll, pitch, _) = body_rotation(bundle.body.data)
+            z = bundle.body.data['position'][2]
+            if (max(abs(roll), abs(pitch)) > self.limits['max_roll_pitch']
+                    or not self.limits['min_body_height_m'] <= z <= self.limits['max_body_height_m']):
+                return self.fail('body:stability')
+            contacts = bundle.contacts.data
+            if (bundle.contacts.frame_id != 'odom'
+>                   or tuple(contacts['names']) != self.model.foot_links
+                                                   ^^^^^^^^^^^^^^^^^^^^^
+                    or contacts['unexpected_contacts'] != 0):
+E                   AttributeError: 'ModelContract' object has no attribute 'foot_links'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/motion_guard.py:108: AttributeError
+_______________ test_clock_rollback_requires_restart_not_a_reset _______________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_clock_rollback_requires_restart_not_a_reset(nav_robot_model):
+        model = nav_robot_model
+        guard = armed(model)
+>       guard.evaluate(bundle(model), command(), command(), 1_000_000_000, 10_000_000_000)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.motion_guard.MotionGuard object at 0x75364c796930>
+bundle = SensorBundle(joints=Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=1000000000, frame_id='base_...={'ready': True, 'generation': 0, 'model_sha256': 'b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc'}))
+raw = Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=10000000000, frame_id='nav_base', data=(0.006, 0.0, 0.01))
+smoothed = Sample(stamp_ns=1000000000, received_ns=10000000000, epoch=0, sequence=10000000000, frame_id='nav_base', data=(0.006, 0.0, 0.01))
+ros_ns = 1000000000, wall_ns = 10000000000
+
+    def evaluate(self, bundle: SensorBundle, raw: Sample, smoothed: Sample,
+                 ros_ns: int, wall_ns: int) -> tuple[Vec3, str]:
+        if (self.last_ros is not None and ros_ns < self.last_ros or
+                self.last_wall is not None and wall_ns < self.last_wall):
+            self.restart_required = True
+            return self.fail('clock_rollback')
+        if self.last_ros is None or ros_ns > self.last_ros:
+            self.progress_wall = wall_ns
+        self.last_ros, self.last_wall = ros_ns, wall_ns
+        if self.fault:
+            return ZERO, self.fault
+        if self.mode != 'CRAWL':
+            return ZERO, ''
+        # Raw is independent of the smoother and is checked first.
+        for name, value in (('raw', raw), ('smoothed', smoothed)):
+            ok, reason = sample_valid(value, ros_ns, wall_ns, self.generation,
+                                      max_age_ns=200_000_000)
+            if not ok:
+                return self.fail(name+':'+reason)
+            if (value.frame_id != 'nav_base' or len(value.data) != 3
+                    or abs(value.data[0]) > self.limits['max_vx']
+                    or value.data[1] != 0. or abs(value.data[2]) > self.limits['max_wz']):
+                return self.fail(name+':command_limit_or_frame')
+        if wall_ns-self.progress_wall > 200_000_000:
+            return self.fail('clock_paused')
+        for name in OWNERS:
+            if self.owners.get(name) != 1:
+                return self.fail('owner:'+name)
+        ok, reason = validate_bundle(bundle, ros_ns, wall_ns, self.engine_epoch)
+        if not ok:
+            return self.fail(reason)
+        try:
+            carry = bundle.carry.data
+            if (carry['ready'] is not True or carry['generation'] != self.generation
+                    or carry['model_sha256'] != self.model.model_sha256):
+                return self.fail('carry:not_ready_or_binding')
+            q, qd = bundle.joints.data['position'], bundle.joints.data['velocity']
+            if set(q) != set(self.model.limits) or set(qd) != set(q):
+                return self.fail('joints:names')
+            for name, value in q.items():
+                lo, hi, velocity, _ = self.model.limits[name]
+                if not lo <= value <= hi or abs(qd[name]) > velocity:
+                    return self.fail('joints:physical_limit')
+            for i, target in enumerate(self.carry_q, 1):
+                name = f'arm_joint_{i}'
+                if (abs(q[name]-target) > self.limits['carry_error_rad']
+                        or abs(qd[name]) > self.limits['carry_velocity_rps']):
+                    return self.fail('carry:measured_drift')
+            if bundle.body.frame_id != 'odom' or bundle.body.data['child_frame_id'] != 'base_footprint':
+                return self.fail('body:frame')
+            _, (roll, pitch, _) = body_rotation(bundle.body.data)
+            z = bundle.body.data['position'][2]
+            if (max(abs(roll), abs(pitch)) > self.limits['max_roll_pitch']
+                    or not self.limits['min_body_height_m'] <= z <= self.limits['max_body_height_m']):
+                return self.fail('body:stability')
+            contacts = bundle.contacts.data
+            if (bundle.contacts.frame_id != 'odom'
+>                   or tuple(contacts['names']) != self.model.foot_links
+                                                   ^^^^^^^^^^^^^^^^^^^^^
+                    or contacts['unexpected_contacts'] != 0):
+E                   AttributeError: 'ModelContract' object has no attribute 'foot_links'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/motion_guard.py:108: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_raw_loss_latches_even_when_smoother_and_sensors_are_fresh
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_measured_faults_zero_without_smoother_ramp[collision]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_clock_rollback_requires_restart_not_a_reset
+3 failed, 10 passed in 5.02s

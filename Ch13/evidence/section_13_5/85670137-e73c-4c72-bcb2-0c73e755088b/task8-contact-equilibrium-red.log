@@ -1,0 +1,30 @@
+F
+=================================== FAILURES ===================================
+_________ test_com_inside_support_does_not_override_tiny_motor_limits __________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_com_inside_support_does_not_override_tiny_motor_limits(nav_robot_model):
+        args=inputs(nav_robot_model)
+        com=np.asarray(center_of_mass(nav_robot_model,args['joints'],args['body_pose']))
+        assert support_margin(com,list(args['points'].values()))>0.
+>       result=api().static_support(**args,effort_limits={n:.001 for n in nav_robot_model.joint_names})
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_equilibrium.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.contact_equilibrium'), \
+            'common 3D contact/actuation equilibrium evaluator missing'
+E       AssertionError: common 3D contact/actuation equilibrium evaluator missing
+E       assert None
+E        +  where None = <function find_spec at 0x7b3e115bc720>('integrated_robot_navigation.contact_equilibrium')
+E        +    where <function find_spec at 0x7b3e115bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_equilibrium.py:11: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_equilibrium.py::test_com_inside_support_does_not_override_tiny_motor_limits
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 19.47s

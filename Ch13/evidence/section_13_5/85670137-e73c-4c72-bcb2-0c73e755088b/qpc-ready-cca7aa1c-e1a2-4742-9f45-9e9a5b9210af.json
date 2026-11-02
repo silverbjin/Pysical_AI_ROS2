@@ -1,0 +1,194 @@
+{
+  "scope": "owned_readonly_host_handshake_not_clock_rate_or_engine_acceptance",
+  "trials": [
+    {
+      "warm_ready": false,
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "function Get-OriginalClockSample { (@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress) }; [Console]::WriteLine(\"READY\"); while(($line=[Console]::ReadLine()) -ne $null) { if($line -eq \"stop\") { break }; [Console]::WriteLine((Get-OriginalClockSample)) }"
+      ],
+      "rows": [
+        {
+          "index": 0,
+          "raw_before_ns": 20421457534100,
+          "raw_after_ns": 20421546831700,
+          "roundtrip_ns": 89297600,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:32.7362941+00:00",
+            "qpc": 247024620446
+          }
+        },
+        {
+          "index": 1,
+          "raw_before_ns": 20421546836500,
+          "raw_after_ns": 20421547672500,
+          "roundtrip_ns": 836000,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:32.8168793+00:00",
+            "qpc": 247025425592
+          }
+        },
+        {
+          "index": 2,
+          "raw_before_ns": 20421547675100,
+          "raw_after_ns": 20421548389900,
+          "roundtrip_ns": 714800,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:32.8178810+00:00",
+            "qpc": 247025433609
+          }
+        }
+      ],
+      "exit": 0
+    },
+    {
+      "warm_ready": true,
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "function Get-OriginalClockSample { (@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress) }; $null=Get-OriginalClockSample; [Console]::WriteLine(\"READY\"); while(($line=[Console]::ReadLine()) -ne $null) { if($line -eq \"stop\") { break }; [Console]::WriteLine((Get-OriginalClockSample)) }"
+      ],
+      "rows": [
+        {
+          "index": 0,
+          "raw_before_ns": 20421863364200,
+          "raw_after_ns": 20421893742300,
+          "roundtrip_ns": 30378100,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:33.1610323+00:00",
+            "qpc": 247028872243
+          }
+        },
+        {
+          "index": 1,
+          "raw_before_ns": 20421893747200,
+          "raw_after_ns": 20421894289500,
+          "roundtrip_ns": 542300,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:33.1640315+00:00",
+            "qpc": 247028893226
+          }
+        },
+        {
+          "index": 2,
+          "raw_before_ns": 20421894291900,
+          "raw_after_ns": 20421894649400,
+          "roundtrip_ns": 357500,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:33.1640315+00:00",
+            "qpc": 247028898030
+          }
+        }
+      ],
+      "exit": 0
+    },
+    {
+      "warm_ready": true,
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "function Get-OriginalClockSample { (@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress) }; $null=Get-OriginalClockSample; [Console]::WriteLine(\"READY\"); while(($line=[Console]::ReadLine()) -ne $null) { if($line -eq \"stop\") { break }; [Console]::WriteLine((Get-OriginalClockSample)) }"
+      ],
+      "rows": [
+        {
+          "index": 0,
+          "raw_before_ns": 20422252547600,
+          "raw_after_ns": 20422259995800,
+          "roundtrip_ns": 7448200,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:33.5274175+00:00",
+            "qpc": 247032531597
+          }
+        },
+        {
+          "index": 1,
+          "raw_before_ns": 20422259999800,
+          "raw_after_ns": 20422260798800,
+          "roundtrip_ns": 799000,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:33.5300446+00:00",
+            "qpc": 247032556600
+          }
+        },
+        {
+          "index": 2,
+          "raw_before_ns": 20422260801600,
+          "raw_after_ns": 20422261484900,
+          "roundtrip_ns": 683300,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:33.5310451+00:00",
+            "qpc": 247032564642
+          }
+        }
+      ],
+      "exit": 0
+    },
+    {
+      "warm_ready": false,
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "function Get-OriginalClockSample { (@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress) }; [Console]::WriteLine(\"READY\"); while(($line=[Console]::ReadLine()) -ne $null) { if($line -eq \"stop\") { break }; [Console]::WriteLine((Get-OriginalClockSample)) }"
+      ],
+      "rows": [
+        {
+          "index": 0,
+          "raw_before_ns": 20422612160800,
+          "raw_after_ns": 20422719061200,
+          "roundtrip_ns": 106900400,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:33.8925777+00:00",
+            "qpc": 247036182952
+          }
+        },
+        {
+          "index": 1,
+          "raw_before_ns": 20422719066500,
+          "raw_after_ns": 20422719913200,
+          "roundtrip_ns": 846700,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:33.9894907+00:00",
+            "qpc": 247037147884
+          }
+        },
+        {
+          "index": 2,
+          "raw_before_ns": 20422719916600,
+          "raw_after_ns": 20422720490900,
+          "roundtrip_ns": 574300,
+          "host": {
+            "frequency": 10000000,
+            "utc": "2026-11-01T07:15:33.9894907+00:00",
+            "qpc": 247037154678
+          }
+        }
+      ],
+      "exit": 0
+    }
+  ],
+  "protocol_sha256": "c49bab06092e11e21ea2b764c2fde8ff7dc647cd8fa673ad8a6e7cde15d12f25"
+}

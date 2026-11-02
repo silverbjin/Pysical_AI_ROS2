@@ -1,0 +1,38 @@
+F
+=================================== FAILURES ===================================
+_________ test_spawn_failure_closes_both_socket_ends_and_never_retries _________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7945e12a34d0>
+
+    def test_spawn_failure_closes_both_socket_ends_and_never_retries(nav_robot_model,monkeypatch):
+        from integrated_robot_navigation import load_process as module
+        model,_=inputs(nav_robot_model);worker=api()(model);calls=[]
+        def denied(*a,**k):calls.append(1);raise OSError('controlled spawn rejection')
+        monkeypatch.setattr(module.subprocess,'Popen',denied)
+        before=len(os.listdir('/proc/self/fd'))
+>       with pytest.raises(ValueError,match='preparation'):worker.prepare()
+                                                           ^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py:89: in prepare
+    self._process=subprocess.Popen([sys.executable,'-m',__name__,'--worker-fd',str(child.fileno())],
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = (['/home/jinho/ch13_vision_13_4_venv/bin/python', '-m', 'integrated_robot_navigation.load_process', '--worker-fd', '23'],)
+k = {'pass_fds': (23,), 'stderr': -1, 'stdin': -3, 'stdout': -3}
+
+>   def denied(*a,**k):calls.append(1);raise OSError('controlled spawn rejection')
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   OSError: controlled spawn rejection
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:138: OSError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_spawn_failure_closes_both_socket_ends_and_never_retries
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 30 deselected in 16.24s
+Exception ignored in: <socket.socket fd=23, family=1, type=1, proto=0>
+ResourceWarning: unclosed <socket.socket fd=23, family=1, type=1, proto=0>
+Exception ignored in: <socket.socket fd=22, family=1, type=1, proto=0>
+ResourceWarning: unclosed <socket.socket fd=22, family=1, type=1, proto=0>

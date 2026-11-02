@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_calibration_uses_the_tick_bundle_even_when_a_new_carry_arrives ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x761d879c4bf0>
+
+    def test_calibration_uses_the_tick_bundle_even_when_a_new_carry_arrives(monkeypatch):
+        context = Context()
+        rclpy.init(context=context)
+        node = CrawlController(context=context)
+        try:
+            node.model = SimpleNamespace(model_sha256='model')
+            monkeypatch.setattr(node,'count_publishers',lambda _:1)
+            good = Sample(1_000_000_000,10_000_000_000,0,1,'base_link',
+                dict(ready=True,generation=0,model_sha256='model'))
+            node.inbox.receive('carry',good)
+            bundle = node._bundle_snapshot(1_010_000_000)
+            node.inbox.receive('carry',Sample(1_010_000_000,10_020_000_001,0,2,'base_link',good.data))
+            valid,reason = node._calibration_carry(1_010_000_000,10_020_000_000)
+>           assert valid, 'a fresh prior sample was replaced by a future wall receipt: '+reason
+E           AssertionError: a fresh prior sample was replaced by a future wall receipt: calibration_carry:wall_age
+E           assert False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_decision_cutoff.py:23: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_decision_cutoff.py::test_calibration_uses_the_tick_bundle_even_when_a_new_carry_arrives
+1 failed in 11.90s

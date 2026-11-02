@@ -1,0 +1,206 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+________ test_explicit_collision_mapping_and_world_up_load[False-30.0] _________
+
+swap = False, force = 30.0
+
+    @pytest.mark.parametrize('swap,force', [(False, 30.), (True, -30.)])
+    def test_explicit_collision_mapping_and_world_up_load(swap, force):
+        name = next(iter(MAP))
+        msg = Contacts(header=Header(stamp=Time(sec=4), frame_id='odom'),
+                       contacts=[contact(name, force, swap)])
+>       result = api().normalize_contacts(msg, POINTS, MAP, GROUND, epoch=8, sequence=9)
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gazebo_contacts'), 'normalizer missing'
+E       AssertionError: normalizer missing
+E       assert None
+E        +  where None = <function find_spec at 0x712a747c0720>('integrated_robot_navigation.gazebo_contacts')
+E        +    where <function find_spec at 0x712a747c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:18: AssertionError
+________ test_explicit_collision_mapping_and_world_up_load[True--30.0] _________
+
+swap = True, force = -30.0
+
+    @pytest.mark.parametrize('swap,force', [(False, 30.), (True, -30.)])
+    def test_explicit_collision_mapping_and_world_up_load(swap, force):
+        name = next(iter(MAP))
+        msg = Contacts(header=Header(stamp=Time(sec=4), frame_id='odom'),
+                       contacts=[contact(name, force, swap)])
+>       result = api().normalize_contacts(msg, POINTS, MAP, GROUND, epoch=8, sequence=9)
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gazebo_contacts'), 'normalizer missing'
+E       AssertionError: normalizer missing
+E       assert None
+E        +  where None = <function find_spec at 0x712a747c0720>('integrated_robot_navigation.gazebo_contacts')
+E        +    where <function find_spec at 0x712a747c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:18: AssertionError
+_____________ test_unexpected_body_contact_is_reported_not_hidden ______________
+
+    def test_unexpected_body_contact_is_reported_not_hidden():
+        msg = Contacts(header=Header(frame_id='odom'), contacts=[contact('integrated_robot::base::body')])
+>       result = api().normalize_contacts(msg, POINTS, MAP, GROUND, epoch=0, sequence=1)
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gazebo_contacts'), 'normalizer missing'
+E       AssertionError: normalizer missing
+E       assert None
+E        +  where None = <function find_spec at 0x712a747c0720>('integrated_robot_navigation.gazebo_contacts')
+E        +    where <function find_spec at 0x712a747c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:18: AssertionError
+____________ test_bad_native_contact_sample_fails_closed[duplicate] ____________
+
+case = 'duplicate'
+
+    @pytest.mark.parametrize('case', ['duplicate', 'missing_wrench', 'nonfinite', 'frame'])
+    def test_bad_native_contact_sample_fails_closed(case):
+        item = contact(next(iter(MAP)))
+        msg = Contacts(header=Header(frame_id='odom'), contacts=[item])
+        if case == 'duplicate':
+            msg.contacts.append(item)
+        elif case == 'missing_wrench':
+            item.wrenches = []
+        elif case == 'nonfinite':
+            item.wrenches[0].body_1_wrench.force.z = math.nan
+        elif case == 'frame':
+            msg.header.frame_id = 'base_link'
+        with pytest.raises(ValueError):
+>           api().normalize_contacts(msg, POINTS, MAP, GROUND, epoch=0, sequence=1)
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gazebo_contacts'), 'normalizer missing'
+E       AssertionError: normalizer missing
+E       assert None
+E        +  where None = <function find_spec at 0x712a747c0720>('integrated_robot_navigation.gazebo_contacts')
+E        +    where <function find_spec at 0x712a747c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:18: AssertionError
+_________ test_bad_native_contact_sample_fails_closed[missing_wrench] __________
+
+case = 'missing_wrench'
+
+    @pytest.mark.parametrize('case', ['duplicate', 'missing_wrench', 'nonfinite', 'frame'])
+    def test_bad_native_contact_sample_fails_closed(case):
+        item = contact(next(iter(MAP)))
+        msg = Contacts(header=Header(frame_id='odom'), contacts=[item])
+        if case == 'duplicate':
+            msg.contacts.append(item)
+        elif case == 'missing_wrench':
+            item.wrenches = []
+        elif case == 'nonfinite':
+            item.wrenches[0].body_1_wrench.force.z = math.nan
+        elif case == 'frame':
+            msg.header.frame_id = 'base_link'
+        with pytest.raises(ValueError):
+>           api().normalize_contacts(msg, POINTS, MAP, GROUND, epoch=0, sequence=1)
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gazebo_contacts'), 'normalizer missing'
+E       AssertionError: normalizer missing
+E       assert None
+E        +  where None = <function find_spec at 0x712a747c0720>('integrated_robot_navigation.gazebo_contacts')
+E        +    where <function find_spec at 0x712a747c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:18: AssertionError
+____________ test_bad_native_contact_sample_fails_closed[nonfinite] ____________
+
+case = 'nonfinite'
+
+    @pytest.mark.parametrize('case', ['duplicate', 'missing_wrench', 'nonfinite', 'frame'])
+    def test_bad_native_contact_sample_fails_closed(case):
+        item = contact(next(iter(MAP)))
+        msg = Contacts(header=Header(frame_id='odom'), contacts=[item])
+        if case == 'duplicate':
+            msg.contacts.append(item)
+        elif case == 'missing_wrench':
+            item.wrenches = []
+        elif case == 'nonfinite':
+            item.wrenches[0].body_1_wrench.force.z = math.nan
+        elif case == 'frame':
+            msg.header.frame_id = 'base_link'
+        with pytest.raises(ValueError):
+>           api().normalize_contacts(msg, POINTS, MAP, GROUND, epoch=0, sequence=1)
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gazebo_contacts'), 'normalizer missing'
+E       AssertionError: normalizer missing
+E       assert None
+E        +  where None = <function find_spec at 0x712a747c0720>('integrated_robot_navigation.gazebo_contacts')
+E        +    where <function find_spec at 0x712a747c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:18: AssertionError
+______________ test_bad_native_contact_sample_fails_closed[frame] ______________
+
+case = 'frame'
+
+    @pytest.mark.parametrize('case', ['duplicate', 'missing_wrench', 'nonfinite', 'frame'])
+    def test_bad_native_contact_sample_fails_closed(case):
+        item = contact(next(iter(MAP)))
+        msg = Contacts(header=Header(frame_id='odom'), contacts=[item])
+        if case == 'duplicate':
+            msg.contacts.append(item)
+        elif case == 'missing_wrench':
+            item.wrenches = []
+        elif case == 'nonfinite':
+            item.wrenches[0].body_1_wrench.force.z = math.nan
+        elif case == 'frame':
+            msg.header.frame_id = 'base_link'
+        with pytest.raises(ValueError):
+>           api().normalize_contacts(msg, POINTS, MAP, GROUND, epoch=0, sequence=1)
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.gazebo_contacts'), 'normalizer missing'
+E       AssertionError: normalizer missing
+E       assert None
+E        +  where None = <function find_spec at 0x712a747c0720>('integrated_robot_navigation.gazebo_contacts')
+E        +    where <function find_spec at 0x712a747c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py:18: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py::test_explicit_collision_mapping_and_world_up_load[False-30.0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py::test_explicit_collision_mapping_and_world_up_load[True--30.0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py::test_unexpected_body_contact_is_reported_not_hidden
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py::test_bad_native_contact_sample_fails_closed[duplicate]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py::test_bad_native_contact_sample_fails_closed[missing_wrench]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py::test_bad_native_contact_sample_fails_closed[nonfinite]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_contacts.py::test_bad_native_contact_sample_fails_closed[frame]
+7 failed in 3.22s

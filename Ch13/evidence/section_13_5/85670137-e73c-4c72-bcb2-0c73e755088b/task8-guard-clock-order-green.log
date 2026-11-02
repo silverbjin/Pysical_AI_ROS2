@@ -1,0 +1,22 @@
+......F                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_guard_age_stop_records_selected_header_receipt_and_clock_not_kernel_fault _
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x7a501d4ebda0>
+
+    def test_guard_age_stop_records_selected_header_receipt_and_clock_not_kernel_fault(crawl_rig):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(.08)
+        rig.gate_delay_ns = 250_000_000
+        rig.pump(.12)
+>       assert rig.crawl_states[-1].fault_reason == 'guard:ros_age'
+E       AssertionError: assert '' == 'guard:ros_age'
+E         
+E         - guard:ros_age
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py:60: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py::test_guard_age_stop_records_selected_header_receipt_and_clock_not_kernel_fault
+1 failed, 6 passed in 27.02s

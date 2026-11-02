@@ -1,0 +1,43 @@
+F
+=================================== FAILURES ===================================
+_ test_relay_ingress_receives_original_data_without_dispatching_model_owner[guard] _
+
+stream = 'guard'
+
+    @pytest.mark.parametrize('stream',['guard','contacts','command'])
+    def test_relay_ingress_receives_original_data_without_dispatching_model_owner(stream):
+        context=Context();rclpy.init(context=context)
+        node=CrawlController(context=context,cli_args=['--ros-args','-r',
+            '/navigation/guard_state:=/independent_ingress/guard'],parameter_overrides=[
+            Parameter('validation_mode',value=True),Parameter('control_clock_mode',value='relay100')])
+        peer=Node('independent_ingress_peer',context=context)
+        if stream=='guard':
+            topic='/independent_ingress/guard';kind=MotionState;qos=1
+            msg=MotionState(state='FAULT',generation=7,model_sha256='original',fault_reason='retained')
+            msg.header.stamp.sec=17;msg.header.frame_id='base_link'
+            arrived=lambda:bool(node.guard_receipts)
+        elif stream=='contacts':
+            topic='/navigation/foot_contacts';kind=FootContacts;qos=qos_profile_sensor_data
+            msg=FootContacts(names=['FL','FR','RL','RR'],normal_forces=[30.]*4,
+                touching=[True]*4,points=[Point(z=-.4) for _ in range(4)])
+            msg.header.stamp.sec=17;msg.header.frame_id='base_link'
+            arrived=lambda:bool(node.contact_ingress)
+        else:
+            topic='/navigation/cmd_vel';kind=Twist;qos=10
+            msg=Twist();msg.linear.x=.01
+            arrived=lambda:node.command is not None
+        pub=peer.create_publisher(kind,topic,qos)
+        try:
+            deadline=time.monotonic()+2.
+            while pub.get_subscription_count()!=1 and time.monotonic()<deadline:time.sleep(.01)
+>           assert pub.get_subscription_count()==1,'exactly one ingress subscription required'
+E           AssertionError: exactly one ingress subscription required
+E           assert 0 == 1
+E            +  where 0 = get_subscription_count()
+E            +    where get_subscription_count = <rclpy.publisher.Publisher object at 0x7387ab862810>.get_subscription_count
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_ingress_dispatch.py:43: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_ingress_dispatch.py::test_relay_ingress_receives_original_data_without_dispatching_model_owner[guard]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 11.37s

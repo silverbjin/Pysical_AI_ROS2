@@ -1,0 +1,27 @@
+F
+=================================== FAILURES ===================================
+_ test_real_failed_return_distance_keeps_rate_acceleration_and_smooth_terminal _
+
+    def test_real_failed_return_distance_keeps_rate_acceleration_and_smooth_terminal():
+>       x=value();v=[];z=[];dt=.001
+          ^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_smooth_preload.py:17: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_smooth_preload.py:9: in value
+    x=InPlaceCalibration(start_z=.0365422433542334,rest_z=.01670515763223346,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.calibration.InPlaceCalibration object at 0x792fd27e6540>
+
+    def __init__(self, *, start_z, rest_z, baseline_z, limits, ros_ns, wall_ns, deadline_wall_ns,
+                 return_policy='loaded_quintic'):
+        if return_policy not in ('loaded_quintic','bounded_preload'):
+>           raise ValueError('unknown calibration return policy')
+E           ValueError: unknown calibration return policy
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/calibration.py:45: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_smooth_preload.py::test_real_failed_return_distance_keeps_rate_acceleration_and_smooth_terminal
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 23.24s

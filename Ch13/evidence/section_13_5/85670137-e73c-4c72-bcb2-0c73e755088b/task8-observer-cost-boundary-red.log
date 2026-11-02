@@ -1,0 +1,22 @@
+F
+=================================== FAILURES ===================================
+___________ test_probe_separates_callback_wait_cpu_and_journal_cost ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_probe_separates_callback_0')
+
+    def test_probe_separates_callback_wait_cpu_and_journal_cost(tmp_path):
+        """Controlled 15ms wait is telemetry, never a native latency verdict."""
+        from probe_navigation_13_5 import NavigationProbe
+        context=Context();rclpy.init(context=context)
+        probe=NavigationProbe(tmp_path,engine='gazebo',context=context)
+        try:
+>           assert hasattr(probe,'timing_snapshot'),'callback/journal timing boundary missing'
+E           AssertionError: callback/journal timing boundary missing
+E           assert False
+E            +  where False = hasattr(<probe_navigation_13_5.NavigationProbe object at 0x782403d05820>, 'timing_snapshot')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py:30: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_receiver_execution.py::test_probe_separates_callback_wait_cpu_and_journal_cost
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 11.95s

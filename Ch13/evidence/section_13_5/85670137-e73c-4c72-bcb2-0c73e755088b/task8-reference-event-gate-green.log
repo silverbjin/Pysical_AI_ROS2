@@ -1,0 +1,23 @@
+F
+=================================== FAILURES ===================================
+_ test_neither_clock_can_bypass_the_20ms_command_spacing[119999999-120000000] __
+
+ros = 119999999, wall = 120000000
+
+    @pytest.mark.parametrize('ros,wall',[(119_999_999,120_000_000),(120_000_000,119_999_999)])
+    def test_neither_clock_can_bypass_the_20ms_command_spacing(ros,wall):
+        value=gate();value.issued(100_000_000,100_000_000);value.defer()
+        assert not value.allowed(ros,wall)
+        assert not value.notify(ros,wall)
+        assert not value.take_notification()
+        assert value.allowed(120_000_000,120_000_000)
+>       assert value.notify(120_000_000,120_000_000)
+E       assert False
+E        +  where False = notify(120000000, 120000000)
+E        +    where notify = <integrated_robot_navigation.reference_dispatch.ReferenceDispatch object at 0x7205329aef60>.notify
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch.py:19: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch.py::test_neither_clock_can_bypass_the_20ms_command_spacing[119999999-120000000]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 18.53s

@@ -1,0 +1,31 @@
+F
+=================================== FAILURES ===================================
+_ test_loaded_unload_height_fault_only_confirms_read_only_stop_after_explicit_request _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_loaded_unload_height_fault_only_confirms_read_only_stop_after_explicit_request(nav_robot_model):
+        value,plant=shifting(nav_robot_model,(.01,0.,0.))
+        value.swing_foot='fr_foot';value._unload_start=plant.ros
+        value._targets['fr_foot'][2]+=value.limits['max_unload_height_m']
+        reason='measured unload height bound reached'
+        value._fail(reason);plant.tick(follow=False)
+        held=deepcopy(value._targets);generation=value.generation
+        for index in range(55):tick(value,plant,index)
+        assert not value.fault_stop_confirmed,'fault alone became a stop acknowledgement'
+        value.request_stop(urgent=True)
+        for index in range(55):
+            result=tick(value,plant,index)
+            assert result.state=='FAULT' and result.reason==reason and result.generation==generation
+            assert result.joint_targets is None
+            assert all(np.array_equal(point,value._targets[name]) for name,point in held.items())
+>       assert value.fault_stop_confirmed, 'fresh loaded height-limit fault never acknowledged measured stop'
+E       AssertionError: fresh loaded height-limit fault never acknowledged measured stop
+E       assert False
+E        +  where False = <integrated_robot_navigation.gait.CrawlMachine object at 0x7230cf5cb710>.fault_stop_confirmed
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_hold_stop.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_hold_stop.py::test_loaded_unload_height_fault_only_confirms_read_only_stop_after_explicit_request
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 6 deselected in 9.86s

@@ -1,0 +1,23 @@
+{
+  "scope": "rejected_diagnostic_not_engine_acceptance",
+  "pool": "diagnostic-owner-cost-pool-23ccb3fd-95be-48af-ad40-ba9572beb310",
+  "serial": "diagnostic-owner-cost-serial-42feec9e-6e79-47d8-8b64-da657a8b403b",
+  "engine_attempts": 0,
+  "rejected": true,
+  "reasons": [
+    "Synthetic ACK fixture emitted different values at the same capture timestamp; runtime correctly rejected conflicting applied observation.",
+    "Pool cProfile aggregation across worker threads is unsuitable for attributing live owner costs.",
+    "Serial activation failed guard:wall_age; then empty pstats output raised before cleanup. No valid serial comparison result exists."
+  ],
+  "failed_cleanup": {
+    "boot_id": "aff8f14e-67e4-491f-a43f-9392c6f4400f",
+    "verified_uid": 1000,
+    "verified_pid": 1112,
+    "verified_command": "python .superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/profile-control-owner.py <closed-native-g2-38127-evidence> serial",
+    "signal": "SIGINT",
+    "outcome": "KeyboardInterrupt in threading shutdown followed by C++ abort; exec parent returned 1. This is NOT normal closure.",
+    "ingress_join_confirmed": false,
+    "owned_processes_after": "pgrep -a -f profile-control-owner returned 1; neither owned diagnostic command remained"
+  },
+  "decision": "Do not use either cost run to select an executor. Do not rerun this diagnostic. Use bounded numeric stage records inside the actual owner under real engines."
+}

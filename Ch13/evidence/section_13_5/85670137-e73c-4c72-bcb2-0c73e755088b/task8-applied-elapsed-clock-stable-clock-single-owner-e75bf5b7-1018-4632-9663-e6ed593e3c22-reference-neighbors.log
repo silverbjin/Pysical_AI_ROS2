@@ -1,0 +1,51 @@
+..........................................F
+=================================== FAILURES ===================================
+____ test_ack_after_held_decision_wakes_owner_without_another_periodic_tick ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-7/test_ack_after_held_decision_w0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7e043c0f8a70>
+
+    def test_ack_after_held_decision_wakes_owner_without_another_periodic_tick(tmp_path,nav_robot_model,monkeypatch):
+        held=[];original=CrawlController._tick
+        def observe(node):
+            before=node.command_publication_count
+            result=original(node)
+            if (node.active and node._credit_motion and node.machine.state=='CRAWL'
+                    and not node.machine.stopping and node.applied_credit.pending is not None
+                    and before==node.command_publication_count):
+                held.append(node.reference_dispatch.snapshot())
+            return result
+        monkeypatch.setattr(CrawlController,'_tick',observe)
+        profile,_,_=relay_proof(tmp_path,nav_robot_model,'a'*64)
+        ctx=Context();rclpy.init(context=ctx)
+        node=controller(ctx,nav_robot_model,profile,contract('mujoco'))
+        rig=CrawlRig(node,nav_robot_model,ctx)
+        rig.node.destroy_publisher(rig.clock)
+        rig.clock=rig.node.create_publisher(Clock,'/navigation/control_clock',10)
+        echo=rig.node.create_publisher(JointState,'/navigation/applied_reference',1)
+        try:
+>           rig.pump(.3);activate(rig);rig.ready=True
+                         ^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_deferred_ack_ros.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rig = <test_crawl_lifecycle.CrawlRig object at 0x7e043bbb3aa0>
+
+    def activate(rig):
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+>       assert rig.transition(Transition.TRANSITION_ACTIVATE)
+E       assert False
+E        +  where False = transition(3)
+E        +    where transition = <test_crawl_lifecycle.CrawlRig object at 0x7e043bbb3aa0>.transition
+E        +    and   3 = Transition.TRANSITION_ACTIVATE
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py:14: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793121356.641071226] [crawl_controller]: activate requires fresh STAND/HOLD guard: guard:ros_age
+[INFO] [1793121356.705451128] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_waitset", "alive": false, "joined": true, "error": null, "pid": 7343, "uid": 1000, "native_tid": 7469, "node_name": "crawl_controller_ingress", "namespace": "/", "clock_subscriptions": []}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_deferred_ack_ros.py::test_ack_after_held_decision_wakes_owner_without_another_periodic_tick
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 42 passed in 76.57s (0:01:16)

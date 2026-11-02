@@ -1,0 +1,35 @@
+F
+=================================== FAILURES ===================================
+_ test_first_swing_centers_the_next_stance_instead_of_advancing_a_full_stride[0.01] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+vx = 0.01
+
+    @pytest.mark.parametrize('vx',[.01,-.01])
+    def test_first_swing_centers_the_next_stance_instead_of_advancing_a_full_stride(nav_robot_model,vx):
+        plant=IdealFeedback(nav_robot_model);value=machine(nav_robot_model,plant)
+        nominal={key:(np.linalg.inv(value.travel)@np.r_[point,1.])[:3]
+            for key,point in value._targets.items()}
+        for _ in range(1000):
+            result=value.advance(plant.state,(vx,0.,0.),plant.ros,plant.wall)
+            assert result.state!='FAULT',result.reason
+            if result.phase=='SWING':break
+            plant.tick(value,result)
+        else:pytest.fail('no normal swing reached')
+        foot=result.swing_foot
+        neutral=(value.travel@np.r_[nominal[foot],1.])[:2]
+        # Remaining swing plus half the next stance centers the workspace. A full
+        # old-anchor stride adds a startup/command-change bias and is not centered.
+        horizon=value.TRAVEL_BUDGET['SWING']+(value.limits['cycle_s']-value.TRAVEL_BUDGET['SWING'])/2
+>       assert np.allclose(value._swing_goal[:2]-neutral,[vx*horizon,0.],atol=1e-9), \
+            'foot endpoint retains the full previous-anchor stride rather than a centered stance'
+E       AssertionError: foot endpoint retains the full previous-anchor stride rather than a centered stance
+E       assert False
+E        +  where False = <function allclose at 0x799a25462230>((array([0.33, 0.18]) - array([0.257, 0.18 ])), [0.044000000000000004, 0.0], atol=1e-09)
+E        +    where <function allclose at 0x799a25462230> = np.allclose
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_neutral_placement.py:29: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_neutral_placement.py::test_first_swing_centers_the_next_stance_instead_of_advancing_a_full_stride[0.01]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 7.55s

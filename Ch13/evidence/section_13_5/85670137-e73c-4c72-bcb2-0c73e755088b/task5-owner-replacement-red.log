@@ -1,0 +1,42 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_real_dds_faults_require_reset_not_just_recovered_inputs[owner_replaced] _
+
+rig = <test_motion_guard_ros.Rig object at 0x7d1e998433e0>
+fault = 'owner_replaced'
+
+    @pytest.mark.parametrize('fault', ['producer', 'owner_replaced', 'carry', 'scan', 'generation'])
+    def test_real_dds_faults_require_reset_not_just_recovered_inputs(rig, fault):
+        assert rig.mode('CRAWL').accepted
+        rig.pump(.1)
+        if fault == 'producer':
+            extra = rig.node.create_publisher(Twist, '/navigation/cmd_vel_raw', 10)
+            rig.pump(.35)
+            rig.node.destroy_publisher(extra)
+        elif fault == 'owner_replaced':
+            # Count returns to one before spinning; endpoint identity must still
+            # require re-arming instead of silently adopting the replacement.
+            rig.node.destroy_publisher(rig.pubs['raw'])
+            rig.pubs['raw'] = rig.node.create_publisher(Twist, '/navigation/cmd_vel_raw', 10)
+            rig.pump(.15)
+        elif fault == 'carry':
+            rig.ready = False
+            rig.pump(.1)
+            rig.ready = True
+        elif fault == 'scan':
+            rig.pump(.4, scan=False)
+        else:
+            assert rig.mode('RESET').accepted
+            # Old carry generation continues over actual DDS after the reset.
+            assert rig.mode('CRAWL').accepted
+            rig.pump(.1)
+>       assert rig.outputs[-1][1:] == (0., 0.)
+E       assert (0.006, 0.01) == (0.0, 0.0)
+E         
+E         At index 0 diff: 0.006 != 0.0
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py:199: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard_ros.py::test_real_dds_faults_require_reset_not_just_recovered_inputs[owner_replaced]
+1 failed, 7 deselected in 6.82s

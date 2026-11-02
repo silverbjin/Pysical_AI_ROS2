@@ -1,0 +1,18 @@
+F
+=================================== FAILURES ===================================
+_________ test_expensive_thread_walk_is_opt_in_and_disabled_does_no_io _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71c87ceba3c0>
+
+    def test_expensive_thread_walk_is_opt_in_and_disabled_does_no_io(monkeypatch):
+        module=api();calls=[]
+        monkeypatch.setattr(module,'sample_owned_threads',lambda *args,**kw:calls.append(args) or {'read_only':True})
+>       assert module.optional_thread_sample(11,50,123) is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'integrated_robot_navigation.runtime_cpu_probe' has no attribute 'optional_thread_sample'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_cpu_probe.py:77: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_cpu_probe.py::test_expensive_thread_walk_is_opt_in_and_disabled_does_no_io
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 8 deselected in 14.77s

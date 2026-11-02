@@ -1,0 +1,24 @@
+..........................F                                              [100%]
+=================================== FAILURES ===================================
+_____ test_deactivation_preserves_fault_diagnostic_and_never_claims_ready ______
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x70ff7e7d6180>
+
+    def test_deactivation_preserves_fault_diagnostic_and_never_claims_ready(crawl_rig):
+        rig = crawl_rig
+        activate(rig)
+        rig.pump(.28, clock=False)
+        reason = rig.crawl_states[-1].fault_reason
+        assert reason
+        assert rig.transition(Transition.TRANSITION_DEACTIVATE)
+        rig.pump(.08, clock=False)
+        assert rig.crawl_states[-1].state == 'INACTIVE'
+>       assert rig.crawl_states[-1].fault_reason == reason
+E       AssertionError: assert '' == 'clock paused'
+E         
+E         - clock paused
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py:55: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py::test_deactivation_preserves_fault_diagnostic_and_never_claims_ready
+1 failed, 26 passed in 28.41s

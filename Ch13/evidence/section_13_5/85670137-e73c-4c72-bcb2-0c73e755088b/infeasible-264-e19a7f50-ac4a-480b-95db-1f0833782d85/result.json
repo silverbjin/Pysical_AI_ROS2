@@ -1,0 +1,74 @@
+{
+  "scope": "offline_feasibility_proof_not_runtime_relaxation_or_physical_acceptance",
+  "native_error": "transition optimization complete XYZ: In solveGeneric() // Infeasible inequality constraints. code=2",
+  "lp": {
+    "success": false,
+    "status": 2,
+    "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is At lower/fixed bound)"
+  },
+  "certificate": {
+    "aT_y_max": 5.551115123125783e-17,
+    "bT_y": -1.0,
+    "nonnegative_min": 0.0,
+    "rows": [
+      {
+        "row": 33,
+        "constraint": "fl_foot:calf:servo-",
+        "weight": 0.5032444593975798,
+        "scaled_rhs": -2.986787140097693
+      },
+      {
+        "row": 77,
+        "constraint": "fl_foot:stepL1:1",
+        "weight": 0.014845793947189935,
+        "scaled_rhs": 0.5773502691896258
+      },
+      {
+        "row": 79,
+        "constraint": "fl_foot:stepL1:3",
+        "weight": 0.004657732440926225,
+        "scaled_rhs": 0.5773502691896258
+      },
+      {
+        "row": 137,
+        "constraint": "upper[5]",
+        "weight": 0.4918237134437811,
+        "scaled_rhs": 1.0
+      }
+    ]
+  },
+  "counterfactual_constraint_groups": {
+    "without_servo": {
+      "success": true,
+      "status": 0
+    },
+    "without_static": {
+      "success": false,
+      "status": 2
+    },
+    "without_friction": {
+      "success": false,
+      "status": 2
+    }
+  },
+  "command": [
+    "c++",
+    "-std=c++17",
+    "-O2",
+    "-fPIC",
+    "-shared",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/infeasible-264-e19a7f50-ac4a-480b-95db-1f0833782d85/debug.cpp",
+    "-I/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/include",
+    "-I/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/third_party/qpmad/include",
+    "-I/usr/include/eigen3",
+    "-L/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib",
+    "-lnavigation_mass_kinematics",
+    "-lnavigation_reference_geometry",
+    "-Wl,-rpath,/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib",
+    "-o",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/infeasible-264-e19a7f50-ac4a-480b-95db-1f0833782d85/lib/libnavigation_xyz_optimizer.so"
+  ],
+  "fixture_sha256": "19cc4abd30210422c4aaba23c8f1d6fd2e97cdde7658f9ae35b2400d5f658b87",
+  "source_sha256": "60374c2a9f488331d0b4324ee0d2c3d28b987e178f4e5893d730c64bc76e7fba",
+  "library_sha256": "63fd17dd8f163d61b7cf892c7571d007a720a21b818bb068884380ccaecbf616"
+}

@@ -1,0 +1,29 @@
+F
+=================================== FAILURES ===================================
+_____ test_random_nominal_ik_preserves_moving_bounds_and_clearance_checks ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_random_nominal_ik_preserves_moving_bounds_and_clearance_checks(nav_robot_model):
+>       old,new,geometry=configured(nav_robot_model);rng=np.random.default_rng(130531)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_g1_arithmetic.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def configured(model):
+>       assert 'kinematics_evaluator' in inspect.signature(CrawlMachine).parameters, \
+            'G1 nominal leg IK still repeats Python geometry work in the model owner'
+E       AssertionError: G1 nominal leg IK still repeats Python geometry work in the model owner
+E       assert 'kinematics_evaluator' in mappingproxy(OrderedDict({'model': <Parameter "model">, 'limits': <Parameter "limits">, 'reference_time_policy': <Para...icy': <Parameter "load_transfer_policy='geometric'">, 'async_load_transfer': <Parameter "async_load_transfer=False">}))
+E        +  where mappingproxy(OrderedDict({'model': <Parameter "model">, 'limits': <Parameter "limits">, 'reference_time_policy': <Para...icy': <Parameter "load_transfer_policy='geometric'">, 'async_load_transfer': <Parameter "async_load_transfer=False">})) = <Signature (model, limits, *, reference_time_policy='bounded_20ms', mass_evaluator=None, calibration_return_policy='loaded_quintic', load_transfer_policy='geometric', async_load_transfer=False)>.parameters
+E        +    where <Signature (model, limits, *, reference_time_policy='bounded_20ms', mass_evaluator=None, calibration_return_policy='loaded_quintic', load_transfer_policy='geometric', async_load_transfer=False)> = <function signature at 0x7fc5ee412840>(CrawlMachine)
+E        +      where <function signature at 0x7fc5ee412840> = inspect.signature
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_g1_arithmetic.py:13: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_g1_arithmetic.py::test_random_nominal_ik_preserves_moving_bounds_and_clearance_checks
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 20.14s

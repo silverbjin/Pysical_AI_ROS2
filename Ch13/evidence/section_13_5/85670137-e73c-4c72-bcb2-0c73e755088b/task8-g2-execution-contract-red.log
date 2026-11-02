@@ -1,0 +1,20 @@
+F
+=================================== FAILURES ===================================
+_ test_exact_runtime_contract_is_required_in_addition_to_native_g1_result[gazebo] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-34/test_exact_runtime_contract_is0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine',['gazebo','mujoco'])
+    def test_exact_runtime_contract_is_required_in_addition_to_native_g1_result(tmp_path,nav_robot_model,engine):
+        profile,expected=fixture(tmp_path,nav_robot_model,engine)
+>       assert api.validate_profile(profile,nav_robot_model,engine,execution_profile=expected)==(True,'')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: validate_profile() got an unexpected keyword argument 'execution_profile'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_execution_admission_contract.py:34: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_execution_admission_contract.py::test_exact_runtime_contract_is_required_in_addition_to_native_g1_result[gazebo]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.63s

@@ -1,0 +1,79 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_activation_preserves_held_spring_preload_not_loaded_encoder_zero_error __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_activation_preserves_held_spring_preload_not_loaded_encoder_zero_error(nav_robot_model):
+        model = nav_robot_model
+        state = bundle(model)
+        held = {name: state.joints.data['position'][name] for name in model.joint_names}
+        q = dict(state.joints.data['position'])
+        q['fr_calf_joint'] = 1.035  # loaded encoder, prior command is still1.000
+        state = replace(state, joints=replace(state.joints,
+            data=dict(position=q, velocity=state.joints.data['velocity'])))
+        machine = CrawlMachine(model, default_limits())
+>       machine.reset(state, state.body.stamp_ns, state.body.received_ns, held_targets=held)
+E       TypeError: CrawlMachine.reset() got an unexpected keyword argument 'held_targets'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py:20: TypeError
+___ test_unverified_incomplete_or_invalid_handoff_emits_no_command[missing] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = 'missing'
+
+    @pytest.mark.parametrize('bad', ['missing', 'nan', 'outside'])
+    def test_unverified_incomplete_or_invalid_handoff_emits_no_command(nav_robot_model, bad):
+        state = bundle(nav_robot_model)
+        held = {name: state.joints.data['position'][name] for name in nav_robot_model.joint_names}
+        if bad == 'missing':
+            held.pop('fr_calf_joint')
+        else:
+            held['fr_calf_joint'] = float('nan') if bad == 'nan' else 4.
+        machine = CrawlMachine(nav_robot_model, default_limits())
+>       machine.reset(state, state.body.stamp_ns, state.body.received_ns, held_targets=held)
+E       TypeError: CrawlMachine.reset() got an unexpected keyword argument 'held_targets'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py:39: TypeError
+_____ test_unverified_incomplete_or_invalid_handoff_emits_no_command[nan] ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = 'nan'
+
+    @pytest.mark.parametrize('bad', ['missing', 'nan', 'outside'])
+    def test_unverified_incomplete_or_invalid_handoff_emits_no_command(nav_robot_model, bad):
+        state = bundle(nav_robot_model)
+        held = {name: state.joints.data['position'][name] for name in nav_robot_model.joint_names}
+        if bad == 'missing':
+            held.pop('fr_calf_joint')
+        else:
+            held['fr_calf_joint'] = float('nan') if bad == 'nan' else 4.
+        machine = CrawlMachine(nav_robot_model, default_limits())
+>       machine.reset(state, state.body.stamp_ns, state.body.received_ns, held_targets=held)
+E       TypeError: CrawlMachine.reset() got an unexpected keyword argument 'held_targets'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py:39: TypeError
+___ test_unverified_incomplete_or_invalid_handoff_emits_no_command[outside] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = 'outside'
+
+    @pytest.mark.parametrize('bad', ['missing', 'nan', 'outside'])
+    def test_unverified_incomplete_or_invalid_handoff_emits_no_command(nav_robot_model, bad):
+        state = bundle(nav_robot_model)
+        held = {name: state.joints.data['position'][name] for name in nav_robot_model.joint_names}
+        if bad == 'missing':
+            held.pop('fr_calf_joint')
+        else:
+            held['fr_calf_joint'] = float('nan') if bad == 'nan' else 4.
+        machine = CrawlMachine(nav_robot_model, default_limits())
+>       machine.reset(state, state.body.stamp_ns, state.body.received_ns, held_targets=held)
+E       TypeError: CrawlMachine.reset() got an unexpected keyword argument 'held_targets'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py:39: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py::test_activation_preserves_held_spring_preload_not_loaded_encoder_zero_error
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py::test_unverified_incomplete_or_invalid_handoff_emits_no_command[missing]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py::test_unverified_incomplete_or_invalid_handoff_emits_no_command[nan]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_activation_preload.py::test_unverified_incomplete_or_invalid_handoff_emits_no_command[outside]
+4 failed in 9.85s

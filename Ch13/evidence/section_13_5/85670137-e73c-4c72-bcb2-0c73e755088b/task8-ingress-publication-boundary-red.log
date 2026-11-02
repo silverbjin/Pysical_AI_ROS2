@@ -1,0 +1,64 @@
+F
+=================================== FAILURES ===================================
+_ test_invalid_parallel_ingress_is_latched_without_mutating_model_or_publishing _
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x76d87e1d6d50>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x76d87e20f350>
+
+    def test_invalid_parallel_ingress_is_latched_without_mutating_model_or_publishing(crawl_rig, monkeypatch):
+        """Concurrent receiver boundary, not an engine or DDS scheduling verdict."""
+        rig = crawl_rig
+        activate(rig)
+        owner = rig.guard
+        advance = owner.machine.advance
+        received = Event()
+        states, workers = [], []
+        publications=[];publish=owner.legs.publish
+        # Deliberately leave one valid, pre-fault DDS publication undelivered.
+        # Receipt count cannot identify when that message was originally sent.
+        owner.legs.publish(Float64MultiArray(data=list(rig.commands[-1].data)))
+        def monitored_publish(message):
+            publications.append(dict(wall_ns=time.monotonic_ns(),ingress_seen=received.is_set()))
+            publish(message)
+        monkeypatch.setattr(owner.legs,'publish',monitored_publish)
+    
+        def during_advance(*args, **kwargs):
+            result = advance(*args, **kwargs)
+            if received.is_set():
+                return result
+            def invalid_ingress():
+                owner._sensor('contacts', FootContacts(epoch=1))
+                states.append(owner.machine.state)
+                received.set()
+            worker = Thread(target=invalid_ingress)
+            workers.append(worker)
+            worker.start()
+            assert received.wait(.15), 'receiver must not wait for the model owner lock'
+            assert states == ['STAND'], 'receiver must not directly mutate the state machine'
+            return result  # valid calculation must not publish after the latched input fault
+    
+        monkeypatch.setattr(owner.machine, 'advance', during_advance)
+        count = len(rig.commands)
+        try:
+            rig.pump(.04)
+        finally:
+            for worker in workers:
+                worker.join(timeout=1.)
+                assert not worker.is_alive()
+            target=os.environ.get('CH13_NAV_EVIDENCE')
+            if target:
+                Path(target, 'ingress-publication-boundary-'+str(uuid.uuid4())+'.json').write_text(json.dumps(dict(
+                    pre_fault_receipt_count=count,post_fault_receipt_count=len(rig.commands),
+                    actual_publications=publications,ingress_seen=received.is_set(),states=states)))
+        assert rig.crawl_states[-1].state == 'FAULT'
+        assert 'engine epoch changed' in rig.crawl_states[-1].fault_reason
+>       assert len(rig.commands) == count
+E       assert 8 == 7
+E        +  where 8 = len([std_msgs.msg.Float64MultiArray(layout=std_msgs.msg.MultiArrayLayout(dim=[], data_offset=0), data=[0.0, -0.49999999999....9999999999999999, 0.0, -0.49999999999999994, 0.9999999999999999, 0.0, -0.49999999999999994, 0.9999999999999999]), ...])
+E        +    where [std_msgs.msg.Float64MultiArray(layout=std_msgs.msg.MultiArrayLayout(dim=[], data_offset=0), data=[0.0, -0.49999999999....9999999999999999, 0.0, -0.49999999999999994, 0.9999999999999999, 0.0, -0.49999999999999994, 0.9999999999999999]), ...] = <test_crawl_lifecycle.CrawlRig object at 0x76d87e1d6d50>.commands
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py:113: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py::test_invalid_parallel_ingress_is_latched_without_mutating_model_or_publishing
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 10.97s

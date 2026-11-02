@@ -1,0 +1,172 @@
+...........FFFFF                                                         [100%]
+=================================== FAILURES ===================================
+_ test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-17/test_contact_experiment_requir0')
+fault = ''
+
+    @pytest.mark.parametrize('fault',['','missing_provider','wrong_provider_hash','wrong_version','wrong_provider_inode'])
+    def test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid(tmp_path,fault):
+        proc=tmp_path/'proc';child=proc/'43';child.mkdir(parents=True)
+        fields=['S','42','42']+['0']*17;fields[19]='123'
+        (child/'stat').write_text('43 (gz fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        libraries=[];maps=[]
+        for name in (*NAMES,'libdart.so.6.13.2'):
+            file=tmp_path/name;file.write_bytes(('explicit fixture '+name).encode())
+            libraries.append(dict(path=str(file),sha256=hashlib.sha256(file.read_bytes()).hexdigest()))
+            stat=file.stat()
+            maps.append(f'000-fff r-xp 00000000 {os.major(stat.st_dev):x}:{os.minor(stat.st_dev):x} {stat.st_ino} {file}')
+        provider=dict(library_path=libraries[-1]['path'],library_sha256=libraries[-1]['sha256'],header_version='6.13.2')
+        if fault=='missing_provider':maps.pop()
+        elif fault=='wrong_provider_hash':provider['library_sha256']='0'*64
+        elif fault=='wrong_version':provider['header_version']='6.19.0'
+        elif fault=='wrong_provider_inode':
+            pieces=maps[-1].split(maxsplit=5);pieces[4]=str(int(pieces[4])+1);maps[-1]=' '.join(pieces)
+        (child/'maps').write_text('\n'.join(maps))
+        members=[dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault:
+            with pytest.raises(RuntimeError,match='Gazebo'):
+                runner.attest_gazebo_libraries(SimpleNamespace(pid=42),members,libraries[:3],
+                    dart_provider=provider,proc_root=proc)
+        else:
+>           result=runner.attest_gazebo_libraries(SimpleNamespace(pid=42),members,libraries[:3],
+                dart_provider=provider,proc_root=proc)
+E           TypeError: attest_gazebo_libraries() got an unexpected keyword argument 'dart_provider'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:90: TypeError
+_ test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[missing_provider] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-17/test_contact_experiment_requir1')
+fault = 'missing_provider'
+
+    @pytest.mark.parametrize('fault',['','missing_provider','wrong_provider_hash','wrong_version','wrong_provider_inode'])
+    def test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid(tmp_path,fault):
+        proc=tmp_path/'proc';child=proc/'43';child.mkdir(parents=True)
+        fields=['S','42','42']+['0']*17;fields[19]='123'
+        (child/'stat').write_text('43 (gz fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        libraries=[];maps=[]
+        for name in (*NAMES,'libdart.so.6.13.2'):
+            file=tmp_path/name;file.write_bytes(('explicit fixture '+name).encode())
+            libraries.append(dict(path=str(file),sha256=hashlib.sha256(file.read_bytes()).hexdigest()))
+            stat=file.stat()
+            maps.append(f'000-fff r-xp 00000000 {os.major(stat.st_dev):x}:{os.minor(stat.st_dev):x} {stat.st_ino} {file}')
+        provider=dict(library_path=libraries[-1]['path'],library_sha256=libraries[-1]['sha256'],header_version='6.13.2')
+        if fault=='missing_provider':maps.pop()
+        elif fault=='wrong_provider_hash':provider['library_sha256']='0'*64
+        elif fault=='wrong_version':provider['header_version']='6.19.0'
+        elif fault=='wrong_provider_inode':
+            pieces=maps[-1].split(maxsplit=5);pieces[4]=str(int(pieces[4])+1);maps[-1]=' '.join(pieces)
+        (child/'maps').write_text('\n'.join(maps))
+        members=[dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault:
+            with pytest.raises(RuntimeError,match='Gazebo'):
+>               runner.attest_gazebo_libraries(SimpleNamespace(pid=42),members,libraries[:3],
+                    dart_provider=provider,proc_root=proc)
+E               TypeError: attest_gazebo_libraries() got an unexpected keyword argument 'dart_provider'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:87: TypeError
+_ test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[wrong_provider_hash] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-17/test_contact_experiment_requir2')
+fault = 'wrong_provider_hash'
+
+    @pytest.mark.parametrize('fault',['','missing_provider','wrong_provider_hash','wrong_version','wrong_provider_inode'])
+    def test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid(tmp_path,fault):
+        proc=tmp_path/'proc';child=proc/'43';child.mkdir(parents=True)
+        fields=['S','42','42']+['0']*17;fields[19]='123'
+        (child/'stat').write_text('43 (gz fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        libraries=[];maps=[]
+        for name in (*NAMES,'libdart.so.6.13.2'):
+            file=tmp_path/name;file.write_bytes(('explicit fixture '+name).encode())
+            libraries.append(dict(path=str(file),sha256=hashlib.sha256(file.read_bytes()).hexdigest()))
+            stat=file.stat()
+            maps.append(f'000-fff r-xp 00000000 {os.major(stat.st_dev):x}:{os.minor(stat.st_dev):x} {stat.st_ino} {file}')
+        provider=dict(library_path=libraries[-1]['path'],library_sha256=libraries[-1]['sha256'],header_version='6.13.2')
+        if fault=='missing_provider':maps.pop()
+        elif fault=='wrong_provider_hash':provider['library_sha256']='0'*64
+        elif fault=='wrong_version':provider['header_version']='6.19.0'
+        elif fault=='wrong_provider_inode':
+            pieces=maps[-1].split(maxsplit=5);pieces[4]=str(int(pieces[4])+1);maps[-1]=' '.join(pieces)
+        (child/'maps').write_text('\n'.join(maps))
+        members=[dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault:
+            with pytest.raises(RuntimeError,match='Gazebo'):
+>               runner.attest_gazebo_libraries(SimpleNamespace(pid=42),members,libraries[:3],
+                    dart_provider=provider,proc_root=proc)
+E               TypeError: attest_gazebo_libraries() got an unexpected keyword argument 'dart_provider'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:87: TypeError
+_ test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[wrong_version] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-17/test_contact_experiment_requir3')
+fault = 'wrong_version'
+
+    @pytest.mark.parametrize('fault',['','missing_provider','wrong_provider_hash','wrong_version','wrong_provider_inode'])
+    def test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid(tmp_path,fault):
+        proc=tmp_path/'proc';child=proc/'43';child.mkdir(parents=True)
+        fields=['S','42','42']+['0']*17;fields[19]='123'
+        (child/'stat').write_text('43 (gz fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        libraries=[];maps=[]
+        for name in (*NAMES,'libdart.so.6.13.2'):
+            file=tmp_path/name;file.write_bytes(('explicit fixture '+name).encode())
+            libraries.append(dict(path=str(file),sha256=hashlib.sha256(file.read_bytes()).hexdigest()))
+            stat=file.stat()
+            maps.append(f'000-fff r-xp 00000000 {os.major(stat.st_dev):x}:{os.minor(stat.st_dev):x} {stat.st_ino} {file}')
+        provider=dict(library_path=libraries[-1]['path'],library_sha256=libraries[-1]['sha256'],header_version='6.13.2')
+        if fault=='missing_provider':maps.pop()
+        elif fault=='wrong_provider_hash':provider['library_sha256']='0'*64
+        elif fault=='wrong_version':provider['header_version']='6.19.0'
+        elif fault=='wrong_provider_inode':
+            pieces=maps[-1].split(maxsplit=5);pieces[4]=str(int(pieces[4])+1);maps[-1]=' '.join(pieces)
+        (child/'maps').write_text('\n'.join(maps))
+        members=[dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault:
+            with pytest.raises(RuntimeError,match='Gazebo'):
+>               runner.attest_gazebo_libraries(SimpleNamespace(pid=42),members,libraries[:3],
+                    dart_provider=provider,proc_root=proc)
+E               TypeError: attest_gazebo_libraries() got an unexpected keyword argument 'dart_provider'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:87: TypeError
+_ test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[wrong_provider_inode] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-17/test_contact_experiment_requir4')
+fault = 'wrong_provider_inode'
+
+    @pytest.mark.parametrize('fault',['','missing_provider','wrong_provider_hash','wrong_version','wrong_provider_inode'])
+    def test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid(tmp_path,fault):
+        proc=tmp_path/'proc';child=proc/'43';child.mkdir(parents=True)
+        fields=['S','42','42']+['0']*17;fields[19]='123'
+        (child/'stat').write_text('43 (gz fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        libraries=[];maps=[]
+        for name in (*NAMES,'libdart.so.6.13.2'):
+            file=tmp_path/name;file.write_bytes(('explicit fixture '+name).encode())
+            libraries.append(dict(path=str(file),sha256=hashlib.sha256(file.read_bytes()).hexdigest()))
+            stat=file.stat()
+            maps.append(f'000-fff r-xp 00000000 {os.major(stat.st_dev):x}:{os.minor(stat.st_dev):x} {stat.st_ino} {file}')
+        provider=dict(library_path=libraries[-1]['path'],library_sha256=libraries[-1]['sha256'],header_version='6.13.2')
+        if fault=='missing_provider':maps.pop()
+        elif fault=='wrong_provider_hash':provider['library_sha256']='0'*64
+        elif fault=='wrong_version':provider['header_version']='6.19.0'
+        elif fault=='wrong_provider_inode':
+            pieces=maps[-1].split(maxsplit=5);pieces[4]=str(int(pieces[4])+1);maps[-1]=' '.join(pieces)
+        (child/'maps').write_text('\n'.join(maps))
+        members=[dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault:
+            with pytest.raises(RuntimeError,match='Gazebo'):
+>               runner.attest_gazebo_libraries(SimpleNamespace(pid=42),members,libraries[:3],
+                    dart_provider=provider,proc_root=proc)
+E               TypeError: attest_gazebo_libraries() got an unexpected keyword argument 'dart_provider'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:87: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[missing_provider]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[wrong_provider_hash]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[wrong_version]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_contact_experiment_requires_its_actual_dart_provider_in_the_same_native_pid[wrong_provider_inode]
+5 failed, 11 passed in 8.30s

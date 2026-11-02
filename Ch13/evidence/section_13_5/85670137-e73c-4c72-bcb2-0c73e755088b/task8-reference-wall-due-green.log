@@ -1,0 +1,20 @@
+...F
+=================================== FAILURES ===================================
+__ test_new_issue_cancels_old_wait_and_never_releases_a_second_command_early ___
+
+    def test_new_issue_cancels_old_wait_and_never_releases_a_second_command_early():
+        value=gate();value.issued(100_000_000,100_000_000);value.defer()
+        assert value.notify(125_000_000,125_000_000)
+        value.begin_tick()  # a regular timer can supersede a queued notification
+        assert not value.take_notification()
+        value.issued(125_000_000,125_000_000);value.defer()
+>       assert not value.notify(144_999_999,145_000_000)
+E       assert not True
+E        +  where True = notify(144999999, 145000000)
+E        +    where notify = <integrated_robot_navigation.reference_dispatch.ReferenceDispatch object at 0x7d6284d46f00>.notify
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch.py:30: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch.py::test_new_issue_cancels_old_wait_and_never_releases_a_second_command_early
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 3 passed in 25.42s

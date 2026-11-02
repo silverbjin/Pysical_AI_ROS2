@@ -1,0 +1,41 @@
+........................................................................ [ 65%]
+.....F
+=================================== FAILURES ===================================
+_______ test_same_cycle_uses_current_capture_once_and_keeps_exact_limits _______
+
+    def test_same_cycle_uses_current_capture_once_and_keeps_exact_limits():
+        c,model=recorded();a=c['args'];fault=c['parent']['fault'];m=None
+        with NativeMassEvaluator(model) as mass:
+            m=CrawlMachine(model,c['limits'],mass_evaluator=mass,load_transfer_policy='coupled_contact',
+                async_load_transfer=True,load_result_timing='same_cycle',load_receipt_mode='event_receiver')
+            try:
+                m.prepare_load_transfer();m.state='CRAWL';m.phase='SHIFT';m.generation=0
+                m._unload_start=fault['phase_context']['_unload_start'];m._unload_origin_z=a['origins'][a['foot']][2]
+                m._targets={f:np.array(p) for f,p in a['reference_xyz'].items()};before=deepcopy(m._targets)
+                m.reference_body=np.array(a['reference_pose']);m._load_transfer_origin_xyz=deepcopy(a['origins'])
+                m._stance_origin_z={f:p[2] for f,p in a['origins'].items()};m.planning_reference_envelope=a['allowed_z']
+                m.planning_future_targets=a['future_targets'];m.load_balance_plan={'equilibrium':dict(feasible=True,forces_world=a['target_forces'])}
+                m._last_ros=fault['ros_ns'];m._last_wall=time.monotonic_ns()
+                offset=m._last_wall-fault['wall_ns'];samples=deepcopy(fault['samples'])
+                for value in samples.values():
+                    if value:value['received_ns']+=offset
+                bundle=SensorBundle(**{key:Sample(**value) if value else None for key,value in samples.items()})
+                pose=np.eye(4);pose[:3,:3]=body_rotation(bundle.body.data)[0];pose[:3,3]=bundle.body.data['position']
+                q=bundle.joints.data['position'];points=dict(zip(model.feet,bundle.contacts.data['points']))
+                assert m._transfer_stance_load(bundle,q,pose,points,a['foot'],a['dt']) is True
+                assert m.load_transfer_observation['numeric_input']['joints']==q
+                assert m.load_transfer_observation['application_scaling']['scope']=='same_cycle_elapsed_credit_not_future_horizon'
+                assert m._load_transfer.snapshot()['submitted']==m._load_transfer.snapshot()['completed']==1
+                assert not m._load_transfer.snapshot()['pending']
+                assert m.load_transfer_observation['queued_next'] is False
+                assert max(np.linalg.norm(m._targets[f]-before[f]) for f in model.feet)<=a['speed']*a['dt']+1e-12
+                exact=m._solve(q,True)
+>               assert all(abs(m._load_transfer.gains[n]*(exact[n]-q[n]))<=model.limits[n][3]+1e-6 for n in model.joint_names)
+E               assert False
+E                +  where False = all(<generator object test_same_cycle_uses_current_capture_once_and_keeps_exact_limits.<locals>.<genexpr> at 0x7f1c22e86ac0>)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_same_cycle_numeric.py:62: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_same_cycle_numeric.py::test_same_cycle_uses_current_capture_once_and_keeps_exact_limits
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 77 passed in 63.72s (0:01:03)

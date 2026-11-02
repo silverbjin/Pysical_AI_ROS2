@@ -1,0 +1,76 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow0')
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true')
+        module = launch_file('crawl_system')
+        actions = module.launch_nodes(ctx)
+        nodes = [a for a in actions if isinstance(a, Node)]
+        executables = [a.node_executable for a in nodes]
+        assert sorted(executables) == sorted(['motion_guard', 'crawl_controller', 'carry_manager',
+                                              'nav_projection', 'crawl_startup'])
+        for action in nodes:
+            values = evaluate_parameters(ctx, action._Node__parameters)
+            assert any(isinstance(p, dict) and p.get('use_sim_time') is True for p in values)
+        selected = launch_file('navigation_sensors').select_engine(ctx)
+        included = [a for a in selected if isinstance(a, IncludeLaunchDescription)]
+        assert len(included) == 1
+>       assert included[0].launch_description_source.location.endswith(engine+'.launch.py')
+E       AssertionError: assert False
+E        +  where False = <built-in method endswith of str object at 0x7f0ee0197930>(('mujoco' + '.launch.py'))
+E        +    where <built-in method endswith of str object at 0x7f0ee0197930> = '<launch.substitutions.text_substitution.TextSubstitution object at 0x7f0ee01c3e30>'.endswith
+E        +      where '<launch.substitutions.text_substitution.TextSubstitution object at 0x7f0ee01c3e30>' = <launch.launch_description_sources.python_launch_description_source.PythonLaunchDescriptionSource object at 0x7f0ee01c36b0>.location
+E        +        where <launch.launch_description_sources.python_launch_description_source.PythonLaunchDescriptionSource object at 0x7f0ee01c36b0> = <launch.actions.include_launch_description.IncludeLaunchDescription object at 0x7f0ee01c3dd0>.launch_description_source
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:52: AssertionError
+______ test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_launch_graph_has_exact_ow1')
+engine = 'gazebo'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_launch_graph_has_exact_owners_and_bound_sensor_scene(tmp_path, engine):
+        record = scene.materialize_scene(engine, 'g1', tmp_path/'scene')
+        from integrated_robot_navigation.model import compile_model
+        model = compile_model(Path(record['robot']['path']).read_text())
+        profile = tmp_path/'profile.json'
+        profile.write_text(json.dumps(asdict(prepare_profile(model, CARRY))))
+        ctx = LaunchContext()
+        ctx.launch_configurations.update(engine=engine, navigation_scene=str(tmp_path/'scene'),
+                                        carry_profile=str(profile), validation_mode='true')
+        module = launch_file('crawl_system')
+        actions = module.launch_nodes(ctx)
+        nodes = [a for a in actions if isinstance(a, Node)]
+        executables = [a.node_executable for a in nodes]
+        assert sorted(executables) == sorted(['motion_guard', 'crawl_controller', 'carry_manager',
+                                              'nav_projection', 'crawl_startup'])
+        for action in nodes:
+            values = evaluate_parameters(ctx, action._Node__parameters)
+            assert any(isinstance(p, dict) and p.get('use_sim_time') is True for p in values)
+        selected = launch_file('navigation_sensors').select_engine(ctx)
+        included = [a for a in selected if isinstance(a, IncludeLaunchDescription)]
+        assert len(included) == 1
+>       assert included[0].launch_description_source.location.endswith(engine+'.launch.py')
+E       AssertionError: assert False
+E        +  where False = <built-in method endswith of str object at 0x7f0ee1ae35b0>(('gazebo' + '.launch.py'))
+E        +    where <built-in method endswith of str object at 0x7f0ee1ae35b0> = '<launch.substitutions.text_substitution.TextSubstitution object at 0x7f0ee07d2480>'.endswith
+E        +      where '<launch.substitutions.text_substitution.TextSubstitution object at 0x7f0ee07d2480>' = <launch.launch_description_sources.python_launch_description_source.PythonLaunchDescriptionSource object at 0x7f0ee07d2d80>.location
+E        +        where <launch.launch_description_sources.python_launch_description_source.PythonLaunchDescriptionSource object at 0x7f0ee07d2d80> = <launch.actions.include_launch_description.IncludeLaunchDescription object at 0x7f0ee07d12b0>.launch_description_source
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py:52: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[mujoco]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_ownership.py::test_launch_graph_has_exact_owners_and_bound_sensor_scene[gazebo]
+2 failed, 1 deselected in 9.91s

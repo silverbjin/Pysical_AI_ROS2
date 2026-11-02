@@ -1,0 +1,47 @@
+F
+=================================== FAILURES ===================================
+_______ test_native_dispatch_does_not_poll_python_between_every_capture ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_native_dispatch_does_not_0')
+
+    def test_native_dispatch_does_not_poll_python_between_every_capture(tmp_path):
+        context=Context();rclpy.init(context=context)
+        probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+        peer=Node('native_continuous_dispatch_peer',context=context)
+        pub=peer.create_publisher(FootContacts,'/navigation/foot_contacts',qos_profile_sensor_data)
+        crossings={};old=threading.gettrace();receiver=None
+        target=ProbeReceiver._spin.__code__
+        def trace(frame,event,arg):
+            if frame.f_code is target:
+                if event=='line':
+                    ident=threading.get_ident();crossings[ident]=crossings.get(ident,0)+1
+                return trace
+            return None
+        try:
+            threading.settrace(trace);receiver=ProbeReceiver(probe)
+            message=FootContacts();message.header.frame_id='odom'
+            message.names=['fr_foot','fl_foot','rr_foot','rl_foot']
+            # Discovery and the fixed workload are separate; retain every real receipt.
+            end=time.monotonic()+2.
+            while pub.get_subscription_count()!=1 and time.monotonic()<end:time.sleep(.005)
+            assert pub.get_subscription_count()==1
+            for index in range(120):
+                message.header.stamp.sec=17;message.header.stamp.nanosec=index*1_000_000
+                message.sequence=index;pub.publish(message);time.sleep(.006)
+            end=time.monotonic()+1.
+            while probe.callback_costs.get('_sensor:contacts',{}).get('count',0)<100 and time.monotonic()<end:time.sleep(.005)
+            assert probe.callback_costs['_sensor:contacts']['count']>=100
+            entered=crossings.get(receiver.ingress_receiver.thread.ident,0)
+>           assert entered<=40, f'native dispatch returned to Python polling {entered} times for the capture workload'
+E           AssertionError: native dispatch returned to Python polling 243 times for the capture workload
+E           assert 243 <= 40
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_continuous_dispatch.py:40: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792999707.087074877] [navigation_native_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792999707.122678177] [navigation_probe_recording]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792999707.163131077] [navigation_probe_ingress]: Serial navigation callbacks use EventsExecutor
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_continuous_dispatch.py::test_native_dispatch_does_not_poll_python_between_every_capture
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.30s

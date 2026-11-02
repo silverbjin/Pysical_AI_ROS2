@@ -1,0 +1,25 @@
+F
+=================================== FAILURES ===================================
+______ test_measured_five_ppm_is_not_an_eight_percent_drift_or_time_step _______
+
+    def test_measured_five_ppm_is_not_an_eight_percent_drift_or_time_step():
+>       result=api()(records(rate=.999995032135))
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_clock_witness.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+        name='integrated_robot_navigation.clock_witness'
+>       assert importlib.util.find_spec(name) is not None,'continuous measured-rate witness missing'
+E       AssertionError: continuous measured-rate witness missing
+E       assert None is not None
+E        +  where None = <function find_spec at 0x78f50edc0720>('integrated_robot_navigation.clock_witness')
+E        +    where <function find_spec at 0x78f50edc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_clock_witness.py:9: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_clock_witness.py::test_measured_five_ppm_is_not_an_eight_percent_drift_or_time_step
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 17.04s

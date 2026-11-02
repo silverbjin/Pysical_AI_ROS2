@@ -1,0 +1,38 @@
+F
+=================================== FAILURES ===================================
+_________ test_original_timesource_updates_without_model_pool_dispatch _________
+
+    def test_original_timesource_updates_without_model_pool_dispatch():
+        from rosgraph_msgs.msg import Clock
+        context=Context();rclpy.init(context=context)
+        node=CrawlController(context=context,cli_args=['--ros-args','-r',
+            '/clock:=/navigation/control_clock'],parameter_overrides=[
+            Parameter('use_sim_time',value=True),Parameter('validation_mode',value=True),
+            Parameter('control_clock_mode',value='relay100')])
+        peer=Node('independent_clock_peer',context=context)
+        publisher=peer.create_publisher(Clock,'/navigation/control_clock',qos_profile_sensor_data)
+        try:
+            deadline=time.monotonic()+2.
+            while publisher.get_subscription_count()!=1 and time.monotonic()<deadline:time.sleep(.01)
+            assert publisher.get_subscription_count()==1,'the original TimeSource must remain unique'
+            message=Clock();message.clock.sec=17;message.clock.nanosec=123
+            deadline=time.monotonic()+.15
+            while node.get_clock().now().nanoseconds!=17_000_000_123 and time.monotonic()<deadline:
+                publisher.publish(message);time.sleep(.005)
+>           assert node.get_clock().now().nanoseconds==17_000_000_123, \
+                'original TimeSource clock starved behind the model thread pool'
+E               AssertionError: original TimeSource clock starved behind the model thread pool
+E               assert 0 == 17000000123
+E                +  where 0 = Time(nanoseconds=0, clock_type=ROS_TIME).nanoseconds
+E                +    where Time(nanoseconds=0, clock_type=ROS_TIME) = now()
+E                +      where now = Clock(clock_type=ROS_TIME).now
+E                +        where Clock(clock_type=ROS_TIME) = get_clock()
+E                +          where get_clock = <integrated_robot_navigation.crawl_controller.CrawlController object at 0x72cb7b948a40>.get_clock
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_ingress_dispatch.py:109: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793024967.308990064] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_waitset", "alive": false, "joined": true, "error": null}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_ingress_dispatch.py::test_original_timesource_updates_without_model_pool_dispatch
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 16.08s

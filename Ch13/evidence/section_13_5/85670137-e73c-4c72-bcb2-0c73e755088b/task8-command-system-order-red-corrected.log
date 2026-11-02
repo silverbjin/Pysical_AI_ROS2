@@ -1,0 +1,27 @@
+F
+=================================== FAILURES ===================================
+_ test_new_dds_publication_survives_system_backstep_without_renewing_duplicate_or_old_epoch[True-raw] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+role = 'raw', mapping = True
+
+    @pytest.mark.parametrize('role',['raw','smoothed','final'])
+    @pytest.mark.parametrize('mapping',[True,False])
+    def test_new_dds_publication_survives_system_backstep_without_renewing_duplicate_or_old_epoch(nav_robot_model,role,mapping):
+        context=Context();rclpy.init(context=context);node=None
+        try:
+            node,cutoff,deliver,selected=receiver(role,nav_robot_model,context)
+            def info(source,sequence):
+                value=dict(source_timestamp=source,publication_sequence_number=sequence)
+                return value if mapping else SimpleNamespace(**value)
+            first=Twist();first.linear.x=.004;deliver(first,info(cutoff+3_000_000_000,1))
+            second=Twist();second.linear.x=.008;deliver(second,info(cutoff+1_000_000_000,2))
+>           assert selected().data[0]==.008, 'new publication was discarded because SYSTEM time moved backward'
+E           AssertionError: new publication was discarded because SYSTEM time moved backward
+E           assert 0.004 == 0.008
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_command_system_clock_ros.py:38: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_command_system_clock_ros.py::test_new_dds_publication_survives_system_backstep_without_renewing_duplicate_or_old_epoch[True-raw]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 12.10s

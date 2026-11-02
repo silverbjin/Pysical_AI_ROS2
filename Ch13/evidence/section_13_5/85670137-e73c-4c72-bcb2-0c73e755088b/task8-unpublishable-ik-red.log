@@ -1,0 +1,29 @@
+F
+=================================== FAILURES ===================================
+_ test_application_wait_observes_safety_without_recomputing_unpublishable_ik[SHIFT] _
+
+phase = 'SHIFT'
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7dbfb3590170>
+
+    @pytest.mark.parametrize('phase',['SHIFT','SWING'])
+    def test_application_wait_observes_safety_without_recomputing_unpublishable_ik(phase,nav_robot_model,monkeypatch):
+        value,plant=(shifting(nav_robot_model,(.01,0.,0.)) if phase=='SHIFT' else swinging(nav_robot_model))
+        held=value.reference_body.copy();targets=deepcopy(value._targets)
+        solves=[];original=value._solve
+        def observe(*args,**kwargs):
+            solves.append(True)
+            return original(*args,**kwargs)
+        monkeypatch.setattr(value,'_solve',observe)
+        ros,wall=value._last_ros+20_000_000,value._last_wall+20_000_000
+        result=value.advance(sample_at(plant.state,ros,wall),(.01,0.,0.),ros,wall,reference_permitted=False)
+        assert result.state=='CRAWL'
+>       assert not solves, 'waiting for the previous application recomputed IK for a command that cannot be published'
+E       AssertionError: waiting for the previous application recomputed IK for a command that cannot be published
+E       assert not [True]
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py:24: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py::test_application_wait_observes_safety_without_recomputing_unpublishable_ik[SHIFT]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 10.40s

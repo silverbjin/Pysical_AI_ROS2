@@ -1,0 +1,18 @@
+F
+=================================== FAILURES ===================================
+________ test_component_witnesses_cannot_satisfy_full_G2_phase_coverage ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_component_witnesses_canno0')
+
+    def test_component_witnesses_cannot_satisfy_full_G2_phase_coverage(tmp_path):
+        rows,probe=records(tmp_path)
+        actual=[dict(deepcopy(rows[0]),sequence=i,capture_ns=i*20_000_000,stage=stage)
+            for i,stage in enumerate(('stand','forward','stopped'),1)]
+>       assert runner.assess_dart_contact_configuration(actual,probe,scenario='contact-component')['passed']
+E       assert False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dart_contact_runner.py:35: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dart_contact_runner.py::test_component_witnesses_cannot_satisfy_full_G2_phase_coverage
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 12.29s

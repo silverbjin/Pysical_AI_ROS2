@@ -1,0 +1,401 @@
+FFFFFFFFFFFFFFF                                                          [100%]
+=================================== FAILURES ===================================
+_____________________ test_literal_standing_foot_positions _____________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_literal_standing_foot_positions(robot_model):
+>       k = api()
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.leg_kinematics'), 'leg IK missing'
+E       AssertionError: leg IK missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.leg_kinematics')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:10: AssertionError
+_______________ test_ik_preserves_nearest_valid_knee_branch[q0] ________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+q = (0.2, -0.7, 1.2)
+
+    @pytest.mark.parametrize('q', [(.2, -.7, 1.2), (-.1, .6, -1.2)])
+    def test_ik_preserves_nearest_valid_knee_branch(robot_model, q):
+>       k = api()
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.leg_kinematics'), 'leg IK missing'
+E       AssertionError: leg IK missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.leg_kinematics')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:10: AssertionError
+_______________ test_ik_preserves_nearest_valid_knee_branch[q1] ________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+q = (-0.1, 0.6, -1.2)
+
+    @pytest.mark.parametrize('q', [(.2, -.7, 1.2), (-.1, .6, -1.2)])
+    def test_ik_preserves_nearest_valid_knee_branch(robot_model, q):
+>       k = api()
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.leg_kinematics'), 'leg IK missing'
+E       AssertionError: leg IK missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.leg_kinematics')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:10: AssertionError
+_______________ test_unreachable_or_nonfinite_is_not_clipped[p0] _______________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+p = (0.25, -0.15, -2.0)
+
+    @pytest.mark.parametrize('p', [(.25, -.15, -2.), (float('nan'), 0., 0.),
+                                  (.25, -.1, 0.)])
+    def test_unreachable_or_nonfinite_is_not_clipped(robot_model, p):
+        with pytest.raises(ValueError):
+>           api().ik_leg(robot_model, 'fr_foot', p, previous=(0., -.5, 1.))
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.leg_kinematics'), 'leg IK missing'
+E       AssertionError: leg IK missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.leg_kinematics')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:10: AssertionError
+_______________ test_unreachable_or_nonfinite_is_not_clipped[p1] _______________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+p = (nan, 0.0, 0.0)
+
+    @pytest.mark.parametrize('p', [(.25, -.15, -2.), (float('nan'), 0., 0.),
+                                  (.25, -.1, 0.)])
+    def test_unreachable_or_nonfinite_is_not_clipped(robot_model, p):
+        with pytest.raises(ValueError):
+>           api().ik_leg(robot_model, 'fr_foot', p, previous=(0., -.5, 1.))
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.leg_kinematics'), 'leg IK missing'
+E       AssertionError: leg IK missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.leg_kinematics')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:10: AssertionError
+_______________ test_unreachable_or_nonfinite_is_not_clipped[p2] _______________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+p = (0.25, -0.1, 0.0)
+
+    @pytest.mark.parametrize('p', [(.25, -.15, -2.), (float('nan'), 0., 0.),
+                                  (.25, -.1, 0.)])
+    def test_unreachable_or_nonfinite_is_not_clipped(robot_model, p):
+        with pytest.raises(ValueError):
+>           api().ik_leg(robot_model, 'fr_foot', p, previous=(0., -.5, 1.))
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.leg_kinematics'), 'leg IK missing'
+E       AssertionError: leg IK missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.leg_kinematics')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:10: AssertionError
+________________ test_urdf_fk_matches_independent_native_model _________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_urdf_fk_matches_independent_native_model(robot_model):
+        import mujoco
+>       k = api()
+            ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.leg_kinematics'), 'leg IK missing'
+E       AssertionError: leg IK missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.leg_kinematics')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py:10: AssertionError
+_______________ test_support_margin_literal_square_and_triangle ________________
+
+    def test_support_margin_literal_square_and_triangle():
+        square = [(-.2, -.1, 0.), (.2, -.1, 0.), (.2, .1, 0.), (-.2, .1, 0.)]
+>       assert margin((0., 0., 0.), square) == pytest.approx(.1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+point = (0.0, 0.0, 0.0)
+contacts = [(-0.2, -0.1, 0.0), (0.2, -0.1, 0.0), (0.2, 0.1, 0.0), (-0.2, 0.1, 0.0)]
+
+    def margin(point, contacts):
+>       assert importlib.util.find_spec('integrated_robot_navigation.support'), 'support core missing'
+E       AssertionError: support core missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.support')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:7: AssertionError
+_________________ test_invalid_support_is_rejected[contacts0] __________________
+
+contacts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0)]
+
+    @pytest.mark.parametrize('contacts', [
+        [(0., 0., 0.), (1., 0., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (2., 0., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (float('nan'), 1., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (0., 0., 0.)],
+    ])
+    def test_invalid_support_is_rejected(contacts):
+        with pytest.raises(ValueError):
+>           margin((0., 0., 0.), contacts)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+point = (0.0, 0.0, 0.0), contacts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0)]
+
+    def margin(point, contacts):
+>       assert importlib.util.find_spec('integrated_robot_navigation.support'), 'support core missing'
+E       AssertionError: support core missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.support')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:7: AssertionError
+_________________ test_invalid_support_is_rejected[contacts1] __________________
+
+contacts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (2.0, 0.0, 0.0)]
+
+    @pytest.mark.parametrize('contacts', [
+        [(0., 0., 0.), (1., 0., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (2., 0., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (float('nan'), 1., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (0., 0., 0.)],
+    ])
+    def test_invalid_support_is_rejected(contacts):
+        with pytest.raises(ValueError):
+>           margin((0., 0., 0.), contacts)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+point = (0.0, 0.0, 0.0)
+contacts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (2.0, 0.0, 0.0)]
+
+    def margin(point, contacts):
+>       assert importlib.util.find_spec('integrated_robot_navigation.support'), 'support core missing'
+E       AssertionError: support core missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.support')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:7: AssertionError
+_________________ test_invalid_support_is_rejected[contacts2] __________________
+
+contacts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (nan, 1.0, 0.0)]
+
+    @pytest.mark.parametrize('contacts', [
+        [(0., 0., 0.), (1., 0., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (2., 0., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (float('nan'), 1., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (0., 0., 0.)],
+    ])
+    def test_invalid_support_is_rejected(contacts):
+        with pytest.raises(ValueError):
+>           margin((0., 0., 0.), contacts)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+point = (0.0, 0.0, 0.0)
+contacts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (nan, 1.0, 0.0)]
+
+    def margin(point, contacts):
+>       assert importlib.util.find_spec('integrated_robot_navigation.support'), 'support core missing'
+E       AssertionError: support core missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.support')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:7: AssertionError
+_________________ test_invalid_support_is_rejected[contacts3] __________________
+
+contacts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
+
+    @pytest.mark.parametrize('contacts', [
+        [(0., 0., 0.), (1., 0., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (2., 0., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (float('nan'), 1., 0.)],
+        [(0., 0., 0.), (1., 0., 0.), (0., 0., 0.)],
+    ])
+    def test_invalid_support_is_rejected(contacts):
+        with pytest.raises(ValueError):
+>           margin((0., 0., 0.), contacts)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+point = (0.0, 0.0, 0.0)
+contacts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
+
+    def margin(point, contacts):
+>       assert importlib.util.find_spec('integrated_robot_navigation.support'), 'support core missing'
+E       AssertionError: support core missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.support')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py:7: AssertionError
+______________________ test_mass_weighting_and_world_pose ______________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_mass_weighting_and_world_pose(robot_model):
+        # Hand fixture: base mass1 at x0; hip mass3 at base x.4/y0.
+        model = replace(robot_model, masses={'base_link': (1., (0., 0., 0.)),
+                                             'fr_hip_link': (3., (.15, .1, 0.))})
+        q = {j: 0. for j in robot_model.limits}
+>       assert com(model, q, np.eye(4)) == pytest.approx((.3, 0., 0.))
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+joints = {'arm_joint_1': 0.0, 'arm_joint_2': 0.0, 'arm_joint_3': 0.0, 'arm_joint_4': 0.0, ...}
+pose = array([[1., 0., 0., 0.],
+       [0., 1., 0., 0.],
+       [0., 0., 1., 0.],
+       [0., 0., 0., 1.]])
+
+    def com(model, joints, pose):
+>       assert importlib.util.find_spec('integrated_robot_navigation.support'), 'CoM core missing'
+E       AssertionError: CoM core missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.support')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py:10: AssertionError
+_____________________ test_com_uses_actual_joint_position ______________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_com_uses_actual_joint_position(robot_model):
+        model = replace(robot_model, masses={'fr_thigh_link': (1., (0., 0., -.125))})
+        q = {j: 0. for j in robot_model.limits}
+        q['fr_thigh_joint'] = np.pi / 2
+>       assert com(model, q, np.eye(4)) == pytest.approx((.125, -.15, 0.), abs=1e-10)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+joints = {'arm_joint_1': 0.0, 'arm_joint_2': 0.0, 'arm_joint_3': 0.0, 'arm_joint_4': 0.0, ...}
+pose = array([[1., 0., 0., 0.],
+       [0., 1., 0., 0.],
+       [0., 0., 1., 0.],
+       [0., 0., 0., 1.]])
+
+    def com(model, joints, pose):
+>       assert importlib.util.find_spec('integrated_robot_navigation.support'), 'CoM core missing'
+E       AssertionError: CoM core missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.support')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py:10: AssertionError
+_____________________ test_com_rejects_non_rigid_body_pose _____________________
+
+robot_model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_com_rejects_non_rigid_body_pose(robot_model):
+        with pytest.raises(ValueError):
+>           com(robot_model, {j: 0. for j in robot_model.limits}, np.diag([2., 1., 1., 1.]))
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='5f26cfbf352613c310b8b9b59eeeec079bd25d224867a86752043c46a4cb5cf1', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+joints = {'arm_joint_1': 0.0, 'arm_joint_2': 0.0, 'arm_joint_3': 0.0, 'arm_joint_4': 0.0, ...}
+pose = array([[2., 0., 0., 0.],
+       [0., 1., 0., 0.],
+       [0., 0., 1., 0.],
+       [0., 0., 0., 1.]])
+
+    def com(model, joints, pose):
+>       assert importlib.util.find_spec('integrated_robot_navigation.support'), 'CoM core missing'
+E       AssertionError: CoM core missing
+E       assert None
+E        +  where None = <function find_spec at 0x7cafc8dc0720>('integrated_robot_navigation.support')
+E        +    where <function find_spec at 0x7cafc8dc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py:10: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py::test_literal_standing_foot_positions
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py::test_ik_preserves_nearest_valid_knee_branch[q0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py::test_ik_preserves_nearest_valid_knee_branch[q1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py::test_unreachable_or_nonfinite_is_not_clipped[p0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py::test_unreachable_or_nonfinite_is_not_clipped[p1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py::test_unreachable_or_nonfinite_is_not_clipped[p2]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_leg_kinematics.py::test_urdf_fk_matches_independent_native_model
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py::test_support_margin_literal_square_and_triangle
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py::test_invalid_support_is_rejected[contacts0]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py::test_invalid_support_is_rejected[contacts1]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py::test_invalid_support_is_rejected[contacts2]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support.py::test_invalid_support_is_rejected[contacts3]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py::test_mass_weighting_and_world_pose
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py::test_com_uses_actual_joint_position
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_center_of_mass.py::test_com_rejects_non_rigid_body_pose
+15 failed in 6.38s

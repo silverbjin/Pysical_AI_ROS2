@@ -1,0 +1,19 @@
+.....F.......                                                            [100%]
+=================================== FAILURES ===================================
+______ test_gazebo_collision_map_comes_from_actual_fixed_joint_conversion ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_gazebo_collision_map_come0')
+
+    def test_gazebo_collision_map_comes_from_actual_fixed_joint_conversion(tmp_path):
+        record = api().materialize_scene('gazebo', 'g1', tmp_path/'native')
+        sdf = ET.parse(record['robot_sdf']['path'])
+        actual = {f"integrated_robot::{link.get('name')}::{collision.get('name')}"
+                  for link in sdf.findall('.//model/link') for collision in link.findall('collision')}
+>       mapping = record['foot_collision_map']
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'foot_collision_map'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:73: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py::test_gazebo_collision_map_comes_from_actual_fixed_joint_conversion
+1 failed, 12 passed in 8.16s

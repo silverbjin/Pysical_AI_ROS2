@@ -1,0 +1,31 @@
+F
+=================================== FAILURES ===================================
+_ test_intermediate_measured_pause_preserves_authority_without_clearing_explicit_stop _
+
+    def test_intermediate_measured_pause_preserves_authority_without_clearing_explicit_stop():
+        plant=LatchedStandSequence()
+>       result=api().run_sequence('crawl-cycle',snapshot=plant.snapshot,source=plant,mode=plant.mode,
+            wait=plant.wait,set_stage=plant.set_stage,limits=default_limits())
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_sequence.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/g2_sequence.py:57: in run_sequence
+    wait(lambda:_reached(start['pose'],snapshot()['pose'],name),900. if name=='forward' else 600.,name+' measured movement')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_g2_sequence.LatchedStandSequence object at 0x748d2f36df70>
+predicate = <function run_sequence.<locals>.<lambda> at 0x748d23bc7ba0>
+seconds = 600.0, label = 'left measured movement'
+
+    def wait(self,predicate,seconds,label):
+        end=self.wall+int(seconds*1e9)
+        while not predicate():
+>           if self.wall>=end:raise TimeoutError(label)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TimeoutError: left measured movement
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_sequence.py:42: TimeoutError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_sequence.py::test_intermediate_measured_pause_preserves_authority_without_clearing_explicit_stop
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 6 deselected in 7.24s

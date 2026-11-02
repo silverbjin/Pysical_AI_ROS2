@@ -1,0 +1,26 @@
+..............F
+=================================== FAILURES ===================================
+_ test_g2_dart_witnesses_follow_actual_scenario_without_repeating_g1_calibration[crawl-cycle-stages0] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_g2_dart_witnesses_follow_0')
+scenario = 'crawl-cycle'
+stages = ('stand', 'forward', 'left', 'right', 'stopped')
+
+    @pytest.mark.parametrize('scenario,stages',[
+        ('crawl-cycle',('stand','forward','left','right','stopped')),
+        ('crawl-reverse',('stand','reverse','stopped')),
+    ])
+    def test_g2_dart_witnesses_follow_actual_scenario_without_repeating_g1_calibration(tmp_path,scenario,stages):
+        rows,probe=records(tmp_path)
+        seed=rows[0]
+        actual=[dict(deepcopy(seed),sequence=i,capture_ns=i*20_000_000,stage=stage)
+                for i,stage in enumerate(stages,1)]
+>       result=runner.assess_dart_contact_configuration(actual,probe,scenario=scenario)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: assess_dart_contact_configuration() got an unexpected keyword argument 'scenario'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dart_contact_runner.py:71: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_dart_contact_runner.py::test_g2_dart_witnesses_follow_actual_scenario_without_repeating_g1_calibration[crawl-cycle-stages0]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 14 passed in 12.71s

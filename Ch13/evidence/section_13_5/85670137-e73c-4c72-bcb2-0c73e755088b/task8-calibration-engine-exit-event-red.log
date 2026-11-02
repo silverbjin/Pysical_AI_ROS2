@@ -1,0 +1,75 @@
+F
+=================================== FAILURES ===================================
+________ test_navigation_engine_exit_event_finishes_launch_and_helpers _________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-26/test_navigation_engine_exit_ev0')
+
+    def test_navigation_engine_exit_event_finishes_launch_and_helpers(tmp_path):
+        launch_file=Path(__file__).resolve().parents[2]/'integrated_robot_description/launch/gazebo.launch.py'
+        program=r'''
+    import importlib.util,sys
+    from pathlib import Path
+    from launch import LaunchDescription,LaunchService
+    from launch.actions import ExecuteProcess
+    spec=importlib.util.spec_from_file_location('owned_native_launch',sys.argv[1])
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    root=Path(sys.argv[2]);ready=root/'ready';closed=root/'closed'
+    engine_code="import pathlib,sys,time; p=pathlib.Path(sys.argv[1]); end=time.monotonic()+3;\nwhile not p.exists() and time.monotonic()<end:time.sleep(.01)\nassert p.exists()"
+    helper_code="import pathlib,signal,sys,time;\ndef stop(*_):\n pathlib.Path(sys.argv[2]).write_text('closed'); sys.exit(0)\nsignal.signal(signal.SIGINT,stop);pathlib.Path(sys.argv[1]).write_text('ready');\nwhile True:time.sleep(.02)"
+    original=ExecuteProcess
+    def fixture_engine(**kwargs):
+        kwargs['cmd']=[sys.executable,'-c',engine_code,str(ready)]
+        return original(**kwargs)
+    module.ExecuteProcess=fixture_engine
+    engine=module.navigation_gazebo_action('unused-owned-world',True)
+    helper=ExecuteProcess(cmd=[sys.executable,'-c',helper_code,str(ready),str(closed)],name='owned_fixture_helper')
+    service=LaunchService();service.include_launch_description(LaunchDescription([engine,helper]))
+    code=service.run();assert code==0 and closed.read_text()=='closed'
+    print('OWNED_PARENT_AND_HELPER_NORMAL_EXIT')
+    '''
+        with (tmp_path/'launch.log').open('w') as log:
+            process=subprocess.Popen([sys.executable,'-c',program,str(launch_file),str(tmp_path)],
+                stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+            timed_out=False
+            try:
+                process.wait(timeout=7.)
+            except subprocess.TimeoutExpired:
+                timed_out=True
+            finally:
+                if process.poll() is None:
+                    process.send_signal(signal.SIGINT)
+                    try:process.wait(timeout=6.)
+                    except subprocess.TimeoutExpired:
+                        os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=3.)
+        output=(tmp_path/'launch.log').read_text()
+>       assert not timed_out,'engine exited but launch parent/helper require an external signal: '+output
+E       AssertionError: engine exited but launch parent/helper require an external signal: [INFO] [launch]: All log files can be found below /home/jinho/.ros/log/2026-10-25-07-31-22-820302-DESKTOP-4B51LPI-58275
+E         [INFO] [launch]: Default logging verbosity is set to INFO
+E         [INFO] [gazebo-1]: process started with pid [58278]
+E         [INFO] [owned_fixture_helper-2]: process started with pid [58279]
+E         [INFO] [gazebo-1]: process has finished cleanly [pid 58278]
+E         [WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+E         [ERROR] [owned_fixture_helper-2]: process[owned_fixture_helper-2] failed to terminate '5' seconds after receiving 'SIGINT', escalating to 'SIGTERM'
+E         [INFO] [owned_fixture_helper-2]: sending signal 'SIGTERM' to process[owned_fixture_helper-2]
+E         [ERROR] [owned_fixture_helper-2]: process has died [pid 58279, exit code -15, cmd '/home/jinho/ch13_vision_13_4_venv/bin/python -c import pathlib,signal,sys,time;
+E         def stop(*_):
+E          pathlib.Path(sys.argv[2]).write_text('closed'); sys.exit(0)
+E         signal.signal(signal.SIGINT,stop);pathlib.Path(sys.argv[1]).write_text('ready');
+E         while True:time.sleep(.02) /tmp/pytest-of-jinho/pytest-26/test_navigation_engine_exit_ev0/ready /tmp/pytest-of-jinho/pytest-26/test_navigation_engine_exit_ev0/closed'].
+E         Traceback (most recent call last):
+E           File "<string>", line 19, in <module>
+E           File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+E             with self.open(mode='r', encoding=encoding, errors=errors) as f:
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+E             return io.open(self, mode, buffering, encoding, errors, newline)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-jinho/pytest-26/test_navigation_engine_exit_ev0/closed'
+E         
+E       assert not True
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_engine_launch_lifetime.py:51: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_engine_launch_lifetime.py::test_navigation_engine_exit_event_finishes_launch_and_helpers
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 17.81s

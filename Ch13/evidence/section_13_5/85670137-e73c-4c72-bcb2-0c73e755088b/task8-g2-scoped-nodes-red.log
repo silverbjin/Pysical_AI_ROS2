@@ -1,0 +1,24 @@
+F
+=================================== FAILURES ===================================
+_ test_g2_context_cannot_enter_default_or_incomplete_scope[motion_guard-False-True-valid] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-36/test_g2_context_cannot_enter_d0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+role = 'motion_guard', validation = False, g2 = True, payload = 'valid'
+
+    @pytest.mark.parametrize('validation,g2,payload',[(False,True,'valid'),(True,True,''),(True,False,'valid')])
+    @pytest.mark.parametrize('role',['motion_guard','crawl_controller'])
+    def test_g2_context_cannot_enter_default_or_incomplete_scope(tmp_path,nav_robot_model,role,validation,g2,payload):
+        module=importlib.import_module('integrated_robot_navigation.'+role)
+        kind=module.MotionGuardNode if role=='motion_guard' else module.CrawlController
+        profile,expected=fixture(tmp_path,nav_robot_model,'gazebo')
+        context=Context();rclpy.init(context=context);node=None
+        try:
+>           with pytest.raises(ValueError,match='G2|scope|profile'):
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_scoped_nodes.py:20: Failed
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_scoped_nodes.py::test_g2_context_cannot_enter_default_or_incomplete_scope[motion_guard-False-True-valid]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 10.93s

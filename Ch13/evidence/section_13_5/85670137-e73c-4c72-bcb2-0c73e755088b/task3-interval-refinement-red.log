@@ -1,0 +1,19 @@
+...F.                                                                    [100%]
+=================================== FAILURES ===================================
+_______ test_interval_dependency_refinement_keeps_front_approach_usable ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_interval_dependency_refinement_keeps_front_approach_usable(nav_robot_model):
+        module = api()
+        p = module.prepare_profile(nav_robot_model, (0., 1.2, -2., 0., .8, 0.))
+        # Largest standoff .65m must leave .05m for the stationary fixture face.
+        # This bounds overestimation; it is not permission to truncate geometry.
+>       assert max(v[0] for v in p.footprint) <= .60
+E       assert 0.7206431126358978 <= 0.6
+E        +  where 0.7206431126358978 = max(<generator object test_interval_dependency_refinement_keeps_front_approach_usable.<locals>.<genexpr> at 0x7631cc409700>)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py:48: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_footprint.py::test_interval_dependency_refinement_keeps_front_approach_usable
+1 failed, 4 passed in 3.96s

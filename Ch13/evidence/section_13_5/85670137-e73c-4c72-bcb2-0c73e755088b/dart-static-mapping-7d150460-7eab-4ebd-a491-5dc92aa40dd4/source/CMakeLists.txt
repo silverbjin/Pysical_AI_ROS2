@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+project(ch13_dart_static_mapping LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+find_package(DART 6.13 REQUIRED COMPONENTS utils-urdf)
+add_executable(dart_static_mapping dart_static_mapping.cpp)
+target_link_libraries(dart_static_mapping PRIVATE dart dart-utils-urdf)

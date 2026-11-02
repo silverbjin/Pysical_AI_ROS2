@@ -1,0 +1,17 @@
+F
+=================================== FAILURES ===================================
+_ test_measured_timeout_input_uses_terminal_error_inside_identical_feasible_set _
+
+    def test_measured_timeout_input_uses_terminal_error_inside_identical_feasible_set():
+>       assert 'force_objective' in inspect.signature(NativeXYZTransition).parameters, 'six-second transition still uses an implicit one-per-second error decay'
+E       AssertionError: six-second transition still uses an implicit one-per-second error decay
+E       assert 'force_objective' in mappingproxy(OrderedDict({'model': <Parameter "model">, 'limits': <Parameter "limits">, 'terms_evaluator': <Parameter "terms_evaluator=None">}))
+E        +  where mappingproxy(OrderedDict({'model': <Parameter "model">, 'limits': <Parameter "limits">, 'terms_evaluator': <Parameter "terms_evaluator=None">})) = <Signature (model, limits, *, terms_evaluator=None)>.parameters
+E        +    where <Signature (model, limits, *, terms_evaluator=None)> = <function signature at 0x74030fa12840>(NativeXYZTransition)
+E        +      where <function signature at 0x74030fa12840> = inspect.signature
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_terminal_force_objective.py:20: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_terminal_force_objective.py::test_measured_timeout_input_uses_terminal_error_inside_identical_feasible_set
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.74s

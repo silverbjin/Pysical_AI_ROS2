@@ -1,0 +1,32 @@
+F
+=================================== FAILURES ===================================
+_ test_new_dds_publication_survives_system_backstep_without_renewing_duplicate_or_old_epoch[True-raw] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+role = 'raw', mapping = True
+
+    @pytest.mark.parametrize('role',['raw','smoothed','final'])
+    @pytest.mark.parametrize('mapping',[True,False])
+    def test_new_dds_publication_survives_system_backstep_without_renewing_duplicate_or_old_epoch(nav_robot_model,role,mapping):
+        context=Context();rclpy.init(context=context);node=None
+        try:
+>           node,cutoff,deliver,selected=receiver(role,nav_robot_model,context)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_command_system_clock_ros.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+role = 'raw'
+model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+context = <rclpy.context.Context object at 0x7d985e162060>
+
+    def receiver(role,model,context):
+>       profile=prepare_profile(model)
+                ^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: prepare_profile() missing 1 required positional argument: 'arm_q'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_command_system_clock_ros.py:18: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_command_system_clock_ros.py::test_new_dds_publication_survives_system_backstep_without_renewing_duplicate_or_old_epoch[True-raw]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 6.97s

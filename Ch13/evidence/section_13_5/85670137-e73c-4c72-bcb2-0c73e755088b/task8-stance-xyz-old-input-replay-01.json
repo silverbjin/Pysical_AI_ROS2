@@ -1,0 +1,4552 @@
+{
+  "scope": "adapted_old_input_arithmetic_not_actual_XYZ_or_engine",
+  "limitations": [
+    "future swing was not recorded: fixed current XY only",
+    "no simulated feedback or repeated integration"
+  ],
+  "fixture_sha256": "4bc1d7c31a2e7be5c91a96c8d09f6bd7d8c2b4bf196574dcb64e155a8e16875a",
+  "method_sha256": "b91fb11e574ee516af2915a9d24886267621369fd2ac6070e9df04386e2a1a16",
+  "source_sha256": {
+    "admission.py": "83edec69ca448c0999030fb4b27ebb56033f4b50a258aca54f40d4d0f003046b",
+    "applied_reference.py": "68dcec4ea6deaf9b8bf637c0a986121c2f53a441391520cc414f3201300ec7c3",
+    "calibration.py": "0a231f8b26d988217d301494f2dd621485910abb72a7e0c602672fa24cc15896",
+    "carry_manager.py": "77d83d8fc547d2d85d953725a310daf56039a5af6779732c32db732ee694e258",
+    "carry_profile.py": "d0e5bfff0583f7af2f06b94252d6a4bea377088af657e116aae230f91454a592",
+    "clock_execution.py": "83e477698e67a29b51f46b748740fd9f5f376ff120fd8c2e900cbafef90afc71",
+    "clock_preflight.py": "c392689600b8be213af90117f928510879a8cbb805c53ac2f109a19634a85730",
+    "command_order.py": "5f9c17d6ea85f10319ef41543872d973226c18883e0447d87b476d5186d1a8b7",
+    "contact_component.py": "263d40fb814167a53a2daece99f408b0278d8b42572996184ff6f1b5e2cc6b0a",
+    "contact_equilibrium.py": "0429ea920a99c12fc84fb97a365c2b4b7f47db0374f5a21cdfceb9d167a72edb",
+    "contact_transfer.py": "a5a4aef51caaea758fbff2bd90a845dbf46e0c2de76ccedfc64991fda94ea2f3",
+    "crawl_controller.py": "6c94b7071b297b2197fe37421d4e242405d844653fc743ca043c94a27a64fcc9",
+    "dispatch_node.py": "b9efae4f8830d2a5aca942066061f1731016b5f23a82219a50849aea70721d69",
+    "execution_contract.py": "d32fff2d5cfcc958f38472ffca820ec3177c88d65f19f93471904824e90f75d6",
+    "g2_command_source.py": "7576f1f51cd6fd32519e124967a69fccc3d819fe0eea50b66be825b5e843dfbd",
+    "g2_sequence.py": "e00d92cd77e182b3daacd7cb2d57b50c1feff1e2b3de5df6bcf7e158d47057e7",
+    "gait.py": "b7fdce114b9c941ea983495f02e28e6f571a92dd13b1ed9597043f5d300ae62b",
+    "gazebo_contacts.py": "41e69e77c6bbef00bf04d8a3d96e1d61ca81adf72f2e496ddb61bb8cfcb5f717",
+    "geometry.py": "afbe69c664e2a689e18158b2cb2c34a54c5145ebcfca06f7f581c550b41d6ba1",
+    "ingress_dispatch.py": "f205ef34ad93f65404a4b65871010771fa8561b911f5507a0fc7a4501161064e",
+    "leg_kinematics.py": "f27e9a1c02b7345913c2b542514020b2e05ee2de911aefa0b30fdf6e181fdb15",
+    "load_process.py": "91b886d6d4a795047340c93447b05b1b044230e37659700d628156307e9b7bfc",
+    "load_transition.py": "2b4ab20c8b112f455e22bc0270e9ff68268461afac9344054fa801a62773aca6",
+    "load_xyz.py": "0743c768715d79742b5e7ff8007a96588ec161d39e2bdc08f826ed367cc74137",
+    "model.py": "1328da5f6074a9429efd16dda03df31666ecd03f9b06876d8ea938cfee119b09",
+    "motion_guard.py": "9868d41f608a8d72e19e6d219acd35cff69a9b2c487698e9223b22bd27b59fb5",
+    "native_mass.py": "cb7498987bacab192b085b8a9314b907249d5b85282c93320d2785d3925d68d2",
+    "observations.py": "bb9eaeef336d8d0f9943898984413ab71d44a5060337aa6770f0f15fd6053610",
+    "projection.py": "b47c8712de60c39ace2e852bb3dfe10edc63dc47ec37b1eb6d8214c69f5d936a",
+    "reference_dispatch.py": "07f5b63652d6cbe52a5b263c42600fc6b5899d7fa5d112220cecfc6934ca89b0",
+    "reference_envelope.py": "dc43a4ce2def35ce3201fc82661b9a0a005a971b705da0f0f81d02240775f2bd",
+    "samples.py": "074a292e330a7c3ba637d532f7da7302018c0ae093b16b4811147a60b20beb1f",
+    "scene.py": "b52e5c6190895210c0b5d95171320aa8009a03fd9a88ba2ef3bafc94f6d9aa39",
+    "startup.py": "bee30b652f2b11904aac780a3486c22ebb1fb6ce46c7de851bd38a7e9c24d108",
+    "support.py": "4395c14c50294824b3ceffda472f0c65050ea1a628167ca3e1c938f7bc79c051",
+    "__init__.py": "c66c4d293b0232380a09076bd4676ee4281fa92797cd9cdac4559e7a0785e1eb"
+  },
+  "numeric_input": {
+    "foot": "fl_foot",
+    "joints": {
+      "arm_joint_1": 0.001978112394115852,
+      "arm_joint_2": 1.208976748816715,
+      "arm_joint_3": -2.022259569132781,
+      "arm_joint_4": -0.00038320540179135254,
+      "arm_joint_5": 0.7969815400007885,
+      "arm_joint_6": -0.0005653285578837815,
+      "fl_calf_joint": 0.9204645316260681,
+      "fl_hip_joint": 0.06608053795752075,
+      "fl_thigh_joint": -0.5748884109718215,
+      "fr_calf_joint": 0.9810395101776526,
+      "fr_hip_joint": 0.06659097956525639,
+      "fr_thigh_joint": -0.6072835383977165,
+      "gripper_left_joint": 0.014942673554880402,
+      "gripper_right_joint": 0.01505732646878494,
+      "rl_calf_joint": 0.9179079568667476,
+      "rl_hip_joint": 0.06738812957006375,
+      "rl_thigh_joint": -0.581660402300884,
+      "rr_calf_joint": 0.9796645981096377,
+      "rr_hip_joint": 0.0679236936631068,
+      "rr_thigh_joint": -0.6148268009619163
+    },
+    "body_pose": [
+      [
+        0.999999156275631,
+        -0.0011977344495727057,
+        -0.0005028719663923841,
+        -0.05434749835466862
+      ],
+      [
+        0.0011972239343251518,
+        0.9999987689488955,
+        -0.0010142758720566981,
+        -0.031424579829203304
+      ],
+      [
+        0.0005040861804846272,
+        0.001013672965933362,
+        0.9999993591819151,
+        0.4603493330850727
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "points": {
+      "fr_foot": [
+        0.24743554408731516,
+        -0.18135482496655592,
+        0.0
+      ],
+      "fl_foot": [
+        0.24687452582472416,
+        0.1786636275814058,
+        0.0
+      ],
+      "rr_foot": [
+        -0.24894103771774656,
+        -0.18138046255912185,
+        0.0
+      ],
+      "rl_foot": [
+        -0.2495102032353244,
+        0.17863631234743474,
+        0.0
+      ]
+    },
+    "forces_world": {
+      "fr_foot": [
+        -2.8062474120200935,
+        1.6709628471314144,
+        38.603408112843645
+      ],
+      "fl_foot": [
+        -3.0891085394766966,
+        -1.9651309982420155,
+        29.481012721971453
+      ],
+      "rr_foot": [
+        3.0873204373060155,
+        2.496957559967385,
+        46.265665392556805
+      ],
+      "rl_foot": [
+        2.686828851303411,
+        -2.294903322449084,
+        34.85965574021787
+      ]
+    },
+    "target_forces": {
+      "fr_foot": [
+        5.35838921018791,
+        3.249444272337529,
+        68.8727079666627
+      ],
+      "rr_foot": [
+        -9.839392335061937,
+        -0.8566021069643832,
+        15.371945990901978
+      ],
+      "rl_foot": [
+        4.481003124874028,
+        -2.3928421653731458,
+        64.96642704243533
+      ]
+    },
+    "allowed_z": {
+      "fr_foot": [
+        0.006705157632233514,
+        0.016705157632233514
+      ],
+      "fl_foot": [
+        0.014705157632233458,
+        0.03994968394852798
+      ],
+      "rr_foot": [
+        0.017727046727298523,
+        0.027727046727298525
+      ],
+      "rl_foot": [
+        0.0077270467272984675,
+        0.017727046727298468
+      ]
+    },
+    "dt": 0.016,
+    "speed": 0.002,
+    "min_force": 2.0,
+    "command_joints": {
+      "arm_joint_1": 0.001978112394115852,
+      "arm_joint_2": 1.208976748816715,
+      "arm_joint_3": -2.022259569132781,
+      "arm_joint_4": -0.00038320540179135254,
+      "arm_joint_5": 0.7969815400007885,
+      "arm_joint_6": -0.0005653285578837815,
+      "fl_calf_joint": 0.9030535624630606,
+      "fl_hip_joint": 0.06270127097862077,
+      "fl_thigh_joint": -0.5709609631382642,
+      "fr_calf_joint": 0.958694139006852,
+      "fr_hip_joint": 0.06314746558115925,
+      "fr_thigh_joint": -0.6004700950672555,
+      "gripper_left_joint": 0.014942673554880402,
+      "gripper_right_joint": 0.01505732646878494,
+      "rl_calf_joint": 0.9030535624630603,
+      "rl_hip_joint": 0.06270127097862077,
+      "rl_thigh_joint": -0.5709609631382643,
+      "rr_calf_joint": 0.9586941390068517,
+      "rr_hip_joint": 0.06314746558115925,
+      "rr_thigh_joint": -0.6004700950672556
+    },
+    "reference_pose": [
+      [
+        0.9999979114831739,
+        6.486552252839834e-16,
+        0.002043778190130021,
+        -0.04776219123839045
+      ],
+      [
+        -6.48883124732666e-16,
+        1.0,
+        1.1084580824494727e-16,
+        -0.027891180776077093
+      ],
+      [
+        -0.002043778190130021,
+        -1.1217174991988367e-16,
+        0.9999979114831739,
+        0.46
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "reference_xyz": {
+      "fr_foot": [
+        0.25493715217842655,
+        -0.1800000000000001,
+        0.016705157632233514
+      ],
+      "fl_foot": [
+        0.2549371521784268,
+        0.17999999999999983,
+        0.01670515763223346
+      ],
+      "rr_foot": [
+        -0.24506180356316026,
+        -0.17999999999999977,
+        0.017727046727298523
+      ],
+      "rl_foot": [
+        -0.24506180356316004,
+        0.18000000000000016,
+        0.017727046727298468
+      ]
+    },
+    "origins": {
+      "fr_foot": [
+        0.25493715217842655,
+        -0.1800000000000001,
+        0.016705157632233514
+      ],
+      "fl_foot": [
+        0.2549371521784268,
+        0.17999999999999983,
+        0.01670515763223346
+      ],
+      "rr_foot": [
+        -0.24506180356316026,
+        -0.17999999999999977,
+        0.017727046727298523
+      ],
+      "rl_foot": [
+        -0.24506180356316004,
+        0.18000000000000016,
+        0.017727046727298468
+      ]
+    },
+    "future_targets": {
+      "fr_foot": [
+        0.25493715217842655,
+        -0.1800000000000001,
+        0.016705157632233514
+      ],
+      "fl_foot": [
+        0.2549371521784268,
+        0.17999999999999983,
+        0.01670515763223346
+      ],
+      "rr_foot": [
+        -0.24506180356316026,
+        -0.17999999999999977,
+        0.017727046727298523
+      ],
+      "rl_foot": [
+        -0.24506180356316004,
+        0.18000000000000016,
+        0.017727046727298468
+      ]
+    }
+  },
+  "attempts": [
+    {
+      "index": 0,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4374230
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 84110,
+            "thread_cpu_ns": 83000
+          },
+          "spatial_response": {
+            "wall_ns": 698133,
+            "thread_cpu_ns": 687000
+          },
+          "constraints_ready": {
+            "wall_ns": 1412355,
+            "thread_cpu_ns": 1388000
+          },
+          "solver_iteration": {
+            "wall_ns": 2052752,
+            "thread_cpu_ns": 2015900
+          },
+          "solver_finished": {
+            "wall_ns": 2065888,
+            "thread_cpu_ns": 2028800
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4340626,
+            "thread_cpu_ns": 4263500
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 1,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 3907755
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 75658,
+            "thread_cpu_ns": 74000
+          },
+          "spatial_response": {
+            "wall_ns": 307012,
+            "thread_cpu_ns": 301500
+          },
+          "constraints_ready": {
+            "wall_ns": 931422,
+            "thread_cpu_ns": 914900
+          },
+          "solver_iteration": {
+            "wall_ns": 1587297,
+            "thread_cpu_ns": 1558300
+          },
+          "solver_finished": {
+            "wall_ns": 1597785,
+            "thread_cpu_ns": 1568500
+          },
+          "exact_ik_validated": {
+            "wall_ns": 3874967,
+            "thread_cpu_ns": 3805400
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 3953782
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 70873,
+            "thread_cpu_ns": 69600
+          },
+          "spatial_response": {
+            "wall_ns": 300190,
+            "thread_cpu_ns": 295100
+          },
+          "constraints_ready": {
+            "wall_ns": 924192,
+            "thread_cpu_ns": 908200
+          },
+          "solver_iteration": {
+            "wall_ns": 1545140,
+            "thread_cpu_ns": 1517500
+          },
+          "solver_finished": {
+            "wall_ns": 1555323,
+            "thread_cpu_ns": 1527200
+          },
+          "exact_ik_validated": {
+            "wall_ns": 3920688,
+            "thread_cpu_ns": 3851000
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4236049
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 73113,
+            "thread_cpu_ns": 71900
+          },
+          "spatial_response": {
+            "wall_ns": 368414,
+            "thread_cpu_ns": 362100
+          },
+          "constraints_ready": {
+            "wall_ns": 997814,
+            "thread_cpu_ns": 980700
+          },
+          "solver_iteration": {
+            "wall_ns": 1598701,
+            "thread_cpu_ns": 1570200
+          },
+          "solver_finished": {
+            "wall_ns": 1611023,
+            "thread_cpu_ns": 1581900
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4198271,
+            "thread_cpu_ns": 4123700
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4052555
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 76880,
+            "thread_cpu_ns": 75500
+          },
+          "spatial_response": {
+            "wall_ns": 367497,
+            "thread_cpu_ns": 361400
+          },
+          "constraints_ready": {
+            "wall_ns": 1000563,
+            "thread_cpu_ns": 983500
+          },
+          "solver_iteration": {
+            "wall_ns": 1607458,
+            "thread_cpu_ns": 1578600
+          },
+          "solver_finished": {
+            "wall_ns": 1617641,
+            "thread_cpu_ns": 1588500
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4016915,
+            "thread_cpu_ns": 3946300
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4022516
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 72705,
+            "thread_cpu_ns": 71300
+          },
+          "spatial_response": {
+            "wall_ns": 322592,
+            "thread_cpu_ns": 317000
+          },
+          "constraints_ready": {
+            "wall_ns": 948122,
+            "thread_cpu_ns": 931900
+          },
+          "solver_iteration": {
+            "wall_ns": 1559294,
+            "thread_cpu_ns": 1531500
+          },
+          "solver_finished": {
+            "wall_ns": 1570291,
+            "thread_cpu_ns": 1541900
+          },
+          "exact_ik_validated": {
+            "wall_ns": 3989829,
+            "thread_cpu_ns": 3918700
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 6,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4119456
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 71076,
+            "thread_cpu_ns": 69900
+          },
+          "spatial_response": {
+            "wall_ns": 368211,
+            "thread_cpu_ns": 361900
+          },
+          "constraints_ready": {
+            "wall_ns": 986613,
+            "thread_cpu_ns": 969400
+          },
+          "solver_iteration": {
+            "wall_ns": 1585770,
+            "thread_cpu_ns": 1557400
+          },
+          "solver_finished": {
+            "wall_ns": 1595647,
+            "thread_cpu_ns": 1566900
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4043085,
+            "thread_cpu_ns": 3978600
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 7,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4161918
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 113131,
+            "thread_cpu_ns": 112000
+          },
+          "spatial_response": {
+            "wall_ns": 405072,
+            "thread_cpu_ns": 398500
+          },
+          "constraints_ready": {
+            "wall_ns": 1020521,
+            "thread_cpu_ns": 1002900
+          },
+          "solver_iteration": {
+            "wall_ns": 1646357,
+            "thread_cpu_ns": 1616800
+          },
+          "solver_finished": {
+            "wall_ns": 1656642,
+            "thread_cpu_ns": 1626700
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4119456,
+            "thread_cpu_ns": 4047400
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 8,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4411295
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 73010,
+            "thread_cpu_ns": 71700
+          },
+          "spatial_response": {
+            "wall_ns": 309252,
+            "thread_cpu_ns": 304200
+          },
+          "constraints_ready": {
+            "wall_ns": 1011662,
+            "thread_cpu_ns": 994200
+          },
+          "solver_iteration": {
+            "wall_ns": 1897872,
+            "thread_cpu_ns": 1864600
+          },
+          "solver_finished": {
+            "wall_ns": 1917830,
+            "thread_cpu_ns": 1883300
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4376164,
+            "thread_cpu_ns": 4298300
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 9,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5157187
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 72706,
+            "thread_cpu_ns": 71500
+          },
+          "spatial_response": {
+            "wall_ns": 363934,
+            "thread_cpu_ns": 357800
+          },
+          "constraints_ready": {
+            "wall_ns": 987631,
+            "thread_cpu_ns": 970800
+          },
+          "solver_iteration": {
+            "wall_ns": 1897771,
+            "thread_cpu_ns": 1763100
+          },
+          "solver_finished": {
+            "wall_ns": 1910398,
+            "thread_cpu_ns": 1775400
+          },
+          "exact_ik_validated": {
+            "wall_ns": 5114419,
+            "thread_cpu_ns": 4923800
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 10,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5028679
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 84415,
+            "thread_cpu_ns": 83100
+          },
+          "spatial_response": {
+            "wall_ns": 474315,
+            "thread_cpu_ns": 466800
+          },
+          "constraints_ready": {
+            "wall_ns": 1125811,
+            "thread_cpu_ns": 1106100
+          },
+          "solver_iteration": {
+            "wall_ns": 1910702,
+            "thread_cpu_ns": 1876300
+          },
+          "solver_finished": {
+            "wall_ns": 1922616,
+            "thread_cpu_ns": 1888000
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4936524,
+            "thread_cpu_ns": 4849600
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 11,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5103624
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 150807,
+            "thread_cpu_ns": 148100
+          },
+          "spatial_response": {
+            "wall_ns": 661272,
+            "thread_cpu_ns": 649500
+          },
+          "constraints_ready": {
+            "wall_ns": 1389342,
+            "thread_cpu_ns": 1364900
+          },
+          "solver_iteration": {
+            "wall_ns": 2049596,
+            "thread_cpu_ns": 2012600
+          },
+          "solver_finished": {
+            "wall_ns": 2064157,
+            "thread_cpu_ns": 2026500
+          },
+          "exact_ik_validated": {
+            "wall_ns": 5049146,
+            "thread_cpu_ns": 4958600
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 12,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4846509
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 106207,
+            "thread_cpu_ns": 104500
+          },
+          "spatial_response": {
+            "wall_ns": 421161,
+            "thread_cpu_ns": 413900
+          },
+          "constraints_ready": {
+            "wall_ns": 1126423,
+            "thread_cpu_ns": 1106600
+          },
+          "solver_iteration": {
+            "wall_ns": 1793193,
+            "thread_cpu_ns": 1760800
+          },
+          "solver_finished": {
+            "wall_ns": 1804293,
+            "thread_cpu_ns": 1771600
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4801603,
+            "thread_cpu_ns": 4717500
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 13,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5035502
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 87980,
+            "thread_cpu_ns": 86400
+          },
+          "spatial_response": {
+            "wall_ns": 408738,
+            "thread_cpu_ns": 402200
+          },
+          "constraints_ready": {
+            "wall_ns": 1207987,
+            "thread_cpu_ns": 1186800
+          },
+          "solver_iteration": {
+            "wall_ns": 1936771,
+            "thread_cpu_ns": 1901800
+          },
+          "solver_finished": {
+            "wall_ns": 1949194,
+            "thread_cpu_ns": 1914000
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4980413,
+            "thread_cpu_ns": 4892200
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 14,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5494950
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 131562,
+            "thread_cpu_ns": 129500
+          },
+          "spatial_response": {
+            "wall_ns": 548243,
+            "thread_cpu_ns": 554900
+          },
+          "constraints_ready": {
+            "wall_ns": 1437202,
+            "thread_cpu_ns": 1414300
+          },
+          "solver_iteration": {
+            "wall_ns": 2309054,
+            "thread_cpu_ns": 2267400
+          },
+          "solver_finished": {
+            "wall_ns": 2321885,
+            "thread_cpu_ns": 2279800
+          },
+          "exact_ik_validated": {
+            "wall_ns": 5454830,
+            "thread_cpu_ns": 5357300
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 15,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5112077
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 87674,
+            "thread_cpu_ns": 86200
+          },
+          "spatial_response": {
+            "wall_ns": 372284,
+            "thread_cpu_ns": 365800
+          },
+          "constraints_ready": {
+            "wall_ns": 1146890,
+            "thread_cpu_ns": 1127100
+          },
+          "solver_iteration": {
+            "wall_ns": 1888199,
+            "thread_cpu_ns": 1854200
+          },
+          "solver_finished": {
+            "wall_ns": 1900724,
+            "thread_cpu_ns": 1866400
+          },
+          "exact_ik_validated": {
+            "wall_ns": 5068291,
+            "thread_cpu_ns": 4981600
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 16,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5533135
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 87572,
+            "thread_cpu_ns": 86000
+          },
+          "spatial_response": {
+            "wall_ns": 369330,
+            "thread_cpu_ns": 362900
+          },
+          "constraints_ready": {
+            "wall_ns": 1117258,
+            "thread_cpu_ns": 1097800
+          },
+          "solver_iteration": {
+            "wall_ns": 1869258,
+            "thread_cpu_ns": 1835600
+          },
+          "solver_finished": {
+            "wall_ns": 1881478,
+            "thread_cpu_ns": 1847500
+          },
+          "exact_ik_validated": {
+            "wall_ns": 5482119,
+            "thread_cpu_ns": 5386000
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 17,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5312270
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 102745,
+            "thread_cpu_ns": 100700
+          },
+          "spatial_response": {
+            "wall_ns": 470751,
+            "thread_cpu_ns": 463300
+          },
+          "constraints_ready": {
+            "wall_ns": 1262261,
+            "thread_cpu_ns": 1240500
+          },
+          "solver_iteration": {
+            "wall_ns": 1995220,
+            "thread_cpu_ns": 1959000
+          },
+          "solver_finished": {
+            "wall_ns": 2007338,
+            "thread_cpu_ns": 1970900
+          },
+          "exact_ik_validated": {
+            "wall_ns": 5253719,
+            "thread_cpu_ns": 5160200
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 18,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5280296
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 95922,
+            "thread_cpu_ns": 94200
+          },
+          "spatial_response": {
+            "wall_ns": 408941,
+            "thread_cpu_ns": 401800
+          },
+          "constraints_ready": {
+            "wall_ns": 1185075,
+            "thread_cpu_ns": 1164300
+          },
+          "solver_iteration": {
+            "wall_ns": 1916404,
+            "thread_cpu_ns": 1881700
+          },
+          "solver_finished": {
+            "wall_ns": 1929031,
+            "thread_cpu_ns": 1894000
+          },
+          "exact_ik_validated": {
+            "wall_ns": 5239157,
+            "thread_cpu_ns": 5145600
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 19,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 6318842
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 90118,
+            "thread_cpu_ns": 88500
+          },
+          "spatial_response": {
+            "wall_ns": 408433,
+            "thread_cpu_ns": 401500
+          },
+          "constraints_ready": {
+            "wall_ns": 1196990,
+            "thread_cpu_ns": 1176500
+          },
+          "solver_iteration": {
+            "wall_ns": 1959377,
+            "thread_cpu_ns": 1924200
+          },
+          "solver_finished": {
+            "wall_ns": 1972614,
+            "thread_cpu_ns": 1937100
+          },
+          "exact_ik_validated": {
+            "wall_ns": 6264262,
+            "thread_cpu_ns": 6154200
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 20,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 5330192
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 107225,
+            "thread_cpu_ns": 105300
+          },
+          "spatial_response": {
+            "wall_ns": 492033,
+            "thread_cpu_ns": 483600
+          },
+          "constraints_ready": {
+            "wall_ns": 1326005,
+            "thread_cpu_ns": 1303000
+          },
+          "solver_iteration": {
+            "wall_ns": 2155395,
+            "thread_cpu_ns": 2117000
+          },
+          "solver_finished": {
+            "wall_ns": 2174234,
+            "thread_cpu_ns": 2135000
+          },
+          "exact_ik_validated": {
+            "wall_ns": 5289970,
+            "thread_cpu_ns": 5196000
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 21,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4715252
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 86758,
+            "thread_cpu_ns": 85300
+          },
+          "spatial_response": {
+            "wall_ns": 408229,
+            "thread_cpu_ns": 401300
+          },
+          "constraints_ready": {
+            "wall_ns": 1094754,
+            "thread_cpu_ns": 1075700
+          },
+          "solver_iteration": {
+            "wall_ns": 1767125,
+            "thread_cpu_ns": 1735400
+          },
+          "solver_finished": {
+            "wall_ns": 1777613,
+            "thread_cpu_ns": 1745600
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4675539,
+            "thread_cpu_ns": 4592700
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 22,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4511901
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 77491,
+            "thread_cpu_ns": 76200
+          },
+          "spatial_response": {
+            "wall_ns": 383688,
+            "thread_cpu_ns": 377200
+          },
+          "constraints_ready": {
+            "wall_ns": 1044960,
+            "thread_cpu_ns": 1026700
+          },
+          "solver_iteration": {
+            "wall_ns": 1719978,
+            "thread_cpu_ns": 1689000
+          },
+          "solver_finished": {
+            "wall_ns": 1730467,
+            "thread_cpu_ns": 1699300
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4475039,
+            "thread_cpu_ns": 4396400
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    },
+    {
+      "index": 23,
+      "delta": {
+        "fr_foot": [
+          -3.2000000000000026e-05,
+          -1.1157741397482822e-20,
+          -7.105427357601002e-21
+        ],
+        "fl_foot": [
+          0.0,
+          0.0,
+          2.5350446968698425e-05
+        ],
+        "rr_foot": [
+          3.199999999999998e-05,
+          -5.773159728050814e-21,
+          -8.881784197001252e-22
+        ],
+        "rl_foot": [
+          -2.4243793682311097e-06,
+          -1.0653538293191147e-05,
+          -1.892208233857776e-05
+        ]
+      },
+      "model": {
+        "scope": "spatial_spring_prediction_not_measured_force_or_torque",
+        "command_space": "stance_xyz",
+        "predicted_forces_world": {
+          "fr_foot": [
+            -2.795529293800706,
+            1.666092350580434,
+            39.08065156167783
+          ],
+          "fl_foot": [
+            -3.0368856586727224,
+            -1.9091988564154707,
+            29.00377710877215
+          ],
+          "rr_foot": [
+            3.0062113683530822,
+            2.497196180703796,
+            45.78841972041139
+          ],
+          "rl_foot": [
+            2.7049969212329827,
+            -2.3462035884610595,
+            35.3368935767284
+          ]
+        },
+        "predicted_joint_torques": {
+          "fr_hip_joint": -0.4284860230817028,
+          "fr_thigh_joint": -0.28811271501218294,
+          "fr_calf_joint": -3.937809421405582,
+          "fl_hip_joint": -0.613299376464199,
+          "fl_thigh_joint": -0.8920495663055145,
+          "fl_calf_joint": -2.943814987133906,
+          "rr_hip_joint": -0.6941035266651996,
+          "rr_thigh_joint": 2.8538577798424796,
+          "rr_calf_joint": -2.98592409415717,
+          "rl_hip_joint": -0.9310071991710429,
+          "rl_thigh_joint": 2.211011263278988,
+          "rl_calf_joint": -1.9432618997320108
+        },
+        "current_joint_torque_estimates": {
+          "fr_hip_joint": -0.4404180348406235,
+          "fr_thigh_joint": -0.31760578811838713,
+          "fr_calf_joint": -3.8970797038222313,
+          "fl_hip_joint": -0.6256148992692827,
+          "fl_thigh_joint": -0.8916570311098168,
+          "fl_calf_joint": -2.9977417716076245,
+          "rr_hip_joint": -0.6845372057535047,
+          "rr_thigh_joint": 2.9172715623516416,
+          "rr_calf_joint": -3.007778166513046,
+          "rl_hip_joint": -0.9163161387140013,
+          "rl_thigh_joint": 2.1761731012106758,
+          "rl_calf_joint": -1.9083902420210443
+        },
+        "entry_position_error_effort": {
+          "fr_hip_joint": -0.6887027968194293,
+          "fr_thigh_joint": 3.4067216652305388,
+          "fr_calf_joint": -16.75902837810045,
+          "fl_hip_joint": -0.6758533957799961,
+          "fl_thigh_joint": 1.9637239167786813,
+          "fl_calf_joint": -13.058226872255663,
+          "rr_hip_joint": -0.9552456163895107,
+          "rr_thigh_joint": 7.17835294733038,
+          "rr_calf_joint": -15.727844327089457,
+          "rl_hip_joint": -0.937371718288596,
+          "rl_thigh_joint": 5.349719581309865,
+          "rl_calf_joint": -11.140795802765474
+        },
+        "predicted_servo_command_efforts": {
+          "fr_hip_joint": -0.6887046711052225,
+          "fr_thigh_joint": 3.4342918589458926,
+          "fr_calf_joint": -16.734310228257996,
+          "fl_hip_joint": -0.6751421354744547,
+          "fl_thigh_joint": 1.903280752510117,
+          "fl_calf_joint": -12.886706787689995,
+          "rr_hip_joint": -0.9552437421031401,
+          "rr_thigh_joint": 7.150788562640232,
+          "rr_calf_joint": -15.752578063112837,
+          "rl_hip_joint": -0.9426631787995132,
+          "rl_thigh_joint": 5.392395664419403,
+          "rl_calf_joint": -11.254213399548018
+        },
+        "requested_delta_xyz": {
+          "fr_foot": [
+            -3.2000000000000026e-05,
+            -1.1157741397482822e-20,
+            -7.105427357601002e-21
+          ],
+          "fl_foot": [
+            0.0,
+            0.0,
+            2.5350446968698425e-05
+          ],
+          "rr_foot": [
+            3.199999999999998e-05,
+            -5.773159728050814e-21,
+            -8.881784197001252e-22
+          ],
+          "rl_foot": [
+            -2.4243793682311097e-06,
+            -1.0653538293191147e-05,
+            -1.892208233857776e-05
+          ]
+        },
+        "future_geometry_validated": true,
+        "vector_bound_method": "inscribed_l1",
+        "inequality_residual": 1.5543122344752192e-15,
+        "optimization_iterations": 5,
+        "compute_wall_ns": 4404168
+      },
+      "trace": {
+        "scope": "current_attempt_timing_not_force_measurement",
+        "stages": {
+          "input_bounds": {
+            "wall_ns": 76066,
+            "thread_cpu_ns": 74800
+          },
+          "spatial_response": {
+            "wall_ns": 335524,
+            "thread_cpu_ns": 329800
+          },
+          "constraints_ready": {
+            "wall_ns": 983558,
+            "thread_cpu_ns": 966600
+          },
+          "solver_iteration": {
+            "wall_ns": 1632305,
+            "thread_cpu_ns": 1603000
+          },
+          "solver_finished": {
+            "wall_ns": 1642895,
+            "thread_cpu_ns": 1613300
+          },
+          "exact_ik_validated": {
+            "wall_ns": 4369546,
+            "thread_cpu_ns": 4291500
+          }
+        },
+        "preparation": {
+          "scope": "numeric_solver_initialization_not_contact_admission",
+          "solver_verified": true,
+          "calls": 1,
+          "wall_ns": 438675,
+          "thread_cpu_ns": 428800
+        },
+        "command_space": "stance_xyz",
+        "solver": {
+          "status": 0,
+          "iterations": 5,
+          "message": "Optimization terminated successfully"
+        }
+      }
+    }
+  ],
+  "native_provenance": {
+    "scope": "pure_current_q_mass_arithmetic_no_state_or_command",
+    "abi": 1,
+    "library": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/libnavigation_mass_kinematics.so",
+    "library_sha256": "63d1bd5aab771690c486a85e9dca3f20a5567d03262780898994db7fd049420b",
+    "compiled_geometry_sha256": "de2bd4a63b6ba4734ae2033a5981275fa637018f4f4c25ca8b6a229d8e996705",
+    "joint_names": [
+      "fr_hip_joint",
+      "fr_thigh_joint",
+      "fr_calf_joint",
+      "fl_hip_joint",
+      "fl_thigh_joint",
+      "fl_calf_joint",
+      "rr_hip_joint",
+      "rr_thigh_joint",
+      "rr_calf_joint",
+      "rl_hip_joint",
+      "rl_thigh_joint",
+      "rl_calf_joint",
+      "arm_joint_1",
+      "arm_joint_2",
+      "arm_joint_3",
+      "arm_joint_4",
+      "arm_joint_5",
+      "arm_joint_6",
+      "gripper_left_joint",
+      "gripper_right_joint"
+    ],
+    "model_sha256": "113a4bb3e0852eb4e47f5f032a8ebfb8f13f296b7eb95e5f549d694661aa5651",
+    "contact_abi": 1
+  },
+  "failed": 0
+}

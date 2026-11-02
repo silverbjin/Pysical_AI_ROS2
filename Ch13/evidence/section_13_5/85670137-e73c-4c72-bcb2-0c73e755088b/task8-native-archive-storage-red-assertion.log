@@ -1,0 +1,21 @@
+F
+=================================== FAILURES ===================================
+_ test_large_original_streams_to_identical_archive_without_duplicate_or_deletion _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-3/test_large_original_streams_to0')
+
+    def test_large_original_streams_to_identical_archive_without_duplicate_or_deletion(tmp_path):
+        native,original,destination=case(tmp_path)
+        ledger=export_closed(original,destination,native,archive_large=True,threshold=300)
+        assert not (destination/'observations.capture').exists()
+>       assert (destination/'result.json').is_file(),'small verdict must be copied before archive admission'
+E       AssertionError: small verdict must be copied before archive admission
+E       assert False
+E        +  where False = <bound method Path.is_file of PosixPath('/tmp/pytest-of-jinho/pytest-3/test_large_original_streams_to0/evidence/native-g2-mujoco-unit/result.json')>()
+E        +    where <bound method Path.is_file of PosixPath('/tmp/pytest-of-jinho/pytest-3/test_large_original_streams_to0/evidence/native-g2-mujoco-unit/result.json')> = (PosixPath('/tmp/pytest-of-jinho/pytest-3/test_large_original_streams_to0/evidence/native-g2-mujoco-unit') / 'result.json').is_file
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_archive_native_storage.py:18: AssertionError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_archive_native_storage.py::test_large_original_streams_to_identical_archive_without_duplicate_or_deletion
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 0.17s

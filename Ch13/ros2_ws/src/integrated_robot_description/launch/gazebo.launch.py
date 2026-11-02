@@ -13,13 +13,14 @@
 # limitations under the License.
 
 import hashlib
+import importlib.util
 import os
 from pathlib import Path
 import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, ExecuteProcess, Shutdown
 from launch.actions import IncludeLaunchDescription
 from launch.actions import RegisterEventHandler
 from launch.actions import TimerAction
@@ -48,15 +49,60 @@ def materialize_controller_config(source, *, vision=False):
     return str(target)
 
 
+def navigation_gazebo_action(world, vision):
+    """Direct Ruby/native server PID; preserve upstream resource/plugin paths.
+
+    Only the opt-in navigation scene uses this. Legacy 13.4 still includes the
+    upstream launch unchanged. Import its installed path helper, never copy or
+    patch the external launcher merely to remove its shell=True wrapper.
+    """
+    launcher = Path(get_package_share_directory('ros_gz_sim'))/'launch/gz_sim.launch.py'
+    spec = importlib.util.spec_from_file_location('_ch13_gazebo_paths', launcher)
+    upstream = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(upstream)
+    model_paths, plugin_paths = upstream.GazeboRosPaths.get_paths()
+    environment = {
+        'GZ_SIM_SYSTEM_PLUGIN_PATH': os.pathsep.join([
+            os.environ.get('GZ_SIM_SYSTEM_PLUGIN_PATH', ''),
+            os.environ.get('LD_LIBRARY_PATH', ''), plugin_paths]),
+        'GZ_SIM_RESOURCE_PATH': os.pathsep.join([
+            os.environ.get('GZ_SIM_RESOURCE_PATH', ''), model_paths]),
+    }
+    command = [upstream.get_executable_path('ruby'), upstream.get_executable_path('gz'),
+               'sim', '-r', '-s']
+    if vision:
+        command.append('--headless-rendering')
+    command.extend([str(world), '--force-version', '8'])
+    # Match the upstream on_exit_shutdown lifecycle: let ProcessExited finish
+    # the launch service rather than racing its async cleanup with parent SIGINT.
+    return ExecuteProcess(cmd=command, name='gazebo', shell=False,
+                          additional_env=environment, output='screen',
+                          on_exit=Shutdown(reason='owned navigation Gazebo process exited'))
+
+
 def launch_nodes(context):
     package_share = get_package_share_directory('integrated_robot_description')
     vision = LaunchConfiguration('vision_enabled').perform(context).lower() == 'true'
+    navigation = LaunchConfiguration('navigation_enabled', default='false').perform(context).lower() == 'true'
+    scene = None
+    if navigation:
+        from integrated_robot_navigation.scene import load_scene
+        scene = load_scene('gazebo', LaunchConfiguration('navigation_scene').perform(context))
+        if not vision:
+            raise ValueError('navigation scene requires vision_enabled')
     world = LaunchConfiguration('world').perform(context) or os.path.join(
         package_share, 'worlds', 'vision_fixture.sdf' if vision else 'empty.sdf')
+    if scene:
+        requested = LaunchConfiguration('world').perform(context)
+        if requested and Path(requested).resolve() != Path(scene['world']['path']).resolve():
+            raise ValueError('navigation world must match bound scene')
+        world = scene['world']['path']
     xacro_path = os.path.join(package_share, 'urdf', 'robot_system.urdf.xacro')
     controllers = materialize_controller_config(
         os.path.join(package_share, 'config', 'controllers.yaml'), vision=vision
     )
+    if scene:
+        controllers = scene['native_controllers']['path']
     description = ParameterValue(
         Command(
             [
@@ -69,6 +115,8 @@ def launch_nodes(context):
         ),
         value_type=str,
     )
+    if scene:
+        description = ParameterValue(Path(scene['robot']['path']).read_text(), value_type=str)
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -78,6 +126,8 @@ def launch_nodes(context):
         launch_arguments={
             'gz_args': ['-r -s ', '--headless-rendering ' if vision else '', world]}.items(),
     )
+    if scene:
+        gazebo = navigation_gazebo_action(world, vision)
     state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -93,7 +143,8 @@ def launch_nodes(context):
     spawn_robot = Node(
         package='ros_gz_sim',
         executable='create',
-        arguments=['-topic', 'robot_description', '-name', 'integrated_robot', '-z', '0.52'],
+        arguments=([ '-file', scene['robot_sdf']['path']] if scene else
+                   ['-topic', 'robot_description']) + ['-name', 'integrated_robot', '-z', '0.52'],
         output='screen',
     )
     spawners = [
@@ -133,9 +184,10 @@ def launch_nodes(context):
         nodes.extend([
             Node(package='ros_gz_bridge', executable='parameter_bridge',
                  parameters=[{'config_file': os.path.join(
-                     package_share, 'config', 'vision_bridge.yaml')}]),
+                     package_share, 'config', 'vision_bridge.yaml') if not navigation else
+                     LaunchConfiguration('navigation_bridge').perform(context)}]),
             Node(package='integrated_robot_vision', executable='native_pose_adapter',
-                 parameters=[{'engine': 'gazebo', 'use_sim_time': True}]),
+                 parameters=[{'engine': 'gazebo', 'use_sim_time': not navigation}]),
         ])
     return nodes
 
@@ -144,5 +196,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('vision_enabled', default_value='false'),
         DeclareLaunchArgument('world', default_value=''),
+        DeclareLaunchArgument('navigation_enabled', default_value='false'),
+        DeclareLaunchArgument('navigation_scene', default_value=''),
+        DeclareLaunchArgument('navigation_bridge', default_value=''),
         OpaqueFunction(function=launch_nodes),
     ])

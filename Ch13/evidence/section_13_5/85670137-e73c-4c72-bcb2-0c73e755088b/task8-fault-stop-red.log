@@ -1,0 +1,20 @@
+F
+=================================== FAILURES ===================================
+_______ test_fault_allows_stop_ack_without_resetting_fault_or_generation _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_fault_allows_stop_ack_without_resetting_fault_or_generation(nav_robot_model):
+        guard = armed(nav_robot_model)
+        guard.fail('carry:not_ready_or_binding')
+        generation = guard.generation
+        accepted, reason = guard.set_mode('STOP')
+>       assert accepted, 'a latched fault must not prevent the measured-stop shutdown sequence'
+E       AssertionError: a latched fault must not prevent the measured-stop shutdown sequence
+E       assert False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py:27: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_motion_guard.py::test_fault_allows_stop_ack_without_resetting_fault_or_generation
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 11 deselected in 14.37s

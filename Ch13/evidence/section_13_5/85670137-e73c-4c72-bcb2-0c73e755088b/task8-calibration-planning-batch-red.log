@@ -1,0 +1,27 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_g1_batches_four_predictions_while_normal_walk_remains_one ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g1_batches_four_predictions_while_normal_walk_remains_one(nav_robot_model):
+        for calibrating,expected in ((True,4),(False,1)):
+            plant=IdealFeedback(nav_robot_model);value=prepared(nav_robot_model,plant,calibrating)
+            original=value._shift_plan;steps=[]
+            def counted():
+                for step in original:
+                    steps.append(None)
+                    yield step
+            value._shift_plan=counted()
+            held={n:p.copy() for n,p in value._targets.items()}
+            result=value.advance(plant.state,(0.,0.,0.) if calibrating else (.001,0.,0.),plant.ros,plant.wall)
+            assert result.state!='FAULT',result.reason
+>           assert len(steps)==expected,'G1 planning still waits a full20ms between every arithmetic candidate'
+E           AssertionError: G1 planning still waits a full20ms between every arithmetic candidate
+E           assert 1 == 4
+E            +  where 1 = len([None])
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_planning_budget.py:28: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_planning_budget.py::test_g1_batches_four_predictions_while_normal_walk_remains_one
+1 failed, 1 passed in 8.62s

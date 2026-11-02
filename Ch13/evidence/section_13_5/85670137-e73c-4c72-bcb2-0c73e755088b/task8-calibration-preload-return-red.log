@@ -1,0 +1,48 @@
+F.FF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_loaded_return_reaches_original_preload_with_continuous_bounded_velocity _
+
+    def test_loaded_return_reaches_original_preload_with_continuous_bounded_velocity():
+        value = trajectory()
+        previous, velocity = value.z, value.velocity
+        for index in range(1,4):
+            tick(value,index,center=.027)
+        previous, velocity = value.z,value.velocity
+        complete = False
+        for index in range(4,120):
+            result = tick(value,index,forces=(30.,5.,30.,30.))
+            assert abs(result.z-previous)/.02 <= .020000001
+>           assert abs(value.velocity-velocity)/.02 <= .20000001
+E           assert (0.006 / 0.02) <= 0.20000001
+E            +  where 0.006 = abs((0.0 - 0.006))
+E            +    where 0.0 = <integrated_robot_navigation.calibration.InPlaceCalibration object at 0x725ea51d3770>.velocity
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preload_return.py:20: AssertionError
+_ test_stand_candidate_retains_calibration_owner_and_never_starts_a_second_lift _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_stand_candidate_retains_calibration_owner_and_never_starts_a_second_lift(nav_robot_model):
+        plant,value,result=stand_candidate(nav_robot_model)
+>       assert value.calibrating, 'reference completion released ownership before measured wall settle'
+E       AssertionError: reference completion released ownership before measured wall settle
+E       assert False
+E        +  where False = <integrated_robot_navigation.gait.CrawlMachine object at 0x725e987c9160>.calibrating
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preload_return.py:62: AssertionError
+___________ test_stand_candidate_still_obeys_original_wall_deadline ____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_stand_candidate_still_obeys_original_wall_deadline(nav_robot_model):
+        plant,value,result=stand_candidate(nav_robot_model)
+>       assert value.calibrating
+E       assert False
+E        +  where False = <integrated_robot_navigation.gait.CrawlMachine object at 0x725e986d9190>.calibrating
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preload_return.py:74: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preload_return.py::test_loaded_return_reaches_original_preload_with_continuous_bounded_velocity
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preload_return.py::test_stand_candidate_retains_calibration_owner_and_never_starts_a_second_lift
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_preload_return.py::test_stand_candidate_still_obeys_original_wall_deadline
+3 failed, 1 passed in 8.18s

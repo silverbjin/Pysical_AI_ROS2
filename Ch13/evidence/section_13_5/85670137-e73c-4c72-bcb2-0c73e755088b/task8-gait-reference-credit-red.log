@@ -1,0 +1,19 @@
+F
+=================================== FAILURES ===================================
+__ test_no_credit_holds_shift_reference_but_consumes_original_decision_clocks __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_no_credit_holds_shift_reference_but_consumes_original_decision_clocks(nav_robot_model):
+        value,plant=shifting(nav_robot_model,(.01,0.,0.))
+        held=value.reference_body.copy();targets=deepcopy(value._targets)
+        ros,wall=value._last_ros+20_000_000,value._last_wall+20_000_000
+>       result=value.advance(sample_at(plant.state,ros,wall),(.01,0.,0.),ros,wall,
+            reference_permitted=False)
+E       TypeError: CrawlMachine.advance() got an unexpected keyword argument 'reference_permitted'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py:15: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py::test_no_credit_holds_shift_reference_but_consumes_original_decision_clocks
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 16.08s

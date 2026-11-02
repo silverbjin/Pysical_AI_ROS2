@@ -1,0 +1,81 @@
+F
+=================================== FAILURES ===================================
+_ test_bound_failed_job72_converges_with_original_32_iterations_and_all_constraints _
+
+    def test_bound_failed_job72_converges_with_original_32_iterations_and_all_constraints():
+        c=case('native_4d26_xyz_iterations.json');assert c['provenance']['failed_job_id']==72
+        model=compile_model(c['urdf'])
+        with NativeMassEvaluator(model) as core:
+            value=api()(model,c['limits'],native_mass=core)
+            try:
+>               value.prepare();actual=value.step(**c['args'])
+                                       ^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_complete_xyz.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.native_complete_xyz.CompleteXYZTransition object at 0x731e8ab62420>
+
+    def step(self,*,foot,joints,body_pose,points,forces_world,target_forces,
+             reference_xyz,origins,allowed_z,future_targets,dt,speed,min_force,
+             command_joints=None,reference_pose=None):
+        start=time.perf_counter_ns();cpu=thread_time_ns()
+        self.last_model=None;self.last_response=None
+        self.last_attempt=dict(scope='current_attempt_timing_not_force_measurement',stages={},
+            preparation=self.preparation,command_space=self.command_space,
+            optimization_backend='qpmad_1_5_1_native',force_objective=self.force_objective,
+            kernel_backend='native_complete_1')
+        self._check_binding();feet=self.model.feet
+        if (foot not in feet or any(set(v)!=set(feet) for v in
+                (points,forces_world,reference_xyz,origins,allowed_z,future_targets))
+                or not set(target_forces).issubset(feet)
+                or set(joints)!=set(self.geometry._joint_bounds)
+                or any(not math.isfinite(joints[n]) or not a<=joints[n]<=b
+                    for n,(a,b) in self.geometry._joint_bounds.items())
+                or not all(math.isfinite(v) for v in (dt,speed,min_force))
+                or not 0.<dt<=.2 or not 0.<speed<=self.limits['unload_speed_mps']
+                or min_force!=self.limits['min_contact_force_n']):
+            raise ValueError('invalid complete XYZ input')
+        command=joints if command_joints is None else command_joints
+        reference=body_pose if reference_pose is None else reference_pose
+        # Fixed ABI order, one buffer, no intermediate numerical wrappers.
+        # Shapes are checked before flattening; the C ABI validates every scalar.
+        try:
+            values=[joints[n] for n in self._mass.names]+[command[n] for n in self._optimizer.names]
+            for pose in (body_pose,reference):
+                if len(pose)!=4 or any(len(row)!=4 for row in pose):raise ValueError('pose dimensions')
+                values.extend(v for row in pose for v in row)
+            for mapping,width,default in ((points,3,None),(forces_world,3,None),
+                    (target_forces,3,(0.,0.,0.)),(reference_xyz,3,None),
+                    (origins,3,None),(allowed_z,2,None),(future_targets,3,None)):
+                for f in feet:
+                    row=mapping.get(f,default)
+                    if len(row)!=width:raise ValueError('named vector dimensions')
+                    values.extend(row)
+            values.extend((dt,speed,min_force));self._input[:]=values
+        except (KeyError,TypeError,OverflowError) as error:
+            raise ValueError('invalid complete XYZ numeric input') from error
+        offset_wall=time.perf_counter_ns()-start;offset_cpu=thread_time_ns()-cpu
+        self.last_attempt['stages']['input_bounds']=dict(wall_ns=offset_wall,thread_cpu_ns=offset_cpu)
+        if offset_wall>=10_000_000:
+            self.last_attempt['rejected_at']='input_bounds';raise ValueError('transition optimization time budget')
+        self._error.value=b''
+        code=self._call(self._optimizer._handle,self._mass._handle,self.geometry._handle,
+            self._input_ptr,len(self._input),len(self._mass.names),self._mass._contact_indices,12,
+            feet.index(foot),10_000_000-offset_wall,self._output_ptr,len(self._output),
+            self._timing_ptr,len(self._timings),self._error,len(self._error))
+        for i,name in enumerate(('contact_terms','spatial_response','constraints_ready',
+                'solver_finished','native_result_validated','exact_ik_validated')):
+            w,c=self._timings[2*i:2*i+2]
+            if w>0:self.last_attempt['stages'][name]=dict(wall_ns=int(offset_wall+w),thread_cpu_ns=int(offset_cpu+c))
+        if code:
+            self.last_attempt['native_error']=self._error.value.decode(errors='replace')
+            self.last_attempt['rejected_at']='complete_native_call'
+>           raise ValueError('transition optimization complete XYZ: '+self.last_attempt['native_error']+' code='+str(code))
+E           ValueError: transition optimization complete XYZ: native XYZ solver status 4 code=2
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/native_complete_xyz.py:120: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_complete_xyz.py::test_bound_failed_job72_converges_with_original_32_iterations_and_all_constraints
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 18 deselected in 19.25s

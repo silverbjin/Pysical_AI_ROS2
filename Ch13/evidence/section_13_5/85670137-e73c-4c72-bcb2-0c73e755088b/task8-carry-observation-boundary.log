@@ -1,0 +1,33 @@
+....F.........                                                           [100%]
+=================================== FAILURES ===================================
+___________ test_terminal_success_then_actual_settle_for_one_second ____________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x7185b8f1efc0>
+
+    def test_terminal_success_then_actual_settle_for_one_second(carry_rig):
+        rig = carry_rig
+        assert rig.call(rig.prepare).success
+        rig.pump(.12)
+        assert rig.executed.is_set()
+        rig.release.set()
+        rig.pump(.65)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        rig.pump(.6)
+        assert rig.states[-1].ready and rig.gripper_commands, list(rig.manager.diagnostics)
+        assert all(list(msg.data) == [.015, .015] for msg in rig.gripper_commands)
+        rig.error = .04
+        # A changed test-source setting, its actual DDS capture, controller fault,
+        # and this client's status receipt are different asynchronous events.
+        # Do not infer all four from an arbitrary 80ms client sleep. The production
+        # input watchdog and the one-second measured settling rule are unchanged.
+        rig.wait_for(lambda: bool(rig.manager.fault), 'measured carry posture fault', timeout=.5)
+        assert rig.manager.fault == 'measured carry posture lost'
+        with rig.manager.lock:
+>           selected = rig.manager.selected['joints']
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'joints'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:260: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_terminal_success_then_actual_settle_for_one_second
+1 failed, 13 passed in 158.64s (0:02:38)

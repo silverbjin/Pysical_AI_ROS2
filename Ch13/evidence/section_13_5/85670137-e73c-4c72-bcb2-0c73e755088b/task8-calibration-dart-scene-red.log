@@ -1,0 +1,83 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_contact_allowance_binds_actual_plugin_and_native_physics_without_changing_robot _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-13/test_contact_allowance_binds_a0')
+
+    def test_contact_allowance_binds_actual_plugin_and_native_physics_without_changing_robot(tmp_path):
+        base=materialize_scene('gazebo','g1',tmp_path/'base',g1_reference_ramp=True)
+>       changed=materialize_scene('gazebo','g1',tmp_path/'contact',g1_reference_ramp=True,g1_contact_allowance=True)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: materialize_scene() got an unexpected keyword argument 'g1_contact_allowance'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py:10: TypeError
+_ test_contact_option_cannot_leave_the_approved_g1_comparison[mujoco-g1-False-True] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-13/test_contact_option_cannot_lea0')
+engine = 'mujoco', scenario = 'g1', ramp = False, enabled = True
+
+    @pytest.mark.parametrize('engine,scenario,ramp,enabled',[
+        ('mujoco','g1',False,True),('gazebo','g2',False,True),('gazebo','g1',False,True),('gazebo','g1',True,'true')])
+    def test_contact_option_cannot_leave_the_approved_g1_comparison(tmp_path,engine,scenario,ramp,enabled):
+        with pytest.raises(ValueError,match='contact|G1'):
+>           materialize_scene(engine,scenario,tmp_path/'invalid',g1_reference_ramp=ramp,g1_contact_allowance=enabled)
+E           TypeError: materialize_scene() got an unexpected keyword argument 'g1_contact_allowance'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py:28: TypeError
+_ test_contact_option_cannot_leave_the_approved_g1_comparison[gazebo-g2-False-True] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-13/test_contact_option_cannot_lea1')
+engine = 'gazebo', scenario = 'g2', ramp = False, enabled = True
+
+    @pytest.mark.parametrize('engine,scenario,ramp,enabled',[
+        ('mujoco','g1',False,True),('gazebo','g2',False,True),('gazebo','g1',False,True),('gazebo','g1',True,'true')])
+    def test_contact_option_cannot_leave_the_approved_g1_comparison(tmp_path,engine,scenario,ramp,enabled):
+        with pytest.raises(ValueError,match='contact|G1'):
+>           materialize_scene(engine,scenario,tmp_path/'invalid',g1_reference_ramp=ramp,g1_contact_allowance=enabled)
+E           TypeError: materialize_scene() got an unexpected keyword argument 'g1_contact_allowance'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py:28: TypeError
+_ test_contact_option_cannot_leave_the_approved_g1_comparison[gazebo-g1-False-True] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-13/test_contact_option_cannot_lea2')
+engine = 'gazebo', scenario = 'g1', ramp = False, enabled = True
+
+    @pytest.mark.parametrize('engine,scenario,ramp,enabled',[
+        ('mujoco','g1',False,True),('gazebo','g2',False,True),('gazebo','g1',False,True),('gazebo','g1',True,'true')])
+    def test_contact_option_cannot_leave_the_approved_g1_comparison(tmp_path,engine,scenario,ramp,enabled):
+        with pytest.raises(ValueError,match='contact|G1'):
+>           materialize_scene(engine,scenario,tmp_path/'invalid',g1_reference_ramp=ramp,g1_contact_allowance=enabled)
+E           TypeError: materialize_scene() got an unexpected keyword argument 'g1_contact_allowance'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py:28: TypeError
+_ test_contact_option_cannot_leave_the_approved_g1_comparison[gazebo-g1-True-true] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-13/test_contact_option_cannot_lea3')
+engine = 'gazebo', scenario = 'g1', ramp = True, enabled = 'true'
+
+    @pytest.mark.parametrize('engine,scenario,ramp,enabled',[
+        ('mujoco','g1',False,True),('gazebo','g2',False,True),('gazebo','g1',False,True),('gazebo','g1',True,'true')])
+    def test_contact_option_cannot_leave_the_approved_g1_comparison(tmp_path,engine,scenario,ramp,enabled):
+        with pytest.raises(ValueError,match='contact|G1'):
+>           materialize_scene(engine,scenario,tmp_path/'invalid',g1_reference_ramp=ramp,g1_contact_allowance=enabled)
+E           TypeError: materialize_scene() got an unexpected keyword argument 'g1_contact_allowance'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py:28: TypeError
+________________ test_contact_mode_cannot_be_hidden_in_metadata ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-13/test_contact_mode_cannot_be_hi0')
+
+    def test_contact_mode_cannot_be_hidden_in_metadata(tmp_path):
+>       record=materialize_scene('gazebo','g1',tmp_path/'scene',g1_reference_ramp=True,g1_contact_allowance=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: materialize_scene() got an unexpected keyword argument 'g1_contact_allowance'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py:33: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py::test_contact_allowance_binds_actual_plugin_and_native_physics_without_changing_robot
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py::test_contact_option_cannot_leave_the_approved_g1_comparison[mujoco-g1-False-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py::test_contact_option_cannot_leave_the_approved_g1_comparison[gazebo-g2-False-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py::test_contact_option_cannot_leave_the_approved_g1_comparison[gazebo-g1-False-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py::test_contact_option_cannot_leave_the_approved_g1_comparison[gazebo-g1-True-true]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_dart_scene.py::test_contact_mode_cannot_be_hidden_in_metadata
+6 failed in 8.82s

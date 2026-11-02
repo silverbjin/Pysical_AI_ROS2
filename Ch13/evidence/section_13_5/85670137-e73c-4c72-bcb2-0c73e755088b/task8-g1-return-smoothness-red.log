@@ -1,0 +1,32 @@
+F
+=================================== FAILURES ===================================
+__ test_planned_return_brakes_without_acceleration_steps_or_new_speed_budget ___
+
+    def test_planned_return_brakes_without_acceleration_steps_or_new_speed_budget():
+        value=trajectory(start_z=.030)
+        value.phase='TOUCHDOWN';value.velocity=.02
+        previous=value.velocity;accelerations=[0.];positions=[value.z]
+        for index in range(1,120):
+            result=tick(value,index,forces=(30.,5.,30.,30.))
+            accelerations.append((value.velocity-previous)/.02)
+            assert abs(value.velocity)<=.020000001
+            assert abs(result.z-positions[-1])<=.02*.02000001
+            positions.append(result.z);previous=value.velocity
+            if result.complete:break
+        assert result.complete and result.z==value.rest_z and value.velocity==0.
+        assert max(abs(a) for a in accelerations)<=.20000001
+        # Existing .02m/s and .2m/s² permit a quintic velocity ramp with T=.1875s.
+        # Its analytic jerk max is (10sqrt(3)/3)*.02/T² <3.285m/s³; allow discrete
+        # samples 4.0, while the old acceleration step produces10m/s³.
+        jerk=np.diff(accelerations)/.02
+>       assert max(abs(jerk))<=4., 'return has an acceleration step that can excite the loaded arm'
+E       AssertionError: return has an acceleration step that can excite the loaded arm
+E       assert 10.0 <= 4.0
+E        +  where 10.0 = max(array([1.00000000e+01, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,\n       0.00000000e+00, 0.00000000e+00, 0.000000...1.00000000e+01, 0.00000000e+00, 0.00000000e+00, 2.77555756e-15,\n       2.20656826e-13, 1.00000000e+01, 0.00000000e+00]))
+E        +    where array([1.00000000e+01, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,\n       0.00000000e+00, 0.00000000e+00, 0.000000...1.00000000e+01, 0.00000000e+00, 0.00000000e+00, 2.77555756e-15,\n       2.20656826e-13, 1.00000000e+01, 0.00000000e+00]) = abs(array([-1.00000000e+01,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,\n        0.00000000e+00,  0.00000000e+00,  0...0000e+01,  0.00000000e+00,  0.00000000e+00, -2.77555756e-15,\n       -2.20656826e-13, -1.00000000e+01,  0.00000000e+00]))
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_return_smoothness.py:23: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_return_smoothness.py::test_planned_return_brakes_without_acceleration_steps_or_new_speed_budget
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 7.35s

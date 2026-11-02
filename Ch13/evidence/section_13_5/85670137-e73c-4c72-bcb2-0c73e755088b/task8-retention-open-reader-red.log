@@ -1,0 +1,22 @@
+.........F
+=================================== FAILURES ===================================
+_____ test_open_original_cannot_be_retired_even_with_an_old_closed_verdict _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-6/test_open_original_cannot_be_r0')
+
+    def test_open_original_cannot_be_retired_even_with_an_old_closed_verdict(tmp_path):
+        if not Path('/proc/self/fd').is_dir():pytest.skip('Linux ownership inspection')
+        root=closed_trial(tmp_path/'trial');raw=root/'frames.json';raw.write_text('[1,2,3]')
+        process=subprocess.Popen([sys.executable,'-c',
+            'import sys; f=open(sys.argv[1]); print("ready",flush=True); sys.stdin.readline(); f.close()',str(raw)],
+            stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True)
+        try:
+            assert process.stdout.readline().strip()=='ready'
+>           with pytest.raises(ValueError,match='opened'):
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/tests/test_evidence_retention_13_5.py:138: Failed
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_evidence_retention_13_5.py::test_open_original_cannot_be_retired_even_with_an_old_closed_verdict
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 9 passed in 2.89s

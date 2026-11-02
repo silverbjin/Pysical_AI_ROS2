@@ -1,0 +1,205 @@
+.E.FEEE.....                                                             [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_delayed_acceptance_and_cancel_ack_never_release_without_result _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    @pytest.fixture
+    def carry_rig(nav_robot_model):
+        module = importlib.import_module('integrated_robot_navigation.carry_manager') if importlib.util.find_spec(
+            'integrated_robot_navigation.carry_manager') else None
+        assert module is not None, 'measured carry owner missing'
+        rig = CarryRig(nav_robot_model, module.CarryManager)
+        try:
+            rig.pump(.25)
+            deadline = time.monotonic()+2.
+            while time.monotonic() < deadline:
+                try:
+                    rig.manager._owners()
+                    if rig.manager.transport.client.server_is_ready():
+                        break
+                except ValueError:
+                    pass
+                rig.pump(.03)
+>           rig.manager._owners()
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.carry_manager.CarryManager object at 0x759cb8145550>
+
+    def _owners(self):
+        started = time.monotonic_ns()
+        topics = ('/navigation/guard_state', '/navigation/crawl_state', '/joint_states', self.STATUS_TOPIC,
+                  self.GRIPPER_TOPIC)
+        ids = tuple(tuple(sorted(bytes(p.endpoint_gid) for p in self.get_publishers_info_by_topic(topic)))
+                    for topic in topics)
+        arm_count = self.count_publishers(self.ARM_TOPIC)
+        self.diagnostics.append(dict(event='owners', elapsed_ms=(time.monotonic_ns()-started)/1e6,
+                                     counts=list(map(len, ids)), arm_count=arm_count))
+        if any(len(value) != 1 for value in ids) or arm_count:
+>           raise ValueError('duplicate/missing arm or observation owner: '+str(
+                dict(zip(topics, map(len, ids))))+' arm_topic='+str(arm_count))
+E           ValueError: duplicate/missing arm or observation owner: {'/navigation/guard_state': 1, '/navigation/crawl_state': 1, '/joint_states': 1, '/arm_trajectory_controller/follow_joint_trajectory/_action/status': 2, '/gripper_position_controller/commands': 1} arm_topic=0
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/carry_manager.py:135: ValueError
+_ ERROR at setup of test_generation_change_cancels_without_adopting_foreign_lease _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    @pytest.fixture
+    def carry_rig(nav_robot_model):
+        module = importlib.import_module('integrated_robot_navigation.carry_manager') if importlib.util.find_spec(
+            'integrated_robot_navigation.carry_manager') else None
+        assert module is not None, 'measured carry owner missing'
+        rig = CarryRig(nav_robot_model, module.CarryManager)
+        try:
+            rig.pump(.25)
+            deadline = time.monotonic()+2.
+            while time.monotonic() < deadline:
+                try:
+                    rig.manager._owners()
+                    if rig.manager.transport.client.server_is_ready():
+                        break
+                except ValueError:
+                    pass
+                rig.pump(.03)
+>           rig.manager._owners()
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.carry_manager.CarryManager object at 0x759cc2268980>
+
+    def _owners(self):
+        started = time.monotonic_ns()
+        topics = ('/navigation/guard_state', '/navigation/crawl_state', '/joint_states', self.STATUS_TOPIC,
+                  self.GRIPPER_TOPIC)
+        ids = tuple(tuple(sorted(bytes(p.endpoint_gid) for p in self.get_publishers_info_by_topic(topic)))
+                    for topic in topics)
+        arm_count = self.count_publishers(self.ARM_TOPIC)
+        self.diagnostics.append(dict(event='owners', elapsed_ms=(time.monotonic_ns()-started)/1e6,
+                                     counts=list(map(len, ids)), arm_count=arm_count))
+        if any(len(value) != 1 for value in ids) or arm_count:
+>           raise ValueError('duplicate/missing arm or observation owner: '+str(
+                dict(zip(topics, map(len, ids))))+' arm_topic='+str(arm_count))
+E           ValueError: duplicate/missing arm or observation owner: {'/navigation/guard_state': 1, '/navigation/crawl_state': 1, '/joint_states': 1, '/arm_trajectory_controller/follow_joint_trajectory/_action/status': 2, '/gripper_position_controller/commands': 1} arm_topic=0
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/carry_manager.py:135: ValueError
+_________ ERROR at setup of test_duplicate_gripper_owner_latches_fault _________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    @pytest.fixture
+    def carry_rig(nav_robot_model):
+        module = importlib.import_module('integrated_robot_navigation.carry_manager') if importlib.util.find_spec(
+            'integrated_robot_navigation.carry_manager') else None
+        assert module is not None, 'measured carry owner missing'
+        rig = CarryRig(nav_robot_model, module.CarryManager)
+        try:
+            rig.pump(.25)
+            deadline = time.monotonic()+2.
+            while time.monotonic() < deadline:
+                try:
+                    rig.manager._owners()
+                    if rig.manager.transport.client.server_is_ready():
+                        break
+                except ValueError:
+                    pass
+                rig.pump(.03)
+>           rig.manager._owners()
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.carry_manager.CarryManager object at 0x759cb87cfcb0>
+
+    def _owners(self):
+        started = time.monotonic_ns()
+        topics = ('/navigation/guard_state', '/navigation/crawl_state', '/joint_states', self.STATUS_TOPIC,
+                  self.GRIPPER_TOPIC)
+        ids = tuple(tuple(sorted(bytes(p.endpoint_gid) for p in self.get_publishers_info_by_topic(topic)))
+                    for topic in topics)
+        arm_count = self.count_publishers(self.ARM_TOPIC)
+        self.diagnostics.append(dict(event='owners', elapsed_ms=(time.monotonic_ns()-started)/1e6,
+                                     counts=list(map(len, ids)), arm_count=arm_count))
+        if any(len(value) != 1 for value in ids) or arm_count:
+>           raise ValueError('duplicate/missing arm or observation owner: '+str(
+                dict(zip(topics, map(len, ids))))+' arm_topic='+str(arm_count))
+E           ValueError: duplicate/missing arm or observation owner: {'/navigation/guard_state': 1, '/navigation/crawl_state': 1, '/joint_states': 1, '/arm_trajectory_controller/follow_joint_trajectory/_action/status': 2, '/gripper_position_controller/commands': 1} arm_topic=0
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/carry_manager.py:135: ValueError
+---------------------------- Captured stderr setup -----------------------------
+The following exception was never retrieved: cannot use Destroyable because destruction was requested
+__ ERROR at setup of test_foreign_real_action_cannot_become_this_carry_lease ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    @pytest.fixture
+    def carry_rig(nav_robot_model):
+        module = importlib.import_module('integrated_robot_navigation.carry_manager') if importlib.util.find_spec(
+            'integrated_robot_navigation.carry_manager') else None
+        assert module is not None, 'measured carry owner missing'
+        rig = CarryRig(nav_robot_model, module.CarryManager)
+        try:
+            rig.pump(.25)
+            deadline = time.monotonic()+2.
+            while time.monotonic() < deadline:
+                try:
+                    rig.manager._owners()
+                    if rig.manager.transport.client.server_is_ready():
+                        break
+                except ValueError:
+                    pass
+                rig.pump(.03)
+>           rig.manager._owners()
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.carry_manager.CarryManager object at 0x759cc1f90710>
+
+    def _owners(self):
+        started = time.monotonic_ns()
+        topics = ('/navigation/guard_state', '/navigation/crawl_state', '/joint_states', self.STATUS_TOPIC,
+                  self.GRIPPER_TOPIC)
+        ids = tuple(tuple(sorted(bytes(p.endpoint_gid) for p in self.get_publishers_info_by_topic(topic)))
+                    for topic in topics)
+        arm_count = self.count_publishers(self.ARM_TOPIC)
+        self.diagnostics.append(dict(event='owners', elapsed_ms=(time.monotonic_ns()-started)/1e6,
+                                     counts=list(map(len, ids)), arm_count=arm_count))
+        if any(len(value) != 1 for value in ids) or arm_count:
+>           raise ValueError('duplicate/missing arm or observation owner: '+str(
+                dict(zip(topics, map(len, ids))))+' arm_topic='+str(arm_count))
+E           ValueError: duplicate/missing arm or observation owner: {'/navigation/guard_state': 1, '/navigation/crawl_state': 1, '/joint_states': 1, '/arm_trajectory_controller/follow_joint_trajectory/_action/status': 2, '/gripper_position_controller/commands': 1} arm_topic=0
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/carry_manager.py:135: ValueError
+=================================== FAILURES ===================================
+___________ test_actual_velocity_prevents_settle_even_after_terminal ___________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x759cac327b60>
+
+    def test_actual_velocity_prevents_settle_even_after_terminal(carry_rig):
+        rig = carry_rig
+        rig.velocity = .021
+        rig.pump(.04)
+        assert rig.call(rig.prepare).success
+        rig.release.set()
+        rig.pump(1.15)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        rig.velocity = 0.
+        rig.pump(.7)
+        assert not rig.states[-1].ready
+        rig.pump(.5)
+>       assert rig.states[-1].ready
+E       AssertionError: assert False
+E        +  where False = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=179266312...67b17d93aa71282cadc', state='FAULT', phase='', swing_foot='', ready=False, stopped=False, fault_reason='guard:ros_age').ready
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:195: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_actual_velocity_prevents_settle_even_after_terminal
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_delayed_acceptance_and_cancel_ack_never_release_without_result
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_generation_change_cancels_without_adopting_foreign_lease
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_duplicate_gripper_owner_latches_fault
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_foreign_real_action_cannot_become_this_carry_lease
+1 failed, 7 passed, 4 errors in 37.28s

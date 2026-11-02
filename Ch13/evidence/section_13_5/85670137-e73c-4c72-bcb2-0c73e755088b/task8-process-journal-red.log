@@ -1,0 +1,26 @@
+F
+=================================== FAILURES ===================================
+___ test_process_writer_preserves_every_private_record_and_normal_ownership ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_process_writer_preserves_0')
+
+    def test_process_writer_preserves_every_private_record_and_normal_ownership(tmp_path):
+>       module=api();path=tmp_path/'records.jsonl';path.touch()
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_process_journal.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('process_journal_13_5') is not None,'owned process journal missing'
+E       AssertionError: owned process journal missing
+E       assert None is not None
+E        +  where None = <function find_spec at 0x718689ebc720>('process_journal_13_5')
+E        +    where <function find_spec at 0x718689ebc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_process_journal.py:11: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_process_journal.py::test_process_writer_preserves_every_private_record_and_normal_ownership
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.14s

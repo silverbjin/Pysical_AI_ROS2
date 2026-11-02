@@ -1,0 +1,65 @@
+{
+  "uid": 1000,
+  "wall_ns": 141892678224,
+  "boot_id": "902f5880-2d48-431e-9888-236fc3b3d107",
+  "commands": [
+    {
+      "command": [
+        "uname",
+        "-a"
+      ],
+      "returncode": 0,
+      "output": "Linux DESKTOP-4B51LPI 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\n"
+    },
+    {
+      "command": [
+        "cat",
+        "/sys/devices/system/clocksource/clocksource0/current_clocksource"
+      ],
+      "returncode": 0,
+      "output": "hyperv_clocksource_tsc_page\n"
+    },
+    {
+      "command": [
+        "systemctl",
+        "show",
+        "systemd-timesyncd.service",
+        "--property=ActiveState,SubState,ExecMainPID"
+      ],
+      "returncode": 0,
+      "output": "ExecMainPID=118\nActiveState=active\nSubState=running\n"
+    },
+    {
+      "command": [
+        "journalctl",
+        "-u",
+        "systemd-timesyncd",
+        "-n",
+        "12",
+        "--no-pager"
+      ],
+      "returncode": 0,
+      "output": "Oct 26 22:52:52 DESKTOP-4B51LPI systemd[1]: Stopped systemd-timesyncd.service - Network Time Synchronization.\n-- Boot 902f58802d48431e9888236fc3b3d107 --\nOct 26 22:58:00 DESKTOP-4B51LPI systemd[1]: Starting systemd-timesyncd.service - Network Time Synchronization...\nOct 26 22:58:00 DESKTOP-4B51LPI systemd[1]: Started systemd-timesyncd.service - Network Time Synchronization.\nOct 26 22:58:02 DESKTOP-4B51LPI systemd-timesyncd[163]: Contacted time server 91.189.91.157:123 (ntp.ubuntu.com).\nOct 26 22:58:02 DESKTOP-4B51LPI systemd-timesyncd[163]: Initial clock synchronization to Mon 2026-10-26 22:58:02.942744 KST.\nOct 26 22:59:54 DESKTOP-4B51LPI systemd[1]: Stopping systemd-timesyncd.service - Network Time Synchronization...\nOct 26 22:59:54 DESKTOP-4B51LPI systemd[1]: systemd-timesyncd.service: Deactivated successfully.\nOct 26 22:59:54 DESKTOP-4B51LPI systemd[1]: Stopped systemd-timesyncd.service - Network Time Synchronization.\nOct 26 23:00:18 DESKTOP-4B51LPI systemd[1]: Starting systemd-timesyncd.service - Network Time Synchronization...\nOct 26 23:00:18 DESKTOP-4B51LPI systemd[1]: Started systemd-timesyncd.service - Network Time Synchronization.\nOct 26 23:00:21 DESKTOP-4B51LPI systemd-timesyncd[118]: Contacted time server 185.125.190.56:123 (ntp.ubuntu.com).\nOct 26 23:00:21 DESKTOP-4B51LPI systemd-timesyncd[118]: Initial clock synchronization to Mon 2026-10-26 23:00:21.216642 KST.\n"
+    },
+    {
+      "command": [
+        "dpkg-query",
+        "-W",
+        "ros-jazzy-fastrtps",
+        "ros-jazzy-rmw-fastrtps-cpp",
+        "ros-jazzy-rclpy"
+      ],
+      "returncode": 0,
+      "output": "ros-jazzy-fastrtps\t2.14.7-1noble.20260911.035053\nros-jazzy-rclpy\t7.1.12-1noble.20260912.162354\nros-jazzy-rmw-fastrtps-cpp\t8.4.4-1noble.20260911.100940\n"
+    },
+    {
+      "command": [
+        "ps",
+        "-eo",
+        "user,pid,ppid,args"
+      ],
+      "returncode": 0,
+      "output": ""
+    }
+  ]
+}

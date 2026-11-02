@@ -1,0 +1,71 @@
+Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from AsyncTrace
+[ RUN      ] AsyncTrace.BlockedWriteDoesNotBlockClockProducerAndDrainsInOrder
+[       OK ] AsyncTrace.BlockedWriteDoesNotBlockClockProducerAndDrainsInOrder (0 ms)
+[ RUN      ] AsyncTrace.QueueOverflowLatchesAndCannotSilentlyDropOrReopen
+[       OK ] AsyncTrace.QueueOverflowLatchesAndCannotSilentlyDropOrReopen (0 ms)
+[ RUN      ] AsyncTrace.ByteBudgetAndWriterErrorsAreTerminalFailures
+[       OK ] AsyncTrace.ByteBudgetAndWriterErrorsAreTerminalFailures (0 ms)
+[----------] 3 tests from AsyncTrace (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (10 ms total)
+[  PASSED  ] 3 tests.
+Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from ControlClockGate
+[ RUN      ] ControlClockGate.BootstrapGapDoesNotPretendControlHasAlreadyActivated
+[       OK ] ControlClockGate.BootstrapGapDoesNotPretendControlHasAlreadyActivated (0 ms)
+[ RUN      ] ControlClockGate.OriginalValuesOnlyAndAtMost100Hz
+[       OK ] ControlClockGate.OriginalValuesOnlyAndAtMost100Hz (0 ms)
+[ RUN      ] ControlClockGate.DuplicateInputCannotRenewProgressLeaseOrRepublish
+[       OK ] ControlClockGate.DuplicateInputCannotRenewProgressLeaseOrRepublish (0 ms)
+[ RUN      ] ControlClockGate.PauseBeforeFirstPositiveStampDoesNotInventTime
+[       OK ] ControlClockGate.PauseBeforeFirstPositiveStampDoesNotInventTime (0 ms)
+[ RUN      ] ControlClockGate.RollbackAndAuthorityChangeAreSticky
+[       OK ] ControlClockGate.RollbackAndAuthorityChangeAreSticky (0 ms)
+[ RUN      ] ControlClockGate.MissingMultipleOrCompetingPublishersFailClosed
+[       OK ] ControlClockGate.MissingMultipleOrCompetingPublishersFailClosed (0 ms)
+[ RUN      ] ControlClockGate.InvalidStampIdentityAndWallRollbackFailClosed
+[       OK ] ControlClockGate.InvalidStampIdentityAndWallRollbackFailClosed (0 ms)
+[ RUN      ] ControlClockGate.LateNewInputCannotHideExpiredProgressLease
+[       OK ] ControlClockGate.LateNewInputCannotHideExpiredProgressLease (0 ms)
+[ RUN      ] ControlClockGate.StaleBootstrapCannotBeArmedOrRepublishedAndNoArmRecovery
+[       OK ] ControlClockGate.StaleBootstrapCannotBeArmedOrRepublishedAndNoArmRecovery (0 ms)
+[ RUN      ] ControlClockGate.CloseBlocksOutstandingAndFutureInputs
+[       OK ] ControlClockGate.CloseBlocksOutstandingAndFutureInputs (0 ms)
+[----------] 10 tests from ControlClockGate (11 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 1 test suite ran. (14 ms total)
+[  PASSED  ] 10 tests.
+Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+[==========] Running 8 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 8 tests from RelayRig
+[ RUN      ] RelayRig.SlowWriteCannotStallOperationalClockReceipts
+[       OK ] RelayRig.SlowWriteCannotStallOperationalClockReceipts (1064 ms)
+[ RUN      ] RelayRig.TraceWorkDoesNotAddItsDurationToEveryPublicationPeriod
+[       OK ] RelayRig.TraceWorkDoesNotAddItsDurationToEveryPublicationPeriod (1666 ms)
+[ RUN      ] RelayRig.ClosedTraceKeepsOriginalInputReceiptAndSeparateClockDomains
+[       OK ] RelayRig.ClosedTraceKeepsOriginalInputReceiptAndSeparateClockDomains (305 ms)
+[ RUN      ] RelayRig.WireOutputsAreUnchangedSourceSubsetWithBoundedPublicationCadence
+[       OK ] RelayRig.WireOutputsAreUnchangedSourceSubsetWithBoundedPublicationCadence (548 ms)
+[ RUN      ] RelayRig.PauseLatchesFaultAndSourceResumeCannotReactivate
+[ERROR] [1793494408.896797394] [navigation_control_clock]: control clock sticky fault: source_stalled
+[       OK ] RelayRig.PauseLatchesFaultAndSourceResumeCannotReactivate (638 ms)
+[ RUN      ] RelayRig.BootstrapPauseBeforeArmingDoesNotLatchOperationalFault
+[       OK ] RelayRig.BootstrapPauseBeforeArmingDoesNotLatchOperationalFault (585 ms)
+[ RUN      ] RelayRig.StopServiceClosesOutstandingWorkBeforeAcknowledging
+[       OK ] RelayRig.StopServiceClosesOutstandingWorkBeforeAcknowledging (414 ms)
+[ RUN      ] RelayRig.CompetingDestinationOwnerFailsWithoutForwarding
+[ERROR] [1793494412.641531528] [navigation_control_clock]: control clock sticky fault: destination_count
+[       OK ] RelayRig.CompetingDestinationOwnerFailsWithoutForwarding (374 ms)
+[----------] 8 tests from RelayRig (5629 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 1 test suite ran. (5664 ms total)
+[  PASSED  ] 8 tests.

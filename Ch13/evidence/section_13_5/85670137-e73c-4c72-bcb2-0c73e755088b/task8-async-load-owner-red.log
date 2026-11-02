@@ -1,0 +1,66 @@
+F
+=================================== FAILURES ===================================
+_______ test_submit_does_not_advance_height_or_duplicate_the_unload_ramp _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_submit_does_not_advance_height_or_duplicate_the_unload_ramp(nav_robot_model):
+        m,b,q,p,points,f=ready(nav_robot_model);before=deepcopy(m._targets)
+>       assert m._transfer_stance_load(b,q,p,points,f,.02) is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.gait.CrawlMachine object at 0x7245a5135490>
+bundle = SensorBundle(joints=Sample(stamp_ns=1020000000, received_ns=10020000000, epoch=0, sequence=1020000000, frame_id='base_...={'ready': True, 'generation': 0, 'model_sha256': '845e57a97d2dd10a6963304d4f4baf628de208993fedf46c5239c39f839e4032'}))
+joints = {'arm_joint_1': 0.0, 'arm_joint_2': 1.2, 'arm_joint_3': -2.0, 'arm_joint_4': 0.0, ...}
+pose = array([[1.  , 0.  , 0.  , 0.  ],
+       [0.  , 1.  , 0.  , 0.  ],
+       [0.  , 0.  , 1.  , 0.46],
+       [0.  , 0.  , 0.  , 1.  ]])
+points = {'fl_foot': (0.25, 0.18, 0.0), 'fr_foot': (0.25, -0.18, 0.0), 'rl_foot': (-0.25, 0.18, 0.0), 'rr_foot': (-0.25, -0.18, 0.0)}
+foot = 'rr_foot', dt = 0.02
+
+    def _transfer_stance_load(self,bundle,joints,pose,points,foot,dt):
+        if (self._load_transfer is None or self.calibrating or self.stopping
+                or self.state!='CRAWL' or self.phase!='SHIFT' or self._unload_start is None):
+            return
+        coupled=self.load_transfer_policy=='coupled_contact'
+        if dt<=0:return True if coupled else None
+        contact=bundle.contacts
+        capture=(contact.stamp_ns,contact.sequence)
+        if self._load_transfer_capture==capture:return True if coupled else None
+        if coupled:
+            data=contact.data;vectors=np.asarray(data.get('forces_world',()),dtype=float)
+            self.load_transfer_observation=dict(contact_capture=capture,selected=foot,dt=dt,
+                outcome='received_for_attestation',force_vectors_valid=data.get('force_vectors_valid'),
+                measured_forces=list(data['forces']),measured_forces_world=vectors.tolist())
+            if (data.get('force_vectors_valid') is not True or vectors.shape!=(4,3)
+                    or not np.isfinite(vectors).all()
+                    or not np.allclose(vectors[:,2],data['forces'],rtol=1e-6,atol=1e-6)):
+                self.load_transfer_observation['outcome']='rejected_force_attestation'
+                raise ValueError('attested spatial force feedback required')
+            plan=self.load_balance_plan
+            if not plan or plan.get('equilibrium',{}).get('feasible') is not True:
+                raise ValueError('common spatial force support plan required')
+            if self.planning_reference_envelope is None:
+                raise ValueError('spatial reference envelope missing')
+            command=dict(joints);command.update(self._solve(joints,True))
+            origins=dict(self._stance_origin_z);origins[foot]=self._unload_origin_z
+            try:
+>               delta=self._load_transfer.step(foot=foot,joints=joints,body_pose=pose,points=points,
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+                    forces_world=dict(zip(self.model.feet,vectors)),
+                    target_forces=plan['equilibrium']['forces_world'],
+                    reference_z={f:float(self._targets[f][2]) for f in self.model.feet},
+                    origins=origins,allowed_z=self.planning_reference_envelope,dt=dt,
+                    speed=self.limits['unload_speed_mps'],min_force=self.limits['min_contact_force_n'],
+                    command_joints=command,reference_pose=self.reference_body)
+E                   AttributeError: 'NumericPeer' object has no attribute 'step'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:688: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py::test_submit_does_not_advance_height_or_duplicate_the_unload_ramp
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.59s

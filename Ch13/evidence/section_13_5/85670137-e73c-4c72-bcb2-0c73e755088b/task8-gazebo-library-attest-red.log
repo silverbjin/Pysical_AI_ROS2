@@ -1,0 +1,364 @@
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+_______ test_only_the_live_owned_native_child_can_attest_all_libraries[] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_the_live_owned_nativ0')
+fault = ''
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'wrong_library', 'wrong_hash', 'wrong_pid',
+                                       'reused_pid', 'wrong_group', 'wrapper', 'ambiguous'])
+    def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fault):
+        proc = tmp_path/'proc'
+        child = proc/'43'
+        child.mkdir(parents=True)
+        fields = ['S', '42', '42']+['0']*17
+        fields[19] = '123'
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        expected = []
+        for index,name in enumerate(NAMES):
+            path = tmp_path/'selected/lib'/name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('fixture library '+str(index)).encode())
+            expected.append(dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        maps = ['000-fff r-xp 00000000 00:00 1 '+item['path'] for item in expected]
+        members = [dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault == 'missing': maps.pop()
+        elif fault == 'wrong_library': maps[0] = maps[0].replace('selected/lib','other/lib')
+        elif fault == 'wrong_hash': expected[0]['sha256'] = '0'*64
+        elif fault == 'wrong_pid': members[0]['pid'] = 44
+        elif fault == 'reused_pid': members[0]['start_ticks'] = 124
+        elif fault == 'wrong_group': fields[2] = '99'
+        elif fault == 'wrapper': (child/'cmdline').write_bytes(b'/bin/sh\0-c\0ruby /usr/bin/gz sim\0')
+        elif fault == 'ambiguous': maps.append(maps[0].replace('selected/lib','other/lib'))
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'maps').write_text('\n'.join(maps))
+>       assert hasattr(runner,'attest_gazebo_libraries'), 'native Gazebo library attestation missing'
+E       AssertionError: native Gazebo library attestation missing
+E       assert False
+E        +  where False = hasattr(runner, 'attest_gazebo_libraries')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:44: AssertionError
+___ test_only_the_live_owned_native_child_can_attest_all_libraries[missing] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_the_live_owned_nativ1')
+fault = 'missing'
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'wrong_library', 'wrong_hash', 'wrong_pid',
+                                       'reused_pid', 'wrong_group', 'wrapper', 'ambiguous'])
+    def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fault):
+        proc = tmp_path/'proc'
+        child = proc/'43'
+        child.mkdir(parents=True)
+        fields = ['S', '42', '42']+['0']*17
+        fields[19] = '123'
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        expected = []
+        for index,name in enumerate(NAMES):
+            path = tmp_path/'selected/lib'/name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('fixture library '+str(index)).encode())
+            expected.append(dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        maps = ['000-fff r-xp 00000000 00:00 1 '+item['path'] for item in expected]
+        members = [dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault == 'missing': maps.pop()
+        elif fault == 'wrong_library': maps[0] = maps[0].replace('selected/lib','other/lib')
+        elif fault == 'wrong_hash': expected[0]['sha256'] = '0'*64
+        elif fault == 'wrong_pid': members[0]['pid'] = 44
+        elif fault == 'reused_pid': members[0]['start_ticks'] = 124
+        elif fault == 'wrong_group': fields[2] = '99'
+        elif fault == 'wrapper': (child/'cmdline').write_bytes(b'/bin/sh\0-c\0ruby /usr/bin/gz sim\0')
+        elif fault == 'ambiguous': maps.append(maps[0].replace('selected/lib','other/lib'))
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'maps').write_text('\n'.join(maps))
+>       assert hasattr(runner,'attest_gazebo_libraries'), 'native Gazebo library attestation missing'
+E       AssertionError: native Gazebo library attestation missing
+E       assert False
+E        +  where False = hasattr(runner, 'attest_gazebo_libraries')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:44: AssertionError
+_ test_only_the_live_owned_native_child_can_attest_all_libraries[wrong_library] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_the_live_owned_nativ2')
+fault = 'wrong_library'
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'wrong_library', 'wrong_hash', 'wrong_pid',
+                                       'reused_pid', 'wrong_group', 'wrapper', 'ambiguous'])
+    def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fault):
+        proc = tmp_path/'proc'
+        child = proc/'43'
+        child.mkdir(parents=True)
+        fields = ['S', '42', '42']+['0']*17
+        fields[19] = '123'
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        expected = []
+        for index,name in enumerate(NAMES):
+            path = tmp_path/'selected/lib'/name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('fixture library '+str(index)).encode())
+            expected.append(dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        maps = ['000-fff r-xp 00000000 00:00 1 '+item['path'] for item in expected]
+        members = [dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault == 'missing': maps.pop()
+        elif fault == 'wrong_library': maps[0] = maps[0].replace('selected/lib','other/lib')
+        elif fault == 'wrong_hash': expected[0]['sha256'] = '0'*64
+        elif fault == 'wrong_pid': members[0]['pid'] = 44
+        elif fault == 'reused_pid': members[0]['start_ticks'] = 124
+        elif fault == 'wrong_group': fields[2] = '99'
+        elif fault == 'wrapper': (child/'cmdline').write_bytes(b'/bin/sh\0-c\0ruby /usr/bin/gz sim\0')
+        elif fault == 'ambiguous': maps.append(maps[0].replace('selected/lib','other/lib'))
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'maps').write_text('\n'.join(maps))
+>       assert hasattr(runner,'attest_gazebo_libraries'), 'native Gazebo library attestation missing'
+E       AssertionError: native Gazebo library attestation missing
+E       assert False
+E        +  where False = hasattr(runner, 'attest_gazebo_libraries')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:44: AssertionError
+__ test_only_the_live_owned_native_child_can_attest_all_libraries[wrong_hash] __
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_the_live_owned_nativ3')
+fault = 'wrong_hash'
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'wrong_library', 'wrong_hash', 'wrong_pid',
+                                       'reused_pid', 'wrong_group', 'wrapper', 'ambiguous'])
+    def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fault):
+        proc = tmp_path/'proc'
+        child = proc/'43'
+        child.mkdir(parents=True)
+        fields = ['S', '42', '42']+['0']*17
+        fields[19] = '123'
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        expected = []
+        for index,name in enumerate(NAMES):
+            path = tmp_path/'selected/lib'/name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('fixture library '+str(index)).encode())
+            expected.append(dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        maps = ['000-fff r-xp 00000000 00:00 1 '+item['path'] for item in expected]
+        members = [dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault == 'missing': maps.pop()
+        elif fault == 'wrong_library': maps[0] = maps[0].replace('selected/lib','other/lib')
+        elif fault == 'wrong_hash': expected[0]['sha256'] = '0'*64
+        elif fault == 'wrong_pid': members[0]['pid'] = 44
+        elif fault == 'reused_pid': members[0]['start_ticks'] = 124
+        elif fault == 'wrong_group': fields[2] = '99'
+        elif fault == 'wrapper': (child/'cmdline').write_bytes(b'/bin/sh\0-c\0ruby /usr/bin/gz sim\0')
+        elif fault == 'ambiguous': maps.append(maps[0].replace('selected/lib','other/lib'))
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'maps').write_text('\n'.join(maps))
+>       assert hasattr(runner,'attest_gazebo_libraries'), 'native Gazebo library attestation missing'
+E       AssertionError: native Gazebo library attestation missing
+E       assert False
+E        +  where False = hasattr(runner, 'attest_gazebo_libraries')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:44: AssertionError
+__ test_only_the_live_owned_native_child_can_attest_all_libraries[wrong_pid] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_the_live_owned_nativ4')
+fault = 'wrong_pid'
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'wrong_library', 'wrong_hash', 'wrong_pid',
+                                       'reused_pid', 'wrong_group', 'wrapper', 'ambiguous'])
+    def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fault):
+        proc = tmp_path/'proc'
+        child = proc/'43'
+        child.mkdir(parents=True)
+        fields = ['S', '42', '42']+['0']*17
+        fields[19] = '123'
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        expected = []
+        for index,name in enumerate(NAMES):
+            path = tmp_path/'selected/lib'/name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('fixture library '+str(index)).encode())
+            expected.append(dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        maps = ['000-fff r-xp 00000000 00:00 1 '+item['path'] for item in expected]
+        members = [dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault == 'missing': maps.pop()
+        elif fault == 'wrong_library': maps[0] = maps[0].replace('selected/lib','other/lib')
+        elif fault == 'wrong_hash': expected[0]['sha256'] = '0'*64
+        elif fault == 'wrong_pid': members[0]['pid'] = 44
+        elif fault == 'reused_pid': members[0]['start_ticks'] = 124
+        elif fault == 'wrong_group': fields[2] = '99'
+        elif fault == 'wrapper': (child/'cmdline').write_bytes(b'/bin/sh\0-c\0ruby /usr/bin/gz sim\0')
+        elif fault == 'ambiguous': maps.append(maps[0].replace('selected/lib','other/lib'))
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'maps').write_text('\n'.join(maps))
+>       assert hasattr(runner,'attest_gazebo_libraries'), 'native Gazebo library attestation missing'
+E       AssertionError: native Gazebo library attestation missing
+E       assert False
+E        +  where False = hasattr(runner, 'attest_gazebo_libraries')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:44: AssertionError
+__ test_only_the_live_owned_native_child_can_attest_all_libraries[reused_pid] __
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_the_live_owned_nativ5')
+fault = 'reused_pid'
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'wrong_library', 'wrong_hash', 'wrong_pid',
+                                       'reused_pid', 'wrong_group', 'wrapper', 'ambiguous'])
+    def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fault):
+        proc = tmp_path/'proc'
+        child = proc/'43'
+        child.mkdir(parents=True)
+        fields = ['S', '42', '42']+['0']*17
+        fields[19] = '123'
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        expected = []
+        for index,name in enumerate(NAMES):
+            path = tmp_path/'selected/lib'/name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('fixture library '+str(index)).encode())
+            expected.append(dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        maps = ['000-fff r-xp 00000000 00:00 1 '+item['path'] for item in expected]
+        members = [dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault == 'missing': maps.pop()
+        elif fault == 'wrong_library': maps[0] = maps[0].replace('selected/lib','other/lib')
+        elif fault == 'wrong_hash': expected[0]['sha256'] = '0'*64
+        elif fault == 'wrong_pid': members[0]['pid'] = 44
+        elif fault == 'reused_pid': members[0]['start_ticks'] = 124
+        elif fault == 'wrong_group': fields[2] = '99'
+        elif fault == 'wrapper': (child/'cmdline').write_bytes(b'/bin/sh\0-c\0ruby /usr/bin/gz sim\0')
+        elif fault == 'ambiguous': maps.append(maps[0].replace('selected/lib','other/lib'))
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'maps').write_text('\n'.join(maps))
+>       assert hasattr(runner,'attest_gazebo_libraries'), 'native Gazebo library attestation missing'
+E       AssertionError: native Gazebo library attestation missing
+E       assert False
+E        +  where False = hasattr(runner, 'attest_gazebo_libraries')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:44: AssertionError
+_ test_only_the_live_owned_native_child_can_attest_all_libraries[wrong_group] __
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_the_live_owned_nativ6')
+fault = 'wrong_group'
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'wrong_library', 'wrong_hash', 'wrong_pid',
+                                       'reused_pid', 'wrong_group', 'wrapper', 'ambiguous'])
+    def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fault):
+        proc = tmp_path/'proc'
+        child = proc/'43'
+        child.mkdir(parents=True)
+        fields = ['S', '42', '42']+['0']*17
+        fields[19] = '123'
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        expected = []
+        for index,name in enumerate(NAMES):
+            path = tmp_path/'selected/lib'/name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('fixture library '+str(index)).encode())
+            expected.append(dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        maps = ['000-fff r-xp 00000000 00:00 1 '+item['path'] for item in expected]
+        members = [dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault == 'missing': maps.pop()
+        elif fault == 'wrong_library': maps[0] = maps[0].replace('selected/lib','other/lib')
+        elif fault == 'wrong_hash': expected[0]['sha256'] = '0'*64
+        elif fault == 'wrong_pid': members[0]['pid'] = 44
+        elif fault == 'reused_pid': members[0]['start_ticks'] = 124
+        elif fault == 'wrong_group': fields[2] = '99'
+        elif fault == 'wrapper': (child/'cmdline').write_bytes(b'/bin/sh\0-c\0ruby /usr/bin/gz sim\0')
+        elif fault == 'ambiguous': maps.append(maps[0].replace('selected/lib','other/lib'))
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'maps').write_text('\n'.join(maps))
+>       assert hasattr(runner,'attest_gazebo_libraries'), 'native Gazebo library attestation missing'
+E       AssertionError: native Gazebo library attestation missing
+E       assert False
+E        +  where False = hasattr(runner, 'attest_gazebo_libraries')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:44: AssertionError
+___ test_only_the_live_owned_native_child_can_attest_all_libraries[wrapper] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_the_live_owned_nativ7')
+fault = 'wrapper'
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'wrong_library', 'wrong_hash', 'wrong_pid',
+                                       'reused_pid', 'wrong_group', 'wrapper', 'ambiguous'])
+    def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fault):
+        proc = tmp_path/'proc'
+        child = proc/'43'
+        child.mkdir(parents=True)
+        fields = ['S', '42', '42']+['0']*17
+        fields[19] = '123'
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        expected = []
+        for index,name in enumerate(NAMES):
+            path = tmp_path/'selected/lib'/name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('fixture library '+str(index)).encode())
+            expected.append(dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        maps = ['000-fff r-xp 00000000 00:00 1 '+item['path'] for item in expected]
+        members = [dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault == 'missing': maps.pop()
+        elif fault == 'wrong_library': maps[0] = maps[0].replace('selected/lib','other/lib')
+        elif fault == 'wrong_hash': expected[0]['sha256'] = '0'*64
+        elif fault == 'wrong_pid': members[0]['pid'] = 44
+        elif fault == 'reused_pid': members[0]['start_ticks'] = 124
+        elif fault == 'wrong_group': fields[2] = '99'
+        elif fault == 'wrapper': (child/'cmdline').write_bytes(b'/bin/sh\0-c\0ruby /usr/bin/gz sim\0')
+        elif fault == 'ambiguous': maps.append(maps[0].replace('selected/lib','other/lib'))
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'maps').write_text('\n'.join(maps))
+>       assert hasattr(runner,'attest_gazebo_libraries'), 'native Gazebo library attestation missing'
+E       AssertionError: native Gazebo library attestation missing
+E       assert False
+E        +  where False = hasattr(runner, 'attest_gazebo_libraries')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:44: AssertionError
+__ test_only_the_live_owned_native_child_can_attest_all_libraries[ambiguous] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_the_live_owned_nativ8')
+fault = 'ambiguous'
+
+    @pytest.mark.parametrize('fault', ['', 'missing', 'wrong_library', 'wrong_hash', 'wrong_pid',
+                                       'reused_pid', 'wrong_group', 'wrapper', 'ambiguous'])
+    def test_only_the_live_owned_native_child_can_attest_all_libraries(tmp_path, fault):
+        proc = tmp_path/'proc'
+        child = proc/'43'
+        child.mkdir(parents=True)
+        fields = ['S', '42', '42']+['0']*17
+        fields[19] = '123'
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'cmdline').write_bytes(b'/usr/bin/ruby\0/usr/bin/gz\0sim\0-r\0-s\0')
+        expected = []
+        for index,name in enumerate(NAMES):
+            path = tmp_path/'selected/lib'/name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('fixture library '+str(index)).encode())
+            expected.append(dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        maps = ['000-fff r-xp 00000000 00:00 1 '+item['path'] for item in expected]
+        members = [dict(pid=43,ppid=42,pgid=42,start_ticks=123)]
+        if fault == 'missing': maps.pop()
+        elif fault == 'wrong_library': maps[0] = maps[0].replace('selected/lib','other/lib')
+        elif fault == 'wrong_hash': expected[0]['sha256'] = '0'*64
+        elif fault == 'wrong_pid': members[0]['pid'] = 44
+        elif fault == 'reused_pid': members[0]['start_ticks'] = 124
+        elif fault == 'wrong_group': fields[2] = '99'
+        elif fault == 'wrapper': (child/'cmdline').write_bytes(b'/bin/sh\0-c\0ruby /usr/bin/gz sim\0')
+        elif fault == 'ambiguous': maps.append(maps[0].replace('selected/lib','other/lib'))
+        (child/'stat').write_text('43 (gz sim fixture) '+' '.join(fields))
+        (child/'maps').write_text('\n'.join(maps))
+>       assert hasattr(runner,'attest_gazebo_libraries'), 'native Gazebo library attestation missing'
+E       AssertionError: native Gazebo library attestation missing
+E       assert False
+E        +  where False = hasattr(runner, 'attest_gazebo_libraries')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py:44: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_only_the_live_owned_native_child_can_attest_all_libraries[]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_only_the_live_owned_native_child_can_attest_all_libraries[missing]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_only_the_live_owned_native_child_can_attest_all_libraries[wrong_library]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_only_the_live_owned_native_child_can_attest_all_libraries[wrong_hash]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_only_the_live_owned_native_child_can_attest_all_libraries[wrong_pid]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_only_the_live_owned_native_child_can_attest_all_libraries[reused_pid]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_only_the_live_owned_native_child_can_attest_all_libraries[wrong_group]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_only_the_live_owned_native_child_can_attest_all_libraries[wrapper]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gazebo_library_attestation.py::test_only_the_live_owned_native_child_can_attest_all_libraries[ambiguous]
+9 failed in 8.42s

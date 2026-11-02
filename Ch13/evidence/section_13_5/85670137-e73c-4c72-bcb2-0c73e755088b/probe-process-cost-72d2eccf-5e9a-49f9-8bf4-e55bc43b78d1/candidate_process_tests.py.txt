@@ -1,0 +1,108 @@
+"""Private record encoding can run outside the ROS receiver's interpreter."""
+import importlib
+import importlib.util
+import json
+import os
+import time
+import pytest
+
+
+def api():
+    assert importlib.util.find_spec('process_journal_13_5') is not None,'owned process journal missing'
+    return importlib.import_module('process_journal_13_5')
+
+
+def test_process_writer_preserves_every_private_record_and_normal_ownership(tmp_path):
+    module=api();path=tmp_path/'records.jsonl';path.touch()
+    journal=module.ProcessJournal(path)
+    original={'kind':'frame','value':{'stamp_ns':123,'received_ns':456,'points':[[1.,2.]],'name':'컵'}}
+    expected=json.loads(json.dumps(original));encoded=journal.encode(original)
+    original['value']['stamp_ns']=999;original['value']['points'][0][0]=99.
+    try:
+        for _ in range(12):journal.submit(encoded)
+        journal.close(timeout_sec=5.)
+        values=[json.loads(line) for line in path.read_text().splitlines()]
+        assert values==[expected]*12
+        report=journal.report()
+        assert report['submitted']==report['written']==12 and report['outstanding_records']==0
+        assert report['joined'] and report['process_exitcode']==0 and report['error'] is None
+        assert report['owner']['pid']!=os.getpid() and report['owner']['uid']==os.getuid()
+        assert report['owner']['start_ticks']>0 and report['encoding']=='owned_process_json'
+    finally:journal.close(timeout_sec=5.)
+
+
+def test_encoder_error_is_sticky_and_original_payload_is_preserved(tmp_path):
+    module=api();path=tmp_path/'records.jsonl';path.touch();journal=module.ProcessJournal(path)
+    try:
+        payload=journal.encode({'kind':'invalid','value':float('nan')});journal.submit(payload)
+        with pytest.raises(module.JournalFailure):journal.flush(timeout_sec=5.)
+        pid=journal.report()['owner']['pid']
+        with pytest.raises(module.JournalFailure):journal.submit(journal.encode({'kind':'later','value':1}))
+        with pytest.raises(module.JournalFailure):journal.close(timeout_sec=5.)
+        report=journal.report()
+        assert report['joined'] and report['process_exitcode']!=0 and report['error']
+        assert report['owner']['pid']==pid and report['written']==0
+        assert list(tmp_path.glob('*.unwritten.pickle')),'failed private payloads disappeared'
+        assert path.read_text()==''
+    finally:
+        try:journal.close(timeout_sec=5.)
+        except module.JournalFailure:pass
+
+
+def test_capacity_cannot_overwrite_or_exceed_original_wire_byte_bound(tmp_path):
+    module=api();path=tmp_path/'records.jsonl';path.touch()
+    journal=module.ProcessJournal(path,max_bytes=8)
+    try:
+        with pytest.raises(module.JournalFailure,match='capacity'):journal.submit(journal.encode({'value':'oversized'}))
+        with pytest.raises(module.JournalFailure):journal.close(timeout_sec=5.)
+        assert journal.report()['joined'] and journal.report()['submitted']==0
+        assert journal.report()['max_bytes']==8 and path.read_text()==''
+    finally:
+        try:journal.close(timeout_sec=5.)
+        except module.JournalFailure:pass
+
+
+def test_startup_file_error_is_reported_after_owned_child_is_reaped(tmp_path):
+    import multiprocessing
+    module=api();path=tmp_path/'denied.jsonl';path.touch();before={p.pid for p in multiprocessing.active_children()}
+    path.chmod(0)
+    try:
+        with pytest.raises(module.JournalFailure):module.ProcessJournal(path)
+        assert {p.pid for p in multiprocessing.active_children()}==before,'startup failure orphaned an encoder'
+    finally:path.chmod(0o600)
+
+
+def test_ros_receipt_does_not_encode_json_in_the_parent_and_worker_is_joined(tmp_path,monkeypatch):
+    import inspect
+    import rclpy
+    from rclpy.context import Context
+    from rclpy.node import Node
+    from rclpy.qos import qos_profile_sensor_data
+    from integrated_robot_interfaces.msg import FootContacts
+    import probe_navigation_13_5 as probe_api
+    assert 'journal_process' in inspect.signature(probe_api.NavigationProbe).parameters,'native observer process encoding missing'
+    context=Context();rclpy.init(context=context)
+    probe=probe_api.NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,journal_process=True,context=context)
+    peer=Node('process_encoder_input_peer',context=context)
+    pub=peer.create_publisher(FootContacts,'/navigation/foot_contacts',qos_profile_sensor_data)
+    receiver=probe_api.ProbeReceiver(probe);original=probe_api.json.dumps
+    def reject_parent_record(value,*args,**kwargs):
+        if isinstance(value,dict) and set(value)=={'kind','value'}:raise RuntimeError('JSON encoding still on ROS interpreter')
+        return original(value,*args,**kwargs)
+    monkeypatch.setattr(probe_api.json,'dumps',reject_parent_record)
+    try:
+        message=FootContacts();message.header.frame_id='odom';message.header.stamp.sec=17;message.sequence=7
+        end=time.monotonic()+2.;selected=None
+        while selected is None and time.monotonic()<end:
+            pub.publish(message);time.sleep(.01);receiver.check()
+            with probe._lock:selected=probe.inbox.pending['contacts'].get(17_000_000_000)
+        assert selected is not None and selected.received_ns>0 and selected.stamp_ns==17_000_000_000
+        assert receiver.shutdown(timeout_sec=2.)
+        probe.restore_history(receiver_joined=True)
+        rows=[json.loads(line) for line in (tmp_path/'observations.jsonl').read_text().splitlines()]
+        assert any(r['kind']=='contacts' and r['value']['stamp_ns']==17_000_000_000 for r in rows)
+        report=probe.journal.report()
+        assert report['joined'] and report['submitted']==report['written']>0 and report['process_exitcode']==0
+    finally:
+        assert receiver.shutdown(timeout_sec=2.)
+        probe.close_log();probe.destroy_node();peer.destroy_node();context.try_shutdown()

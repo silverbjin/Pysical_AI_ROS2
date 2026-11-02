@@ -1,0 +1,46 @@
+....F
+=================================== FAILURES ===================================
+_ test_real_ros_owner_selects_elapsed_policy_only_in_acknowledged_g2_scope[False] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_real_ros_owner_selects_el0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+g2 = False
+
+    @pytest.mark.parametrize('g2',[False,True])
+    def test_real_ros_owner_selects_elapsed_policy_only_in_acknowledged_g2_scope(tmp_path,nav_robot_model,g2):
+        import rclpy
+        from rclpy.context import Context
+        from lifecycle_msgs.msg import Transition
+        from test_execution_admission_contract import fixture
+        from test_g2_control_cadence_ros import controller
+        from test_crawl_lifecycle import CrawlRig
+        profile,expected=fixture(tmp_path,nav_robot_model,'mujoco')
+>       ctx=Context();rclpy.init(context=ctx);node=controller(ctx,nav_robot_model,profile,expected,g2=g2)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_elapsed_reference.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_control_cadence_ros.py:23: in controller
+    return CrawlController(model,profile,'mujoco',context=context,
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/crawl_controller.py:51: in __init__
+    self.execution_profile=read_g2_execution_scope(self.validation_mode,self.g2_validation_mode,serialized,self.engine)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+validation_mode = True, g2_mode = False
+serialized = '{"control_clock": "relay100", "position_reference_mode": "native", "dart_contact": "native", "native_physics_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}'
+engine = 'mujoco'
+
+    def read_g2_execution_scope(validation_mode,g2_mode,serialized,engine):
+        if type(validation_mode) is not bool or type(g2_mode) is not bool or not isinstance(serialized,str):
+            raise ValueError('typed G2 validation scope required')
+        if not g2_mode:
+>           if serialized:raise ValueError('execution profile requires explicit G2 scope')
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           ValueError: execution profile requires explicit G2 scope
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/execution_contract.py:31: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_elapsed_reference.py::test_real_ros_owner_selects_elapsed_policy_only_in_acknowledged_g2_scope[False]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 passed in 29.91s

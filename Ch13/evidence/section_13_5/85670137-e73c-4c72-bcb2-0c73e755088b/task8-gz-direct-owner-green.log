@@ -1,0 +1,39 @@
+........................................................................ [ 71%]
+.................F
+=================================== FAILURES ===================================
+_ test_actual_owner_records_bounded_ordered_decision_costs_without_changing_clock[gazebo-True] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_owner_records_boun3')
+nav_robot_model = ModelContract(model_sha256='845e57a97d2dd10a6963304d4f4baf628de208993fedf46c5239c39f839e4032', joint_names=('fr_hip_jo...ame="initial_value">0.015</param></state_interface><state_interface name="velocity" /></joint></ros2_control></robot>')
+g2 = True, engine = 'gazebo'
+
+    @pytest.mark.parametrize('g2',[False,True])
+    @pytest.mark.parametrize('engine',['mujoco','gazebo'])
+    def test_actual_owner_records_bounded_ordered_decision_costs_without_changing_clock(tmp_path,nav_robot_model,g2,engine):
+        if engine=='gazebo' and g2:
+            from test_stance_load_transfer import helper
+            nav_robot_model=helper(nav_robot_model).model
+        profile,expected=fixture(tmp_path,nav_robot_model,engine)
+        ctx=Context();rclpy.init(context=ctx);node=controller(ctx,nav_robot_model,profile,expected,g2=g2,engine=engine)
+        rig=CrawlRig(node,nav_robot_model,ctx)
+        rig.node.destroy_publisher(rig.clock)
+        rig.clock=rig.node.create_publisher(Clock,'/navigation/control_clock',10)
+        try:
+            rig.pump(.3)
+            assert rig.transition(Transition.TRANSITION_CONFIGURE)
+>           assert rig.transition(Transition.TRANSITION_ACTIVATE)
+E           assert False
+E            +  where False = transition(3)
+E            +    where transition = <test_crawl_lifecycle.CrawlRig object at 0x70f092a18f80>.transition
+E            +    and   3 = Transition.TRANSITION_ACTIVATE
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_control_cadence_ros.py:117: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793528516.813701089] [crawl_controller]: Validation model uses direct serial dispatch with isolated ingress
+[WARN] [1793528517.694411532] [crawl_controller]: activate requires fresh STAND/HOLD guard: guard:ros_age
+[INFO] [1793528517.738903962] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_events", "alive": false, "joined": true, "error": null, "pid": 1417, "uid": 1000, "native_tid": 1804, "node_name": "crawl_controller_ingress", "namespace": "/", "executor_type": "EventsExecutor", "backend_manifest": {"rclpy_version": "7.1.12", "callbacks": "serial", "parallel_callback_groups": false, "reviewed_tag": "7.1.12", "reviewed_commit": "bd637294dd02b1c128422395c059fa06df8387a3", "wrapper": {"path": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/experimental/events_executor.py", "sha256": "753cc5da96bbfa154b3a7c263a8596b5a4facaf07d2a4fbbfaa9c81626ef281d"}, "extension": {"path": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/_rclpy_pybind11.cpython-312-x86_64-linux-gnu.so", "sha256": "53efd7622c109ae6f9ff7ffafc3bffac4856700d39ca51d8689ecaa617a596bd"}}, "clock_subscriptions": []}
+[INFO] [1793528517.790814425] [crawl_controller]: Numerical load owner closed: {"scope": "one_numerical_job_no_command_authority", "command_space": "stance_xyz", "optimization_backend": "qpmad_1_5_1_native", "kernel_backend": "native_complete_1", "complete_kernel_abi": 1, "force_objective": "bounded_terminal_force", "optimization_library_sha256": "4810d192c7ab03f224a0ab7e985a36666f33a79503cbb332ea93ab0a0ffc564c", "reference_library_sha256": "af982840d8e8bb96f77a6eb1c167867ab25f584c099616c8c39f9b840f7d2c35", "library_sha256": "63d1bd5aab771690c486a85e9dca3f20a5567d03262780898994db7fd049420b", "pid": 1805, "alive": false, "submitted": 0, "completed": 0, "discarded": 0, "failed": 0, "last_reply": null, "last_input_id": null, "pending": false, "fault": "", "closed": true, "acknowledged": true, "parent_reaped": true, "returncode": 0, "forced_cleanup": false, "error": "", "stderr_tail": "", "reference_geometry_closed": true, "optimizer_closed": true, "complete_kernel_closed": true}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_control_cadence_ros.py::test_actual_owner_records_bounded_ordered_decision_costs_without_changing_clock[gazebo-True]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 89 passed in 56.95s

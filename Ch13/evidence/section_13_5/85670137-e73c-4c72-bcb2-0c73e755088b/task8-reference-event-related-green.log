@@ -1,0 +1,34 @@
+..F
+=================================== FAILURES ===================================
+_ test_pending_native_application_emits_no_duplicate_commands_and_expires_original_lease _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_pending_native_applicatio0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_pending_native_application_emits_no_duplicate_commands_and_expires_original_lease(tmp_path,nav_robot_model):
+        from test_mujoco_relay_validation_scope import relay_proof
+        from test_execution_admission_contract import contract
+        from test_crawl_lifecycle import CrawlRig
+        from test_crawl_safety_ros import activate
+        profile,_,_=relay_proof(tmp_path,nav_robot_model,'a'*64)
+        ctx=Context();rclpy.init(context=ctx)
+        node=controller(ctx,nav_robot_model,profile,contract('mujoco'))
+        rig=CrawlRig(node,nav_robot_model,ctx)
+        rig.node.destroy_publisher(rig.clock)
+        rig.clock=rig.node.create_publisher(Clock,'/navigation/control_clock',10)
+        echo=rig.node.create_publisher(JointState,'/navigation/applied_reference',1)
+        try:
+            rig.pump(.3);activate(rig);rig.ready=True
+            rig.mode_name='CRAWL';rig.value=.001;rig.pump(.8)
+>           assert 'unconfirmed' in node.stop_reason,node.stop_reason
+E           AssertionError: 
+E           assert 'unconfirmed' in ''
+E            +  where '' = <integrated_robot_navigation.crawl_controller.CrawlController object at 0x72d92338a0c0>.stop_reason
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch_ros.py:87: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793069595.419903065] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_waitset", "alive": false, "joined": true, "error": null, "pid": 1102, "uid": 1000, "native_tid": 1372, "node_name": "crawl_controller_ingress", "namespace": "/", "clock_subscriptions": []}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch_ros.py::test_pending_native_application_emits_no_duplicate_commands_and_expires_original_lease
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 2 passed in 32.27s

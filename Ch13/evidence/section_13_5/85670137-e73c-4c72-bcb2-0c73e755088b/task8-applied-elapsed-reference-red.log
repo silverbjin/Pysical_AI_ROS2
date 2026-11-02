@@ -1,0 +1,26 @@
+F
+=================================== FAILURES ===================================
+_ test_original_failed_cadence_can_sample_same_curve_without_impossible_reference_count _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_original_failed_cadence_can_sample_same_curve_without_impossible_reference_count(nav_robot_model):
+        fixture=json.loads((Path(__file__).parent/'fixtures/reference-4163.json').read_text())
+>       value=owner(nav_robot_model);legacy=CrawlMachine(nav_robot_model,default_limits())
+              ^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_elapsed_reference.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def owner(model):
+>       return CrawlMachine(model,default_limits(),reference_time_policy='applied_elapsed')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: CrawlMachine.__init__() got an unexpected keyword argument 'reference_time_policy'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_elapsed_reference.py:15: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_elapsed_reference.py::test_original_failed_cadence_can_sample_same_curve_without_impossible_reference_count
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 13.03s

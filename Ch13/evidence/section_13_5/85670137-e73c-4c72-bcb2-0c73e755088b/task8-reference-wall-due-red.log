@@ -1,0 +1,40 @@
+F
+=================================== FAILURES ===================================
+_ test_confirmed_reference_wakes_at_wall_due_with_only_positive_original_ros_progress _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_confirmed_reference_wakes0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x737005e96c00>
+
+    def test_confirmed_reference_wakes_at_wall_due_with_only_positive_original_ros_progress(tmp_path,nav_robot_model,monkeypatch):
+        ctx=Context();rclpy.init(context=ctx);calls=[];original=CrawlController._tick
+        def record(node):
+            calls.append((node.get_clock().now().nanoseconds,time.monotonic_ns()))
+            return original(node)
+        monkeypatch.setattr(CrawlController,'_tick',record)
+        profile,expected=fixture(tmp_path,nav_robot_model,'mujoco')
+        node=controller(ctx,nav_robot_model,profile,expected)
+        peer=Node('reference_due_source',context=ctx);executor=make_control_executor(node)
+        executor.add_node(node);executor.add_node(peer)
+        source=peer.create_publisher(Clock,'/navigation/control_clock',10)
+        for timer in node.timers:
+            if timer.clock is node.get_clock():timer.cancel()
+        try:
+            deadline=time.monotonic()+.1
+            while time.monotonic()<deadline:
+                source.publish(Clock(clock=Time(sec=1,nanosec=18_000_000)))
+                executor.spin_once(timeout_sec=.001);time.sleep(.001)
+            assert node.get_clock().now().nanoseconds==1_018_000_000
+>           assert callable(getattr(node,'_schedule_reference_due',None)), 'owned wall-due notification missing'
+E           AssertionError: owned wall-due notification missing
+E           assert False
+E            +  where False = callable(None)
+E            +    where None = getattr(<integrated_robot_navigation.crawl_controller.CrawlController object at 0x737005ea9d30>, '_schedule_reference_due', None)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_due_ros.py:33: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793072796.037523879] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_waitset", "alive": false, "joined": true, "error": null, "pid": 1337, "uid": 1000, "native_tid": 1356, "node_name": "crawl_controller_ingress", "namespace": "/", "clock_subscriptions": []}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_due_ros.py::test_confirmed_reference_wakes_at_wall_due_with_only_positive_original_ros_progress
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 11.74s

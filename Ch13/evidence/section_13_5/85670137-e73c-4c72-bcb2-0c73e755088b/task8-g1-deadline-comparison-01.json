@@ -1,0 +1,578 @@
+{
+  "scope": "closed_G1_deadline_comparison_not_new_engine",
+  "trials": [
+    {
+      "trial": "native-g1-gazebo-027edf99-68f1-452c-9434-578b6f8602d7",
+      "report_sha256": "d426ef735c6df258d60ce0f66b17616bf0b5e1d181ee62495ae2eca1e26fb580",
+      "first_fault": null,
+      "calibration_request": {
+        "ros_ns": 23592000000,
+        "wall_ns": 406516102571,
+        "deadline_wall_ns": 416516102571
+      },
+      "stages": [
+        {
+          "phase": "STAND",
+          "ros_ns": 23600000000,
+          "wall_ns": 406523287169
+        },
+        {
+          "phase": "SHIFT",
+          "ros_ns": 23622000000,
+          "wall_ns": 406543460564
+        },
+        {
+          "phase": "SWING",
+          "ros_ns": 28320000000,
+          "wall_ns": 411883328571
+        },
+        {
+          "phase": "TOUCHDOWN",
+          "ros_ns": 28860000000,
+          "wall_ns": 412463880503
+        },
+        {
+          "phase": "STAND",
+          "ros_ns": 30120000000,
+          "wall_ns": 414026014122
+        }
+      ],
+      "vertical": {
+        "scope": "candidate_requires_owner_measured_stand_settle",
+        "phase": "STAND",
+        "return_policy": "bounded_preload",
+        "deadline_wall_ns": 416516102571,
+        "last_update_wall_ns": 414026014122,
+        "remaining_wall_ns": 2490088449,
+        "target_z": 0.01670515763223346,
+        "velocity": 0.0,
+        "rest_z": 0.01670515763223346,
+        "baseline_z": 0.019949740532093474,
+        "lift_captures": [
+          28784000000,
+          28824000000,
+          28844000000
+        ],
+        "landing_captures": [
+          30064000000,
+          30084000000,
+          30104000000
+        ],
+        "transitions": [
+          {
+            "phase": "SWING",
+            "ros_ns": 28320000000,
+            "wall_ns": 411883328571
+          },
+          {
+            "phase": "TOUCHDOWN",
+            "ros_ns": 28860000000,
+            "wall_ns": 412463880503
+          },
+          {
+            "phase": "STAND",
+            "ros_ns": 30120000000,
+            "wall_ns": 414026014122
+          }
+        ],
+        "return_plan": {
+          "start_ros_ns": 28954000000,
+          "start_z": 0.03655855730023341,
+          "ramp_s": 0.1,
+          "cruise_s": 0.8926699833999977,
+          "peak_mps": 0.02,
+          "duration_s": 1.0926699833999978
+        },
+        "return_brake": null,
+        "loaded_contact": {
+          "capture_ns": 29524000000,
+          "ros_ns": 29536000000,
+          "wall_ns": 413303216506,
+          "force_n": 6.432516052626357
+        },
+        "loaded_brake": null,
+        "previous_return_plan": null,
+        "measurement": {
+          "center_z": 0.019996859194312322,
+          "forces": [
+            39.237889295540924,
+            26.82027624880842,
+            49.09977766475874,
+            33.81693512668808
+          ],
+          "capture_ns": 30104000000,
+          "ros_ns": 30120000000,
+          "wall_ns": 414026014122
+        },
+        "fault": ""
+      },
+      "stage_costs": [
+        {
+          "phase": "STAND",
+          "next_phase": "SHIFT",
+          "ros_s": 0.022,
+          "wall_s": 0.020173395,
+          "ratio": 1.0905452453590483
+        },
+        {
+          "phase": "SHIFT",
+          "next_phase": "SWING",
+          "ros_s": 4.698,
+          "wall_s": 5.339868007,
+          "ratio": 0.8797970275372764
+        },
+        {
+          "phase": "SWING",
+          "next_phase": "TOUCHDOWN",
+          "ros_s": 0.54,
+          "wall_s": 0.580551932,
+          "ratio": 0.930149346225929
+        },
+        {
+          "phase": "TOUCHDOWN",
+          "next_phase": "STAND",
+          "ros_s": 1.26,
+          "wall_s": 1.562133619,
+          "ratio": 0.806589132117001
+        }
+      ],
+      "cpu": [
+        {
+          "pid": 1783,
+          "command": "gz sim -r -s --headless-rendering /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-027edf99-68f1-452c-9434-578b6f8602d7-prepared/scene/world.sdf ",
+          "average_cpu_one_core_percent": 164.13891459822597,
+          "threads_max": 59,
+          "observed_wall_s": 41.824329208
+        },
+        {
+          "pid": 1791,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/crawl_controller",
+          "average_cpu_one_core_percent": 61.1862111477842,
+          "threads_max": 17,
+          "observed_wall_s": 40.548351556
+        },
+        {
+          "pid": 1717,
+          "command": "observer",
+          "average_cpu_one_core_percent": 29.215285834221568,
+          "threads_max": 18,
+          "observed_wall_s": 43.983824334
+        },
+        {
+          "pid": 1789,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/gazebo_contact_adapter",
+          "average_cpu_one_core_percent": 26.536220554218378,
+          "threads_max": 15,
+          "observed_wall_s": 40.548351556
+        },
+        {
+          "pid": 1792,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/carry_manager",
+          "average_cpu_one_core_percent": 21.209246911364133,
+          "threads_max": 17,
+          "observed_wall_s": 40.548351556
+        },
+        {
+          "pid": 1790,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/motion_guard",
+          "average_cpu_one_core_percent": 20.71600861109985,
+          "threads_max": 17,
+          "observed_wall_s": 40.548351556
+        },
+        {
+          "pid": 1749,
+          "command": "full_observer",
+          "average_cpu_one_core_percent": 18.27944732351295,
+          "threads_max": 18,
+          "observed_wall_s": 43.983824334
+        },
+        {
+          "pid": 1785,
+          "command": "/opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
+          "average_cpu_one_core_percent": 13.317607491800707,
+          "threads_max": 21,
+          "observed_wall_s": 41.824329208
+        },
+        {
+          "pid": 1798,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/crawl_startup",
+          "average_cpu_one_core_percent": 11.46779048114456,
+          "threads_max": 16,
+          "observed_wall_s": 40.548351556
+        },
+        {
+          "pid": 1788,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_vision/lib/integrated_robot_vision/native_pose_adapter",
+          "average_cpu_one_core_percent": 10.703271115734923,
+          "threads_max": 15,
+          "observed_wall_s": 40.548351556
+        },
+        {
+          "pid": 1799,
+          "command": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/control_clock_relay /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-027edf99-68f1-452c-9434-578b6f8602d7/control_clock.jsonl",
+          "average_cpu_one_core_percent": 9.946363943606991,
+          "threads_max": 15,
+          "observed_wall_s": 41.824329208
+        },
+        {
+          "pid": 1797,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/nav_projection",
+          "average_cpu_one_core_percent": 9.692132600193144,
+          "threads_max": 15,
+          "observed_wall_s": 40.548351556
+        },
+        {
+          "pid": 1787,
+          "command": "/opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge --ros-args",
+          "average_cpu_one_core_percent": 9.49208289810571,
+          "threads_max": 21,
+          "observed_wall_s": 41.824329208
+        },
+        {
+          "pid": 2043,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner",
+          "average_cpu_one_core_percent": 8.91341629617524,
+          "threads_max": 15,
+          "observed_wall_s": 2.131618155
+        },
+        {
+          "pid": 1784,
+          "command": "/opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args",
+          "average_cpu_one_core_percent": 7.268496728020494,
+          "threads_max": 16,
+          "observed_wall_s": 41.824329208
+        },
+        {
+          "pid": 1800,
+          "command": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/tf_provenance /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-027edf99-68f1-452c-9434-578b6f8602d7/tf_provenance.jsonl",
+          "average_cpu_one_core_percent": 6.757364713620666,
+          "threads_max": 16,
+          "observed_wall_s": 40.548351556
+        },
+        {
+          "pid": 2044,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner",
+          "average_cpu_one_core_percent": 6.27371666179903,
+          "threads_max": 15,
+          "observed_wall_s": 4.303669014
+        },
+        {
+          "pid": 1786,
+          "command": "/opt/ros/jazzy/lib/ros_gz_sim/create -file",
+          "average_cpu_one_core_percent": 5.448932484425373,
+          "threads_max": 21,
+          "observed_wall_s": 1.101133115
+        },
+        {
+          "pid": 2041,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner",
+          "average_cpu_one_core_percent": 4.769358019371463,
+          "threads_max": 15,
+          "observed_wall_s": 1.048359125
+        },
+        {
+          "pid": 2042,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner",
+          "average_cpu_one_core_percent": 3.862685562145513,
+          "threads_max": 15,
+          "observed_wall_s": 6.472180973
+        },
+        {
+          "pid": 1780,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/bin/ros2",
+          "average_cpu_one_core_percent": 2.387241254936393,
+          "threads_max": 3,
+          "observed_wall_s": 43.983824334
+        }
+      ],
+      "metrics_sha256": "449f57f0f1a91dc25b34e93733c4aafe09b49e5358b60182301f778f1748f3dd"
+    },
+    {
+      "trial": "native-g1-gazebo-330b055b-0cb9-4db5-872d-06e2613fe447",
+      "report_sha256": "90909de0ab9c2b4e0431af5706fe0e6e69eb790b6b7784a215fa72887b63b3a2",
+      "first_fault": "calibration original wall deadline",
+      "calibration_request": {
+        "ros_ns": 23828000000,
+        "wall_ns": 593916602471,
+        "deadline_wall_ns": 603916602471
+      },
+      "stages": [
+        {
+          "phase": "STAND",
+          "ros_ns": 23838000000,
+          "wall_ns": 593923899271
+        },
+        {
+          "phase": "SHIFT",
+          "ros_ns": 23854000000,
+          "wall_ns": 593949595770
+        },
+        {
+          "phase": "SWING",
+          "ros_ns": 28468000000,
+          "wall_ns": 600441344382
+        },
+        {
+          "phase": "TOUCHDOWN",
+          "ros_ns": 29004000000,
+          "wall_ns": 601264918243
+        },
+        {
+          "phase": "STAND",
+          "ros_ns": 30262000000,
+          "wall_ns": 602902932671
+        }
+      ],
+      "vertical": {
+        "scope": "candidate_requires_owner_measured_stand_settle",
+        "phase": "STAND",
+        "return_policy": "bounded_preload",
+        "deadline_wall_ns": 603916602471,
+        "last_update_wall_ns": 602902932671,
+        "remaining_wall_ns": 1013669800,
+        "target_z": 0.01670515763223346,
+        "velocity": 0.0,
+        "rest_z": 0.01670515763223346,
+        "baseline_z": 0.019949733831383876,
+        "lift_captures": [
+          28964000000,
+          28984000000,
+          29004000000
+        ],
+        "landing_captures": [
+          30204000000,
+          30224000000,
+          30244000000
+        ],
+        "transitions": [
+          {
+            "phase": "SWING",
+            "ros_ns": 28468000000,
+            "wall_ns": 600441344382
+          },
+          {
+            "phase": "TOUCHDOWN",
+            "ros_ns": 29004000000,
+            "wall_ns": 601264918243
+          },
+          {
+            "phase": "STAND",
+            "ros_ns": 30262000000,
+            "wall_ns": 602902932671
+          }
+        ],
+        "return_plan": {
+          "start_ros_ns": 29104000000,
+          "start_z": 0.03653483079223349,
+          "ramp_s": 0.1,
+          "cruise_s": 0.8914836580000016,
+          "peak_mps": 0.02,
+          "duration_s": 1.0914836580000016
+        },
+        "return_brake": null,
+        "loaded_contact": {
+          "capture_ns": 29684000000,
+          "ros_ns": 29688000000,
+          "wall_ns": 602220823998,
+          "force_n": 5.085525226202714
+        },
+        "loaded_brake": null,
+        "previous_return_plan": null,
+        "measurement": {
+          "center_z": 0.019977529455460163,
+          "forces": [
+            39.51867573475278,
+            26.86520534590982,
+            48.813370030044545,
+            33.57394398604189
+          ],
+          "capture_ns": 30244000000,
+          "ros_ns": 30262000000,
+          "wall_ns": 602902932671
+        },
+        "fault": ""
+      },
+      "stage_costs": [
+        {
+          "phase": "STAND",
+          "next_phase": "SHIFT",
+          "ros_s": 0.016,
+          "wall_s": 0.025696499,
+          "ratio": 0.6226529147025048
+        },
+        {
+          "phase": "SHIFT",
+          "next_phase": "SWING",
+          "ros_s": 4.614,
+          "wall_s": 6.491748612,
+          "ratio": 0.7107484093686283
+        },
+        {
+          "phase": "SWING",
+          "next_phase": "TOUCHDOWN",
+          "ros_s": 0.536,
+          "wall_s": 0.823573861,
+          "ratio": 0.6508220153431994
+        },
+        {
+          "phase": "TOUCHDOWN",
+          "next_phase": "STAND",
+          "ros_s": 1.258,
+          "wall_s": 1.638014428,
+          "ratio": 0.7680030032067581
+        }
+      ],
+      "cpu": [
+        {
+          "pid": 1990,
+          "command": "gz sim -r -s --headless-rendering /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-330b055b-0cb9-4db5-872d-06e2613fe447-prepared/scene/world.sdf ",
+          "average_cpu_one_core_percent": 167.11500783864597,
+          "threads_max": 59,
+          "observed_wall_s": 53.549948121
+        },
+        {
+          "pid": 1998,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/crawl_controller",
+          "average_cpu_one_core_percent": 68.07675581016947,
+          "threads_max": 18,
+          "observed_wall_s": 52.382049608
+        },
+        {
+          "pid": 1833,
+          "command": "observer",
+          "average_cpu_one_core_percent": 32.790090513070744,
+          "threads_max": 18,
+          "observed_wall_s": 55.718052967
+        },
+        {
+          "pid": 2259,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner",
+          "average_cpu_one_core_percent": 27.913632692820848,
+          "threads_max": 15,
+          "observed_wall_s": 2.077837759
+        },
+        {
+          "pid": 1996,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/gazebo_contact_adapter",
+          "average_cpu_one_core_percent": 26.82216542716997,
+          "threads_max": 15,
+          "observed_wall_s": 52.382049608
+        },
+        {
+          "pid": 1999,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/carry_manager",
+          "average_cpu_one_core_percent": 24.77948094268087,
+          "threads_max": 17,
+          "observed_wall_s": 52.382049608
+        },
+        {
+          "pid": 1997,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/motion_guard",
+          "average_cpu_one_core_percent": 22.469529329380112,
+          "threads_max": 17,
+          "observed_wall_s": 52.382049608
+        },
+        {
+          "pid": 1865,
+          "command": "full_observer",
+          "average_cpu_one_core_percent": 19.975572381525858,
+          "threads_max": 18,
+          "observed_wall_s": 55.718052967
+        },
+        {
+          "pid": 1992,
+          "command": "/opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
+          "average_cpu_one_core_percent": 14.62186290509105,
+          "threads_max": 21,
+          "observed_wall_s": 53.549948121
+        },
+        {
+          "pid": 2006,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/crawl_startup",
+          "average_cpu_one_core_percent": 13.382446949783736,
+          "threads_max": 16,
+          "observed_wall_s": 52.382049608
+        },
+        {
+          "pid": 2255,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner",
+          "average_cpu_one_core_percent": 12.642984071352021,
+          "threads_max": 15,
+          "observed_wall_s": 5.378477076
+        },
+        {
+          "pid": 2012,
+          "command": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/control_clock_relay /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-330b055b-0cb9-4db5-872d-06e2613fe447/control_clock.jsonl",
+          "average_cpu_one_core_percent": 11.073773566690923,
+          "threads_max": 15,
+          "observed_wall_s": 53.549948121
+        },
+        {
+          "pid": 2004,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/integrated_robot_navigation/nav_projection",
+          "average_cpu_one_core_percent": 10.996133299679647,
+          "threads_max": 15,
+          "observed_wall_s": 52.382049608
+        },
+        {
+          "pid": 1995,
+          "command": "/home/jinho/ch13_vision_13_4_venv/bin/python /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_vision/lib/integrated_robot_vision/native_pose_adapter",
+          "average_cpu_one_core_percent": 10.327965477650501,
+          "threads_max": 15,
+          "observed_wall_s": 52.382049608
+        },
+        {
+          "pid": 1994,
+          "command": "/opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge --ros-args",
+          "average_cpu_one_core_percent": 9.934650147520355,
+          "threads_max": 21,
+          "observed_wall_s": 53.549948121
+        },
+        {
+          "pid": 2256,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner",
+          "average_cpu_one_core_percent": 8.177227780354968,
+          "threads_max": 15,
+          "observed_wall_s": 8.68264917
+        },
+        {
+          "pid": 2257,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner",
+          "average_cpu_one_core_percent": 7.381225066814401,
+          "threads_max": 5,
+          "observed_wall_s": 9.754478335
+        },
+        {
+          "pid": 2016,
+          "command": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/tf_provenance /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-330b055b-0cb9-4db5-872d-06e2613fe447/tf_provenance.jsonl",
+          "average_cpu_one_core_percent": 7.2734840055172665,
+          "threads_max": 16,
+          "observed_wall_s": 52.382049608
+        },
+        {
+          "pid": 1991,
+          "command": "/opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args",
+          "average_cpu_one_core_percent": 7.245571912101312,
+          "threads_max": 16,
+          "observed_wall_s": 53.549948121
+        },
+        {
+          "pid": 1993,
+          "command": "/opt/ros/jazzy/lib/ros_gz_sim/create -file",
+          "average_cpu_one_core_percent": 6.189234313032626,
+          "threads_max": 21,
+          "observed_wall_s": 1.130996121
+        },
+        {
+          "pid": 1896,
+          "command": "/usr/bin/python3 /opt/ros/jazzy/bin/ros2",
+          "average_cpu_one_core_percent": 2.602388135957996,
+          "threads_max": 3,
+          "observed_wall_s": 55.718052967
+        }
+      ],
+      "metrics_sha256": "77811deeba891a079150194487fb79b11d7e9da1a133a9ea11773449244de1a0"
+    }
+  ],
+  "method_sha256": "91ac05a3bd7c86484a3c7b7f429191b2224b46c951cb613d60ac7a785d42d93f"
+}

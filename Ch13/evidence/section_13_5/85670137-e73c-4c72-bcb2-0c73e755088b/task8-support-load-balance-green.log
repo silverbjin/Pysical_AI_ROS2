@@ -1,0 +1,22 @@
+F
+=================================== FAILURES ===================================
+______ test_explicit_force_profile_does_not_stop_at_first_geometric_inset ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_explicit_force_profile_does_not_stop_at_first_geometric_inset(nav_robot_model):
+        value,fractions,margin=planned(nav_robot_model,'stance_admittance')
+        assert margin>=.025-1e-12
+        # Independent vertical force and moment equilibrium: the old nearest
+        # inset puts about half the load on the already saturated FL leg. A
+        # collision-clear candidate in this fixed fixture reduces the peak <43%.
+>       assert max(fractions)<.43, fractions
+E       AssertionError: array([0.08434988, 0.49846308, 0.41718703])
+E       assert 0.4984630847587816 < 0.43
+E        +  where 0.4984630847587816 = max(array([0.08434988, 0.49846308, 0.41718703]))
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support_load_balance_plan.py:52: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support_load_balance_plan.py::test_explicit_force_profile_does_not_stop_at_first_geometric_inset
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 28.28s

@@ -1,0 +1,1 @@
+첫 runner-cost 비교의 with_command_and_poll은 실제 runner와 달리 default_limits()로 YAML을 매 poll 다시 읽었다. 69% CPU 증가를 실제 G2 비용이나 movement_snapshot의 근거로 사용하지 않는다. 원본 result/helper를 보존하며 수정 helper는 limits를 한 번 읽고 별도 UUID로 재실행한다.

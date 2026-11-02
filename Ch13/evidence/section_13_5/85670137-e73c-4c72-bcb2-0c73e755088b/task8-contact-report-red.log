@@ -1,0 +1,71 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_____ test_contact_calibration_is_one_inplace_lift_not_a_crawl_permission ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_contact_calibration_is_one_inplace_lift_not_a_crawl_permission(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        initial = {name: point.copy() for name, point in value.anchors.items()}
+>       assert hasattr(value, 'request_contact_calibration'), 'owned G1 calibration primitive missing'
+E       AssertionError: owned G1 calibration primitive missing
+E       assert False
+E        +  where False = hasattr(<integrated_robot_navigation.gait.CrawlMachine object at 0x711ac5535df0>, 'request_contact_calibration')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:236: AssertionError
+__________ test_contact_calibration_cannot_accept_navigation_velocity __________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_contact_calibration_cannot_accept_navigation_velocity(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+>       assert hasattr(value, 'request_contact_calibration'), 'owned G1 calibration primitive missing'
+E       AssertionError: owned G1 calibration primitive missing
+E       assert False
+E        +  where False = hasattr(<integrated_robot_navigation.gait.CrawlMachine object at 0x711ac9be0fb0>, 'request_contact_calibration')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:261: AssertionError
+__ test_inplace_calibration_requires_validation_mode_and_measured_carry[True] __
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x711abfbf9580>
+
+    @pytest.mark.parametrize('crawl_rig', [True, False], indirect=True)
+    def test_inplace_calibration_requires_validation_mode_and_measured_carry(crawl_rig):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(1.15)
+        assert rig.crawl_states[-1].stopped
+        client = rig.node.create_client(Trigger, '/crawl_controller/calibrate_contact')
+>       assert client.wait_for_service(timeout_sec=1.)
+E       assert False
+E        +  where False = wait_for_service(timeout_sec=1.0)
+E        +    where wait_for_service = <rclpy.client.Client object at 0x711abfb9a390>.wait_for_service
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_calibration_ros.py:17: AssertionError
+_ test_inplace_calibration_requires_validation_mode_and_measured_carry[False] __
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x711ac4ca2c90>
+
+    @pytest.mark.parametrize('crawl_rig', [True, False], indirect=True)
+    def test_inplace_calibration_requires_validation_mode_and_measured_carry(crawl_rig):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(1.15)
+        assert rig.crawl_states[-1].stopped
+        client = rig.node.create_client(Trigger, '/crawl_controller/calibrate_contact')
+>       assert client.wait_for_service(timeout_sec=1.)
+E       assert False
+E        +  where False = wait_for_service(timeout_sec=1.0)
+E        +    where wait_for_service = <rclpy.client.Client object at 0x711abfb92780>.wait_for_service
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_calibration_ros.py:17: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_contact_calibration_is_one_inplace_lift_not_a_crawl_permission
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_contact_calibration_cannot_accept_navigation_velocity
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_calibration_ros.py::test_inplace_calibration_requires_validation_mode_and_measured_carry[True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_calibration_ros.py::test_inplace_calibration_requires_validation_mode_and_measured_carry[False]
+4 failed, 24 deselected in 19.09s

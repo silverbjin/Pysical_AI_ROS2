@@ -1,0 +1,95 @@
+.....F
+=================================== FAILURES ===================================
+______ test_same_cycle_parent_rejects_a_selected_foot_move_in_maintenance ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_same_cycle_parent_rejects_a_selected_foot_move_in_maintenance(nav_robot_model):
+        m,b,q,p,points,f=ready_xyz(nav_robot_model);m.load_result_timing='same_cycle'
+        peer=m._load_transfer;before=deepcopy(m._targets)
+        def transact(args,context):
+            return {'delta':{n:[0.,0.,1e-5] if n==f else [0.,0.,0.] for n in m.model.feet},
+                'context':context,'received_wall_ns':m._last_wall,'numeric_input':args,'job_id':1}
+        peer.transact=transact
+        with pytest.raises(ValueError,match='maintenance.*selected'):
+>           m._transfer_stance_load(b,q,p,points,f,.02,maintenance=True)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_maintenance.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:762: in _transfer_stance_load
+    return self._transfer_spatial_async(bundle,joints,pose,points,foot,dt,vectors,maintenance=maintenance)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.gait.CrawlMachine object at 0x71b5e4a85ac0>
+bundle = SensorBundle(joints=Sample(stamp_ns=1020000000, received_ns=10020000000, epoch=0, sequence=1020000000, frame_id='base_...={'ready': True, 'generation': 0, 'model_sha256': '845e57a97d2dd10a6963304d4f4baf628de208993fedf46c5239c39f839e4032'}))
+joints = {'arm_joint_1': 0.0, 'arm_joint_2': 1.2, 'arm_joint_3': -2.0, 'arm_joint_4': 0.0, ...}
+pose = array([[1.  , 0.  , 0.  , 0.  ],
+       [0.  , 1.  , 0.  , 0.  ],
+       [0.  , 0.  , 1.  , 0.46],
+       [0.  , 0.  , 0.  , 1.  ]])
+points = {'fl_foot': (0.25, 0.18, 0.0), 'fr_foot': (0.25, -0.18, 0.0), 'rl_foot': (-0.25, 0.18, 0.0), 'rr_foot': (-0.25, -0.18, 0.0)}
+foot = 'rr_foot', dt = 0.02
+vectors = array([[-0.        , -0.        , 37.30277025],
+       [ 3.46814468,  0.        , 44.26485853],
+       [ 0.        , -3.21480509, 37.30277025],
+       [-3.46814468,  3.21480509, 30.34068197]])
+
+    def _transfer_spatial_async(self,bundle,joints,pose,points,foot,dt,vectors,*,maintenance=False):
+        worker=self._load_transfer;context=self._load_context(bundle,foot,dt)
+        try:
+            same_cycle=self.load_result_timing=='same_cycle'
+            collected_before_model=self._load_collected_reply is not None
+            if same_cycle:
+                context['maintenance']=maintenance
+                if collected_before_model:raise ValueError('same-cycle unexpected stored result')
+                reply=worker.transact(self._spatial_arguments(joints,pose,points,foot,dt,vectors,maintenance=maintenance),context)
+            else:
+                reply=self._load_collected_reply;self._load_collected_reply=None
+                if reply is None:reply=worker.poll(now_wall_ns=self._last_wall)
+            if reply is None:
+                if not worker.snapshot()['pending'] and context['capture']!=self._load_submitted_capture:
+                    worker.submit(self._spatial_arguments(joints,pose,points,foot,dt,vectors),context)
+                    self._load_submitted_capture=context['capture']
+                    outcome='submitted'
+                else:outcome=('waiting_for_numeric_result' if worker.snapshot()['pending'] else 'awaiting_new_capture')
+                self.load_transfer_observation.update(outcome=outcome,worker=worker.snapshot(),
+                    numeric_input=deepcopy(getattr(worker,'last_input',None)),
+                    original_snapshot=deepcopy(getattr(worker,'last_context',None)))
+                return True
+            original=reply['context']
+            application_wall_ns=max(self._last_wall,reply['received_wall_ns'],
+                time.monotonic_ns() if collected_before_model or same_cycle else 0)
+            keys=('generation','foot','reference')+(('geometry',) if 'geometry' in context else ())
+            if same_cycle:keys+=('maintenance',)
+            if any(original[key]!=context[key] for key in keys):
+                raise ValueError('transition optimization result ownership/reference mismatch')
+            for stamp,receipt,epoch in original['samples'].values():
+                if (epoch!=self.epoch or not 0<=self._last_ros-stamp<=200_000_000
+                        or not 0<=application_wall_ns-receipt<=200_000_000):
+>                   raise ValueError('transition optimization stale original snapshot')
+E                   ValueError: transition optimization stale original snapshot
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:883: ValueError
+
+During handling of the above exception, another exception occurred:
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_same_cycle_parent_rejects_a_selected_foot_move_in_maintenance(nav_robot_model):
+        m,b,q,p,points,f=ready_xyz(nav_robot_model);m.load_result_timing='same_cycle'
+        peer=m._load_transfer;before=deepcopy(m._targets)
+        def transact(args,context):
+            return {'delta':{n:[0.,0.,1e-5] if n==f else [0.,0.,0.] for n in m.model.feet},
+                'context':context,'received_wall_ns':m._last_wall,'numeric_input':args,'job_id':1}
+        peer.transact=transact
+>       with pytest.raises(ValueError,match='maintenance.*selected'):
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'maintenance.*selected'
+E        Input: 'transition optimization stale original snapshot'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_maintenance.py:77: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_maintenance.py::test_same_cycle_parent_rejects_a_selected_foot_move_in_maintenance
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 5 passed in 17.97s

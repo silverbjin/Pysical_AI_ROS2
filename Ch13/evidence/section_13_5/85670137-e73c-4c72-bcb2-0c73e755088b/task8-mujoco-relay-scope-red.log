@@ -1,0 +1,38 @@
+F
+=================================== FAILURES ===================================
+________ test_mujoco_relay_requires_exact_g1_mode_and_extra_clock_proof ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_mujoco_relay_requires_exa0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_mujoco_relay_requires_exact_g1_mode_and_extra_clock_proof(tmp_path, nav_robot_model):
+        scene = dict(engine='mujoco', native_physics_sha256='a'*64)
+>       expected = g2_execution_profile(scene, 'relay100')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_mujoco_relay_validation_scope.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/execution_contract.py:20: in g2_execution_profile
+    return normalize_execution_profile(dict(control_clock=control_clock,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = {'control_clock': 'relay100', 'dart_contact': 'native', 'native_physics_sha256': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'position_reference_mode': 'native'}
+engine = 'mujoco'
+
+    def normalize_execution_profile(value,engine):
+        fields={'control_clock','position_reference_mode','dart_contact','native_physics_sha256'}
+        if engine not in ('mujoco','gazebo') or not isinstance(value,dict) or set(value)!=fields:
+            raise ValueError('complete engine execution profile required')
+        if not isinstance(value['native_physics_sha256'],str) or not re.fullmatch('[0-9a-f]{64}',value['native_physics_sha256']):
+            raise ValueError('bound native physics SHA256 required')
+        modes=(value['control_clock'],value['position_reference_mode'],value['dart_contact'])
+        if modes!=('native','native','native') and not (
+                engine=='gazebo' and modes==('relay100','g1_ramp20ms','allowance50um')):
+>           raise ValueError('unapproved or incomplete G2 execution profile')
+E           ValueError: unapproved or incomplete G2 execution profile
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/execution_contract.py:15: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_mujoco_relay_validation_scope.py::test_mujoco_relay_requires_exact_g1_mode_and_extra_clock_proof
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 13.63s

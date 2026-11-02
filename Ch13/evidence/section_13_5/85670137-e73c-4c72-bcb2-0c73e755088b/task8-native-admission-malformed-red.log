@@ -1,0 +1,77 @@
+F
+=================================== FAILURES ===================================
+_ test_incomplete_mismatched_or_g1_experiment_evidence_cannot_enable_native_crawl[malformed_action] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-46/test_incomplete_mismatched_or_0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+bad = 'malformed_action'
+
+    @pytest.mark.parametrize('bad',['missing_required','false_extra','duplicate','traversal','changed_bytes',
+        'missing_artifact','forced','no_terminal','experiment','wrong_binding','malformed_action'])
+    def test_incomplete_mismatched_or_g1_experiment_evidence_cannot_enable_native_crawl(tmp_path,nav_robot_model,bad):
+        profile,result=prepared(tmp_path,nav_robot_model)
+        if bad=='missing_required':result['required_checks'].remove('contact_lift')
+        elif bad=='false_extra':
+            result['required_checks'].append('extra_required');result['checks']['extra_required']=False
+        elif bad=='duplicate':result['artifacts'].append(result['artifacts'][0])
+        elif bad=='traversal':result['artifacts'][0]['path']='../frames.json'
+        elif bad=='changed_bytes':(tmp_path/'frames.json').write_text('changed')
+        elif bad=='missing_artifact':result['artifacts']=result['artifacts'][1:]
+        elif bad in ('forced','no_terminal'):
+            name='teardown.json' if bad=='forced' else 'action_results.json'
+            file=tmp_path/name;data=json.loads(file.read_text())
+            data['forced_cleanup' if bad=='forced' else 'result_future_done']=True if bad=='forced' else False
+            file.write_text(json.dumps(data))
+            artifact=next(row for row in result['artifacts'] if row['path']==name)
+            artifact.update(size=file.stat().st_size,sha256=sha(file))
+        elif bad=='experiment':result['execution_mode']['control_clock']='relay100'
+        elif bad=='malformed_action':
+            file=tmp_path/'action_results.json';file.write_text('[]')
+            artifact=next(row for row in result['artifacts'] if row['path']==file.name)
+            artifact.update(size=file.stat().st_size,sha256=sha(file))
+        else:result['config_sha256']='0'*64
+>       assert validate(tmp_path,nav_robot_model,profile,result)[0] is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_profile_admission.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_profile_admission.py:43: in validate
+    return api.validate_profile(candidate,model,'mujoco')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/carry_profile.py:211: in validate_profile
+    if not _native_artifacts(evidence,path.parent,profile.model_sha256):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+evidence = {'artifacts': [{'path': 'frames.json', 'sha256': '1ff1aae32e584ca4e12b91b54c278c05d4bafc3c3a48bcdd3d57fdd2dc4d7049', '...ue, ...}, 'config_sha256': '8c954ee889c4209e68dad0a7fb6d477136f1114c8a2a3312f714443655a87baa', 'engine': 'mujoco', ...}
+root = PosixPath('/tmp/pytest-of-jinho/pytest-46/test_incomplete_mismatched_or_0')
+model_sha256 = 'b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc'
+
+    def _native_artifacts(evidence,root,model_sha256):
+        """Read the real EvidenceRun list; never fabricate a role-based PASS file."""
+        if not isinstance(evidence.get('artifacts'),list):return False
+        verified={};resolved=set()
+        for artifact in evidence['artifacts']:
+            relative=Path(artifact['path'])
+            if relative.is_absolute() or '..' in relative.parts:return False
+            target=(root/relative).resolve(strict=True)
+            if not target.is_relative_to(root) or target in resolved:return False
+            if (type(artifact['size']) is not int or artifact['size']<=0
+                    or target.stat().st_size!=artifact['size'] or _file_digest(target)!=artifact['sha256']):
+                return False
+            resolved.add(target);verified[str(relative)]=target
+        required={'frames.json','action_results.json','source_manifest.json','install_manifest.json','teardown.json'}
+        if not required.issubset(verified):return False
+        action=json.loads(verified['action_results.json'].read_text())
+>       if not (action.get('terminal') is True and action.get('result_future_done') is True
+                ^^^^^^^^^^
+                and action.get('result_status')==4 and action.get('result_error_code')==0
+                and action.get('pending_uuid','missing') is None
+                and action.get('model_sha256')==model_sha256 and not action.get('fault')):
+E               AttributeError: 'list' object has no attribute 'get'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/carry_profile.py:53: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_profile_admission.py::test_incomplete_mismatched_or_g1_experiment_evidence_cannot_enable_native_crawl[malformed_action]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 11 deselected in 7.99s

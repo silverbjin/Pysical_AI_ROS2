@@ -1,0 +1,31 @@
+F
+=================================== FAILURES ===================================
+_ test_waiting_credit_keeps_three_stance_margin_even_after_early_foot_contact __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_waiting_credit_keeps_three_stance_margin_even_after_early_foot_contact(nav_robot_model):
+        value,plant=swinging(nav_robot_model)
+        ros,wall=value._last_ros+20_000_000,value._last_wall+20_000_000
+        bundle=sample_at(plant.state,ros,wall)
+        _,_,_,_,_,com=value._measure(bundle,ros,wall)
+        points=tuple((com[0]+x,com[1]+y,0.) for x,y in ((-.2,-.1),(.2,-.1),(.2,.1),(-.2,.1)))
+        data={**bundle.contacts.data,'points':points,'forces':(30.,)*4,'touching':(True,)*4}
+        bundle=replace(bundle,contacts=replace(bundle.contacts,data=data))
+        _,_,_,loads,actual_points,actual_com=value._measure(bundle,ros,wall)
+        assert value._margin(actual_com,loads,actual_points)>.09
+        assert value._margin(actual_com,loads,actual_points,value.swing_foot)<.01
+        result=value.advance(bundle,(.01,0.,0.),ros,wall,reference_permitted=False)
+>       assert result.state=='FAULT' and result.reason=='swing support lost', \
+            'application wait bypassed the original three-stance SWING support check'
+E       AssertionError: application wait bypassed the original three-stance SWING support check
+E       assert ('CRAWL' == 'FAULT'
+E         
+E         - FAULT
+E         + CRAWL)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py:75: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py::test_waiting_credit_keeps_three_stance_margin_even_after_early_foot_contact
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 12.30s

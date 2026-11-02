@@ -1,0 +1,28 @@
+F
+=================================== FAILURES ===================================
+________ test_body_reference_holds_after_measured_unload_until_landing _________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_body_reference_holds_after_measured_unload_until_landing(nav_robot_model):
+        plant=IdealFeedback(nav_robot_model);value=machine(nav_robot_model,plant)
+        held=None;checks=0
+        for _ in range(2000):
+            result=value.advance(plant.state,(.007,0.,.02),plant.ros,plant.wall)
+            assert result.state!='FAULT',result.reason
+            if result.phase=='SWING':
+                if held is None:held=value.reference_body.copy()
+                else:
+>                   assert np.allclose(value.reference_body,held,atol=1e-12), \
+                        'body moved after measured settle/unload while a foot was swinging'
+E                   AssertionError: body moved after measured settle/unload while a foot was swinging
+E                   assert False
+E                    +  where False = <function allclose at 0x7224c7aae430>(array([[ 0.99993133, -0.01171872,  0.        , -0.04469885],\n       [ 0.01171872,  0.99993133,  0.        , -0.0274268...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]), array([[ 0.99993134, -0.01171852,  0.        , -0.04469892],\n       [ 0.01171852,  0.99993134,  0.        , -0.0274268...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]), atol=1e-12)
+E                    +    where <function allclose at 0x7224c7aae430> = np.allclose
+E                    +    and   array([[ 0.99993133, -0.01171872,  0.        , -0.04469885],\n       [ 0.01171872,  0.99993133,  0.        , -0.0274268...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]) = <integrated_robot_navigation.gait.CrawlMachine object at 0x72249c454110>.reference_body
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_intermittent_body.py:17: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_intermittent_body.py::test_body_reference_holds_after_measured_unload_until_landing
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.96s

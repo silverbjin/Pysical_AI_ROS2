@@ -1,0 +1,32 @@
+F
+=================================== FAILURES ===================================
+________ test_early_contact_does_not_latch_incomplete_planned_endpoint _________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_early_contact_does_not_latch_incomplete_planned_endpoint(nav_robot_model):
+        plant, value, _ = descending_swing(nav_robot_model)
+        foot = 'fl_foot'
+        goal = value._swing_goal.copy()
+        prior = value._targets[foot].copy()
+        for _ in range(600):
+            plant.tick(follow=False)
+            contact(plant, True)
+            result = value.advance(plant.state, (.0001, 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            current = value._targets[foot].copy()
+            assert np.linalg.norm(current-prior)/.02 <= .020000001
+            prior = current
+            if result.phase == 'SETTLE':
+>               assert np.allclose(current, goal, atol=1e-10), \
+                    'contact is not completion: raised/short reference would be inherited by next support shift'
+E               AssertionError: contact is not completion: raised/short reference would be inherited by next support shift
+E               assert False
+E                +  where False = <function allclose at 0x746df2f220b0>(array([0.25067499, 0.18      , 0.03422507]), array([0.2508    , 0.18      , 0.02120872]), atol=1e-10)
+E                +    where <function allclose at 0x746df2f220b0> = np.allclose
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_planned_landing_completion.py:26: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_planned_landing_completion.py::test_early_contact_does_not_latch_incomplete_planned_endpoint
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.27s

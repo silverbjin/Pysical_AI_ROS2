@@ -1,0 +1,76 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+__ test_g1_opt_in_changes_only_leg_reference_parameters_and_records_its_mode ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-8/test_g1_opt_in_changes_only_le0')
+
+    def test_g1_opt_in_changes_only_leg_reference_parameters_and_records_its_mode(tmp_path):
+        original=materialize_scene('gazebo','g1',tmp_path/'original')
+>       changed=materialize_scene('gazebo','g1',tmp_path/'ramped',g1_reference_ramp=True)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: materialize_scene() got an unexpected keyword argument 'g1_reference_ramp'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py:9: TypeError
+_ test_invalid_reference_experiment_is_rejected_before_creating_a_scene[mujoco-g1-True] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-8/test_invalid_reference_experim0')
+engine = 'mujoco', scenario = 'g1', enabled = True
+
+    @pytest.mark.parametrize('engine,scenario,enabled',[
+        ('mujoco','g1',True),('gazebo','g2',True),('gazebo','front',True),('gazebo','g1','true')])
+    def test_invalid_reference_experiment_is_rejected_before_creating_a_scene(tmp_path,engine,scenario,enabled):
+        output=tmp_path/'invalid'
+        with pytest.raises(ValueError,match='G1|reference'):
+>           materialize_scene(engine,scenario,output,g1_reference_ramp=enabled)
+E           TypeError: materialize_scene() got an unexpected keyword argument 'g1_reference_ramp'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py:38: TypeError
+_ test_invalid_reference_experiment_is_rejected_before_creating_a_scene[gazebo-g2-True] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-8/test_invalid_reference_experim1')
+engine = 'gazebo', scenario = 'g2', enabled = True
+
+    @pytest.mark.parametrize('engine,scenario,enabled',[
+        ('mujoco','g1',True),('gazebo','g2',True),('gazebo','front',True),('gazebo','g1','true')])
+    def test_invalid_reference_experiment_is_rejected_before_creating_a_scene(tmp_path,engine,scenario,enabled):
+        output=tmp_path/'invalid'
+        with pytest.raises(ValueError,match='G1|reference'):
+>           materialize_scene(engine,scenario,output,g1_reference_ramp=enabled)
+E           TypeError: materialize_scene() got an unexpected keyword argument 'g1_reference_ramp'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py:38: TypeError
+_ test_invalid_reference_experiment_is_rejected_before_creating_a_scene[gazebo-front-True] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-8/test_invalid_reference_experim2')
+engine = 'gazebo', scenario = 'front', enabled = True
+
+    @pytest.mark.parametrize('engine,scenario,enabled',[
+        ('mujoco','g1',True),('gazebo','g2',True),('gazebo','front',True),('gazebo','g1','true')])
+    def test_invalid_reference_experiment_is_rejected_before_creating_a_scene(tmp_path,engine,scenario,enabled):
+        output=tmp_path/'invalid'
+        with pytest.raises(ValueError,match='G1|reference'):
+>           materialize_scene(engine,scenario,output,g1_reference_ramp=enabled)
+E           TypeError: materialize_scene() got an unexpected keyword argument 'g1_reference_ramp'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py:38: TypeError
+_ test_invalid_reference_experiment_is_rejected_before_creating_a_scene[gazebo-g1-true] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-8/test_invalid_reference_experim3')
+engine = 'gazebo', scenario = 'g1', enabled = 'true'
+
+    @pytest.mark.parametrize('engine,scenario,enabled',[
+        ('mujoco','g1',True),('gazebo','g2',True),('gazebo','front',True),('gazebo','g1','true')])
+    def test_invalid_reference_experiment_is_rejected_before_creating_a_scene(tmp_path,engine,scenario,enabled):
+        output=tmp_path/'invalid'
+        with pytest.raises(ValueError,match='G1|reference'):
+>           materialize_scene(engine,scenario,output,g1_reference_ramp=enabled)
+E           TypeError: materialize_scene() got an unexpected keyword argument 'g1_reference_ramp'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py:38: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py::test_g1_opt_in_changes_only_leg_reference_parameters_and_records_its_mode
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py::test_invalid_reference_experiment_is_rejected_before_creating_a_scene[mujoco-g1-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py::test_invalid_reference_experiment_is_rejected_before_creating_a_scene[gazebo-g2-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py::test_invalid_reference_experiment_is_rejected_before_creating_a_scene[gazebo-front-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_reference_scene.py::test_invalid_reference_experiment_is_rejected_before_creating_a_scene[gazebo-g1-true]
+5 failed in 8.17s

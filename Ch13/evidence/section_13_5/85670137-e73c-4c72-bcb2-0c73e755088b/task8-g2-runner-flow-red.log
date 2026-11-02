@@ -1,0 +1,26 @@
+F
+=================================== FAILURES ===================================
+____ test_missing_g1_records_failed_g2_before_any_engine_or_command_source _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-44/test_missing_g1_records_failed0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x753b4bdfc380>
+
+    def test_missing_g1_records_failed_g2_before_any_engine_or_command_source(tmp_path,monkeypatch):
+        output=tmp_path/'fresh'
+        def forbidden(*args,**kwargs):raise AssertionError('G2 started without G1')
+        monkeypatch.setattr(runner.subprocess,'Popen',forbidden)
+        args=SimpleNamespace(engine='mujoco',scenario='crawl-cycle',scene_dir=str(tmp_path/'missing'),
+            profile=str(tmp_path/'missing.json'),output_dir=str(output),control_clock_mode='native',
+            dart_contact_mode='native',profile_node=None,g1_result=None)
+        with pytest.raises((RuntimeError,ValueError)):runner.run(args)
+>       assert (output/'result.json').is_file(),'G2 refusal did not preserve a result'
+E       AssertionError: G2 refusal did not preserve a result
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = (PosixPath('/tmp/pytest-of-jinho/pytest-44/test_missing_g1_records_failed0/fresh') / 'result.json').is_file
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_runner_flow.py:20: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_runner_flow.py::test_missing_g1_records_failed_g2_before_any_engine_or_command_source
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 6.12s

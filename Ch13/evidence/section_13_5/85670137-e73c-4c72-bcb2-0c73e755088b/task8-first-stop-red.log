@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_guard_age_stop_records_selected_header_receipt_and_clock_not_kernel_fault _
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x79325c29cc20>
+
+    def test_guard_age_stop_records_selected_header_receipt_and_clock_not_kernel_fault(crawl_rig):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(.08)
+        rig.gate_delay_ns = 250_000_000
+        rig.pump(.12)
+        assert rig.crawl_states[-1].fault_reason == 'guard:ros_age'
+        client = rig.node.create_client(Trigger, '/crawl_controller/report')
+        assert client.wait_for_service(timeout_sec=1.)
+    
+        def report():
+            future = client.call_async(Trigger.Request())
+            deadline = time.monotonic()+1.
+            while not future.done() and time.monotonic() < deadline:
+                rig.pump(.02)
+            assert future.done() and future.result().success
+            return json.loads(future.result().message)
+    
+        result = report()
+>       snapshot = result['first_stop']
+                   ^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'first_stop'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py:73: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py::test_guard_age_stop_records_selected_header_receipt_and_clock_not_kernel_fault
+1 failed, 1 deselected in 16.56s

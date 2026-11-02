@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_shift_unloads_the_selected_foot_before_swing _______________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_shift_unloads_the_selected_foot_before_swing(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        value.request_contact_calibration()
+        for _ in range(400):
+            result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            if result.phase == 'SWING':
+                index = nav_robot_model.feet.index(result.swing_foot)
+>               assert plant.state.contacts.data['forces'][index] < 2., 'loaded foot was jerked into swing'
+E               AssertionError: loaded foot was jerked into swing
+E               assert 30.0 < 2.0
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:322: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_shift_unloads_the_selected_foot_before_swing
+1 failed, 29 deselected in 10.71s

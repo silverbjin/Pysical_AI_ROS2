@@ -1,0 +1,252 @@
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+______________ test_raw_carry_hold_is_independent_of_ready_flag[] ______________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = ''
+
+    @pytest.mark.parametrize('fault', ['', 'arm_error', 'arm_speed', 'gripper_error',
+                                       'gripper_speed', 'age', 'ready_only', 'duplicates'])
+    def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
+        for row in observed['frames']:
+            sample = row['samples']['joints']
+            data = sample['data']
+            if fault == 'arm_error':
+                data['position']['arm_joint_1'] = .030001
+            elif fault == 'arm_speed':
+                data['velocity']['arm_joint_1'] = .020001
+            elif fault == 'gripper_error':
+                data['position']['gripper_left_joint'] = .017001
+            elif fault == 'gripper_speed':
+                data['velocity']['gripper_left_joint'] = .005001
+            elif fault == 'age':
+                sample['received_ns'] -= 200_000_001
+            elif fault == 'ready_only':
+                data['position']['arm_joint_2'] = .9  # READY remains true throughout
+            elif fault == 'duplicates':
+                sample['stamp_ns'] = 1_000_000_000
+>       result = api().assess_carry_hold(observed, (0., 1.2, -2., 0., .8, 0.))
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_hold'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:146: AttributeError
+_________ test_raw_carry_hold_is_independent_of_ready_flag[arm_error] __________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'arm_error'
+
+    @pytest.mark.parametrize('fault', ['', 'arm_error', 'arm_speed', 'gripper_error',
+                                       'gripper_speed', 'age', 'ready_only', 'duplicates'])
+    def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
+        for row in observed['frames']:
+            sample = row['samples']['joints']
+            data = sample['data']
+            if fault == 'arm_error':
+                data['position']['arm_joint_1'] = .030001
+            elif fault == 'arm_speed':
+                data['velocity']['arm_joint_1'] = .020001
+            elif fault == 'gripper_error':
+                data['position']['gripper_left_joint'] = .017001
+            elif fault == 'gripper_speed':
+                data['velocity']['gripper_left_joint'] = .005001
+            elif fault == 'age':
+                sample['received_ns'] -= 200_000_001
+            elif fault == 'ready_only':
+                data['position']['arm_joint_2'] = .9  # READY remains true throughout
+            elif fault == 'duplicates':
+                sample['stamp_ns'] = 1_000_000_000
+>       result = api().assess_carry_hold(observed, (0., 1.2, -2., 0., .8, 0.))
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_hold'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:146: AttributeError
+_________ test_raw_carry_hold_is_independent_of_ready_flag[arm_speed] __________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'arm_speed'
+
+    @pytest.mark.parametrize('fault', ['', 'arm_error', 'arm_speed', 'gripper_error',
+                                       'gripper_speed', 'age', 'ready_only', 'duplicates'])
+    def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
+        for row in observed['frames']:
+            sample = row['samples']['joints']
+            data = sample['data']
+            if fault == 'arm_error':
+                data['position']['arm_joint_1'] = .030001
+            elif fault == 'arm_speed':
+                data['velocity']['arm_joint_1'] = .020001
+            elif fault == 'gripper_error':
+                data['position']['gripper_left_joint'] = .017001
+            elif fault == 'gripper_speed':
+                data['velocity']['gripper_left_joint'] = .005001
+            elif fault == 'age':
+                sample['received_ns'] -= 200_000_001
+            elif fault == 'ready_only':
+                data['position']['arm_joint_2'] = .9  # READY remains true throughout
+            elif fault == 'duplicates':
+                sample['stamp_ns'] = 1_000_000_000
+>       result = api().assess_carry_hold(observed, (0., 1.2, -2., 0., .8, 0.))
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_hold'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:146: AttributeError
+_______ test_raw_carry_hold_is_independent_of_ready_flag[gripper_error] ________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'gripper_error'
+
+    @pytest.mark.parametrize('fault', ['', 'arm_error', 'arm_speed', 'gripper_error',
+                                       'gripper_speed', 'age', 'ready_only', 'duplicates'])
+    def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
+        for row in observed['frames']:
+            sample = row['samples']['joints']
+            data = sample['data']
+            if fault == 'arm_error':
+                data['position']['arm_joint_1'] = .030001
+            elif fault == 'arm_speed':
+                data['velocity']['arm_joint_1'] = .020001
+            elif fault == 'gripper_error':
+                data['position']['gripper_left_joint'] = .017001
+            elif fault == 'gripper_speed':
+                data['velocity']['gripper_left_joint'] = .005001
+            elif fault == 'age':
+                sample['received_ns'] -= 200_000_001
+            elif fault == 'ready_only':
+                data['position']['arm_joint_2'] = .9  # READY remains true throughout
+            elif fault == 'duplicates':
+                sample['stamp_ns'] = 1_000_000_000
+>       result = api().assess_carry_hold(observed, (0., 1.2, -2., 0., .8, 0.))
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_hold'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:146: AttributeError
+_______ test_raw_carry_hold_is_independent_of_ready_flag[gripper_speed] ________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'gripper_speed'
+
+    @pytest.mark.parametrize('fault', ['', 'arm_error', 'arm_speed', 'gripper_error',
+                                       'gripper_speed', 'age', 'ready_only', 'duplicates'])
+    def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
+        for row in observed['frames']:
+            sample = row['samples']['joints']
+            data = sample['data']
+            if fault == 'arm_error':
+                data['position']['arm_joint_1'] = .030001
+            elif fault == 'arm_speed':
+                data['velocity']['arm_joint_1'] = .020001
+            elif fault == 'gripper_error':
+                data['position']['gripper_left_joint'] = .017001
+            elif fault == 'gripper_speed':
+                data['velocity']['gripper_left_joint'] = .005001
+            elif fault == 'age':
+                sample['received_ns'] -= 200_000_001
+            elif fault == 'ready_only':
+                data['position']['arm_joint_2'] = .9  # READY remains true throughout
+            elif fault == 'duplicates':
+                sample['stamp_ns'] = 1_000_000_000
+>       result = api().assess_carry_hold(observed, (0., 1.2, -2., 0., .8, 0.))
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_hold'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:146: AttributeError
+____________ test_raw_carry_hold_is_independent_of_ready_flag[age] _____________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'age'
+
+    @pytest.mark.parametrize('fault', ['', 'arm_error', 'arm_speed', 'gripper_error',
+                                       'gripper_speed', 'age', 'ready_only', 'duplicates'])
+    def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
+        for row in observed['frames']:
+            sample = row['samples']['joints']
+            data = sample['data']
+            if fault == 'arm_error':
+                data['position']['arm_joint_1'] = .030001
+            elif fault == 'arm_speed':
+                data['velocity']['arm_joint_1'] = .020001
+            elif fault == 'gripper_error':
+                data['position']['gripper_left_joint'] = .017001
+            elif fault == 'gripper_speed':
+                data['velocity']['gripper_left_joint'] = .005001
+            elif fault == 'age':
+                sample['received_ns'] -= 200_000_001
+            elif fault == 'ready_only':
+                data['position']['arm_joint_2'] = .9  # READY remains true throughout
+            elif fault == 'duplicates':
+                sample['stamp_ns'] = 1_000_000_000
+>       result = api().assess_carry_hold(observed, (0., 1.2, -2., 0., .8, 0.))
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_hold'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:146: AttributeError
+_________ test_raw_carry_hold_is_independent_of_ready_flag[ready_only] _________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'ready_only'
+
+    @pytest.mark.parametrize('fault', ['', 'arm_error', 'arm_speed', 'gripper_error',
+                                       'gripper_speed', 'age', 'ready_only', 'duplicates'])
+    def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
+        for row in observed['frames']:
+            sample = row['samples']['joints']
+            data = sample['data']
+            if fault == 'arm_error':
+                data['position']['arm_joint_1'] = .030001
+            elif fault == 'arm_speed':
+                data['velocity']['arm_joint_1'] = .020001
+            elif fault == 'gripper_error':
+                data['position']['gripper_left_joint'] = .017001
+            elif fault == 'gripper_speed':
+                data['velocity']['gripper_left_joint'] = .005001
+            elif fault == 'age':
+                sample['received_ns'] -= 200_000_001
+            elif fault == 'ready_only':
+                data['position']['arm_joint_2'] = .9  # READY remains true throughout
+            elif fault == 'duplicates':
+                sample['stamp_ns'] = 1_000_000_000
+>       result = api().assess_carry_hold(observed, (0., 1.2, -2., 0., .8, 0.))
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_hold'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:146: AttributeError
+_________ test_raw_carry_hold_is_independent_of_ready_flag[duplicates] _________
+
+observed = {'frames': [{'crawl': {'phase': '', 'state': 'STAND', 'stopped': True, 'swing_foot': ''}, 'ros_ns': 1000000000, 'sampl...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>'}
+fault = 'duplicates'
+
+    @pytest.mark.parametrize('fault', ['', 'arm_error', 'arm_speed', 'gripper_error',
+                                       'gripper_speed', 'age', 'ready_only', 'duplicates'])
+    def test_raw_carry_hold_is_independent_of_ready_flag(observed, fault):
+        for row in observed['frames']:
+            sample = row['samples']['joints']
+            data = sample['data']
+            if fault == 'arm_error':
+                data['position']['arm_joint_1'] = .030001
+            elif fault == 'arm_speed':
+                data['velocity']['arm_joint_1'] = .020001
+            elif fault == 'gripper_error':
+                data['position']['gripper_left_joint'] = .017001
+            elif fault == 'gripper_speed':
+                data['velocity']['gripper_left_joint'] = .005001
+            elif fault == 'age':
+                sample['received_ns'] -= 200_000_001
+            elif fault == 'ready_only':
+                data['position']['arm_joint_2'] = .9  # READY remains true throughout
+            elif fault == 'duplicates':
+                sample['stamp_ns'] = 1_000_000_000
+>       result = api().assess_carry_hold(observed, (0., 1.2, -2., 0., .8, 0.))
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_carry_hold'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py:146: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_raw_carry_hold_is_independent_of_ready_flag[]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_raw_carry_hold_is_independent_of_ready_flag[arm_error]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_raw_carry_hold_is_independent_of_ready_flag[arm_speed]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_raw_carry_hold_is_independent_of_ready_flag[gripper_error]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_raw_carry_hold_is_independent_of_ready_flag[gripper_speed]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_raw_carry_hold_is_independent_of_ready_flag[age]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_raw_carry_hold_is_independent_of_ready_flag[ready_only]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_sensor_semantics.py::test_raw_carry_hold_is_independent_of_ready_flag[duplicates]
+8 failed, 12 deselected in 8.71s

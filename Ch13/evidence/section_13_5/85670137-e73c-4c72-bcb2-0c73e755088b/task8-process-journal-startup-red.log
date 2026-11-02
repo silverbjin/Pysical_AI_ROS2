@@ -1,0 +1,28 @@
+....F
+=================================== FAILURES ===================================
+___ test_ros_receipt_does_not_encode_json_in_the_parent_and_worker_is_joined ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_ros_receipt_does_not_enco0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b26e94c8230>
+
+    def test_ros_receipt_does_not_encode_json_in_the_parent_and_worker_is_joined(tmp_path,monkeypatch):
+        import inspect
+        import rclpy
+        from rclpy.context import Context
+        from rclpy.node import Node
+        from rclpy.qos import qos_profile_sensor_data
+        from integrated_robot_interfaces.msg import FootContacts
+        import probe_navigation_13_5 as probe_api
+>       assert 'journal_process' in inspect.signature(probe_api.NavigationProbe).parameters,'native observer process encoding missing'
+E       AssertionError: native observer process encoding missing
+E       assert 'journal_process' in mappingproxy(OrderedDict({'directory': <Parameter "directory">, 'engine': <Parameter "engine='mujoco'">, 'bounded_history': <Parameter "bounded_history=False">, 'kwargs': <Parameter "**kwargs">}))
+E        +  where mappingproxy(OrderedDict({'directory': <Parameter "directory">, 'engine': <Parameter "engine='mujoco'">, 'bounded_history': <Parameter "bounded_history=False">, 'kwargs': <Parameter "**kwargs">})) = <Signature (directory, engine='mujoco', *, bounded_history=False, **kwargs)>.parameters
+E        +    where <Signature (directory, engine='mujoco', *, bounded_history=False, **kwargs)> = <function signature at 0x7b2716716840>(<class 'probe_navigation_13_5.NavigationProbe'>)
+E        +      where <function signature at 0x7b2716716840> = <module 'inspect' from '/usr/lib/python3.12/inspect.py'>.signature
+E        +      and   <class 'probe_navigation_13_5.NavigationProbe'> = <module 'probe_navigation_13_5' from '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py'>.NavigationProbe
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_process_journal.py:83: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_process_journal.py::test_ros_receipt_does_not_encode_json_in_the_parent_and_worker_is_joined
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 passed in 22.08s

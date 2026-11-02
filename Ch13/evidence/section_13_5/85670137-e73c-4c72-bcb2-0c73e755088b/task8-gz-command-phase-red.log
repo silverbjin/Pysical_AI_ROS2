@@ -1,0 +1,38 @@
+[2.718s] WARNING:colcon.colcon_core.package_selection:Some selected packages are already built in one or more underlay workspaces:
+	'integrated_robot_navigation_sensors' is in: /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/install13_5_85670137-e73c-4c72-bcb2-0c73e755088b/integrated_robot_navigation_sensors
+If a package in a merged underlay workspace is overridden and it installs headers, then all packages in the overlay must sort their include directories by workspace order. Failure to do so may result in build failures or undefined behavior at run time.
+If the overridden package is used by another package in any underlay, then the overriding package in the overlay must be API and ABI compatible or undefined behavior at run time may occur.
+
+If you understand the risks and want to override a package anyways, add the following to the command line:
+	--allow-overriding integrated_robot_navigation_sensors
+
+This may be promoted to an error in a future release of colcon-override-check.
+Starting >>> integrated_robot_navigation_sensors
+Finished <<< integrated_robot_navigation_sensors [1min 50s]
+
+Summary: 1 package finished [1min 51s]
+Running main() from /opt/ros/jazzy/src/gtest_vendor/src/gtest_main.cc
+[==========] Running 3 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from GazeboControls
+[ RUN      ] GazeboControls.NativePluginObservesCommandsBeforePhysicsClearsThem
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_gazebo_observation.cpp:35: Failure
+Expected: (plugin->QueryInterface<sim::ISystemUpdate>()) != (nullptr), actual: NULL vs (nullptr)
+
+[  FAILED  ] GazeboControls.NativePluginObservesCommandsBeforePhysicsClearsThem (15 ms)
+[ RUN      ] GazeboControls.ActualScalarComponentsAndJointFrameEffortNotInferredTorque
+[       OK ] GazeboControls.ActualScalarComponentsAndJointFrameEffortNotInferredTorque (4 ms)
+[----------] 2 tests from GazeboControls (21 ms total)
+
+[----------] 1 test from GazeboObservation
+[ RUN      ] GazeboObservation.NativeEcMassPoseFootNamesAndEmptyContactTick
+[       OK ] GazeboObservation.NativeEcMassPoseFootNamesAndEmptyContactTick (0 ms)
+[----------] 1 test from GazeboObservation (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 2 test suites ran. (26 ms total)
+[  PASSED  ] 2 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] GazeboControls.NativePluginObservesCommandsBeforePhysicsClearsThem
+
+ 1 FAILED TEST

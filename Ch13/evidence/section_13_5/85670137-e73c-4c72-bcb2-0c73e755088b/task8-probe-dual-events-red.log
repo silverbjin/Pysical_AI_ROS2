@@ -1,0 +1,21 @@
+F
+=================================== FAILURES ===================================
+_______ test_g2_has_two_serial_owners_without_a_second_clock_subscriber ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_g2_has_two_serial_owners_0')
+
+    def test_g2_has_two_serial_owners_without_a_second_clock_subscriber(tmp_path):
+        context=Context();rclpy.init(context=context)
+        probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+        receiver=None
+        try:
+>           assert getattr(probe,'recording_node',None) is not None,'separate serial recording owner missing'
+E           AssertionError: separate serial recording owner missing
+E           assert None is not None
+E            +  where None = getattr(<probe_navigation_13_5.NavigationProbe object at 0x71f512c51e80>, 'recording_node', None)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_split_executor.py:17: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_split_executor.py::test_g2_has_two_serial_owners_without_a_second_clock_subscriber
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.18s

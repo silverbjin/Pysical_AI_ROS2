@@ -1,0 +1,24 @@
+F
+=================================== FAILURES ===================================
+__ test_stop_contact_does_not_rewind_motor_reference_to_measured_world_center __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_stop_contact_does_not_rewind_motor_reference_to_measured_world_center(nav_robot_model):
+        row,state,value=replay(nav_robot_model)
+        value.phase,value.swing_foot,value._index='SWING','fl_foot',0
+        before=value._solve(state.joints.data['position'],True)
+        value.request_stop(urgent=False)
+        result=value.advance(state,(.01,0.,0.),row['ros_ns'],row['wall_ns'])
+        assert result.state!='FAULT',result.reason
+>       assert max(abs(result.joint_targets[n]-q) for n,q in before.items())<1e-10, \
+            'stop at first contact mixed the measured stance frame with motor command references'
+E       AssertionError: stop at first contact mixed the measured stance frame with motor command references
+E       assert 0.03493742844049763 < 1e-10
+E        +  where 0.03493742844049763 = max(<generator object test_stop_contact_does_not_rewind_motor_reference_to_measured_world_center.<locals>.<genexpr> at 0x786b34280130>)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_measured_stance_anchor.py:59: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_measured_stance_anchor.py::test_stop_contact_does_not_rewind_motor_reference_to_measured_world_center
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 6.44s

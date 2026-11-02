@@ -1,0 +1,306 @@
+FFFFFFFFFFFFFF                                                           [100%]
+=================================== FAILURES ===================================
+______________ test_empty_teardown_and_missing_fields_fail_closed ______________
+
+    def test_empty_teardown_and_missing_fields_fail_closed():
+>       assert not api().normal_teardown({})
+                   ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py:6: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+________ test_force_or_residual_or_unreaped_child_cannot_be_normal_exit ________
+
+    def test_force_or_residual_or_unreaped_child_cannot_be_normal_exit():
+        good = dict(runtime_exit=True, engine_exit=True, parent_reaped=True,
+                    launch_returncode=0, forced_cleanup=False, residual_live_pids=[])
+>       assert api().normal_teardown(good)
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+_____________ test_terminal_ack_or_status_alone_cannot_prove_carry _____________
+
+    def test_terminal_ack_or_status_alone_cannot_prove_carry():
+>       verify = api()
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+________________ test_forward_measured_error_boundary[0.4-True] ________________
+
+distance = 0.4, expected = True
+
+    @pytest.mark.parametrize('distance,expected', [(.40, True), (.350001, True), (.349999, False)])
+    def test_forward_measured_error_boundary(distance, expected):
+>       result = api().motion_phase((0., 0., 0.), (distance, 0., 0.), 'forward')
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+_____________ test_forward_measured_error_boundary[0.350001-True] ______________
+
+distance = 0.350001, expected = True
+
+    @pytest.mark.parametrize('distance,expected', [(.40, True), (.350001, True), (.349999, False)])
+    def test_forward_measured_error_boundary(distance, expected):
+>       result = api().motion_phase((0., 0., 0.), (distance, 0., 0.), 'forward')
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+_____________ test_forward_measured_error_boundary[0.349999-False] _____________
+
+distance = 0.349999, expected = False
+
+    @pytest.mark.parametrize('distance,expected', [(.40, True), (.350001, True), (.349999, False)])
+    def test_forward_measured_error_boundary(distance, expected):
+>       result = api().motion_phase((0., 0., 0.), (distance, 0., 0.), 'forward')
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+________ test_measured_yaw_error_and_drift_boundary[0.3-0.049999-True] _________
+
+yaw = 0.3, drift = 0.049999, expected = True
+
+    @pytest.mark.parametrize('yaw,drift,expected', [(.30, .049999, True),
+                                                  (.199999, 0., False), (.30, .050001, False)])
+    def test_measured_yaw_error_and_drift_boundary(yaw, drift, expected):
+>       assert api().motion_phase((0., 0., 0.), (drift, 0., yaw), 'left')['passed'] is expected
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+________ test_measured_yaw_error_and_drift_boundary[0.199999-0.0-False] ________
+
+yaw = 0.199999, drift = 0.0, expected = False
+
+    @pytest.mark.parametrize('yaw,drift,expected', [(.30, .049999, True),
+                                                  (.199999, 0., False), (.30, .050001, False)])
+    def test_measured_yaw_error_and_drift_boundary(yaw, drift, expected):
+>       assert api().motion_phase((0., 0., 0.), (drift, 0., yaw), 'left')['passed'] is expected
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+________ test_measured_yaw_error_and_drift_boundary[0.3-0.050001-False] ________
+
+yaw = 0.3, drift = 0.050001, expected = False
+
+    @pytest.mark.parametrize('yaw,drift,expected', [(.30, .049999, True),
+                                                  (.199999, 0., False), (.30, .050001, False)])
+    def test_measured_yaw_error_and_drift_boundary(yaw, drift, expected):
+>       assert api().motion_phase((0., 0., 0.), (drift, 0., yaw), 'left')['passed'] is expected
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+_______ test_reverse_and_right_have_real_direction_not_absolute_distance _______
+
+    def test_reverse_and_right_have_real_direction_not_absolute_distance():
+>       verify = api()
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+___ test_command_log_or_fake_odometry_cannot_pass_crawl[command_integrated] ____
+
+source = 'command_integrated'
+
+    @pytest.mark.parametrize('source', ['command_integrated', 'synthetic', ''])
+    def test_command_log_or_fake_odometry_cannot_pass_crawl(source):
+        from integrated_robot_navigation.carry_profile import default_limits
+>       checks = api().assess_crawl(dict(root_source=source, commands=[(.01, 0., 0.)]*100), default_limits())
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+________ test_command_log_or_fake_odometry_cannot_pass_crawl[synthetic] ________
+
+source = 'synthetic'
+
+    @pytest.mark.parametrize('source', ['command_integrated', 'synthetic', ''])
+    def test_command_log_or_fake_odometry_cannot_pass_crawl(source):
+        from integrated_robot_navigation.carry_profile import default_limits
+>       checks = api().assess_crawl(dict(root_source=source, commands=[(.01, 0., 0.)]*100), default_limits())
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+____________ test_command_log_or_fake_odometry_cannot_pass_crawl[] _____________
+
+source = ''
+
+    @pytest.mark.parametrize('source', ['command_integrated', 'synthetic', ''])
+    def test_command_log_or_fake_odometry_cannot_pass_crawl(source):
+        from integrated_robot_navigation.carry_profile import default_limits
+>       checks = api().assess_crawl(dict(root_source=source, commands=[(.01, 0., 0.)]*100), default_limits())
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+_______________ test_missing_contact_or_native_com_never_passes ________________
+
+    def test_missing_contact_or_native_com_never_passes():
+        from integrated_robot_navigation.carry_profile import default_limits
+>       checks = api().assess_crawl(dict(root_source='native_ground_truth', frames=[{}]), default_limits())
+                 ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('verify_navigation_13_5'), 'native acceptance assessor missing'
+E       AssertionError: native acceptance assessor missing
+E       assert None
+E        +  where None = <function find_spec at 0x7f93720bc720>('verify_navigation_13_5')
+E        +    where <function find_spec at 0x7f93720bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py:12: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py::test_empty_teardown_and_missing_fields_fail_closed
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py::test_force_or_residual_or_unreaped_child_cannot_be_normal_exit
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py::test_terminal_ack_or_status_alone_cannot_prove_carry
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_forward_measured_error_boundary[0.4-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_forward_measured_error_boundary[0.350001-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_forward_measured_error_boundary[0.349999-False]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_measured_yaw_error_and_drift_boundary[0.3-0.049999-True]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_measured_yaw_error_and_drift_boundary[0.199999-0.0-False]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_measured_yaw_error_and_drift_boundary[0.3-0.050001-False]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_reverse_and_right_have_real_direction_not_absolute_distance
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_command_log_or_fake_odometry_cannot_pass_crawl[command_integrated]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_command_log_or_fake_odometry_cannot_pass_crawl[synthetic]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_command_log_or_fake_odometry_cannot_pass_crawl[]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_verdicts.py::test_missing_contact_or_native_com_never_passes
+14 failed in 7.46s

@@ -1,0 +1,139 @@
+...FFFFFFFF                                                              [100%]
+=================================== FAILURES ===================================
+_ test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[joints] _
+
+stream = 'joints'
+
+    @pytest.mark.parametrize('stream',api().STREAMS)
+    def test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time(stream):
+        inbox = api().SensorInbox(0)
+        previous = Sample(1_000_000_000,10_000_000_000,0,1,'base_link',(1.,))
+        late = replace(previous,stamp_ns=1_010_000_000,received_ns=10_020_000_001,sequence=2)
+        inbox.receive(stream,previous)
+>       assert getattr(inbox.bundle(1_010_000_000,wall_ns=10_020_000_000),stream)==previous
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensorInbox.bundle() got an unexpected keyword argument 'wall_ns'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:45: TypeError
+_ test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[imu] _
+
+stream = 'imu'
+
+    @pytest.mark.parametrize('stream',api().STREAMS)
+    def test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time(stream):
+        inbox = api().SensorInbox(0)
+        previous = Sample(1_000_000_000,10_000_000_000,0,1,'base_link',(1.,))
+        late = replace(previous,stamp_ns=1_010_000_000,received_ns=10_020_000_001,sequence=2)
+        inbox.receive(stream,previous)
+>       assert getattr(inbox.bundle(1_010_000_000,wall_ns=10_020_000_000),stream)==previous
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensorInbox.bundle() got an unexpected keyword argument 'wall_ns'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:45: TypeError
+_ test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[contacts] _
+
+stream = 'contacts'
+
+    @pytest.mark.parametrize('stream',api().STREAMS)
+    def test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time(stream):
+        inbox = api().SensorInbox(0)
+        previous = Sample(1_000_000_000,10_000_000_000,0,1,'base_link',(1.,))
+        late = replace(previous,stamp_ns=1_010_000_000,received_ns=10_020_000_001,sequence=2)
+        inbox.receive(stream,previous)
+>       assert getattr(inbox.bundle(1_010_000_000,wall_ns=10_020_000_000),stream)==previous
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensorInbox.bundle() got an unexpected keyword argument 'wall_ns'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:45: TypeError
+_ test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[body] _
+
+stream = 'body'
+
+    @pytest.mark.parametrize('stream',api().STREAMS)
+    def test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time(stream):
+        inbox = api().SensorInbox(0)
+        previous = Sample(1_000_000_000,10_000_000_000,0,1,'base_link',(1.,))
+        late = replace(previous,stamp_ns=1_010_000_000,received_ns=10_020_000_001,sequence=2)
+        inbox.receive(stream,previous)
+>       assert getattr(inbox.bundle(1_010_000_000,wall_ns=10_020_000_000),stream)==previous
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensorInbox.bundle() got an unexpected keyword argument 'wall_ns'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:45: TypeError
+_ test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[scan] _
+
+stream = 'scan'
+
+    @pytest.mark.parametrize('stream',api().STREAMS)
+    def test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time(stream):
+        inbox = api().SensorInbox(0)
+        previous = Sample(1_000_000_000,10_000_000_000,0,1,'base_link',(1.,))
+        late = replace(previous,stamp_ns=1_010_000_000,received_ns=10_020_000_001,sequence=2)
+        inbox.receive(stream,previous)
+>       assert getattr(inbox.bundle(1_010_000_000,wall_ns=10_020_000_000),stream)==previous
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensorInbox.bundle() got an unexpected keyword argument 'wall_ns'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:45: TypeError
+_ test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[carry] _
+
+stream = 'carry'
+
+    @pytest.mark.parametrize('stream',api().STREAMS)
+    def test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time(stream):
+        inbox = api().SensorInbox(0)
+        previous = Sample(1_000_000_000,10_000_000_000,0,1,'base_link',(1.,))
+        late = replace(previous,stamp_ns=1_010_000_000,received_ns=10_020_000_001,sequence=2)
+        inbox.receive(stream,previous)
+>       assert getattr(inbox.bundle(1_010_000_000,wall_ns=10_020_000_000),stream)==previous
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: SensorInbox.bundle() got an unexpected keyword argument 'wall_ns'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py:45: TypeError
+_____ test_calibration_uses_the_tick_bundle_even_when_a_new_carry_arrives ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x77472941a000>
+
+    def test_calibration_uses_the_tick_bundle_even_when_a_new_carry_arrives(monkeypatch):
+        context = Context()
+        rclpy.init(context=context)
+        node = CrawlController(context=context)
+        try:
+            node.model = SimpleNamespace(model_sha256='model')
+            monkeypatch.setattr(node,'count_publishers',lambda _:1)
+            good = Sample(1_000_000_000,10_000_000_000,0,1,'base_link',
+                dict(ready=True,generation=0,model_sha256='model'))
+            node.inbox.receive('carry',good)
+            bundle = node._bundle_snapshot(1_010_000_000)
+            node.inbox.receive('carry',Sample(1_010_000_000,10_020_000_001,0,2,'base_link',good.data))
+>           assert node._calibration_carry(1_010_000_000,10_020_000_000,bundle=bundle)[0]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: CrawlController._calibration_carry() got an unexpected keyword argument 'bundle'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_decision_cutoff.py:22: TypeError
+_ test_guard_selection_uses_the_same_wall_cutoff_without_losing_late_candidate _
+
+    def test_guard_selection_uses_the_same_wall_cutoff_without_losing_late_candidate():
+        context = Context()
+        rclpy.init(context=context)
+        node = CrawlController(context=context)
+        try:
+            old,new = MotionState(state='STAND'),MotionState(state='FAULT',fault_reason='new fault')
+            old.header.stamp.sec=1
+            new.header.stamp.sec,new.header.stamp.nanosec=1,10_000_000
+            node._gate_pending={1_000_000_000:(old,10_000_000_000),
+                                1_010_000_000:(new,10_020_000_001)}
+>           node._select_gate(1_010_000_000,wall_ns=10_020_000_000)
+E           TypeError: CrawlController._select_gate() got an unexpected keyword argument 'wall_ns'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_decision_cutoff.py:38: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py::test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[joints]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py::test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[imu]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py::test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[contacts]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py::test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[body]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py::test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[scan]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observations.py::test_decision_cutoff_holds_receipts_that_arrive_after_the_evaluation_time[carry]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_decision_cutoff.py::test_calibration_uses_the_tick_bundle_even_when_a_new_carry_arrives
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_control_decision_cutoff.py::test_guard_selection_uses_the_same_wall_cutoff_without_losing_late_candidate
+8 failed, 3 passed in 14.24s

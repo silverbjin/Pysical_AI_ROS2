@@ -1,0 +1,45 @@
+# Initial, unvalidated gait envelope; changes invalidate the carry profile.
+control_hz: 50.0
+cycle_s: 8.0
+swing_height_m: 0.02
+# Spatial envelope alone does not bound contact impact. Time-scale the full
+# world-foot curve; the 8s stride integration clock remains nominal only.
+max_swing_speed_mps: 0.02
+max_foot_displacement_m: 0.08
+max_vx: 0.01
+max_vy: 0.0
+max_wz: 0.03
+max_accel_x: 0.02
+max_accel_wz: 0.06
+# Internal CoM shift is distinct from the navigation velocity ramp. Measured
+# support/velocity gates can extend the nominal cycle; never lift on a timer.
+max_support_shift_accel_mps2: 0.10
+unload_speed_mps: 0.002
+max_unload_height_m: 0.010
+max_roll_pitch: 0.15
+min_body_height_m: 0.30
+max_body_height_m: 0.70
+nominal_body_height_m: 0.46
+min_contact_force_n: 2.0
+min_support_margin_m: 0.01
+max_stance_slip_m: 0.02
+sensor_max_age_s: 0.20
+raw_max_age_s: 0.20
+scan_max_age_s: 0.30
+stop_landing_s: 1.0
+stopped_v_mps: 0.003
+stopped_wz_rps: 0.01
+settle_s: 1.0
+# Book example: permit slower simulation startup without changing motion,
+# measured settling, freshness or any sticky-fault/recovery rule.
+calibration_wall_timeout_s: 20.0
+carry_error_rad: 0.03
+carry_velocity_rps: 0.02
+footprint_margin_m: 0.05
+# New navigation scene only: the original .10m default remains unchanged.
+hip_mount_y_m: 0.13
+# The controller must reject a target outside these footprint-bound intervals.
+gait_joint_bounds:
+  hip: [-0.20, 0.20]
+  thigh: [-0.80, -0.20]
+  calf: [0.80, 1.40]

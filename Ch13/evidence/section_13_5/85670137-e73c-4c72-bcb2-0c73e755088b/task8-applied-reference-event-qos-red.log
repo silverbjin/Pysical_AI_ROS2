@@ -1,0 +1,35 @@
+F
+=================================== FAILURES ===================================
+_____ test_only_explicit_mujoco_g2_owns_an_applied_reference_inbox[mujoco] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_only_explicit_mujoco_g2_o0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine',['mujoco','gazebo'])
+    def test_only_explicit_mujoco_g2_owns_an_applied_reference_inbox(tmp_path,nav_robot_model,engine):
+        profile,execution=fixture(tmp_path,nav_robot_model,engine)
+        ctx=Context();rclpy.init(context=ctx);node=None
+        try:
+            node=CrawlController(nav_robot_model,profile,engine,context=ctx,parameter_overrides=[
+                Parameter('validation_mode',value=True),Parameter('g2_validation_mode',value=True),
+                Parameter('native_execution_profile',value=json.dumps(execution))])
+            node.trigger_configure()
+            assert hasattr(node,'applied_credit'),'actual leg owner lacks application credit binding'
+            assert (node.applied_credit is not None)==(engine=='mujoco')
+            if engine=='mujoco':
+                endpoints=node.get_subscriptions_info_by_topic('/navigation/applied_reference')
+                assert len(endpoints)==1
+>               assert endpoints[0].qos_profile.reliability==ReliabilityPolicy.RELIABLE, \
+                    'one-shot application events need reliable delivery, not a lossy sensor stream'
+E                   AssertionError: one-shot application events need reliable delivery, not a lossy sensor stream
+E                   assert <ReliabilityPolicy.BEST_EFFORT: 2> == <ReliabilityPolicy.RELIABLE: 1>
+E                    +  where <ReliabilityPolicy.BEST_EFFORT: 2> = <rclpy.qos.QoSProfile object at 0x76217968dee0>.reliability
+E                    +    where <rclpy.qos.QoSProfile object at 0x76217968dee0> = <rclpy.topic_endpoint_info.TopicEndpointInfo object at 0x7621795e2620>.qos_profile
+E                    +  and   <ReliabilityPolicy.RELIABLE: 1> = ReliabilityPolicy.RELIABLE
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_reference_ros.py:32: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_reference_ros.py::test_only_explicit_mujoco_g2_owns_an_applied_reference_inbox[mujoco]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.79s

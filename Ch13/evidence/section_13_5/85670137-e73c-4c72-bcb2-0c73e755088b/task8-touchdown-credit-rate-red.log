@@ -1,0 +1,25 @@
+F
+=================================== FAILURES ===================================
+_ test_touchdown_search_uses_original_bounded_rate_without_extending_its_deadline _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_touchdown_search_uses_original_bounded_rate_without_extending_its_deadline(nav_robot_model):
+        value,plant=swinging(nav_robot_model);foot=value.swing_foot
+        value.phase='TOUCHDOWN';value._phase_start=value._last_ros
+        value._targets[foot][2]=value.floor[foot]+.0005
+        initial=value._targets[foot][2];ros,wall=value._last_ros,value._last_wall
+        for index,permitted in ((1,False),(2,False),(3,True)):
+            r,w=ros+index*20_000_000,wall+index*20_000_000
+            result=value.advance(sample_at(plant.state,r,w),(.01,0.,0.),r,w,
+                reference_permitted=permitted)
+            assert result.state!='FAULT',result.reason
+>       assert abs(value._targets[foot][2]-initial+value.limits['unload_speed_mps']*.06)<1e-12
+E       assert 8.000000000000163e-05 < 1e-12
+E        +  where 8.000000000000163e-05 = abs(((0.021668719054813643 - 0.02170871905481364) + (0.002 * 0.06)))
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py:109: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py::test_touchdown_search_uses_original_bounded_rate_without_extending_its_deadline
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.23s

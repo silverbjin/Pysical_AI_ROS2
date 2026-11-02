@@ -1,0 +1,19 @@
+F
+=================================== FAILURES ===================================
+_ test_discrete_model_can_propose_bounded_step_from_recorded_failure[native_d504_infeasible.json] _
+
+fixture = 'native_d504_infeasible.json'
+
+    @pytest.mark.parametrize('fixture',['native_d504_infeasible.json','native_ab85_infeasible.json'])
+    def test_discrete_model_can_propose_bounded_step_from_recorded_failure(fixture):
+        f=json.loads((Path(__file__).parent/'fixtures'/fixture).read_bytes());model=compile_model(f['urdf'])
+        with NativeMassEvaluator(model) as mass:
+>           k=CompleteXYZTransition(model,f['limits'],native_mass=mass,force_model='gazebo_discrete_equilibrium_v1')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: CompleteXYZTransition.__init__() got an unexpected keyword argument 'force_model'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_discrete_complete_xyz.py:14: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_discrete_complete_xyz.py::test_discrete_model_can_propose_bounded_step_from_recorded_failure[native_d504_infeasible.json]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 13.56s

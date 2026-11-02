@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 794, in run
+    wait(lambda: probe.motion.get('startup', {}).get('ready') is True, 55., 'measured startup')
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 786, in wait
+    step()
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 778, in step
+    if not probe.ignore_faults and probe.fault():
+                                   ^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/split_observer_13_5.py", line 216, in fault
+    self.observer.check()
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/split_observer_13_5.py", line 139, in check
+    raise RuntimeError('observer runtime fault: '+str(self.runtime_fault))
+RuntimeError: observer runtime fault: {'reason': 'crawl:guard:ros_age', 'stage': 'bootstrap', 'ros_ns': 13248000000, 'wall_ns': 33662180100}

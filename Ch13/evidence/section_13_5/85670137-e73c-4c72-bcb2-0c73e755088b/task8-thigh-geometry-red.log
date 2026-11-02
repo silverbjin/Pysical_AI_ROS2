@@ -1,0 +1,18 @@
+F
+=================================== FAILURES ===================================
+_ test_measured_native_rr_collision_is_rejected_without_changing_joint_limits __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_measured_native_rr_collision_is_rejected_without_changing_joint_limits(nav_robot_model):
+        row=json.loads(Path(__file__).with_name('native_982b_collision.json').read_text())
+>       assert hasattr(legs,'thigh_trunk_clearance'),'runtime URDF clearance predicate missing'
+E       AssertionError: runtime URDF clearance predicate missing
+E       assert False
+E        +  where False = hasattr(legs, 'thigh_trunk_clearance')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_thigh_trunk_geometry.py:13: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_thigh_trunk_geometry.py::test_measured_native_rr_collision_is_rejected_without_changing_joint_limits
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 10.31s

@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_stop_during_measured_unload_lands_the_same_foot _____________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_stop_during_measured_unload_lands_the_same_foot(nav_robot_model):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        value.request_contact_calibration()
+        for _ in range(400):
+            result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            plant.tick(value, result)
+            if result.phase == 'SHIFT' and not all(plant.state.contacts.data['touching']):
+                break
+        else:
+            pytest.fail('no actual unload')
+        value.request_stop(urgent=False)
+        landed_at = None
+        for i in range(125):
+            result = value.advance(plant.state, (0., 0., 0.), plant.ros, plant.wall)
+            assert result.state != 'FAULT', result.reason
+            plant.tick(value, result)
+            if all(plant.state.contacts.data['touching']) and landed_at is None:
+                landed_at = (i+1)*.02
+            if result.state == 'STOPPED':
+                break
+>       assert landed_at is not None and landed_at <= 1.
+E       assert (None is not None)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:351: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_stop_during_measured_unload_lands_the_same_foot
+1 failed, 30 deselected in 9.58s

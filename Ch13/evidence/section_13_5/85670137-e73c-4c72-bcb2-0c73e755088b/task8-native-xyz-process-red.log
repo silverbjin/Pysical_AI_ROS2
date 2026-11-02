@@ -1,0 +1,19 @@
+F
+=================================== FAILURES ===================================
+___ test_actual_child_uses_native_backend_and_closes_both_arithmetic_handles ___
+
+    def test_actual_child_uses_native_backend_and_closes_both_arithmetic_handles():
+        model,case=fixture();worker=SpatialLoadProcess(model,command_space='stance_xyz',limits=case['limits'])
+        try:
+            ready=worker.prepare()
+>           assert ready.get('optimization_backend')=='qpmad_1_5_1_native','actual child still executes Python/SLSQP'
+E           AssertionError: actual child still executes Python/SLSQP
+E           assert None == 'qpmad_1_5_1_native'
+E            +  where None = <built-in method get of dict object at 0x7c1262efd0c0>('optimization_backend')
+E            +    where <built-in method get of dict object at 0x7c1262efd0c0> = {'command_space': 'stance_xyz', 'kind': 'ready', 'library_sha256': '63d1bd5aab771690c486a85e9dca3f20a5567d03262780898994db7fd049420b', 'model_sha256': '113a4bb3e0852eb4e47f5f032a8ebfb8f13f296b7eb95e5f549d694661aa5651', ...}.get
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_xyz_process.py:20: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_xyz_process.py::test_actual_child_uses_native_backend_and_closes_both_arithmetic_handles
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.28s

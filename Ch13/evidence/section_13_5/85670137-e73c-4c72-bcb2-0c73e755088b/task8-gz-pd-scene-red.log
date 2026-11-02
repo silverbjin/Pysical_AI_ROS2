@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_nav_gazebo_position_system_binds_gains_without_changing_legacy_hardware _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_nav_gazebo_position_syste0')
+
+    def test_nav_gazebo_position_system_binds_gains_without_changing_legacy_hardware(tmp_path):
+        record = api().materialize_scene('gazebo', 'g1', tmp_path/'pd_scene')
+        root = ET.parse(record['robot']['path']).getroot()
+        control = root.find('ros2_control')
+>       assert control.findtext('hardware/plugin') == 'integrated_robot_navigation_sensors/PositionPDSystem'
+E       AssertionError: assert 'gz_ros2_cont...zeboSimSystem' == 'integrated_r...itionPDSystem'
+E         
+E         - integrated_robot_navigation_sensors/PositionPDSystem
+E         + gz_ros2_control/GazeboSimSystem
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py:82: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene.py::test_nav_gazebo_position_system_binds_gains_without_changing_legacy_hardware
+1 failed, 6 deselected in 11.73s

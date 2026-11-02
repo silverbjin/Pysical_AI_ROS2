@@ -1,0 +1,79 @@
+..............F
+=================================== FAILURES ===================================
+_ test_application_wire_trace_is_separate_from_client_receipt_and_grants_no_credit _
+
+root = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_application_wire_trace_is0')
+report = {'engine': 'gazebo', 'records': 2}
+
+    def replay_recording(root,report):
+        from rclpy.serialization import deserialize_message
+        root=Path(root);types=_message_types()
+        if report['engine']=='mujoco':
+            from mujoco_ros2_control_msgs.msg import FreeJointStateArray
+            types['body_source']=FreeJointStateArray
+        output=root/'observations.jsonl';temporary=root/'observations.jsonl.tmp'
+        if output.exists() or temporary.exists():raise ValueError('CDR replay output already exists')
+        prefixes=deque(maxlen=128);max_receipt=0;count=0
+        with temporary.open('x',encoding='utf-8') as target,(root/'observations.cdr').open('rb') as source:
+            state=ReplayState(report['engine'],target)
+            for row in read_records(source):
+                meta,payload=row['meta'],row['payload'];count+=1;kind=meta['kind']
+                if kind=='packet':
+                    receipt=meta.get('received_ns')
+                    if type(receipt) is not int or receipt<0:raise ValueError('CDR receipt metadata')
+                    max_receipt=max(max_receipt,receipt);key=meta['key'];state.stage=meta['stage']
+>                   try:message=deserialize_message(payload,types[key])
+                                                            ^^^^^^^^^^
+E                   KeyError: 'applied_reference'
+
+Ch13/scripts/native_observer_13_5.py:103: KeyError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_application_wire_trace_is0')
+
+    def test_application_wire_trace_is_separate_from_client_receipt_and_grants_no_credit(tmp_path):
+        from sensor_msgs.msg import JointState
+        from rclpy.serialization import serialize_message
+        message=JointState(name=['a','b'],position=[.1,.2])
+        message.header.frame_id='mujoco/pre_step';message.header.stamp.sec=2
+        rows=[(dict(kind='packet',key='applied_reference',received_ns=100,callback_system_ns=200,
+            source_system_ns=180,rmw_received_system_ns=190,gid='01'*24,stage='forward'),serialize_message(message)),
+            (dict(kind='end',records=1),b'')]
+        (tmp_path/'observations.cdr').write_bytes(journal(rows))
+>       result=api().replay_recording(tmp_path,dict(engine='gazebo',records=2))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py:229: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_application_wire_trace_is0')
+report = {'engine': 'gazebo', 'records': 2}
+
+    def replay_recording(root,report):
+        from rclpy.serialization import deserialize_message
+        root=Path(root);types=_message_types()
+        if report['engine']=='mujoco':
+            from mujoco_ros2_control_msgs.msg import FreeJointStateArray
+            types['body_source']=FreeJointStateArray
+        output=root/'observations.jsonl';temporary=root/'observations.jsonl.tmp'
+        if output.exists() or temporary.exists():raise ValueError('CDR replay output already exists')
+        prefixes=deque(maxlen=128);max_receipt=0;count=0
+        with temporary.open('x',encoding='utf-8') as target,(root/'observations.cdr').open('rb') as source:
+            state=ReplayState(report['engine'],target)
+            for row in read_records(source):
+                meta,payload=row['meta'],row['payload'];count+=1;kind=meta['kind']
+                if kind=='packet':
+                    receipt=meta.get('received_ns')
+                    if type(receipt) is not int or receipt<0:raise ValueError('CDR receipt metadata')
+                    max_receipt=max(max_receipt,receipt);key=meta['key'];state.stage=meta['stage']
+                    try:message=deserialize_message(payload,types[key])
+>                   except Exception as error:raise ValueError('CDR message decode: '+key) from error
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   ValueError: CDR message decode: applied_reference
+
+Ch13/scripts/native_observer_13_5.py:104: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py::test_application_wire_trace_is_separate_from_client_receipt_and_grants_no_credit
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 14 passed in 14.39s

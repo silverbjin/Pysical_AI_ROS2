@@ -1,0 +1,130 @@
+{
+  "scope": "closed_owned_observer_cost_not_physics_cpu_or_causal_hardware_proof",
+  "trials": [
+    {
+      "trial": "native-g1-gazebo-701c2860-d0a4-4377-ab9a-f0b5a9ef5f5b",
+      "start_capture_ns": 25384000000,
+      "end_capture_ns": 31784000000,
+      "received_wall_s": 7.947087115,
+      "simulated_s": 6.4,
+      "observer_errors": 0,
+      "stages": {
+        "update": {
+          "calls": 3200,
+          "wall_ns": 691353727,
+          "cpu_ns": 638107200,
+          "mean_wall_us": 216.0480396875,
+          "mean_cpu_us": 199.4085
+        },
+        "post_update": {
+          "calls": 3200,
+          "wall_ns": 788963933,
+          "cpu_ns": 731309900,
+          "mean_wall_us": 246.5512290625,
+          "mean_cpu_us": 228.53434375
+        },
+        "between_update_and_post": {
+          "calls": 3200,
+          "wall_ns": 3532366782,
+          "mean_wall_us": 1103.864619375
+        }
+      },
+      "raw_location": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-gazebo-701c2860-d0a4-4377-ab9a-f0b5a9ef5f5b/native_controls.json",
+      "source_sha256": {
+        "controller_report.json": "b1de6056e19fa09e21198d635db7d473a5951f819344cbbcae16d88be3246a92",
+        "native_controls.json": "5caf9182d6599303cf6531deabec1a1417c31ea25d167360232d0be51307e49b"
+      }
+    },
+    {
+      "trial": "native-contact-component-gazebo-7e642180-032d-4077-9ee4-1a2f11fde186",
+      "start_capture_ns": 24184000000,
+      "end_capture_ns": 28084000000,
+      "received_wall_s": 5.160744077,
+      "simulated_s": 3.9,
+      "observer_errors": 0,
+      "stages": {
+        "update": {
+          "calls": 1950,
+          "wall_ns": 457842890,
+          "cpu_ns": 413847700,
+          "mean_wall_us": 234.79122564102565,
+          "mean_cpu_us": 212.22958974358974
+        },
+        "post_update": {
+          "calls": 1950,
+          "wall_ns": 505519095,
+          "cpu_ns": 465801000,
+          "mean_wall_us": 259.2405615384615,
+          "mean_cpu_us": 238.8723076923077
+        },
+        "between_update_and_post": {
+          "calls": 1950,
+          "wall_ns": 2405259377,
+          "mean_wall_us": 1233.466347179487
+        }
+      },
+      "raw_location": "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-contact-component-gazebo-7e642180-032d-4077-9ee4-1a2f11fde186/native_controls.json",
+      "source_sha256": {
+        "controller_report.json": "60bd253d329db48294b90a4d714d9756e79568c21d5057ad4f91da4aebaa5f8f",
+        "native_controls.json": "e09bda3faa1c21237c0aca1f197900a4090dc2d5f4716ac6fe37d697f21c22e9"
+      },
+      "numeric_failure": {
+        "reason": "transition optimization worker: transition optimization time budget",
+        "timing": {
+          "input_bounds": {
+            "wall_ns": 183400,
+            "thread_cpu_ns": 183900
+          },
+          "contact_terms": {
+            "wall_ns": 6525700,
+            "thread_cpu_ns": 1779100
+          },
+          "spatial_response": {
+            "wall_ns": 7006200,
+            "thread_cpu_ns": 2256900
+          },
+          "constraints_ready": {
+            "wall_ns": 7074000,
+            "thread_cpu_ns": 2323500
+          },
+          "solver_finished": {
+            "wall_ns": 9385500,
+            "thread_cpu_ns": 2385900
+          },
+          "native_result_validated": {
+            "wall_ns": 9395500,
+            "thread_cpu_ns": 2394600
+          },
+          "native_qp_returned": {
+            "wall_ns": 10446900,
+            "thread_cpu_ns": 3450700
+          }
+        },
+        "off_cpu_or_unaccounted_wall_ns": 6996200,
+        "worker": {
+          "scope": "one_numerical_job_no_command_authority",
+          "command_space": "stance_xyz",
+          "optimization_backend": "qpmad_1_5_1_native",
+          "force_objective": "bounded_terminal_force",
+          "optimization_library_sha256": "01bb3e2916b8694aab2b44a9d66be9d87a47738cf031b1fd756c7a5a03202118",
+          "reference_library_sha256": "af982840d8e8bb96f77a6eb1c167867ab25f584c099616c8c39f9b840f7d2c35",
+          "library_sha256": "63d1bd5aab771690c486a85e9dca3f20a5567d03262780898994db7fd049420b",
+          "pid": 2825,
+          "alive": true,
+          "submitted": 54,
+          "completed": 53,
+          "discarded": 0,
+          "failed": 1,
+          "pending": false,
+          "fault": "transition optimization time budget",
+          "closed": false
+        }
+      },
+      "fixture": {
+        "path": "Ch13/ros2_ws/src/integrated_robot_navigation/test/fixtures/native_7e64_xyz_budget.json",
+        "bytes": 45758,
+        "sha256": "a6159d58ebbfdf899cc659f549813e7dc413f74982fb1c383cbb61528d27a0f8"
+      }
+    }
+  ]
+}

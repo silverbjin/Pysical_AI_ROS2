@@ -1,0 +1,57 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_actual_tf_observer_exclusive_output_and_normal_shutdown _________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_tf_observer_exclus0')
+
+    def test_actual_tf_observer_exclusive_output_and_normal_shutdown(tmp_path):
+        executable = Path(get_package_prefix('integrated_robot_navigation_sensors'))/'lib/integrated_robot_navigation_sensors/tf_provenance'
+        output = tmp_path/'authority.jsonl'
+        process = subprocess.Popen([str(executable), str(output)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        context = Context()
+        rclpy.init(context=context)
+        node = rclpy.create_node('tf_provenance_process_peer', context=context)
+        publisher = node.create_publisher(TFMessage, '/tf', 10)
+        transform = TransformStamped(child_frame_id='process_test_base')
+        transform.header.frame_id = 'odom'
+        transform.header.stamp.sec = 42
+        transform.transform.rotation.w = 1.
+        try:
+            deadline = time.monotonic()+8.
+            rows = []
+            while not rows and time.monotonic() < deadline:
+                assert process.poll() is None, process.communicate(timeout=1.)
+                publisher.publish(TFMessage(transforms=[transform]))
+>               rclpy.spin_once(node, timeout_sec=.02)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_observer_process.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py:221: in spin_once
+    executor = get_global_executor() if executor is None else executor
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py:106: in get_global_executor
+    __executor = SingleThreadedExecutor()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py:899: in __init__
+    super().__init__(context=context)
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py:198: in __init__
+    self._guard = GuardCondition(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <rclpy.guard_condition.GuardCondition object at 0x70349455be30>
+callback = None, callback_group = None
+context = <rclpy.context.Context object at 0x703494c88440>
+
+    def __init__(self, callback, callback_group, context=None):
+        self._context = get_default_context() if context is None else context
+>       with self._context.handle:
+E       TypeError: 'NoneType' object does not support the context manager protocol
+
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/guard_condition.py:23: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_observer_process.py::test_actual_tf_observer_exclusive_output_and_normal_shutdown
+1 failed in 5.96s
+Exception ignored in: <function Executor.__del__ at 0x703496456d40>
+Traceback (most recent call last):
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 305, in __del__
+AttributeError: 'SingleThreadedExecutor' object has no attribute '_sigint_gc'

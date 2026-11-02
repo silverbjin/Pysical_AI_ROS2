@@ -1,0 +1,161 @@
+...FFFFFFF                                                               [100%]
+=================================== FAILURES ===================================
+_ test_actual_jazzy_metadata_capability_is_not_invented_as_a_publisher_identity _
+
+    def test_actual_jazzy_metadata_capability_is_not_invented_as_a_publisher_identity():
+        record = SimpleNamespace(transforms=[], errors=[], tf_api={})
+        transform = TransformStamped(child_frame_id='nav_base')
+        transform.header.frame_id = 'odom'
+        NavigationProbe._tf(record, TFMessage(transforms=[transform]), {
+            'source_timestamp': 123, 'received_timestamp': 124,
+            'publication_sequence_number': 1, 'reception_sequence_number': None})
+>       assert not record.errors
+E       AssertionError: assert not ['tf_metadata:missing publisher_gid']
+E        +  where ['tf_metadata:missing publisher_gid'] = namespace(transforms=[], errors=['tf_metadata:missing publisher_gid'], tf_api={}).errors
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:39: AssertionError
+_______________ test_tf_requires_complete_single_authority_tree ________________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_tf_requires_complete_single_authority_tree(nav_robot_model):
+        rows = observations(nav_robot_model)
+>       assert verify.assess_tf_ownership(rows, nav_robot_model)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_tf_ownership'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py:27: AttributeError
+____ test_tf_records_reject_owner_parent_or_unattributed_replacement[owner] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'owner'
+
+    @pytest.mark.parametrize('change', ['owner', 'parent', 'topic', 'zero_gid', 'missing_source'])
+    def test_tf_records_reject_owner_parent_or_unattributed_replacement(nav_robot_model, change):
+        rows = observations(nav_robot_model)
+        extra = copy.deepcopy(rows[-1])
+        if change == 'owner':
+            extra['gid'] = '03'*16
+        elif change == 'parent':
+            extra['parent'] = 'map'
+        elif change == 'topic':
+            extra['topic'] = '/tf_static'
+        elif change == 'zero_gid':
+            extra['gid'] = '00'*16
+        else:
+            del extra['source_timestamp']
+        rows.append(extra)
+>       assert not verify.assess_tf_ownership(rows, nav_robot_model)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_tf_ownership'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py:47: AttributeError
+___ test_tf_records_reject_owner_parent_or_unattributed_replacement[parent] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'parent'
+
+    @pytest.mark.parametrize('change', ['owner', 'parent', 'topic', 'zero_gid', 'missing_source'])
+    def test_tf_records_reject_owner_parent_or_unattributed_replacement(nav_robot_model, change):
+        rows = observations(nav_robot_model)
+        extra = copy.deepcopy(rows[-1])
+        if change == 'owner':
+            extra['gid'] = '03'*16
+        elif change == 'parent':
+            extra['parent'] = 'map'
+        elif change == 'topic':
+            extra['topic'] = '/tf_static'
+        elif change == 'zero_gid':
+            extra['gid'] = '00'*16
+        else:
+            del extra['source_timestamp']
+        rows.append(extra)
+>       assert not verify.assess_tf_ownership(rows, nav_robot_model)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_tf_ownership'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py:47: AttributeError
+____ test_tf_records_reject_owner_parent_or_unattributed_replacement[topic] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'topic'
+
+    @pytest.mark.parametrize('change', ['owner', 'parent', 'topic', 'zero_gid', 'missing_source'])
+    def test_tf_records_reject_owner_parent_or_unattributed_replacement(nav_robot_model, change):
+        rows = observations(nav_robot_model)
+        extra = copy.deepcopy(rows[-1])
+        if change == 'owner':
+            extra['gid'] = '03'*16
+        elif change == 'parent':
+            extra['parent'] = 'map'
+        elif change == 'topic':
+            extra['topic'] = '/tf_static'
+        elif change == 'zero_gid':
+            extra['gid'] = '00'*16
+        else:
+            del extra['source_timestamp']
+        rows.append(extra)
+>       assert not verify.assess_tf_ownership(rows, nav_robot_model)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_tf_ownership'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py:47: AttributeError
+__ test_tf_records_reject_owner_parent_or_unattributed_replacement[zero_gid] ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'zero_gid'
+
+    @pytest.mark.parametrize('change', ['owner', 'parent', 'topic', 'zero_gid', 'missing_source'])
+    def test_tf_records_reject_owner_parent_or_unattributed_replacement(nav_robot_model, change):
+        rows = observations(nav_robot_model)
+        extra = copy.deepcopy(rows[-1])
+        if change == 'owner':
+            extra['gid'] = '03'*16
+        elif change == 'parent':
+            extra['parent'] = 'map'
+        elif change == 'topic':
+            extra['topic'] = '/tf_static'
+        elif change == 'zero_gid':
+            extra['gid'] = '00'*16
+        else:
+            del extra['source_timestamp']
+        rows.append(extra)
+>       assert not verify.assess_tf_ownership(rows, nav_robot_model)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_tf_ownership'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py:47: AttributeError
+_ test_tf_records_reject_owner_parent_or_unattributed_replacement[missing_source] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+change = 'missing_source'
+
+    @pytest.mark.parametrize('change', ['owner', 'parent', 'topic', 'zero_gid', 'missing_source'])
+    def test_tf_records_reject_owner_parent_or_unattributed_replacement(nav_robot_model, change):
+        rows = observations(nav_robot_model)
+        extra = copy.deepcopy(rows[-1])
+        if change == 'owner':
+            extra['gid'] = '03'*16
+        elif change == 'parent':
+            extra['parent'] = 'map'
+        elif change == 'topic':
+            extra['topic'] = '/tf_static'
+        elif change == 'zero_gid':
+            extra['gid'] = '00'*16
+        else:
+            del extra['source_timestamp']
+        rows.append(extra)
+>       assert not verify.assess_tf_ownership(rows, nav_robot_model)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'assess_tf_ownership'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py:47: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_actual_jazzy_metadata_capability_is_not_invented_as_a_publisher_identity
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py::test_tf_requires_complete_single_authority_tree
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py::test_tf_records_reject_owner_parent_or_unattributed_replacement[owner]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py::test_tf_records_reject_owner_parent_or_unattributed_replacement[parent]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py::test_tf_records_reject_owner_parent_or_unattributed_replacement[topic]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py::test_tf_records_reject_owner_parent_or_unattributed_replacement[zero_gid]
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_tf_ownership.py::test_tf_records_reject_owner_parent_or_unattributed_replacement[missing_source]
+7 failed, 3 passed in 7.66s

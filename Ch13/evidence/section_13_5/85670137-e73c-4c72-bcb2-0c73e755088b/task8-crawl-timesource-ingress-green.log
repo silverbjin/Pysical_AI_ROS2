@@ -1,0 +1,30 @@
+..........F
+=================================== FAILURES ===================================
+________________ test_clock_pause_cannot_keep_leg_targets_fresh ________________
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x703a72d90a10>
+
+    def test_clock_pause_cannot_keep_leg_targets_fresh(crawl_rig):
+        rig = crawl_rig
+>       activate(rig)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rig = <test_crawl_lifecycle.CrawlRig object at 0x703a72d90a10>
+
+    def activate(rig):
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+>       assert rig.transition(Transition.TRANSITION_ACTIVATE)
+E       assert False
+E        +  where False = transition(3)
+E        +    where transition = <test_crawl_lifecycle.CrawlRig object at 0x703a72d90a10>.transition
+E        +    and   3 = Transition.TRANSITION_ACTIVATE
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py:14: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793025113.882135644] [crawl_controller]: activation rejected: command_clock_step_requires_restart
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py::test_clock_pause_cannot_keep_leg_targets_fresh
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 10 passed in 35.92s

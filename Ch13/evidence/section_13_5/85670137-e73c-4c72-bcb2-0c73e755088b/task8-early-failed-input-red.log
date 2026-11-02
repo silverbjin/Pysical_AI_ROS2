@@ -1,0 +1,30 @@
+F
+=================================== FAILURES ===================================
+_____ test_failed_early_collection_reports_failed_job_not_previous_success _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7761491908c0>
+
+    def test_failed_early_collection_reports_failed_job_not_previous_success(nav_robot_model,monkeypatch):
+        m,b,q,p,points,f=pending(nav_robot_model);peer=m._load_transfer;before=deepcopy(m._targets)
+        m.load_transfer_observation=dict(numeric_input={'job':60},original_snapshot={'capture':60})
+        peer.last_input={'job':61,'reference':[1.,2.,3.]};peer.last_context={'capture':61}
+        peer.last_input_id=61;peer.last_attempt={'solver_status':4}
+        def fail(**kw):raise ValueError('native XYZ solver status 4')
+        monkeypatch.setattr(peer,'poll',fail)
+        with pytest.raises(ValueError,match='solver status 4'):m._collect_load_transfer(m._last_wall)
+        report=m.load_transfer_observation
+>       assert report['numeric_input']==peer.last_input
+E       AssertionError: assert {'job': 60} == {'job': 61, '....0, 2.0, 3.0]}
+E         
+E         Differing items:
+E         {'job': 60} != {'job': 61}
+E         Right contains 1 more item:
+E         {'reference': [1.0, 2.0, 3.0]}
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_early_numeric_collection.py:72: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_early_numeric_collection.py::test_failed_early_collection_reports_failed_job_not_previous_success
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 5 deselected in 14.43s

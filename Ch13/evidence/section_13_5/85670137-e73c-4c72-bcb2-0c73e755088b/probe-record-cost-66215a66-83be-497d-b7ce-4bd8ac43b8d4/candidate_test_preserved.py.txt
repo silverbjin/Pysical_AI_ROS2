@@ -1,0 +1,65 @@
+"""Immutable normalized data can be shared; original clocks cannot be renewed."""
+from copy import deepcopy
+from dataclasses import asdict
+import importlib
+import importlib.util
+import json
+from types import MappingProxyType
+import pytest
+
+
+def api():
+    assert importlib.util.find_spec('observation_records_13_5') is not None,'immutable observation record boundary missing'
+    return importlib.import_module('observation_records_13_5')
+
+
+def test_every_normalized_stream_preserves_its_wire_values_and_original_times(nav_robot_model):
+    from guard_fixture import bundle
+    values=bundle(nav_robot_model)
+    for key in ('joints','imu','contacts','body','scan','carry'):
+        original=getattr(values,key);expected=asdict(original)
+        frozen=api().freeze_sample(original);record=api().sample_record(frozen)
+        assert frozen.stamp_ns==original.stamp_ns and frozen.received_ns==original.received_ns
+        assert json.loads(json.dumps(record,default=api().json_value))==json.loads(json.dumps(expected))
+        assert api().freeze_sample(frozen) is frozen,'already immutable data was copied again'
+
+
+def test_mutating_original_or_later_ingress_cannot_change_old_record():
+    from integrated_robot_navigation.samples import Sample
+    positions={'joint':.25};data={'position':positions,'nested':[[1.,2.]]}
+    original=Sample(123,456,0,7,'fixture',data)
+    frozen=api().freeze_sample(original);old=api().sample_record(frozen)
+    positions['joint']=9.;data['nested'][0][0]=8.
+    assert old['data']['position']['joint']==.25 and old['data']['nested'][0][0]==1.
+    with pytest.raises(TypeError):old['data']['position']['joint']=10.
+    newer=api().freeze_sample(Sample(124,457,0,8,'fixture',{'position':{'joint':.5}}))
+    assert api().sample_record(newer)['data']['position']['joint']==.5
+    assert old['stamp_ns']==123 and old['received_ns']==456
+    assert old['data']['position']['joint']==.25
+
+
+def test_immutable_body_record_keeps_existing_projection_contract(nav_robot_model):
+    from guard_fixture import bundle
+    from integrated_robot_navigation.samples import Sample
+    from integrated_robot_navigation.projection import project_body
+    original=bundle(nav_robot_model).body
+    selected=Sample(**api().sample_record(api().freeze_sample(original)))
+    assert project_body(selected)==project_body(original)
+    assert selected.data['child_frame_id']=='base_footprint'
+    assert api().sample_record(None) is None
+
+
+def test_unknown_mutable_payload_is_rejected_instead_of_shared():
+    from integrated_robot_navigation.samples import Sample
+    with pytest.raises(TypeError):api().freeze_sample(Sample(1,2,0,1,'fixture',{'bad':object()}))
+
+
+def test_native_fixed_array_scalars_preserve_wire_values_and_clocks():
+    from integrated_robot_interfaces.msg import FootContacts
+    from integrated_robot_navigation.observations import sensor_sample
+    message=FootContacts();message.header.frame_id='odom';message.header.stamp.sec=17
+    message.normal_forces=[1.,2.,3.,4.]
+    original=sensor_sample('contacts',message,12345,0)
+    frozen=api().freeze_sample(original)
+    assert json.loads(json.dumps(api().sample_record(frozen),default=api().json_value))==json.loads(json.dumps(asdict(original)))
+    assert frozen.stamp_ns==17_000_000_000 and frozen.received_ns==12345

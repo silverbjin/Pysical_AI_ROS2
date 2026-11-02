@@ -1,0 +1,82 @@
+...E.........E                                                           [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_delayed_acceptance_and_cancel_ack_never_release_without_result _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    @pytest.fixture
+    def carry_rig(nav_robot_model):
+        module = importlib.import_module('integrated_robot_navigation.carry_manager') if importlib.util.find_spec(
+            'integrated_robot_navigation.carry_manager') else None
+        assert module is not None, 'measured carry owner missing'
+>       rig = CarryRig(nav_robot_model, module.CarryManager)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:45: in __init__
+    self.feedback = CarryFeedbackPeer(model.model_sha256, bundle(model).joints.data['position'])
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ch13/ros2_ws/src/integrated_robot_navigation/test/carry_feedback_peer.py:66: in __init__
+    self.close()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <carry_feedback_peer.CarryFeedbackPeer object at 0x71f0f172d940>
+
+    def close(self):
+        self.stopping.set()
+>       assert self.result.poll(5.), 'feedback child did not report normal resource cleanup'
+               ^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: feedback child did not report normal resource cleanup
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/carry_feedback_peer.py:75: AssertionError
+_ ERROR at setup of test_report_exposes_received_typed_result_not_only_status __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    @pytest.fixture
+    def carry_rig(nav_robot_model):
+        module = importlib.import_module('integrated_robot_navigation.carry_manager') if importlib.util.find_spec(
+            'integrated_robot_navigation.carry_manager') else None
+        assert module is not None, 'measured carry owner missing'
+>       rig = CarryRig(nav_robot_model, module.CarryManager)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:45: in __init__
+    self.feedback = CarryFeedbackPeer(model.model_sha256, bundle(model).joints.data['position'])
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <carry_feedback_peer.CarryFeedbackPeer object at 0x71f0f0738950>
+model_hash = 'b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc'
+positions = {'arm_joint_1': 0.0, 'arm_joint_2': 1.2, 'arm_joint_3': -2.0, 'arm_joint_4': 0.0, ...}
+
+    def __init__(self, model_hash, positions):
+        context = multiprocessing.get_context('spawn')
+        self.values = context.Array('d', [0., 1., 0., 0., 0., 0.])
+        self.enabled, self.stopping, ready = (context.Event() for _ in range(3))
+        self.enabled.set()
+        self.result, sender = context.Pipe(duplex=False)
+        self.process = context.Process(target=_publish, args=(model_hash, positions, self.values,
+            self.enabled, self.stopping, ready, sender), name='carry-feedback-peer')
+        self.process.start()
+        sender.close()
+        if not ready.wait(5.):
+            self.close()
+>           raise AssertionError('independent DDS feedback failed to start')
+E           AssertionError: independent DDS feedback failed to start
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/carry_feedback_peer.py:67: AssertionError
+=========================== short test summary info ============================
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_delayed_acceptance_and_cancel_ack_never_release_without_result
+ERROR Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_report_exposes_received_typed_result_not_only_status
+12 passed, 2 errors in 105.30s (0:01:45)
+Exception ignored in: <module 'threading' from '/usr/lib/python3.12/threading.py'>
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/threading.py", line 1622, in _shutdown
+    lock.acquire()
+KeyboardInterrupt: 
+terminate called without an active exception
+terminate called recursively

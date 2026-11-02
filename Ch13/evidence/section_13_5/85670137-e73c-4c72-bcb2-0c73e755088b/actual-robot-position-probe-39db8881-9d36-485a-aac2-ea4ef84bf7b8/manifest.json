@@ -1,0 +1,69 @@
+{
+  "scope": "actual_URDF_installed_PD_stationary_position_force_model_not_G1_C1_G2",
+  "uuid": "actual-robot-position-probe-39db8881-9d36-485a-aac2-ea4ef84bf7b8",
+  "commands": [
+    {
+      "label": "convert",
+      "argv": [
+        "gz",
+        "sdf",
+        "-p",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/actual-robot-position-probe-39db8881-9d36-485a-aac2-ea4ef84bf7b8/robot_without_system_plugins.urdf"
+      ],
+      "returncode": 0
+    },
+    {
+      "label": "configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/mnt/c/Users/Jinho/Documents/Codex/2026-11-02/13-5-2026-11-02-task8/work/robot_force_probe",
+        "-B",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/actual-robot-position-probe-39db8881-9d36-485a-aac2-ea4ef84bf7b8/build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCH13_SENSOR_PREFIX=/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors",
+        "-DCH13_SENSOR_INCLUDE=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/include"
+      ],
+      "returncode": 0
+    },
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/actual-robot-position-probe-39db8881-9d36-485a-aac2-ea4ef84bf7b8/build",
+        "-j1"
+      ],
+      "returncode": 0
+    },
+    {
+      "label": "run",
+      "argv": [
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/actual-robot-position-probe-39db8881-9d36-485a-aac2-ea4ef84bf7b8/build/robot_force_probe",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/actual-robot-position-probe-39db8881-9d36-485a-aac2-ea4ef84bf7b8/world.sdf",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/actual-robot-position-probe-39db8881-9d36-485a-aac2-ea4ef84bf7b8/config.json"
+      ],
+      "returncode": 0
+    }
+  ],
+  "fixture_sha256": "799e3b0b088b1b7eaade804934fb589549d382c6110f122f21838301fb79d3bb",
+  "original_urdf_sha256": "113a4bb3e0852eb4e47f5f032a8ebfb8f13f296b7eb95e5f549d694661aa5651",
+  "physical_link_joint_sha256": "45026c98f094f8995ffb2876013b4d226c8b27684846a997adf6563c737f4a6b",
+  "source_sha256": {
+    "CMakeLists.txt": "ebdadfe34d188a930ce17d2279ee085b401070f5e9648bd8780ccd4ba8f705a2",
+    "robot_force_probe.cpp": "3fab18106dc2e9cdfdc1705f1e84a9ab1348d27802a6c0a36504c1b5946feb19",
+    "run_actual_robot_probe.py": "7e32aab37acbf9aec6cb2ddd2c67fd9f0c73237b9c00490d93269d8474b9f855"
+  },
+  "library_sha256": {
+    "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/libnavigation_position_system.so": "3a33420408b7a01e65a8c958d8743d6f91db0481dfecc14ebb4b066f509b3620",
+    "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/libnavigation_gazebo_observation.so": "dde68e6d85fbaeb580a1045316e1ab9439cd03abdb8c4c879c8720f74b4b50cb"
+  },
+  "seed_frame_ros_ns": 15000000000,
+  "seed_native_capture_ns": 15004000000,
+  "conditions_predefined": "baseline then each12legjoint plus/minus20microrad; installed20ms reference ramp;2sec percase;last100samples",
+  "model_validation_criterion_predefined": "full equilibrium derivative each input column relative vector error <=5%; raw data and any failure retained",
+  "system_changes": "none; no services/clock/driver/priority changes; one finite headless process",
+  "binary_sha256": "aac2b5f54545e33fcd964f7a5445bd15b8a9a2b361639cec47fcaae447ff82f2",
+  "world_sha256": "54e676d7ac4c50452f2e23f6565ebb1a3951039e6bcecebf2b9e46e9d247a603",
+  "config_sha256": "205e01e39b813544c11971afb05c506a0ceda69db09bd4b123017f7f4aa9908a"
+}

@@ -1,0 +1,39 @@
+F
+=================================== FAILURES ===================================
+_ test_current_jitter_keeps_same_unique_optimum_without_warmstart[native_c371_xyz_budget.json] _
+
+name = 'native_c371_xyz_budget.json'
+
+    @pytest.mark.parametrize('name',['native_c371_xyz_budget.json','native_8d4f_xyz_budget.json','native_141b_xyz_budget.json'])
+    def test_current_jitter_keeps_same_unique_optimum_without_warmstart(name):
+        case=json.loads((Path(__file__).parent/'fixtures'/name).read_text());model=compile_model(case['urdf']);rng=np.random.default_rng(130601)
+        with NativeMassEvaluator(model) as core:
+            old=SpatialXYZTransition(model,case['limits'],terms_evaluator=core.contact_terms)
+            new=api()(model,case['limits'],terms_evaluator=core.contact_terms)
+            try:
+                old.prepare();new.prepare()
+                for index in range(18):
+                    args=deepcopy(case['args'])
+                    for n,value in args['joints'].items():
+                        lo,hi=model.limits[n][:2];args['joints'][n]=float(rng.uniform(max(lo,value-.001),min(hi,value+.001)))
+                    for f,values in args['forces_world'].items():args['forces_world'][f]=(np.array(values)*rng.uniform(.98,1.02)).tolist()
+                    expected=old.step(**args);actual=new.step(**args)
+                    response=old.spatial_response(args['joints'],args['body_pose'],args['points'])
+                    assert np.max(np.abs(new.last_response-response))<1e-6
+                    unit=args['speed']*args['dt'];a=response*unit;scale=max(float(np.linalg.norm(a,2)**2),1e-12)
+                    desired=np.array([np.array(args['target_forces'].get(f,[0.,0.,0.]))-args['forces_world'][f] for f in model.feet]).ravel()*args['dt']
+                    def objective(delta):
+                        x=np.array([delta[f] for f in model.feet]).ravel()/unit
+                        return float(np.linalg.norm(a@x-desired)**2/scale+.001*(x@x))
+                    before,after=objective(expected),objective(actual)
+>                   assert max(np.max(np.abs(np.array(actual[f])-expected[f])) for f in model.feet)<2e-9, dict(
+                        index=index,oracle_objective=before,native_objective=after,objective_gap=before-after,unit_m=unit)
+E                       AssertionError: {'index': 11, 'native_objective': 0.01946362046609069, 'objective_gap': 3.132515427606286e-11, 'oracle_objective': 0.019463620497415846, ...}
+E                       assert 2.4435616524852694e-09 < 2e-09
+E                        +  where 2.4435616524852694e-09 = max(<generator object test_current_jitter_keeps_same_unique_optimum_without_warmstart.<locals>.<genexpr> at 0x72d81aa61be0>)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_xyz.py:88: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_xyz.py::test_current_jitter_keeps_same_unique_optimum_without_warmstart[native_c371_xyz_budget.json]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 7 deselected in 13.80s

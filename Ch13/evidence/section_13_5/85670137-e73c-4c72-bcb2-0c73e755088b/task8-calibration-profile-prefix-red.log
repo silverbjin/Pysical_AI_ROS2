@@ -1,0 +1,25 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___ test_profile_default_has_no_prefix_and_explicit_target_is_one_owned_node ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-19/test_profile_default_has_no_pr0')
+
+    def test_profile_default_has_no_prefix_and_explicit_target_is_one_owned_node(tmp_path):
+>       assert runner.g1_profile_arguments(None,tmp_path)==[]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'run_navigation_13_5' has no attribute 'g1_profile_arguments'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_profile_runner.py:11: AttributeError
+__ test_profiled_diagnostic_preserves_every_check_but_cannot_pass_acceptance ___
+
+    def test_profiled_diagnostic_preserves_every_check_but_cannot_pass_acceptance():
+        base=runner.native_required_checks('relay100','allowance50um','gazebo')
+>       diagnostic=runner.native_required_checks('relay100','allowance50um','gazebo',profile_node='motion_guard')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: native_required_checks() got an unexpected keyword argument 'profile_node'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_profile_runner.py:22: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_profile_runner.py::test_profile_default_has_no_prefix_and_explicit_target_is_one_owned_node
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g1_profile_runner.py::test_profiled_diagnostic_preserves_every_check_but_cannot_pass_acceptance
+2 failed in 7.93s

@@ -1,0 +1,99 @@
+{
+  "scope": "predeclared_fixed_source_serial_mujoco_G1_G2_acceptance_not_section_completion",
+  "pid": 1738,
+  "uid": 1000,
+  "boot_id": "9ba4e47c-dc1e-4459-a1f3-a7400f86154e",
+  "required_pairs": 3,
+  "seed_g1_result": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-mujoco-9d296bc8-1f99-494a-83f4-2bfc0bdc3751/result.json",
+  "commands": [
+    [
+      "/home/jinho/ch13_vision_13_4_venv/bin/python",
+      "Ch13/scripts/check_system_clock_13_5.py",
+      "--output-dir",
+      "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/preflight-mujoco-pairs-441da77a-6a35-4e95-aa6f-c1c050718aa2/preflight"
+    ],
+    [
+      "bash",
+      "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/check-native.sh",
+      "task8-stable-clock-startup-441da77a-6a35-4e95-aa6f-c1c050718aa2",
+      "Ch13/ros2_ws/src/integrated_robot_navigation/test/test_shutdown_lifecycle_state_ros.py",
+      "Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_shutdown_order.py",
+      "Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_startup.py",
+      "-W",
+      "error"
+    ],
+    [
+      "/home/jinho/ch13_vision_13_4_venv/bin/python",
+      "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/native-output-g1-mujoco.py",
+      "--control-clock-mode",
+      "relay100",
+      "--seed-g1-result",
+      "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-mujoco-9d296bc8-1f99-494a-83f4-2bfc0bdc3751/result.json",
+      "--observer-backend",
+      "native_cdr"
+    ],
+    [
+      "/home/jinho/ch13_vision_13_4_venv/bin/python",
+      "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/freeze-current-trial.py",
+      "native-g1-mujoco-073ad2cb-6795-41f6-8de5-e13de7e2f343",
+      "task8-preflight-pair-g1-mujoco-073ad2cb-6795-41f6-8de5-e13de7e2f343"
+    ]
+  ],
+  "attempts": [
+    {
+      "trial": "native-g1-mujoco-073ad2cb-6795-41f6-8de5-e13de7e2f343",
+      "status": "FAIL",
+      "admitted": false,
+      "required_checks": [
+        "carry_collision_free",
+        "carry_measured_settle",
+        "carry_terminal_received",
+        "contact_frames_force",
+        "contact_lift",
+        "contact_support",
+        "control_clock_contract",
+        "imu_frame",
+        "joint_envelope",
+        "joint_tf_ownership",
+        "native_com_consistent",
+        "native_ctrl_observed",
+        "native_library_loaded",
+        "native_observations",
+        "no_residual_members",
+        "normal_engine_exit",
+        "normal_runtime_exit",
+        "parent_reaped",
+        "scan_world_not_self",
+        "sensor_freshness",
+        "stability",
+        "stance_slip",
+        "tf_observer_owned",
+        "unvalidated_crawl_rejected"
+      ],
+      "source_manifest_sha256": "56ce26df067546208b960077358369ad3bd1f293096d269e97b37ba86d4bc1e2",
+      "result_sha256": "439309c1280501e3e8974e1bd1f846da468503273fa8bead8536cc9b05e0617b",
+      "runtime_exit": false,
+      "engine_exit": true,
+      "forced_cleanup": false,
+      "residual": [],
+      "archive": "task8-preflight-pair-g1-mujoco-073ad2cb-6795-41f6-8de5-e13de7e2f343.json"
+    }
+  ],
+  "passed": false,
+  "first_failure_stops": true,
+  "changes_system_settings": false,
+  "concurrent_engines": false,
+  "archive_from_native": true,
+  "observer_backend": "native_cdr",
+  "verification": {
+    "returncode": 0,
+    "clock_samples": 1516,
+    "clock_changes": [],
+    "observer_joined": true,
+    "observer_errors": [],
+    "label": "task8-stable-clock-startup-441da77a-6a35-4e95-aa6f-c1c050718aa2",
+    "scope": "CPU_RPC_verification_only_not_engine_acceptance"
+  },
+  "pair_in_progress": 1,
+  "failure": "first failed acceptance retained: series stopped, no retry/next engine"
+}

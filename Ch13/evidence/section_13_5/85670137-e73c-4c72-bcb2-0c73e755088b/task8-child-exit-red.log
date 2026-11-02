@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_native_child_exit_is_taken_from_owning_parent_not_wrapper_returncode ___
+
+    def test_native_child_exit_is_taken_from_owning_parent_not_wrapper_returncode():
+        content = ('[INFO] [ros2_control_node-1]: process has finished cleanly [pid 123]\n'
+                   '[ERROR] [ros2_control_node-2]: process has died [pid 124, exit code -6, cmd x].\n')
+>       assert api().engine_returncodes(content, [123, 124, 125]) == [0, -6, None]
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_navigation_13_5' has no attribute 'engine_returncodes'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py:28: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_evidence_13_5.py::test_native_child_exit_is_taken_from_owning_parent_not_wrapper_returncode
+1 failed in 7.80s
