@@ -1,0 +1,30 @@
+revision: section_13_5_reuse_R2_v1
+role: frozen_descriptive_contract_runtime_constants_in_safety_py
+upstream_commit: d010212c3f5c9e6e5542ada61cfdacc19b00f775
+profile: corrected_A_native_arm_pd_consistent_walking_gains
+physics_dt_s: 0.002
+policy_hz: 50
+command_type: geometry_msgs/msg/TwistStamped
+command_frame: reuse/nav_base
+axes: {vx_mps: [-0.2, 0.2], vy_mps: [0.0, 0.0], wz_radps: [-0.2, 0.2]}
+acceleration: {vx_mps2: 0.3, wz_radps2: 0.5}
+wall_timeout_s: 0.30
+source_timeout_sim_s: 0.30
+cross_dds_future_slack_sim_s: 0.025
+explicit_reset_then_arm: true
+source_identity: rclcpp_MessageInfo_actual_GID
+first_receipt: CLOCK_MONOTONIC_at_cpp_ingress
+raw_topic: /ch13/reuse/cmd_vel_raw
+safe_topic: /ch13/reuse/cmd_vel_safe
+raw_actual_state: /ch13/reuse/engine_state
+projected_nav_state: /ch13/reuse/odometry
+localization: explicit_engine_ground_truth_no_AMCL_SLAM_claim
+frames: {odom: reuse/odom, navigation: reuse/nav_base, actual_body: reuse/base}
+arm_owner: independent_upstream_native_PD_hold
+arm_hold_target: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+arm_target_screen_rad: 0.10
+arm_joint1_offset_test_max_rad: 0.05
+motor_caps: {hip_thigh_Nm: 23.7, calf_Nm: 45.43, arm_first3_Nm: 32, arm_last3_Nm: 8, gripper_N: 0.5}
+educational_stop_gate: section_13_5_edu_stop_v2
+R2_first_stop_deadline: {sim_s: 5, wall_s: 8}
+raw_expiry_zero_decision_wall_s: 0.35 # expiry0.30 + control/dispatch budget

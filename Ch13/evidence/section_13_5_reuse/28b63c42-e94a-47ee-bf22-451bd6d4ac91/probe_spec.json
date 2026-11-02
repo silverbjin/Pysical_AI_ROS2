@@ -1,0 +1,55 @@
+{
+  "revision": "section_13_5_reuse_v1_R1_probe_2_arm_snapshot",
+  "scope": "ROS-free original PlayMujoco loop, unchanged physics/policy/gains; bounded input replay and observation only",
+  "schedule_sim_s": [
+    {
+      "until": 5.0,
+      "phase": "initial_zero",
+      "vx": 0.0,
+      "wz": 0.0
+    },
+    {
+      "until": 10.0,
+      "phase": "forward",
+      "vx": 0.2,
+      "wz": 0.0
+    },
+    {
+      "until": 15.0,
+      "phase": "stop_forward",
+      "vx": 0.0,
+      "wz": 0.0
+    },
+    {
+      "until": 19.0,
+      "phase": "turn",
+      "vx": 0.0,
+      "wz": 0.2
+    },
+    {
+      "until": 25.0,
+      "phase": "stop_turn",
+      "vx": 0.0,
+      "wz": 0.0
+    }
+  ],
+  "probe_limits_not_final_acceptance": {
+    "wall_timeout_s": 100,
+    "minimum_base_z_m": 0.12,
+    "maximum_tilt_rad": 0.7853981633974483,
+    "settle_linear_speed_mps": 0.03,
+    "settle_angular_speed_radps": 0.05,
+    "settle_arm_speed_radps": 0.1,
+    "settle_wall_s": 1.0,
+    "minimum_forward_displacement_m": 0.3,
+    "minimum_turn_yaw_rad": 0.3
+  },
+  "do_not_claim": [
+    "R2 limits frozen",
+    "Nav2 PASS",
+    "vision PASS",
+    "collision-free proof from ncon only",
+    "process exit means physical stop"
+  ],
+  "minimal_correction": "copy initial arm target out of live qpos view; original source unchanged"
+}

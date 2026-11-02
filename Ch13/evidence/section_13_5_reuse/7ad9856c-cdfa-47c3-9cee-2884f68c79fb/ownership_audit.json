@@ -1,0 +1,97 @@
+{
+  "candidate": "B",
+  "commit": "4e12109d1eccb1d9da2e4a35f189fabea3f13677",
+  "pid": 751,
+  "ppid": 750,
+  "scope": "TorchScript CPU inference + source/config ownership audit; no simulation, no B environment reproduction",
+  "policies": [
+    {
+      "config": "config.yaml",
+      "path": "mujoco/deploy/policy/go2_piper/policy.pt",
+      "bytes": 1111382,
+      "sha256": "72d9f22c633081e8d4b9693e6fda54dba6cdd036a102f330c1bfe096e43b4da8",
+      "input_shape": [
+        1,
+        210
+      ],
+      "actual_output_shape": [
+        1,
+        18
+      ],
+      "output_finite": true,
+      "num_actions": 18,
+      "policy_owned_leg_indices": [
+        0,
+        12
+      ],
+      "policy_owned_arm_indices": [
+        12,
+        18
+      ],
+      "default_arm_target": [
+        0.0,
+        0.0,
+        -0.0,
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "simulation_dt_s": 0.005,
+      "control_decimation": 4
+    },
+    {
+      "config": "config_wbc.yaml",
+      "path": "mujoco/deploy/policy/go2_piper/wbc/policy.pt",
+      "bytes": 1111510,
+      "sha256": "c5f57c79bc01d8b8f2c0846163b149e3f53de39291770a1ccb230ef3be6b800e",
+      "input_shape": [
+        1,
+        210
+      ],
+      "actual_output_shape": [
+        1,
+        18
+      ],
+      "output_finite": true,
+      "num_actions": 18,
+      "policy_owned_leg_indices": [
+        0,
+        12
+      ],
+      "policy_owned_arm_indices": [
+        12,
+        18
+      ],
+      "default_arm_target": [
+        0.0,
+        0.0,
+        -0.0,
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "simulation_dt_s": 0.005,
+      "control_decimation": 4
+    }
+  ],
+  "ownership_source_lines": [
+    {
+      "line": 236,
+      "text": "data.ctrl[:] = tau"
+    },
+    {
+      "line": 286,
+      "text": "arm_action  = action[:, 12:]"
+    },
+    {
+      "line": 287,
+      "text": "action_out  = torch.cat([leg_action, arm_action], dim=-1)"
+    },
+    {
+      "line": 289,
+      "text": "target_dof_pos = action_out * action_scale + default_angles"
+    }
+  ],
+  "preflight_result": "INCOMPATIBLE_WITH_INDEPENDENT_ARM_OWNER_AS_DELIVERED",
+  "reason": "Both provided actors command 18 joints, and upstream main applies last six actor outputs to arm PD targets. No delivered independent-arm mode demonstrated. Dropping/replacing those outputs would change the validated closed-loop policy/model contract; not adopted silently."
+}
