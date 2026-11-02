@@ -1,0 +1,44 @@
+F
+=================================== FAILURES ===================================
+_______ test_actual_dds_echo_preserves_first_receipt_and_sole_publisher ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-18/test_actual_dds_echo_preserves0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_actual_dds_echo_preserves_first_receipt_and_sole_publisher(tmp_path,nav_robot_model):
+        profile,execution=fixture(tmp_path,nav_robot_model,'mujoco')
+        ctx=Context();rclpy.init(context=ctx);owner=source=executor=None
+        try:
+            owner=CrawlController(nav_robot_model,profile,'mujoco',context=ctx,parameter_overrides=[
+                Parameter('validation_mode',value=True),Parameter('g2_validation_mode',value=True),
+                Parameter('native_execution_profile',value=json.dumps(execution))])
+            owner.trigger_configure()
+            assert hasattr(owner,'applied_credit'),'applied DDS owner missing'
+            credit=owner.applied_credit
+            source=Node('synthetic_pre_step_echo',context=ctx)
+            publisher=source.create_publisher(JointState,'/navigation/applied_reference',1)
+            executor=SingleThreadedExecutor(context=ctx);executor.add_node(owner);executor.add_node(source)
+            end=time.monotonic()+1.
+            while publisher.get_subscription_count()<1 and time.monotonic()<end:executor.spin_once(timeout_sec=.01)
+            credit.prime((0.,)*12)
+            stamp=owner.get_clock().now().nanoseconds;wall=time.monotonic_ns()
+            credit.submitted((.001,)*12,stamp,wall)
+            message=JointState();message.header.stamp=owner.get_clock().now().to_msg()
+            message.header.frame_id='mujoco/pre_step';message.name=list(nav_robot_model.joint_names)
+            message.position=[.001]*12
+            end=time.monotonic()+.15
+            while credit.snapshot()['last_ack'] is None and time.monotonic()<end:
+                publisher.publish(message);executor.spin_once(timeout_sec=.005)
+                owner._reference_permitted((.001,0.,0.),owner.get_clock().now().nanoseconds,time.monotonic_ns())
+            ack=credit.snapshot()['last_ack'];assert ack is not None
+            first=ack['received_ns'];assert first>=wall
+            cutoff_ros=owner.get_clock().now().nanoseconds;cutoff_wall=time.monotonic_ns()
+>           diagnostic=owner._application_snapshot(cutoff_ros,cutoff_wall)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'CrawlController' object has no attribute '_application_snapshot'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_reference_ros.py:67: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_reference_ros.py::test_actual_dds_echo_preserves_first_receipt_and_sole_publisher
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 12.67s

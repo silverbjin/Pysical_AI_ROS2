@@ -1,0 +1,39 @@
+F
+=================================== FAILURES ===================================
+_ test_absolute_virtual_com_cannot_grant_zero_shift_when_measured_support_is_unsafe _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_absolute_virtual_com_cannot_grant_zero_shift_when_measured_support_is_unsafe(nav_robot_model):
+        row=json.loads(Path(__file__).with_name('native_4692_support.json').read_text())
+        value=machine(nav_robot_model,IdealFeedback(nav_robot_model))
+        value.state='CRAWL';value.reference_body=np.array(row['reference_body'])
+        value._targets={name:np.array(point) for name,point in row['targets'].items()}
+        value._index=value.ORDER.index(row['swing_foot'])
+        q=row['joints']['position'];body=np.eye(4)
+        body[:3,:3]=body_rotation(row['body'])[0];body[:3,3]=row['body']['position']
+        actual=np.array(center_of_mass(nav_robot_model,q,body))
+        points=dict(zip(nav_robot_model.feet,row['contacts']['points']))
+        loads=dict(zip(nav_robot_model.feet,row['contacts']['touching']))
+        support=[point for name,point in points.items() if name!=row['swing_foot']]
+        assert support_margin(actual,support)==pytest.approx(.009877044883909392,abs=1e-10)
+        baseline=dict(q);baseline.update(value._solve(q,True))
+        virtual=np.array(center_of_mass(nav_robot_model,baseline,value.reference_body))
+        assert support_margin(virtual,support)>.025, 'original absolute model optimism no longer reproduced'
+        start=value.reference_body.copy()
+        value._begin_shift(actual,loads,points,row['ros_ns'],q)
+        list(value._shift_plan)
+        goal=start.copy();goal[:2,3]+=value._offset_goal-value._offset_start
+        planned=dict(q);planned.update(value._solve(q,True,goal))
+        delta=np.array(center_of_mass(nav_robot_model,planned,goal))-virtual
+>       assert support_margin(actual+delta,support)>=.025-1e-12, \
+            'absolute virtual CoM accepted zero shift while the actual three-foot margin was below 10mm'
+E       AssertionError: absolute virtual CoM accepted zero shift while the actual three-foot margin was below 10mm
+E       assert 0.009877044883909392 >= (0.025 - 1e-12)
+E        +  where 0.009877044883909392 = support_margin((array([ 0.40599226, -0.00818019,  0.45913193]) + array([0., 0., 0.])), [[0.631208564464474, -0.18285010267601406, -0.001112229057985921], [0.6788573879390887, 0.18389489951500634, -0.0002785730229234937], [0.12570568227962925, 0.18186335737135775, -0.0009489746526222184]])
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_shift_measured_baseline.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_shift_measured_baseline.py::test_absolute_virtual_com_cannot_grant_zero_shift_when_measured_support_is_unsafe
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 6.67s

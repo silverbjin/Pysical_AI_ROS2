@@ -1,0 +1,15 @@
+F
+=================================== FAILURES ===================================
+___ test_gazebo_g2_requires_numerical_close_without_relabelling_other_roles ____
+
+    def test_gazebo_g2_requires_numerical_close_without_relabelling_other_roles():
+        for scenario in ('crawl-cycle','crawl-reverse'):
+            required=runner.g2_required_checks('relay100','allowance50um','gazebo',scenario)
+>           assert 'numeric_worker_normal_close' in required
+E           AssertionError: assert 'numeric_worker_normal_close' in frozenset({'bounded_test_commands', 'carry_collision_free', 'carry_measured_settle', 'carry_terminal_received', 'command_source_shutdown', 'contact_frames_force', ...})
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_numeric_worker_acceptance.py:11: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_numeric_worker_acceptance.py::test_gazebo_g2_requires_numerical_close_without_relabelling_other_roles
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 8 deselected in 15.91s

@@ -1,0 +1,28 @@
+F
+=================================== FAILURES ===================================
+_____ test_real_mode_service_checks_prepared_file_identity_without_rehash ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-32/test_real_mode_service_checks_0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7c348d75bd70>
+
+    def test_real_mode_service_checks_prepared_file_identity_without_rehash(tmp_path,nav_robot_model,monkeypatch):
+        module=importlib.import_module('integrated_robot_navigation.motion_guard')
+        original=module.validate_profile;calls=[]
+        def checked(*args,**kwargs):calls.append(None);return original(*args,**kwargs)
+        monkeypatch.setattr(module,'validate_profile',checked)
+        profile=candidate(tmp_path,nav_robot_model)
+        context=Context();rclpy.init(context=context);guard=None;rig=None
+        try:
+            guard=module.MotionGuardNode(nav_robot_model,profile,'mujoco',context=context,
+                parameter_overrides=[Parameter('use_sim_time',value=True)])
+>           assert len(calls)==1,'native proof was not prepared before starting control resources'
+E           AssertionError: native proof was not prepared before starting control resources
+E           assert 0 == 1
+E            +  where 0 = len([])
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_guard_prepared_admission_ros.py:21: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_guard_prepared_admission_ros.py::test_real_mode_service_checks_prepared_file_identity_without_rehash
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.02s

@@ -1,0 +1,32 @@
+.........F
+=================================== FAILURES ===================================
+_____ test_reference_speed_envelope_and_real_landing_not_timer_completion ______
+
+    def test_reference_speed_envelope_and_real_landing_not_timer_completion():
+        value = trajectory()
+        previous = .029
+        for index in range(1,27):
+            result = tick(value,index,center=.027 if index<=3 else .030)
+            assert abs(result.z-previous)/.02 <= .020000001
+            assert .017 <= result.z <= .040
+            assert not result.complete
+            previous = result.z
+        assert result.phase == 'TOUCHDOWN'
+        for index in range(27,60):
+            result = tick(value,index,center=.020,forces=(30.,3.,30.,30.))
+            assert abs(result.z-previous)/.02 <= .020000001, 'approved G1 planned return stays bounded under load'
+            assert not result.complete, 'sub-margin load is not restored stable support'
+            previous = result.z
+>       assert result.z == pytest.approx(.017,abs=1e-12), 'reference endpoint precedes loaded completion'
+E       AssertionError: reference endpoint precedes loaded completion
+E       assert 0.020263749999999997 == 0.017 ± 1.0e-12
+E         
+E         comparison failed
+E         Obtained: 0.020263749999999997
+E         Expected: 0.017 ± 1.0e-12
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py:61: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_inplace_calibration.py::test_reference_speed_envelope_and_real_landing_not_timer_completion
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 9 passed in 25.85s

@@ -1,0 +1,20 @@
+F
+=================================== FAILURES ===================================
+_ test_actual_runner_artifact_list_shape_can_be_checked_without_a_handwritten_role_map _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-28/test_actual_runner_artifact_li0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_actual_runner_artifact_list_shape_can_be_checked_without_a_handwritten_role_map(tmp_path,nav_robot_model):
+        profile,result=prepared(tmp_path,nav_robot_model)
+>       assert validate(tmp_path,nav_robot_model,profile,result)==(True,'')
+E       AssertionError: assert (False, 'inva...ive_evidence') == (True, '')
+E         
+E         At index 0 diff: False != True
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_profile_admission.py:48: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_profile_admission.py::test_actual_runner_artifact_list_shape_can_be_checked_without_a_handwritten_role_map
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 7.86s

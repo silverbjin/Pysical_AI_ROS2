@@ -1,0 +1,17 @@
+F
+=================================== FAILURES ===================================
+_________ test_numeric_dt_cannot_exceed_actual_elapsed_reference_time __________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_numeric_dt_cannot_exceed_actual_elapsed_reference_time(nav_robot_model):
+        m,b,q,p,points,f=ready(nav_robot_model);m._transfer_stance_load(b,q,p,points,f,.02)
+        complete(m,f,delta=2e-5);b=next_capture(m,b,5_000_000);before=deepcopy(m._targets)
+>       with pytest.raises(ValueError,match='elapsed reference rate'):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py:67: Failed
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py::test_numeric_dt_cannot_exceed_actual_elapsed_reference_time
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 10 deselected in 13.84s

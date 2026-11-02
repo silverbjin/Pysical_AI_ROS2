@@ -1,0 +1,39 @@
+F
+=================================== FAILURES ===================================
+________ test_real_config_selects_only_explicit_gazebo_g2[gazebo-True] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_real_config_selects_only_0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+engine = 'gazebo', g2 = True
+
+    @pytest.mark.parametrize('engine,g2',[('gazebo',True),('gazebo',False),('mujoco',True),('mujoco',False)])
+    def test_real_config_selects_only_explicit_gazebo_g2(tmp_path,nav_robot_model,engine,g2):
+        import rclpy
+        from rclpy.context import Context
+        from rclpy.parameter import Parameter
+        from integrated_robot_navigation.crawl_controller import CrawlController
+        from test_execution_admission_contract import fixture
+        model=helper(nav_robot_model).model;profile,expected=fixture(tmp_path,model,engine)
+        expected={**expected,'control_clock':'relay100'}
+        ctx=Context();rclpy.init(context=ctx)
+        node=CrawlController(model,profile,engine,context=ctx,
+            cli_args=['--ros-args','-r','/clock:=/navigation/control_clock'],parameter_overrides=[
+                Parameter('validation_mode',value=True),Parameter('g2_validation_mode',value=g2),
+                Parameter('control_clock_mode',value='relay100'),
+                Parameter('native_execution_profile',value=json.dumps(expected) if g2 else '')])
+        try:
+            node.trigger_configure();assert node.machine is not None
+            assert getattr(node.machine,'load_transfer_policy',None)==('coupled_contact' if engine=='gazebo' and g2 else 'geometric')
+            if engine=='gazebo' and g2:
+                assert node.machine._load_transfer.preparation['solver_verified'] is True
+>               assert node.mass_evaluator is not None
+E               assert None is not None
+E                +  where None = <integrated_robot_navigation.crawl_controller.CrawlController object at 0x79b4973d0470>.mass_evaluator
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_load_owner.py:71: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793315319.737124550] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_waitset", "alive": false, "joined": true, "error": null, "pid": 1139, "uid": 1000, "native_tid": 1155, "node_name": "crawl_controller_ingress", "namespace": "/", "executor_type": "SingleThreadedExecutor", "backend_manifest": null, "clock_subscriptions": []}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_load_owner.py::test_real_config_selects_only_explicit_gazebo_g2[gazebo-True]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 6 deselected in 22.81s

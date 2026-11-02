@@ -1,0 +1,118 @@
+F
+=================================== FAILURES ===================================
+___ test_late_consumed_result_can_close_normally_but_never_pass_jobs[False] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7688faba34a0>
+numeric_failure = False
+
+    @pytest.mark.parametrize('numeric_failure',[False,True])
+    def test_late_consumed_result_can_close_normally_but_never_pass_jobs(nav_robot_model,monkeypatch,numeric_failure):
+        model,args=inputs(nav_robot_model);worker=module.SpatialLoadProcess(model);worker.prepare()
+        if numeric_failure:args['forces_world']={f:[0.,0.,100000.] for f in model.feet}
+        worker.submit(args,dict(generation=1));issued=worker._pending['submitted_wall_ns']
+        try:
+            assert select.select([worker._channel],[],[],1.)[0], 'actual child did not reply'
+            # Reproduce the exact edge: entry is in time, then a complete response
+            # is read but the post-receive deadline check finds it late.
+            with monkeypatch.context() as patch:
+                patch.setattr(module,'time',SimpleNamespace(monotonic_ns=lambda:issued+module.DISPATCH_NS+1))
+                with pytest.raises(ValueError,match='dispatch deadline'):
+                    worker.poll(now_wall_ns=issued+1)
+            assert worker.last_model is None
+            assert worker.snapshot()['completed']==0
+>           assert worker.snapshot()['pending'] is False, 'reply was consumed but job lifetime was left pending'
+E           AssertionError: reply was consumed but job lifetime was left pending
+E           assert True is False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_numeric_result_lifetime.py:24: AssertionError
+
+During handling of the above exception, another exception occurred:
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7688faba34a0>
+numeric_failure = False
+
+    @pytest.mark.parametrize('numeric_failure',[False,True])
+    def test_late_consumed_result_can_close_normally_but_never_pass_jobs(nav_robot_model,monkeypatch,numeric_failure):
+        model,args=inputs(nav_robot_model);worker=module.SpatialLoadProcess(model);worker.prepare()
+        if numeric_failure:args['forces_world']={f:[0.,0.,100000.] for f in model.feet}
+        worker.submit(args,dict(generation=1));issued=worker._pending['submitted_wall_ns']
+        try:
+            assert select.select([worker._channel],[],[],1.)[0], 'actual child did not reply'
+            # Reproduce the exact edge: entry is in time, then a complete response
+            # is read but the post-receive deadline check finds it late.
+            with monkeypatch.context() as patch:
+                patch.setattr(module,'time',SimpleNamespace(monotonic_ns=lambda:issued+module.DISPATCH_NS+1))
+                with pytest.raises(ValueError,match='dispatch deadline'):
+                    worker.poll(now_wall_ns=issued+1)
+            assert worker.last_model is None
+            assert worker.snapshot()['completed']==0
+            assert worker.snapshot()['pending'] is False, 'reply was consumed but job lifetime was left pending'
+            assert worker.snapshot()['discarded']==1
+            assert worker.snapshot()['failed']==int(numeric_failure)
+            assert worker.last_attempt is not None
+            with pytest.raises(ValueError,match='latched'):worker.submit(args,{})
+>       finally:closed=worker.close()
+                       ^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_numeric_result_lifetime.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.load_process.SpatialLoadProcess object at 0x7688ee1f5f40>
+
+    def close(self):
+        if self._close_report is not None:
+            if self._ready is not None and (not self._close_report['acknowledged']
+                    or self._close_report['returncode']!=0 or self._close_report.get('error')
+                    or self._close_report['pending']):
+                raise RuntimeError('numerical worker normal close unconfirmed: '+str(self._close_report))
+            return dict(self._close_report)
+        self._closed=True;self.discard();ack=False;error='';reference_closed=None;optimizer_closed=None;complete_closed=None
+        if self._process is None:
+            self._close_report=dict(self.snapshot(),scope='numerical_worker_not_started',
+                no_process_started=True,acknowledged=False,parent_reaped=False,
+                returncode=None,forced_cleanup=False)
+            return dict(self._close_report)
+        until=time.monotonic()+2.
+        try:
+            if self._ready is not None:
+                self._send(dict(kind='stop'))
+                while time.monotonic()<until and not ack:
+                    message=self._receive_once()
+                    if message is None:
+                        select.select([self._channel],[],[],min(.02,max(0.,until-time.monotonic())))
+                        continue
+                    if message.get('kind')=='stopped':
+                        reference_closed=message.get('reference_geometry_closed')
+                        optimizer_closed=message.get('optimizer_closed')
+                        complete_closed=message.get('complete_kernel_closed')
+                        if self.command_space=='stance_xyz' and (reference_closed is not True
+                                or optimizer_closed is not True or complete_closed is not True):
+                            raise ValueError('numerical reference/optimizer/complete kernel release unconfirmed')
+                        ack=True
+                    elif message.get('kind')=='result' and self._pending is not None and message.get('id')==self._pending['id']:
+                        self.last_attempt=message.get('attempt');self._pending=None
+                        if message.get('ok') is not True:
+                            self._failed+=1;self._fault=str(message.get('error','numerical result failed'))
+                    else:raise ValueError('numerical close message identity')
+            self._process.wait(timeout=max(.001,until-time.monotonic()))
+        except (ValueError,OSError,subprocess.TimeoutExpired) as failure:error=repr(failure)
+        finally:
+            if self._channel is not None:self._channel.close()
+        code=self._process.poll();stderr=''
+        if code is not None and self._process.stderr is not None:
+            stderr=self._process.stderr.read(4096).decode(errors='replace');self._process.stderr.close()
+        self._close_report=dict(self.snapshot(),acknowledged=ack,parent_reaped=code is not None,
+            returncode=code,forced_cleanup=False,error=error,stderr_tail=stderr,
+            reference_geometry_closed=reference_closed,optimizer_closed=optimizer_closed,
+            complete_kernel_closed=complete_closed)
+        if self._ready is not None and (not ack or code!=0 or error or self._pending is not None):
+>           raise RuntimeError('numerical worker normal close unconfirmed: '+str(self._close_report))
+E           RuntimeError: numerical worker normal close unconfirmed: {'scope': 'one_numerical_job_no_command_authority', 'command_space': 'height', 'optimization_backend': None, 'kernel_backend': None, 'complete_kernel_abi': None, 'force_objective': None, 'optimization_library_sha256': None, 'reference_library_sha256': None, 'library_sha256': '63d1bd5aab771690c486a85e9dca3f20a5567d03262780898994db7fd049420b', 'pid': 41458, 'alive': False, 'submitted': 1, 'completed': 0, 'discarded': 1, 'failed': 0, 'pending': True, 'fault': 'transition optimization dispatch deadline', 'closed': True, 'acknowledged': True, 'parent_reaped': True, 'returncode': 0, 'forced_cleanup': False, 'error': '', 'stderr_tail': '', 'reference_geometry_closed': None, 'optimizer_closed': None, 'complete_kernel_closed': None}
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py:298: RuntimeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_numeric_result_lifetime.py::test_late_consumed_result_can_close_normally_but_never_pass_jobs[False]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 18.71s

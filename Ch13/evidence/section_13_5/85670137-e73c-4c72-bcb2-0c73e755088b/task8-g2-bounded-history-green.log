@@ -1,0 +1,51 @@
+...F
+=================================== FAILURES ===================================
+_ test_tf_publisher_identity_accepts_both_supported_message_info_shapes[True] __
+
+mapping = True
+
+    @pytest.mark.parametrize('mapping', [True, False])
+    def test_tf_publisher_identity_accepts_both_supported_message_info_shapes(mapping):
+        record = SimpleNamespace(transforms=[], errors=[])
+        transform = TransformStamped(child_frame_id='nav_base')
+        transform.header.frame_id = 'odom'
+        gid = [1, 2, 3, 4]
+        info = {'publisher_gid': gid} if mapping else SimpleNamespace(publisher_gid=gid)
+>       NavigationProbe._tf(record, TFMessage(transforms=[transform]), info)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:21: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(transforms=[], errors=[])
+msg = tf2_msgs.msg.TFMessage(transforms=[geometry_msgs.msg.TransformStamped(header=std_msgs.msg.Header(stamp=builtin_interfa...n=geometry_msgs.msg.Vector3(x=0.0, y=0.0, z=0.0), rotation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)))])
+info = {'publisher_gid': [1, 2, 3, 4]}
+
+    def _tf(self, msg, info):
+        try:
+            raw_gid = info.get('publisher_gid') if isinstance(info, dict) else getattr(info, 'publisher_gid', None)
+            if (raw_gid is None and isinstance(info, dict)
+                    and type(info.get('source_timestamp')) is int
+                    and type(info.get('received_timestamp')) is int):
+                self.tf_api = dict(publisher_gid_available=False,
+                                  authority_source='required_native_cpp_observer')
+                return  # this API capability is not a native runtime fault
+            gid_bytes = bytes(raw_gid) if raw_gid is not None else b''
+            if not gid_bytes:
+                raise ValueError('missing publisher_gid')
+            gid = gid_bytes.hex()
+        except (ValueError, TypeError) as error:
+            self.errors.append('tf_metadata:'+str(error))
+            return  # retain a usable executor for explicit owner/engine cleanup
+        for transform in msg.transforms:
+            reference = dict(parent=transform.header.frame_id,
+                child=transform.child_frame_id, gid=gid,
+                stamp_ns=transform.header.stamp.sec*1_000_000_000+transform.header.stamp.nanosec)
+>           if self.bounded_history:self._write('tf_transform',reference)
+               ^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'types.SimpleNamespace' object has no attribute 'bounded_history'
+
+Ch13/scripts/probe_navigation_13_5.py:297: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_tf_publisher_identity_accepts_both_supported_message_info_shapes[True]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 3 passed in 13.16s

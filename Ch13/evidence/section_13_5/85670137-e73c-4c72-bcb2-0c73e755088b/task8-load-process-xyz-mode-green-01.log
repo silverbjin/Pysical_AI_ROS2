@@ -1,0 +1,92 @@
+F
+=================================== FAILURES ===================================
+___ test_explicit_xyz_process_verifies_its_mode_and_returns_bounded_vectors ____
+
+self = <integrated_robot_navigation.load_process.SpatialLoadProcess object at 0x76d5485c3980>
+
+    def poll(self,*,now_wall_ns=None):
+        if self._ready is not None and not self._closed and self._process.poll() is not None:
+            self._fault='numerical worker exited before close'
+            raise ValueError('transition optimization worker: '+self._fault)
+        if self._pending is None:return None
+        if self._fault:raise ValueError('numerical worker latched: '+self._fault)
+        now=time.monotonic_ns() if now_wall_ns is None else now_wall_ns
+        try:
+            job=self._pending
+            if not job['discarded'] and not 0<=now-job['submitted_wall_ns']<=DISPATCH_NS:
+                raise ValueError('transition optimization dispatch deadline')
+            message=self._receive_once()
+            if message is None:return None
+            if message.get('kind')!='result' or message.get('id')!=job['id']:
+                raise ValueError('numerical result identity mismatch')
+            received=time.monotonic_ns()
+            if not job['discarded'] and not 0<=received-job['submitted_wall_ns']<=DISPATCH_NS:
+                raise ValueError('transition optimization dispatch deadline')
+            self._pending=None;self.last_attempt=message.get('attempt')
+            if message.get('ok') is not True:
+                self._failed+=1
+>               raise ValueError(str(message.get('error','numerical result failed')))
+E               ValueError: can't multiply sequence by non-int of type 'float'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py:201: ValueError
+
+The above exception was the direct cause of the following exception:
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_explicit_xyz_process_verifies_its_mode_and_returns_bounded_vectors(nav_robot_model):
+        from test_spatial_xyz_transition import xyz_inputs
+        from integrated_robot_navigation.carry_profile import default_limits
+        model,args=xyz_inputs(nav_robot_model)
+        worker=api()(model,command_space='stance_xyz',limits=default_limits())
+        try:
+            ready=worker.prepare();assert ready['command_space']=='stance_xyz'
+>           worker.submit(args,dict(generation=7));result=take(worker)
+                                                          ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:195: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:20: in take
+    result=worker.poll()
+           ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.load_process.SpatialLoadProcess object at 0x76d5485c3980>
+
+    def poll(self,*,now_wall_ns=None):
+        if self._ready is not None and not self._closed and self._process.poll() is not None:
+            self._fault='numerical worker exited before close'
+            raise ValueError('transition optimization worker: '+self._fault)
+        if self._pending is None:return None
+        if self._fault:raise ValueError('numerical worker latched: '+self._fault)
+        now=time.monotonic_ns() if now_wall_ns is None else now_wall_ns
+        try:
+            job=self._pending
+            if not job['discarded'] and not 0<=now-job['submitted_wall_ns']<=DISPATCH_NS:
+                raise ValueError('transition optimization dispatch deadline')
+            message=self._receive_once()
+            if message is None:return None
+            if message.get('kind')!='result' or message.get('id')!=job['id']:
+                raise ValueError('numerical result identity mismatch')
+            received=time.monotonic_ns()
+            if not job['discarded'] and not 0<=received-job['submitted_wall_ns']<=DISPATCH_NS:
+                raise ValueError('transition optimization dispatch deadline')
+            self._pending=None;self.last_attempt=message.get('attempt')
+            if message.get('ok') is not True:
+                self._failed+=1
+                raise ValueError(str(message.get('error','numerical result failed')))
+            if job['discarded']:return None
+            self._completed+=1;self.last_model=message['model']
+            return dict(delta=message['delta'],context=job['context'],
+                submitted_wall_ns=job['submitted_wall_ns'],received_wall_ns=received,
+                computed_wall_ns=message['computed_wall_ns'],numeric_input=job['numeric_input'])
+        except (ValueError,OSError,json.JSONDecodeError) as error:
+            self._fault=str(error)
+>           raise ValueError('transition optimization worker: '+str(error)) from error
+E           ValueError: transition optimization worker: can't multiply sequence by non-int of type 'float'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_process.py:209: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_explicit_xyz_process_verifies_its_mode_and_returns_bounded_vectors
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 30 deselected in 16.09s

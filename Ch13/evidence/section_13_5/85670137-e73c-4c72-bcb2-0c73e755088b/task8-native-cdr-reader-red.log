@@ -1,0 +1,27 @@
+F
+=================================== FAILURES ===================================
+___________ test_reader_preserves_original_cdr_and_original_receipt ____________
+
+    def test_reader_preserves_original_cdr_and_original_receipt():
+        raw=b'\x00\x01\x00\x00original_cdr'
+        data=journal([(dict(kind='packet',key='contacts',received_ns=10,callback_system_ns=20),raw),
+                      (dict(kind='end',records=1),b'')])
+>       rows=list(api().read_records(io.BytesIO(data)))
+                  ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('native_observer_13_5'), 'native CDR witness reader missing'
+E       AssertionError: native CDR witness reader missing
+E       assert None
+E        +  where None = <function find_spec at 0x71659d1bc720>('native_observer_13_5')
+E        +    where <function find_spec at 0x71659d1bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py:18: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py::test_reader_preserves_original_cdr_and_original_receipt
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 12.98s

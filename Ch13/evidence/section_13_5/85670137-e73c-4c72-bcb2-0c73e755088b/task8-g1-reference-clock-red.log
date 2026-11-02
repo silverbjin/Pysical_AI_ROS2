@@ -1,0 +1,27 @@
+F
+=================================== FAILURES ===================================
+_____ test_g1_clock_jump_cannot_skip_more_than_one_nominal_reference_step ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g1_clock_jump_cannot_skip_more_than_one_nominal_reference_step(nav_robot_model):
+        fixture=json.loads((Path(__file__).parent/'fixtures/native_a50_shift_clock_gap.json').read_text())
+        first,plant=shifting(nav_robot_model);second=deepcopy(first)
+        ros,wall=first._last_ros,first._last_wall
+        normal=first.advance(sample_at(plant.state,ros+20_000_000,wall+20_000_000),(0.,0.,0.),ros+20_000_000,wall+20_000_000)
+        r,w=ros+fixture['decision_ros_gap_ns'],wall+fixture['decision_wall_gap_ns']
+        delayed=second.advance(sample_at(plant.state,r,w),(0.,0.,0.),r,w)
+        assert normal.state!='FAULT' and delayed.state!='FAULT'
+>       assert np.allclose(second.reference_body,first.reference_body,atol=1e-12), 'one delayed ROS update consumed a multi-step G1 body reference'
+E       AssertionError: one delayed ROS update consumed a multi-step G1 body reference
+E       assert False
+E        +  where False = <function allclose at 0x797b6ee85ff0>(array([[ 1.        ,  0.        ,  0.        , -0.00485469],\n       [ 0.        ,  1.        ,  0.        , -0.0027308...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]), array([[ 1.        ,  0.        ,  0.        , -0.00336881],\n       [ 0.        ,  1.        ,  0.        , -0.0018950...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]), atol=1e-12)
+E        +    where <function allclose at 0x797b6ee85ff0> = np.allclose
+E        +    and   array([[ 1.        ,  0.        ,  0.        , -0.00485469],\n       [ 0.        ,  1.        ,  0.        , -0.0027308...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]) = <integrated_robot_navigation.gait.CrawlMachine object at 0x797b43716cc0>.reference_body
+E        +    and   array([[ 1.        ,  0.        ,  0.        , -0.00336881],\n       [ 0.        ,  1.        ,  0.        , -0.0018950...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]) = <integrated_robot_navigation.gait.CrawlMachine object at 0x797b4ef670b0>.reference_body
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_clock_progress.py:36: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_clock_progress.py::test_g1_clock_jump_cannot_skip_more_than_one_nominal_reference_step
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 12.33s

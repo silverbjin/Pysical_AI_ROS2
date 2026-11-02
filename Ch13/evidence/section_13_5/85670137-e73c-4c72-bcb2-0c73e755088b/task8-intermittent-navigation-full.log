@@ -1,0 +1,29 @@
+......................................F
+=================================== FAILURES ===================================
+____________ test_actual_terminal_success_does_not_cover_stuck_arm _____________
+
+carry_rig = <test_carry_manager_ros.CarryRig object at 0x70ecf48e7d40>
+
+    def test_actual_terminal_success_does_not_cover_stuck_arm(carry_rig):
+        rig = carry_rig
+        rig.error = .04
+        rig.pump(.04)
+        assert rig.call(rig.prepare).success
+        rig.release.set()
+        rig.pump(1.2)
+        assert rig.manager.record.terminal and not rig.states[-1].ready
+        assert not rig.states[-1].fault_reason
+        rig.pump(10.)  # actual wall timeout, not a synthetic success or forged clock
+>       assert rig.states[-1].state == 'FAULT' and 'settle timeout' in rig.states[-1].fault_reason
+E       AssertionError: assert ('FAULT' == 'FAULT'
+E         
+E           FAULT and 'settle timeout' in 'guard:wall_age')
+E        +  where 'guard:wall_age' = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=13, nanos...7b17d93aa71282cadc', state='FAULT', phase='', swing_foot='', ready=False, stopped=False, fault_reason='guard:wall_age').fault_reason
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py:306: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+[INFO] [1792931095.050658888] [carry_manager]: Serial navigation callbacks use EventsExecutor
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_carry_manager_ros.py::test_actual_terminal_success_does_not_cover_stuck_arm
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 38 passed in 95.49s (0:01:35)

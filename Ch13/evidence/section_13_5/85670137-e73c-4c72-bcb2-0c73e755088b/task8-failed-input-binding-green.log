@@ -1,0 +1,37 @@
+.....................................F
+=================================== FAILURES ===================================
+___ test_late_consumed_result_can_close_normally_but_never_pass_jobs[False] ____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7bec84c66c90>
+numeric_failure = False
+
+    @pytest.mark.parametrize('numeric_failure',[False,True])
+    def test_late_consumed_result_can_close_normally_but_never_pass_jobs(nav_robot_model,monkeypatch,numeric_failure):
+        model,args=inputs(nav_robot_model);worker=module.SpatialLoadProcess(model);worker.prepare()
+        if numeric_failure:args['forces_world']={f:[0.,0.,100000.] for f in model.feet}
+        worker.submit(args,dict(generation=1));issued=worker._pending['submitted_wall_ns']
+        try:
+            assert select.select([worker._channel],[],[],1.)[0], 'actual child did not reply'
+            # Reproduce the exact edge: entry is in time, then a complete response
+            # is read but the post-receive deadline check finds it late.
+            with monkeypatch.context() as patch:
+                patch.setattr(module,'time',SimpleNamespace(monotonic_ns=lambda:issued+module.DISPATCH_NS+1))
+                with pytest.raises(ValueError,match='dispatch deadline'):
+                    worker.poll(now_wall_ns=issued+1)
+            assert worker.last_model is None
+            assert worker.snapshot()['completed']==0
+            assert worker.snapshot()['pending'] is False, 'reply was consumed but job lifetime was left pending'
+            assert worker.snapshot()['discarded']==1
+            assert worker.snapshot()['failed']==int(numeric_failure)
+            assert worker.last_attempt is not None
+            assert worker.last_input_id==worker.snapshot()['last_reply']['id']==1
+>           assert worker.last_input==args and worker.last_context==dict(generation=1)
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+E           ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_numeric_result_lifetime.py:29: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_numeric_result_lifetime.py::test_late_consumed_result_can_close_normally_but_never_pass_jobs[False]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 37 passed in 54.86s

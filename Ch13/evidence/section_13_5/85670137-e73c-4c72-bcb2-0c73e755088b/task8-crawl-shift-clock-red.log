@@ -1,0 +1,31 @@
+F
+=================================== FAILURES ===================================
+__ test_delayed_crawl_shift_consumes_at_most_one_nominal_curve_step[command0] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (0.01, 0.0, 0.0)
+
+    @pytest.mark.parametrize('command',[(.01,0.,0.),(-.01,0.,0.),(0.,0.,.03)])
+    def test_delayed_crawl_shift_consumes_at_most_one_nominal_curve_step(nav_robot_model,command):
+        normal,plant=shifting(nav_robot_model,command); delayed=deepcopy(normal)
+        ros,wall=normal._last_ros,normal._last_wall
+        a=normal.advance(sample_at(plant.state,ros+20_000_000,wall+20_000_000),command,
+            ros+20_000_000,wall+20_000_000)
+        # Actual publication 5343 -> 5344, preserved 7c3373df source manifest a694f432.
+        r,w=ros+72_000_000,wall+52_029_145
+        b=delayed.advance(sample_at(plant.state,r,w),command,r,w)
+        assert a.state!='FAULT' and b.state!='FAULT'
+>       assert np.allclose(delayed.reference_body,normal.reference_body,atol=1e-12), \
+            'late control tick jumped several nominal SHIFT reference steps'
+E       AssertionError: late control tick jumped several nominal SHIFT reference steps
+E       assert False
+E        +  where False = <function allclose at 0x7c86b1a32130>(array([[ 1.        ,  0.        ,  0.        , -0.00524954],\n       [ 0.        ,  1.        ,  0.        , -0.0034537...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]), array([[ 1.        ,  0.        ,  0.        , -0.00433551],\n       [ 0.        ,  1.        ,  0.        , -0.0028523...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]), atol=1e-12)
+E        +    where <function allclose at 0x7c86b1a32130> = np.allclose
+E        +    and   array([[ 1.        ,  0.        ,  0.        , -0.00524954],\n       [ 0.        ,  1.        ,  0.        , -0.0034537...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]) = <integrated_robot_navigation.gait.CrawlMachine object at 0x7c868614f740>.reference_body
+E        +    and   array([[ 1.        ,  0.        ,  0.        , -0.00433551],\n       [ 0.        ,  1.        ,  0.        , -0.0028523...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]) = <integrated_robot_navigation.gait.CrawlMachine object at 0x7c86862c7440>.reference_body
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_shift_clock_progress.py:32: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_shift_clock_progress.py::test_delayed_crawl_shift_consumes_at_most_one_nominal_curve_step[command0]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 13.53s

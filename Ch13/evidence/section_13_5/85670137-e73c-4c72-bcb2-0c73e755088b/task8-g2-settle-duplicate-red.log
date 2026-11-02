@@ -1,0 +1,23 @@
+F
+=================================== FAILURES ===================================
+_ test_unhealthy_status_resets_settle_even_when_the_body_capture_is_duplicated _
+
+    def test_unhealthy_status_resets_settle_even_when_the_body_capture_is_duplicated():
+        value=api().MeasuredSettle(default_limits())
+        def row(capture,wall,stopped=True):
+            return dict(capture_ns=capture,wall_ns=wall,stopped=stopped,
+                linear_speed=0.,yaw_speed=0.,touching=(True,)*4)
+        assert not value.update(row(1_000_000_000,1_000_000_000))
+        assert not value.update(row(1_000_000_000,1_050_000_000,False))
+        assert not value.update(row(1_100_000_000,1_100_000_000))
+>       assert not value.update(row(2_000_000_000,2_000_000_000))
+E       AssertionError: assert not True
+E        +  where True = update({'capture_ns': 2000000000, 'linear_speed': 0.0, 'stopped': True, 'touching': (True, True, True, True), ...})
+E        +    where update = <integrated_robot_navigation.g2_sequence.MeasuredSettle object at 0x7c67b256da30>.update
+E        +    and   {'capture_ns': 2000000000, 'linear_speed': 0.0, 'stopped': True, 'touching': (True, True, True, True), ...} = <function test_unhealthy_status_resets_settle_even_when_the_body_capture_is_duplicated.<locals>.row at 0x7c67a5ceb060>(2000000000, 2000000000)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_sequence.py:81: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_sequence.py::test_unhealthy_status_resets_settle_even_when_the_body_capture_is_duplicated
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 deselected in 9.03s

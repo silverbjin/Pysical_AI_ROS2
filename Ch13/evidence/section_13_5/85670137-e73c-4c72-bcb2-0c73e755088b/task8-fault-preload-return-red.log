@@ -1,0 +1,27 @@
+F
+=================================== FAILURES ===================================
+_ test_contact_already_present_does_not_end_fault_return_before_its_reference __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_contact_already_present_does_not_end_fault_return_before_its_reference(nav_robot_model):
+        value,plant,foot=unload_fault(nav_robot_model);value.request_stop(urgent=True)
+        contact=plant.state.contacts
+        forces=list(contact.data['forces']);touching=list(contact.data['touching'])
+        i=value.model.feet.index(foot);forces[i]=2.2;touching[i]=True
+        # Logic fixture for the native case: contact is present despite a raised
+        # servo reference. This is not an ideal plant's physical force simulation.
+        bundle=replace(plant.state,contacts=replace(contact,data={**contact.data,
+            'forces':tuple(forces),'touching':tuple(touching)}))
+        result=value.advance(bundle,(0.,0.,0.),plant.ros,plant.wall)
+>       assert result.state=='STOPPING' and value.swing_foot==foot
+E       AssertionError: assert ('STOPPING' == 'STOPPING'
+E         
+E           STOPPING and None == 'fl_foot')
+E        +  where None = <integrated_robot_navigation.gait.CrawlMachine object at 0x75e7d3647500>.swing_foot
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_recovery_lifetime.py:60: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_recovery_lifetime.py::test_contact_already_present_does_not_end_fault_return_before_its_reference
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 16.86s

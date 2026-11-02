@@ -1,0 +1,28 @@
+......................F
+=================================== FAILURES ===================================
+__ test_maximum_command_envelope_remains_finite_and_footprint_bound[command0] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+command = (0.01, 0.0, 0.0)
+
+    @pytest.mark.parametrize('command', [(.01, 0., 0.), (-.01, 0., 0.),
+                                         (0., 0., .03), (.01, 0., .03)])
+    def test_maximum_command_envelope_remains_finite_and_footprint_bound(nav_robot_model, command):
+        plant = IdealFeedback(nav_robot_model)
+        value = machine(nav_robot_model, plant)
+        seen = set()
+        # A full 80mm step can now consume >10s under the analytic foot-speed
+        # bound. Observe all four feet under a bounded 60s ideal horizon; this
+        # asserts ordering/envelopes, not a native cycle-rate acceptance deadline.
+        for _ in range(3000):
+            result = value.advance(plant.state, command, plant.ros, plant.wall)
+>           assert result.state != 'FAULT', result.reason
+E           AssertionError: foot stride bound
+E           assert 'FAULT' != 'FAULT'
+E            +  where 'FAULT' = ControlResult(state='FAULT', phase='SWING', swing_foot=None, generation=0, joint_targets=None, reason='foot stride bound').state
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py:172: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait.py::test_maximum_command_envelope_remains_finite_and_footprint_bound[command0]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 22 passed in 35.79s

@@ -1,0 +1,20 @@
+F
+=================================== FAILURES ===================================
+______ test_xyz_kernel_uses_native_geometry_and_reports_its_exact_binary _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_xyz_kernel_uses_native_geometry_and_reports_its_exact_binary(nav_robot_model):
+        model,a=xyz_inputs(nav_robot_model);kernel=SpatialXYZTransition(model,default_limits())
+        try:
+>           assert isinstance(kernel.geometry,NativeReferenceEnvelope),'10ms worker still evaluates current geometry in Python'
+E           AssertionError: 10ms worker still evaluates current geometry in Python
+E           assert False
+E            +  where False = isinstance(<integrated_robot_navigation.compiled_reference.CompiledReferenceEnvelope object at 0x7fb0c03fb950>, NativeReferenceEnvelope)
+E            +    where <integrated_robot_navigation.compiled_reference.CompiledReferenceEnvelope object at 0x7fb0c03fb950> = <integrated_robot_navigation.load_xyz.SpatialXYZTransition object at 0x7fb0b476a390>.geometry
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_reference_integration.py:13: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_reference_integration.py::test_xyz_kernel_uses_native_geometry_and_reports_its_exact_binary
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 13.63s

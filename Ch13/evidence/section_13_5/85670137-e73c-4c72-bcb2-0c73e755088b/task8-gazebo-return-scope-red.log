@@ -1,0 +1,35 @@
+F
+=================================== FAILURES ===================================
+_ test_configured_owner_preserves_mujoco_loaded_return_and_selects_gazebo_preload[g2_relay] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_configured_owner_preserve0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+scope = 'g2_relay'
+
+    @pytest.mark.parametrize('scope',['g2_relay','g1_relay','native','gazebo_relay'])
+    def test_configured_owner_preserves_mujoco_loaded_return_and_selects_gazebo_preload(tmp_path,nav_robot_model,scope):
+        profile,expected=fixture(tmp_path,nav_robot_model,'mujoco')
+        context=Context();rclpy.init(context=context)
+        if scope in ('g2_relay','g1_relay'):
+            node=controller(context,nav_robot_model,profile,expected,g2=scope=='g2_relay')
+        else:
+            relay=scope=='gazebo_relay'
+            node=CrawlController(nav_robot_model,profile,'gazebo' if relay else 'mujoco',context=context,
+                cli_args=['--ros-args','-r','/clock:=/navigation/control_clock'] if relay else [],
+                parameter_overrides=[Parameter('validation_mode',value=relay),
+                    Parameter('control_clock_mode',value='relay100' if relay else 'native')])
+        try:
+            node.trigger_configure()
+            assert node.machine is not None
+            expected_policy='bounded_preload' if scope=='gazebo_relay' else 'loaded_quintic'
+>           assert node.machine.calibration_return_policy==expected_policy
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'CrawlMachine' object has no attribute 'calibration_return_policy'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_return_scope_ros.py:31: AttributeError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793239935.812188595] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_events", "alive": false, "joined": true, "error": null, "pid": 855, "uid": 1000, "native_tid": 1096, "node_name": "crawl_controller_ingress", "namespace": "/", "executor_type": "EventsExecutor", "backend_manifest": {"rclpy_version": "7.1.12", "callbacks": "serial", "parallel_callback_groups": false, "reviewed_tag": "7.1.12", "reviewed_commit": "bd637294dd02b1c128422395c059fa06df8387a3", "wrapper": {"path": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/experimental/events_executor.py", "sha256": "753cc5da96bbfa154b3a7c263a8596b5a4facaf07d2a4fbbfaa9c81626ef281d"}, "extension": {"path": "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/_rclpy_pybind11.cpython-312-x86_64-linux-gnu.so", "sha256": "53efd7622c109ae6f9ff7ffafc3bffac4856700d39ca51d8689ecaa617a596bd"}}, "clock_subscriptions": []}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_calibration_return_scope_ros.py::test_configured_owner_preserves_mujoco_loaded_return_and_selects_gazebo_preload[g2_relay]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.09s

@@ -1,0 +1,256 @@
+F
+=================================== FAILURES ===================================
+_ test_body_motion_stops_unload_but_same_cycle_still_maintains_stance[strict] __
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70d211c93ce0>
+timing = 'strict'
+
+    @pytest.mark.parametrize('timing',['strict','mature_horizon','same_cycle'])
+    def test_body_motion_stops_unload_but_same_cycle_still_maintains_stance(nav_robot_model,monkeypatch,timing):
+        m,b,q,p,points,f=ready_xyz(nav_robot_model);m.load_result_timing=timing
+        m._shift_plan=None;m._phase_start=m._last_ros-1_000_000_000;m._shift_duration=.7
+        m._shift_settled_start=None;m._unload_start=m._last_ros-500_000_000
+        m._index=m.ORDER.index(f);m.swing_foot=f
+        original=deepcopy(m._targets);requests=[]
+        b=replace(b,body=replace(b.body,data={**b.body.data,'linear_velocity':(.0031,0.,0.),'angular_velocity':(0.,0.,0.)}))
+        monkeypatch.setattr(m,'_margin',lambda *args,**kwargs:.04)
+        monkeypatch.setattr(m,'_measure',lambda *args:(q,p,deepcopy(m.anchors),dict.fromkeys(m.model.feet,True),points,np.zeros(3)))
+        monkeypatch.setattr(m,'_crawl_reference_time',lambda *args:(1.,.02))
+        monkeypatch.setattr(m,'_solve',lambda *args,**kwargs:q)
+        def transfer(*args,**kwargs):requests.append((args[-1],kwargs));return True
+        monkeypatch.setattr(m,'_transfer_stance_load',transfer)
+>       result=m.advance(b,(.0001,0.,0.),m._last_ros+20_000_000,m._last_wall+20_000_000)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_maintenance.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.gait.CrawlMachine object at 0x70d211b3bc50>
+bundle = SensorBundle(joints=Sample(stamp_ns=1020000000, received_ns=10020000000, epoch=0, sequence=1020000000, frame_id='base_...={'ready': True, 'generation': 0, 'model_sha256': '845e57a97d2dd10a6963304d4f4baf628de208993fedf46c5239c39f839e4032'}))
+command = (0.0001, 0.0, 0.0), ros_ns = 1040000000, wall_ns = 10040000000
+
+    def advance(self, bundle, command, ros_ns, wall_ns, *, reference_permitted=True):
+        fault_landing=(self.state=='FAULT' and self.stopping and self._fault_landing_foot is not None)
+        if self.state == 'FAULT' and not fault_landing:
+            return self._observe_fault_hold_stop(bundle,command,ros_ns,wall_ns)
+        if not self._initialized:
+            return self._fail('not initialized')
+        try:
+            if (len(command) != 3 or not all(math.isfinite(v) for v in command)
+                    or abs(command[0]) > self.limits['max_vx'] or command[1] != 0.
+                    or abs(command[2]) > self.limits['max_wz']):
+                raise ValueError('command limit/nonfinite')
+            if self.calibrating and command != (0., 0., 0.):
+                raise ValueError('contact calibration forbids navigation velocity')
+            if ros_ns < self._last_ros or wall_ns < self._last_wall:
+                raise ValueError('clock rollback')
+            if ros_ns > self._last_ros:
+                self._progress_wall = wall_ns
+            if wall_ns-self._progress_wall > 200_000_000:
+                raise ValueError('clock paused')
+            decision_step_ns=min(ros_ns-self._last_ros,wall_ns-self._last_wall)
+            dt = (ros_ns-self._last_ros)/1e9
+            if dt > .2:
+                raise ValueError('control gap')
+            self._last_ros, self._last_wall = ros_ns, wall_ns
+            if (getattr(self._load_transfer,'asynchronous',False) and self.state=='CRAWL'
+                    and not self.stopping and command!=(0.,0.,0.)
+                    and self.phase=='SHIFT' and self._unload_start is not None):
+                self._collect_load_transfer(wall_ns)
+                self._observe_stage('model_collect')
+            q, pose, centers, loads, points, com = self._measure(bundle, ros_ns, wall_ns)
+            if (getattr(self._load_transfer,'asynchronous',False) and self.state=='CRAWL'
+                    and not self.stopping and (self.phase!='SHIFT' or self._unload_start is None)):
+                self._discard_load_transfer()
+                self._load_transfer.poll(now_wall_ns=wall_ns)
+            if fault_landing:
+                self.swing_foot=self._fault_landing_foot
+            for foot in self.model.feet:
+                if foot != self.swing_foot and loads[foot] and np.linalg.norm(centers[foot]-self.anchors[foot]) > self.limits['max_stance_slip_m']:
+                    raise ValueError('stance slip')
+            if self._margin(com, loads, points) < self.limits['min_support_margin_m']:
+                raise ValueError('current measured support lost')
+            if fault_landing:
+                if self._margin(com,loads,points,self.swing_foot)<self.limits['min_support_margin_m']:
+                    raise ValueError('fault landing measured support lost')
+                # Entry uses the existing bounded crawl motion envelope. The
+                # final STOPPED predicate below still uses the stricter original
+                # measured stop limits; landing is allowed to precede settling.
+                if (np.linalg.norm(np.asarray(bundle.body.data['linear_velocity']))>self.limits['max_vx']
+                        or np.linalg.norm(np.asarray(bundle.body.data['angular_velocity']))>self.limits['max_wz']):
+                    if self._fault_wait_start is None:self._fault_wait_start=ros_ns
+                    if (ros_ns-self._fault_wait_start)/1e9>self.limits['stop_landing_s']:
+                        raise ValueError('fault landing safe-entry timeout')
+                    self.fault_recovery_stage='WAIT_SAFE_ENTRY'
+                    self._record_fault_event('fault landing waiting for bounded motion')
+                    return self._result()
+                # Explicit STOP may only land this known foot. The original
+                # failure reason/generation and explicit-stop latch remain;
+                # no CRAWL activation or general fault recovery is performed.
+                self.state='STOPPING';self._fault_landing_foot=None
+                self.fault_recovery_stage='LANDING'
+                self._stop_start=self._settled_start=None
+            self._observe_stage('model_safety')
+            if self.calibrating:
+                if self._calibration_request is None:
+                    self._calibration_request = dict(ros_ns=ros_ns,wall_ns=wall_ns,
+                        deadline_wall_ns=wall_ns+10_000_000_000)
+                if wall_ns>=self._calibration_request['deadline_wall_ns']:
+                    raise ValueError('calibration original wall deadline')
+                self._record_calibration(bundle,ros_ns,wall_ns)
+            if (self.calibrating and self.state == 'STAND' and not self.stopping
+                    and self._calibration_vertical is None):
+                self.state = 'CALIBRATING'
+                self._begin_shift(com, loads, points, ros_ns, q)
+            if self._paused and not self._explicit_stop and self.state == 'STOPPED' and command != (0., 0., 0.):
+                # Resuming an authorized velocity pause is not recovery from a
+                # fault. Explicit stop/fault still requires a caller reset.
+                self.stopping = self._paused = False
+                self._stop_start = self._settled_start = None
+                self.state, self.phase = 'STAND', 'STAND'
+                self.travel = self.reference_body.copy()
+                self.offset = np.zeros(2)
+            if command == (0., 0., 0.) and self.state == 'CRAWL' and not self.stopping:
+                self._discard_load_transfer()
+                self.stopping = self._paused = True
+            if self.stopping:
+                self._stop(bundle, centers, loads, ros_ns)
+            elif command == (0., 0., 0.) and self.state == 'STAND':
+                # Bootstrap stance can precede carry; only leg targets are emitted.
+                if not self.calibrating:
+                    weight = blend((ros_ns-self._stand_start)/2e9)
+                    self.reference_body[2, 3] = self._stand_start_z*(1-weight)+self.limits['nominal_body_height_m']*weight
+            else:
+                if self.state == 'STAND':
+                    self.state = 'CRAWL'
+                    if self._load_transfer_rest_z or self._load_transfer_rest_xyz:
+                        # An explicitly authorized velocity pause can have
+                        # landed while holding temporary stance offsets. Finish
+                        # their restoration before resuming that same step.
+                        self.phase,self._phase_start='SETTLE',ros_ns
+                        self._restore_next_index=False
+                    else:self._begin_shift(com, loads, points, ros_ns, q,command)
+                unload_dt=touchdown_dt=max(0,decision_step_ns)/1e9
+                if not self.calibrating and self.phase=='SHIFT' and self._unload_start is not None:
+                    foot=self.ORDER[self._index]
+                    eligible=((loads[foot] or self._load_transfer is not None)
+                        and self._margin(com,loads,points,foot)>=self.limits['min_support_margin_m']
+                        and np.linalg.norm(np.asarray(bundle.body.data['linear_velocity']))<=self.limits['stopped_v_mps']
+                        and np.linalg.norm(np.asarray(bundle.body.data['angular_velocity']))<=self.limits['stopped_wz_rps'])
+                    # Contact search is a bounded physical-time rate, separate
+                    # from body/swing curve progress. Waiting for the previous
+                    # application cannot erase eligible time or bank unsafe time.
+                    self._unload_time_credit_ns=(min(200_000_000,
+                        self._unload_time_credit_ns+max(0,decision_step_ns)) if eligible else 0)
+                    unload_dt=self._unload_time_credit_ns/1e9 if reference_permitted else 0.
+                    if reference_permitted:self._unload_time_credit_ns=0
+                if not self.calibrating and self.phase=='TOUCHDOWN':
+                    foot=self.ORDER[self._index]
+                    self._touchdown_time_credit_ns=(min(200_000_000,
+                        self._touchdown_time_credit_ns+max(0,decision_step_ns)) if not loads[foot] else 0)
+                    touchdown_dt=self._touchdown_time_credit_ns/1e9 if reference_permitted else 0.
+                    if reference_permitted:self._touchdown_time_credit_ns=0
+                if not self.calibrating and not reference_permitted:
+                    foot=self.ORDER[self._index]
+                    if (self.phase=='SETTLE' and self._load_transfer is not None
+                            and (ros_ns-self._phase_start)/1e9>
+                            self.limits['max_unload_height_m']/self.limits['unload_speed_mps']+.25):
+                        raise ValueError('stance preload restore timeout')
+                    if (self.phase=='SWING'
+                            and self._margin(com,loads,points,foot)<self.limits['min_support_margin_m']):
+                        raise ValueError('swing support lost')
+                    if (self.phase=='TOUCHDOWN' and not loads[foot]
+                            and (ros_ns-self._phase_start)/1e9>1.):
+                        raise ValueError('touchdown timeout')
+                    if (self.phase=='SHIFT' and self._unload_start is not None
+                            and (ros_ns-self._unload_start)/1e9>
+                                self.limits['max_unload_height_m']/self.limits['unload_speed_mps']+1.):
+                        raise ValueError('measured unload timeout')
+                    if self.phase in ('SHIFT','SWING'):
+                        self._crawl_reference_time(ros_ns,wall_ns,decision_step_ns,False)
+                    if (self.phase=='SHIFT' and self._unload_start is None
+                            and self._shift_plan is None
+                            and (ros_ns-self._phase_start)/1e9>self._shift_duration+1.):
+                        raise ValueError('shift timeout; measured support/settle not gained')
+                    # The already validated/published reference is unchanged.
+                    # Safety measurement and phase deadlines above still run,
+                    # but this owner cannot publish a new target until credit.
+                    # Re-solving IK here only delays that application boundary.
+                    return self._result()
+                if self._shift_plan is not None:
+                    # Bounded G1-only arithmetic batch, measured separately
+                    # from live control. No motor/body reference is advanced
+                    # while planning; every tick still checks current support.
+                    for _ in range(4 if self.calibrating else 1):
+                        try:
+                            next(self._shift_plan)
+                        except StopIteration:
+                            self._shift_plan = None
+                            # Planning is not executed body/foot motion.
+                            self._phase_start = ros_ns
+                            break
+                    else:
+                        return self._result(self._solve(q, True))
+                if self.calibrating and self._calibration_vertical is not None:
+                    foot = self.ORDER[self._index]
+                    if self._margin(com,loads,points,foot)<self.limits['min_support_margin_m']:
+                        raise ValueError('calibration three-stance support lost')
+                    step = self._calibration_vertical.advance(ros_ns=ros_ns,wall_ns=wall_ns,
+                        center_z=float(centers[foot][2]),forces=bundle.contacts.data['forces'],
+                        capture_ns=bundle.contacts.stamp_ns)
+                    if step.phase!=self.phase:
+                        self._phase_start = ros_ns
+                    self._targets[foot][2],self.phase = step.z,step.phase
+                    self._record_calibration(bundle,ros_ns,wall_ns)
+                    if step.complete:
+                        self.state,self.phase,self.swing_foot = 'STAND','STAND',None
+                        self.travel,self.offset = self.reference_body.copy(),np.zeros(2)
+                        self._stand_start,self._stand_start_z = ros_ns,self.reference_body[2,3]
+                    return self._result(self._solve(q,self.state!='STAND'))
+                vx, wz = self._effective_command(command)
+                elapsed = (ros_ns-self._phase_start)/1e9
+                actual_elapsed=elapsed
+                if self.calibrating and self.phase=='SHIFT':
+                    elapsed,dt=self._g1_shift_reference_time(ros_ns,wall_ns)
+                elif self.phase in ('SHIFT','SWING'):
+                    elapsed,dt=self._crawl_reference_time(ros_ns,wall_ns,decision_step_ns)
+                # Progress is phase-bounded: physical support waits do not
+                # integrate extra body travel while the feet remain planted.
+                token = (self.phase, self._phase_start)
+                if getattr(self, '_travel_token', None) != token:
+                    self._travel_token, self._travel_progress = token, 0.
+                budgets = self.TRAVEL_BUDGET
+                phase_time = elapsed*.7/self._shift_duration if self.phase == 'SHIFT' else elapsed
+                if self.phase == 'SWING':
+                    phase_time = elapsed*.8/self._swing_duration
+                if self.calibrating:
+                    progress = min(budgets[self.phase], max(0., phase_time))
+                else:
+                    duration = (self._shift_duration if self.phase == 'SHIFT' else
+                        self._swing_duration if self.phase == 'SWING' else
+                        self._body_duration(self.phase,.25))
+                    progress = budgets[self.phase]*blend(elapsed/duration)
+                travel_dt = max(0., progress-self._travel_progress)
+                self._travel_progress = progress
+                yaw = math.atan2(self.travel[1, 0], self.travel[0, 0])+wz*travel_dt
+                self.travel[:2, 3] += np.array([math.cos(yaw), math.sin(yaw)])*vx*travel_dt
+                # Integrate only the requested world-z rotation. Replacing this
+                # with a yaw-only pose instantly erases the standing roll/pitch,
+                # creating an IK target step even at dt=0 and zero command.
+                delta = wz*travel_dt
+                yaw_step = np.array([[math.cos(delta), -math.sin(delta), 0.],
+                                     [math.sin(delta), math.cos(delta), 0.], [0., 0., 1.]])
+                self.travel[:3, :3] = yaw_step @ self.travel[:3, :3]
+                foot = self.ORDER[self._index]
+                if self.phase == 'SHIFT':
+                    weight = blend(elapsed/self._shift_duration)
+>                   self.offset = self._offset_start*(1-weight)+self._offset_goal*weight
+                                  ^^^^^^^^^^^^^^^^^^
+E                   AttributeError: 'CrawlMachine' object has no attribute '_offset_start'. Did you mean: '_phase_start'?
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:1383: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_maintenance.py::test_body_motion_stops_unload_but_same_cycle_still_maintains_stance[strict]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.87s

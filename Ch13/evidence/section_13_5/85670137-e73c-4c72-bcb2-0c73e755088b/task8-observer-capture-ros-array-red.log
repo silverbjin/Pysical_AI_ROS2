@@ -1,0 +1,43 @@
+F
+=================================== FAILURES ===================================
+________ test_ros_fixed_array_values_remain_equivalent_to_original_json ________
+
+    def test_ros_fixed_array_values_remain_equivalent_to_original_json():
+        from dataclasses import asdict
+        from integrated_robot_interfaces.msg import FootContacts
+        from integrated_robot_navigation.observations import sensor_sample
+        message=FootContacts();message.header.frame_id='odom'
+        message.names=['fr_foot','fl_foot','rr_foot','rl_foot']
+        row=dict(kind='contacts',value=asdict(sensor_sample('contacts',message,123,0)))
+        expected=json.loads(json.dumps(row,allow_nan=False))
+>       raw=codec().MAGIC+codec().encode_record(row)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observer_capture_journal.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/scripts/observer_journal_13_5.py:32: in encode_record
+    _primitive(row)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = {'kind': 'contacts', 'value': {'data': {'forces': (0.0, 0.0, 0.0, 0.0), 'names': ('fr_foot', 'fl_foot', 'rr_foot', 'rl..., 0.0, 0.0)), 'touching': (False, False, False, False), ...}, 'epoch': 0, 'frame_id': 'odom', 'received_ns': 123, ...}}
+
+    def _primitive(value):
+        pending=[value]
+        while pending:
+            item=pending.pop();kind=type(item)
+            if kind in (str,int,bool,type(None)):continue
+            if kind is float:
+                if not math.isfinite(item):raise ValueError('non-finite capture value')
+            elif kind in (list,tuple):pending.extend(item)
+            elif kind is dict:
+                if any(type(key) is not str for key in item):raise ValueError('capture keys must be strings')
+                pending.extend(item.values())
+>           else:raise ValueError('non-primitive capture value')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           ValueError: non-primitive capture value
+
+Ch13/scripts/observer_journal_13_5.py:28: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_observer_capture_journal.py::test_ros_fixed_array_values_remain_equivalent_to_original_json
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 17.06s

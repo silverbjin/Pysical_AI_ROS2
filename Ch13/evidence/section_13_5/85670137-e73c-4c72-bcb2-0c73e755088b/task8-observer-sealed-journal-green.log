@@ -1,0 +1,122 @@
+.......F
+=================================== FAILURES ===================================
+_____ test_full_observer_owns_ros_recording_and_closes_without_capture_ipc _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_full_observer_owns_ros_re0')
+
+    def test_full_observer_owns_ros_recording_and_closes_without_capture_ipc(tmp_path):
+        module=api();context=Context();rclpy.init(context=context)
+        peer=Node('full_observer_fixture_peer',context=context)
+        pub=peer.create_publisher(FootContacts,'/navigation/foot_contacts',qos_profile_sensor_data)
+        owner=module.ObserverProcess(tmp_path,engine='gazebo')
+        try:
+            assert owner.identity['pid']!=os.getpid() and owner.identity['uid']==os.getuid()
+            owner.set_stage('stand')
+            end=time.monotonic()+3.
+            while pub.get_subscription_count()!=1 and time.monotonic()<end:time.sleep(.01)
+            assert pub.get_subscription_count()==1
+            msg=FootContacts();msg.header.frame_id='odom';msg.names=['fr_foot','fl_foot','rr_foot','rl_foot']
+            for i in range(30):
+                msg.header.stamp.sec=17;msg.header.stamp.nanosec=i*1_000_000;msg.sequence=i;pub.publish(msg);time.sleep(.01)
+>           data=owner.finish(timeout_sec=10.)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_split_observer.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <split_observer_13_5.ObserverProcess object at 0x75a774849f70>
+
+    def finish(self,*,timeout_sec):
+        if self.finished:
+            if self.error:raise RuntimeError(self.error)
+            return self.data
+        if not getattr(self,'stop_sent',False):
+            if self.process.is_alive():
+                try:self.connection.send(('stop',None));self.ipc_requests+=1
+                except (BrokenPipeError,EOFError,OSError):pass
+            self.stop_sent=True
+        self.process.join(timeout=timeout_sec)
+        if self.process.is_alive():raise RuntimeError('observer process not joined; resources retained')
+        self.joined=True
+        report_path=self.root/'observer_process_report.json'
+        if report_path.exists():self.result=json.loads(report_path.read_text())
+        self.runtime_fault=self.runtime_fault or self.result.get('runtime_fault')
+        self.finished=True;self.connection.close()
+        journal=self.result.get('journal',{})
+        if (self.error or self.process.exitcode!=0 or self.result.get('failure')
+                or not self.result.get('receiver',{}).get('closed')
+                or self.result.get('ros_closed') is not True
+                or journal.get('joined') is not True or journal.get('error')
+                or journal.get('submitted')!=journal.get('written')):
+            self.error=self.error or 'observer finish failed: '+str(self.result.get('failure',self.process.exitcode))
+>           raise RuntimeError(self.error)
+E           RuntimeError: observer finish failed: 1
+
+Ch13/scripts/split_observer_13_5.py:229: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_full_observer_owns_ros_re0')
+
+    def test_full_observer_owns_ros_recording_and_closes_without_capture_ipc(tmp_path):
+        module=api();context=Context();rclpy.init(context=context)
+        peer=Node('full_observer_fixture_peer',context=context)
+        pub=peer.create_publisher(FootContacts,'/navigation/foot_contacts',qos_profile_sensor_data)
+        owner=module.ObserverProcess(tmp_path,engine='gazebo')
+        try:
+            assert owner.identity['pid']!=os.getpid() and owner.identity['uid']==os.getuid()
+            owner.set_stage('stand')
+            end=time.monotonic()+3.
+            while pub.get_subscription_count()!=1 and time.monotonic()<end:time.sleep(.01)
+            assert pub.get_subscription_count()==1
+            msg=FootContacts();msg.header.frame_id='odom';msg.names=['fr_foot','fl_foot','rr_foot','rl_foot']
+            for i in range(30):
+                msg.header.stamp.sec=17;msg.header.stamp.nanosec=i*1_000_000;msg.sequence=i;pub.publish(msg);time.sleep(.01)
+            data=owner.finish(timeout_sec=10.)
+            report=owner.report()
+            assert report['joined'] and report['exitcode']==0 and report['receiver']['closed']
+            assert report['ipc_requests']==2,'captures crossed the process boundary instead of staying in their ROS/file owner'
+            rows=[json.loads(line) for line in (tmp_path/'observations.jsonl').read_text().splitlines()]
+            contacts=[r['value'] for r in rows if r['kind']=='contacts']
+            assert len(contacts)>=20 and contacts[-1]['stamp_ns']==17_029_000_000
+            assert contacts[-1]['received_ns']>0
+            assert data['frames']==[],'an incomplete fixture became physical evidence'
+            assert not data['errors']
+        finally:
+>           owner.finish(timeout_sec=10.)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_split_observer.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <split_observer_13_5.ObserverProcess object at 0x75a774849f70>
+
+    def finish(self,*,timeout_sec):
+        if self.finished:
+>           if self.error:raise RuntimeError(self.error)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           RuntimeError: observer finish failed: 1
+
+Ch13/scripts/split_observer_13_5.py:208: RuntimeError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793090464.505247205] [navigation_native_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1793090464.520201189] [navigation_probe_recording]: Serial navigation callbacks use EventsExecutor
+[INFO] [1793090464.536074669] [navigation_probe_ingress]: Serial navigation callbacks use EventsExecutor
+Process navigation_full_observer:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/split_observer_13_5.py", line 131, in _observe
+    report=dict(identity=identity,receiver=receiver.report() if receiver else {},
+                                           ^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 182, in report
+    return dict(node=self.node.get_name(),thread_ident=self.thread.ident,
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/node.py", line 341, in get_name
+    with self.handle:
+rclpy._rclpy_pybind11.InvalidHandle: cannot use Destroyable because destruction was requested
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_split_observer.py::test_full_observer_owns_ros_recording_and_closes_without_capture_ipc
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 7 passed in 31.03s

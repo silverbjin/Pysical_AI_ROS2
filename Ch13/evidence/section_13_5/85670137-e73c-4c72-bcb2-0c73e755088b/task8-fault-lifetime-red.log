@@ -1,0 +1,19 @@
+F
+=================================== FAILURES ===================================
+__ test_secondary_settle_error_keeps_known_landing_target_and_primary_reason ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_secondary_settle_error_keeps_known_landing_target_and_primary_reason(nav_robot_model):
+        value,plant,foot=unload_fault(nav_robot_model)
+        value._fail('fault landing measured support/settle lost')
+>       assert value._fault_landing_foot==foot, 'transient second fault destroyed the landing owner'
+E       AssertionError: transient second fault destroyed the landing owner
+E       assert None == 'fl_foot'
+E        +  where None = <integrated_robot_navigation.gait.CrawlMachine object at 0x7634916e0d70>._fault_landing_foot
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_recovery_lifetime.py:13: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_recovery_lifetime.py::test_secondary_settle_error_keeps_known_landing_target_and_primary_reason
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 16.98s

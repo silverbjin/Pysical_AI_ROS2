@@ -1,0 +1,40 @@
+Starting >>> integrated_robot_navigation_sensors
+--- stderr: integrated_robot_navigation_sensors
+CMake Deprecation Warning at /opt/ros/jazzy/share/tl_expected/cmake/tl_expectedConfig.cmake:37 (message):
+  Package 'tl_expected' is deprecated (This package will be removed in ROS 2
+  Lyrical Luth.
+
+        Use tl/expected.hpp from libexpected-dev,
+        or rcpputils/tl_expected/expected.hpp if the system header is not available)
+Call Stack (most recent call first):
+  /opt/ros/jazzy/share/parameter_traits/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/parameter_traits/cmake/parameter_traitsConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/controller_manager/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/controller_manager/cmake/controller_managerConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/gz_ros2_control/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/gz_ros2_control/cmake/gz_ros2_controlConfig.cmake:41 (include)
+  CMakeLists.txt:21 (find_package)
+
+
+In file included from /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_plugin_loading.cpp:2:
+/opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h: In instantiation of ‘testing::AssertionResult testing::internal::CmpHelperEQ(const char*, const char*, const T1&, const T2&) [with T1 = rclcpp::ReliabilityPolicy; T2 = rmw_qos_reliability_policy_e]’:
+/opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:1398:23:   required from ‘static testing::AssertionResult testing::internal::EqHelper::Compare(const char*, const char*, const T1&, const T2&) [with T1 = rclcpp::ReliabilityPolicy; T2 = rmw_qos_reliability_policy_e; typename std::enable_if<((! std::is_integral<_Tp>::value) || (! std::is_pointer<_T2>::value))>::type* <anonymous> = 0]’
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/test/test_plugin_loading.cpp:48:3:   required from here
+/opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:1379:11: error: no match for ‘operator==’ (operand types are ‘const rclcpp::ReliabilityPolicy’ and ‘const rmw_qos_reliability_policy_e’)
+ 1379 |   if (lhs == rhs) {
+      |       ~~~~^~~~~~
+/opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:1379:11: note: candidate: ‘operator==(rmw_qos_reliability_policy_e, rmw_qos_reliability_policy_e)’ (built-in)
+/opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:1379:11: note:   no known conversion for argument 1 from ‘const rclcpp::ReliabilityPolicy’ to ‘rmw_qos_reliability_policy_e’
+/opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:1379:11: note: candidate: ‘operator==(rclcpp::ReliabilityPolicy, rclcpp::ReliabilityPolicy)’ (built-in)
+/opt/ros/jazzy/src/gtest_vendor/include/gtest/gtest.h:1379:11: note:   no known conversion for argument 2 from ‘const rmw_qos_reliability_policy_e’ to ‘rclcpp::ReliabilityPolicy’
+gmake[2]: *** [CMakeFiles/test_plugin_loading.dir/build.make:76: CMakeFiles/test_plugin_loading.dir/test/test_plugin_loading.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:593: CMakeFiles/test_plugin_loading.dir/all] Error 2
+gmake[1]: *** Waiting for unfinished jobs....
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< integrated_robot_navigation_sensors [1min 26s, exited with code 2]
+
+Summary: 0 packages finished [1min 27s]
+  1 package failed: integrated_robot_navigation_sensors
+  1 package had stderr output: integrated_robot_navigation_sensors
+  1 package not processed

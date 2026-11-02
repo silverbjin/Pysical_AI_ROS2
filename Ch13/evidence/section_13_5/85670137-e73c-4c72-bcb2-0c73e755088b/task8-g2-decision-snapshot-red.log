@@ -1,0 +1,22 @@
+F
+=================================== FAILURES ===================================
+_____ test_decision_uses_original_fresh_ingress_not_delayed_journal_frame ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x76d154167ec0>
+
+    def test_decision_uses_original_fresh_ingress_not_delayed_journal_frame(nav_robot_model,monkeypatch):
+        probe,records,now,wall=fixture(nav_robot_model,monkeypatch)
+        # Reproduce the old runner path: cached frame + later ROS now fails even
+        # though its replacement has already arrived. Never retag the old sample.
+        with pytest.raises(ValueError,match='body:ros_age'):
+            movement_snapshot(NavigationProbe.latest_frame(probe),now,wall,default_limits())
+>       value=NavigationProbe.movement_decision(probe,default_limits())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'NavigationProbe' has no attribute 'movement_decision'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_movement_decision.py:44: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_movement_decision.py::test_decision_uses_original_fresh_ingress_not_delayed_journal_frame
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.21s

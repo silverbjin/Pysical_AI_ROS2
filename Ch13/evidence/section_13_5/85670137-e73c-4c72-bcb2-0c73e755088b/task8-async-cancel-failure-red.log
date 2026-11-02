@@ -1,0 +1,36 @@
+F
+=================================== FAILURES ===================================
+_ test_cancelled_failed_math_remains_a_job_failure_even_with_normal_close[poll] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+drain = 'poll'
+
+    @pytest.mark.parametrize('drain',['poll','close'])
+    def test_cancelled_failed_math_remains_a_job_failure_even_with_normal_close(nav_robot_model,drain):
+        model,args=inputs(nav_robot_model);worker=api()(model);worker.prepare()
+        args['forces_world']={f:[0.,0.,100000.] for f in model.feet}
+        worker.submit(args,dict(generation=1));worker.discard()
+        try:
+            if drain=='poll':
+>               with pytest.raises(ValueError,match='transition optimization'):take(worker)
+                                                                               ^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+worker = <integrated_robot_navigation.load_process.SpatialLoadProcess object at 0x73b102dfa870>
+
+    def take(worker):
+        deadline=time.monotonic()+1.
+        while time.monotonic()<deadline:
+            result=worker.poll()
+            if result is not None:return result
+            time.sleep(.001)
+>       raise AssertionError('bounded numerical response missing')
+E       AssertionError: bounded numerical response missing
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py:23: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_load_process.py::test_cancelled_failed_math_remains_a_job_failure_even_with_normal_close[poll]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 28 deselected in 17.89s

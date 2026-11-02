@@ -1,0 +1,36 @@
+F
+=================================== FAILURES ===================================
+_ test_clean_stderr_log_carries_actual_lifecycle_and_passes_existing_artifact_contract _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_clean_stderr_log_carries_0')
+
+    def test_clean_stderr_log_carries_actual_lifecycle_and_passes_existing_artifact_contract(tmp_path):
+        from verify_vision_13_4 import EvidenceRun
+        owner=api().NativeObserverProcess(tmp_path,engine='gazebo')
+        try:
+            owner.finish(timeout_sec=10.);report=owner.report()
+            with EvidenceRun(tmp_path,{'native_drain'}) as evidence:
+                evidence.artifact(tmp_path/'native_observer.stderr.log')
+>               evidence.finish(dict(native_drain=report['joined'] and report['exitcode']==0
+                    and report['receiver']['closed'] and report['journal']['joined']))
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <verify_vision_13_4.EvidenceRun object at 0x76ea8063b9b0>
+checks = {'native_drain': True}
+
+    def finish(self, checks):
+        with self.lock:
+            self.result.update(checks=dict(checks), finished_at=time.time(), status='COMPLETE')
+            self.result['status'] = verdict(self.result, self.required)
+            self.save()
+            if self.result['status'] != 'PASS':
+>               raise RuntimeError('required checks/artifacts incomplete, stale, or failed')
+E               RuntimeError: required checks/artifacts incomplete, stale, or failed
+
+Ch13/scripts/verify_vision_13_4.py:245: RuntimeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py::test_clean_stderr_log_carries_actual_lifecycle_and_passes_existing_artifact_contract
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 17 deselected in 17.81s

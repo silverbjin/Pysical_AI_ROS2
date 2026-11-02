@@ -1,0 +1,30 @@
+F
+=================================== FAILURES ===================================
+_ test_actual_owner_records_bounded_ordered_decision_costs_without_changing_clock _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_actual_owner_records_boun0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_actual_owner_records_bounded_ordered_decision_costs_without_changing_clock(tmp_path,nav_robot_model):
+        profile,expected=fixture(tmp_path,nav_robot_model,'mujoco')
+        ctx=Context();rclpy.init(context=ctx);node=controller(ctx,nav_robot_model,profile,expected)
+        rig=CrawlRig(node,nav_robot_model,ctx)
+        rig.node.destroy_publisher(rig.clock)
+        rig.clock=rig.node.create_publisher(Clock,'/navigation/control_clock',10)
+        try:
+            rig.pump(.3)
+            assert rig.transition(Transition.TRANSITION_CONFIGURE)
+            assert rig.transition(Transition.TRANSITION_ACTIVATE)
+            rig.pump(.1)
+            rows=getattr(node,'decision_cost_trace',None)
+>           assert rows, 'actual owner decision boundaries are not observable'
+E           AssertionError: actual owner decision boundaries are not observable
+E           assert None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_control_cadence_ros.py:96: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793076103.484284063] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_waitset", "alive": false, "joined": true, "error": null, "pid": 1096, "uid": 1000, "native_tid": 1115, "node_name": "crawl_controller_ingress", "namespace": "/", "clock_subscriptions": []}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_control_cadence_ros.py::test_actual_owner_records_bounded_ordered_decision_costs_without_changing_clock
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 12.40s

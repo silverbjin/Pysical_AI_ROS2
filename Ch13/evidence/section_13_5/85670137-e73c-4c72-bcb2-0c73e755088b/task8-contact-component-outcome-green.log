@@ -1,0 +1,27 @@
+....F
+=================================== FAILURES ===================================
+___ test_component_completion_keeps_original_incomplete_G2_result_unchanged ____
+
+    def test_component_completion_keeps_original_incomplete_G2_result_unchanged():
+        from integrated_robot_navigation import contact_component as module
+        assert hasattr(module,'component_outcome'), 'explicit non-admission component outcome missing'
+        checks=dict(forward=False,left=False,right=False,dart_contact_contract=False,
+            normal_runtime_exit=True,normal_engine_exit=True,carry_terminal_received=True,
+            joint_tf_ownership=True,contact_support=True,sensor_freshness=True,stability=True,native_ctrl_observed=True)
+        result=dict(gate='G2',status='FAIL',required_checks=list(checks),checks=checks)
+        report=module.component_outcome(result,dict(all_four_contacts_completed=True),
+            protocol_finished=True,dart_observed=True)
+        assert report['observations_complete'] and not report['full_G2_acceptance']
+        assert result['status']=='FAIL' and result['checks']['forward'] is False
+        checks['normal_runtime_exit']=False
+        assert not module.component_outcome(result,dict(all_four_contacts_completed=True),
+            protocol_finished=True,dart_observed=True)['observations_complete']
+>       item=frame(nav_robot_model);item['samples']['contacts']['data']['force_vectors_valid']=False
+                   ^^^^^^^^^^^^^^^
+E       NameError: name 'nav_robot_model' is not defined
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_component.py:79: NameError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_component.py::test_component_completion_keeps_original_incomplete_G2_result_unchanged
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 passed in 14.26s

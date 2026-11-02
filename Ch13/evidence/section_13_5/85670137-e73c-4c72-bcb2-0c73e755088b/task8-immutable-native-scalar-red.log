@@ -1,0 +1,53 @@
+....F
+=================================== FAILURES ===================================
+_______ test_native_fixed_array_scalars_preserve_wire_values_and_clocks ________
+
+    def test_native_fixed_array_scalars_preserve_wire_values_and_clocks():
+        from integrated_robot_interfaces.msg import FootContacts
+        from integrated_robot_navigation.observations import sensor_sample
+        message=FootContacts();message.header.frame_id='odom';message.header.stamp.sec=17
+        message.normal_forces=[1.,2.,3.,4.]
+        original=sensor_sample('contacts',message,12345,0)
+>       frozen=api().freeze_sample(original)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_immutable_records.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/scripts/observation_records_13_5.py:25: in freeze_sample
+    data = _freeze(sample.data)
+           ^^^^^^^^^^^^^^^^^^^^
+Ch13/scripts/observation_records_13_5.py:13: in _freeze
+    return MappingProxyType({key: _freeze(item) for key, item in value.items()})
+                                  ^^^^^^^^^^^^^
+Ch13/scripts/observation_records_13_5.py:15: in _freeze
+    frozen = tuple(_freeze(item) for item in value)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ch13/scripts/observation_records_13_5.py:15: in <genexpr>
+    frozen = tuple(_freeze(item) for item in value)
+                   ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = 1.0
+
+    def _freeze(value):
+        if isinstance(value, MappingProxyType):
+            return value
+        if type(value) is dict:
+            if any(type(key) is not str for key in value):
+                raise TypeError('observation keys must be strings')
+            return MappingProxyType({key: _freeze(item) for key, item in value.items()})
+        if type(value) in (tuple, list):
+            frozen = tuple(_freeze(item) for item in value)
+            if type(value) is tuple and all(a is b for a, b in zip(value, frozen)):
+                return value
+            return frozen
+        if type(value) in (str, int, float, bool, type(None)):
+            return value
+>       raise TypeError('unsupported observation value: ' + type(value).__name__)
+E       TypeError: unsupported observation value: float64
+
+Ch13/scripts/observation_records_13_5.py:21: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_immutable_records.py::test_native_fixed_array_scalars_preserve_wire_values_and_clocks
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 passed in 12.28s

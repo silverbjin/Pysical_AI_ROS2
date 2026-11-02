@@ -1,0 +1,132 @@
+{
+  "scope": "read_only_shared_kernel_environment_not_engine_acceptance",
+  "utc": "2026-10-27T15:08:56.6575442+00:00",
+  "distributions": [
+    {
+      "distribution": "Ubuntu-22.04",
+      "report": {
+        "uid": 1000,
+        "boot_id": "87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd",
+        "clocksource": "hyperv_clocksource_tsc_page",
+        "clock_ticks": 100,
+        "namespaces": {
+          "pid": "pid:[4026532245]",
+          "time": "time:[4026531834]",
+          "uts": "uts:[4026532244]"
+        },
+        "commands": [
+          {
+            "command": [
+              "systemctl",
+              "show",
+              "systemd-timesyncd.service",
+              "--property=ActiveState,SubState,ExecMainPID"
+            ],
+            "returncode": 0,
+            "output": "ExecMainPID=108\nActiveState=active\nSubState=running\n"
+          },
+          {
+            "command": [
+              "systemctl",
+              "is-enabled",
+              "systemd-timesyncd.service"
+            ],
+            "returncode": 0,
+            "output": "enabled\n"
+          },
+          {
+            "command": [
+              "timedatectl",
+              "timesync-status"
+            ],
+            "returncode": 0,
+            "output": "       Server: 185.125.190.58 (ntp.ubuntu.com)\nPoll interval: 32s (min: 32s; max 34min 8s)\n         Leap: normal\n      Version: 4\n      Stratum: 2\n    Reference: 1D586304\n    Precision: 1us (-25)\nRoot distance: 3.654ms (max: 5s)\n       Offset: +2.927125s\n        Delay: 238.983ms\n       Jitter: 1.095723s\n Packet count: 48\n    Frequency: +32.222ppm\n"
+          },
+          {
+            "command": [
+              "journalctl",
+              "-b",
+              "-u",
+              "systemd-timesyncd.service",
+              "--no-pager",
+              "-n",
+              "18"
+            ],
+            "returncode": 0,
+            "output": "Oct 27 23:41:45 DESKTOP-4B51LPI systemd[1]: Starting Network Time Synchronization...\nOct 27 23:41:46 DESKTOP-4B51LPI systemd[1]: Started Network Time Synchronization.\nOct 27 23:41:46 DESKTOP-4B51LPI systemd-timesyncd[108]: Initial synchronization to time server 185.125.190.58:123 (ntp.ubuntu.com).\n"
+          }
+        ]
+      }
+    },
+    {
+      "distribution": "Ubuntu-24.04",
+      "report": {
+        "uid": 1000,
+        "boot_id": "87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd",
+        "clocksource": "hyperv_clocksource_tsc_page",
+        "clock_ticks": 100,
+        "namespaces": {
+          "pid": "pid:[4026532214]",
+          "time": "time:[4026531834]",
+          "uts": "uts:[4026532213]"
+        },
+        "commands": [
+          {
+            "command": [
+              "systemctl",
+              "show",
+              "systemd-timesyncd.service",
+              "--property=ActiveState,SubState,ExecMainPID"
+            ],
+            "returncode": 0,
+            "output": "ExecMainPID=2177\nActiveState=active\nSubState=running\n"
+          },
+          {
+            "command": [
+              "systemctl",
+              "is-enabled",
+              "systemd-timesyncd.service"
+            ],
+            "returncode": 0,
+            "output": "enabled\n"
+          },
+          {
+            "command": [
+              "timedatectl",
+              "timesync-status"
+            ],
+            "returncode": 0,
+            "output": "       Server: 185.125.190.57 (ntp.ubuntu.com)\nPoll interval: 32s (min: 32s; max 34min 8s)\n         Leap: normal\n      Version: 4\n      Stratum: 2\n    Reference: 1D586304\n    Precision: 1us (-25)\nRoot distance: 3.653ms (max: 5s)\n       Offset: +23.029ms\n        Delay: 248.540ms\n       Jitter: 1.089665s\n Packet count: 13\n    Frequency: +32.222ppm\n"
+          },
+          {
+            "command": [
+              "journalctl",
+              "-b",
+              "-u",
+              "systemd-timesyncd.service",
+              "--no-pager",
+              "-n",
+              "18"
+            ],
+            "returncode": 0,
+            "output": "Oct 27 23:41:26 DESKTOP-4B51LPI systemd[1]: Starting systemd-timesyncd.service - Network Time Synchronization...\nOct 27 23:41:26 DESKTOP-4B51LPI systemd[1]: Started systemd-timesyncd.service - Network Time Synchronization.\nOct 27 23:41:36 DESKTOP-4B51LPI systemd-timesyncd[158]: Contacted time server 185.125.190.58:123 (ntp.ubuntu.com).\nOct 27 23:41:36 DESKTOP-4B51LPI systemd-timesyncd[158]: Initial clock synchronization to Tue 2026-10-27 23:41:36.859613 KST.\nOct 27 23:58:53 DESKTOP-4B51LPI systemd[1]: Stopping systemd-timesyncd.service - Network Time Synchronization...\nOct 27 23:58:53 DESKTOP-4B51LPI systemd[1]: systemd-timesyncd.service: Deactivated successfully.\nOct 27 23:58:53 DESKTOP-4B51LPI systemd[1]: Stopped systemd-timesyncd.service - Network Time Synchronization.\nOct 28 00:02:01 DESKTOP-4B51LPI systemd[1]: Starting systemd-timesyncd.service - Network Time Synchronization...\nOct 28 00:02:02 DESKTOP-4B51LPI systemd[1]: Started systemd-timesyncd.service - Network Time Synchronization.\nOct 28 00:02:03 DESKTOP-4B51LPI systemd-timesyncd[2177]: Contacted time server 185.125.190.57:123 (ntp.ubuntu.com).\nOct 28 00:02:03 DESKTOP-4B51LPI systemd-timesyncd[2177]: Initial clock synchronization to Wed 2026-10-28 00:02:03.974945 KST.\n"
+          }
+        ]
+      }
+    }
+  ],
+  "wsl_listing": "  NAME              STATE           VERSION\n\n* Ubuntu-22.04      Running         2\n\n  Ubuntu-24.04      Running         2\n\n  docker-desktop    Stopped         2\n\n",
+  "host_services": [
+    {
+      "Name": "vmictimesync",
+      "Status": "Stopped",
+      "StartType": "Manual"
+    },
+    {
+      "Name": "W32Time",
+      "Status": "Stopped",
+      "StartType": "Manual"
+    }
+  ],
+  "writes_system_settings": false
+}

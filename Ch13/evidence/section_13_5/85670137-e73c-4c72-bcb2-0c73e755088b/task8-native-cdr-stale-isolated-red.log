@@ -1,0 +1,39 @@
+F
+=================================== FAILURES ===================================
+___ test_all_original_stale_frames_survive_replay_and_fail_same_age_contract ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_all_original_stale_frames0')
+
+    def test_all_original_stale_frames_survive_replay_and_fail_same_age_contract(tmp_path):
+        from integrated_robot_navigation.samples import Sample,SensorBundle,validate_bundle
+>       rows=complete_packets()
+             ^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py:191: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py:185: in complete_packets
+    source_system_ns=receipt+900,rmw_received_system_ns=receipt+950,gid='01'*24,stage='stand'),serialize_message(message)))
+                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+message = integrated_robot_interfaces.msg.FootContacts(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=2, nanos...nts=[geometry_msgs.msg.Point(x=0.0, y=0.0, z=0.0)], normal_forces=array([30.]), touching=[True], unexpected_contacts=0)
+
+    def serialize_message(message) -> bytes:
+        """
+        Serialize a ROS message.
+    
+        :param message: The ROS message to serialize.
+        :return: The serialized bytes.
+        """
+        message_type = type(message)
+        # this line imports the typesupport for the message module if not already done
+        check_for_type_support(message_type)
+>       return _rclpy.rclpy_serialize(message, message_type)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: Internal error: pybind11::error_already_set called while Python error indicator not set.
+
+/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/serialization.py:29: RuntimeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py::test_all_original_stale_frames_survive_replay_and_fail_same_age_contract
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 14 deselected in 10.95s

@@ -1,0 +1,40 @@
+F
+=================================== FAILURES ===================================
+_ test_fault_status_can_confirm_measured_hold_stop_but_never_ready_or_new_commands _
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x705795ea1eb0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70579a66f0b0>
+
+    def test_fault_status_can_confirm_measured_hold_stop_but_never_ready_or_new_commands(crawl_rig,monkeypatch):
+        rig=crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+        assert rig.transition(Transition.TRANSITION_ACTIVATE)
+        rig.pump(.1)
+        reason='shift timeout; measured support/settle not gained'
+        publications=[];publish=rig.guard.legs.publish
+        def record(message):
+            publications.append(message)
+            publish(message)
+        monkeypatch.setattr(rig.guard.legs,'publish',record)
+        with rig.guard.lock:
+            # Inject the observed failure at the owner boundary. The fixture is a
+            # stationary feedback producer, not a simulated successful crawl.
+            machine=rig.guard.machine
+            machine.phase='SHIFT';machine._unload_start=None
+            machine._fail(reason);machine.request_stop(urgent=True)
+        rig.mode_name='STOP'
+        rig.pump(.7)
+        assert rig.crawl_states[-1].state=='FAULT'
+        assert not rig.crawl_states[-1].stopped and not publications
+        rig.pump(.7)
+        state=rig.crawl_states[-1]
+>       assert state.stopped, 'measured fault stop never crossed the actual ROS status boundary'
+E       AssertionError: measured fault stop never crossed the actual ROS status boundary
+E       assert False
+E        +  where False = integrated_robot_interfaces.msg.MotionState(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=5, nanose...e='SHIFT', swing_foot='', ready=False, stopped=False, fault_reason='shift timeout; measured support/settle not gained').stopped
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_hold_stop_ros.py:29: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_hold_stop_ros.py::test_fault_status_can_confirm_measured_hold_stop_but_never_ready_or_new_commands
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 20.77s

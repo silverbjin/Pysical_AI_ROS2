@@ -1,0 +1,33 @@
+F
+=================================== FAILURES ===================================
+__ test_timely_application_and_first_receipt_survive_delayed_owner_evaluation __
+
+    def test_timely_application_and_first_receipt_survive_delayed_owner_evaluation():
+        value=pending()
+        value.receive(observed((.001,.002),stamp=ROS+46_000_000,receipt=WALL+100_000_000))
+        assert not value.permit(ROS+45_000_000,WALL+99_000_000),'future input was used'
+        # CF1's measured decision offsets; receipt100ms is an explicit test input.
+        # At this decision capture age164ms/receipt age106ms are BOTH still valid.
+>       assert value.permit(ROS+210_000_000,WALL+206_000_000)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_reference_event_deadline.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.applied_reference.AppliedReferenceCredit object at 0x71071b347ef0>
+ros_ns = 1210000000, wall_ns = 10206000000
+
+    def permit(self,ros_ns,wall_ns):
+        if self.pending is None:return True
+        pending=self.pending
+        ros_age=ros_ns-pending['issued_ros_ns'];wall_age=wall_ns-pending['issued_wall_ns']
+        if min(ros_age,wall_age)<0:raise ValueError('application clock rollback')
+        if max(ros_age,wall_age)>self.max_age_ns:
+>           raise ValueError('native reference unconfirmed')
+E           ValueError: native reference unconfirmed
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/applied_reference.py:58: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_reference_event_deadline.py::test_timely_application_and_first_receipt_survive_delayed_owner_evaluation
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 21.26s

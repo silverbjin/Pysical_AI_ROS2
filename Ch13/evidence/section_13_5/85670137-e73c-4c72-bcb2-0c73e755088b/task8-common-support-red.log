@@ -1,0 +1,41 @@
+F
+=================================== FAILURES ===================================
+______ test_tiny_actuator_caps_are_rejected_by_both_search_routes[search] ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+route = 'search'
+
+    @pytest.mark.parametrize('route',['search','projection'])
+    def test_tiny_actuator_caps_are_rejected_by_both_search_routes(nav_robot_model,route):
+>       m,plant,q,pose,com,points,support=ready(nav_robot_model,tiny=True)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_support_plan.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_support_plan.py:19: in ready
+    m=CrawlMachine(model,default_limits(),load_transfer_policy='coupled_contact')
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.gait.CrawlMachine object at 0x7496c62a3410>
+model = ModelContract(model_sha256='3071418a45e7f757110db8d4f536a9b55cf01495e115652372f1c4d5a716aa4d', joint_names=('fr_hip_jo...ame="initial_value">0.015</param></state_interface><state_interface name="velocity" /></joint></ros2_control></robot>')
+limits = {'carry_error_rad': 0.03, 'carry_velocity_rps': 0.02, 'control_hz': 50.0, 'cycle_s': 8.0, ...}
+
+    def __init__(self, model, limits, *, reference_time_policy='bounded_20ms',mass_evaluator=None,
+                 calibration_return_policy='loaded_quintic',load_transfer_policy='geometric'):
+        _validate_limits(limits)
+        if reference_time_policy not in ('bounded_20ms','applied_shift_elapsed'):
+            raise ValueError('unknown reference time policy')
+        self.reference_time_policy=reference_time_policy
+        if calibration_return_policy not in ('loaded_quintic','bounded_preload'):
+            raise ValueError('unknown calibration return policy')
+        self.calibration_return_policy=calibration_return_policy
+        if load_transfer_policy not in ('geometric','stance_admittance'):
+>           raise ValueError('unknown load transfer policy')
+E           ValueError: unknown load transfer policy
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:41: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_support_plan.py::test_tiny_actuator_caps_are_rejected_by_both_search_routes[search]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 20.13s

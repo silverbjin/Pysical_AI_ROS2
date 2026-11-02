@@ -1,0 +1,38 @@
+F
+=================================== FAILURES ===================================
+_ test_g2_control_waits_for_original_simulation_progress_but_wall_watchdog_still_runs _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_g2_control_waits_for_orig0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7bc03ad9c560>
+
+    def test_g2_control_waits_for_original_simulation_progress_but_wall_watchdog_still_runs(tmp_path,nav_robot_model,monkeypatch):
+        ctx=Context();rclpy.init(context=ctx);calls=[]
+        def record(node):calls.append((node.get_clock().now().nanoseconds,time.monotonic_ns()))
+        monkeypatch.setattr(CrawlController,'_tick',record)  # instrument dispatch only; no motor/model fixture
+        profile,expected=fixture(tmp_path,nav_robot_model,'mujoco')
+        node=controller(ctx,nav_robot_model,profile,expected)
+        peer=Node('g2_cadence_source',context=ctx);executor=make_control_executor(node)
+        executor.add_node(node);executor.add_node(peer)
+        pub=peer.create_publisher(Clock,'/navigation/control_clock',10)
+        def pump(seconds,stamp=None):
+            deadline=time.monotonic()+seconds
+            while time.monotonic()<deadline:
+                if stamp is not None:pub.publish(Clock(clock=Time(sec=stamp//10**9,nanosec=stamp%10**9)))
+                executor.spin_once(timeout_sec=.001)
+                time.sleep(.001)
+        try:
+            pump(.15,1_000_000_000);pump(.035,1_100_000_000)
+            assert calls and node.get_clock().now().nanoseconds==1_100_000_000
+            calls.clear();pump(.10)
+>           assert not calls, 'wall control timer consumed the same simulation instant repeatedly'
+E           AssertionError: wall control timer consumed the same simulation instant repeatedly
+E           assert not [(1100000000, 20577931100), (1100000000, 20598702500), (1100000000, 20618591600), (1100000000, 20638865300), (1100000000, 20659712500)]
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_control_cadence_ros.py:49: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793067100.847891321] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_waitset", "alive": false, "joined": true, "error": null, "pid": 1144, "uid": 1000, "native_tid": 1385, "node_name": "crawl_controller_ingress", "namespace": "/", "clock_subscriptions": []}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_control_cadence_ros.py::test_g2_control_waits_for_original_simulation_progress_but_wall_watchdog_still_runs
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 13.57s

@@ -1,0 +1,19 @@
+F
+=================================== FAILURES ===================================
+__ test_same_shared_kernel_boot_does_not_authorize_a_replacement_distro_init ___
+
+    def test_same_shared_kernel_boot_does_not_authorize_a_replacement_distro_init():
+        ops=Ops()
+        for value in ops.states.values():value['init_start_ticks']=10
+        owner,_=lease(ops);owner.begin()
+        ops.states['Ubuntu-22.04']['init_start_ticks']=200
+>       assert owner.close() is False
+E       assert True is False
+E        +  where True = close()
+E        +    where close = <temporary_clock_lease.ClockLease object at 0x72f3d036fa70>.close
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py:99: AssertionError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py::test_same_shared_kernel_boot_does_not_authorize_a_replacement_distro_init
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 17 deselected in 0.29s

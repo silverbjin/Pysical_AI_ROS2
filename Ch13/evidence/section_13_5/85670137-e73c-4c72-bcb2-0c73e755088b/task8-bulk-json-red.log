@@ -1,0 +1,31 @@
+F
+=================================== FAILURES ===================================
+__ test_bulk_evidence_is_lossless_and_uses_less_recording_space[frames.json] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_bulk_evidence_is_lossless0')
+name = 'frames.json'
+
+    @pytest.mark.parametrize('name',['frames.json','all_frames.json','native_controls.json'])
+    def test_bulk_evidence_is_lossless_and_uses_less_recording_space(tmp_path,name):
+        frame=dict(source_header=dict(frame_id='camera_optical_frame',sec=71,nanosec=999999999),
+            first_received_monotonic_ns=2**58+17,phase='SWING',fault=None,accepted=True,
+            label='컵',values=[-0.0,1.2345678901234567,1e-12,-1e-12,1e300]*4)
+        data=dict(scope='original_samples',frames=[frame for _ in range(256)])
+        path=tmp_path/name;runner.save(path,data)
+        encoded=path.read_bytes();decoded=json.loads(encoded)
+        assert decoded==data
+        assert len(decoded['frames'])==256
+        assert decoded['frames'][0]['first_received_monotonic_ns']==2**58+17
+        assert math.copysign(1.,decoded['frames'][0]['values'][0])==-1.
+        expanded=(json.dumps(data,indent=2,allow_nan=False)+'\n').encode()
+>       assert len(encoded)<.7*len(expanded), 'bulk evidence still stores an expanded pretty-print copy'
+E       AssertionError: bulk evidence still stores an expanded pretty-print copy
+E       assert 171828 < (0.7 * 171828)
+E        +  where 171828 = len(b'{\n  "scope": "original_samples",\n  "frames": [\n    {\n      "source_header": {\n        "frame_id": "camera_optic...n        -0.0,\n        1.2345678901234567,\n        1e-12,\n        -1e-12,\n        1e+300\n      ]\n    }\n  ]\n}\n')
+E        +  and   171828 = len(b'{\n  "scope": "original_samples",\n  "frames": [\n    {\n      "source_header": {\n        "frame_id": "camera_optic...n        -0.0,\n        1.2345678901234567,\n        1e-12,\n        -1e-12,\n        1e+300\n      ]\n    }\n  ]\n}\n')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runner_evidence_json.py:25: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runner_evidence_json.py::test_bulk_evidence_is_lossless_and_uses_less_recording_space[frames.json]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 10.95s

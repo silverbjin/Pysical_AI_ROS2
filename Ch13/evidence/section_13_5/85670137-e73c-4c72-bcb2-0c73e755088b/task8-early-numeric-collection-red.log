@@ -1,0 +1,43 @@
+F
+=================================== FAILURES ===================================
+_ test_ready_reply_is_collected_before_slow_measure_but_sensor_failure_prevents_commit _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7d43c6f22690>
+
+    def test_ready_reply_is_collected_before_slow_measure_but_sensor_failure_prevents_commit(nav_robot_model,monkeypatch):
+        m,b,q,p,points,f=pending(nav_robot_model);peer=m._load_transfer;before=deepcopy(m._targets)
+        def measure(*a,**kw):
+            assert peer.reply is None,'ready numerical reply still waits behind model safety work'
+            assert m._load_collected_reply is not None
+            assert all(np.array_equal(before[n],m._targets[n]) for n in m.model.feet)
+            raise ValueError('controlled current sensor failure')
+        monkeypatch.setattr(m,'_measure',measure)
+>       result=m.advance(b,(.005,0.,0.),m._last_ros,m._last_wall)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_early_numeric_collection.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:1120: in advance
+    q, pose, centers, loads, points, com = self._measure(bundle, ros_ns, wall_ns)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = (SensorBundle(joints=Sample(stamp_ns=1040000000, received_ns=10040000000, epoch=0, sequence=1040000000, frame_id='base...on': 0, 'model_sha256': '845e57a97d2dd10a6963304d4f4baf628de208993fedf46c5239c39f839e4032'})), 1040000000, 10040000000)
+kw = {}
+@py_assert1 = {'computed_wall_ns': 10022000000, 'context': {'capture': (1020000000, 1020000000), 'dt': 0.02, 'foot': 'rr_foot', 'for...05, -1e-05, 0.0], 'rl_foot': [1e-05, -1e-05, 0.0], 'rr_foot': [0.0, 0.0, 1e-05]}, 'received_wall_ns': 10040000000, ...}
+@py_assert4 = None, @py_assert3 = False
+@py_format6 = "{'computed_wall_ns': 10022000000, 'context': {'capture': (1020000000, 1020000000), 'dt': 0.02, 'foot': 'rr_foot', 'fo... 'received_wall_ns': 10040000000, ...} = <test_async_load_owner.NumericPeer object at 0x7d43d28bca10>.reply\n} is None"
+@py_format8 = "ready numerical reply still waits behind model safety work\n>assert {'computed_wall_ns': 10022000000, 'context': {'ca... 'received_wall_ns': 10040000000, ...} = <test_async_load_owner.NumericPeer object at 0x7d43d28bca10>.reply\n} is None"
+
+    def measure(*a,**kw):
+>       assert peer.reply is None,'ready numerical reply still waits behind model safety work'
+E       AssertionError: ready numerical reply still waits behind model safety work
+E       assert {'computed_wall_ns': 10022000000, 'context': {'capture': (1020000000, 1020000000), 'dt': 0.02, 'foot': 'rr_foot', 'for...05, -1e-05, 0.0], 'rl_foot': [1e-05, -1e-05, 0.0], 'rr_foot': [0.0, 0.0, 1e-05]}, 'received_wall_ns': 10040000000, ...} is None
+E        +  where {'computed_wall_ns': 10022000000, 'context': {'capture': (1020000000, 1020000000), 'dt': 0.02, 'foot': 'rr_foot', 'for...05, -1e-05, 0.0], 'rl_foot': [1e-05, -1e-05, 0.0], 'rr_foot': [0.0, 0.0, 1e-05]}, 'received_wall_ns': 10040000000, ...} = <test_async_load_owner.NumericPeer object at 0x7d43d28bca10>.reply
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_early_numeric_collection.py:19: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_early_numeric_collection.py::test_ready_reply_is_collected_before_slow_measure_but_sensor_failure_prevents_commit
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 19.51s

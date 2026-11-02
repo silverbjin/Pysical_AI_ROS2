@@ -1,0 +1,21 @@
+F
+=================================== FAILURES ===================================
+___ test_xyz_worker_reuses_compiled_immutable_geometry_without_skipping_grid ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_xyz_worker_reuses_compiled_immutable_geometry_without_skipping_grid(nav_robot_model):
+        from integrated_robot_navigation.compiled_reference import CompiledReferenceEnvelope
+        model,a=xyz_inputs(nav_robot_model);kernel=api()(model,default_limits())
+>       assert isinstance(getattr(kernel,'geometry',None),CompiledReferenceEnvelope), \
+            'actual numerical worker still repeats full URDF/FK validation per grid point'
+E       AssertionError: actual numerical worker still repeats full URDF/FK validation per grid point
+E       assert False
+E        +  where False = isinstance(None, <class 'integrated_robot_navigation.compiled_reference.CompiledReferenceEnvelope'>)
+E        +    where None = getattr(<integrated_robot_navigation.load_xyz.SpatialXYZTransition object at 0x71d17f99fad0>, 'geometry', None)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_xyz_transition.py:87: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_xyz_transition.py::test_xyz_worker_reuses_compiled_immutable_geometry_without_skipping_grid
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 8 deselected in 12.44s

@@ -1,0 +1,25 @@
+......................F
+=================================== FAILURES ===================================
+_______ test_first_fault_reports_selected_capture_and_is_not_overwritten _______
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x760cc67b3410>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x760cd8dfc290>
+
+    def test_first_fault_reports_selected_capture_and_is_not_overwritten(crawl_rig, monkeypatch):
+        rig = crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+>       assert rig.transition(Transition.TRANSITION_ACTIVATE)
+E       assert False
+E        +  where False = transition(3)
+E        +    where transition = <test_crawl_lifecycle.CrawlRig object at 0x760cc67b3410>.transition
+E        +    and   3 = Transition.TRANSITION_ACTIVATE
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py:37: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+[WARN] [1792978960.809618048] [crawl_controller]: Final command SYSTEM clock backstep; DDS publication order retained; activation requires receiver restart: {"publication_sequence": 4, "source_system_ns": 1792978960667983889, "rmw_received_system_ns": 1792978960778880695, "system_backstep": true, "epoch_reset_requires_new_receiver": true}
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1792978961.002853635] [crawl_controller]: activation rejected: command_clock_step_requires_restart
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_fault_report.py::test_first_fault_reports_selected_capture_and_is_not_overwritten
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 22 passed in 54.25s

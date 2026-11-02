@@ -1,0 +1,86 @@
+.......................F
+=================================== FAILURES ===================================
+_ test_decision_without_fresh_native_ingress_still_fails_and_records_rejection _
+
+self = namespace(_lock=<unlocked _thread.RLock object owner=0 count=0 at 0x70c01a203980>, inbox=<integrated_robot_navigation....=<function fixture.<locals>.<lambda> at 0x70c01a4aec00>, _write=<function fixture.<locals>.<lambda> at 0x70c01a4aeca0>)
+limits = {'carry_error_rad': 0.03, 'carry_velocity_rps': 0.02, 'control_hz': 50.0, 'cycle_s': 8.0, ...}
+
+    def movement_decision(self, limits):
+        """Select native ingress at one decision, independently of journal timer.
+    
+        A recorded frame remains immutable evidence of its original decision;
+        rechecking it at a later clock can expire it after fresher ingress has
+        already arrived. Select under the inbox lock, never renew either age.
+        """
+        from integrated_robot_navigation.g2_sequence import movement_snapshot
+        with self._lock:
+            ros_ns,wall_ns=self.get_clock().now().nanoseconds,time.monotonic_ns()
+            bundle=self.inbox.bundle(ros_ns,wall_ns=wall_ns)
+            row=dict(ros_ns=ros_ns,wall_ns=wall_ns,stage=self.stage,
+                samples={key:asdict(getattr(bundle,key)) if getattr(bundle,key) is not None else None
+                    for key in ('body','contacts')},crawl=dict(self.motion.get('crawl',{})))
+            try:
+>               value=movement_snapshot(row,ros_ns,wall_ns,limits)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/scripts/probe_navigation_13_5.py:399: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+frame = {'crawl': {'stopped': False}, 'ros_ns': 1210000001, 'samples': {'body': {'data': {'angular_velocity': (0.0, 0.0, 0.0),...e, True, True, True), ...}, 'epoch': 0, 'frame_id': 'odom', 'received_ns': 10000000000, ...}}, 'stage': 'forward', ...}
+ros_ns = 1210000001, wall_ns = 10210000001
+limits = {'carry_error_rad': 0.03, 'carry_velocity_rps': 0.02, 'control_hz': 50.0, 'cycle_s': 8.0, ...}
+
+    def movement_snapshot(frame,ros_ns,wall_ns,limits):
+        try:
+            body=Sample(**frame['samples']['body']);contacts=Sample(**frame['samples']['contacts'])
+            for name,value in (('body',body),('contacts',contacts)):
+                valid,reason=sample_valid(value,ros_ns,wall_ns,0,max_age_ns=int(limits['sensor_max_age_s']*1e9))
+>               if not valid:raise ValueError('native movement '+name+':'+reason)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               ValueError: native movement body:ros_age
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/g2_sequence.py:12: ValueError
+
+During handling of the above exception, another exception occurred:
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x70c01a2e50d0>
+
+    def test_decision_without_fresh_native_ingress_still_fails_and_records_rejection(nav_robot_model,monkeypatch):
+        probe,records,now,wall=fixture(nav_robot_model,monkeypatch,fresh=False)
+        with pytest.raises(ValueError,match='body:ros_age'):
+>           NavigationProbe.movement_decision(probe,default_limits())
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_movement_decision.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(_lock=<unlocked _thread.RLock object owner=0 count=0 at 0x70c01a203980>, inbox=<integrated_robot_navigation....=<function fixture.<locals>.<lambda> at 0x70c01a4aec00>, _write=<function fixture.<locals>.<lambda> at 0x70c01a4aeca0>)
+limits = {'carry_error_rad': 0.03, 'carry_velocity_rps': 0.02, 'control_hz': 50.0, 'cycle_s': 8.0, ...}
+
+    def movement_decision(self, limits):
+        """Select native ingress at one decision, independently of journal timer.
+    
+        A recorded frame remains immutable evidence of its original decision;
+        rechecking it at a later clock can expire it after fresher ingress has
+        already arrived. Select under the inbox lock, never renew either age.
+        """
+        from integrated_robot_navigation.g2_sequence import movement_snapshot
+        with self._lock:
+            ros_ns,wall_ns=self.get_clock().now().nanoseconds,time.monotonic_ns()
+            bundle=self.inbox.bundle(ros_ns,wall_ns=wall_ns)
+            row=dict(ros_ns=ros_ns,wall_ns=wall_ns,stage=self.stage,
+                samples={key:asdict(getattr(bundle,key)) if getattr(bundle,key) is not None else None
+                    for key in ('body','contacts')},crawl=dict(self.motion.get('crawl',{})))
+            try:
+                value=movement_snapshot(row,ros_ns,wall_ns,limits)
+            except (ValueError,TypeError) as error:
+                self._write('movement_decision',dict(row,accepted=False,error=str(error),
+>                   observer_timing=self.timing_snapshot()))
+                                    ^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'types.SimpleNamespace' object has no attribute 'timing_snapshot'
+
+Ch13/scripts/probe_navigation_13_5.py:402: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_movement_decision.py::test_decision_without_fresh_native_ingress_still_fails_and_records_rejection
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 23 passed in 32.27s

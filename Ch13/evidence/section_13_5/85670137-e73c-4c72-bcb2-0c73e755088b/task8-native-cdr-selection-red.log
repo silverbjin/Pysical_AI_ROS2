@@ -1,0 +1,23 @@
+F
+=================================== FAILURES ===================================
+__ test_split_probe_can_explicitly_select_native_cdr_without_changing_default __
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_split_probe_can_explicitl0')
+
+    def test_split_probe_can_explicitly_select_native_cdr_without_changing_default(tmp_path):
+        import inspect
+        import rclpy
+        from rclpy.context import Context
+        from split_observer_13_5 import SplitNavigationProbe
+>       assert 'observer_backend' in inspect.signature(SplitNavigationProbe).parameters, 'explicit observer backend missing'
+E       AssertionError: explicit observer backend missing
+E       assert 'observer_backend' in mappingproxy(OrderedDict({'directory': <Parameter "directory">, 'engine': <Parameter "engine='mujoco'">, 'kwargs': <Parameter "**kwargs">}))
+E        +  where mappingproxy(OrderedDict({'directory': <Parameter "directory">, 'engine': <Parameter "engine='mujoco'">, 'kwargs': <Parameter "**kwargs">})) = <Signature (directory, engine='mujoco', **kwargs)>.parameters
+E        +    where <Signature (directory, engine='mujoco', **kwargs)> = <function signature at 0x7c17ab412840>(<class 'split_observer_13_5.SplitNavigationProbe'>)
+E        +      where <function signature at 0x7c17ab412840> = <module 'inspect' from '/usr/lib/python3.12/inspect.py'>.signature
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py:137: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_observer_cdr.py::test_split_probe_can_explicitly_select_native_cdr_without_changing_default
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 10 deselected in 23.28s

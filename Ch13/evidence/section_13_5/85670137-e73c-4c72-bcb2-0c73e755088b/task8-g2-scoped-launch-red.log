@@ -1,0 +1,24 @@
+F
+=================================== FAILURES ===================================
+_ test_only_guard_and_crawl_receive_the_verified_actual_g2_execution_contract[mujoco] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-38/test_only_guard_and_crawl_rece0')
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine',['mujoco','gazebo'])
+    def test_only_guard_and_crawl_receive_the_verified_actual_g2_execution_contract(tmp_path,engine):
+        module,context,expected=setup(tmp_path,engine)
+        actions=module.launch_nodes(context)
+        parameters=[p for action in actions if isinstance(action,Node)
+            for p in evaluate_parameters(context,action._Node__parameters) if isinstance(p,dict)]
+        scoped=[p for p in parameters if p.get('g2_validation_mode') is True]
+>       assert len(scoped)==2,'G2 scope not routed to exactly the guard and sole crawl owner'
+E       AssertionError: G2 scope not routed to exactly the guard and sole crawl owner
+E       assert 0 == 2
+E        +  where 0 = len([])
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_scoped_launch.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_scoped_launch.py::test_only_guard_and_crawl_receive_the_verified_actual_g2_execution_contract[mujoco]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.88s

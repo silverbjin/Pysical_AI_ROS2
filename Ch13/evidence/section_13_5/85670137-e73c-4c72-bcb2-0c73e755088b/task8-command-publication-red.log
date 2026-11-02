@@ -1,0 +1,26 @@
+F
+=================================== FAILURES ===================================
+__________ test_report_keeps_original_decision_and_publication_times ___________
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x7f915520b8f0>
+
+    def test_report_keeps_original_decision_and_publication_times(crawl_rig):
+        rig = crawl_rig
+        activate(rig)
+        client = rig.node.create_client(Trigger, '/crawl_controller/report')
+        assert client.wait_for_service(timeout_sec=1.)
+        future = client.call_async(Trigger.Request())
+        until = time.monotonic()+2.
+        while not future.done() and time.monotonic() < until:
+            rig.pump(.02)
+        assert future.done() and future.result().success
+        report = json.loads(future.result().message)
+>       assert 'command_publications' in report, 'no publication -> CM -> physical application provenance'
+E       AssertionError: no publication -> CM -> physical application provenance
+E       assert 'command_publications' in {'active': True, 'command_transport': {'epoch_reset_requires_new_receiver': False, 'publication_sequence': 15, 'rmw_re...nt': -0.49999999999999994, 'fr_calf_joint': 0.9999999999999999, ...}, 'phase': 'STAND', ...}, 'first_fault': None, ...}
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_command_boundary_trace.py:20: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_command_boundary_trace.py::test_report_keeps_original_decision_and_publication_times
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 13.33s

@@ -1,0 +1,71 @@
+{
+  "scope": "read_only_reference_vs_measurement_not_causal_physics_proof",
+  "trial": "native-g2-gazebo-bd67d364-2f02-4537-abb0-c09558fc95b6",
+  "report_sha256": "2773cf186d1b0767d7b3502390ca5e6b1c8bfe665162843447ec7aff5ec32e32",
+  "source_manifest_sha256": "afbbe4834376d7156032b24851c27e3e5706afe4dcbcc25587527113c28c85a4",
+  "fault": {
+    "reason": "measured unload height bound reached",
+    "ros_ns": 58340000000,
+    "wall_ns": 570548848146,
+    "state": {
+      "state": "CRAWL",
+      "phase": "SHIFT",
+      "swing_foot": "fr_foot"
+    },
+    "phase_context": {
+      "_phase_start": 50344000000,
+      "_shift_duration": 2.625,
+      "_shift_settled_start": 53094000000,
+      "_unload_start": 53200000000
+    }
+  },
+  "body_reference_z": 0.46,
+  "actual_body_z": 0.45684413833752185,
+  "rows": [
+    {
+      "foot": "fr_foot",
+      "held_command_z_in_reference": 0.02069869093025456,
+      "target_z": 0.026705157632233516,
+      "target_minus_held_z_m": 0.006006466701978956,
+      "initial_measured_floor_z": 0.019949747691831665,
+      "measured_world_center_z": 0.019949863936825296,
+      "measured_joint_FK_in_reference_z": 0.027854808951012833,
+      "selected_force_n": 18.213048196053194
+    },
+    {
+      "foot": "fl_foot",
+      "held_command_z_in_reference": 0.020698690930254504,
+      "target_z": 0.019949747691831665,
+      "target_minus_held_z_m": -0.0007489432384228389,
+      "initial_measured_floor_z": 0.019949747691831665,
+      "measured_world_center_z": 0.01998420782669652,
+      "measured_joint_FK_in_reference_z": 0.023732447122152,
+      "selected_force_n": 56.22262716749553
+    },
+    {
+      "foot": "rr_foot",
+      "held_command_z_in_reference": 0.02172058002531957,
+      "target_z": 0.019949792703510327,
+      "target_minus_held_z_m": -0.0017707873218092418,
+      "initial_measured_floor_z": 0.019949792703510327,
+      "measured_world_center_z": 0.01994985664238147,
+      "measured_joint_FK_in_reference_z": 0.023789559315042674,
+      "selected_force_n": 49.249761184176506
+    },
+    {
+      "foot": "rl_foot",
+      "held_command_z_in_reference": 0.021720580025319514,
+      "target_z": 0.017727046727298468,
+      "target_minus_held_z_m": -0.003993533298021046,
+      "initial_measured_floor_z": 0.01994979270351016,
+      "measured_world_center_z": 0.019949814142134314,
+      "measured_joint_FK_in_reference_z": 0.01915458666087838,
+      "selected_force_n": 25.5908303663414
+    }
+  ],
+  "caveats": [
+    "body/joint/contact captures differ; no exact coincident physics inferred",
+    "The static held-q FK is expressed in the fault reference pose; inspect preserved z/roll/pitch before interpreting it as activation preload",
+    "Reference loss is a hypothesis for remaining load, not a completed physical counterfactual"
+  ]
+}

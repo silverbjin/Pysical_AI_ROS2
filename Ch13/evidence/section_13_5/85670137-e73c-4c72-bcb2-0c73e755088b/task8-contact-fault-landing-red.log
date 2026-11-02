@@ -1,0 +1,32 @@
+F
+=================================== FAILURES ===================================
+_ test_explicit_stop_after_contact_deadline_lands_only_the_known_foot_and_keeps_fault _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_explicit_stop_after_contact_deadline_lands_only_the_known_foot_and_keeps_fault(nav_robot_model):
+        value,plant,foot=unload_fault(nav_robot_model)
+        held=value.reference_body.copy();generation=value.generation
+        before=value.advance(plant.state,(0.,0.,0.),plant.ros,plant.wall)
+        assert before.state=='FAULT' and before.joint_targets is None
+        value.request_stop(urgent=True);previous=value._targets[foot].copy()
+        for _ in range(150):
+            result=value.advance(plant.state,(0.,0.,0.),plant.ros,plant.wall,reference_permitted=False)
+            assert result.state not in ('CRAWL','STAND')
+            assert np.array_equal(value.reference_body,held)
+            assert np.linalg.norm(value._targets[foot]-previous)/.02<=value.limits['max_swing_speed_mps']+1e-9
+            previous=value._targets[foot].copy()
+            plant.tick(value,result)
+            if result.state=='STOPPED':break
+>       assert result.state=='STOPPED','explicit stop could not land the known unloaded foot'
+E       AssertionError: explicit stop could not land the known unloaded foot
+E       assert 'FAULT' == 'STOPPED'
+E         
+E         - STOPPED
+E         + FAULT
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_landing.py:38: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_landing.py::test_explicit_stop_after_contact_deadline_lands_only_the_known_foot_and_keeps_fault
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.92s

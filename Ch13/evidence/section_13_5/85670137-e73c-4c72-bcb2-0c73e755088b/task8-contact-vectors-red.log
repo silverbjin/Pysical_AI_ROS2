@@ -1,0 +1,24 @@
+F
+=================================== FAILURES ===================================
+____ test_signed_force_belongs_to_named_foot_after_pair_order_change[False] ____
+
+swapped = False
+
+    @pytest.mark.parametrize('swapped',[False,True])
+    def test_signed_force_belongs_to_named_foot_after_pair_order_change(swapped):
+        item=contact(next(iter(MAP)),force=-30. if swapped else 30.,swap=swapped)
+        sign=-1. if swapped else 1.
+        item.wrenches[0].body_1_wrench.force.x=sign*5.
+        item.wrenches[0].body_2_wrench.force.x=-sign*5.
+        msg=Contacts(contacts=[item]);msg.header.frame_id='odom';msg.header.stamp.sec=4
+        output=normalize_contacts(msg,POINTS,MAP,GROUND,epoch=0,sequence=8)
+>       assert getattr(output,'force_vectors_valid',False), 'attested signed force vectors missing'
+E       AssertionError: attested signed force vectors missing
+E       assert False
+E        +  where False = getattr(integrated_robot_interfaces.msg.FootContacts(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=4, nanos...0.18, z=0.02)], normal_forces=array([30.,  0.,  0.,  0.]), touching=[True, False, False, False], unexpected_contacts=0), 'force_vectors_valid', False)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_force_vectors.py:19: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_force_vectors.py::test_signed_force_belongs_to_named_foot_after_pair_order_change[False]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 17.84s

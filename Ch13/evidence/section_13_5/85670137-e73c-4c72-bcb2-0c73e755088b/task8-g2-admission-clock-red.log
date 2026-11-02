@@ -1,0 +1,53 @@
+F
+=================================== FAILURES ===================================
+________ test_g2_slow_admission_preserves_clock_and_defers_motion_grant ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-48/test_g2_slow_admission_preserv0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_g2_slow_admission_preserves_clock_and_defers_motion_grant(tmp_path,nav_robot_model):
+        profile,expected=fixture(tmp_path,nav_robot_model,'gazebo')
+        context=Context();rclpy.init(context=context)
+        guard=MotionGuardNode(nav_robot_model,profile,'gazebo',context=context,parameter_overrides=[
+            Parameter('use_sim_time',value=True),Parameter('validation_mode',value=True),
+            Parameter('g2_validation_mode',value=True),Parameter('native_execution_profile',value=json.dumps(expected))])
+        rig=Rig(guard,nav_robot_model,context)
+        entered,release,stopping=threading.Event(),threading.Event(),threading.Event()
+        thread=None
+        try:
+            rig.pump(.4)
+            assert rig.mode('STAND').accepted
+            original=guard.prepared_admission.check
+            def delayed(*args,**kwargs):
+                entered.set()
+                assert release.wait(2.),'test check release deadline'
+                return original(*args,**kwargs)
+            guard.prepared_admission.check=delayed
+            def spin():
+                while not stopping.is_set():rig.executor.spin_once(timeout_sec=.005)
+            thread=threading.Thread(target=spin);thread.start()
+            future=rig.client.call_async(SetMode.Request(mode='CRAWL'))
+            assert entered.wait(1.)
+            before=guard.get_clock().now().nanoseconds
+            for index in range(1,26):
+                stamp=before+index*10_000_000
+                rig.clock.publish(Clock(clock=Time(sec=stamp//1_000_000_000,nanosec=stamp%1_000_000_000)))
+                time.sleep(.01)
+            assert guard.core.mode=='STAND' and not future.done(), 'pending proof cannot grant motion'
+>           assert guard.get_clock().now().nanoseconds>=before+200_000_000, \
+                'mode callback blocked original clock dispatch for the entire safety age budget'
+E               AssertionError: mode callback blocked original clock dispatch for the entire safety age budget
+E               assert 4424276972 >= (4424276972 + 200000000)
+E                +  where 4424276972 = Time(nanoseconds=4424276972, clock_type=ROS_TIME).nanoseconds
+E                +    where Time(nanoseconds=4424276972, clock_type=ROS_TIME) = now()
+E                +      where now = Clock(clock_type=ROS_TIME).now
+E                +        where Clock(clock_type=ROS_TIME) = get_clock()
+E                +          where get_clock = <integrated_robot_navigation.motion_guard.MotionGuardNode object at 0x78d4d3882720>.get_clock
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_admission_clock_ros.py:50: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792897479.250152465] [motion_guard]: Serial navigation callbacks use EventsExecutor
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_g2_admission_clock_ros.py::test_g2_slow_admission_preserves_clock_and_defers_motion_grant
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.39s

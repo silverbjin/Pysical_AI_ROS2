@@ -1,0 +1,22 @@
+F
+=================================== FAILURES ===================================
+________ test_original_receipt_age_is_checked_at_actual_result_receipt _________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_original_receipt_age_is_checked_at_actual_result_receipt(nav_robot_model):
+        m,b,q,p,points,f=ready(nav_robot_model)
+        b=replace(b,**{key:replace(getattr(b,key),stamp_ns=getattr(b,key).stamp_ns-180_000_000,
+            received_ns=getattr(b,key).received_ns-180_000_000,
+            sequence=getattr(b,key).sequence-180_000_000) for key in ('joints','imu','body','contacts')})
+        m._transfer_stance_load(b,q,p,points,f,.02);complete(m,f)
+        m._load_transfer.reply['received_wall_ns']=m._last_wall+27_000_000
+        b=next_capture(m,b,10_000_000);before=deepcopy(m._targets)
+>       with pytest.raises(ValueError,match='stale original snapshot'):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py:94: Failed
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_load_owner.py::test_original_receipt_age_is_checked_at_actual_result_receipt
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 11 deselected in 13.46s

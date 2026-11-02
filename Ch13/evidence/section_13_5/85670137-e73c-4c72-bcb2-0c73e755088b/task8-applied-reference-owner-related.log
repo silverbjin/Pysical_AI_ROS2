@@ -1,0 +1,30 @@
+..........F
+=================================== FAILURES ===================================
+__________ test_foreign_guard_generation_is_not_adopted_while_active ___________
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x7242f63a8bf0>
+
+    def test_foreign_guard_generation_is_not_adopted_while_active(crawl_rig):
+        rig = crawl_rig
+>       activate(rig)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rig = <test_crawl_lifecycle.CrawlRig object at 0x7242f63a8bf0>
+
+    def activate(rig):
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+>       assert rig.transition(Transition.TRANSITION_ACTIVATE)
+E       assert False
+E        +  where False = transition(3)
+E        +    where transition = <test_crawl_lifecycle.CrawlRig object at 0x7242f63a8bf0>.transition
+E        +    and   3 = Transition.TRANSITION_ACTIVATE
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py:14: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793016888.617681298] [crawl_controller]: activation rejected: command_clock_step_requires_restart
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_safety_ros.py::test_foreign_guard_generation_is_not_adopted_while_active
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 10 passed in 41.16s

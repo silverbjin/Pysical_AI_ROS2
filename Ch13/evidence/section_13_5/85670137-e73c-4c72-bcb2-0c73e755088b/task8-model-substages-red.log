@@ -1,0 +1,20 @@
+F
+=================================== FAILURES ===================================
+______ test_model_stage_observer_preserves_shift_result_and_credit[True] _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+permit = True
+
+    @pytest.mark.parametrize('permit',[True,False])
+    def test_model_stage_observer_preserves_shift_result_and_credit(nav_robot_model,permit):
+        plain,plant=shifting(nav_robot_model,(.01,0.,0.))
+        traced=deepcopy(plain);seen=[]
+>       traced.set_stage_observer(seen.append)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'CrawlMachine' object has no attribute 'set_stage_observer'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model_stage_observation.py:13: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_model_stage_observation.py::test_model_stage_observer_preserves_shift_result_and_credit[True]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 13.17s

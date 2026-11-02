@@ -1,0 +1,122 @@
+{
+  "scope": "closed_trial_diagnostic_not_acceptance",
+  "trial": "native-g1-gazebo-8500b070-e207-43ec-bf3a-d3b34aa42a06",
+  "inputs": {
+    "controller_report.json": "3324c08b6f02cdf22cad1ad61caf6c6ec33b89887a4e6c48a88f603906063b1b",
+    "control_clock.jsonl": "b04db7a47da18ced89ea3504dc09f52c61db42b75fb7388014b0b0c6281b3538",
+    "result.json": "5a9a5ba64111d69a97d13e4a452f4f10e1e59be83c65d0f976049756e078f688"
+  },
+  "method_sha256": "0bd15eacf3f5709356e7d04f7e5e57e9bbc005861a035620b746a6c4faa96acd",
+  "trace_span": {
+    "poll_wall_ns": 563789555065,
+    "publish_finished_wall_ns": 563789716465,
+    "publish_started_wall_ns": 563789642365,
+    "sequence": 2785,
+    "trace_finished_wall_ns": 564005908460,
+    "trace_started_wall_ns": 563789719265
+  },
+  "trace_wall_ms": 216.189195,
+  "first_crawl_fault": {
+    "reason": "imu:wall_age",
+    "ros_ns": 19210000000,
+    "wall_ns": 563956695561
+  },
+  "selected_imu": {
+    "stamp_ns": 19200000000,
+    "received_ns": 563756258466,
+    "epoch": 0,
+    "sequence": 19200000000,
+    "frame_id": "base_link"
+  },
+  "pending_imu": [
+    {
+      "stamp_ns": 19220000000,
+      "received_ns": 563815905465
+    },
+    {
+      "stamp_ns": 19240000000,
+      "received_ns": 563863906163
+    },
+    {
+      "stamp_ns": 19260000000,
+      "received_ns": 563922142662
+    },
+    {
+      "stamp_ns": 19280000000,
+      "received_ns": 563952564961
+    }
+  ],
+  "pending_body": [
+    {
+      "stamp_ns": 19220000000,
+      "received_ns": 563816246265
+    },
+    {
+      "stamp_ns": 19240000000,
+      "received_ns": 563864268263
+    },
+    {
+      "stamp_ns": 19260000000,
+      "received_ns": 563922581462
+    },
+    {
+      "stamp_ns": 19280000000,
+      "received_ns": 563952869261
+    }
+  ],
+  "pending_contacts": [
+    {
+      "stamp_ns": 19224000000,
+      "received_ns": 563843197964
+    },
+    {
+      "stamp_ns": 19244000000,
+      "received_ns": 563891640063
+    },
+    {
+      "stamp_ns": 19264000000,
+      "received_ns": 563923809062
+    }
+  ],
+  "relay_fault": {
+    "event": "fault",
+    "report": {
+      "armed": true,
+      "closing": false,
+      "destination_topic": "/navigation/control_clock",
+      "fault": "source_stalled",
+      "gid": "010fb40554073fed0000000000001403",
+      "inputs": 8683,
+      "last_source_capture_ns": 19210000000,
+      "last_source_receipt_ns": 563788431665,
+      "mode": "relay100",
+      "outputs": 2785,
+      "source_topic": "/clock"
+    },
+    "wall_ns": 564005962260
+  },
+  "before_trace_input": {
+    "callback_system_ns": 1793493645906501442,
+    "capture_ns": 19210000000,
+    "raw_after_ns": 573175274300,
+    "raw_before_ns": 573175273500,
+    "received_wall_ns": 563788431665,
+    "rmw_received_system_ns": 1793493645906056842,
+    "sequence": 8683,
+    "source_system_ns": 1793493645905903042,
+    "verdict": "received"
+  },
+  "next_callback_after_trace": {
+    "callback_system_ns": 1793493646124511837,
+    "capture_ns": 19300000000,
+    "raw_after_ns": 573393284800,
+    "raw_before_ns": 573393284200,
+    "received_wall_ns": 564006442260,
+    "rmw_received_system_ns": 1793493646106120638,
+    "sequence": 8684,
+    "source_system_ns": 1793493646104954838,
+    "verdict": "source_stalled"
+  },
+  "claim": "Trace phase stalled shared executor while other sensor ingress continued. Wall span includes scheduling; exact write syscall duration and disk-only causality not established.",
+  "next_experiment": "Inject delayed sink; bound queue and isolate file writes from sole clock executor; retain all original clock/safety/close checks."
+}

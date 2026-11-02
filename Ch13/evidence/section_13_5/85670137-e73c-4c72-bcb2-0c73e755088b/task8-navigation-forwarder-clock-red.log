@@ -1,0 +1,36 @@
+F
+=================================== FAILURES ===================================
+_ test_navigation_header_forwarders_do_not_subscribe_to_unused_sim_clock[mujoco] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_navigation_header_forward0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b0cdc975160>
+engine = 'mujoco'
+
+    @pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+    def test_navigation_header_forwarders_do_not_subscribe_to_unused_sim_clock(tmp_path,monkeypatch,engine):
+        scene.materialize_scene(engine,'g1',tmp_path/'scene')
+        module=launch_module(engine);original=module.get_package_share_directory
+        monkeypatch.setattr(module,'get_package_share_directory',lambda name:
+            str(description_dir()) if name=='integrated_robot_description' else original(name))
+        if engine=='mujoco':monkeypatch.setattr(module,'probe_snapshot_plugin',lambda path:{})
+        ctx=LaunchContext();config=Path(__file__).resolve().parents[1]/'config'
+        ctx.launch_configurations.update(dict(vision_enabled='true',vision_camera_backend='snapshot',
+            mujoco_headless='true',world='',model_path='',navigation_enabled='true',
+            navigation_scene=str(tmp_path/'scene'),navigation_plugins=str(config/'mujoco_navigation_plugins.yaml'),
+            navigation_bridge=str(config/'navigation_bridge.yaml')))
+        adapters=[action for action in module.launch_nodes(ctx) if isinstance(action,Node)
+            and action.node_executable in ('native_pose_adapter','native_camera_info_adapter')]
+        assert len(adapters)==(2 if engine=='mujoco' else 1)
+        for action in adapters:
+            values=evaluate_parameters(ctx,action._Node__parameters)
+>           assert any(isinstance(p,dict) and p.get('use_sim_time') is False for p in values), \
+                'header-only forwarder still handles the unused high-rate clock'
+E           AssertionError: header-only forwarder still handles the unused high-rate clock
+E           assert False
+E            +  where False = any(<generator object test_navigation_header_forwarders_do_not_subscribe_to_unused_sim_clock.<locals>.<genexpr> at 0x7b0ce810c2e0>)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_scene_launch.py:65: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_navigation_scene_launch.py::test_navigation_header_forwarders_do_not_subscribe_to_unused_sim_clock[mujoco]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 12.06s

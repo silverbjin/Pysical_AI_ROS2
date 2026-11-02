@@ -1,0 +1,32 @@
+F
+=================================== FAILURES ===================================
+_ test_same_real_problems_keep_full_forces_geometry_and_original_bounds[native_141b_xyz_budget.json] _
+
+name = 'native_141b_xyz_budget.json'
+
+    @pytest.mark.parametrize('name',['native_141b_xyz_budget.json','native_76b_xyz_unload.json',
+        'native_7e64_xyz_budget.json','native_9c62_xyz_budget.json'])
+    def test_same_real_problems_keep_full_forces_geometry_and_original_bounds(name):
+        c=case(name);model=compile_model(c['urdf']);a=c['args']
+        with NativeMassEvaluator(model) as core:
+            old=NativeXYZTransition(model,c['limits'],terms_evaluator=core.contact_terms,force_objective='bounded_terminal_force')
+>           value=api()(model,c['limits'],native_mass=core)
+                  ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_complete_xyz.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+        name='integrated_robot_navigation.native_complete_xyz'
+>       assert importlib.util.find_spec(name),'kernel still crosses Python for contacts/QP/geometry separately'
+E       AssertionError: kernel still crosses Python for contacts/QP/geometry separately
+E       assert None
+E        +  where None = <function find_spec at 0x7ddeb94bc720>('integrated_robot_navigation.native_complete_xyz')
+E        +    where <function find_spec at 0x7ddeb94bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_complete_xyz.py:14: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_complete_xyz.py::test_same_real_problems_keep_full_forces_geometry_and_original_bounds[native_141b_xyz_budget.json]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 14.83s
