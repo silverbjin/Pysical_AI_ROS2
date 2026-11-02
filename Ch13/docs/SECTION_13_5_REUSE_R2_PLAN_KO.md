@@ -1,43 +1,45 @@
-# R2 ÃÖ¼Ò ROS2 ¿¬°á ½ÇÇà °èÈ¹
+> 2026-11-02 í›„ì† ì§€ì‹œë¡œ ë‹¨ê³„ë³„ ë³´ê³ ì„œÂ·commit/pushë¡œ ê²Œì‹œ ê·œì¹™ì„ ë³€ê²½í–ˆë‹¤. [ìµœì‹  ì™„ë£Œ ë³´ê³ ì„œ](SECTION_13_5_REUSE_R2_STAGE_3_KO.md). ê¸°ìˆ  ì‘ì—… ì™„ë£Œ, pushëŠ” ëª©ì ì§€ ìŠ¹ì¸ ëŒ€ê¸°.
 
-> ´ÜÀÏ ÀÛ¾÷ÀÚ. superpowers:executing-plans Àû¿ë.
+# R2 ìµœì†Œ ROS2 ì—°ê²° ì‹¤í–‰ ê³„íš
 
-**Goal:** °ËÁõÇÑ corrected A profileÀ» ROS2 Jazzy¿¡¼­ ´ÜÀÏ ¼Óµµ ¼ÒÀ¯ÀÚ¡¤½ÇÁ¦ »óÅÂ¡¤½Ã°¢/TF¿Í ¿¬°áÇÑ´Ù.
-**Architecture:** ¿øº» PlayMujoco.run/LocomotionPolicyWrapper¸¦ ±×´ë·Î ½ÇÇà °æ°è·Î »ç¿ëÇÏ°í °ËÁõÇÑ3°³ º¸¿ÏÀ» Àû¿ëÇÑ´Ù. ROS2 ²®µ¥±â¸¸ Ãß°¡ÇÑ´Ù. upstream ºĞ¸®ÇüROS2 ÆÄÀÏÀº timestamp ¹Ì¹ßÇà¡¤import½Ã ¿ì¼±¼øÀ§ º¯°æ¡¤º°µµ ½Ã¹Ä·¹ÀÌÅÍ/ÆÈ hold µ¿ÀÛ Â÷ÀÌ ¶§¹®¿¡ ÀÌ ´Ü°èÀÇ ±âº» ½ÇÇà±â·Î ¾²Áö ¾Ê´Â´Ù.
-**Tech Stack:** °íÁ¤A commit/MuJoCo3.13/torch2.9cpu/Jazzy, Ç¥ÁØROS¸Ş½ÃÁö, µ¶¸³ament_python ÆĞÅ°Áö.
-**Spec:** HANDOFF_SECTION_13_5_REUSE_REVISION_2026_11_02_KO.md R2 + SECTION_13_5_REUSE_EDUCATIONAL_GATES_KO.md + »ç¿ëÀÚ R2 ½ÃÀÛ Áö½Ã.
+> ë‹¨ì¼ ì‘ì—…ì. superpowers:executing-plans ì ìš©.
 
-## °íÁ¤ °è¾à
+**Goal:** ê²€ì¦í•œ corrected A profileì„ ROS2 Jazzyì—ì„œ ë‹¨ì¼ ì†ë„ ì†Œìœ ìÂ·ì‹¤ì œ ìƒíƒœÂ·ì‹œê°/TFì™€ ì—°ê²°í•œë‹¤.
+**Architecture:** ì›ë³¸ PlayMujoco.run/LocomotionPolicyWrapperë¥¼ ê·¸ëŒ€ë¡œ ì‹¤í–‰ ê²½ê³„ë¡œ ì‚¬ìš©í•˜ê³  ê²€ì¦í•œ3ê°œ ë³´ì™„ì„ ì ìš©í•œë‹¤. ROS2 ê»ë°ê¸°ë§Œ ì¶”ê°€í•œë‹¤. upstream ë¶„ë¦¬í˜•ROS2 íŒŒì¼ì€ timestamp ë¯¸ë°œí–‰Â·importì‹œ ìš°ì„ ìˆœìœ„ ë³€ê²½Â·ë³„ë„ ì‹œë®¬ë ˆì´í„°/íŒ” hold ë™ì‘ ì°¨ì´ ë•Œë¬¸ì— ì´ ë‹¨ê³„ì˜ ê¸°ë³¸ ì‹¤í–‰ê¸°ë¡œ ì“°ì§€ ì•ŠëŠ”ë‹¤.
+**Tech Stack:** ê³ ì •A commit/MuJoCo3.13/torch2.9cpu/Jazzy, í‘œì¤€ROSë©”ì‹œì§€, ë…ë¦½ament_python íŒ¨í‚¤ì§€.
+**Spec:** HANDOFF_SECTION_13_5_REUSE_REVISION_2026_11_02_KO.md R2 + SECTION_13_5_REUSE_EDUCATIONAL_GATES_KO.md + ì‚¬ìš©ì R2 ì‹œì‘ ì§€ì‹œ.
 
-- namespace /ch13/reuse; localhost-only/domain135(ÇÁ·Î¼¼½ºº°), ±âÁ¸È¯°æº¯°æ ¾øÀ½.
-- raw TwistStamped¡æcommand_gateway¡æsafe TwistStamped¡æplatform. Nav2/smoother´ÂR3; R2´ÂÁ÷Á¢½ÃÇèpublisher.
-- cmd frame reuse/nav_base, vx m/s¡¾0.20¡¤wz rad/s¡¾0.20, vy´Â¾ÆÁ÷¹Ì°ËÁõÀÌ¹Ç·Î0¸¸. ³ª¸ÓÁöÃà0¸¸. Á¤»ó °¡¼Óµµ0.30m/s©÷/0.50rad/s©÷. °íÀåzero´ÂÁï½Ã Ãâ·Â.
-- raw/state/safe/clock wall expiry0.30s, source age0.30simÃÊ. DDSÅäÇÈ °£ Àü´Ş¼ø¼­ Â÷ÀÌ¿¡ ¹Ì·¡¿©À¯0.025simÃÊ¸¸ Çã¿ë. ±× ÀÌ»ó ¹Ì·¡ RED.
-- ÃÖÃÊreceipt/GID/stamp º¸Á¸; Áßº¹µ¿ÀÏstamp·Îage°»½Å±İÁö; publisherÃß°¡/±³Ã¼¡¤½Ã°è¿ªÇà¡¤pause/¸¸·á¡¤ºñÀ¯ÇÑ°ª latch. reset ÈÄ »õ0¸í·É/°üÃø°ú arm ¼­ºñ½º ÇÊ¿ä. ÀÚµ¿Àç°³±İÁö.
-- ½ÇÁ¦ engine stamp/pose/q/qd ¹ßÇà. Odometry raw child reuse/base´Â3D½ÇÃø. nav odometry/TF´Â ¸í½ÃµÈ xy/yaw projection; nav_base¡æbase¿¡¼­¿øº»z/roll/pitch¸¦ º¸Á¸. engine body TF´Â½ÇÃøkinematics. ¼¾¼­/map/Nav2 ¾øÀ½.
-- ÆÈÀº¿øº»home target hold¡¾0.10rad screening. ¼ö³³envelope/IKÃÖÁ¾½ÂÀÎ¾Æ´Ô. Á¤Ã¥Àº´Ù¸®12Ãà¸¸¼ÒÀ¯. ÀÛÀº joint1 hold offset¡Â0.05rad¸¦ Á¤Áö»óÅÂ¿¡¼­¸¸ ½ÃÇè.
-- edu_stop_v2±×´ë·Î»ç¿ë. ÃÖÃÊ live fault-stop °ËÁõÀºzero°áÁ¤¡Â0.35wallÈÄ(0.30¸¸·á+20msÁ¦¾îtick/Àü´Ş¿©À¯), ½ÇÁ¦Á¤ÂøÃÖ´ë5simÃÊ/8wallÃÊ·Î»çÀü°íÁ¤. ¼Óµµ/Èû cap, °íÀålatch, Á¤»óÁ¾·á´ÂÀ¯Áö.
+## ê³ ì • ê³„ì•½
 
-## Task 1: °è¾à°ú¼ø¼ö¾ÈÀüÄÚ¾î
+- namespace /ch13/reuse; localhost-only/domain135(í”„ë¡œì„¸ìŠ¤ë³„), ê¸°ì¡´í™˜ê²½ë³€ê²½ ì—†ìŒ.
+- raw TwistStampedâ†’command_gatewayâ†’safe TwistStampedâ†’platform. Nav2/smootherëŠ”R3; R2ëŠ”ì§ì ‘ì‹œí—˜publisher.
+- cmd frame reuse/nav_base, vx m/sÂ±0.20Â·wz rad/sÂ±0.20, vyëŠ”ì•„ì§ë¯¸ê²€ì¦ì´ë¯€ë¡œ0ë§Œ. ë‚˜ë¨¸ì§€ì¶•0ë§Œ. ì •ìƒ ê°€ì†ë„0.30m/sÂ²/0.50rad/sÂ². ê³ ì¥zeroëŠ”ì¦‰ì‹œ ì¶œë ¥.
+- raw/state/safe/clock wall expiry0.30s, source age0.30simì´ˆ. DDSí† í”½ ê°„ ì „ë‹¬ìˆœì„œ ì°¨ì´ì— ë¯¸ë˜ì—¬ìœ 0.025simì´ˆë§Œ í—ˆìš©. ê·¸ ì´ìƒ ë¯¸ë˜ RED.
+- ìµœì´ˆreceipt/GID/stamp ë³´ì¡´; ì¤‘ë³µë™ì¼stampë¡œageê°±ì‹ ê¸ˆì§€; publisherì¶”ê°€/êµì²´Â·ì‹œê³„ì—­í–‰Â·pause/ë§Œë£ŒÂ·ë¹„ìœ í•œê°’ latch. reset í›„ ìƒˆ0ëª…ë ¹/ê´€ì¸¡ê³¼ arm ì„œë¹„ìŠ¤ í•„ìš”. ìë™ì¬ê°œê¸ˆì§€.
+- ì‹¤ì œ engine stamp/pose/q/qd ë°œí–‰. Odometry raw child reuse/baseëŠ”3Dì‹¤ì¸¡. nav odometry/TFëŠ” ëª…ì‹œëœ xy/yaw projection; nav_baseâ†’baseì—ì„œì›ë³¸z/roll/pitchë¥¼ ë³´ì¡´. engine body TFëŠ”ì‹¤ì¸¡kinematics. ì„¼ì„œ/map/Nav2 ì—†ìŒ.
+- íŒ”ì€ì›ë³¸home target holdÂ±0.10rad screening. ìˆ˜ë‚©envelope/IKìµœì¢…ìŠ¹ì¸ì•„ë‹˜. ì •ì±…ì€ë‹¤ë¦¬12ì¶•ë§Œì†Œìœ . ì‘ì€ joint1 hold offsetâ‰¤0.05radë¥¼ ì •ì§€ìƒíƒœì—ì„œë§Œ ì‹œí—˜.
+- edu_stop_v2ê·¸ëŒ€ë¡œì‚¬ìš©. ìµœì´ˆ live fault-stop ê²€ì¦ì€zeroê²°ì •â‰¤0.35wallí›„(0.30ë§Œë£Œ+20msì œì–´tick/ì „ë‹¬ì—¬ìœ ), ì‹¤ì œì •ì°©ìµœëŒ€5simì´ˆ/8wallì´ˆë¡œì‚¬ì „ê³ ì •. ì†ë„/í˜ cap, ê³ ì¥latch, ì •ìƒì¢…ë£ŒëŠ”ìœ ì§€.
+
+## Task 1: ê³„ì•½ê³¼ìˆœìˆ˜ì•ˆì „ì½”ì–´
 
 Files: ch13_navigation_reuse/{safety.py,state_adapter.py}, config/platform.yaml, test/test_safety.py,test_state.py.
-- [ ] RED: ÃÖÃÊreceipt¡¤Áßº¹stamp¡¤¸¸·á¡¤¹Ì·¡¡¤ºñÀ¯ÇÑ°ª¡¤Áßº¹/±³Ã¼GID¡¤clock rollback/pause¡¤¸í½ÃÀç¹«Àå¡¤Áö¿øÃà/Á¦ÇÑ¡¤½ÇÃøquaternion/frameº¯È¯.
-- [ ] GREEN: µ¶¸³ÄÚ¾î/½ÇÁ¦´ÜÀ§¡¤°üÀı¼ø¼­¼³Á¤±¸Çö. python unittest·ÎÇØ´ç°è¾àÅë°ú.
+- [x] RED: ìµœì´ˆreceiptÂ·ì¤‘ë³µstampÂ·ë§Œë£ŒÂ·ë¯¸ë˜Â·ë¹„ìœ í•œê°’Â·ì¤‘ë³µ/êµì²´GIDÂ·clock rollback/pauseÂ·ëª…ì‹œì¬ë¬´ì¥Â·ì§€ì›ì¶•/ì œí•œÂ·ì‹¤ì¸¡quaternion/frameë³€í™˜.
+- [x] GREEN: ë…ë¦½ì½”ì–´/ì‹¤ì œë‹¨ìœ„Â·ê´€ì ˆìˆœì„œì„¤ì •êµ¬í˜„. python unittestë¡œí•´ë‹¹ê³„ì•½í†µê³¼.
 
-## Task 2: ROS2°æ°è¿Í¼³Ä¡
+## Task 2: ROS2ê²½ê³„ì™€ì„¤ì¹˜
 
 Files: package.xml/setup.py/resource, command_gateway.py, platform_adapter.py, launch/platform.launch.py.
-ConsumesTask1. ½ÇÁ¦DDScallbackÀÇMessageInfo GID¿Ísteady timer·ÎÄÚ¾î¿¬°á. platformÀº¿øº»·çÇÁobserver¸¸Ãß°¡ÇÏ°í`/clock`, raw/nav odom, joint states, TF¹ßÇà. ¼ÒÀ¯engine lock°úRX join.
-- [ ] RED¡æGREEN: ½ÇÁ¦DDS raw¡æsafe °æ·ÎÀÇarm/¸í·É/¸¸·á¡¤Áßº¹publisher¡¤½Ã°¢Á¶°Ç.
-- [ ] »õÆĞÅ°Áö¸¸colcon build/install; ¿ÜºÎcheckout/underlay¿øº»¼öÁ¤±İÁö.
+ConsumesTask1. ì‹¤ì œDDScallbackì˜MessageInfo GIDì™€steady timerë¡œì½”ì–´ì—°ê²°. platformì€ì›ë³¸ë£¨í”„observerë§Œì¶”ê°€í•˜ê³ `/clock`, raw/nav odom, joint states, TFë°œí–‰. ì†Œìœ engine lockê³¼RX join.
+- [x] REDâ†’GREEN: ì‹¤ì œDDS rawâ†’safe ê²½ë¡œì˜arm/ëª…ë ¹/ë§Œë£ŒÂ·ì¤‘ë³µpublisherÂ·ì‹œê°ì¡°ê±´.
+- [x] ìƒˆíŒ¨í‚¤ì§€ë§Œcolcon build/install; ì™¸ë¶€checkout/underlayì›ë³¸ìˆ˜ì •ê¸ˆì§€.
 
-## Task 3: ÂªÀº½ÇÁ¦¿¬°á°ú±â·Ï
+## Task 3: ì§§ì€ì‹¤ì œì—°ê²°ê³¼ê¸°ë¡
 
-Files: scripts/reuse_13_5/run_r2_probe.py, docs/SECTION_13_5_REUSE_R2_REPORT_KO.md, »õUUID evidence.
-- [ ] ¼³Ä¡º»/Á¤Ã¥hash °¨»çÈÄ¿£Áø´Üµ¶½ÇÇà. ¸í½Ãarm¡æÂªÀºÀüÁø¡æzero¡æ½ÇÁ¦Á¤Âø¡æÆÈµ¶¸³hold¡æÀÔ·Â¼Õ½Çlatch¡æÁ¤»óÈ¸¼ö/ÀÜ¿©°Ë»ç.
-- [ ] clock pause/rollback¡¤publisher±³Ã¼´ÂÀÛÀºDDS°Ë»ç·Î¸ÕÀúÆÇº°. ¿£ÁøÁßbuild/test/ºĞ¼®º´Çà±İÁö.
-- [ ] ½ÇÃø¼ö¸í/¹Ì°ËÁõÀ»ºĞ¸®ÇØº¸°í. R3·ÎÀÚµ¿È®ÀåÇÏÁö¾ÊÀ½. commit/push´ÂÀüÃ¼°èÈ¹R5±ÔÄ¢À¯Áö.
+Files: scripts/reuse_13_5/run_r2_probe.py, docs/SECTION_13_5_REUSE_R2_REPORT_KO.md, ìƒˆUUID evidence.
+- [x] ì„¤ì¹˜ë³¸/ì •ì±…hash ê°ì‚¬í›„ì—”ì§„ë‹¨ë…ì‹¤í–‰. ëª…ì‹œarmâ†’ì§§ì€ì „ì§„â†’zeroâ†’ì‹¤ì œì •ì°©â†’íŒ”ë…ë¦½holdâ†’ì…ë ¥ì†ì‹¤latchâ†’ì •ìƒíšŒìˆ˜/ì”ì—¬ê²€ì‚¬.
+- [x] clock pause/rollbackÂ·publisherêµì²´ëŠ”ì‘ì€DDSê²€ì‚¬ë¡œë¨¼ì €íŒë³„. ì—”ì§„ì¤‘build/test/ë¶„ì„ë³‘í–‰ê¸ˆì§€.
+- [x] ì‹¤ì¸¡ìˆ˜ëª…/ë¯¸ê²€ì¦ì„ë¶„ë¦¬í•´ë³´ê³ . R3ë¡œìë™í™•ì¥í•˜ì§€ì•ŠìŒ. commit/pushëŠ”ì „ì²´ê³„íšR5ê·œì¹™ìœ ì§€.
 
-## °ËÅäÃÊÁ¡
+## ê²€í† ì´ˆì 
 
-clockÅäÇÈ°ústateµµÂø¼ø¼­¡¤freshnessÀ§Àå¡¤bodyÁøµ¿À»Æò¸éTF·Î»èÁ¦ÇÏ´Â¿ÀÀÎ¡¤¿øº»·çÇÁ½ÇÇà¼ö¸í¡¤¾ÈÀüzero¿ÍÁ¤Ã¥Á¾·áÈ¥µ¿À»È®ÀÎÇÑ´Ù. »ç¿ëÀÚÁöÁ¤´ÜÀÏÀÛ¾÷ÀÚÀÌ¹Ç·ÎÀÚÃ¼°ËÅä.
+clockí† í”½ê³¼stateë„ì°©ìˆœì„œÂ·freshnessìœ„ì¥Â·bodyì§„ë™ì„í‰ë©´TFë¡œì‚­ì œí•˜ëŠ”ì˜¤ì¸Â·ì›ë³¸ë£¨í”„ì‹¤í–‰ìˆ˜ëª…Â·ì•ˆì „zeroì™€ì •ì±…ì¢…ë£Œí˜¼ë™ì„í™•ì¸í•œë‹¤. ì‚¬ìš©ìì§€ì •ë‹¨ì¼ì‘ì—…ìì´ë¯€ë¡œìì²´ê²€í† .

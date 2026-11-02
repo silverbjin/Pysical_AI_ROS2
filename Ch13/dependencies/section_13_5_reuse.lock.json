@@ -1,6 +1,6 @@
 {
   "revision": "section_13_5_reuse_v1",
-  "status": "R2_ENTERED_MINIMAL_ROS_CONNECTION_LIVE_PASS_FULL_R2_PENDING",
+  "status": "R2_TECHNICAL_COMPLETE_PUBLICATION_APPROVAL_PENDING",
   "upstream": {
     "url": "https://github.com/iit-DLSLab/locomanipulation-teleop-isaaclab",
     "commit": "d010212c3f5c9e6e5542ada61cfdacc19b00f775",
@@ -513,7 +513,7 @@
   "acceptance": {
     "R0": "ASSET_AND_ENV_AUDIT_RECORDED_LICENSE_PROVENANCE_OPEN",
     "R1": "CORRECTED_A_LIMITED_STOP_HOLD_REPLAY_PASS; original failures preserved; down-to-stand and stow-envelope audit pending",
-    "R2": "IN_PROGRESS: two packages installed,28 small tests and first live ROS movement/hold/raw-loss/cleanup probe PASS; remaining DDS fault matrix pending",
+    "R2": "TECHNICAL_PASS:45 small/DDS/lifecycle tests; installed launch actual forward/turn/stop/arm ownership/raw-loss/cleanup PASS; publication pending explicit destination approval",
     "R3": "NOT_STARTED",
     "R4": "NOT_STARTED",
     "R5": "NOT_STARTED"
@@ -907,8 +907,8 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/launch/platform.launch.py",
-        "bytes": 1067,
-        "sha256": "b6116f001f065b033c34837b49f59c21f04c1c369d92e139d66a4eaef06d1c6d"
+        "bytes": 1360,
+        "sha256": "9e63c9c463124b75d69f802d92c5281d4c1fee5488d6fd272b8d04fa6c0b64b8"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/package.xml",
@@ -931,9 +931,24 @@
         "sha256": "f1d1b74315cd9c1ec9b52b7277acf2cb1aba913f4199437700300215225c1dae"
       },
       {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_launch_lifecycle.py",
+        "bytes": 1578,
+        "sha256": "13d16a9664ec14063d2fba51ac0ea0f47a262f56c8d2f498f38b479ecc3a1a83"
+      },
+      {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_services.py",
         "bytes": 1168,
         "sha256": "33b9a7e6f415278605943cfe05c395cf0854a4cd93c3bb8a5037abd9e02810f3"
+      },
+      {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_wire.py",
+        "bytes": 3471,
+        "sha256": "17328f914a82b2da0a442126d946c6b29c5714a754a3f828bb260127bbc16de1"
+      },
+      {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_probe_service_wait.py",
+        "bytes": 1502,
+        "sha256": "0f19664702d4fbdf3bbc4030a2f24ef847d451af00a740930027faa8164dd7ce"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_process_cleanup.py",
@@ -982,13 +997,7 @@
       }
     ],
     "installed_audit": "Ch13/evidence/section_13_5_reuse/ad20c823-7bf3-4ea1-87da-cb5b96cd929e/install_audit.json",
-    "remaining": [
-      "DDS publisher replacement",
-      "DDS clock pause",
-      "DDS state observation loss/future packet",
-      "installed launch flow review",
-      "align/document wall-based slew versus simulation acceleration before R2 completion"
-    ],
+    "remaining": [],
     "completion_stage1": {
       "tests": 36,
       "result": "PASS",
@@ -1006,6 +1015,16 @@
       "tests": 39,
       "result": "PASS",
       "evidence": "Ch13/evidence/section_13_5_reuse/r2_stage2_20261102"
+    },
+    "completion_stage3": {
+      "result": "TECHNICAL_PASS",
+      "tests": 45,
+      "evidence": "Ch13/evidence/section_13_5_reuse/b5c33be2-25f1-4c2b-8f74-2ad1706840ec",
+      "report": "Ch13/docs/SECTION_13_5_REUSE_R2_STAGE_3_KO.md",
+      "publication": "BLOCKED_AUTO_REVIEW_DESTINATION_APPROVAL_PENDING",
+      "branch": "feat/ch13-section-13-5-reuse-r2-20261102",
+      "gateway_fault_latched": true,
+      "platform_final_mode": "ARMED receiving generated safe zeros; own safe-input faults latch in separate DDS tests"
     }
   }
 }

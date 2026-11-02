@@ -1,0 +1,37 @@
+{
+  "result": "FAIL",
+  "pid": 1125,
+  "events": [
+    {
+      "event": "spawn",
+      "name": "launch",
+      "pid": 1151
+    },
+    {
+      "event": "armed",
+      "clock_ns": 2060000000,
+      "wall": 92.3499437
+    }
+  ],
+  "forward_distance_m": 0.4149047937987831,
+  "zero_stop_latency_wall_s": 2.4685637629999917,
+  "turn_angle_rad": 0.3712416210032026,
+  "turn_stop_latency_wall_s": 2.4382263050000006,
+  "arm_joint1_observed_rad": 0.011403093870967596,
+  "error": "Traceback (most recent call last):\n  File \"/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/scripts/reuse_13_5/run_r2_probe.py\", line 82, in main\n    S['arm_joint1_observed_rad']=joints.position[12];arm_target(0.);assert until(lambda:abs(joints.position[12])<.01 and platform.get('stationary_ready'),8)\n                                                     ^^^^^^^^^^^^^^\n  File \"/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/scripts/reuse_13_5/run_r2_probe.py\", line 80, in arm_target\n    response=call('/ch13_reuse_platform/set_parameters_atomically',request,SetParametersAtomically);assert response.result.successful,response.result.reason\n                                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: actual settled zero and armed platform required\n",
+  "children": [
+    {
+      "name": "launch",
+      "pid": 1151,
+      "exit_code": 0,
+      "reaped": true
+    }
+  ],
+  "launch_children_pids": [
+    1165,
+    1166,
+    1167
+  ],
+  "launch_clean_exits": 2,
+  "launch_remaining_pids": []
+}

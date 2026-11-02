@@ -1,3 +1,5 @@
+> 이 파일은 R2 진입 당시 기록이다. **현재 R2 기술 완료 결과는 [단계3 보고서](SECTION_13_5_REUSE_R2_STAGE_3_KO.md)를 우선한다.** 게시/원격SHA는 승인 대기다.
+
 # R2 진입·최소 ROS2 연결 보고
 
 2026-11-02 한국 시각. 단일 작업자, `superpowers:executing-plans`. 개정 gate `section_13_5_edu_stop_v2`와 검증된 corrected A profile을 적용했다.

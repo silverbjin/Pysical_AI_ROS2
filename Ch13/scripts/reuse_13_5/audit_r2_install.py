@@ -11,7 +11,7 @@ for p in source.glob('*.py'):
  actual=Path(mod.__file__);expected=hashlib.sha256(p.read_bytes()).hexdigest();found=hashlib.sha256(actual.read_bytes()).hexdigest()
  assert '/install/' in str(actual) and expected==found,(p,actual)
  rows.append({'source':str(p),'installed':str(actual),'sha256':found})
-for p,installed in [(root/'Ch13/scripts/reuse_13_5/reproduce_upstream.py',share/'upstream_corrections/reproduce_upstream.py'),(source.parent/'config/platform.yaml',share/'config/platform.yaml')]:
+for p,installed in [(root/'Ch13/scripts/reuse_13_5/reproduce_upstream.py',share/'upstream_corrections/reproduce_upstream.py'),(source.parent/'config/platform.yaml',share/'config/platform.yaml'),(source.parent/'launch/platform.launch.py',share/'launch/platform.launch.py')]:
  assert p.read_bytes()==installed.read_bytes();rows.append({'source':str(p),'installed':str(installed),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
 a=Path('/home/jinho/ch13_reuse_r2_build/build/ch13_reuse_wire/ingress');b=Path('/home/jinho/ch13_reuse_r2_build/install/ch13_reuse_wire/lib/ch13_reuse_wire/ingress')
 sections={}
