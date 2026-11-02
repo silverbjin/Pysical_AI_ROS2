@@ -10,7 +10,7 @@
 
 ## 소유권과 관측
 
-속도 흐름은 `Nav2 controller → velocity smoother → navigation_boundary → command_gateway → platform_adapter → upstream policy`다. 전 구간 TwistStamped를 명시한다. ACTIVE 출력 시각은 controller와 smoother 원본 시각 중 오래된 값이며 반복 수신으로 최초 receipt를 갱신하지 않는다. IDLE의 생성 zero는 관측이나 명령의 원본 시각으로 위장하지 않는다. 단일 명령자와 실제 DDS GID를 C++ ingress에서 확인한다. 출발 준비 중에는 boundary가 controller 원본 stamp의 zero를 유지한다. 실제 controller/smoother가 신선해진 뒤 gateway 재무장→명시적 release 순서로 움직임을 허용한다. 도달 불가 terminal이 준비 중 발생하면 움직임을 해제하지 않는다.
+속도 흐름은 `Nav2 controller → velocity smoother → navigation_boundary → command_gateway → platform_adapter → upstream policy`다. 전 구간 TwistStamped를 명시한다. ACTIVE 출력 시각은 controller와 smoother 원본 시각 중 오래된 값이며 반복 수신으로 최초 receipt를 갱신하지 않는다. IDLE의 생성 zero는 관측이나 명령의 원본 시각으로 위장하지 않는다. DISARMED gateway의 zero는 raw 원본과 마지막 safe 발행 watermark를 따라가며, 오래된 입력은 반복 stamp로 유지한다. 원본 stamp가 watermark에 도달해야 재무장하므로 safe header가 뒤로 가지 않는다. 단일 명령자와 실제 DDS GID를 C++ ingress에서 확인한다. 출발 준비 중에는 boundary가 controller 원본 stamp의 zero를 유지한다. 실제 controller/smoother가 신선해진 뒤 gateway 재무장→platform 재무장→명시적 release 순서로 움직임을 허용한다. 도달 불가 terminal이 준비 중 발생하면 움직임을 해제하지 않는다.
 
 engine의 실제 qpos/qvel에서 상태를 발행한다. `map→odom`은 알려진 장면의 ground-truth 교육 profile이다. `odom→nav_base`는 측정 xy/yaw, `nav_base→base`는 나머지 z/roll/pitch를 보존한다. 팔·카메라까지 이어진 TF는 같은 실제 상태에서 계산한다. edge마다 소유자 하나를 요구한다. odometry에 목표를 넣거나 root를 teleport하지 않는다. AMCL/SLAM 실증으로 표현하지 않는다.
 

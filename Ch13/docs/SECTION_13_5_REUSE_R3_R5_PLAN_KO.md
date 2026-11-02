@@ -20,26 +20,30 @@
 ## Task R3: 실제 센서와 Nav2
 
 Files: scene.py, sensors.py, navigation_boundary.py, nav_contract.py, config/nav2_params.yaml, config/navigate_no_recovery.xml, launch/navigation.launch.py, 기존platform_adapter/ingress/wire, scripts/run_navigation_probe.py.
-- [ ] RED: flat장면에서도원본robot구조동일, ray가실제장애물hit, 원본stamp/손실/복수TFedge/명령자/우회/미래와latch.
-- [ ] GREEN: 장면·센서·명령경계 최소구현, 고정footprint 산출, isolated build/install byte audit.
-- [ ] 실제 DDS→실제 Nav2 action→실제 engine의자유공간/우회/막힌경로/취소·정착·회수 확인. 수명/실패보고서와commit/push.
+- [x] RED: flat장면에서도원본robot구조동일, ray가실제장애물hit, 원본stamp/손실/복수TFedge/명령자/우회/미래와latch.
+- [x] GREEN: 장면·센서·명령경계 최소구현, 고정footprint 산출, isolated build/install byte audit.
+- [x] 실제 DDS→실제 Nav2 action→실제 engine의자유공간/우회/막힌경로/취소·정착·회수 확인. 수명/실패보고서와commit/push.
 
 ## Task R4: RGB-D와 작업 위치
 
 Files: vision_approach.py, approach_geometry.py, readiness.py, camera지원, test/test_reuse_vision.py, run_navigation_probe.py vision profile.
-- [ ] RED: depth축/과거TF/age·미래/원본stamp보존, stale목표/관측손실·candidate도달불가·terminal/cancelACK오인.
-- [ ] GREEN: 13.4 geometry재사용, 실제RGB-D관측, 팔FK/IK후보평가와Nav2연결. 최신촬영TF와실제body진동보존.
-- [ ] 실제촬영→관측→goal→terminal→root오차→정착→READY를실행. 팔파지는하지않는다. 보고서·commit/push.
+- [x] RED: depth축/과거TF/age·미래/원본stamp보존, stale목표/관측손실·candidate도달불가·terminal/cancelACK오인.
+- [x] GREEN: 13.4 geometry재사용, 실제RGB-D관측, 팔FK/IK후보평가와Nav2연결. 최신촬영TF와실제body진동보존.
+- [x] 실제촬영→관측→goal→terminal→root오차→정착→READY를실행. 팔파지는하지않는다. 보고서·commit/push.
 
 ## Task R5: 동결 인수·본문·재현
 
 Files: config/acceptance_v1.json, scripts/run_acceptance.py/verify_acceptance.py, docs/SECTION_13_5_REUSE_DESIGN_KO.md/LAB_13_5_REUSE_GUIDE_KO.md/SECTION_13_5_REUSE_REPORT_KO.md/REUSE_MANIFEST.md, lock.
-- [ ] 최종실행전 matrix/수치/source·설치hash동결. MuJoCo는순차실행, 빌드/검사동시실행금지.
-- [ ] physics 시나리오: 자유공간, 장애물우회, 막힌goal, goal취소, 실제vision접근, raw손실. wire부품: 중복/교체/TF우회/미래·만료goal/clockrollback·pause/관측손실. 각필수1회,3회반복은확장.
-- [ ] 기본도착0.10m/0.10rad, 정착edu_stop_v2, rawexpiry→zero0.35wall초/정착5sim·8wall초. Nav2시나리오예산90sim·240wall초, blocked/cancel은terminalと実測stopを別測定. 원래cap/非有限/넘어짐fail조건유지.
-- [ ] 소스변경영향별재실행, 원본실패보존. 기존13.3/13.4회귀와새플랫폼회귀분리. 설치단계와knownassetlicense한계를명시한한글본문·가이드·출처작성.
-- [ ] 단일작업자자체검토후보고서·commit/push·local/remoteSHA대조. main/PR없음.
+- [x] 최종실행전 matrix/수치/source·설치hash동결. MuJoCo는순차실행, 빌드/검사동시실행금지.
+- [x] physics 시나리오: 자유공간, 장애물우회, 막힌goal, goal취소, 실제vision접근, raw손실. wire부품: 중복/교체/TF우회/미래·만료goal/clockrollback·pause/관측손실. 각필수1회,3회반복은확장.
+- [x] 기본도착0.10m/0.10rad, 정착edu_stop_v2, rawexpiry→zero0.35wall초/정착5sim·8wall초. Nav2시나리오예산90sim·240wall초, blocked/cancel은terminalと実測stopを別測定. 원래cap/非有限/넘어짐fail조건유지.
+- [x] 소스변경영향별재실행, 원본실패보존. 기존13.3/13.4회귀와새플랫폼회귀분리. 설치단계와knownassetlicense한계를명시한한글본문·가이드·출처작성.
+- [x] 단일작업자자체검토후보고서·commit/push·local/remoteSHA대조. main/PR없음.
 
 ## 검토 초점
 
 느린sim에서wallfreshness를완화하지않음; Nav2가idle일때와제어원손실의구분; smoother가now로stamp를세탁하지않음; TF다중publisher허용과동일edge복수소유금지; renderer첫워밍업/종료; 관측점과장면정답분리; terminal받기전cancelACK로완료처리하지않음.
+
+## 최종 실행 판정
+
+2026-11-03 v3 고정본 여섯 실제 시나리오 전수/독립 검증 PASS. 신규89/기존관련순수50 PASS. v1/v2와 검증 누락은 보존했다. 실행 중 정착/age 허용치를 확대하지 않았고, 누락한 실제 움직임 증거를 추가했다. 새 OS 전체 재설치·기존전체 engine 회귀·3회 반복·Gazebo/실기는 검증 범위 밖이다. 최종 게시 확인은 R5 게시 보고서에 기록한다.

@@ -10,6 +10,46 @@
 
 검증 환경은 Ubuntu24.04/WSL2, ROS2 Jazzy, Nav2 1.3.13, Python3.12.3, MuJoCo3.13.0과 CPU ONNX 추론이다. 기존 Ch13 환경을 덮어 올리지 않고 별도 추론 venv와 별도 build/install 디렉터리를 쓴다. Isaac Lab 전체 학습 환경은 본문 실행에 필요하지 않다. 시스템 패키지·권한·드라이버 변경은 이 안내를 실행했다고 자동 승인되는 일이 아니다.
 
+새 PC에서는 ROS2 Jazzy·Nav2·colcon·pytest와 EGL 렌더링 라이브러리, OpenSSL 개발 헤더를 먼저 준비한다. 검증한 ROS 패키지 목록은 [사전 검사 목록](../evidence/section_13_5_reuse/r5_preflight_20261103_v2/nav2_packages.txt)에 있다. 운영체제 설치/관리자 명령은 이 실습 실행기에 포함하지 않는다.
+
+외부 자산은 다음처럼 **새 디렉터리에서만** 고정 커밋의 정확한 파일을 받는다. 기존 upstream 디렉터리가 있으면 중단하므로 기존 원본을 고치지 않는다. 네트워크/해시 실패 시 부분 결과를 검사하고 다른 새 작업 위치에서 준비한다. Git LFS pointer 등 잘못된 내용도 크기/SHA 검사에서 중단된다. 모델·가중치를 책 저장소에 복사해 올리지 않는다.
+
+```bash
+python3 - <<'PY_ASSETS'
+from pathlib import Path, PurePosixPath
+from urllib.request import urlopen
+from urllib.parse import quote
+import hashlib, json
+repo = Path.cwd().resolve()
+lock = json.loads((repo/'Ch13/dependencies/section_13_5_reuse.lock.json').read_text())
+target = repo.parent/'upstream-iit-locomanipulation-d010212'
+if target.exists():
+    raise SystemExit('기존 원본은 보존한다. 새 작업 위치를 사용하거나 설치 감사만 실행한다.')
+target.mkdir()
+base = 'https://raw.githubusercontent.com/iit-DLSLab/locomanipulation-teleop-isaaclab/'
+for row in lock['files']:
+    rel = PurePosixPath(row['path'])
+    assert not rel.is_absolute() and '..' not in rel.parts
+    with urlopen(base+lock['upstream']['commit']+'/'+quote(str(rel), safe='/'), timeout=60) as response:
+        data = response.read(row['bytes']+1)
+    assert len(data) == row['bytes'] and hashlib.sha256(data).hexdigest() == row['sha256'], row['path']
+    destination = target.joinpath(*rel.parts)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open('xb') as stream:
+        stream.write(data)
+print('94 pinned asset hashes verified')
+PY_ASSETS
+```
+
+새 추론 venv는 다음 고정 목록을 사용한다. R5의 `pip_freeze.txt`는 ROS 패키지까지 보이는 실행 환경의 **조회 목록**이며 pip 설치 목록으로 사용하지 않는다. 아래 R0 목록은 추론 전용 목록이다. CPU Torch를 먼저 같은 버전으로 설치하고 나머지 고정 버전을 맞춘다. 이 새 PC 설치 절차를 별도 새 OS에서 다시 실행한 것은 아니며, 현재 PC의 새 isolated build/install 재현과 구분한다.
+
+```bash
+export CH13_REUSE_VENV="$HOME/ch13_reuse_iit_d010212_venv"
+python3 -m venv "$CH13_REUSE_VENV"
+"$CH13_REUSE_VENV/bin/python" -m pip install --index-url https://download.pytorch.org/whl/cpu 'torch==2.9.0+cpu'
+"$CH13_REUSE_VENV/bin/python" -m pip install -r Ch13/evidence/section_13_5_reuse/r0-20261102/pip-freeze.txt
+```
+
 다음은 Ubuntu bash에서 저장소 루트로 이동한 뒤 실행한다. Python/MuJoCo 관련 정확한 버전은 lock의 pip 목록을 대조한다. ROS2/Nav2와 추론 venv가 이미 준비된 상태를 전제한다. 기본 venv 경로와 다른 PC에서는 `CH13_REUSE_VENV`에 실제 venv 경로를 지정한다.
 
 ```bash
@@ -31,7 +71,7 @@ bash Ch13/scripts/reuse_13_5/run_navigation.sh free "$PWD/Ch13/evidence/section_
 
 ## 13.5.3 명령·상태·TF 계약
 
-Nav2 raw 출력을 upstream에 직접 연결하지 않는다. controller→smoother→navigation boundary→gateway→platform 경로를 읽고, `config/platform.yaml`의 단위·축·상한을 확인한다. vx/wz는 각각 최대0.20m/s·0.20rad/s, vy는0이다. 명령 ramp 상한은 몸체 가속도의 실측 보장이 아니다. 실행기는 먼저 실제 controller/smoother의 신선한 입력을 받으면서 zero를 유지하고, gateway 재무장과 명시적 release 후에만 움직인다. 준비 중의 경로 실패는 움직임을 해제하지 않는다.
+Nav2 raw 출력을 upstream에 직접 연결하지 않는다. controller→smoother→navigation boundary→gateway→platform 경로를 읽고, `config/platform.yaml`의 단위·축·상한을 확인한다. vx/wz는 각각 최대0.20m/s·0.20rad/s, vy는0이다. 명령 ramp 상한은 몸체 가속도의 실측 보장이 아니다. 실행기는 먼저 실제 controller/smoother의 신선한 입력을 받으면서 zero를 유지하고, gateway 재무장→platform 재무장→명시적 release 후에만 움직인다. 생성 zero와 제어기 원본 stamp 사이의 watermark를 유지하여 인계 시 시각 역행을 막는다. DISARMED에서도 공개 정책은0속도로 몸체를 유지한다. 준비 중의 경로 실패는 움직임을 해제하지 않는다.
 
 `/ch13/reuse/engine_state`는 실제3D 상태, `/ch13/reuse/odometry`는 지도 이동용 투영이다. TF에서 nav_base→base의 높이와 roll/pitch가 남는지 확인한다. map→odom은 알려진 장면과 engine ground truth를 사용하는 교육 profile이다. localization을 완성했다거나 AMCL/SLAM을 시험했다고 표현하지 않는다.
 
@@ -43,7 +83,7 @@ Nav2 raw 출력을 upstream에 직접 연결하지 않는다. controller→smoot
 
 ## 13.5.5 제한·watchdog·수납
 
-팔은 원본 PD의 검증된 수납 목표를 유지한다. 팔 상태를 정책이 관측한다는 사실과 팔 명령 소유권을 구분한다. 오래된 입력, 관측 손실, clock 정지/역행, 소유자 교체는 fault를 고정하고 zero를 지시한다. 입력이 돌아와도 자동으로 움직이지 않는다. 실제 stop 확인 후 명시적 reset·새 zero·arm 순서가 필요하다.
+팔은 원본 PD의 검증된 수납 목표를 유지한다. 팔 상태를 정책이 관측한다는 사실과 팔 명령 소유권을 구분한다. 오래된 입력, 관측 손실, clock 정지/역행, 소유자 교체는 fault를 고정하고 zero를 지시한다. 입력이 돌아와도 자동으로 움직이지 않는다. 같은 시뮬레이션 epoch의 입력 손실은 실제 stop 확인 후 명시적 reset·새 zero·arm 순서로 복구한다. clock 역행이나 engine 재시작은 소유 실행을 정상 회수한 뒤 새 launch에서 시작한다.
 
 `raw_loss`는 이 실행이 만든 명령 경계 프로세스에만 손실을 주입한다. 명령 만료에서 zero 결정까지와 그 뒤 실제 정착 시간을 따로 읽는다. 플랫폼 전원을 끄거나 torque를0으로 만드는 시험이 아니다.
 
@@ -52,6 +92,10 @@ Nav2 raw 출력을 upstream에 직접 연결하지 않는다. controller→smoot
 ```bash
 bash Ch13/scripts/reuse_13_5/run_navigation.sh vision "$PWD/Ch13/evidence/section_13_5_reuse/my_vision_run" 15
 ```
+
+![실제 MuJoCo 작업물 촬영](../evidence/section_13_5_reuse/3b1fcc07-525d-4211-806e-72249a78b9be/last_accepted_rgb.png)
+
+최종 v3 실험의 원본320×240 촬영이다. 붉은 고정 작업물의 보이는 표면과 depth를 사용한다.
 
 320×240 RGB-D를 실제 상태 복사본에서 촬영한다. 카메라는 고해상도 장식 mesh 대신 원본 충돌 형상을 보여주는 교육용 화면이다. 실제 환경과 로봇 가림 근사를 렌더링하며, 장면 좌표를 비전 관측이라고 발행하지 않는다. 붉은 작업물의 보이는 표면을 색 영역과 depth로 검출한다. 일반 물체 인식은 별도 확장이다.
 
@@ -70,3 +114,16 @@ capture 상한15wallHz와 기본 처리 상한10wallHz를 구분한다. 위 명�
 ## 13.5.9 결과와 확장
 
 최종 인수 UUID와 고정본은 [R5 보고서](SECTION_13_5_REUSE_R5_REPORT_KO.md)를 따른다. 각 필수 시나리오1회가 본문 기준이며3회 반복은 강건성 확장이다. Gazebo 동등 구현, 실기 배포, 새 crawl/학습, AMCL/SLAM, 일반 인식, MoveIt·파지는 이번 결과의 검증 범위에 포함하지 않는다. 13.6은 선택한 Piper interface와 카메라/팔 TF를 이어받아 별도로 설계한다.
+
+## 최종 고정본 전체 인수 재현
+
+최종 source commit과 v3 freeze가 일치하는 checkout에서 실행한다. 이미 기록이 있는 결과 디렉터리를 재사용하지 않는다. source나 실행 도구가 달라지면 기존 freeze를 수정하지 말고 별도 개정으로 검증한다.
+
+```bash
+export CH13_REUSE_BUILD="$HOME/ch13_reuse_r5_build"
+bash Ch13/scripts/reuse_13_5/env_r2.sh Ch13/scripts/reuse_13_5/run_acceptance.py \
+  --freeze "$PWD/Ch13/dependencies/section_13_5_reuse_acceptance_v3.json" \
+  --out "$PWD/Ch13/evidence/section_13_5_reuse/my_final_matrix"
+```
+
+실행기는 각 시나리오에 새 UUID를 만들고 실제 engine 종료와 잔여 검사를 끝낸 뒤 다음 시나리오를 시작한다. 각 RUN_REPORT_KO.md와 최종 matrix/verification JSON을 생성한다. 비교용 원본 결과를 보존하려면 새 작업 checkout에서 재현한다. 게시 보고서의 remote SHA와 source freeze를 함께 확인한다.

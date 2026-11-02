@@ -1,6 +1,21 @@
 # 13.5 공개 통합 플랫폼 재현·선정 보고
 
-> **최신 R2 결과:** 최소 ROS2 연결과 첫 실제 이동·정지·팔 hold·입력 손실·정상 회수가 통과했다. [R2 진입 보고](SECTION_13_5_REUSE_R2_REPORT_KO.md)를 먼저 읽는다. R2 전체 fault matrix와 R3는 아직 완료하지 않았다.
+## 최종 개정판 결과 — 2026-11-03
+
+**R3·R4·R5 완료, MuJoCo 교육용 인수 PASS.** [실습 본문/설치 안내](LAB_13_5_REUSE_GUIDE_KO.md), [설계](SECTION_13_5_REUSE_DESIGN_KO.md), [최종 R5 보고서](SECTION_13_5_REUSE_R5_REPORT_KO.md)를 먼저 읽는다. 아래 최초 후보 조사와 R2 중간 상태는 당시 이력으로 보존한다.
+
+최종 고정 source commit은 `3924205d94424278b2ccd3935c1b7bb1db45e14c`이고, v3 freeze SHA256은 `c4f40b5d10a9a87b7ae7edc82c45cc77e51696e850c43f72c73c4ff77f73bc6a`다. 자유 이동·우회·비어 있는 도달 불가 목표·이동 후 취소·실제 RGB-D 접근·raw 손실을 새 UUID에서 각1회 전수 실행했다. 여섯 실행과 독립 검증·정상 회수·잔여 검사가 모두 PASS다. 최종89개 신규 검사와 기존 관련 순수 회귀50개를 통과했다.3회 반복은 별도 확장이다.
+
+비전은 선택15Hz profile에서 실제0.969227m 이동, root 오차0.052764m/0.009707rad, terminal 성공 뒤1.897058wall초 정착을 확인했다. 실제 최종 사진 age143.44ms, 위치 IK 잔차6.53mm/충돌·관절 제한 확인 뒤 READY를 발행했다. Native 픽셀의 canonical SHA·C++ 실제 송신자/최초 receipt·과거TF와 관측점 재계산을 독립 확인했다. raw 만료→zero 결정은302.89ms이고 입력 복귀 뒤 FAULT를 유지했다. torque cap 최대비율1.0, native hinge 제한 soft overrun 최대 약0.000525rad다.
+
+v1/v2의 전체 실패와 v2 취소 checker 누락은 [v1](SECTION_13_5_REUSE_R5_V1_REPORT_KO.md), [v2](SECTION_13_5_REUSE_R5_V2_REPORT_KO.md), [보완 기록](SECTION_13_5_REUSE_R5_S3_REPORT_KO.md)에 보존한다. 이전 Task8/원본 A 실패를 PASS로 변경하지 않았다.
+
+검증 범위는 MuJoCo·고정 작업물·알려진 지도와 engine ground truth다. 기본10Hz의 전체 접근, 일반 물체 인식·AMCL/SLAM·동적 물체 추적·Gazebo 동등성·실기·MoveIt·파지는 이번 결과에 포함하지 않는다. 기존13.3/13.4의 실제 engine 성공을 새 플랫폼에 전이하지 않는다. 모델/가중치의 하위 권리 확인은 [출처 명세](REUSE_MANIFEST.md)를 따른다. 별도 새 OS 재설치는 미실증이며 현재 PC에서 새 isolated build/install을 확인했다.
+
+---
+
+
+> **당시 R2 중간 결과:** 최소 ROS2 연결과 첫 실제 이동·정지·팔 hold·입력 손실·정상 회수가 통과했다. [R2 진입 보고](SECTION_13_5_REUSE_R2_REPORT_KO.md)를 먼저 읽는다. R2 전체 fault matrix와 R3는 아직 완료하지 않았다.
 
 > **후속 R1 결과:** A 제한 조사와 교재용 게이트 개정을 마쳤다. 최소 배포 보완 후 실제 이동·세 정착 창을 확인했다. [최신 정착 검토](SECTION_13_5_REUSE_SETTLING_REVIEW_KO.md)를 먼저 읽는다. 아래 최초 조사와 실패는 이력으로 보존한다.
 
