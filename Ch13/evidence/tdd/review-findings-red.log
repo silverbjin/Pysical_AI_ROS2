@@ -1,0 +1,108 @@
+........FFFFFF                                                           [100%]
+=================================== FAILURES ===================================
+__________ test_no_command_can_claim_owner_before_trusted_clock[0.0] ___________
+
+arb = <ch13_sim_core.arbiter.CommandArbiter object at 0x7580136f6030>
+stamp = 0.0
+
+    @pytest.mark.parametrize('stamp',[0.,1000.])
+    def test_no_command_can_claim_owner_before_trusted_clock(arb,stamp):
+>       with pytest.raises(ValueError,match='clock'):arb.update('arm',cmd(arb,stamp=stamp,owner='bad',values=[1.]*6))
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/tests/test_arbiter.py:58: Failed
+_________ test_no_command_can_claim_owner_before_trusted_clock[1000.0] _________
+
+arb = <ch13_sim_core.arbiter.CommandArbiter object at 0x758013767cb0>
+stamp = 1000.0
+
+    @pytest.mark.parametrize('stamp',[0.,1000.])
+    def test_no_command_can_claim_owner_before_trusted_clock(arb,stamp):
+>       with pytest.raises(ValueError,match='clock'):arb.update('arm',cmd(arb,stamp=stamp,owner='bad',values=[1.]*6))
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+Ch13/tests/test_arbiter.py:58: Failed
+_____________ test_frozen_clock_holds_pending_targets_until_resume _____________
+
+arb = <ch13_sim_core.arbiter.CommandArbiter object at 0x7580136f7e00>
+
+    def test_frozen_clock_holds_pending_targets_until_resume(arb):
+        arb.resolve(1.)
+        arb.update('arm',cmd(arb,values=[.2]*6))
+>       np.testing.assert_array_equal(arb.resolve(1.).targets[12:18],[0]*6)
+
+Ch13/tests/test_arbiter.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (<built-in function eq>, array([0.2, 0.2, 0.2, 0.2, 0.2, 0.2]), [0, 0, 0, 0, 0, 0])
+kwds = {'err_msg': '', 'header': 'Arrays are not equal', 'strict': False, 'verbose': True}
+
+    @wraps(func)
+    def inner(*args, **kwds):
+        with self._recreate_cm():
+>           return func(*args, **kwds)
+                   ^^^^^^^^^^^^^^^^^^^
+E           AssertionError: 
+E           Arrays are not equal
+E           
+E           Mismatched elements: 6 / 6 (100%)
+E           Max absolute difference: 0.2
+E           Max relative difference: inf
+E            x: array([0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
+E            y: array([0, 0, 0, 0, 0, 0])
+
+/usr/lib/python3.12/contextlib.py:81: AssertionError
+__________ test_stale_pending_command_never_becomes_last_safe_target ___________
+
+arb = <ch13_sim_core.arbiter.CommandArbiter object at 0x758013767980>
+
+    def test_stale_pending_command_never_becomes_last_safe_target(arb):
+        arb.resolve(1.)
+        arb.update('arm',cmd(arb,values=[.4]*6))
+>       np.testing.assert_array_equal(arb.resolve(2.).targets[12:18],[0]*6)
+
+Ch13/tests/test_arbiter.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (<built-in function eq>, array([0.4, 0.4, 0.4, 0.4, 0.4, 0.4]), [0, 0, 0, 0, 0, 0])
+kwds = {'err_msg': '', 'header': 'Arrays are not equal', 'strict': False, 'verbose': True}
+
+    @wraps(func)
+    def inner(*args, **kwds):
+        with self._recreate_cm():
+>           return func(*args, **kwds)
+                   ^^^^^^^^^^^^^^^^^^^
+E           AssertionError: 
+E           Arrays are not equal
+E           
+E           Mismatched elements: 6 / 6 (100%)
+E           Max absolute difference: 0.4
+E           Max relative difference: inf
+E            x: array([0.4, 0.4, 0.4, 0.4, 0.4, 0.4])
+E            y: array([0, 0, 0, 0, 0, 0])
+
+/usr/lib/python3.12/contextlib.py:81: AssertionError
+___________ test_exception_cannot_pass_even_after_successful_checks ____________
+
+    def test_exception_cannot_pass_even_after_successful_checks():
+>       r=result();assert probe.probe_status(r)=='PASS'
+                          ^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'ros_probe' has no attribute 'probe_status'
+
+Ch13/ros2_ws/src/ch13_control/test/test_probe_verdict.py:11: AttributeError
+_________ test_missing_backend_checks_or_incomplete_probe_cannot_pass __________
+
+    def test_missing_backend_checks_or_incomplete_probe_cannot_pass():
+>       r=result();r['backend']='gazebo';assert probe.probe_status(r)=='FAIL'
+                                                ^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'ros_probe' has no attribute 'probe_status'
+
+Ch13/ros2_ws/src/ch13_control/test/test_probe_verdict.py:15: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_arbiter.py::test_no_command_can_claim_owner_before_trusted_clock[0.0]
+FAILED Ch13/tests/test_arbiter.py::test_no_command_can_claim_owner_before_trusted_clock[1000.0]
+FAILED Ch13/tests/test_arbiter.py::test_frozen_clock_holds_pending_targets_until_resume
+FAILED Ch13/tests/test_arbiter.py::test_stale_pending_command_never_becomes_last_safe_target
+FAILED Ch13/ros2_ws/src/ch13_control/test/test_probe_verdict.py::test_exception_cannot_pass_even_after_successful_checks
+FAILED Ch13/ros2_ws/src/ch13_control/test/test_probe_verdict.py::test_missing_backend_checks_or_incomplete_probe_cannot_pass
+6 failed, 8 passed in 2.11s

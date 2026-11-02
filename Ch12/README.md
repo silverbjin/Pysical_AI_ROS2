@@ -1,6 +1,6 @@
 # 12장: 강화학습 기반 4족 보행
 
-- [12.1 실습 가이드](docs/LAB_12_1_GUIDE_KO.md) · [보고서](docs/CHANGE_REPORT_KO.md)
+- [12.1 실습 가이드](docs/LAB_12_1_GUIDE_KO.md) · [보고서](docs/SECTION_12_1_REPORT_KO.md)
 - [12.2 실습 가이드](docs/LAB_12_2_GUIDE_KO.md) · [보고서](docs/SECTION_12_2_REPORT_KO.md)
 - [12.3 실습 가이드](docs/LAB_12_3_GUIDE_KO.md) · [보고서](docs/SECTION_12_3_REPORT_KO.md)
 - [12.4 PPO 실습 가이드](docs/LAB_12_4_GUIDE_KO.md) · [보고서](docs/SECTION_12_4_REPORT_KO.md)

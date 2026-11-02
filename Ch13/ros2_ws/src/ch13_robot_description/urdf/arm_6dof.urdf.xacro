@@ -1,0 +1,27 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"><!-- Ch08 Z-Y-Y-X-Y-Z concept, scaled primitive arm. -->
+<xacro:macro name="arm_6dof" params="parent mount_xyz mount_rpy">
+<xacro:box_link name="arm_mount" mass="0.08" sx="0.08" sy="0.08" sz="0.02"/>
+<joint name="arm_mount_fixed" type="fixed"><parent link="${parent}"/><child link="arm_mount"/><origin xyz="${mount_xyz}" rpy="${mount_rpy}"/></joint>
+<xacro:box_link name="arm_link_1" mass="0.08" sx="0.06" sy="0.022" sz="0.022" xyz="0.03 0 0"/>
+<xacro:hinge name="arm_joint_1" parent="arm_mount" child="arm_link_1" xyz="0 0 0" axis="0 0 1" lower="-3.14" upper="3.14"/>
+<xacro:box_link name="arm_link_2" mass="0.15" sx="0.16" sy="0.022" sz="0.022" xyz="0.08 0 0"/>
+<xacro:hinge name="arm_joint_2" parent="arm_link_1" child="arm_link_2" xyz="0.06 0 0" axis="0 1 0" lower="-2" upper="2"/>
+<xacro:box_link name="arm_link_3" mass="0.12" sx="0.14" sy="0.022" sz="0.022" xyz="0.07 0 0"/>
+<xacro:hinge name="arm_joint_3" parent="arm_link_2" child="arm_link_3" xyz="0.16 0 0" axis="0 1 0" lower="-2.4" upper="2.4"/>
+<xacro:box_link name="arm_link_4" mass="0.05" sx="0.04" sy="0.022" sz="0.022" xyz="0.02 0 0"/>
+<xacro:hinge name="arm_joint_4" parent="arm_link_3" child="arm_link_4" xyz="0.14 0 0" axis="1 0 0" lower="-3.14" upper="3.14"/>
+<xacro:box_link name="arm_link_5" mass="0.04" sx="0.04" sy="0.022" sz="0.022" xyz="0.02 0 0"/>
+<xacro:hinge name="arm_joint_5" parent="arm_link_4" child="arm_link_5" xyz="0.04 0 0" axis="0 1 0" lower="-2" upper="2"/>
+<xacro:box_link name="arm_link_6" mass="0.04" sx="0.04" sy="0.022" sz="0.022" xyz="0.02 0 0"/>
+<xacro:hinge name="arm_joint_6" parent="arm_link_5" child="arm_link_6" xyz="0.04 0 0" axis="0 0 1" lower="-3.14" upper="3.14"/>
+<xacro:box_link name="tool0" mass="0.04" sx="0.025" sy="0.10" sz="0.015"/>
+<joint name="tool_fixed" type="fixed"><parent link="arm_link_6"/><child link="tool0"/><origin xyz="0.04 0 0"/></joint>
+<xacro:box_link name="grasp_site" mass="0.000001" sx="0.001" sy="0.001" sz="0.001"/>
+<joint name="grasp_fixed" type="fixed"><parent link="tool0"/><child link="grasp_site"/><origin xyz="0 0 -0.065"/></joint>
+<xacro:box_link name="gripper_left" mass="0.025" sx="0.035" sy="0.012" sz="0.085" xyz="0 0 -0.055"/>
+<joint name="gripper_left_joint" type="prismatic"><parent link="tool0"/><child link="gripper_left"/><origin xyz="0 0.012 0"/><axis xyz="0 1 0"/><limit lower="0" upper="0.04" effort="25" velocity="0.2"/><dynamics damping="2"/></joint>
+<gazebo reference="gripper_left"><mu1>2</mu1><mu2>2</mu2></gazebo>
+<xacro:box_link name="gripper_right" mass="0.025" sx="0.035" sy="0.012" sz="0.085" xyz="0 0 -0.055"/>
+<joint name="gripper_right_joint" type="prismatic"><parent link="tool0"/><child link="gripper_right"/><origin xyz="0 -0.012 0"/><axis xyz="0 -1 0"/><limit lower="0" upper="0.04" effort="25" velocity="0.2"/><dynamics damping="2"/></joint>
+<gazebo reference="gripper_right"><mu1>2</mu1><mu2>2</mu2></gazebo>
+</xacro:macro></robot>

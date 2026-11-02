@@ -1,0 +1,193 @@
+
+ros2 pkg prefix my_quadruped_bot 
+/home/jinho/Pysical_AI_book/Ch11/ros2_ws/install/my_quadruped_bot
+exit=0 (124 = observation timeout)
+
+ros2 node list 
+/ekf_filter_node
+/figure_11_2_rviz
+/imu_pose_viz
+/robot_state_publisher
+/ros_gz_bridge
+/sim_odometry
+/transform_listener_impl_5b668c038710
+/transform_listener_impl_617c54c307e0
+/trot_controller
+exit=0 (124 = observation timeout)
+
+ros2 topic echo /clock --once 
+A message was lost!!!
+	total count change:1
+	total count: 1---
+A message was lost!!!
+	total count change:3
+	total count: 4---
+A message was lost!!!
+	total count change:3
+	total count: 7---
+clock:
+  sec: 7
+  nanosec: 858000000
+---
+exit=0 (124 = observation timeout)
+
+ros2 topic info /scan -v 
+Type: sensor_msgs/msg/LaserScan
+
+Publisher count: 1
+
+Node name: ros_gz_bridge
+Node namespace: /
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: PUBLISHER
+GID: 01.0f.b4.05.92.2e.4b.15.00.00.00.00.00.00.17.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 1
+
+Node name: figure_11_2_rviz
+Node namespace: /
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.b4.05.99.2e.04.33.00.00.00.00.00.00.1e.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+exit=0 (124 = observation timeout)
+
+ros2 topic echo /scan --once --field header --qos-reliability best_effort 
+stamp:
+  sec: 11
+  nanosec: 100000000
+frame_id: lidar_link
+---
+exit=0 (124 = observation timeout)
+
+ros2 topic echo /imu/data_raw --once --qos-reliability best_effort 
+header:
+  stamp:
+    sec: 13
+    nanosec: 50000000
+  frame_id: base_link
+orientation:
+  x: 7.590543680872749e-09
+  y: -0.010960778320354558
+  z: 1.3840021744372166e-08
+  w: 0.9999399288650352
+orientation_covariance:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+angular_velocity:
+  x: -0.00024771416004951494
+  y: 0.0002281958886478776
+  z: 0.00014605037112800628
+angular_velocity_covariance:
+- 3.999999975690116e-08
+- 0.0
+- 0.0
+- 0.0
+- 3.999999975690116e-08
+- 0.0
+- 0.0
+- 0.0
+- 3.999999975690116e-08
+linear_acceleration:
+  x: 0.2118140855026257
+  y: -0.009345724232658613
+  z: 9.805719700865168
+linear_acceleration_covariance:
+- 0.00028899998869746923
+- 0.0
+- 0.0
+- 0.0
+- 0.00028899998869746923
+- 0.0
+- 0.0
+- 0.0
+- 0.00028899998869746923
+---
+exit=0 (124 = observation timeout)
+
+ros2 topic echo /figure_11_2/imu_pose --once 
+header:
+  stamp:
+    sec: 15
+    nanosec: 60000000
+  frame_id: odom
+pose:
+  position:
+    x: -0.0227600254027857
+    y: -6.458881017264358e-09
+    z: 0.24823395229667386
+  orientation:
+    x: 7.602982480232216e-09
+    y: -0.010921890808814956
+    z: 1.3794708312431894e-08
+    w: 0.9999403543717796
+---
+exit=0 (124 = observation timeout)
+
+ros2 run tf2_ros tf2_echo odom base_link 
+[INFO] [1792167959.176992512] [tf2_echo]: Waiting for transform odom ->  base_link: Invalid frame ID "odom" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1792167961.098600477] [tf2_echo]: Waiting for transform odom ->  base_link: Invalid frame ID "odom" passed to canTransform argument target_frame - frame does not exist
+At time 17.360000000
+- Translation: [-0.023, -0.000, 0.248]
+- Rotation: in Quaternion (xyzw) [0.000, -0.011, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.022, 0.000]
+- Rotation: in RPY (degree) [0.000, -1.247, 0.000]
+- Matrix:
+  1.000 -0.000 -0.022 -0.023
+  0.000  1.000 -0.000 -0.000
+  0.022  0.000  1.000  0.248
+  0.000  0.000  0.000  1.000
+At time 17.700000000
+- Translation: [-0.023, -0.000, 0.248]
+- Rotation: in Quaternion (xyzw) [-0.000, -0.011, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.022, -0.000]
+- Rotation: in RPY (degree) [0.000, -1.246, -0.000]
+- Matrix:
+  1.000  0.000 -0.022 -0.023
+ -0.000  1.000  0.000 -0.000
+  0.022  0.000  1.000  0.248
+  0.000  0.000  0.000  1.000
+[INFO] [1792167963.630767709] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+exit=124 (124 = observation timeout)
+
+ros2 run tf2_ros tf2_echo odom lidar_link 
+[INFO] [1792167964.860068936] [tf2_echo]: Waiting for transform odom ->  lidar_link: Invalid frame ID "odom" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1792167966.805188681] [tf2_echo]: Waiting for transform odom ->  lidar_link: Invalid frame ID "odom" passed to canTransform argument target_frame - frame does not exist
+At time 19.760000000
+- Translation: [-0.025, -0.000, 0.358]
+- Rotation: in Quaternion (xyzw) [0.000, -0.011, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.022, 0.000]
+- Rotation: in RPY (degree) [0.000, -1.241, 0.000]
+- Matrix:
+  1.000 -0.000 -0.022 -0.025
+  0.000  1.000 -0.000 -0.000
+  0.022  0.000  1.000  0.358
+  0.000  0.000  0.000  1.000
+[INFO] [1792167969.645418489] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+exit=124 (124 = observation timeout)
+Diagnostic collection ended. This script does not certify GUI rendering.

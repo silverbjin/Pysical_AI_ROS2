@@ -17,6 +17,10 @@ for program in colcon ros2 gz; do
     exit 2
   fi
 done
+# ROS_DOMAIN_ID does not isolate Gazebo Transport. Keep clocks, model topics
+# and spawn services separate from other chapters running on this host.
+export GZ_PARTITION="${GZ_PARTITION:-ch11_figure_11_2_${UID}_$$}"
+printf 'ROS_DOMAIN_ID=%s\nGZ_PARTITION=%s\n' "${ROS_DOMAIN_ID:-0}" "$GZ_PARTITION"
 cd "$chapter/ros2_ws"
 colcon build --symlink-install --packages-up-to my_quadruped_bot
 source install/setup.bash

@@ -154,3 +154,30 @@ CH12_GAZEBO_EVIDENCE=Ch12/evidence/my_12_2_gazebo bash Ch12/scripts/verify_gazeb
 Gazebo는 기존 Ch11의 관절 위치 제어, MuJoCo는 이번 절의 actuator 모델을 사용하므로 두 엔진의 동역학이 동일하다는 검증은 아니다. 실행 증거·남은 진단·검증 범위는 [12.2절 보고서](SECTION_12_2_REPORT_KO.md)에 기록한다.
 
 API 근거: [MuJoCo 3.3.7 MJCF](https://mujoco.readthedocs.io/en/3.3.7/XMLreference.html), [Python viewer](https://mujoco.readthedocs.io/en/3.3.7/python.html), [Gymnasium Env](https://gymnasium.farama.org/api/env/).
+
+
+---
+
+## 원고 연계 실습 보강 (2026-10-21 리뷰)
+
+**학습 도달점:** Gymnasium·MuJoCo 위치 제어 환경. 예제 코드의 목적과 실제 패키지의 제어·관측 계약을 구분하고, 재현 가능한 증거를 제출한다. 실행 위치는 `Pysical_AI_ROS2/` 저장소 루트다(기존 가이드가 별도 경로를 지정한 경우 그 지시를 우선한다).
+
+### 따라하기: 최소 검증 루트
+
+```bash
+python -m pip install -e './Ch12[test,visual]'
+python -m pytest Ch12/tests/test_training_env.py -q
+quadruped-rl --section 12.2 --control-mode position --policy stand --steps 1000
+python Ch12/examples/12_2_random_motion.py --steps 200 --seed 42
+```
+
+### 관찰 → 설명 → 응용
+
+먼저 stand 위치 제어, 이어 random 위치 제어, 마지막에 토크 제어를 비교한다. `reset(seed=42)` 이후 `step(np.zeros(12))`가 관측 31개·보상 유한값을 반환하는지 확인한다. `render`가 불가능한 서버에서는 headless 결과로 판정하고 WSLg 검증을 하지 않은 사실을 명시한다. 한 제어 스텝이 물리 스텝 10회임을 직접 계산한다.
+
+### 제출 증거 및 합격선
+
+- 실행 명령과 사용 Python/라이브러리 버전, git 기준 커밋, seed, 주요 출력 수치/로그를 기록한다.
+- **합격선:** 31차원과 frame_skip·dt·제어 50 Hz를 확인하고, 위치/토크 명령을 분리해 설명한다. headless CLI가 오류 없이 끝나고 시각화 선택 시 정상 종료해야 한다.
+- 기존 `evidence/`는 **과거 실행 기록**이고 위 명령을 새로 실행한 증거가 아니다. GUI·물리 엔진·ROS 환경을 실제로 확인하지 못했다면 '미검증'으로 기록한다.
+- 보고서: [12.2절 코드 리뷰](SECTION_12_2_REPORT_KO.md). 기존 학습/시연 스크립트와 구성 파일 설명은 이 문서의 위쪽 절에 그대로 보존한다.

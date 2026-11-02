@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_reference_diff_compares_content_not_windows_checkout_newlines ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-15/test_reference_diff_compares_c0')
+
+    def test_reference_diff_compares_content_not_windows_checkout_newlines(tmp_path):
+        subprocess.run(['git','init','-q',str(tmp_path)],check=True)
+        p=tmp_path/'reference.txt';p.write_bytes(b'reference\n')
+        subprocess.run(['git','-C',str(tmp_path),'add','.'],check=True)
+        subprocess.run(['git','-C',str(tmp_path),'-c','user.name=Test','-c','user.email=test@example.com','commit','-qm','baseline'],check=True)
+        p.write_bytes(b'reference\r\n')
+>       assert module.git_output(tmp_path,'diff','--name-only','HEAD')==''
+               ^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'verify_all' has no attribute 'git_output'
+
+Ch13/tests/test_verification_summary.py:26: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_verification_summary.py::test_reference_diff_compares_content_not_windows_checkout_newlines
+1 failed, 2 deselected in 0.38s

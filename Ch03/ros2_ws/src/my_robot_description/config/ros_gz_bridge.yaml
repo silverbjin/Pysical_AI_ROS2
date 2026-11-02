@@ -1,40 +1,37 @@
-# ros_gz_bridge ¼³Á¤ ÆÄÀÏ
+# ros_gz_bridge ì„¤ì • íŒŒì¼
 
-# 1. ROS -> Gazebo (¸í·É Àü´Þ): cmd_vel
+# 1. ROS -> Gazebo (ëª…ë ¹ ì „ë‹¬): cmd_vel ì˜ˆì œìš© (ë³¸ ë¡œë´‡ì—ëŠ” cmd_vel êµ¬ë™ í”ŒëŸ¬ê·¸ì¸ì´ ì—†ìŒ)
 - ros_topic_name: "/model/my_robot/cmd_vel"
   gz_topic_name: "/model/my_robot/cmd_vel"
   ros_type_name: "geometry_msgs/msg/Twist"
   gz_type_name: "gz.msgs.Twist"
-  direction: ROS_TO_GZ  # ±âÈ£ ']' ¿Í µ¿ÀÏ
+  direction: ROS_TO_GZ  # ê¸°í˜¸ ']' ì™€ ë™ì¼
 
-# 2. Gazebo -> ROS (¼¾¼­ ¹× »óÅÂ ¼ö½Å): joint_states
+# 2. Gazebo -> ROS (ì„¼ì„œ ë° ìƒíƒœ ìˆ˜ì‹ ): joint_states
 - ros_topic_name: "/joint_states"
   gz_topic_name: "/world/my_first_world/model/my_robot/joint_state"
   ros_type_name: "sensor_msgs/msg/JointState"
   gz_type_name: "gz.msgs.Model"
-  direction: GZ_TO_ROS  # ±âÈ£ '[' ¿Í µ¿ÀÏ
+  direction: GZ_TO_ROS  # ê¸°í˜¸ '[' ì™€ ë™ì¼
 
-# 3. ¾ç¹æÇâ (½Ã°£ µ¿±âÈ­ ¹× TF): clock
+# 3. Gazebo -> ROS ë‹¨ë°©í–¥ ì‹œê°„ ë™ê¸°í™”
 - ros_topic_name: "/clock"
   gz_topic_name: "/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"
   gz_type_name: "gz.msgs.Clock"
-  direction: BIDIRECTIONAL # ±âÈ£ '@' ¿Í µ¿ÀÏ
+  direction: GZ_TO_ROS  # ì‹œë®¬ë ˆì´ì…˜ ì‹œê°„ì´ ìœ ì¼í•œ ê¸°ì¤€(ROSì—ì„œ ì—­ì†¡ì‹ í•˜ì§€ ì•ŠìŒ)
 
-- ros_topic_name: "/tf"
-  gz_topic_name: "/tf"
-  ros_type_name: "tf2_msgs/msg/TFMessage"
-  gz_type_name: "gz.msgs.Pose_V"
-  direction: BIDIRECTIONAL
+# TFëŠ” Robot State Publisherê°€ /joint_statesë¡œë¶€í„° ìƒì„±í•œë‹¤.
+# /tf ì–‘ë°©í–¥ ë¸Œë¦¬ì§€ëŠ” ì¤‘ë³µ TF ë£¨í”„ ë°©ì§€ë¥¼ ìœ„í•´ ì‚¬ìš©í•˜ì§€ ì•ŠëŠ”ë‹¤.
 
-# ROS -> Gazebo (Joint 1 ¸í·É)
+# ROS -> Gazebo (Joint 1 ëª…ë ¹)
 - ros_topic_name: "/joint1/cmd_pos"
   gz_topic_name: "/model/my_robot/joint1/cmd_pos"
   ros_type_name: "std_msgs/msg/Float64"
   gz_type_name: "gz.msgs.Double"
   direction: ROS_TO_GZ
 
-# ROS -> Gazebo (Joint 2 ¸í·É)
+# ROS -> Gazebo (Joint 2 ëª…ë ¹)
 - ros_topic_name: "/joint2/cmd_pos"
   gz_topic_name: "/model/my_robot/joint2/cmd_pos"
   ros_type_name: "std_msgs/msg/Float64"

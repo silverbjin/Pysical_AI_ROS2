@@ -30,7 +30,7 @@ class JointSensorNode(Node):
         # 가상의 센서 데이터 생성 (랜덤 값)
         noise = random.uniform(-0.1, 0.1)
         self.joint_angle += noise
-        self.battery_level -= 0.1  # 배터리가 조금씩 소모됨을 시뮬레이션
+        self.battery_level = max(0.0, self.battery_level - 0.1)  # 0% 미만으로 내려가지 않도록 포화
         
         # 로그 출력: 단순 print()가 아닌 ROS 2 로거를 사용해야 시간 정보 등이 함께 기록된다.
         self.get_logger().info(

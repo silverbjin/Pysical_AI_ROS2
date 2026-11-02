@@ -94,3 +94,39 @@ CH12_GAZEBO_EVIDENCE=Ch12/evidence/my_12_2_gazebo bash Ch12/scripts/verify_gazeb
 ```
 
 `red.log`, `first_green.log`, `pd_red.log`, `mujoco_before_pd.*`는 수정 전 실패 기록이다. `pd_tuning.json`은 실제 계수 비교다. 최종 `green.log`, `mujoco.json`, `legacy_mujoco.json`, `reviewer_tests.log`, `reviewer_mujoco.json`, `wheel_human.json`, `frame.png`, `gazebo/result.json`을 최종 판정의 증거로 사용한다. 코드의 LF 정규화 SHA-256은 `source_manifest.json`, 전체 요약은 `verification_summary.json`에 기록한다.
+
+
+---
+
+## 2026-10-21 편집·코드 2차 리뷰: 원고 12.2 ↔ main 구현
+
+> 검토 방식: GitHub `main/Ch12`의 공개 소스·기존 문서·저장된 2026-10-17 실행 증거와 첨부 원고를 **정적 대조**. **이번 세션에서 MuJoCo/Gazebo/ROS/PPO를 새로 실행하지 않았음.** 기존 문서의 과거 PASS를 새 실행 결과로 재표기하지 않는다. 구현 파일 변경 없음.
+
+### 판정과 핵심 소견
+
+**문서 보강 후 실습 가능(기존 검증 증거에 근거한 조건부 판정).** 실제 실행 장비/디스플레이/ROS overlay에 따라 현장 재현이 필요하며 학습 성능은 별도 판정이다.
+
+1. **[높음·원고 교정]** 원고의 1관절 `robot.xml`, 외부 STL 파일 및 불완전한 Gym `reset()` 골격은 실행용 프로젝트가 아니다. 실제 패키지는 12관절 MJCF와 설치 자산 경로, 전체 Gymnasium API를 사용한다.
+2. **[중간·계약]** 12.2의 기본은 31차원 `(quaternion wxyz 4 + angular velocity 3 + joint positions 12 + joint velocities 12)`, 12행동, 물리 간격 0.002 s × frame_skip 10 = 50 Hz다. `qvel[0]`을 일반적인 자세/회전 속도 표현으로 설명하지 않는다.
+3. **[중간·종료]** 낙상·기울기·접촉과 시간 초과를 분리하고 `terminated`와 `truncated`의 의미를 설명한다. 공개 MuJoCo 렌더러를 쓰므로 버전 변경 시 실제 viewer 종료를 다시 확인한다.
+
+### 코드 및 증거 추적
+
+- [`Ch12/src/quadruped_rl/training_env.py`](../src/quadruped_rl/training_env.py)
+- [`Ch12/src/quadruped_rl/env.py`](../src/quadruped_rl/env.py)
+- [`Ch12/src/quadruped_rl/models/quadruped_position.xml`](../src/quadruped_rl/models/quadruped_position.xml)
+- [`Ch12/tests/test_training_env.py`](../tests/test_training_env.py)
+- 기준 안내: [Ch12 README](../README.md), 기존 본 문서의 2026-10-17 검증 이력과 `Ch12/evidence/`.
+
+### 독자·리뷰어 재검증 명령 (저장소 루트에서)
+
+```bash
+python -m pip install -e './Ch12[test,visual]'
+python -m pytest Ch12/tests/test_training_env.py -q
+quadruped-rl --section 12.2 --control-mode position --policy stand --steps 1000
+python Ch12/examples/12_2_random_motion.py --steps 200 --seed 42
+```
+
+**Acceptance:** 31차원과 frame_skip·dt·제어 50 Hz를 확인하고, 위치/토크 명령을 분리해 설명한다. headless CLI가 오류 없이 끝나고 시각화 선택 시 정상 종료해야 한다.
+
+**한계 및 조치:** 이 PR은 문서만 개정하며 실제 재실행·스크린샷·새 테스트 로그를 생성하지 않는다. 명령 실패 시 Python/MuJoCo/SB3/ROS 버전, 실행 위치, seed, stdout/stderr, 생성 JSON, git SHA를 남기고 버그/환경 문제를 분리해 새 코드 수정 PR로 처리한다.

@@ -1,0 +1,29 @@
+test_default_runs_use_distinct_chapter_partitions (test_figure_11_2_environment.FigureEnvironmentTests.test_default_runs_use_distinct_chapter_partitions) ... FAIL
+test_explicit_partition_is_preserved_for_external_gazebo_tools (test_figure_11_2_environment.FigureEnvironmentTests.test_explicit_partition_is_preserved_for_external_gazebo_tools) ... FAIL
+
+======================================================================
+FAIL: test_default_runs_use_distinct_chapter_partitions (test_figure_11_2_environment.FigureEnvironmentTests.test_default_runs_use_distinct_chapter_partitions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jinho/Pysical_AI_book/Ch11/tests/test_figure_11_2_environment.py", line 28, in test_default_runs_use_distinct_chapter_partitions
+    first, _ = self.run_environment(None)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jinho/Pysical_AI_book/Ch11/tests/test_figure_11_2_environment.py", line 24, in run_environment
+    self.assertIsNotNone(match, 'Runner must report the Gazebo partition inherited by launch')
+AssertionError: unexpectedly None : Runner must report the Gazebo partition inherited by launch
+
+======================================================================
+FAIL: test_explicit_partition_is_preserved_for_external_gazebo_tools (test_figure_11_2_environment.FigureEnvironmentTests.test_explicit_partition_is_preserved_for_external_gazebo_tools)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jinho/Pysical_AI_book/Ch11/tests/test_figure_11_2_environment.py", line 34, in test_explicit_partition_is_preserved_for_external_gazebo_tools
+    partition, _ = self.run_environment('ch11_custom_test')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jinho/Pysical_AI_book/Ch11/tests/test_figure_11_2_environment.py", line 24, in run_environment
+    self.assertIsNotNone(match, 'Runner must report the Gazebo partition inherited by launch')
+AssertionError: unexpectedly None : Runner must report the Gazebo partition inherited by launch
+
+----------------------------------------------------------------------
+Ran 2 tests in 39.440s
+
+FAILED (failures=2)

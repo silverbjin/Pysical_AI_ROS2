@@ -84,3 +84,30 @@ PYTHONPATH=/tmp/ch12-installed python Ch12/scripts/verify_wheel_viewer.py \
 ```
 
 Gazebo 검증은 ROS 2 Jazzy와 기존 Ch11 의존성이 갖춰진 새 터미널에서 `bash Ch12/scripts/verify_gazebo.sh`로 실행한다. RL 가상환경을 활성화하지 않고 실행한다. 이 검사는 기존 ROS/Gazebo 로봇의 실행 회귀다.
+
+
+---
+
+## 원고 연계 실습 보강 (2026-10-21 리뷰)
+
+**이번 절의 학습 목표:** 목표 좌표계·도착 이벤트와 목표 재샘플링. 알고리즘 구현 성공과 '실제 보행/회피/실기 적합' 판정을 나누어 기록한다. 아래 명령은 모두 저장소 루트에서 실행한다(기존 본문에 독립된 작업 경로 안내가 있는 경우 그 지시를 따른다).
+
+### 따라하기/재현용 최소 경로
+
+```bash
+python -m pytest Ch12/tests/test_goal_env.py -q
+quadruped-goal --policy stand --target 2 1 --steps 200 --seed 42
+MUJOCO_GL=egl quadruped-goal --policy stand --target 2 1 --steps 200 --frame-path /tmp/ch12-12-5-frame.png --trajectory-path /tmp/ch12-12-5-path.csv
+python Ch12/scripts/plot_trajectory.py /tmp/ch12-12-5-path.csv --output /tmp/ch12-12-5-path.png
+```
+
+### 관찰 → 원리 설명 → 응용 실험
+
+seed 42와 고정 목표 [2,1]에서 목표 마커·궤적을 본다. `obs[9:12]`를 출력해 거리·sin·cos를 해석하고, 정지 정책이 목표를 자동 추종하지 않음을 확인한다. 최소 성공률 과제는 새로운 수십 회 평가 에피소드로 판정해야 하며 기존 0% 기록을 성공으로 바꿔 적지 않는다. `goal_mode='resample'`과 `'terminate'`의 반환 `info`를 직접 비교해 본다.
+
+### 독자 제출물과 합격 기준
+
+- 실행 환경(Python, MuJoCo, Gymnasium, SB3, ROS 해당 시), Git SHA, seed, 사용 명령, 로그/JSON/화면 또는 CSV를 제출한다.
+- **합격선:** 48차원 의미, 몸체 오른쪽 목표의 음수 헤딩, sin/cos 연속성, `is_success`·`goals_reached`·`target`·`evaluated_target`을 구분한다. 목표로 걷는 능력은 학습과 분리해 평가한다.
+- 실습을 수행하지 못했거나 해당 장치/GUI/ROS를 사용할 수 없다면 **미실행**으로 기록하며 기존 `evidence/`의 통과 기록을 자신의 결과로 사용하지 않는다.
+- 코드 2차 리뷰는 [SECTION_12_5_REPORT_KO.md](SECTION_12_5_REPORT_KO.md)를 참조한다.

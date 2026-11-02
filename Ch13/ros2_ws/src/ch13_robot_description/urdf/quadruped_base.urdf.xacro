@@ -1,0 +1,18 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!-- Ch11 dimensions/masses; remove baked 1.2/-2.4 origins, use explicit nominal joint coordinates. -->
+<xacro:macro name="leg" params="prefix x y">
+<xacro:box_link name="${prefix}_hip_link" mass="0.2" sx="0.08" sy="0.04" sz="0.04"/>
+<xacro:hinge name="${prefix}_hip_joint" parent="base_link" child="${prefix}_hip_link" xyz="${x} ${y} 0" axis="1 0 0" lower="-0.8" upper="0.8"/>
+<xacro:box_link name="${prefix}_thigh_link" mass="0.7" sx="0.028" sy="0.028" sz="0.25" xyz="0 0 -0.125"/>
+<xacro:hinge name="${prefix}_thigh_joint" parent="${prefix}_hip_link" child="${prefix}_thigh_link" xyz="0 ${0.05 if y > 0 else -0.05} 0" axis="0 1 0" lower="-1" upper="4"/>
+<xacro:box_link name="${prefix}_calf_link" mass="0.5" sx="0.024" sy="0.024" sz="0.25" xyz="0 0 -0.125"/>
+<xacro:hinge name="${prefix}_calf_joint" parent="${prefix}_thigh_link" child="${prefix}_calf_link" xyz="0 0 -0.25" axis="0 1 0" lower="-2.8" upper="2.8"/>
+<xacro:box_link name="${prefix}_foot" mass="0.1" sx="0.04" sy="0.04" sz="0.04"/>
+<joint name="${prefix}_foot_fixed" type="fixed"><parent link="${prefix}_calf_link"/><child link="${prefix}_foot"/><origin xyz="0 0 -0.25"/></joint>
+</xacro:macro><xacro:macro name="quadruped_base" params="parent:=''">
+<xacro:box_link name="base_footprint" mass="0.000001" sx="0.001" sy="0.001" sz="0.001"/>
+<xacro:box_link name="base_link" mass="6" sx="0.60" sy="0.30" sz="0.15"/>
+<joint name="base_fixed" type="fixed"><parent link="base_footprint"/><child link="base_link"/></joint>
+<xacro:leg prefix="fr" x="0.25" y="-0.10"/><xacro:leg prefix="fl" x="0.25" y="0.10"/>
+<xacro:leg prefix="rr" x="-0.25" y="-0.10"/><xacro:leg prefix="rl" x="-0.25" y="0.10"/>
+</xacro:macro></robot>

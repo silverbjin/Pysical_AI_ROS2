@@ -133,3 +133,30 @@ Gazebo의 기존 관절 위치 제어와 MuJoCo의 토크 행동은 제어 계�
 6. 로봇 모델·관측·토크·제어 주기를 기록한 뒤 다음 절의 학습 환경 확장으로 넘어간다.
 
 검증 결과와 수정 내역은 [보고서](CHANGE_REPORT_KO.md)에 기록한다. MuJoCo/Gymnasium API 근거: [MuJoCo Python](https://mujoco.readthedocs.io/en/3.3.7/python.html), [Gymnasium Env](https://gymnasium.farama.org/api/env/).
+
+
+---
+
+## 원고 연계 실습 보강 (2026-10-21 리뷰)
+
+**학습 도달점:** 강화학습·MDP와 토크 환경. 예제 코드의 목적과 실제 패키지의 제어·관측 계약을 구분하고, 재현 가능한 증거를 제출한다. 실행 위치는 `Pysical_AI_ROS2/` 저장소 루트다(기존 가이드가 별도 경로를 지정한 경우 그 지시를 우선한다).
+
+### 따라하기: 최소 검증 루트
+
+```bash
+python -m pip install -e './Ch12[test,visual]'
+python -m pytest Ch12/tests/test_env.py -q
+quadruped-rl --policy random --steps 1000 --seed 42 --output /tmp/ch12-12-1-random.json
+quadruped-rl --policy stand --steps 1000 --seed 42 --target-velocity 0 --output /tmp/ch12-12-1-stand.json
+```
+
+### 관찰 → 설명 → 응용
+
+강사 시연은 같은 seed의 random→stand 순으로 진행한다. `info`의 보상/종료/시간 정보를 비교하고, 무작위 행동으로 넘어짐을 관찰한 뒤 초기화한다. 관측과 행동의 정의를 직접 표로 적고, 상태를 더 많이 넣는다고 자동으로 좋은 정책이 되는 것은 아님을 토론한다. Gazebo 회귀를 선택하면 별도 ROS 2 Jazzy 터미널에서 `bash Ch12/scripts/verify_gazebo.sh`를 실행하며, 이것은 MuJoCo 학습 검증이 아니다.
+
+### 제출 증거 및 합격선
+
+- 실행 명령과 사용 Python/라이브러리 버전, git 기준 커밋, seed, 주요 출력 수치/로그를 기록한다.
+- **합격선:** 30차원 기본 관측과 45차원 선택 관측, 12개 행동, 종료 후 reset 의무, random과 stand의 서로 다른 실험 목적을 구분한다. JSON과 pytest 결과를 남긴다.
+- 기존 `evidence/`는 **과거 실행 기록**이고 위 명령을 새로 실행한 증거가 아니다. GUI·물리 엔진·ROS 환경을 실제로 확인하지 못했다면 '미검증'으로 기록한다.
+- 보고서: [12.1절 코드 리뷰](SECTION_12_1_REPORT_KO.md). 기존 학습/시연 스크립트와 구성 파일 설명은 이 문서의 위쪽 절에 그대로 보존한다.

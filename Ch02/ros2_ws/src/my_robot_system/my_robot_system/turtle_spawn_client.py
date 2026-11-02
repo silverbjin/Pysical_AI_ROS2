@@ -11,8 +11,7 @@ class TurtleSpawnClient(Node):
         
         # 2. 서비스 서버가 준비될 때까지 대기
         # 서버가 켜져 있지 않은데 요청을 보내면 에러가 나거나 소실된다.
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warn('Service not available, waiting again...')
+        # 생성자에서 영구 대기하지 않고, 실제 요청 시 제한 시간 내 탐색한다.
         
         self.req = Spawn.Request()
 
@@ -20,6 +19,14 @@ class TurtleSpawnClient(Node):
         """
         서버에 요청을 보내고, 결과를 기다리는 함수
         """
+        # 서버 탐색: 최대 5초. 서버가 없으면 무한 대기 대신 실패시킨다.
+        for _ in range(5):
+            if self.client.wait_for_service(timeout_sec=1.0):
+                break
+            self.get_logger().warn('Spawn service not available yet...')
+        else:
+            raise TimeoutError('Spawn service unavailable after 5 s')
+
         # 요청 데이터 채우기
         self.req.x = 5.0
         self.req.y = 5.0
@@ -32,8 +39,11 @@ class TurtleSpawnClient(Node):
         self.future = self.client.call_async(self.req)
         
         # ROS 2 시스템이 Future가 완료될 때까지(응답이 올 때까지) spin 한다.
-        rclpy.spin_until_future_complete(self, self.future)
-        
+        rclpy.spin_until_future_complete(self, self.future, timeout_sec=5.0)
+        if not self.future.done():
+            raise TimeoutError('Spawn service response timed out after 5 s')
+        if self.future.exception() is not None:
+            raise self.future.exception()
         return self.future.result()
 
 def main(args=None):
@@ -51,9 +61,11 @@ def main(args=None):
     except Exception as e:
         client_node.get_logger().error(f'Service call failed: {e}')
     
-    # 종료 처리
-    client_node.destroy_node()
-    rclpy.shutdown()
+    finally:
+        # 정상·타임아웃·중복 소환 실패 모두 자원을 회수한다.
+        client_node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

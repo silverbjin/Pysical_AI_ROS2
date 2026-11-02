@@ -83,3 +83,31 @@ MUJOCO_GL=egl CH12_TEST_RENDER=1 python -m pytest Ch12 -q
 ```
 
 검증기는 실제 ROS launch, 센서→PPO→위치 타깃→물리 엔진 루프, 명령 전달과 만료, 유한 관측, 관절 개수, 주기, 몸통 높이, 정상 종료를 검사한다. MuJoCo에서는 pause 후 벽시계 감시기와 재개까지 확인한다. 90초 내 제어가 시작되지 않으면 실패한다. 원시 로그와 result.json을 함께 확인한다. 짧은 통과 결과를 학습된 보행 능력이나 두 물리 엔진의 동역학 일치로 해석하지 않는다.
+
+
+---
+
+## 원고 연계 실습 보강 (2026-10-21 리뷰)
+
+**이번 절의 학습 목표:** ROS 2 안전 게이트·MuJoCo/Gazebo 추론 연결. 알고리즘 구현 성공과 '실제 보행/회피/실기 적합' 판정을 나누어 기록한다. 아래 명령은 모두 저장소 루트에서 실행한다(기존 본문에 독립된 작업 경로 안내가 있는 경우 그 지시를 따른다).
+
+### 따라하기/재현용 최소 경로
+
+```bash
+source /opt/ros/jazzy/setup.bash
+# 기존 LAB_12_8_GUIDE_KO.md 설치/colcon/ros_env.sh 절차 완료 후
+python -m pytest Ch12/tests/test_ros_core.py -q
+ros2 launch quadruped_rl_ros rl_simulation.launch.py backend:=mujoco bundle_path:="$PWD/Ch12/runs/ros-smoke"
+# 별도 터미널에서 ros2 topic echo /rl/controller_status 로 dry_run 확인
+```
+
+### 관찰 → 원리 설명 → 응용 실험
+
+처음은 enabled 기본값으로 status `dry_run`과 입력 토픽 신선도를 점검한다. 앞의 가이드대로 생성한 `ros-smoke` 번들이 없는 경우 명령이 실패하는 것이 정상이며 12.8 설치·학습 단계를 먼저 수행한다. 그 다음 시뮬레이터에서만 `enabled:=true`를 지정해 `arming→active`, `/cmd_vel` 0.5초 만료, IMU/joint/odom 역순/지연 차단, 중복 publisher 차단을 체크리스트로 작성한다. `ros2 topic hz`의 벽시계 측정과 sim time 제어 간격을 같은 뜻으로 보고하지 않는다.
+
+### 독자 제출물과 합격 기준
+
+- 실행 환경(Python, MuJoCo, Gymnasium, SB3, ROS 해당 시), Git SHA, seed, 사용 명령, 로그/JSON/화면 또는 CSV를 제출한다.
+- **합격선:** 기본 dry_run에서 정책 타깃 미발행, 12관절 이름 및 48차원 규격, 준비 후 시뮬레이터 enabled=true의 active/hold/만료 상태를 구별한다. Gazebo 비교 실행은 ROS overlay 분리와 별도 도메인을 사용한다.
+- 실습을 수행하지 못했거나 해당 장치/GUI/ROS를 사용할 수 없다면 **미실행**으로 기록하며 기존 `evidence/`의 통과 기록을 자신의 결과로 사용하지 않는다.
+- 코드 2차 리뷰는 [SECTION_12_8_REPORT_KO.md](SECTION_12_8_REPORT_KO.md)를 참조한다.

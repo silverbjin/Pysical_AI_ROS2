@@ -1,93 +1,91 @@
 #!/usr/bin/env python3
+"""카운트다운 액션 서버: 취소 가능한 장기 실행 태스크의 교육용 예제."""
+import math
 import time
+
 import rclpy
-from rclpy.node import Node
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
+from rclpy.node import Node
 from my_robot_interfaces.action import CountUntil
+
 
 class CountUntilServer(Node):
     def __init__(self):
         super().__init__('count_until_server')
-        
-        # [중요] 액션 서버 생성
-        # execute_callback: 목표를 수락했을 때 실제 작업을 수행하는 함수
-        # callback_group: 동시에 여러 요청을 처리하거나 취소 명령을 받기 위해 필요
+        # 기본 MutuallyExclusiveCallbackGroup을 쓰면 멀티스레드만으로
+        # 취소 콜백의 병렬 실행을 보장할 수 없다.
+        self.callback_group = ReentrantCallbackGroup()
         self._action_server = ActionServer(
-            self,
-            CountUntil,
-            'count_until',
-            self.execute_callback,
+            self, CountUntil, 'count_until',
+            execute_callback=self.execute_callback,
             goal_callback=self.goal_callback,
-            cancel_callback=self.cancel_callback)
-            
+            cancel_callback=self.cancel_callback,
+            callback_group=self.callback_group,
+        )
         self.get_logger().info('Action Server has been started.')
 
     def goal_callback(self, goal_request):
-        """1. 목표 수신 시 수락 여부 결정"""
-        self.get_logger().info(f'Received goal request: {goal_request.target_number}')
-        # 예: 목표값이 0 이하면 거절하는 로직을 넣을 수 있다.
-        if goal_request.target_number <= 0:
-            self.get_logger().warn('Rejecting goal: Target must be positive')
+        target = goal_request.target_number
+        period = goal_request.period
+        if not 1 <= target <= 1000 or not math.isfinite(period) or not 0.01 <= period <= 10.0:
+            self.get_logger().warn('Rejecting goal: target must be 1..1000, period 0.01..10 s')
             return GoalResponse.REJECT
         return GoalResponse.ACCEPT
 
     def cancel_callback(self, goal_handle):
-        """2. 취소 요청 수신 시 처리"""
         self.get_logger().info('Received cancel request')
         return CancelResponse.ACCEPT
 
     def execute_callback(self, goal_handle):
-        """3. 실제 작업 수행 (메인 로직)"""
-        self.get_logger().info('Executing goal...')
-        
-        # 목표 데이터 추출
-        target_number = goal_handle.request.target_number
-        period = goal_handle.request.period
-        
-        feedback_msg = CountUntil.Feedback()
         result = CountUntil.Result()
-        counter = 0
+        feedback_msg = CountUntil.Feedback()
+        period = goal_handle.request.period
+        target = goal_handle.request.target_number
+        count = 0
 
-        # 메인 루프: 목표에 도달할 때까지 반복
-        for i in range(target_number):
-            # (1) 취소 요청이 들어왔는지 확인
+        for _ in range(target):
             if goal_handle.is_cancel_requested:
                 goal_handle.canceled()
-                self.get_logger().info('Goal canceled')
-                result.reached_number = counter
+                result.reached_number = count
+                self.get_logger().info(f'Goal canceled at {count}')
                 return result
 
-            # (2) 작업 수행 (여기서는 단순 카운트 및 대기)
-            counter += 1
-            self.get_logger().info(f'Counting... {counter}')
-            
-            # (3) 피드백 발행
-            feedback_msg.current_number = counter
+            count += 1
+            feedback_msg.current_number = count
             goal_handle.publish_feedback(feedback_msg)
-            
-            # (4) 시간 지연 (실제 로봇 이동 시간 시뮬레이션)
-            time.sleep(period)
+            self.get_logger().info(f'Counting... {count}')
+            # 작은 지연 구간으로 나누어 취소 반영 시간을 짧게 유지한다.
+            end_time = time.monotonic() + period
+            while time.monotonic() < end_time:
+                if goal_handle.is_cancel_requested:
+                    goal_handle.canceled()
+                    result.reached_number = count
+                    self.get_logger().info(f'Goal canceled at {count}')
+                    return result
+                time.sleep(min(0.05, max(0.0, end_time - time.monotonic())))
 
-        # 반복문이 정상적으로 끝났다면 성공 처리
         goal_handle.succeed()
-        
-        # 최종 결과 반환
-        result.reached_number = counter
-        self.get_logger().info(f'Goal succeeded. Result: {result.reached_number}')
+        result.reached_number = count
+        self.get_logger().info(f'Goal succeeded. Result: {count}')
         return result
+
 
 def main(args=None):
     rclpy.init(args=args)
     node = CountUntilServer()
-    
-    # [심화] 액션 서버는 블로킹되는 작업(time.sleep 등)을 수행하므로
-    # 멀티스레드 실행기를 사용하는 것이 안전하다.
-    executor = MultiThreadedExecutor()
-    rclpy.spin(node, executor=executor)
-    
-    rclpy.shutdown()
+    executor = MultiThreadedExecutor(num_threads=2)
+    try:
+        rclpy.spin(node, executor=executor)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        executor.shutdown()
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

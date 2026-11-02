@@ -61,3 +61,30 @@ python Ch12/scripts/verify_training_interrupt.py --output Ch12/runs/verify-inter
 ```
 
 장시간 학습 결과 모델과 혼동하지 않도록 smoke 모델 ZIP은 Git 이력에 포함하지 않는다. 검증용 모델이 제공된 경우에도 학습된 보행·목표 이동 성능을 보장하는 모델은 아니다.
+
+
+---
+
+## 원고 연계 실습 보강 (2026-10-21 리뷰)
+
+**학습 도달점:** PPO 학습·평가·체크포인트. 예제 코드의 목적과 실제 패키지의 제어·관측 계약을 구분하고, 재현 가능한 증거를 제출한다. 실행 위치는 `Pysical_AI_ROS2/` 저장소 루트다(기존 가이드가 별도 경로를 지정한 경우 그 지시를 우선한다).
+
+### 따라하기: 최소 검증 루트
+
+```bash
+python -m pip install -e './Ch12[test,visual,train]'
+python -m pytest Ch12/tests/test_ppo.py -q
+quadruped-train --output Ch12/runs/review-12-4 --total-timesteps 512 --n-envs 2 --n-steps 64 --batch-size 64 --n-epochs 2 --eval-every 256 --eval-episodes 2 --checkpoint-every 256
+quadruped-play --output Ch12/runs/review-12-4 --steps 200
+```
+
+### 관찰 → 설명 → 응용
+
+`review-12-4` 출력 폴더가 이미 있다면 새로운 접미사를 쓰고 기존 기록을 덮어쓰지 않는다. `tensorboard --logdir Ch12/runs/review-12-4/tensorboard`에서 episode reward만 보지 말고 평가 곡선과 loss를 함께 비교한다. `dummy`와 `subproc`의 시작 비용 및 초당 전이 수를 측정하는 실험을 12.7로 넘긴다.
+
+### 제출 증거 및 합격선
+
+- 실행 명령과 사용 Python/라이브러리 버전, git 기준 커밋, seed, 주요 출력 수치/로그를 기록한다.
+- **합격선:** 학습 output 신규 생성, manifest/final_model/best_model/평가 기록 생성 여부, 재생 시 schema 검사 및 에피소드 종료 처리 확인. 성공률·장기 보행은 별도 실험으로 판정한다.
+- 기존 `evidence/`는 **과거 실행 기록**이고 위 명령을 새로 실행한 증거가 아니다. GUI·물리 엔진·ROS 환경을 실제로 확인하지 못했다면 '미검증'으로 기록한다.
+- 보고서: [12.4절 코드 리뷰](SECTION_12_4_REPORT_KO.md). 기존 학습/시연 스크립트와 구성 파일 설명은 이 문서의 위쪽 절에 그대로 보존한다.
