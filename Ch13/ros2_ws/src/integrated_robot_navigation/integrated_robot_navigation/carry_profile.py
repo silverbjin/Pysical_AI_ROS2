@@ -12,6 +12,7 @@ from .geometry import (footprint_bounds, native_geometry,
                        navigation_mjcf, physics_digest, trig_bounds as trig_bounds)
 from .model import ModelContract
 from .samples import Vec3
+from .acceptance_policy import calibration_timeout_s
 
 
 G1_REQUIRED = frozenset({
@@ -95,6 +96,7 @@ def _digest(limits, arm_q, physics_sha256, footprint, inflation_radius):
 
 
 def _validate_limits(limits):
+    calibration_timeout_s(limits)
     maxima = {
         'max_vx': .01, 'max_wz': .03, 'max_accel_x': .02, 'max_accel_wz': .06,
         'max_support_shift_accel_mps2': .10,

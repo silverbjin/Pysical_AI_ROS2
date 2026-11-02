@@ -26,6 +26,7 @@ from std_srvs.srv import Trigger
 from integrated_robot_interfaces.srv import SetMode
 from integrated_robot_navigation.carry_profile import CarryProfile, G1_REQUIRED,G1_NATIVE_REQUIRED,swept_footprint,validate_profile
 from integrated_robot_navigation.execution_contract import g2_execution_profile
+from integrated_robot_navigation.acceptance_policy import calibration_timeout_s
 from integrated_robot_navigation.g2_command_source import G2CommandSource,assess_command_trace
 from split_observer_13_5 import SplitNavigationProbe
 from integrated_robot_navigation.g2_sequence import movement_snapshot,run_sequence
@@ -1021,10 +1022,11 @@ def run(args):
                     raise RuntimeError('owned contact calibration rejected: '+calibration.message)
                 wait(lambda: probe.motion.get('crawl', {}).get('state') == 'CALIBRATING', 2., 'calibration start')
                 wait(lambda: probe.motion.get('crawl', {}).get('state') == 'STAND'
-                     and probe.motion['crawl']['stopped'], 10., 'measured calibration landing/settle')
+                     and probe.motion['crawl']['stopped'], calibration_timeout_s(profile.limits), 'measured calibration landing/settle')
                 phase_measurements['calibration'] = dict(start_ros_ns=calibration_ros, start_wall_ns=calibration_wall,
                     ros_duration_s=(probe.get_clock().now().nanoseconds-calibration_ros)/1e9,
-                    wall_duration_s=(time.monotonic_ns()-calibration_wall)/1e9)
+                    wall_duration_s=(time.monotonic_ns()-calibration_wall)/1e9,
+                    wall_budget_s=calibration_timeout_s(profile.limits), acceptance_policy='book_v1')
             evidence.result['phase'] = 'owner_attestation'
             evidence.save()
             graph = probe.owner_graph(include_command_sources=is_g2)

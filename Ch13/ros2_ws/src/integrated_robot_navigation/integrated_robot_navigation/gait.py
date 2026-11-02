@@ -11,6 +11,7 @@ from copy import deepcopy
 import numpy as np
 
 from .carry_profile import _validate_limits
+from .acceptance_policy import calibration_timeout_s
 from .leg_kinematics import fk_leg, ik_leg, thigh_trunk_clearance
 from .projection import body_rotation
 from .samples import ControlResult, sample_valid
@@ -335,7 +336,7 @@ class CrawlMachine:
         self._calibration_rest_z = float(self._targets['fl_foot'][2])
         self._calibration_vertical = None
         self._calibration_request = None if wall_ns is None else dict(
-            ros_ns=ros_ns,wall_ns=wall_ns,deadline_wall_ns=wall_ns+10_000_000_000)
+            ros_ns=ros_ns,wall_ns=wall_ns,deadline_wall_ns=wall_ns+int(calibration_timeout_s(self.limits)*1e9))
         self._calibration_stages, self._calibration_sources = [],None
         self._calibration_shift_clock = None
 
@@ -1248,7 +1249,7 @@ class CrawlMachine:
             if self.calibrating:
                 if self._calibration_request is None:
                     self._calibration_request = dict(ros_ns=ros_ns,wall_ns=wall_ns,
-                        deadline_wall_ns=wall_ns+10_000_000_000)
+                        deadline_wall_ns=wall_ns+int(calibration_timeout_s(self.limits)*1e9))
                 if wall_ns>=self._calibration_request['deadline_wall_ns']:
                     raise ValueError('calibration original wall deadline')
                 self._record_calibration(bundle,ros_ns,wall_ns)

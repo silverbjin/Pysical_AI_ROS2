@@ -1,5 +1,7 @@
 # Ch13 복합 로봇 실습
 
+> 2026-11-02 §13.5 작업중: 책예제 인수정책은 [교정20초·엔진별전체/역순각1회](docs/SECTION_13_5_BOOK_ACCEPTANCE_POLICY_KO.md)를따릅니다. 안전·실측조건은유지하며C1/G2는아직미완료입니다.
+
 - [13.2 모델링 실습](docs/LAB_13_2_GUIDE_KO.md)
 - [13.2 변경·검증 보고서](docs/SECTION_13_2_REPORT_KO.md)
 - [13.3 아키텍처 실습](docs/LAB_13_3_GUIDE_KO.md)

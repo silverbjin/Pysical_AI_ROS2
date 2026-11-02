@@ -36,7 +36,7 @@ def test_g1_measures_small_inplace_lift_then_returns_without_full_walk_bump(nav_
     assert len(snapshot['vertical']['lift_captures'])==3
     assert value._phase_start==snapshot['stages'][-1]['ros_ns'], 'reported phase origin must follow real transition'
     assert snapshot['vertical']['scope']=='candidate_requires_owner_measured_stand_settle'
-    assert snapshot['request']['deadline_wall_ns']==snapshot['request']['wall_ns']+10_000_000_000
+    assert snapshot['request']['deadline_wall_ns']==snapshot['request']['wall_ns']+20_000_000_000
 
 
 def test_g1_unload_keeps_bounded_progress_during_low_force_confirmation(nav_robot_model):

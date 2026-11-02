@@ -2648,3 +2648,6 @@ Handoff2026-11-02: root5597f39f CLOSEDrestoredtrue/pendingfalse/foregroundclosed
 
 
 2026-11-02: User-requested G1/C1 repetition analysis and primary-source research saved in Ch13/docs/SECTION_13_5_REPEAT_ANALYSIS_RESEARCH_KO.md. Repetition includes valid regression checks and symptom-driven integration loops; pointwise torque mapping is not force-response derivative validation. No new robot execution or runtime changes during this research. C1/G2 acceptance remains incomplete.
+
+
+2026-11-02 user-directed remote sync: original17929paths in9normalpushcommits, remoteSHA4ac5e623 verified. Protected13.4doc unchanged/excluded. Bookpolicy now20wallsec fixed calibration lease, eachengine1cycle+1reverse finaldemonstration; safety retained. RED1FAIL24.80s/new11PASS18.45s/related82PASS107.96s/N21.8s+8auditPASS. Independent mass/contact oracle f6c11c32 matchesDART1.421e-14Nm,15.2101kg; currentposeFR/RRnecessarytripodsfeasible but actualforce-response/pathnotvalidated. Runtimeforce-responsemodelunchanged.
