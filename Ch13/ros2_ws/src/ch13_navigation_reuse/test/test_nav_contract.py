@@ -17,3 +17,19 @@ class NavContractTests(unittest.TestCase):
   c=self.ready();c.output(.03);c.output(.4);self.assertFalse(c.enable(.41));self.assertEqual(c.output(.42)[1],0.)
  def test_idle_is_explicit_generated_zero(self):
   c=self.ready();c.output(.03);c.idle();self.assertEqual(c.output(.04)[1:4],(0.,0.,'IDLE'))
+
+ def test_idle_to_controller_handoff_waits_without_restamping_old_command(self):
+  c=self.ready();c.idle();c.clock(2_040_000_000,.04,'clock');self.assertEqual(c.output(.04)[0],2_040_000_000);self.assertTrue(c.enable(.04))
+  c.nav(2_020_000_000,.05,'nav',(.15,0,0,0,0,0));c.smooth(2_030_000_000,.05,'smooth',(.1,0,0,0,0,0));d=c.output(.05)
+  self.assertEqual(d[0],2_040_000_000);self.assertEqual(d[1],0.);self.assertEqual(d[3],'WAITING')
+  c.clock(2_060_000_000,.06,'clock');c.nav(2_060_000_000,.06,'nav',(.15,0,0,0,0,0));c.smooth(2_060_000_000,.06,'smooth',(.1,0,0,0,0,0));self.assertEqual(c.output(.07)[:2],(2_060_000_000,.1))
+
+class FutureInboxTests(unittest.TestCase):
+ def test_cross_topic_future_is_not_admitted_until_real_clock_catches_up(self):
+  from ch13_navigation_reuse.nav_contract import FutureInbox
+  box=FutureInbox();payload=object();self.assertEqual(box.offer('tf:base',2_040_000_000,1.,payload,2_000_000_000,1.),[])
+  self.assertEqual(box.ready(2_040_000_000,1.01),[payload])
+ def test_future_wait_is_bounded_and_duplicates_do_not_renew_receipt(self):
+  from ch13_navigation_reuse.nav_contract import FutureInbox
+  box=FutureInbox();box.offer('tf:base',3_000_000_000,1.,'old',2_000_000_000,1.);box.offer('tf:base',3_000_000_000,1.04,'repeat',2_000_000_000,1.04)
+  with self.assertRaises(ValueError):box.ready(2_000_000_000,1.051)

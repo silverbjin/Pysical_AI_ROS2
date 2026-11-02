@@ -23,6 +23,7 @@ def make_model(source,profile):
  return s.compile()
 
 def ray_scan(model,data,count=181):
+ mujoco.mj_kinematics(model,data) # ray origin and header use the same post-integration state
  base=model.body('base').id;r=data.xmat[base].reshape(3,3);origin=data.xpos[base]+r@SCAN_POS
  groups=np.zeros(6,dtype=np.uint8);groups[5]=1;hit=np.zeros(1,dtype=np.int32);result=[]
  for angle in np.linspace(-math.pi,math.pi,count):

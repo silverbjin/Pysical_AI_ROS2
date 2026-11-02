@@ -1,6 +1,6 @@
 {
   "revision": "section_13_5_reuse_v1",
-  "status": "R3_IMPLEMENTED_BOUNDARY_PASS_LIVE_DIAGNOSIS_IN_PROGRESS",
+  "status": "R3_DEVELOPMENT_PASS_R4_R5_PENDING",
   "upstream": {
     "url": "https://github.com/iit-DLSLab/locomanipulation-teleop-isaaclab",
     "commit": "d010212c3f5c9e6e5542ada61cfdacc19b00f775",
@@ -514,7 +514,7 @@
     "R0": "ASSET_AND_ENV_AUDIT_RECORDED_LICENSE_PROVENANCE_OPEN",
     "R1": "CORRECTED_A_LIMITED_STOP_HOLD_REPLAY_PASS; original failures preserved; down-to-stand and stow-envelope audit pending",
     "R2": "PASS:45 small/DDS/lifecycle tests; installed launch actual forward/turn/stop/arm ownership/raw-loss/cleanup PASS; four stage commits non-force pushed and remote SHA verified",
-    "R3": "IN_PROGRESS:Nav2 1.3.13 installed;57 core/model/DDS testsPASS; actual free-space motion near goal but clock/observation stall latched; diagnosis pending",
+    "R3": "DEVELOPMENT_PASS:Nav2 actual free/obstacle/blocked/cancel and measured stop/cleanup; final frozen replay in R5 pending",
     "R4": "NOT_STARTED",
     "R5": "NOT_STARTED"
   },
@@ -1038,12 +1038,12 @@
     "nav2_version": "1.3.13",
     "scene_change": "only static environment, preserve original body masses/joints/actuator caps; new camera no body mass",
     "footprint_file": "Ch13/ros2_ws/src/ch13_navigation_reuse/config/footprint.json",
-    "small_tests": 57,
+    "small_tests": 62,
     "live_failures_preserved": [
       "3d4656a4-d008-4765-82b0-feec4e697227",
       "0552b293-39f2-4547-9a77-28206e819db1"
     ],
-    "result": "IN_PROGRESS",
+    "result": "DEVELOPMENT_PASS",
     "source_files": [
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/__init__.py",
@@ -1057,13 +1057,13 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/nav_contract.py",
-        "bytes": 2317,
-        "sha256": "f2d6254844ffefbf0e0db584e660a56f6fa390fc6c136cb7da17b283f5c7a9a5"
+        "bytes": 3919,
+        "sha256": "16b555debaeb3ddfa5c2eddcf5ab4bd971414b99f9dd3388906b4a5baefca25f"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/navigation_boundary.py",
-        "bytes": 3944,
-        "sha256": "59b3c062060e74ab298caf54c988b655acb84295beb39e473e667232e96dbe24"
+        "bytes": 4996,
+        "sha256": "1beb86547a10c382654abf0157fc71ebd80766507ad4a82137653729c7622fe6"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/platform_adapter.py",
@@ -1077,8 +1077,8 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/scene.py",
-        "bytes": 2800,
-        "sha256": "0889b1df02e3417918cf7654fcd729529cc92439ac5bf9c4f6bb19cf88eb0715"
+        "bytes": 2895,
+        "sha256": "ba3eb2fbd2443d10bae23edfc6ce9d2cd84179709b37da9b7ed76b17a576b237"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/sensors.py",
@@ -1157,13 +1157,13 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_nav_contract.py",
-        "bytes": 1624,
-        "sha256": "836998ae82f314c0214a6a8cbf146243830841a78bddcac82bdca37798782745"
+        "bytes": 2989,
+        "sha256": "5dc513a19ae210fced061d1fcc25b4a0769c808a6bc29f8793295d6c66d59b40"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_navigation_wire.py",
-        "bytes": 4708,
-        "sha256": "bda379b2f52645a165a969e1ddba229ffe2d3352c1b538b3720856e7122bf767"
+        "bytes": 5055,
+        "sha256": "9b38e211409d70e81bafd4120b79ed20a65d36f0b216cf28111a6c58030ec187"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_concurrency.py",
@@ -1202,8 +1202,8 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_scene_sensor.py",
-        "bytes": 1303,
-        "sha256": "fa65fc4fe2860f162f493cdfc1ba518c5faef9278a6ec60127019eb920abc466"
+        "bytes": 1749,
+        "sha256": "91f6806f2dc2c106567ded82e2c0f16f499775ab80e9a0378fe9127f9b31f235"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_slew_clock.py",
@@ -1235,7 +1235,16 @@
         "bytes": 4023,
         "sha256": "34560d7f55817b108371487cd47778c10dfa62b7a6de244dfd17809e568e2b59"
       }
-    ]
+    ],
+    "development_runs": {
+      "free": "048b8e4e-8efa-4414-aa43-82f4c69db1eb",
+      "obstacle": "05c9c5ca-1b7d-47a2-a380-cdc390a092e5",
+      "blocked": "535013f5-7288-4b71-afe7-b29aaed0a164",
+      "cancel": "3824b7f0-cda8-46ea-b37f-907fb82bc461"
+    },
+    "future_ordering_wait_wall_s": 0.05,
+    "future_source_slack_sim_s": 0.025,
+    "report": "Ch13/docs/SECTION_13_5_REUSE_R3_REPORT_KO.md"
   },
   "current_source_files": [
     {
@@ -1250,13 +1259,13 @@
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/nav_contract.py",
-      "bytes": 2317,
-      "sha256": "f2d6254844ffefbf0e0db584e660a56f6fa390fc6c136cb7da17b283f5c7a9a5"
+      "bytes": 3919,
+      "sha256": "16b555debaeb3ddfa5c2eddcf5ab4bd971414b99f9dd3388906b4a5baefca25f"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/navigation_boundary.py",
-      "bytes": 3944,
-      "sha256": "59b3c062060e74ab298caf54c988b655acb84295beb39e473e667232e96dbe24"
+      "bytes": 4996,
+      "sha256": "1beb86547a10c382654abf0157fc71ebd80766507ad4a82137653729c7622fe6"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/platform_adapter.py",
@@ -1270,8 +1279,8 @@
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/scene.py",
-      "bytes": 2800,
-      "sha256": "0889b1df02e3417918cf7654fcd729529cc92439ac5bf9c4f6bb19cf88eb0715"
+      "bytes": 2895,
+      "sha256": "ba3eb2fbd2443d10bae23edfc6ce9d2cd84179709b37da9b7ed76b17a576b237"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/sensors.py",
@@ -1350,13 +1359,13 @@
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_nav_contract.py",
-      "bytes": 1624,
-      "sha256": "836998ae82f314c0214a6a8cbf146243830841a78bddcac82bdca37798782745"
+      "bytes": 2989,
+      "sha256": "5dc513a19ae210fced061d1fcc25b4a0769c808a6bc29f8793295d6c66d59b40"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_navigation_wire.py",
-      "bytes": 4708,
-      "sha256": "bda379b2f52645a165a969e1ddba229ffe2d3352c1b538b3720856e7122bf767"
+      "bytes": 5055,
+      "sha256": "9b38e211409d70e81bafd4120b79ed20a65d36f0b216cf28111a6c58030ec187"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_concurrency.py",
@@ -1395,8 +1404,8 @@
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_scene_sensor.py",
-      "bytes": 1303,
-      "sha256": "fa65fc4fe2860f162f493cdfc1ba518c5faef9278a6ec60127019eb920abc466"
+      "bytes": 1749,
+      "sha256": "91f6806f2dc2c106567ded82e2c0f16f499775ab80e9a0378fe9127f9b31f235"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_slew_clock.py",

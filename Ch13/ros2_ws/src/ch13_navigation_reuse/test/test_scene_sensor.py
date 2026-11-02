@@ -14,3 +14,9 @@ class SceneTests(unittest.TestCase):
   from ch13_navigation_reuse.scene import make_model,ray_scan
   up=Path(__file__).resolve().parents[5].parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml';m=make_model(up,'obstacle');d=mujoco.MjData(m);d.qpos[:]=m.key_qpos[m.key('home').id];mujoco.mj_forward(m,d)
   rays=ray_scan(m,d);self.assertAlmostEqual(rays[len(rays)//2],1.2-.14-.4,places=3)
+
+ def test_ray_origin_uses_current_post_step_qpos(self):
+  import mujoco
+  from ch13_navigation_reuse.scene import make_model,ray_scan
+  up=Path(__file__).resolve().parents[5].parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml';m=make_model(up,'obstacle');d=mujoco.MjData(m);d.qpos[:]=m.key_qpos[m.key('home').id];mujoco.mj_forward(m,d);d.qpos[0]=.2
+  self.assertAlmostEqual(ray_scan(m,d)[90],1.2-.14-.4-.2,places=3)

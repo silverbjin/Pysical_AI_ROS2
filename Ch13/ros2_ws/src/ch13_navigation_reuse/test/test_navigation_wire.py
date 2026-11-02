@@ -56,5 +56,7 @@ class NavigationWireTests(unittest.TestCase):
   end=time.monotonic()+1.
   while self.status.get('phase')!='FAULT' and time.monotonic()<end:extra.publish(TFMessage(transforms=[t]));time.sleep(.02)
   self.fault();self.assertTrue(self.status['fault'].startswith('TF_EDGE_OWNER:'));self.n.destroy_publisher(extra)
+ def test_future_tf_times_out_without_being_admitted(self):
+  self.active();t=TransformStamped();set_stamp(t.header.stamp,self.ns+1_000_000_000);t.header.frame_id='reuse/nav_base';t.child_frame_id='reuse/base';t.transform.rotation.w=1.;self.tp.publish(TFMessage(transforms=[t]));self.fault();self.assertIn('future',self.status['fault'].lower())
  def tearDown(self):
   self.ex.shutdown(timeout_sec=2.);self.t.join(2.);self.n.destroy_node();self.b.destroy_node();rclpy.shutdown();self.relay.terminate();self.relay.wait(timeout=3.);self.assertFalse(self.t.is_alive())
