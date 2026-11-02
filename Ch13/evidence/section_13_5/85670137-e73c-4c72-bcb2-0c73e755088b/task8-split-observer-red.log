@@ -1,0 +1,26 @@
+F
+=================================== FAILURES ===================================
+_____ test_full_observer_owns_ros_recording_and_closes_without_capture_ipc _____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_full_observer_owns_ros_re0')
+
+    def test_full_observer_owns_ros_recording_and_closes_without_capture_ipc(tmp_path):
+>       module=api();context=Context();rclpy.init(context=context)
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_split_observer.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('split_observer_13_5') is not None,'independent full observer missing'
+E       AssertionError: independent full observer missing
+E       assert None is not None
+E        +  where None = <function find_spec at 0x712148fc0720>('split_observer_13_5')
+E        +    where <function find_spec at 0x712148fc0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_split_observer.py:17: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_split_observer.py::test_full_observer_owns_ros_recording_and_closes_without_capture_ipc
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 15.67s

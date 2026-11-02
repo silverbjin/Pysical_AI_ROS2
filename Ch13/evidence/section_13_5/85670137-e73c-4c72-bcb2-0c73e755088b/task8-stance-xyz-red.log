@@ -1,0 +1,27 @@
+F
+=================================== FAILURES ===================================
+____ test_full_response_has_six_force_directions_and_preserves_body_wrench _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_full_response_has_six_force_directions_and_preserves_body_wrench(nav_robot_model):
+>       model,a=xyz_inputs(nav_robot_model);kernel=api()(model,default_limits())
+                                                   ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_xyz_transition.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+>       assert importlib.util.find_spec('integrated_robot_navigation.load_xyz'), \
+            'height-only rank-one policy still owns the spatial command'
+E       AssertionError: height-only rank-one policy still owns the spatial command
+E       assert None
+E        +  where None = <function find_spec at 0x7f83101bc720>('integrated_robot_navigation.load_xyz')
+E        +    where <function find_spec at 0x7f83101bc720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_xyz_transition.py:13: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_xyz_transition.py::test_full_response_has_six_force_directions_and_preserves_body_wrench
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 19.77s

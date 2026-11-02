@@ -1,0 +1,42 @@
+F
+=================================== FAILURES ===================================
+___ test_bounded_probe_receives_original_tf_bytes_before_metadata_admission ____
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_bounded_probe_receives_or0')
+
+    def test_bounded_probe_receives_original_tf_bytes_before_metadata_admission(tmp_path):
+        context=Context();rclpy.init(context=context)
+        probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+        peer=Node('raw_tf_boundary_peer',context=context)
+        publisher=peer.create_publisher(TFMessage,'/tf',qos_profile_sensor_data)
+        seen=[];arrived=threading.Event();original=probe._tf
+        def receive(message,info):
+            seen.append((message,info));original(message,info);arrived.set()
+        probe._tf=receive
+        receiver=ProbeReceiver(probe)
+        message=TFMessage(transforms=[TransformStamped(child_frame_id='fixture_child')])
+        message.transforms[0].header.frame_id='fixture_parent'
+        message.transforms[0].header.stamp.sec=17
+        message.transforms[0].transform.rotation.w=1.
+        expected=bytes(serialize_message(message))
+        try:
+            end=time.monotonic()+2.
+            while not arrived.is_set() and time.monotonic()<end:
+                publisher.publish(message);time.sleep(.01)
+            receiver.check();assert seen,'DDS TF callback missing'
+            assert isinstance(seen[0][0],bytes),'TF was converted before authority admission'
+>           assert seen[0][0]==expected,'serialized capture was changed'
+E           AssertionError: serialized capture was changed
+E           assert b'\x00\x01\x0...\x00\x00\xf0?' == b'\x00\x01\x0...\x00\x00\xf0?'
+E             
+E             At index 35 diff: b'\x00' != b'\x05'
+E             Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_raw_tf.py:38: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792983121.116696420] [navigation_native_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792983121.137786193] [navigation_probe_recording]: Serial navigation callbacks use EventsExecutor
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_raw_tf.py::test_bounded_probe_receives_original_tf_bytes_before_metadata_admission
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 29.12s

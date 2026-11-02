@@ -1,0 +1,36 @@
+F
+=================================== FAILURES ===================================
+_____ test_slow_journal_write_does_not_block_probe_callback_and_is_joined ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_slow_journal_write_does_n0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x72925f9a1b50>
+
+    def test_slow_journal_write_does_not_block_probe_callback_and_is_joined(tmp_path,monkeypatch):
+        context=Context();rclpy.init(context=context)
+        probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+        entered,release,finished=threading.Event(),threading.Event(),threading.Event()
+        original=probe.raw.write;errors=[]
+        def blocked(value):
+            entered.set()
+            assert release.wait(3.)
+            return original(value)
+        monkeypatch.setattr(probe.raw,'write',blocked)
+        def callback():
+            try:probe._dispatch(probe._write,'controlled',dict(capture_ns=123))
+            except BaseException as error:errors.append(error)
+            finally:finished.set()
+        producer=threading.Thread(target=callback)
+        try:
+            producer.start()
+            assert entered.wait(1.)
+>           assert finished.wait(.15),'file IO still blocks the ingress callback'
+E           AssertionError: file IO still blocks the ingress callback
+E           assert False
+E            +  where False = wait(0.15)
+E            +    where wait = <threading.Event at 0x729258b01070: unset>.wait
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py:29: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py::test_slow_journal_write_does_not_block_probe_callback_and_is_joined
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.80s

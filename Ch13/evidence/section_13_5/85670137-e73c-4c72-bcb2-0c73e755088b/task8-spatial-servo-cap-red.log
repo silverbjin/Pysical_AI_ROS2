@@ -1,0 +1,18 @@
+F
+=================================== FAILURES ===================================
+___ test_native_servo_reference_error_is_not_hidden_by_static_contact_torque ___
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_native_servo_reference_error_is_not_hidden_by_static_contact_torque(nav_robot_model):
+        model,args=inputs(nav_robot_model);value=api()(model)
+        command=dict(args['joints']);command['fl_calf_joint']+=.2
+        with pytest.raises(ValueError,match='transition optimization'):
+>           value.step(**args,command_joints=command,reference_pose=args['body_pose'])
+E           TypeError: SpatialLoadTransition.step() got an unexpected keyword argument 'command_joints'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_load_transition.py:70: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_load_transition.py::test_native_servo_reference_error_is_not_hidden_by_static_contact_torque
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 21.64s

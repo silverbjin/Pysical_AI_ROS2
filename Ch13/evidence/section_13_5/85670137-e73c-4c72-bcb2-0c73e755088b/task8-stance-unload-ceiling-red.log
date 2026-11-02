@@ -1,0 +1,42 @@
+F
+=================================== FAILURES ===================================
+_ test_height_ceiling_holds_reference_only_until_original_unload_deadline[False] _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+expired = False
+
+    @pytest.mark.parametrize('expired',[False,True])
+    def test_height_ceiling_holds_reference_only_until_original_unload_deadline(nav_robot_model,expired):
+        model=helper(nav_robot_model).model;plant=IdealFeedback(model)
+        plant.ros+=100_000_000_000;plant.wall+=100_000_000_000;plant.tick(follow=False)
+        machine=CrawlMachine(model,default_limits(),load_transfer_policy='stance_admittance')
+        machine.reset(plant.state,plant.ros,plant.wall)
+        for _ in range(500):
+            previous=machine.advance(plant.state,(.0001,0.,0.),plant.ros,plant.wall)
+            assert previous.state!='FAULT',previous.reason
+            if machine._unload_start is not None:break
+            plant.tick(machine,previous)
+        else:pytest.fail('fixture never reached unload')
+        foot=machine.ORDER[machine._index]
+        plant.tick(machine,previous)
+        machine._unload_start=plant.ros-(6_010_000_000 if expired else 5_750_000_000)
+        machine._targets[foot][2]=machine._unload_origin_z+.010
+        plant.state=replace(plant.state,body=replace(plant.state.body,
+            data={**plant.state.body.data,'linear_velocity':(0.,0.,0.),'angular_velocity':(0.,0.,0.)}))
+        ceiling=machine._targets[foot][2]
+        result=machine.advance(plant.state,(.0001,0.,0.),plant.ros,plant.wall)
+        if expired:
+            assert result.state=='FAULT' and result.joint_targets is None
+        else:
+>           assert result.state=='CRAWL' and result.phase=='SHIFT', 'height cap prematurely ended the original6s budget'
+E           AssertionError: height cap prematurely ended the original6s budget
+E           assert ('FAULT' == 'CRAWL'
+E             
+E             - CRAWL
+E             + FAULT)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_unload_confirmation_control.py:76: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_unload_confirmation_control.py::test_height_ceiling_holds_reference_only_until_original_unload_deadline[False]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 2 deselected in 15.07s

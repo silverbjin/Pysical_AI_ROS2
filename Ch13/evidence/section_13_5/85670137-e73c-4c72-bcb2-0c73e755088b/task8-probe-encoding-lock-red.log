@@ -1,0 +1,55 @@
+F
+=================================== FAILURES ===================================
+________ test_heavy_frame_serialization_cannot_own_native_ingress_group ________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_heavy_frame_serialization0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x792dc6d3ed20>
+
+    def test_heavy_frame_serialization_cannot_own_native_ingress_group(tmp_path,nav_robot_model,monkeypatch):
+        from carry_feedback_peer import CarryFeedbackPeer
+        from guard_fixture import bundle
+        from probe_navigation_13_5 import ProbeReceiver
+        peer=CarryFeedbackPeer(nav_robot_model.model_sha256,bundle(nav_robot_model).joints.data['position'])
+        context=Context();rclpy.init(context=context)
+        probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+        entered,release=threading.Event(),threading.Event()
+        import probe_navigation_13_5 as api
+        original=api.json.dumps
+        def slow_encoding(value,*args,**kwargs):
+            if isinstance(value,dict) and value.get('kind')=='frame':
+                entered.set();assert release.wait(3.)
+            return original(value,*args,**kwargs)
+        monkeypatch.setattr(api.json,'dumps',slow_encoding)
+        receiver=ProbeReceiver(probe)
+        try:
+            deadline=time.monotonic()+2.
+            first=None
+            while first is None and time.monotonic()<deadline:
+                with probe._lock:first=probe.inbox.samples['joints']
+                time.sleep(.01)
+            assert first is not None
+            # Force a complete frame from the independent peer's canonical samples.
+            complete=bundle(nav_robot_model)
+            with probe._lock:
+                for key in ('joints','imu','contacts','body','scan','carry'):
+                    probe.inbox.samples[key]=getattr(complete,key)
+                probe.native_com=complete.body
+            # Exercise actual JSON serialization, including its record lock boundary.
+            assert entered.wait(1.)
+            with probe._lock:first=probe.inbox.samples['joints']
+            time.sleep(.25)
+            with probe._lock:latest=probe.inbox.samples['joints']
+>           assert latest.stamp_ns>first.stamp_ns,'heavy frame callback still blocks native ingress'
+E           AssertionError: heavy frame callback still blocks native ingress
+E           assert 4708753176 > 4708753176
+E            +  where 4708753176 = Sample(stamp_ns=4708753176, received_ns=207231201683, epoch=0, sequence=4708753176, frame_id='base_link', data={'posit...0, 'arm_joint_4': 0.0, 'arm_joint_5': 0.0, 'arm_joint_6': 0.0, 'gripper_left_joint': 0.0, 'gripper_right_joint': 0.0}}).stamp_ns
+E            +  and   4708753176 = Sample(stamp_ns=4708753176, received_ns=207231201683, epoch=0, sequence=4708753176, frame_id='base_link', data={'posit...0, 'arm_joint_4': 0.0, 'arm_joint_5': 0.0, 'arm_joint_6': 0.0, 'gripper_left_joint': 0.0, 'gripper_right_joint': 0.0}}).stamp_ns
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py:177: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792937675.973818626] [navigation_native_probe]: G2 observer isolates native ingress from frame/control recording
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_journal_io.py::test_heavy_frame_serialization_cannot_own_native_ingress_group
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 24.59s

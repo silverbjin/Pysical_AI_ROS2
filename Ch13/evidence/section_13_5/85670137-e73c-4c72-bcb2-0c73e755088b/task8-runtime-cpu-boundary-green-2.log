@@ -1,0 +1,18 @@
+....F
+=================================== FAILURES ===================================
+______ test_thread_cap_and_racing_exit_are_explicit_not_silently_complete ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-8/test_thread_cap_and_racing_exi0')
+
+    def test_thread_cap_and_racing_exit_are_explicit_not_silently_complete(tmp_path):
+        p=proc(tmp_path,5);(p/'task'/'11'/'schedstat').unlink()
+        r=api().sample_owned_threads(11,50,123,proc_root=tmp_path,max_threads=3)
+        assert r['truncated'] is True and len(r['threads'])<=3
+>       assert r['unavailable_threads']==1
+E       assert 0 == 1
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_cpu_probe.py:59: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_cpu_probe.py::test_thread_cap_and_racing_exit_are_explicit_not_silently_complete
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 passed in 33.73s

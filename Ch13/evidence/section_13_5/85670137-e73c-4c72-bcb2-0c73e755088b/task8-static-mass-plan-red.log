@@ -1,0 +1,25 @@
+F
+=================================== FAILURES ===================================
+_ test_immutable_mass_geometry_is_compiled_once_while_measurements_remain_fresh _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_immutable_mass_geometry_is_compiled_once_while_measurements_remain_fresh(nav_robot_model):
+        point=CountedInertialPoint((.0123456789,0.,0.))
+        model=replace(nav_robot_model,masses={'base_link':(1.,point),
+            'fr_thigh_link':(3.,(0.,0.,-.12))})
+        q={name:0. for name in model.limits}
+        first=center_of_mass(model,q,np.eye(4))
+        q['fr_thigh_joint']=.5
+        second=center_of_mass(model,q,np.eye(4))
+        assert np.linalg.norm(np.asarray(first)-second)>.001
+>       assert point.materializations<=1, 'unchanging inertial geometry was rebuilt for another sensor capture'
+E       AssertionError: unchanging inertial geometry was rebuilt for another sensor capture
+E       assert 2 <= 1
+E        +  where 2 = (0.0123456789, 0.0, 0.0).materializations
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_mass_frame_budget.py:56: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_mass_frame_budget.py::test_immutable_mass_geometry_is_compiled_once_while_measurements_remain_fresh
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 10.59s

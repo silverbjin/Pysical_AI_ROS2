@@ -1,0 +1,46 @@
+F
+=================================== FAILURES ===================================
+_ test_original_clock_and_ack_can_wake_one_waiting_owner_without_periodic_polling[clock] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_original_clock_and_ack_ca0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x75c12a21a720>
+arrival = 'clock'
+
+    @pytest.mark.parametrize('arrival',['clock','ack'])
+    def test_original_clock_and_ack_can_wake_one_waiting_owner_without_periodic_polling(tmp_path,nav_robot_model,monkeypatch,arrival):
+        ctx=Context();rclpy.init(context=ctx);calls=[];original=CrawlController._tick
+        def record(node):
+            calls.append((node.get_clock().now().nanoseconds,time.monotonic_ns()))
+            return original(node)
+        monkeypatch.setattr(CrawlController,'_tick',record)
+        profile,expected=fixture(tmp_path,nav_robot_model,'mujoco')
+        node=controller(ctx,nav_robot_model,profile,expected)
+        peer=Node('original_reference_notification_source',context=ctx)
+        executor=make_control_executor(node);executor.add_node(node);executor.add_node(peer)
+        source=peer.create_publisher(Clock,'/navigation/control_clock',10)
+        ack=peer.create_publisher(JointState,'/navigation/applied_reference',1)
+        for timer in node.timers:
+            if timer.clock is node.get_clock():timer.cancel()  # isolate notifications from the regular timer
+        def pump(seconds,stamp=None,message=None):
+            deadline=time.monotonic()+seconds
+            while time.monotonic()<deadline:
+                if stamp is not None:source.publish(Clock(clock=Time(sec=1,nanosec=stamp-10**9)))
+                if message is not None:ack.publish(message)
+                executor.spin_once(timeout_sec=.001);time.sleep(.001)
+        try:
+            stamp=1_030_000_000 if arrival=='clock' else 1_050_000_000
+            pump(.1,stamp)
+            assert node.get_clock().now().nanoseconds==stamp
+>           assert getattr(node,'reference_dispatch',None) is not None, 'applied-reference wake path missing'
+E           AssertionError: applied-reference wake path missing
+E           assert None is not None
+E            +  where None = getattr(<integrated_robot_navigation.crawl_controller.CrawlController object at 0x75c11e91b320>, 'reference_dispatch', None)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch_ros.py:41: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1793069241.339958112] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_waitset", "alive": false, "joined": true, "error": null, "pid": 1096, "uid": 1000, "native_tid": 1337, "node_name": "crawl_controller_ingress", "namespace": "/", "clock_subscriptions": []}
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch_ros.py::test_original_clock_and_ack_can_wake_one_waiting_owner_without_periodic_polling[clock]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 15.26s

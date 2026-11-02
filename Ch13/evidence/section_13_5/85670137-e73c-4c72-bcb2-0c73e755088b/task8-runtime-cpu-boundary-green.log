@@ -1,0 +1,20 @@
+.F
+=================================== FAILURES ===================================
+_____ test_owned_threads_have_identity_and_separate_runtime_wait_counters ______
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-6/test_owned_threads_have_identi0')
+
+    def test_owned_threads_have_identity_and_separate_runtime_wait_counters(tmp_path):
+        proc(tmp_path);result=api().sample_owned_threads(11,50,123,proc_root=tmp_path)
+        assert result['read_only'] is True and result['truncated'] is False
+        assert len(result['threads'])==2
+        assert result['threads'][0]==dict(tid=11,name='thread name',start_ticks=123,
+            runtime_ns=1000,runqueue_wait_ns=2000,timeslices=3)
+>       assert result['collection_wall_ns']>=result['collection_thread_ns']>=0
+E       assert 235397 >= 253800
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_cpu_probe.py:43: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_cpu_probe.py::test_owned_threads_have_identity_and_separate_runtime_wait_counters
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 passed in 33.47s

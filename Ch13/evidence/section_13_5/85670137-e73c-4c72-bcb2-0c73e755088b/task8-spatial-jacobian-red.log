@@ -1,0 +1,22 @@
+F
+=================================== FAILURES ===================================
+________ test_local_contact_jacobian_matches_independent_fk_derivatives ________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_local_contact_jacobian_matches_independent_fk_derivatives(nav_robot_model):
+        from integrated_robot_navigation.leg_kinematics import fk_leg
+        rng=np.random.default_rng(26)
+        for foot in nav_robot_model.feet:
+            for _ in range(4):
+                q=rng.uniform([-.15,-.65,.85],[.15,-.35,1.2])
+                point=np.asarray(fk_leg(nav_robot_model,foot,q))
+>               actual=api().leg_jacobian_local(nav_robot_model,foot,q,point)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: module 'integrated_robot_navigation.contact_equilibrium' has no attribute 'leg_jacobian_local'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_equilibrium.py:91: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_contact_equilibrium.py::test_local_contact_jacobian_matches_independent_fk_derivatives
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 12 deselected in 13.48s

@@ -1,0 +1,20 @@
+F
+=================================== FAILURES ===================================
+_ test_gazebo_navigation_capture_rate_leaves_wall_age_budget_at_observed_slowdown _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_gazebo_navigation_capture0')
+
+    def test_gazebo_navigation_capture_rate_leaves_wall_age_budget_at_observed_slowdown(tmp_path):
+        record=materialize_scene('gazebo','g1',tmp_path/'scene')
+        robot=ET.parse(record['robot']['path']);converted=ET.parse(record['robot_sdf']['path'])
+        sensor=robot.find('.//sensor[@name="navigation_lidar"]')
+        rate=float(sensor.findtext('update_rate'))
+>       assert rate==20., '100ms simulation scan period exceeded300ms wall age at measured0.279RTF'
+E       AssertionError: 100ms simulation scan period exceeded300ms wall age at measured0.279RTF
+E       assert 10.0 == 20.0
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene_scan_wall_budget.py:14: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_scene_scan_wall_budget.py::test_gazebo_navigation_capture_rate_leaves_wall_age_budget_at_observed_slowdown
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 20.63s

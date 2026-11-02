@@ -1,0 +1,43 @@
+.F
+=================================== FAILURES ===================================
+_______ test_same_cycle_uses_current_capture_once_and_keeps_exact_limits _______
+
+    def test_same_cycle_uses_current_capture_once_and_keeps_exact_limits():
+        c,model=recorded();a=c['args'];fault=c['parent']['fault'];m=None
+        with NativeMassEvaluator(model) as mass:
+>           m=CrawlMachine(model,c['limits'],mass_evaluator=mass,load_transfer_policy='coupled_contact',
+                async_load_transfer=True,load_result_timing='same_cycle',load_receipt_mode='event_receiver')
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_same_cycle_numeric.py:38: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.gait.CrawlMachine object at 0x74cd0d86e450>
+model = ModelContract(model_sha256='113a4bb3e0852eb4e47f5f032a8ebfb8f13f296b7eb95e5f549d694661aa5651', joint_names=('fr_hip_jo...imROS2ControlPlugin"><parameters>/tmp/ch13_5_controllers_1927b0a9a09dae57.yaml</parameters></plugin></gazebo></robot>')
+limits = {'carry_error_rad': 0.03, 'carry_velocity_rps': 0.02, 'control_hz': 50.0, 'cycle_s': 8.0, ...}
+
+    def __init__(self, model, limits, *, reference_time_policy='bounded_20ms',mass_evaluator=None,
+                 calibration_return_policy='loaded_quintic',load_transfer_policy='geometric',async_load_transfer=False,
+                 kinematics_evaluator=None,load_result_timing='strict',load_receipt_mode='model_poll'):
+        _validate_limits(limits)
+        if kinematics_evaluator is not None and kinematics_evaluator.model_sha256!=model.model_sha256:
+            raise ValueError('kinematics evaluator model binding')
+        self._kinematics_evaluator=kinematics_evaluator
+        if reference_time_policy not in ('bounded_20ms','applied_shift_elapsed'):
+            raise ValueError('unknown reference time policy')
+        self.reference_time_policy=reference_time_policy
+        if calibration_return_policy not in ('loaded_quintic','bounded_preload','bounded_preload_smooth'):
+            raise ValueError('unknown calibration return policy')
+        self.calibration_return_policy=calibration_return_policy
+        if load_transfer_policy not in ('geometric','stance_admittance','coupled_contact'):
+            raise ValueError('unknown load transfer policy')
+        self.load_transfer_policy=load_transfer_policy
+        if (load_result_timing not in ('strict','mature_horizon') or
+                load_result_timing=='mature_horizon' and not (async_load_transfer and load_transfer_policy=='coupled_contact')):
+>           raise ValueError('load result timing requires explicit async coupled horizon scope')
+E           ValueError: load result timing requires explicit async coupled horizon scope
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:50: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_same_cycle_numeric.py::test_same_cycle_uses_current_capture_once_and_keeps_exact_limits
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 passed in 11.81s

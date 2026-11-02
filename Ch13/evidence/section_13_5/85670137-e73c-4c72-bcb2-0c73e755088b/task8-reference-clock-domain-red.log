@@ -1,0 +1,19 @@
+F
+=================================== FAILURES ===================================
+____ test_positive_original_ros_progress_is_not_a_second_wall_rate_limiter _____
+
+    def test_positive_original_ros_progress_is_not_a_second_wall_rate_limiter():
+        value=gate();value.issued(100_000_000,100_000_000);value.defer()
+        # The original clock is quantized/coalesced; no future data is used.
+        # Wall control rate is 50Hz, and the trajectory consumes only these 18ms.
+>       assert value.allowed(118_000_000,120_000_000), 'coarse ROS samples inserted an extra control wait'
+E       AssertionError: coarse ROS samples inserted an extra control wait
+E       assert False
+E        +  where False = allowed(118000000, 120000000)
+E        +    where allowed = <integrated_robot_navigation.reference_dispatch.ReferenceDispatch object at 0x7443c317fc20>.allowed
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch.py:40: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_reference_dispatch.py::test_positive_original_ros_progress_is_not_a_second_wall_rate_limiter
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 9.98s

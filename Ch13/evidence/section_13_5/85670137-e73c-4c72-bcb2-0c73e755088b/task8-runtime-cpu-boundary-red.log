@@ -1,0 +1,29 @@
+F
+=================================== FAILURES ===================================
+_______ test_clock_fields_are_bracketed_without_cross_domain_subtraction _______
+
+    def test_clock_fields_are_bracketed_without_cross_domain_subtraction():
+        calls=[];raw=iter((10,40))
+        def read(k):
+            calls.append(k);return next(raw) if k==4 else 20
+        clock=SimpleNamespace(CLOCK_MONOTONIC_RAW=4,CLOCK_MONOTONIC=1,clock_gettime_ns=read,time_ns=lambda:30)
+>       result=api().clock_sample(clock=clock)
+               ^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_cpu_probe.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def api():
+        name='integrated_robot_navigation.runtime_cpu_probe'
+>       assert importlib.util.find_spec(name),'runtime clock/scheduler boundary is unobserved'
+E       AssertionError: runtime clock/scheduler boundary is unobserved
+E       assert None
+E        +  where None = <function find_spec at 0x7c035f5c0720>('integrated_robot_navigation.runtime_cpu_probe')
+E        +    where <function find_spec at 0x7c035f5c0720> = <module 'importlib.util' (frozen)>.find_spec
+E        +      where <module 'importlib.util' (frozen)> = importlib.util
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_cpu_probe.py:9: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_runtime_cpu_probe.py::test_clock_fields_are_bracketed_without_cross_domain_subtraction
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 21.17s

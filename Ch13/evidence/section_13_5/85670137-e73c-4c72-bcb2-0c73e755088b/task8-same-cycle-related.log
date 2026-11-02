@@ -1,0 +1,46 @@
+...............F
+=================================== FAILURES ===================================
+___ test_exact_recorded_job_is_safe_at_the_recorded_shorter_parent_interval ____
+
+    def test_exact_recorded_job_is_safe_at_the_recorded_shorter_parent_interval():
+        import json
+        from pathlib import Path
+        from integrated_robot_navigation.model import compile_model
+        from integrated_robot_navigation.native_mass import NativeMassEvaluator
+        from integrated_robot_navigation.load_xyz import SpatialXYZTransition
+        from integrated_robot_navigation.compiled_reference import CompiledReferenceEnvelope
+        from integrated_robot_navigation.gait import CrawlMachine
+        from integrated_robot_navigation.samples import Sample,SensorBundle
+        from integrated_robot_navigation.projection import body_rotation
+        from test_async_load_owner import NumericPeer
+        folder=Path(__file__).parent/'fixtures'
+        case=json.loads((folder/'native_c371_xyz_budget.json').read_text())
+        parent=json.loads((folder/'native_c371_parent_reply.json').read_text());a=case['args']
+        assert parent['report_sha256']==case['report_sha256']
+        model=compile_model(case['urdf']);limits=case['limits']
+        with NativeMassEvaluator(model) as core:
+            kernel=SpatialXYZTransition(model,limits,terms_evaluator=core.contact_terms);kernel.prepare()
+>           delta=kernel.step(**a);prediction=deepcopy(kernel.last_model)
+                  ^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_xyz_owner.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_xyz.py:76: in step
+    budget('spatial_response')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+stage = 'spatial_response'
+
+    def budget(stage):
+        wall=time.perf_counter_ns()-started
+        self.last_attempt['stages'][stage]=dict(wall_ns=wall,thread_cpu_ns=thread_time_ns()-cpu)
+        if wall>10_000_000:
+            self.last_attempt['rejected_at']=stage
+>           raise ValueError('transition optimization time budget')
+E           ValueError: transition optimization time budget
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/load_xyz.py:44: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_async_xyz_owner.py::test_exact_recorded_job_is_safe_at_the_recorded_shorter_parent_interval
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 15 passed in 43.24s

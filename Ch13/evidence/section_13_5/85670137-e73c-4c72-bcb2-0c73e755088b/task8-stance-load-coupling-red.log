@@ -1,0 +1,36 @@
+F
+=================================== FAILURES ===================================
+______ test_three_stance_references_address_the_unreleased_fourth_contact ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_three_stance_references_address_the_unreleased_fourth_contact(nav_robot_model):
+        transfer=helper(nav_robot_model);args=inputs(nav_robot_model)
+        result=transfer.correction(**args)
+        assert set(result)==set(nav_robot_model.feet)-{'rr_foot'}
+        assert result['fr_foot']<0 and result['rl_foot']<0 and result['fl_foot']>0
+        assert max(abs(v) for v in result.values())<=.002*.02+1e-12
+        # Independent flat spring/base equilibrium. Body translation/roll/pitch
+        # remain free; force cannot be predicted with four independent springs.
+        h=np.array([[1.,p[1],-p[0]] for p in args['points'].values()])
+        stiffness=np.diag([1/transfer.vertical_compliance(f,args['joints'],args['rotation']) for f in nav_robot_model.feet])
+        projection=stiffness-stiffness@h@np.linalg.solve(h.T@stiffness@h,h.T@stiffness)
+        delta=np.array([result.get(f,0.) for f in nav_robot_model.feet])
+        force_change=-projection@delta
+        assert force_change[2]<0
+        # The requested one-second force-error step must survive free-body
+        # translation/roll/pitch coupling even though the fourth reference is held.
+>       assert force_change[2]==pytest.approx(-args['forces'][2]*args['dt'],abs=1e-10), \
+            'independent stance springs attenuated the requested load-release step'
+E       AssertionError: independent stance springs attenuated the requested load-release step
+E       assert -0.07105918524212147 == -0.096 ± 1.0e-10
+E         
+E         comparison failed
+E         Obtained: -0.07105918524212147
+E         Expected: -0.096 ± 1.0e-10
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_load_transfer.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_load_transfer.py::test_three_stance_references_address_the_unreleased_fourth_contact
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 15.62s

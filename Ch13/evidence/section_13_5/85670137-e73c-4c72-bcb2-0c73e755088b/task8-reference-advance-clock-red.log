@@ -1,0 +1,32 @@
+..F
+=================================== FAILURES ===================================
+_ test_confirmed_reference_advances_one_bounded_step_after_a_short_post_wait_tick _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_confirmed_reference_advances_one_bounded_step_after_a_short_post_wait_tick(nav_robot_model):
+        normal,plant=shifting(nav_robot_model,(.01,0.,0.));delayed=deepcopy(normal)
+        ros,wall=normal._last_ros,normal._last_wall
+        expected=normal.advance(sample_at(plant.state,ros+20_000_000,wall+20_000_000),
+            (.01,0.,0.),ros+20_000_000,wall+20_000_000)
+        waiting=delayed.advance(sample_at(plant.state,ros+20_000_000,wall+20_000_000),
+            (.01,0.,0.),ros+20_000_000,wall+20_000_000,reference_permitted=False)
+        assert waiting.state=='CRAWL'
+        # Application was confirmed before this next short scheduling interval.
+        actual=delayed.advance(sample_at(plant.state,ros+30_000_000,wall+30_000_000),
+            (.01,0.,0.),ros+30_000_000,wall+30_000_000,reference_permitted=True)
+        assert expected.state=='CRAWL' and actual.state=='CRAWL'
+>       assert np.allclose(delayed.reference_body,normal.reference_body,atol=1e-12), \
+            'waiting decision consumed part of the next single permitted reference step'
+E       AssertionError: waiting decision consumed part of the next single permitted reference step
+E       assert False
+E        +  where False = <function allclose at 0x72bf3c046570>(array([[ 1.        ,  0.        ,  0.        , -0.00417008],\n       [ 0.        ,  1.        ,  0.        , -0.0027435...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]), array([[ 1.        ,  0.        ,  0.        , -0.00433551],\n       [ 0.        ,  1.        ,  0.        , -0.0028523...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]), atol=1e-12)
+E        +    where <function allclose at 0x72bf3c046570> = np.allclose
+E        +    and   array([[ 1.        ,  0.        ,  0.        , -0.00417008],\n       [ 0.        ,  1.        ,  0.        , -0.0027435...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]) = <integrated_robot_navigation.gait.CrawlMachine object at 0x72bf10a95dc0>.reference_body
+E        +    and   array([[ 1.        ,  0.        ,  0.        , -0.00433551],\n       [ 0.        ,  1.        ,  0.        , -0.0028523...    [ 0.        ,  0.        ,  1.        ,  0.46      ],\n       [ 0.        ,  0.        ,  0.        ,  1.        ]]) = <integrated_robot_navigation.gait.CrawlMachine object at 0x72bf3daddf10>.reference_body
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_gait_reference_credit.py::test_confirmed_reference_advances_one_bounded_step_after_a_short_post_wait_tick
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 2 passed in 11.33s

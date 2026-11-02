@@ -1,0 +1,38 @@
+F
+=================================== FAILURES ===================================
+______ test_explicit_force_profile_does_not_stop_at_first_geometric_inset ______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_explicit_force_profile_does_not_stop_at_first_geometric_inset(nav_robot_model):
+>       value,fractions,margin=planned(nav_robot_model,'stance_admittance')
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support_load_balance_plan.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support_load_balance_plan.py:34: in planned
+    value._begin_shift(com,loads,points,0,q)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <integrated_robot_navigation.gait.CrawlMachine object at 0x7454629b6a50>
+com = array([ 0.09889826, -0.00216674,  0.45747677])
+loads = {'fl_foot': True, 'fr_foot': True, 'rl_foot': True, 'rr_foot': True}
+points = {'fl_foot': [0.3032966757672402, 0.1785202502711721, 0.0], 'fr_foot': [0.31818931937608047, -0.18035221789782654, 0.0]...l_foot': [-0.19754125922684318, 0.18371192473257253, 0.0], 'rr_foot': [-0.18607992637156734, -0.1867857178539275, 0.0]}
+now = 0
+joints = {'arm_joint_1': 0.0009667716136085471, 'arm_joint_2': 1.2110834387129505, 'arm_joint_3': -2.0182627814597516, 'arm_joint_4': -0.00010769506286102513, ...}
+command = (0.0, 0.0, 0.0)
+
+    def _begin_shift(self, com, loads, points, now, joints, command=(0.,0.,0.)):
+        self._shift_plan = None
+        self._unload_time_credit_ns = 0
+        self.phase, self.swing_foot, self._phase_start = 'SHIFT', None, now
+        foot = self.ORDER[self._index]
+>       self._offset_start = self.offset.copy()
+                             ^^^^^^^^^^^
+E       AttributeError: 'CrawlMachine' object has no attribute 'offset'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/gait.py:341: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_support_load_balance_plan.py::test_explicit_force_profile_does_not_stop_at_first_geometric_inset
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 18.63s

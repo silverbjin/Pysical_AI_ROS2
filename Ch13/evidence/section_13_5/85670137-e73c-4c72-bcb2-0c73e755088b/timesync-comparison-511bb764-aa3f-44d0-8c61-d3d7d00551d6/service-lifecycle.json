@@ -1,0 +1,87 @@
+{
+  "scope": "user_approved_temporary_timesyncd_comparison_not_engine_acceptance",
+  "boot_id": "b7e5406a-35ab-4ce5-8677-8524dafc36f7",
+  "pid": 751,
+  "uid": 0,
+  "validation_uid": 1000,
+  "initial_active": {
+    "command": [
+      "systemctl",
+      "is-active",
+      "systemd-timesyncd.service"
+    ],
+    "returncode": 0,
+    "output": "active"
+  },
+  "initial_enabled": {
+    "command": [
+      "systemctl",
+      "is-enabled",
+      "systemd-timesyncd.service"
+    ],
+    "returncode": 0,
+    "output": "enabled"
+  },
+  "restoration_pending": false,
+  "restored": true,
+  "child_returncode": 1,
+  "source_hashes": {
+    "timesync-comparison-root.py": "42677bfc68efa2eab579336ba876507805971a680c498e3669b2db15a008d4f9",
+    "timesync-comparison-user.sh": "0e11f82c5829e7c8e790192dd4b3fee7519b7565c57f11255f7dc222b6980712"
+  },
+  "stop": {
+    "command": [
+      "systemctl",
+      "stop",
+      "systemd-timesyncd.service"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  "during": {
+    "command": [
+      "systemctl",
+      "is-active",
+      "systemd-timesyncd.service"
+    ],
+    "returncode": 3,
+    "output": "inactive"
+  },
+  "validation_command": [
+    "runuser",
+    "-u",
+    "jinho",
+    "--",
+    "bash",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/timesync-comparison-user.sh",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/timesync-comparison-511bb764-aa3f-44d0-8c61-d3d7d00551d6",
+    "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-mujoco-9d296bc8-1f99-494a-83f4-2bfc0bdc3751/result.json"
+  ],
+  "restore": {
+    "command": [
+      "systemctl",
+      "start",
+      "systemd-timesyncd.service"
+    ],
+    "returncode": 0,
+    "output": ""
+  },
+  "final_active": {
+    "command": [
+      "systemctl",
+      "is-active",
+      "systemd-timesyncd.service"
+    ],
+    "returncode": 0,
+    "output": "active"
+  },
+  "final_enabled": {
+    "command": [
+      "systemctl",
+      "is-enabled",
+      "systemd-timesyncd.service"
+    ],
+    "returncode": 0,
+    "output": "enabled"
+  }
+}

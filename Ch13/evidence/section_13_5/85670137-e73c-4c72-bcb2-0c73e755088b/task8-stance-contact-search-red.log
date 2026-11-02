@@ -1,0 +1,24 @@
+F
+=================================== FAILURES ===================================
+_ test_contact_search_never_raises_a_preloaded_reference_to_the_measured_floor _
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_contact_search_never_raises_a_preloaded_reference_to_the_measured_floor(nav_robot_model):
+        plant,machine,previous,original=preloaded_swing(nav_robot_model)
+        foot='fl_foot'
+        machine._targets[foot][2]=original[foot]
+        machine.phase='TOUCHDOWN';machine._phase_start=plant.ros
+        plant.tick(follow=False);contact(plant,False)
+        result=machine.advance(plant.state,(.0001,0.,0.),plant.ros,plant.wall)
+        assert result.state!='FAULT',result.reason
+>       assert 0<=original[foot]-machine._targets[foot][2]<=.002*.02+1e-12, \
+            'the measured-floor clamp made a new upward reference step'
+E       AssertionError: the measured-floor clamp made a new upward reference step
+E       assert 0 <= (0.02120871905481364 - 0.022273374121671463)
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_preload_landing.py:65: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_stance_preload_landing.py::test_contact_search_never_raises_a_preloaded_reference_to_the_measured_floor
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 deselected in 11.32s

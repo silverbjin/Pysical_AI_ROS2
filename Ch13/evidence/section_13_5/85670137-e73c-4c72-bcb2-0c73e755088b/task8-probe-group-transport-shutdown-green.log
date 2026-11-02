@@ -1,0 +1,36 @@
+...........................F
+=================================== FAILURES ===================================
+_______ test_native_controls_record_keeps_source_capture_and_actual_ctrl _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x79e3ae384bf0>
+
+    def test_native_controls_record_keeps_source_capture_and_actual_ctrl(monkeypatch):
+        import json
+        from std_msgs.msg import String
+        import probe_navigation_13_5 as probe
+        rows = []
+        record = SimpleNamespace(engine='mujoco', stage='stand', native_controls=[], transport_errors=[],
+                                 _write=lambda kind, value: rows.append((kind, value)))
+        payload = dict(schema=1, capture_ns=123, epoch=0, sequence=7,
+                       actuators=[dict(joint_name='fr_hip_joint', ctrl=.1, position=.09)])
+        monkeypatch.setattr(probe.time, 'monotonic_ns', lambda: 4000)
+>       NavigationProbe._controls(record, String(data=json.dumps(payload)))
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:131: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(engine='mujoco', stage='stand', native_controls=[], transport_errors=[], _write=<function test_native_controls_record_keeps_source_capture_and_actual_ctrl.<locals>.<lambda> at 0x79e3abacce00>)
+msg = std_msgs.msg.String(data='{"schema": 1, "capture_ns": 123, "epoch": 0, "sequence": 7, "actuators": [{"joint_name": "fr_hip_joint", "ctrl": 0.1, "position": 0.09}]}')
+info = None
+
+    def _controls(self, msg, info=None):
+        receipt = time.monotonic_ns()
+>       with self._lock:stage=self.stage
+             ^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_lock'
+
+Ch13/scripts/probe_navigation_13_5.py:401: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_native_controls_record_keeps_source_capture_and_actual_ctrl
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 27 passed in 36.17s

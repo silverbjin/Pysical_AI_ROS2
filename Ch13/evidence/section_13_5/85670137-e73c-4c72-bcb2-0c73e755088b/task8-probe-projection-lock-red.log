@@ -1,0 +1,38 @@
+F
+=================================== FAILURES ===================================
+___________ test_decision_projection_cannot_hold_sensor_ingress_lock ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_decision_projection_canno0')
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x764d95bb0a10>
+
+    def test_decision_projection_cannot_hold_sensor_ingress_lock(tmp_path,nav_robot_model,monkeypatch):
+        from carry_feedback_peer import CarryFeedbackPeer
+        from guard_fixture import bundle
+        import integrated_robot_navigation.g2_sequence as sequence
+        from integrated_robot_navigation.carry_profile import default_limits
+        peer=CarryFeedbackPeer(nav_robot_model.model_sha256,bundle(nav_robot_model).joints.data['position'])
+        context=Context();rclpy.init(context=context)
+        probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+        receiver=ProbeReceiver(probe);entered,release=threading.Event(),threading.Event();worker=None;out=[]
+        original=sequence.movement_snapshot
+        def blocked(*args):
+            entered.set();assert release.wait(3.)
+            return original(*args)
+        try:
+            end=time.monotonic()+2.;first=None
+            while first is None and time.monotonic()<end:
+                with probe._lock:first=probe.inbox.bundle(probe.get_clock().now().nanoseconds).body
+                time.sleep(.005)
+>           assert first is not None
+E           assert None is not None
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_ingress_isolation.py:120: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792990657.488472857] [navigation_native_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792990657.516309803] [navigation_probe_recording]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792990657.536522106] [navigation_probe_ingress]: Serial navigation callbacks use EventsExecutor
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_ingress_isolation.py::test_decision_projection_cannot_hold_sensor_ingress_lock
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 3 deselected in 22.31s

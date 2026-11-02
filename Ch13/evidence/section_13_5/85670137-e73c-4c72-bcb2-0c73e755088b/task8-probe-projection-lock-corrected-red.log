@@ -1,0 +1,61 @@
+F
+=================================== FAILURES ===================================
+___________ test_decision_projection_cannot_hold_sensor_ingress_lock ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_decision_projection_canno0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7e84db7b6150>
+
+    def test_decision_projection_cannot_hold_sensor_ingress_lock(tmp_path,monkeypatch):
+        from rosgraph_msgs.msg import Clock as ClockMessage
+        from builtin_interfaces.msg import Time
+        from nav_msgs.msg import Odometry
+        import integrated_robot_navigation.g2_sequence as sequence
+        from integrated_robot_navigation.carry_profile import default_limits
+        context=Context();rclpy.init(context=context)
+        peer=Node('movement_snapshot_input_peer',context=context)
+        clock=peer.create_publisher(ClockMessage,'/clock',10)
+        body=peer.create_publisher(Odometry,'/odom',qos_profile_sensor_data)
+        contacts=peer.create_publisher(FootContacts,'/navigation/foot_contacts',qos_profile_sensor_data)
+        stop=threading.Event()
+        def publish():
+            origin=time.monotonic_ns()
+            while not stop.is_set():
+                stamp_ns=1_000_000_000+time.monotonic_ns()-origin
+                stamp=Time(sec=stamp_ns//1_000_000_000,nanosec=stamp_ns%1_000_000_000)
+                odom=Odometry(child_frame_id='base_footprint');odom.header.frame_id='odom';odom.header.stamp=stamp
+                odom.pose.pose.orientation.w=1.;odom.pose.pose.position.z=.46
+                feet=FootContacts();feet.header.frame_id='odom';feet.header.stamp=stamp;feet.touching=[True]*4
+                clock.publish(ClockMessage(clock=stamp));body.publish(odom);contacts.publish(feet);time.sleep(.01)
+        publisher=threading.Thread(target=publish);publisher.start()
+        probe=NavigationProbe(tmp_path,engine='gazebo',bounded_history=True,context=context)
+        receiver=ProbeReceiver(probe);entered,release=threading.Event(),threading.Event();worker=None;out=[]
+        original=sequence.movement_snapshot
+        def blocked(*args):
+            entered.set();assert release.wait(3.)
+            return original(*args)
+        try:
+            end=time.monotonic()+2.;first=None
+            while first is None and time.monotonic()<end:
+                with probe._lock:first=probe.inbox.bundle(probe.get_clock().now().nanoseconds).body
+                time.sleep(.005)
+            assert first is not None
+            monkeypatch.setattr(sequence,'movement_snapshot',blocked)
+            def decide():
+                try:out.append(probe.movement_decision(default_limits()))
+                except BaseException as error:out.append(error)
+            worker=threading.Thread(target=decide);worker.start();assert entered.wait(1.)
+            time.sleep(.15)
+            acquired=probe._lock.acquire(timeout=.05)
+>           assert acquired,'decision projection held the sensor ingress lock'
+E           AssertionError: decision projection held the sensor ingress lock
+E           assert False
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_ingress_isolation.py:143: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[INFO] [1792990733.593363074] [navigation_native_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792990733.618608386] [navigation_probe_recording]: Serial navigation callbacks use EventsExecutor
+[INFO] [1792990733.639305014] [navigation_probe_ingress]: Serial navigation callbacks use EventsExecutor
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_probe_ingress_isolation.py::test_decision_projection_cannot_hold_sensor_ingress_lock
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 3 deselected in 11.53s

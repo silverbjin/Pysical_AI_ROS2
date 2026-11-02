@@ -1,0 +1,32 @@
+F
+=================================== FAILURES ===================================
+_____ test_scan_latency_is_measured_directly_not_inferred_from_nearby_body _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7a833d0aec30>
+
+    def test_scan_latency_is_measured_directly_not_inferred_from_nearby_body(monkeypatch):
+        from sensor_msgs.msg import LaserScan
+        from integrated_robot_navigation.observations import SensorInbox
+        import probe_navigation_13_5 as probe
+        rows=[]
+        record=SimpleNamespace(inbox=SensorInbox(0),errors=[],bounded_history=False,
+            _write=lambda kind,value:rows.append((kind,value)))
+        message=LaserScan(range_min=.05,range_max=10.,ranges=[10.]*360)
+        message.header.stamp.sec=1;message.header.frame_id='lidar_link'
+        monkeypatch.setattr(probe.time,'monotonic_ns',lambda:2000)
+        monkeypatch.setattr(probe.time,'time_ns',lambda:5000)
+        NavigationProbe._sensor(record,'scan',message,dict(source_timestamp=101,received_timestamp=121))
+        selected=[value for kind,value in rows if kind=='scan_transport']
+>       assert selected==[dict(stamp_ns=1_000_000_000,received_ns=2000,callback_system_ns=5000,
+            source_system_ns=101,rmw_received_system_ns=121)], 'scan delay boundary was not recorded'
+E       AssertionError: scan delay boundary was not recorded
+E       assert [] == [{'callback_s...s': 101, ...}]
+E         
+E         Right contains one more item: {'callback_system_ns': 5000, 'received_ns': 2000, 'rmw_received_system_ns': 121, 'source_system_ns': 101, ...}
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py:79: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_native_probe.py::test_scan_latency_is_measured_directly_not_inferred_from_nearby_body
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 12 deselected in 7.13s

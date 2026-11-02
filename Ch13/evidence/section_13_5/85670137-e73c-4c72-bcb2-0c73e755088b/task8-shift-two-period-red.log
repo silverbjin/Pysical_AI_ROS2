@@ -1,0 +1,25 @@
+F
+=================================== FAILURES ===================================
+_____ test_shift_reference_does_not_catch_up_more_than_two_nominal_periods _____
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_shift_reference_does_not_catch_up_more_than_two_nominal_periods(nav_robot_model):
+        case=json.loads((Path(__file__).parent/'fixtures/reference-095-carry.json').read_text())
+        assert case['phase']=='SHIFT' and case['observed_gripper_peak_mps']>.005
+        value=owner(nav_robot_model);value.phase='SHIFT';value._phase_start=1_000_000_000
+        value._crawl_reference_time(1_000_000_000,2_000_000_000,0)
+        gap=case['cadence_probe_ns']
+        # The recorded native hold/step motivates this cadence probe; native sample
+        # times are NOT exact publisher callbacks. Physical coupling remains gated
+        # by actual fixed-source native G2, not this deterministic time-law test.
+        elapsed,step=value._crawl_reference_time(1_000_000_000+gap,2_000_000_000+gap,gap)
+>       assert round(step*1e9)<=case['reference_step_cap_ns']
+E       assert 60000000 <= 40000000
+E        +  where 60000000 = round((0.06 * 1000000000.0))
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_elapsed_reference.py:28: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_elapsed_reference.py::test_shift_reference_does_not_catch_up_more_than_two_nominal_periods
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 7 deselected in 16.26s

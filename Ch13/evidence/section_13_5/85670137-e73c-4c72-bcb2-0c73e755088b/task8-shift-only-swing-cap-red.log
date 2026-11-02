@@ -1,0 +1,28 @@
+F
+=================================== FAILURES ===================================
+______ test_shift_budget_policy_does_not_enlarge_delayed_swing_reference _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_shift_budget_policy_does_not_enlarge_delayed_swing_reference(nav_robot_model):
+        value=owner(nav_robot_model);legacy=CrawlMachine(nav_robot_model,default_limits())
+        for machine in (value,legacy):
+            machine.phase='SWING';machine._phase_start=1_000_000_000
+            machine._crawl_reference_time(1_000_000_000,2_000_000_000,0)
+        # Original 242efeba native window: 90.239ms command interval during RL SWING;
+        # later native calf reference steps reached 0.006986rad and jaw speed .005889m/s.
+        args=(1_094_000_000,2_090_239_000,90_239_000)
+        actual=value._crawl_reference_time(*args)
+        expected=legacy._crawl_reference_time(*args)
+>       assert actual==expected==(0.02,0.02),'SHIFT budget correction expanded the SWING reference step'
+E       AssertionError: SHIFT budget correction expanded the SWING reference step
+E       assert (0.090239, 0.090239) == (0.02, 0.02)
+E         
+E         At index 0 diff: 0.090239 != 0.02
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_elapsed_reference.py:28: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_applied_elapsed_reference.py::test_shift_budget_policy_does_not_enlarge_delayed_swing_reference
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 20.64s

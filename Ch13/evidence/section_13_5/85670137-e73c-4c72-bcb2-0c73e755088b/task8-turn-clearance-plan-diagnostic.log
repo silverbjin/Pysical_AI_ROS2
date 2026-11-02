@@ -1,0 +1,27 @@
+F
+=================================== FAILURES ===================================
+________ test_full_turn_keeps_nonadjacent_thighs_clear_of_trunk[-0.03] _________
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+wz = -0.03
+
+    @pytest.mark.parametrize('wz',[.03,-.03])
+    def test_full_turn_keeps_nonadjacent_thighs_clear_of_trunk(nav_robot_model,wz):
+        plant=IdealFeedback(nav_robot_model);value=machine(nav_robot_model,plant)
+        native=mujoco.MjModel.from_xml_string(navigation_mjcf(nav_robot_model));data=mujoco.MjData(native)
+        trunk=native.geom('base_collision').id
+        thighs=[next(g for g in range(native.ngeom) if native.geom_bodyid[g]==native.body(p+'_thigh_link').id)
+            for p in ('fr','fl','rr','rl')]
+        for tick in range(15000):
+            result=value.advance(plant.state,(0.,0.,wz),plant.ros,plant.wall)
+>           assert result.state!='FAULT',dict(reason=result.reason,tick=tick,index=value._index,
+                reference=value.reference_body.tolist(),targets={n:p.tolist() for n,p in value._targets.items()})
+E           AssertionError: {'index': 2, 'reason': 'no footprint-bound collision-clear support shift', 'reference': [[0.9928086358538682, 0.119712...[-0.25, 0.18, 0.02120871905481364], 'rr_foot': [-0.28240103272836814, -0.12308394173876329, 0.02120871905481364]}, ...}
+E           assert 'FAULT' != 'FAULT'
+E            +  where 'FAULT' = ControlResult(state='FAULT', phase='SHIFT', swing_foot=None, generation=0, joint_targets=None, reason='no footprint-bound collision-clear support shift').state
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_turn_clearance.py:23: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_crawl_turn_clearance.py::test_full_turn_keeps_nonadjacent_thighs_clear_of_trunk[-0.03]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 11.78s

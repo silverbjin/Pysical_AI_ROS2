@@ -1,0 +1,31 @@
+F
+=================================== FAILURES ===================================
+______ test_step_owns_stance_xyz_but_keeps_selected_xy_fixed_and_bounded _______
+
+nav_robot_model = ModelContract(model_sha256='b974c8efb1f25b175b4edeb40082001879100d29b24d667b17d93aa71282cadc', joint_names=('fr_hip_jo...name="initial_value">0.015</param></state_interface><state_interface name="velocity"/></joint></ros2_control></robot>')
+
+    def test_step_owns_stance_xyz_but_keeps_selected_xy_fixed_and_bounded(nav_robot_model):
+        model,a=xyz_inputs(nav_robot_model);kernel=api()(model,default_limits());before=deepcopy(a)
+        delta=kernel.step(**a)
+        assert set(delta)==set(model.feet)
+        for f,d in delta.items():
+            assert np.shape(d)==(3,) and np.linalg.norm(d)<=a['speed']*a['dt']+1e-10
+            assert np.linalg.norm(a['reference_xyz'][f]+d-a['origins'][f])<=.01+1e-10
+        assert np.allclose(delta[a['foot']][:2],0.,atol=1e-14) and delta[a['foot']][2]>=0.
+        assert any(np.linalg.norm(delta[f][:2])>1e-8 for f in model.feet if f!=a['foot'])
+        predicted=kernel.last_model['predicted_forces_world'][a['foot']]
+        assert np.linalg.norm(predicted)<np.linalg.norm(a['forces_world'][a['foot']])
+        assert kernel.last_model['scope']=='spatial_spring_prediction_not_measured_force_or_torque'
+        assert kernel.last_model['command_space']=='stance_xyz'
+        assert kernel.last_model['future_geometry_validated'] is True
+>       assert kernel.last_model.get('linear_origin_feasible') is True
+E       AssertionError: assert None is True
+E        +  where None = <built-in method get of dict object at 0x77806c5d8cc0>('linear_origin_feasible')
+E        +    where <built-in method get of dict object at 0x77806c5d8cc0> = {'command_space': 'stance_xyz', 'compute_wall_ns': 4689835, 'current_joint_torque_estimates': {'fl_calf_joint': -4.059...tion_error_effort': {'fl_calf_joint': 0.0, 'fl_hip_joint': 0.0, 'fl_thigh_joint': 0.0, 'fr_calf_joint': 0.0, ...}, ...}.get
+E        +      where {'command_space': 'stance_xyz', 'compute_wall_ns': 4689835, 'current_joint_torque_estimates': {'fl_calf_joint': -4.059...tion_error_effort': {'fl_calf_joint': 0.0, 'fl_hip_joint': 0.0, 'fl_thigh_joint': 0.0, 'fr_calf_joint': 0.0, ...}, ...} = <integrated_robot_navigation.load_xyz.SpatialXYZTransition object at 0x77806c931820>.last_model
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_xyz_transition.py:52: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_spatial_xyz_transition.py::test_step_owns_stance_xyz_but_keeps_selected_xy_fixed_and_bounded
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 8 deselected in 16.68s

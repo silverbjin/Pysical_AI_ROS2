@@ -1,0 +1,21 @@
+..........F
+=================================== FAILURES ===================================
+__________________ test_pin_survives_later_automatic_rotation __________________
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-9/test_pin_survives_later_automa0')
+
+    def test_pin_survives_later_automatic_rotation(tmp_path):
+        for name in ('baseline','current'):
+            root=closed_trial(tmp_path/name);(root/'frames.json').write_text('[1,2,3]')
+        retention.maintain_trials(tmp_path,pins=['baseline'],minimum_bytes=1)
+        retention.maintain_trials(tmp_path,minimum_bytes=1)
+>       assert (tmp_path/'baseline/frames.json').exists()
+E       AssertionError: assert False
+E        +  where False = exists()
+E        +    where exists = (PosixPath('/tmp/pytest-of-jinho/pytest-9/test_pin_survives_later_automa0') / 'baseline/frames.json').exists
+
+Ch13/tests/test_evidence_retention_13_5.py:151: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/tests/test_evidence_retention_13_5.py::test_pin_survives_later_automatic_rotation
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 10 passed in 2.41s
