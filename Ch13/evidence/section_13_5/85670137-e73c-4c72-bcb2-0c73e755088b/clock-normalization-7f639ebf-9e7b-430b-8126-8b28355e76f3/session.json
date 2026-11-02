@@ -1,0 +1,775 @@
+{
+  "scope": "user_approved_temporary_shared_tick_and_two_services_not_engine_acceptance",
+  "pid": 3154,
+  "uid": 1000,
+  "restoration_pending": false,
+  "restored": true,
+  "validation_exit": null,
+  "changes": {
+    "services": [
+      "Ubuntu-22.04:systemd-timesyncd.service",
+      "Ubuntu-24.04:systemd-timesyncd.service"
+    ],
+    "adjtimex_write_modes": "ADJ_TICK only",
+    "temporary_tick_us": 10000,
+    "sets_current_time": false,
+    "changes_freq_status_driver_or_permanent_settings": false
+  },
+  "commands": [
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9166,\"freq_scaled_ppm\":2111682,\"status\":0,\"before_tick_us\":9166,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "active\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9166,\"freq_scaled_ppm\":2111682,\"status\":0,\"before_tick_us\":9166,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "active\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9166,\"freq_scaled_ppm\":2111682,\"status\":0,\"before_tick_us\":9166,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "root",
+        "--",
+        "systemctl",
+        "stop",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9166,\"freq_scaled_ppm\":2111682,\"status\":0,\"before_tick_us\":9166,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 3,
+      "stdout": "inactive\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "root",
+        "--",
+        "systemctl",
+        "stop",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9166,\"freq_scaled_ppm\":2111682,\"status\":0,\"before_tick_us\":9166,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 3,
+      "stdout": "inactive\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "root",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "set-tick",
+        "9166",
+        "10000",
+        "87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":0,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":2111682,\"status\":0,\"before_tick_us\":9166,\"write_modes\":16384,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":2111682,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::WriteLine((@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress))"
+      ],
+      "returncode": 0,
+      "stdout": "{\"frequency\":10000000,\"utc\":\"2026-10-27T15:28:00.6582049+00:00\",\"qpc\":139333760573}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::WriteLine((@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress))"
+      ],
+      "returncode": 0,
+      "stdout": "{\"frequency\":10000000,\"utc\":\"2026-10-27T15:28:10.6820068+00:00\",\"qpc\":139434004804}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::WriteLine((@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress))"
+      ],
+      "returncode": 0,
+      "stdout": "{\"frequency\":10000000,\"utc\":\"2026-10-27T15:28:20.6412089+00:00\",\"qpc\":139533599533}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::WriteLine((@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress))"
+      ],
+      "returncode": 0,
+      "stdout": "{\"frequency\":10000000,\"utc\":\"2026-10-27T15:28:30.6370357+00:00\",\"qpc\":139633554568}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::WriteLine((@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress))"
+      ],
+      "returncode": 0,
+      "stdout": "{\"frequency\":10000000,\"utc\":\"2026-10-27T15:28:40.6922513+00:00\",\"qpc\":139734111396}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::WriteLine((@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress))"
+      ],
+      "returncode": 0,
+      "stdout": "{\"frequency\":10000000,\"utc\":\"2026-10-27T15:28:50.6479513+00:00\",\"qpc\":139833665543}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::WriteLine((@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress))"
+      ],
+      "returncode": 0,
+      "stdout": "{\"frequency\":10000000,\"utc\":\"2026-10-27T15:29:01.2732742+00:00\",\"qpc\":139939914874}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":6023,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "root",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "set-tick",
+        "10000",
+        "9166",
+        "87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":0,\"clock_ticks\":100,\"tick_us\":9166,\"freq_scaled_ppm\":6023,\"status\":0,\"before_tick_us\":10000,\"write_modes\":16384,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9166,\"freq_scaled_ppm\":6023,\"status\":0,\"before_tick_us\":9166,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9166,\"freq_scaled_ppm\":6023,\"status\":0,\"before_tick_us\":9166,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 3,
+      "stdout": "inactive\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "root",
+        "--",
+        "systemctl",
+        "start",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9166,\"freq_scaled_ppm\":6023,\"status\":0,\"before_tick_us\":9166,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "active\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":4802,\"status\":8256,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":5}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 3,
+      "stdout": "inactive\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "root",
+        "--",
+        "systemctl",
+        "start",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":4802,\"status\":8256,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":5}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "active\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":4802,\"status\":8193,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":4802,\"status\":8193,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "active\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":4802,\"status\":8193,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-active",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "active\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "systemctl",
+        "is-enabled",
+        "systemd-timesyncd.service"
+      ],
+      "returncode": 0,
+      "stdout": "enabled\n",
+      "stderr": ""
+    }
+  ],
+  "phases": [
+    "normalized_confirmed",
+    "original_clock_recording_closed"
+  ],
+  "source_and_binary_sha256": {
+    "clock-reader": "aac81a0a92c7be3e92090ad67129fbd8c11f27fc45a37075ecb352c41c1b4e3e",
+    "clock-tick-control": "5757e6346edcdf635dbf035793c0e2f1cb70f45e1b189de56241be9336073067",
+    "clock-tick-control.c": "0ec993f27898cfa42bd5c062812472faf4df2080380c14b09963825d5541cfc0",
+    "read-clock-discipline.c": "d8b650f28c425962c2f9784016094c028006563b1b8fca39090f6f7f86cccac7",
+    "temporary-clock-session.py": "fd538e0a4e17140fa9fa3692abc1e9e73ec73a4d434e1293354e1ac4ab98c082",
+    "temporary_clock_lease.py": "66242294acf7e9e42d7c17ed2d687cbfd2bca1f3f79d0ede94dd511befc2a9c0",
+    "test_temporary_clock_lease.py": "ae17a701bee012aeb1d205e7d7596c5b63aebbf89bc52478c2a9f127e7528c07",
+    "timesync-comparison-user.sh": "d4f0feface50e33baf918ab4b0db20bec93a78099ec8ecde5f530ae48c3b359a"
+  },
+  "initial_related_runtimes": [],
+  "negative_guard": {
+    "returncode": 3,
+    "output": "tick ownership/identity/approved pair check failed; no write\n"
+  },
+  "failure": "RuntimeError('host/guest original clock rates differ; no engine')",
+  "final_related_runtimes": [],
+  "final_clock": {
+    "boot_id": "87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd",
+    "time_namespace": "time:[4026531834]",
+    "uid": 1000,
+    "clock_ticks": 100,
+    "tick_us": 10000,
+    "freq_scaled_ppm": 4802,
+    "status": 8193,
+    "before_tick_us": 10000,
+    "write_modes": 0,
+    "read_state": 0
+  },
+  "final_services": {
+    "Ubuntu-22.04": {
+      "active": "active",
+      "enabled": "enabled",
+      "boot": "87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd",
+      "namespace": "time:[4026531834]",
+      "clock_ticks": 100
+    },
+    "Ubuntu-24.04": {
+      "active": "active",
+      "enabled": "enabled",
+      "boot": "87c3f02d-25d7-4fbb-a9ab-39eacf7e7fdd",
+      "namespace": "time:[4026531834]",
+      "clock_ticks": 100
+    }
+  }
+}

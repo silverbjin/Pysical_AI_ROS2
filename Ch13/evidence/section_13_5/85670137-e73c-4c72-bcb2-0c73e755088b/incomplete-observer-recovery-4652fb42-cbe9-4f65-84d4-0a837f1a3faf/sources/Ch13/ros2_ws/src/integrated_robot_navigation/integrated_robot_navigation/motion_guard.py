@@ -1,0 +1,367 @@
+"""Short safety kernel. ROS activation must also verify the native profile.
+
+The kernel is not a native-validation authority. Only its ROS service wrapper
+may expose activation, after loading/verifying a bound CarryProfile.
+"""
+import math
+import json
+from pathlib import Path
+import threading
+import time
+
+import rclpy
+from .dispatch_node import NavigationNode as Node
+from rclpy.clock import Clock
+from rclpy.clock_type import ClockType
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.qos import qos_profile_sensor_data
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+from sensor_msgs.msg import JointState, Imu, LaserScan
+from integrated_robot_interfaces.msg import FootContacts, MotionState
+from integrated_robot_interfaces.srv import SetMode
+
+from .carry_profile import CarryProfile, _validate_limits, validate_profile
+from .admission import prepare_admission
+from .command_order import CommandOrder
+from .execution_contract import read_g2_execution_scope
+from .model import compile_model
+from .projection import body_rotation
+from .observations import SensorInbox, sensor_sample
+from .samples import SensorBundle, Sample, Vec3, sample_valid, validate_bundle
+
+OWNERS = ('raw', 'smoothed', 'final', 'legs', 'joints', 'imu', 'contacts', 'body', 'scan', 'carry')
+ZERO = (0., 0., 0.)
+
+
+class MotionGuard:
+    def __init__(self, model, limits, carry_q):
+        _validate_limits(limits)
+        if len(carry_q) != 6 or not all(math.isfinite(v) for v in carry_q):
+            raise ValueError('six carry angles required')
+        self.model, self.limits, self.carry_q = model, dict(limits), tuple(carry_q)
+        self.generation, self.engine_epoch = 0, 0
+        self.mode, self.fault = 'HOLD', ''
+        self.owners = {}
+        self.last_ros = self.last_wall = self.progress_wall = None
+        self.restart_required = False
+
+    def observe_owners(self, counts):
+        self.owners = dict(counts)
+
+    def fail(self, reason):
+        if not self.fault:
+            self.fault = reason
+        return ZERO, self.fault
+
+    def set_mode(self, mode):
+        if mode == 'RESET':
+            if self.restart_required:
+                return False, 'restart_required'
+            self.generation += 1
+            self.mode, self.fault = 'HOLD', ''
+            self.last_ros = self.last_wall = self.progress_wall = None
+            return True, ''
+        if mode not in ('STAND', 'CRAWL', 'HOLD', 'STOP'):
+            return False, 'unsupported_mode'
+        if mode == 'STOP':
+            # Acknowledging a stop is not rearming. Keep the original fault
+            # and generation; the sole leg owner must still prove settling.
+            self.mode = 'STOP'
+            return True, self.fault
+        if self.fault:
+            return False, self.fault
+        self.mode = mode
+        return True, ''
+
+    def evaluate(self, bundle: SensorBundle, raw: Sample, smoothed: Sample,
+                 ros_ns: int, wall_ns: int) -> tuple[Vec3, str]:
+        if (self.last_ros is not None and ros_ns < self.last_ros or
+                self.last_wall is not None and wall_ns < self.last_wall):
+            self.restart_required = True
+            return self.fail('clock_rollback')
+        if self.last_ros is None or ros_ns > self.last_ros:
+            self.progress_wall = wall_ns
+        self.last_ros, self.last_wall = ros_ns, wall_ns
+        if self.fault:
+            return ZERO, self.fault
+        if self.mode != 'CRAWL':
+            return ZERO, ''
+        # Raw is independent of the smoother and is checked first.
+        for name, value in (('raw', raw), ('smoothed', smoothed)):
+            ok, reason = sample_valid(value, ros_ns, wall_ns, self.generation,
+                                      max_age_ns=200_000_000)
+            if not ok:
+                return self.fail(name+':'+reason)
+            if (value.frame_id != 'nav_base' or not isinstance(value.data, (tuple, list)) or len(value.data) != 3
+                    or abs(value.data[0]) > self.limits['max_vx']
+                    or value.data[1] != 0. or abs(value.data[2]) > self.limits['max_wz']):
+                return self.fail(name+':command_limit_or_frame')
+        if wall_ns-self.progress_wall > 200_000_000:
+            return self.fail('clock_paused')
+        for name in OWNERS:
+            if self.owners.get(name) != 1:
+                return self.fail('owner:'+name)
+        ok, reason = validate_bundle(bundle, ros_ns, wall_ns, self.engine_epoch)
+        if not ok:
+            return self.fail(reason)
+        try:
+            carry = bundle.carry.data
+            if (carry['ready'] is not True or carry['generation'] != self.generation
+                    or carry['model_sha256'] != self.model.model_sha256):
+                return self.fail('carry:not_ready_or_binding')
+            q, qd = bundle.joints.data['position'], bundle.joints.data['velocity']
+            if set(q) != set(self.model.limits) or set(qd) != set(q):
+                return self.fail('joints:names')
+            for name, value in q.items():
+                lo, hi, velocity, _ = self.model.limits[name]
+                if not lo <= value <= hi or abs(qd[name]) > velocity:
+                    return self.fail('joints:physical_limit')
+            for i, target in enumerate(self.carry_q, 1):
+                name = f'arm_joint_{i}'
+                if (abs(q[name]-target) > self.limits['carry_error_rad']
+                        or abs(qd[name]) > self.limits['carry_velocity_rps']):
+                    return self.fail('carry:measured_drift')
+            if bundle.body.frame_id != 'odom' or bundle.body.data['child_frame_id'] != 'base_footprint':
+                return self.fail('body:frame')
+            _, (roll, pitch, _) = body_rotation(bundle.body.data)
+            z = bundle.body.data['position'][2]
+            if (max(abs(roll), abs(pitch)) > self.limits['max_roll_pitch']
+                    or not self.limits['min_body_height_m'] <= z <= self.limits['max_body_height_m']):
+                return self.fail('body:stability')
+            contacts = bundle.contacts.data
+            if (bundle.contacts.frame_id != 'odom'
+                    or tuple(contacts['names']) != self.model.feet
+                    or contacts['unexpected_contacts'] != 0):
+                return self.fail('contacts:frame_names_or_unexpected')
+            if (len(contacts['forces']) != 4 or len(contacts['touching']) != 4
+                    or sum(contacts['touching']) < 3
+                    or any(bool(touch) != (force >= self.limits['min_contact_force_n'])
+                           for touch, force in zip(contacts['touching'], contacts['forces']))):
+                return self.fail('contacts:support')
+            if bundle.imu.frame_id != 'base_link' or bundle.scan.frame_id != 'lidar_link':
+                return self.fail('sensor:frame')
+            scan = bundle.scan.data
+            if (len(scan['ranges']) != 360 or len(scan['hits']) != 360
+                    or not 0. < scan['range_min'] < scan['range_max']
+                    or any(not scan['range_min'] <= value <= scan['range_max'] for value in scan['ranges'])):
+                return self.fail('scan:invalid')
+        except (KeyError, TypeError, ValueError, IndexError):
+            return self.fail('sensor:schema')
+        return tuple(float(v) for v in smoothed.data), ''
+
+
+class MotionGuardNode(Node):
+    """Serialized ROS receiver + independent monotonic watchdog, one final owner.
+
+    model/profile constructor injection is also used by embedded launchers; no
+    parameter or service can bypass validate_profile. Headerless Twist generation
+    cutoffs use DDS SYSTEM source timestamps on this same-host native benchmark.
+    Sensor capture ROS times and local monotonic receipt remain separate.
+    """
+    TOPICS = {
+        'raw': '/navigation/cmd_vel_raw', 'smoothed': '/navigation/cmd_vel_smoothed',
+        'final': '/navigation/cmd_vel', 'legs': '/leg_position_controller/commands',
+        'joints': '/joint_states', 'imu': '/navigation/imu', 'contacts': '/navigation/foot_contacts',
+        'body': '/odom', 'scan': '/scan', 'carry': '/navigation/carry_state',
+    }
+
+    def __init__(self, model=None, profile=None, engine=None, **kwargs):
+        super().__init__('motion_guard', **kwargs)
+        model_file = self.declare_parameter('model_file', '').value
+        profile_file = self.declare_parameter('carry_profile', '').value
+        selected = self.declare_parameter('engine', 'mujoco').value
+        self.validation_mode = self.declare_parameter('validation_mode', False).value
+        self.model = model if model is not None else compile_model(Path(model_file).read_text())
+        self.profile = profile if profile is not None else CarryProfile(**json.loads(Path(profile_file).read_text()))
+        self.engine = engine or selected
+        self.g2_validation_mode=self.declare_parameter('g2_validation_mode',False).value
+        serialized=self.declare_parameter('native_execution_profile','').value
+        try:
+            self.execution_profile=read_g2_execution_scope(self.validation_mode,self.g2_validation_mode,serialized,self.engine)
+        except ValueError:
+            super().destroy_node();raise
+        # Complete bulk artifact verification before subscriptions and watchdog
+        # start. Offline candidates still take the original cheap rejection path.
+        self.prepared_admission=(prepare_admission(self.profile,self.model,self.engine,
+            execution_profile=self.execution_profile,checker=validate_profile)
+            if self.profile.state=='native_validated' else None)
+        self.core = MotionGuard(self.model, self.profile.limits, self.profile.arm_q)
+        self.lock = threading.RLock()
+        self.inbox = SensorInbox(0)
+        self.commands = {'raw': None, 'smoothed': None}
+        self.command_sources = {}
+        self.command_orders = {key:CommandOrder() for key in ('raw','smoothed')}
+        self.owner_ids = {}
+        self.reset_ros = -1
+        self.reset_system = time.time_ns()
+        self.closing = False
+        self.pub = self.create_publisher(Twist, self.TOPICS['final'], 10)
+        self.state_pub = self.create_publisher(MotionState, '/navigation/guard_state', 10)
+        qos = qos_profile_sensor_data
+        self.create_subscription(JointState, self.TOPICS['joints'],
+                                 lambda msg: self._sensor('joints', msg), qos)
+        self.create_subscription(Imu, self.TOPICS['imu'], lambda msg: self._sensor('imu', msg), qos)
+        self.create_subscription(FootContacts, self.TOPICS['contacts'],
+                                 lambda msg: self._sensor('contacts', msg), qos)
+        self.create_subscription(Odometry, self.TOPICS['body'], lambda msg: self._sensor('body', msg), qos)
+        self.create_subscription(LaserScan, self.TOPICS['scan'], lambda msg: self._sensor('scan', msg), qos)
+        self.create_subscription(MotionState, self.TOPICS['carry'], lambda msg: self._sensor('carry', msg), qos)
+        self.create_subscription(Twist, self.TOPICS['raw'], self._raw, 10)
+        self.create_subscription(Twist, self.TOPICS['smoothed'], self._smoothed, 10)
+        # The original /clock must keep dispatching while a G2 proof identity
+        # check waits on filesystem I/O. No motion grant precedes that check.
+        self.parallel_mode_admission = self.g2_validation_mode
+        self.mode_group = (MutuallyExclusiveCallbackGroup()
+                           if self.parallel_mode_admission else None)
+        self.create_service(SetMode, '/navigation/set_mode', self._mode,
+                            callback_group=self.mode_group)
+        self.create_timer(.05, self._owners, clock=Clock(clock_type=ClockType.STEADY_TIME))
+        self.stopping = threading.Event()
+        self.worker = threading.Thread(target=self._watchdog, name='navigation_motion_watchdog')
+        self.worker.start()  # last: constructor failure cannot orphan a started worker
+
+    def _owners(self):
+        endpoints = {name: tuple(sorted(bytes(value.endpoint_gid) for value in
+                       self.get_publishers_info_by_topic(topic))) for name, topic in self.TOPICS.items()}
+        counts = {name: len(values) for name, values in endpoints.items()}
+        with self.lock:
+            if self.core.mode == 'CRAWL' and self.owner_ids:
+                for name, current in endpoints.items():
+                    if current != self.owner_ids.get(name):
+                        self.core.fail('owner_identity:'+name)
+                        break
+            else:
+                self.owner_ids = endpoints
+            self.core.observe_owners(counts)
+
+    def _raw(self, msg, info):
+        self._command('raw', msg, info)
+
+    def _smoothed(self, msg, info):
+        self._command('smoothed', msg, info)
+
+    def _command(self, key, msg, info):
+        with self.lock:
+            if self.closing:return
+            order=self.command_orders[key];stepped=order.system_backstep
+            accepted,reason=order.accept(info,self.reset_system)
+            if not accepted:
+                if reason.startswith('missing_') and self.core.mode=='CRAWL':self.core.fail('command:'+reason)
+                return
+            source=order.last_source_system_ns
+            if order.system_backstep and not stepped:
+                self.get_logger().warning('Command SYSTEM clock backstep; DDS publication order retained; RESET requires receiver restart: '+json.dumps(order.snapshot()))
+            self.command_sources[key] = source
+            value = (msg.linear.x, msg.linear.y, msg.angular.z)
+            if any(v != 0. for v in (msg.linear.z, msg.angular.x, msg.angular.y)):
+                self.core.fail('command:nonplanar')
+                return
+            self.commands[key] = Sample(self.get_clock().now().nanoseconds, time.monotonic_ns(),
+                self.core.generation, source, 'nav_base', value)
+
+    def _sensor(self, key, msg):
+        receipt = time.monotonic_ns()
+        try:
+            sample = sensor_sample(key, msg, receipt, self.core.engine_epoch)
+            with self.lock:
+                if not self.closing:
+                    self.inbox.receive(key, sample)
+        except (TypeError, ValueError) as error:
+            with self.lock:
+                if self.core.mode == 'CRAWL':
+                    self.core.fail(key+':'+str(error))
+
+    def _bundle(self, ros_ns):
+        # Clock and sensor DDS callbacks may arrive in different orders. Buffer
+        # future captures; never accept them early or renew their first receipt.
+        return self.inbox.bundle(ros_ns)
+
+    def _mode(self, request, response):
+        with self.lock:
+            generation = self.core.generation
+            if request.mode=='RESET' and any(order.system_backstep for order in self.command_orders.values()):
+                self.core.restart_required=True
+                self.core.fail('command_clock_step_requires_restart')
+                response.accepted,response.message=False,'command_clock_step_requires_restart'
+                return response
+        if request.mode == 'CRAWL':
+            if self.validation_mode and not self.g2_validation_mode:
+                response.accepted, response.message = False, 'validation_mode_forbids_crawl'
+                return response
+            if self.prepared_admission is not None:
+                started = (time.monotonic_ns(), self.get_clock().now().nanoseconds)
+                accepted,reason=self.prepared_admission.check(self.profile,self.model,self.engine,
+                    execution_profile=self.execution_profile)
+                if self.g2_validation_mode:
+                    self.get_logger().info('G2 admission identity check '+json.dumps(dict(
+                        started_wall_ns=started[0],started_ros_ns=started[1],
+                        finished_wall_ns=time.monotonic_ns(),finished_ros_ns=self.get_clock().now().nanoseconds,
+                        accepted=accepted,reason=reason)))
+            else:
+                accepted,reason=(validate_profile(self.profile,self.model,self.engine) if self.execution_profile is None else
+                    validate_profile(self.profile,self.model,self.engine,execution_profile=self.execution_profile))
+            if not accepted:
+                with self.lock:
+                    if self.core.mode=='CRAWL':self.core.fail('admission:'+reason)
+                response.accepted, response.message = False, reason
+                return response
+        with self.lock:
+            if self.closing or generation != self.core.generation:
+                response.accepted, response.message = False, 'owner_generation_changed'
+                return response
+            response.accepted, response.message = self.core.set_mode(request.mode)
+            if response.accepted and request.mode == 'RESET':
+                self.reset_ros = self.get_clock().now().nanoseconds
+                self.reset_system = time.time_ns()
+                self.inbox.clear(self.reset_ros)
+                self.commands = {'raw': None, 'smoothed': None}
+                self.command_sources.clear()
+                self.command_orders={key:CommandOrder() for key in ('raw','smoothed')}
+                self.owner_ids.clear()
+        return response
+
+    def _publish(self, value, reason):
+        msg = Twist()
+        msg.linear.x, msg.linear.y, msg.angular.z = value
+        self.pub.publish(msg)
+        status = MotionState()
+        status.header.stamp = self.get_clock().now().to_msg()
+        status.header.frame_id = 'nav_base'
+        status.generation = self.core.generation
+        status.model_sha256 = self.model.model_sha256
+        status.state = 'FAULT' if reason else self.core.mode
+        status.ready = not reason and self.core.mode == 'CRAWL'
+        status.fault_reason = reason
+        status.stopped = False  # only crawl's measured landing/velocity gate can assert this
+        self.state_pub.publish(status)
+
+    def _watchdog(self):
+        while not self.stopping.wait(.02):
+            try:
+                with self.lock:
+                    ros_ns, wall_ns = self.get_clock().now().nanoseconds, time.monotonic_ns()
+                    value, reason = self.core.evaluate(self._bundle(ros_ns), self.commands['raw'],
+                                                      self.commands['smoothed'], ros_ns, wall_ns)
+                    self._publish(value, reason)
+            except Exception as error:
+                with self.lock:
+                    self.core.fail('watchdog_exception:'+type(error).__name__)
+        with self.lock:
+            self._publish(ZERO, self.core.fault)
+
+    def destroy_node(self):
+        with self.lock:
+            self.closing = True
+            if not self.core.fault:
+                self.core.set_mode('STOP')
+        self.stopping.set()
+        self.worker.join(timeout=2.)
+        if self.worker.is_alive():
+            raise RuntimeError('motion watchdog did not join; ROS resources retained')
+        return super().destroy_node()
+
+
+def main(args=None):
+    from .dispatch_node import run_navigation_node
+    run_navigation_node(MotionGuardNode, args=args)

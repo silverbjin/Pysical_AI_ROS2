@@ -1,0 +1,282 @@
+{
+  "scope": "single_joint_force_semantics_not_C1_G2_acceptance",
+  "uuid": "0e189460-4aa3-41a8-803e-30bdc3707458",
+  "boot_id": "82d63ed9-478a-4ae7-9194-f7681c38d565",
+  "inputs": {
+    "force_probe.cpp": "719075b3676e28ce5b5ce8e004fc3018a0a5d32640449e6d5a05057801f4f159",
+    "force_probe.sdf": "caefe645919f74cd623510a235a8aa51f1f8e390952080e47e28446aeec9fbda",
+    "run_probe.py": "bb0ccec60e3f4c092b26abf00f00b9465215ad9c9a2ca1871add0f2f343ad2f7"
+  },
+  "conditions_predefined": [
+    "every_step",
+    "control_period"
+  ],
+  "dt_s": 0.002,
+  "inertia_kg_m2": 0.1,
+  "torque_nm": 1.0,
+  "drive_steps": 100,
+  "environment_changes": "unique GZ_PARTITION only; no service/clock/driver changes",
+  "commands": [
+    {
+      "label": "build",
+      "argv": [
+        "g++",
+        "-O2",
+        "-std=c++17",
+        "/mnt/c/Users/Jinho/Documents/Codex/2026-11-02/13-5-2026-11-02-task8/work/force_probe/force_probe.cpp",
+        "-o",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/force-semantics-0e189460-4aa3-41a8-803e-30bdc3707458/force_probe",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/sim8",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/cmake3",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/sdformat14",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/math7",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/utils2",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/plugin2",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/transport13",
+        "-I/usr/include/uuid",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/msgs10",
+        "-I/usr/include/pgm-5.3",
+        "-I/usr/include/libxml2",
+        "-I/usr/include/x86_64-linux-gnu",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/common5",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/fuel_tools9",
+        "-I/usr/include/jsoncpp",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/gui8",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/rendering8",
+        "-DQT_CORE_LIB",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtCore",
+        "-I/usr/include/x86_64-linux-gnu/qt5",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtQuick",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtGui",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtQml",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtNetwork",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtQmlModels",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtQuickControls2",
+        "-DQT_WIDGETS_LIB",
+        "-I/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
+        "-DQT_QUICKCONTROLS2_LIB",
+        "-DQT_QUICK_LIB",
+        "-DQT_GUI_LIB",
+        "-DQT_QMLMODELS_LIB",
+        "-DQT_QML_LIB",
+        "-DQT_NETWORK_LIB",
+        "-DQT_CORE_LIB",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/physics7",
+        "-I/usr/include/eigen3",
+        "-I/usr/lib/x86_64-linux-gnu/pkgconfig/../../../include/gz/sensors8",
+        "-isystem",
+        "/usr/include/mit-krb5",
+        "-std=c++17",
+        "-L/usr/lib/x86_64-linux-gnu/pkgconfig/../../../lib/x86_64-linux-gnu",
+        "-lgz-sim8",
+        "-lgz-fuel_tools9",
+        "-lgz-gui8",
+        "-lQt5Widgets",
+        "-lQt5QuickControls2",
+        "-lQt5Quick",
+        "-lQt5Gui",
+        "-lQt5QmlModels",
+        "-lQt5Qml",
+        "-lQt5Network",
+        "-lQt5Core",
+        "-lgz-physics7",
+        "-lgz-sensors8",
+        "-lgz-transport13",
+        "-lgz-msgs10",
+        "-lsdformat14",
+        "-ltinyxml2",
+        "-lgz-rendering8",
+        "-lgz-common5",
+        "-luuid",
+        "-lgz-plugin2",
+        "-lGL",
+        "-lgz-math7",
+        "-lgz-utils2",
+        "-lprotobuf"
+      ]
+    },
+    {
+      "label": "every_step",
+      "argv": [
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/force-semantics-0e189460-4aa3-41a8-803e-30bdc3707458/force_probe",
+        "/mnt/c/Users/Jinho/Documents/Codex/2026-11-02/13-5-2026-11-02-task8/work/force_probe/force_probe.sdf",
+        "every_step"
+      ]
+    },
+    {
+      "label": "control_period",
+      "argv": [
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/force-semantics-0e189460-4aa3-41a8-803e-30bdc3707458/force_probe",
+        "/mnt/c/Users/Jinho/Documents/Codex/2026-11-02/13-5-2026-11-02-task8/work/force_probe/force_probe.sdf",
+        "control_period"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "label": "build",
+      "returncode": 0
+    },
+    {
+      "label": "every_step",
+      "returncode": 0
+    },
+    {
+      "label": "control_period",
+      "returncode": 0
+    }
+  ],
+  "binary_sha256": "9bc57b08e7dfb414c45332ef05488e905540d1ae44a3af423cef56ceba56b36e",
+  "packages": "ros-jazzy-gz-physics-vendor\t0.0.9-1noble.20260905.065116\nros-jazzy-gz-ros2-control\t1.2.20-1noble.20261006.040504\nros-jazzy-gz-sim-vendor\t0.0.13-1noble.20260905.073557\nros-jazzy-hardware-interface\t4.48.1-1noble.20260924.184843\n",
+  "residual_process_lines": [],
+  "all_conditions_pass": true,
+  "summary": {
+    "every_step": {
+      "delta_qd": 2.0000000000000013,
+      "first_drive_rows": [
+        {
+          "step": "10",
+          "time_ns": "22000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.02",
+          "wrench_y_nm": "1"
+        },
+        {
+          "step": "11",
+          "time_ns": "24000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.040000000000000001",
+          "wrench_y_nm": "1"
+        },
+        {
+          "step": "12",
+          "time_ns": "26000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.059999999999999998",
+          "wrench_y_nm": "1"
+        },
+        {
+          "step": "13",
+          "time_ns": "28000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.080000000000000002",
+          "wrench_y_nm": "1"
+        },
+        {
+          "step": "14",
+          "time_ns": "30000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.10000000000000001",
+          "wrench_y_nm": "1"
+        },
+        {
+          "step": "15",
+          "time_ns": "32000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.12000000000000001",
+          "wrench_y_nm": "1"
+        },
+        {
+          "step": "16",
+          "time_ns": "34000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.14000000000000001",
+          "wrench_y_nm": "1"
+        }
+      ],
+      "last": {
+        "step": "109",
+        "time_ns": "220000000",
+        "dt_ns": "2000000",
+        "post_command_nm": "0",
+        "velocity_rad_s": "2.0000000000000013",
+        "wrench_y_nm": "1"
+      }
+    },
+    "control_period": {
+      "delta_qd": 0.4000000000000001,
+      "first_drive_rows": [
+        {
+          "step": "10",
+          "time_ns": "22000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.02",
+          "wrench_y_nm": "1"
+        },
+        {
+          "step": "11",
+          "time_ns": "24000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.02",
+          "wrench_y_nm": "0"
+        },
+        {
+          "step": "12",
+          "time_ns": "26000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.02",
+          "wrench_y_nm": "0"
+        },
+        {
+          "step": "13",
+          "time_ns": "28000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.02",
+          "wrench_y_nm": "0"
+        },
+        {
+          "step": "14",
+          "time_ns": "30000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.02",
+          "wrench_y_nm": "0"
+        },
+        {
+          "step": "15",
+          "time_ns": "32000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.040000000000000001",
+          "wrench_y_nm": "1"
+        },
+        {
+          "step": "16",
+          "time_ns": "34000000",
+          "dt_ns": "2000000",
+          "post_command_nm": "0",
+          "velocity_rad_s": "0.040000000000000001",
+          "wrench_y_nm": "0"
+        }
+      ],
+      "last": {
+        "step": "109",
+        "time_ns": "220000000",
+        "dt_ns": "2000000",
+        "post_command_nm": "0",
+        "velocity_rad_s": "0.40000000000000008",
+        "wrench_y_nm": "0"
+      }
+    }
+  },
+  "output_sha256": {
+    "every_step.stderr": "b3e08f0689cbe338b0f70cf5dd28437d44aa1e1c6befe03534f043cf5dc67ed9",
+    "every_step.stdout": "732f82f82f15775a9daedd505e0d613a420f0c5372e34b17d47326e61c47ff80",
+    "build.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "force_probe": "9bc57b08e7dfb414c45332ef05488e905540d1ae44a3af423cef56ceba56b36e",
+    "control_period.stderr": "b4610fae7b63f6f035cdb513a473eca1361230ab5c211a3a4a1771a4ca2a8bbf",
+    "control_period.stdout": "ccf312df32181ed65035b910c60dcf31b49b49add071e42add661b9885f0e825",
+    "build.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

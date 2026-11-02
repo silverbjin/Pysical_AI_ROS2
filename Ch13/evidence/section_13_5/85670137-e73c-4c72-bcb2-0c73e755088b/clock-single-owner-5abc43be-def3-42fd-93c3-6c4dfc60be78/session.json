@@ -1,0 +1,1201 @@
+{
+  "scope": "approved_two_services_only_unmodified_chrony_convergence_not_engine_acceptance",
+  "pid": 734,
+  "uid": 1000,
+  "restoration_pending": false,
+  "restored": true,
+  "validation_exit": 1,
+  "changes": {
+    "services": [
+      "Ubuntu-22.04:systemd-timesyncd.service",
+      "Ubuntu-24.04:systemd-timesyncd.service"
+    ],
+    "adjtimex_write_modes": "none",
+    "temporary_tick_us": null,
+    "sets_current_time": false,
+    "changes_freq_status_driver_or_permanent_settings": false
+  },
+  "commands": [
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "root",
+        "--",
+        "python3",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/distro_session.py",
+        "--service-action",
+        "stop",
+        "47fa41ea-35b3-4275-ba73-4521f7c75927",
+        "7765",
+        "e5fdf8859aa86bddf42839e36ac34c2ee924494695ee1251257eb699500c0884"
+      ],
+      "returncode": 0,
+      "stdout": "{\"action\": \"stop\", \"confirmed_instance\": {\"boot\": \"47fa41ea-35b3-4275-ba73-4521f7c75927\", \"init_start_ticks\": 7765, \"machine_sha256\": \"e5fdf8859aa86bddf42839e36ac34c2ee924494695ee1251257eb699500c0884\"}}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "root",
+        "--",
+        "python3",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/distro_session.py",
+        "--service-action",
+        "stop",
+        "47fa41ea-35b3-4275-ba73-4521f7c75927",
+        "7170",
+        "3b07c6028e97328aa0c53414646c2f3bcc2f494805fc14ab3b2b5f39fc5403e7"
+      ],
+      "returncode": 0,
+      "stdout": "{\"action\": \"stop\", \"confirmed_instance\": {\"boot\": \"47fa41ea-35b3-4275-ba73-4521f7c75927\", \"init_start_ticks\": 7170, \"machine_sha256\": \"3b07c6028e97328aa0c53414646c2f3bcc2f494805fc14ab3b2b5f39fc5403e7\"}}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:57:56 2026\nSystem time     : 0.689469695 seconds fast of NTP time\nLast offset     : +0.870819986 seconds\nRMS offset      : 0.275444537 seconds\nFrequency       : 0.019 ppm fast\nResidual freq   : +28980.486 ppm\nSkew            : 0.912 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.506877661 seconds\nUpdate interval : 9.2 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:58:06 2026\nSystem time     : 0.354752243 seconds fast of NTP time\nLast offset     : +0.425266922 seconds\nRMS offset      : 0.293884188 seconds\nFrequency       : 0.019 ppm fast\nResidual freq   : +37187.422 ppm\nSkew            : 0.912 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.480914742 seconds\nUpdate interval : 8.0 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9167,\"freq_scaled_ppm\":-2185673,\"status\":0,\"before_tick_us\":9167,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-1222,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-1222,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9827,\"freq_scaled_ppm\":-700096,\"status\":0,\"before_tick_us\":9827,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9827,\"freq_scaled_ppm\":-700096,\"status\":0,\"before_tick_us\":9827,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:58:18 2026\nSystem time     : 0.195327207 seconds fast of NTP time\nLast offset     : +0.244025722 seconds\nRMS offset      : 0.289285302 seconds\nFrequency       : 0.019 ppm fast\nResidual freq   : +36759.305 ppm\nSkew            : 0.912 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.445374668 seconds\nUpdate interval : 8.0 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9827,\"freq_scaled_ppm\":-700096,\"status\":0,\"before_tick_us\":9827,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9827,\"freq_scaled_ppm\":-700096,\"status\":0,\"before_tick_us\":9827,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9827,\"freq_scaled_ppm\":-700096,\"status\":0,\"before_tick_us\":9827,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9827,\"freq_scaled_ppm\":-700096,\"status\":0,\"before_tick_us\":9827,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9827,\"freq_scaled_ppm\":-700096,\"status\":0,\"before_tick_us\":9827,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":9827,\"freq_scaled_ppm\":-700096,\"status\":0,\"before_tick_us\":9827,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10016,\"freq_scaled_ppm\":2237799,\"status\":0,\"before_tick_us\":10016,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10016,\"freq_scaled_ppm\":2237799,\"status\":0,\"before_tick_us\":10016,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:58:23 2026\nSystem time     : 0.060107931 seconds slow of NTP time\nLast offset     : -0.168561965 seconds\nRMS offset      : 0.279568791 seconds\nFrequency       : 0.019 ppm fast\nResidual freq   : +23631.344 ppm\nSkew            : 0.912 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.406443238 seconds\nUpdate interval : 8.0 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10016,\"freq_scaled_ppm\":2237799,\"status\":0,\"before_tick_us\":10016,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10016,\"freq_scaled_ppm\":2237799,\"status\":0,\"before_tick_us\":10016,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10016,\"freq_scaled_ppm\":2237799,\"status\":0,\"before_tick_us\":10016,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10016,\"freq_scaled_ppm\":2237799,\"status\":0,\"before_tick_us\":10016,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10016,\"freq_scaled_ppm\":2237799,\"status\":0,\"before_tick_us\":10016,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10095,\"freq_scaled_ppm\":681074,\"status\":0,\"before_tick_us\":10095,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10095,\"freq_scaled_ppm\":681074,\"status\":0,\"before_tick_us\":10095,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10095,\"freq_scaled_ppm\":681074,\"status\":0,\"before_tick_us\":10095,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:58:31 2026\nSystem time     : 0.106954016 seconds slow of NTP time\nLast offset     : -0.091776356 seconds\nRMS offset      : 0.266805410 seconds\nFrequency       : 0.019 ppm fast\nResidual freq   : +13468.187 ppm\nSkew            : 0.912 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.300087571 seconds\nUpdate interval : 8.0 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10095,\"freq_scaled_ppm\":681074,\"status\":0,\"before_tick_us\":10095,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10095,\"freq_scaled_ppm\":681074,\"status\":0,\"before_tick_us\":10095,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10095,\"freq_scaled_ppm\":681074,\"status\":0,\"before_tick_us\":10095,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10095,\"freq_scaled_ppm\":681074,\"status\":0,\"before_tick_us\":10095,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10833,\"freq_scaled_ppm\":2182734,\"status\":0,\"before_tick_us\":10833,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10833,\"freq_scaled_ppm\":2182734,\"status\":0,\"before_tick_us\":10833,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10833,\"freq_scaled_ppm\":2182734,\"status\":0,\"before_tick_us\":10833,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-1225629,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:58:39 2026\nSystem time     : 0.000370806 seconds fast of NTP time\nLast offset     : -0.140843719 seconds\nRMS offset      : 0.257002532 seconds\nFrequency       : 0.025 ppm fast\nResidual freq   : +272.448 ppm\nSkew            : 2.235 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.009668074 seconds\nUpdate interval : 8.1 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-1225629,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-1225629,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-1225629,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-1225629,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-111253,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-111253,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-111253,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-111253,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:58:48 2026\nSystem time     : 0.000111915 seconds fast of NTP time\nLast offset     : -0.000180792 seconds\nRMS offset      : 0.243814021 seconds\nFrequency       : 0.046 ppm fast\nResidual freq   : +170.267 ppm\nSkew            : 4.137 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.009224760 seconds\nUpdate interval : 8.2 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-111253,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-111253,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-111253,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-111253,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":6802177,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":6802177,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":6802177,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":6802177,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:58:54 2026\nSystem time     : 0.000000026 seconds fast of NTP time\nLast offset     : -0.000614888 seconds\nRMS offset      : 0.231302366 seconds\nFrequency       : 0.359 ppm fast\nResidual freq   : +75.487 ppm\nSkew            : 9.442 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.006174950 seconds\nUpdate interval : 8.0 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-23522,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-23522,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-23522,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-391978,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-391978,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-391978,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-391978,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-391978,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:59:02 2026\nSystem time     : 0.000075656 seconds fast of NTP time\nLast offset     : +0.000098089 seconds\nRMS offset      : 0.219432697 seconds\nFrequency       : 1.998 ppm fast\nResidual freq   : +55.181 ppm\nSkew            : 21.419 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.005411186 seconds\nUpdate interval : 8.0 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-391978,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-391978,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-391978,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-741983,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-741983,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-741983,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-741983,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-741983,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Thu Oct 29 02:59:11 2026\nSystem time     : 0.000014483 seconds slow of NTP time\nLast offset     : -0.000081672 seconds\nRMS offset      : 0.208172143 seconds\nFrequency       : 11.485 ppm fast\nResidual freq   : +22.882 ppm\nSkew            : 46.761 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.004643161 seconds\nUpdate interval : 8.0 seconds\nLeap status     : Normal\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-741983,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":-741983,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":1134871,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":1134871,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":1134871,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":1134871,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":1134871,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":8901,\"status\":0,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "root",
+        "--",
+        "python3",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/distro_session.py",
+        "--service-action",
+        "start",
+        "47fa41ea-35b3-4275-ba73-4521f7c75927",
+        "7170",
+        "3b07c6028e97328aa0c53414646c2f3bcc2f494805fc14ab3b2b5f39fc5403e7"
+      ],
+      "returncode": 0,
+      "stdout": "{\"action\": \"start\", \"confirmed_instance\": {\"boot\": \"47fa41ea-35b3-4275-ba73-4521f7c75927\", \"init_start_ticks\": 7170, \"machine_sha256\": \"3b07c6028e97328aa0c53414646c2f3bcc2f494805fc14ab3b2b5f39fc5403e7\"}}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "root",
+        "--",
+        "python3",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/distro_session.py",
+        "--service-action",
+        "start",
+        "47fa41ea-35b3-4275-ba73-4521f7c75927",
+        "7765",
+        "e5fdf8859aa86bddf42839e36ac34c2ee924494695ee1251257eb699500c0884"
+      ],
+      "returncode": 0,
+      "stdout": "{\"action\": \"start\", \"confirmed_instance\": {\"boot\": \"47fa41ea-35b3-4275-ba73-4521f7c75927\", \"init_start_ticks\": 7765, \"machine_sha256\": \"e5fdf8859aa86bddf42839e36ac34c2ee924494695ee1251257eb699500c0884\"}}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/clock-tick-control",
+        "read"
+      ],
+      "returncode": 0,
+      "stdout": "{\"boot_id\":\"47fa41ea-35b3-4275-ba73-4521f7c75927\",\"time_namespace\":\"time:[4026531834]\",\"uid\":1000,\"clock_ticks\":100,\"tick_us\":10000,\"freq_scaled_ppm\":45181,\"status\":8192,\"before_tick_us\":10000,\"write_modes\":0,\"read_state\":0}\n",
+      "stderr": ""
+    }
+  ],
+  "phases": [
+    "services_only_stopped",
+    "original_clock_recording_closed",
+    "rate_and_continuity_admitted"
+  ],
+  "requested_pair_count": 3,
+  "requested_engine": "gazebo",
+  "single_pair_is_not_final_consecutive_acceptance": false,
+  "read_only_nominal_encoding": "tick9999_plus100ppm_within2ppm_or_strict10000",
+  "source_and_binary_sha256": {
+    "archive_native_storage.py": "e93fe201cb002c0211fdae824c72c574703988c7ec410bf74d165955755123ef",
+    "clock-reader": "aac81a0a92c7be3e92090ad67129fbd8c11f27fc45a37075ecb352c41c1b4e3e",
+    "clock-tick-control": "5757e6346edcdf635dbf035793c0e2f1cb70f45e1b189de56241be9336073067",
+    "clock-tick-control.c": "0ec993f27898cfa42bd5c062812472faf4df2080380c14b09963825d5541cfc0",
+    "clock_convergence.py": "a4ea24a59f0ae381e38cedde3dbdd83c39907255f6eca20307faba22c83273b8",
+    "distro_session.py": "392772394f31745bdb07d98efebdffb6258570816eabfd7dd5cb71d294ea1c6f",
+    "native-output-g1.py": "4827bca1cf1108214ff7a1be9366e86bdc7c0fe58fe09ac6a215b44c22682d80",
+    "native-output-g2.py": "65873a709531a9386131bd3c66b1f8069cb358d485dea5051339d355e275e3e7",
+    "native_engine_plan.py": "e8e70b478641c1d11d65b29dcc9809e92c963c263f806d3427ded3430f447e13",
+    "read-clock-discipline.c": "d8b650f28c425962c2f9784016094c028006563b1b8fca39090f6f7f86cccac7",
+    "run-preflight-native-pairs.py": "9d040a0353c04e8690d7b619688a7618d6894b631c7aae26f4d7bdef3363d873",
+    "temporary-clock-session.py": "ba8eba6e4891bdead0cf6630eb43779dc440008c3671f5d8491d4031fbb305b8",
+    "temporary_clock_lease.py": "386c1d78e88d2271ebbbaa5d862527fb3085392b6ae5bef20603b6811a09e721",
+    "test_clock_convergence.py": "91a235f6bcbf27ecb32e7684cf0c9016167cf2844d7d29fb507b3cbfb56e9aa0",
+    "test_distro_session.py": "79f86fa81fe59ac3c6b127acd5fc00d7e133ad08444237b1b173819eb0062146",
+    "test_native_engine_plan.py": "9dd16d590f1175c53803c7d22310bb402b9103acb634f1ade1f332fcea7b837c",
+    "test_temporary_clock_lease.py": "0de5989c87b69f93731762f4e65e0e50852a800eeb89b20961eabaab44e7322d",
+    "timesync-comparison-user.sh": "df1ce810d7028fe373a319718e27aadd0ba6a7a28220d9d94069788aed629dfa"
+  },
+  "initial_related_runtimes": [],
+  "foreground_sessions": {
+    "Ubuntu-22.04": {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "python3",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/distro_session.py",
+        "--serve",
+        "9bc1796b-1288-45e4-8b31-561d07fcfe88"
+      ],
+      "identity": {
+        "uid": 1000,
+        "pid": 321,
+        "start_ticks": 8001,
+        "init_start_ticks": 7765,
+        "machine_sha256": "e5fdf8859aa86bddf42839e36ac34c2ee924494695ee1251257eb699500c0884",
+        "boot": "47fa41ea-35b3-4275-ba73-4521f7c75927",
+        "namespace": "time:[4026531834]",
+        "clock_ticks": 100,
+        "source_sha256": "392772394f31745bdb07d98efebdffb6258570816eabfd7dd5cb71d294ea1c6f"
+      },
+      "proxy_pid": 857,
+      "joined": false,
+      "returncode": null,
+      "close_acknowledged": false,
+      "error": null,
+      "stderr_bytes": 0,
+      "stderr_file": null,
+      "scope": "owned_unprivileged_foreground_no_service_clock_or_distro_configuration_changes"
+    },
+    "Ubuntu-24.04": {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "python3",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/distro_session.py",
+        "--serve",
+        "de763839-f66b-4eee-964b-8a75295e3455"
+      ],
+      "identity": {
+        "uid": 1000,
+        "pid": 1110,
+        "start_ticks": 8132,
+        "init_start_ticks": 7170,
+        "machine_sha256": "3b07c6028e97328aa0c53414646c2f3bcc2f494805fc14ab3b2b5f39fc5403e7",
+        "boot": "47fa41ea-35b3-4275-ba73-4521f7c75927",
+        "namespace": "time:[4026531834]",
+        "clock_ticks": 100,
+        "source_sha256": "392772394f31745bdb07d98efebdffb6258570816eabfd7dd5cb71d294ea1c6f"
+      },
+      "proxy_pid": 1107,
+      "joined": false,
+      "returncode": null,
+      "close_acknowledged": false,
+      "error": null,
+      "stderr_bytes": 0,
+      "stderr_file": null,
+      "scope": "owned_unprivileged_foreground_no_service_clock_or_distro_configuration_changes"
+    }
+  },
+  "negative_guard": {
+    "returncode": 3,
+    "output": "tick ownership/identity/approved pair check failed; no write\n"
+  },
+  "qpc_server_command": [
+    "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+    "-NoLogo",
+    "-NoProfile",
+    "-NonInteractive",
+    "-Command",
+    "[Console]::WriteLine(\"READY\"); while(($line=[Console]::ReadLine()) -ne $null) { if($line -eq \"stop\") { break }; [Console]::WriteLine((@{qpc=[Diagnostics.Stopwatch]::GetTimestamp();frequency=[Diagnostics.Stopwatch]::Frequency;utc=[DateTimeOffset]::UtcNow.ToString(\"o\")} | ConvertTo-Json -Compress)) }"
+  ],
+  "qpc_server_exit": 0,
+  "validation_command": [
+    "bash",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78/timesync-comparison-user.sh",
+    "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/clock-single-owner-5abc43be-def3-42fd-93c3-6c4dfc60be78",
+    "",
+    "3",
+    "gazebo"
+  ],
+  "final_related_runtimes": [],
+  "final_clock": {
+    "boot_id": "47fa41ea-35b3-4275-ba73-4521f7c75927",
+    "time_namespace": "time:[4026531834]",
+    "uid": 1000,
+    "clock_ticks": 100,
+    "tick_us": 10000,
+    "freq_scaled_ppm": 45181,
+    "status": 8192,
+    "before_tick_us": 10000,
+    "write_modes": 0,
+    "read_state": 0
+  },
+  "final_services": {
+    "Ubuntu-22.04": {
+      "uid": 1000,
+      "pid": 321,
+      "start_ticks": 8001,
+      "init_start_ticks": 7765,
+      "machine_sha256": "e5fdf8859aa86bddf42839e36ac34c2ee924494695ee1251257eb699500c0884",
+      "boot": "47fa41ea-35b3-4275-ba73-4521f7c75927",
+      "namespace": "time:[4026531834]",
+      "clock_ticks": 100,
+      "source_sha256": "392772394f31745bdb07d98efebdffb6258570816eabfd7dd5cb71d294ea1c6f",
+      "active": "active",
+      "enabled": "enabled",
+      "service_main_pid": 613,
+      "inspected_wall_ns": 618106887798
+    },
+    "Ubuntu-24.04": {
+      "uid": 1000,
+      "pid": 1110,
+      "start_ticks": 8132,
+      "init_start_ticks": 7170,
+      "machine_sha256": "3b07c6028e97328aa0c53414646c2f3bcc2f494805fc14ab3b2b5f39fc5403e7",
+      "boot": "47fa41ea-35b3-4275-ba73-4521f7c75927",
+      "namespace": "time:[4026531834]",
+      "clock_ticks": 100,
+      "source_sha256": "392772394f31745bdb07d98efebdffb6258570816eabfd7dd5cb71d294ea1c6f",
+      "active": "active",
+      "enabled": "enabled",
+      "service_main_pid": 2722,
+      "inspected_wall_ns": 618118367206
+    }
+  },
+  "final_foreground_sessions": {
+    "Ubuntu-22.04": {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "jinho",
+        "--",
+        "python3",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/distro_session.py",
+        "--serve",
+        "9bc1796b-1288-45e4-8b31-561d07fcfe88"
+      ],
+      "identity": {
+        "uid": 1000,
+        "pid": 321,
+        "start_ticks": 8001,
+        "init_start_ticks": 7765,
+        "machine_sha256": "e5fdf8859aa86bddf42839e36ac34c2ee924494695ee1251257eb699500c0884",
+        "boot": "47fa41ea-35b3-4275-ba73-4521f7c75927",
+        "namespace": "time:[4026531834]",
+        "clock_ticks": 100,
+        "source_sha256": "392772394f31745bdb07d98efebdffb6258570816eabfd7dd5cb71d294ea1c6f"
+      },
+      "proxy_pid": 857,
+      "joined": true,
+      "returncode": 0,
+      "close_acknowledged": true,
+      "error": null,
+      "stderr_bytes": 0,
+      "stderr_file": null,
+      "scope": "owned_unprivileged_foreground_no_service_clock_or_distro_configuration_changes"
+    },
+    "Ubuntu-24.04": {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "-u",
+        "jinho",
+        "--",
+        "python3",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/distro_session.py",
+        "--serve",
+        "de763839-f66b-4eee-964b-8a75295e3455"
+      ],
+      "identity": {
+        "uid": 1000,
+        "pid": 1110,
+        "start_ticks": 8132,
+        "init_start_ticks": 7170,
+        "machine_sha256": "3b07c6028e97328aa0c53414646c2f3bcc2f494805fc14ab3b2b5f39fc5403e7",
+        "boot": "47fa41ea-35b3-4275-ba73-4521f7c75927",
+        "namespace": "time:[4026531834]",
+        "clock_ticks": 100,
+        "source_sha256": "392772394f31745bdb07d98efebdffb6258570816eabfd7dd5cb71d294ea1c6f"
+      },
+      "proxy_pid": 1107,
+      "joined": true,
+      "returncode": 0,
+      "close_acknowledged": true,
+      "error": null,
+      "stderr_bytes": 0,
+      "stderr_file": null,
+      "scope": "owned_unprivileged_foreground_no_service_clock_or_distro_configuration_changes"
+    }
+  },
+  "foreground_sessions_closed": true
+}

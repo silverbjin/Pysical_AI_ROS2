@@ -1,0 +1,66 @@
+--- actual-073ad2cb/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/clock_execution.py
++++ direct-owner-candidate/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/clock_execution.py
+@@ -66,10 +66,11 @@
+         return SingleThreadedExecutor(context=node.context)
+     if mode != 'relay100' or node.get_parameter('validation_mode').value is not True:
+         raise ValueError('control_clock isolated executor requires validation_mode')
+-    if getattr(node,'simulation_cadence',False):
+-        # The G2 model group is serial already; its TimeSource and all ingress
++    if getattr(node,'direct_model_dispatch',False) or getattr(node,'simulation_cadence',False):
++        # The MuJoCo G1/G2 model group is serial already; TimeSource and ingress
+         # have their own receiver. Dispatch the sole owner directly instead of
+         # handing each decision through another Python callback worker queue.
++        node.get_logger().info('MuJoCo validation model uses direct serial dispatch with isolated ingress')
+         return SingleThreadedExecutor(context=node.context)
+     return DrainingExecutor(num_threads=2,context=node.context)
+ 
+--- actual-073ad2cb/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/crawl_controller.py
++++ direct-owner-candidate/Ch13/ros2_ws/src/integrated_robot_navigation/integrated_robot_navigation/crawl_controller.py
+@@ -127,6 +127,10 @@
+         self.create_service(Trigger, '~/report', self._report)
+         self.simulation_cadence=(self.engine=='mujoco' and self.g2_validation_mode
+             and self.clock_mode=='relay100')
++        # Both validation roles have one mutually-exclusive model group and
++        # already-isolated ingress. G1 needs no extra callback worker queue.
++        self.direct_model_dispatch=(self.engine=='mujoco' and self.validation_mode
++            and self.clock_mode=='relay100')
+         self.last_control_dispatch_wall_ns=time.monotonic_ns()
+         self.reference_dispatch=None
+         self.reference_retry_hint=None
+@@ -378,7 +382,7 @@
+                 raise ValueError('held command model changed; cold restart required')
+             self.machine = CrawlMachine(self.model,self.profile.limits,
+                 reference_time_policy='applied_shift_elapsed' if self.simulation_cadence else 'bounded_20ms')
+-            if self.simulation_cadence:
++            if self.direct_model_dispatch:
+                 self.machine.set_stage_observer(self._mark_decision_cost)
+             self.applied_credit=(AppliedReferenceCredit(self.model.joint_names)
+                 if self.engine=='mujoco' and self.g2_validation_mode else None)
+@@ -580,6 +584,7 @@
+                 crawl_shift_reference_clock=machine._crawl_shift_clock,
+                 fault_stop_confirmed=machine.fault_stop_confirmed,
+                 simulation_control_cadence=self.simulation_cadence,
++                direct_model_dispatch=self.direct_model_dispatch,
+                 reference_time_policy=machine.reference_time_policy,
+                 reference_dispatch=reference_dispatch,
+                 crawl_swing_reference_clock=machine._crawl_swing_clock,
+@@ -654,7 +659,7 @@
+ 
+     def _dispatch_tick(self):
+         started = time.monotonic_ns()
+-        if self.simulation_cadence:
++        if self.direct_model_dispatch:
+             self._decision_cost_current=dict(started_wall_ns=started,stages=[],
+                 started_thread_ns=time.thread_time_ns(),native_tid=threading.get_native_id(),
+                 publication_before=self.command_publication_count)
+--- actual-073ad2cb/Ch13/scripts/run_navigation_13_5.py
++++ direct-owner-candidate/Ch13/scripts/run_navigation_13_5.py
+@@ -90,7 +90,7 @@
+ 
+ def crawl_dispatch_mode(engine,clock_mode,is_g2):
+     if clock_mode=='native':return 'single_worker'
+-    return 'direct_single_owner' if engine=='mujoco' and is_g2 else 'isolated_2worker'
++    return 'direct_single_owner' if engine=='mujoco' else 'isolated_2worker'
+ 
+ 
+ def capture_native_command_trace(engine, *, call, client, path):

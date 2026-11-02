@@ -1,0 +1,173 @@
+{
+  "scope": "read_only_service_and_init_journal_correlation_not_syscall_attribution",
+  "commands": [
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "root",
+        "--",
+        "journalctl",
+        "-u",
+        "systemd-timesyncd.service",
+        "--since",
+        "2026-10-28 01:40:00 UTC",
+        "--until",
+        "2026-10-28 01:50:00 UTC",
+        "--no-pager",
+        "-o",
+        "json"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "47d2a5ada501ddc84a1d86b168af3fbc94e391526d1fc6e9980b49a8e7f1b3ab"
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "-d",
+        "Ubuntu-22.04",
+        "-u",
+        "root",
+        "--",
+        "journalctl",
+        "_PID=1",
+        "--grep",
+        "systemd.*running in system mode|Startup finished",
+        "--since",
+        "2026-10-28 01:40:00 UTC",
+        "--until",
+        "2026-10-28 01:50:00 UTC",
+        "--no-pager",
+        "-o",
+        "json"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "746f31b8b3882855400ba20aa45a4a094e3b87f288dd21af76ebe06206158947"
+    }
+  ],
+  "verification_clock_sha256": "3411688e3611bec206cc83bca273249f7b66e73b0729c711da73c1101b179ab4",
+  "steps": [
+    {
+      "delta_ns": 899656095,
+      "before": {
+        "wall_before_ns": 399440578210,
+        "system_ns": 1793152169284090805,
+        "wall_after_ns": 399440581210,
+        "offset_ns": 1793151769843511095
+      },
+      "after": {
+        "wall_before_ns": 399460783311,
+        "system_ns": 1793152170203951601,
+        "wall_after_ns": 399460785511,
+        "offset_ns": 1793151770743167190
+      },
+      "before_call_span_ns": 3000,
+      "after_call_span_ns": 2200
+    }
+  ],
+  "journal": [
+    {
+      "__MONOTONIC_TIMESTAMP": "13987109",
+      "__REALTIME_TIMESTAMP": "1793151783830619",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "1",
+      "MESSAGE": "Starting Network Time Synchronization...",
+      "UNIT": "systemd-timesyncd.service",
+      "_SYSTEMD_UNIT": "init.scope"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "14106698",
+      "__REALTIME_TIMESTAMP": "1793151783950208",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "1",
+      "MESSAGE": "Started Network Time Synchronization.",
+      "UNIT": "systemd-timesyncd.service",
+      "_SYSTEMD_UNIT": "init.scope"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "14369994",
+      "__REALTIME_TIMESTAMP": "1793151784213504",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "101",
+      "MESSAGE": "Initial synchronization to time server 91.189.91.157:123 (ntp.ubuntu.com).",
+      "UNIT": null,
+      "_SYSTEMD_UNIT": "systemd-timesyncd.service"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "19046221",
+      "__REALTIME_TIMESTAMP": "1793151788889731",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "1",
+      "MESSAGE": "Stopping Network Time Synchronization...",
+      "UNIT": "systemd-timesyncd.service",
+      "_SYSTEMD_UNIT": "init.scope"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "19047890",
+      "__REALTIME_TIMESTAMP": "1793151788891400",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "1",
+      "MESSAGE": "systemd-timesyncd.service: Deactivated successfully.",
+      "UNIT": "systemd-timesyncd.service",
+      "_SYSTEMD_UNIT": "init.scope"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "19048159",
+      "__REALTIME_TIMESTAMP": "1793151788891669",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "1",
+      "MESSAGE": "Stopped Network Time Synchronization.",
+      "UNIT": "systemd-timesyncd.service",
+      "_SYSTEMD_UNIT": "init.scope"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "398973609",
+      "__REALTIME_TIMESTAMP": "1793152168817119",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "1",
+      "MESSAGE": "Starting Network Time Synchronization...",
+      "UNIT": "systemd-timesyncd.service",
+      "_SYSTEMD_UNIT": "init.scope"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "399080608",
+      "__REALTIME_TIMESTAMP": "1793152168924118",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "1",
+      "MESSAGE": "Started Network Time Synchronization.",
+      "UNIT": "systemd-timesyncd.service",
+      "_SYSTEMD_UNIT": "init.scope"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "399472854",
+      "__REALTIME_TIMESTAMP": "1793152170216020",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "102",
+      "MESSAGE": "Initial synchronization to time server 185.125.190.57:123 (ntp.ubuntu.com).",
+      "UNIT": null,
+      "_SYSTEMD_UNIT": "systemd-timesyncd.service"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "15659803",
+      "__REALTIME_TIMESTAMP": "1793151785503313",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "1",
+      "MESSAGE": "Startup finished in 2.718s.",
+      "UNIT": null,
+      "_SYSTEMD_UNIT": "init.scope"
+    },
+    {
+      "__MONOTONIC_TIMESTAMP": "400868572",
+      "__REALTIME_TIMESTAMP": "1793152171611739",
+      "_BOOT_ID": "e5355f4f0360401c94cc546098ee8e9f",
+      "_PID": "1",
+      "MESSAGE": "Startup finished in 3.459s.",
+      "UNIT": null,
+      "_SYSTEMD_UNIT": "init.scope"
+    }
+  ],
+  "mutations": [],
+  "boot_expected": "e5355f4f0360401c94cc546098ee8e9f"
+}

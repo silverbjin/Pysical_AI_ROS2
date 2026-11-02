@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 986, in run
+    phase_measurements.update(run_sequence(args.scenario,snapshot=snapshot,source=source_node,
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_contact_transition_13_5.py", line 80, in sequence
+    wait(observed,180.,'four physical unload/lift/return transitions')
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 927, in wait
+    while not predicate():
+              ^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_contact_transition_13_5.py", line 64, in observed
+    selected=frame()
+             ^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_contact_transition_13_5.py", line 55, in frame
+    return joiner.begin(ros,wall) if begin else joiner.take(ros,wall)
+                                                ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/contact_component.py", line 112, in take
+    selected=self._select(contact,ros,wall)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/contact_component.py", line 67, in _select
+    if not good:self._fail('component pending contact expired:'+reason)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/contact_component.py", line 27, in _fail
+    self.error=reason;raise ValueError(reason)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: component pending contact expired:wall_age

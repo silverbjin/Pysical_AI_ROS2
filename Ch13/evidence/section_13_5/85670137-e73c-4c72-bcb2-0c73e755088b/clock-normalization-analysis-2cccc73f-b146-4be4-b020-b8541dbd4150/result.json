@@ -1,0 +1,102 @@
+{
+  "scope": "failed_manual_comparison_and_managed_clock_diagnosis_not_engine_acceptance",
+  "original_trial": "clock-normalization-7f639ebf-9e7b-430b-8126-8b28355e76f3",
+  "original_status": "FAIL_host_guest_rate",
+  "engine_attempts": 0,
+  "original_clock_samples": 6433,
+  "tick_segments": [
+    {
+      "raw_elapsed_seconds": 0.0,
+      "tick_us": 10000,
+      "freq_scaled_ppm": 2111682
+    },
+    {
+      "raw_elapsed_seconds": 3.706442,
+      "tick_us": 9166,
+      "freq_scaled_ppm": 2111682
+    },
+    {
+      "raw_elapsed_seconds": 114.8044167,
+      "tick_us": 10000,
+      "freq_scaled_ppm": 437739
+    }
+  ],
+  "realtime_steps": [],
+  "lease_restored": true,
+  "tick_restored_before_service_resume": true,
+  "final_tick_after_service_resume": 10000,
+  "related_runtime_residual": [],
+  "read_only_commands": [
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--version"
+      ],
+      "returncode": 0,
+      "stdout": "WSL \ubc84\uc804: 3.0.1.0\r\n\ucee4\ub110 \ubc84\uc804: 6.18.40.1-1\r\nWSLg \ubc84\uc804: 1.0.79\r\nMSRDC \ubc84\uc804: 1.2.7214\r\nDirect3D \ubc84\uc804: 1.611.1-81528511\r\nDXCore \ubc84\uc804: 10.0.26100.1-240331-1435.ge-release\r\nWindows \ubc84\uc804: 10.0.19045.6456\r\n",
+      "stdout_base64": "VwBTAEwAIACEvATIOgAgADMALgAwAC4AMQAuADAADQAKAOTOELEgAIS8BMg6ACAANgAuADEAOAAuADQAMAAuADEALQAxAA0ACgBXAFMATABnACAAhLwEyDoAIAAxAC4AMAAuADcAOQANAAoATQBTAFIARABDACAAhLwEyDoAIAAxAC4AMgAuADcAMgAxADQADQAKAEQAaQByAGUAYwB0ADMARAAgAIS8BMg6ACAAMQAuADYAMQAxAC4AMQAtADgAMQA1ADIAOAA1ADEAMQANAAoARABYAEMAbwByAGUAIACEvATIOgAgADEAMAAuADAALgAyADYAMQAwADAALgAxAC0AMgA0ADAAMwAzADEALQAxADQAMwA1AC4AZwBlAC0AcgBlAGwAZQBhAHMAZQANAAoAVwBpAG4AZABvAHcAcwAgAIS8BMg6ACAAMQAwAC4AMAAuADEAOQAwADQANQAuADYANAA1ADYADQAKAA==",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "id"
+      ],
+      "returncode": 0,
+      "stdout": "uid=1000(wslg) gid=1000(wslg) groups=1000(wslg)\n",
+      "stdout_base64": "dWlkPTEwMDAod3NsZykgZ2lkPTEwMDAod3NsZykgZ3JvdXBzPTEwMDAod3NsZykK",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "tracking"
+      ],
+      "returncode": 0,
+      "stdout": "Reference ID    : 50484330 (PHC0)\nStratum         : 1\nRef time (UTC)  : Tue Oct 27 15:43:19 2026\nSystem time     : 0.000003310 seconds slow of NTP time\nLast offset     : -0.000011121 seconds\nRMS offset      : 0.925813735 seconds\nFrequency       : 0.722 ppm fast\nResidual freq   : -0.027 ppm\nSkew            : 1.782 ppm\nRoot delay      : 0.000000001 seconds\nRoot dispersion : 0.000074961 seconds\nUpdate interval : 8.0 seconds\nLeap status     : Normal\n",
+      "stdout_base64": "UmVmZXJlbmNlIElEICAgIDogNTA0ODQzMzAgKFBIQzApClN0cmF0dW0gICAgICAgICA6IDEKUmVmIHRpbWUgKFVUQykgIDogVHVlIE9jdCAyNyAxNTo0MzoxOSAyMDI2ClN5c3RlbSB0aW1lICAgICA6IDAuMDAwMDAzMzEwIHNlY29uZHMgc2xvdyBvZiBOVFAgdGltZQpMYXN0IG9mZnNldCAgICAgOiAtMC4wMDAwMTExMjEgc2Vjb25kcwpSTVMgb2Zmc2V0ICAgICAgOiAwLjkyNTgxMzczNSBzZWNvbmRzCkZyZXF1ZW5jeSAgICAgICA6IDAuNzIyIHBwbSBmYXN0ClJlc2lkdWFsIGZyZXEgICA6IC0wLjAyNyBwcG0KU2tldyAgICAgICAgICAgIDogMS43ODIgcHBtClJvb3QgZGVsYXkgICAgICA6IDAuMDAwMDAwMDAxIHNlY29uZHMKUm9vdCBkaXNwZXJzaW9uIDogMC4wMDAwNzQ5NjEgc2Vjb25kcwpVcGRhdGUgaW50ZXJ2YWwgOiA4LjAgc2Vjb25kcwpMZWFwIHN0YXR1cyAgICAgOiBOb3JtYWwK",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/mnt/c/Windows/System32/wsl.exe",
+        "--system",
+        "--exec",
+        "chronyc",
+        "-n",
+        "sources",
+        "-v"
+      ],
+      "returncode": 0,
+      "stdout": "\n  .-- Source mode  '^' = server, '=' = peer, '#' = local clock.\n / .- Source state '*' = current best, '+' = combined, '-' = not combined,\n| /             'x' = may be in error, '~' = too variable, '?' = unusable.\n||                                                 .- xxxx [ yyyy ] +/- zzzz\n||      Reachability register (octal) -.           |  xxxx = adjusted offset,\n||      Log2(Polling interval) --.      |          |  yyyy = measured offset,\n||                                \\     |          |  zzzz = estimated error.\n||                                 |    |           \\\nMS Name/IP address         Stratum Poll Reach LastRx Last sample               \n===============================================================================\n#* PHC0                          0   3   377     6     +5ns[-9133ns] +/-   53us\n",
+      "stdout_base64": "CiAgLi0tIFNvdXJjZSBtb2RlICAnXicgPSBzZXJ2ZXIsICc9JyA9IHBlZXIsICcjJyA9IGxvY2FsIGNsb2NrLgogLyAuLSBTb3VyY2Ugc3RhdGUgJyonID0gY3VycmVudCBiZXN0LCAnKycgPSBjb21iaW5lZCwgJy0nID0gbm90IGNvbWJpbmVkLAp8IC8gICAgICAgICAgICAgJ3gnID0gbWF5IGJlIGluIGVycm9yLCAnficgPSB0b28gdmFyaWFibGUsICc/JyA9IHVudXNhYmxlLgp8fCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAuLSB4eHh4IFsgeXl5eSBdICsvLSB6enp6Cnx8ICAgICAgUmVhY2hhYmlsaXR5IHJlZ2lzdGVyIChvY3RhbCkgLS4gICAgICAgICAgIHwgIHh4eHggPSBhZGp1c3RlZCBvZmZzZXQsCnx8ICAgICAgTG9nMihQb2xsaW5nIGludGVydmFsKSAtLS4gICAgICB8ICAgICAgICAgIHwgIHl5eXkgPSBtZWFzdXJlZCBvZmZzZXQsCnx8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBcICAgICB8ICAgICAgICAgIHwgIHp6enogPSBlc3RpbWF0ZWQgZXJyb3IuCnx8ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgICB8ICAgICAgICAgICBcCk1TIE5hbWUvSVAgYWRkcmVzcyAgICAgICAgIFN0cmF0dW0gUG9sbCBSZWFjaCBMYXN0UnggTGFzdCBzYW1wbGUgICAgICAgICAgICAgICAKPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQojKiBQSEMwICAgICAgICAgICAgICAgICAgICAgICAgICAwICAgMyAgIDM3NyAgICAgNiAgICAgKzVuc1stOTEzM25zXSArLy0gICA1M3VzCg==",
+      "stderr": ""
+    }
+  ],
+  "references": [
+    {
+      "url": "https://github.com/microsoft/WSL/blob/master/src/linux/init/main.cpp",
+      "blob_sha": "4970608d7739a5b5a60ea1c5e11ec83e97099567",
+      "scope": "concept_not_installed_binary_identity",
+      "function": "StartTimeSyncAgent"
+    },
+    {
+      "url": "https://chrony-project.org/doc/4.6/chrony.conf.html#maxslewrate",
+      "default_maxslew_ppm": 83333.333
+    }
+  ],
+  "identities": {
+    "session.json": "b7e7477aa6dc8046cd08d5cb0a00418abf76152d95b98e2071d5e6d1f488fe03",
+    "lease.json": "b3f085ee22328eee75ba9e131fafb417301e4c5323e8bd8d73562fb726735539",
+    "original-clocks.jsonl": "6a82edb5ae60cc987555f9ddc0c3f62568213b0266f0d3bae279472465646c6d",
+    "cross-clock-result.json": "de11217360eeb28257ce37953dbe50a4d3f5989557a308e484012510c1c4d150"
+  },
+  "exact_syscall_writer_traced": false,
+  "changes_managed_chrony_or_settings": false
+}

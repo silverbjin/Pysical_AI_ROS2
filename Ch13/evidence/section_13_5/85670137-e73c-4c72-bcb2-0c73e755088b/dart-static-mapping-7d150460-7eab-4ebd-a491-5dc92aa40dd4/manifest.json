@@ -1,0 +1,48 @@
+{
+  "scope": "offline_DART_mapping_not_acceptance",
+  "uuid": "dart-static-mapping-7d150460-7eab-4ebd-a491-5dc92aa40dd4",
+  "inputs": {
+    "CMakeLists.txt": "9479c579b641efa1e43d62e6757705b2028179a5474cfb6dcd5cf8ee5850a63b",
+    "dart_static_mapping.cpp": "a5de7ab762941828dadbef4610da86b26995e7b7428edf11332305d5e8fbc3d8",
+    "force_probe.cpp": "3d17a6381bec69d8793ff7a14383fe35f8a1df754c3b23d3963679ed82aad154",
+    "force_probe.sdf": "caefe645919f74cd623510a235a8aa51f1f8e390952080e47e28446aeec9fbda",
+    "inspect_existing_boundaries.py": "85489071da7a0d00a256495b8373cbfe80299c821139088bdf4ac7310a054d10",
+    "run_constraint_probe.py": "80bad45e45c11a77f3de96e9505714142841b70bca289f83026ff83c60ae7381",
+    "run_contact_probe.py": "4f5b3ae9b6d97be8cc5d0fc747b2a72e50dbcfcd49308dacf7db3426d66ae707",
+    "run_mapping.py": "0e90de04cc29e910faf8a43b674f5d49605703c45667cba2a3def019188084e0",
+    "run_probe.py": "bb0ccec60e3f4c092b26abf00f00b9465215ad9c9a2ca1871add0f2f343ad2f7"
+  },
+  "fixture_sha256": "799e3b0b088b1b7eaade804934fb589549d382c6110f122f21838301fb79d3bb",
+  "commands": [
+    {
+      "label": "configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/mnt/c/Users/Jinho/Documents/Codex/2026-11-02/13-5-2026-11-02-task8/work/force_probe",
+        "-B",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/dart-static-mapping-7d150460-7eab-4ebd-a491-5dc92aa40dd4/build",
+        "-DDART_DIR=/opt/ros/jazzy/opt/gz_dartsim_vendor/share/dart/cmake"
+      ],
+      "returncode": 0
+    },
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/dart-static-mapping-7d150460-7eab-4ebd-a491-5dc92aa40dd4/build",
+        "-j1"
+      ],
+      "returncode": 0
+    },
+    {
+      "label": "evaluate",
+      "argv": [
+        "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/dart-static-mapping-7d150460-7eab-4ebd-a491-5dc92aa40dd4/build/dart_static_mapping",
+        "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation/test/fixtures/native_d504_infeasible.json"
+      ],
+      "returncode": 0
+    }
+  ]
+}

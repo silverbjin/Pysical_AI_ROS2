@@ -1,0 +1,1628 @@
+{
+  "schema": 1,
+  "analysis_id": "analysis-a1ee6678-35ab-484c-9fba-aa861f1af230",
+  "scope": "offline_analysis_only_not_new_engine_or_acceptance",
+  "trial": "native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0",
+  "analysis_source_sha256": "a7628b6f15a5841e9e78b0e023a4800d69e886cee614346436cc3f8ef03802db",
+  "inputs": {
+    "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0/controller_report.json": "4fd65c7667ab4142053cf4f7ae9614c76d98cc65e8deb1b29e850c9d823deeaa",
+    "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0/source_manifest.json": "4a6731f9618581b88c4ca1011ae7cf851ce6c5b7ec1c1128186e6d0918baaadb",
+    "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0-prepared/scene/robot.urdf": "bd020dff1fd3672ce9eac84287a3da22fd43da26aaf190ca21b29e59dd8063aa",
+    "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0/native_controls.json": "e284d006e5bf8985eedf15587167d3c5e16b04c66d4914cbf73857f3b016d9b0",
+    "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0/carry_failure_report.json": "889f452273fe295154e8f404e1d4645161d8f9f44c515c7b4acdbfe4c39c82ef",
+    "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0/result.json": "34ef8b6860d122b33e7f585a2b7f814f811939ebfe2819b3cf6ffa8256b0b51b",
+    "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0/teardown.json": "082e66239e919ac31d2f284045d4993412747d9a887f1d25e75394c5c58e3c9d",
+    "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0/control_clock.jsonl": "85a97830bef7144f927809445d4b808dc248029491ada5b11d6684df4dce0e84",
+    "Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-mujoco-61422188-2d9d-4915-bdaf-eb06a8b1e4e0/observations.jsonl": "61654d0a8ca258ec74452581e9f38f8c7599d873610f1b5fb5a1d0a2ac37584e"
+  },
+  "runtime_manifest_file_count": 119,
+  "runtime_mismatches": [],
+  "model_sha256": "bd020dff1fd3672ce9eac84287a3da22fd43da26aaf190ca21b29e59dd8063aa",
+  "original_archive_sha256": "42d461db29e4b87af0b99ccbfb090bdd74f1c6c1d3a3a034243dd2017065b21e",
+  "external_source": {
+    "repository": "https://github.com/ros-controls/mujoco_ros2_control",
+    "head": "c261f5552edf124d1000a23fb25b6c07cadeb807",
+    "status_porcelain": "",
+    "provenance_scope": "postmortem_local_source_not_trial_binary_rebuild",
+    "license_sha256": "10df721a4406adc5fc3024b9cefc6f62345dda19a28b7d842cc16ee470c6c198",
+    "files": {
+      "mujoco_ros2_control/src/mujoco_system_interface.cpp": {
+        "sha256": "1ed44ea9adc588e777211e2806d0e2eaf7c74cb9914e7dae9ec665c422a31e54",
+        "excerpts": [
+          {
+            "first_line": 1005,
+            "last_line": 1018,
+            "text": "hardware_interface::return_type MujocoSystemInterface::read(const rclcpp::Time& time, const rclcpp::Duration& /*period*/)\n{\n  // Snapshot the per-step control state to avoid having to copy the whole scene data.\n  simulation_->copy_control_state(control_state_);\n\n  // Joint states\n  actuator_state_msg_.header.stamp = time;\n  actuator_state_msg_.position.clear();\n  actuator_state_msg_.velocity.clear();\n  actuator_state_msg_.effort.clear();\n  for (auto& actuator_state : mujoco_actuator_data_)\n  {\n    actuator_state.position_interface.state_ = control_state_.qpos[actuator_state.mj_pos_adr];\n    actuator_state.velocity_interface.state_ = control_state_.qvel[actuator_state.mj_vel_adr];"
+          },
+          {
+            "first_line": 1172,
+            "last_line": 1184,
+            "text": "  mjData* control_data = plugin_instances_.empty() ? mj_data_control_ : simulation_->acquire_data_snapshot();\n\n  // Mirror the sim's actual ctrl so entries we do not command below (e.g., passive actuators)\n  // are staged with their current values rather than a possibly stale snapshot.\n  mju_copy(control_data->ctrl, control_state_.ctrl.data(), static_cast<int>(control_state_.ctrl.size()));\n\n  // Update control data based on the latest readings\n  for (auto& actuator : mujoco_actuator_data_)\n  {\n    if (actuator.actuator_type == ActuatorType::PASSIVE)\n    {\n      continue;\n    }"
+          },
+          {
+            "first_line": 1209,
+            "last_line": 1220,
+            "text": "  // Update plugins, in order. This enables plugins to read and rewrite ctrl/qfrc_applied\n  // immediately before they are sent to the simulation.\n  for (auto& plugin : plugin_instances_)\n  {\n    plugin->update(simulation_->model(), control_data);\n  }\n\n  // Trigger to simulation to update its control inputs (this locks)\n  simulation_->apply_control_data(control_data);\n\n  return hardware_interface::return_type::OK;\n}"
+          }
+        ]
+      },
+      "mujoco_ros2_control/src/mujoco_simulation.cpp": {
+        "sha256": "7ed17cbce3981e262a7c137a505594ccf221abed0a5deee75935bd51ab8acc2f",
+        "excerpts": [
+          {
+            "first_line": 1364,
+            "last_line": 1370,
+            "text": "void MujocoSimulation::apply_control_data(mjData* control_data)\n{\n  const std::lock_guard<std::mutex> lock(control_staging_mutex_);\n  mju_copy(ctrl_staged_.data(), control_data->ctrl, static_cast<int>(mj_model_->nu));\n  mju_copy(qfrc_applied_staged_.data(), control_data->qfrc_applied, static_cast<int>(mj_model_->nv));\n  control_inputs_staged_ = true;\n}"
+          },
+          {
+            "first_line": 1407,
+            "last_line": 1419,
+            "text": "void MujocoSimulation::apply_staged_control_inputs()\n{\n  const std::lock_guard<std::mutex> lock(control_staging_mutex_);\n\n  // Only apply ctrl / qfrc_applied once the hw interface has staged control inputs,\n  // so that initial or reset values in mj_data_ are not overwritten with zeros.\n  if (control_inputs_staged_)\n  {\n    mju_copy(mj_data_->ctrl, ctrl_staged_.data(), static_cast<int>(mj_model_->nu));\n    mju_copy(mj_data_->qfrc_applied, qfrc_applied_staged_.data(), static_cast<int>(mj_model_->nv));\n  }\n}\n"
+          },
+          {
+            "first_line": 1518,
+            "last_line": 1526,
+            "text": "            apply_staged_control_inputs();\n            pre_step_callback_(mj_data_);\n            // run single step, let next iteration deal with timing\n            mj_step(mj_model_, mj_data_);\n\n            // Publish the per-step control state before the clock tick,\n            // so consumers woken by this tick read state synchronous with that sim time.\n            publish_control_state();\n            publish_clock();"
+          }
+        ]
+      },
+      "mujoco_ros2_control/src/mujoco_ros2_control_node.cpp": {
+        "sha256": "833ec59369f292ff77d9f58b7353156d0eb2871526ac92c9e95fdc025585b302",
+        "excerpts": [
+          {
+            "first_line": 152,
+            "last_line": 175,
+            "text": "\n      std::chrono::steady_clock::time_point next_iteration_time{std::chrono::steady_clock::now()};\n\n      while (rclcpp::ok())\n      {\n        // calculate measured period\n        auto const current_time = get_cm_now(cm);\n        auto const measured_period = current_time - previous_time;\n        previous_time = current_time;\n\n        // execute update loop\n        cm->read(get_cm_now(cm), measured_period);\n        cm->update(get_cm_now(cm), measured_period);\n        cm->write(get_cm_now(cm), measured_period);\n\n        // wait until we hit the end of the period\n        if (use_sim_time)\n        {\n          try\n          {\n            // `sleep_until` may throw if sim time stops (e.g., simulation shutdown).\n            cm->get_clock()->sleep_until(current_time + period);\n          }\n          catch (const std::runtime_error & e)"
+          }
+        ]
+      },
+      "mujoco_ros2_control_plugins/include/mujoco_ros2_control_plugins/mujoco_ros2_control_plugins_base.hpp": {
+        "sha256": "1740fcf4595e96234ae85583469b639024f7e6bf06cfa20c11dcbd6b5515d9a4",
+        "excerpts": [
+          {
+            "first_line": 30,
+            "last_line": 38,
+            "text": " * Three optional hooks are available. Override whichever fits your use case:\n *\n * - `update()` runs on the ros2_control control thread, once per `write()` cycle. `data` is a\n *   recent snapshot, not the live `mj_data_`. Use this for anything that doesn't need to run on\n *   exactly one physics step, e.g. publishing sensor data or servicing a trigger.\n * - `pre_step()` runs on the physics thread, immediately before every `mj_step()`, with direct\n *   access to the live `mj_data_`. Use this for anything that must hold for exactly one step,\n *   e.g. a hard kinematic override. There's no command buffer: an untouched entry keeps its\n *   last value, so releasing a command (e.g. an expired force) needs an explicit write. This"
+          }
+        ]
+      }
+    }
+  },
+  "original_status": "FAIL",
+  "original_false_or_missing_required_checks": [
+    "carry_measured_settle",
+    "contact_lift",
+    "joint_tf_ownership",
+    "native_ctrl_observed",
+    "native_library_loaded"
+  ],
+  "carry_fault": {
+    "reason": "measured carry posture lost",
+    "header_ns": 32021999999,
+    "wall_ns": 13533839009475,
+    "selected_header_ns": 32021999999,
+    "selected_receipt_age_ms": 1.314989,
+    "arm_joint_2_velocity_rps": -0.02100903152126743
+  },
+  "joint_window": [
+    {
+      "header_ns": 31953999999,
+      "first_received_ns": 13533772182408,
+      "arm_joint_2_velocity_rps": 0.001510162332084346
+    },
+    {
+      "header_ns": 31965999999,
+      "first_received_ns": 13533782245892,
+      "arm_joint_2_velocity_rps": -0.0032343626463312907
+    },
+    {
+      "header_ns": 31975999999,
+      "first_received_ns": 13533787678295,
+      "arm_joint_2_velocity_rps": -0.002659849058575013
+    },
+    {
+      "header_ns": 31993999999,
+      "first_received_ns": 13533805578147,
+      "arm_joint_2_velocity_rps": -0.0013373678925903566
+    },
+    {
+      "header_ns": 31997999999,
+      "first_received_ns": 13533825925717,
+      "arm_joint_2_velocity_rps": -0.008333889617020578
+    },
+    {
+      "header_ns": 32011999999,
+      "first_received_ns": 13533833172559,
+      "arm_joint_2_velocity_rps": -0.0027684773980110773
+    },
+    {
+      "header_ns": 32021999999,
+      "first_received_ns": 13533835139631,
+      "arm_joint_2_velocity_rps": -0.02100903152126743
+    },
+    {
+      "header_ns": 32031999999,
+      "first_received_ns": 13533848862080,
+      "arm_joint_2_velocity_rps": 0.0038028350541547216
+    },
+    {
+      "header_ns": 32041999999,
+      "first_received_ns": 13533860200744,
+      "arm_joint_2_velocity_rps": 0.013173004565285145
+    },
+    {
+      "header_ns": 32051999999,
+      "first_received_ns": 13533865418599,
+      "arm_joint_2_velocity_rps": 0.007189390211442173
+    },
+    {
+      "header_ns": 32065999999,
+      "first_received_ns": 13533884887614,
+      "arm_joint_2_velocity_rps": -0.0002853854297696153
+    },
+    {
+      "header_ns": 32085999999,
+      "first_received_ns": 13533903447895,
+      "arm_joint_2_velocity_rps": 0.008315076757495501
+    },
+    {
+      "header_ns": 32097999999,
+      "first_received_ns": 13533912833430,
+      "arm_joint_2_velocity_rps": -0.00013016344046182455
+    }
+  ],
+  "observation_counts": {
+    "body_source": 1572,
+    "native_controls": 1538,
+    "native_controls_transport": 1538,
+    "contacts": 1527,
+    "contacts_transport": 1527,
+    "imu": 1527,
+    "scan": 317,
+    "scan_transport": 317,
+    "body": 1525,
+    "body_transport": 1525,
+    "guard_state": 1542,
+    "startup_state": 634,
+    "carry": 1581,
+    "carry_state": 1582,
+    "crawl_state": 1531,
+    "joints": 2013,
+    "frame": 1045
+  },
+  "command_coherence": {
+    "count": 36,
+    "max_spread_m": 1.5700924586837752e-16,
+    "analytic_vs_general_fk_max_error_m": 1.1443916996305594e-16,
+    "negative_control_displacement_m": 0.0004415728844169982
+  },
+  "conditional_curve_reconstruction": {
+    "phase_start_ns": 31327999999,
+    "duration_s": 1.744655038853971,
+    "distance_m": 0.05272052975520194,
+    "start_translation_m": [
+      0.0023446469700835284,
+      4.255854927729767e-16,
+      0.46000000000000013
+    ],
+    "delta_m": [
+      -0.045882722618943404,
+      -0.025965939666074724,
+      0.0
+    ],
+    "assumptions": [
+      "zero navigation command throughout G1",
+      "constant commanded rotation",
+      "FR/RR/RL world reference targets fixed until stop",
+      "first selected reference is phase start",
+      "G1 duration determined by quintic acceleration formula, no additional duration scaling"
+    ],
+    "limitation": "Inverse curve timing is conditional, not a publish/callback/CM/physics application trace"
+  },
+  "reference_rows": [
+    {
+      "snapshot_capture_ns": 31338000000,
+      "probe_received_ns": 13533166753284,
+      "implied_command_translation_m": [
+        0.0023446469700835284,
+        4.255854927729767e-16,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 9.29657545718587e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.002344646970083547,
+          3.885780586188048e-16,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          0.0023446469700835193,
+          3.885780586188048e-16,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.0023446469700835193,
+          4.996003610813204e-16,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.48561163610959845,
+      "snapshot_arm_joint_2_velocity_rps": -5.3740069854937473e-11,
+      "curve_line_residual_m": 0.0,
+      "curve_implied_decision_ns_not_direct_trace": 31327999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 10.000001
+    },
+    {
+      "snapshot_capture_ns": 31362000000,
+      "probe_received_ns": 13533181203072,
+      "implied_command_translation_m": [
+        0.0023446469700835284,
+        4.255854927729767e-16,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 9.29657545718587e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.002344646970083547,
+          3.885780586188048e-16,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          0.0023446469700835193,
+          3.885780586188048e-16,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.0023446469700835193,
+          4.996003610813204e-16,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.48561163610959845,
+      "snapshot_arm_joint_2_velocity_rps": -1.4162849315934645e-11,
+      "curve_line_residual_m": 0.0,
+      "curve_implied_decision_ns_not_direct_trace": 31327999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 34.000001
+    },
+    {
+      "snapshot_capture_ns": 31382000000,
+      "probe_received_ns": 13533204437327,
+      "implied_command_translation_m": [
+        0.0023423738910579492,
+        -1.2863803508141498e-06,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 6.141360674338382e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0023423738910579306,
+          -1.2863803507956462e-06,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          0.0023423738910579583,
+          -1.2863803507956462e-06,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.0023423738910579583,
+          -1.2863803508511573e-06,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4856174073623641,
+      "snapshot_arm_joint_2_velocity_rps": -0.0011992594581494462,
+      "curve_line_residual_m": 1.342912399627776e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31357999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 24.000001
+    },
+    {
+      "snapshot_capture_ns": 31402000000,
+      "probe_received_ns": 13533222039927,
+      "implied_command_translation_m": [
+        0.0023330349198541303,
+        -6.5714887527712484e-06,
+        0.45999999999999996
+      ],
+      "fixed_leg_translation_spread_m": 6.66360216442289e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0023330349198540934,
+          -6.5714887527712484e-06,
+          0.46
+        ],
+        "rr_foot": [
+          0.002333034919854149,
+          -6.5714887527712484e-06,
+          0.46
+        ],
+        "rl_foot": [
+          0.002333034919854149,
+          -6.5714887527712484e-06,
+          0.4599999999999999
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.48564111795693404,
+      "snapshot_arm_joint_2_velocity_rps": 0.00109924516064694,
+      "curve_line_residual_m": 1.6675691978218738e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31379999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 22.000001
+    },
+    {
+      "snapshot_capture_ns": 31422000000,
+      "probe_received_ns": 13533243140719,
+      "implied_command_translation_m": [
+        0.002314361217719163,
+        -1.713930590271917e-05,
+        0.45999999999999996
+      ],
+      "fixed_leg_translation_spread_m": 1.5700924586837752e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.002314361217719163,
+          -1.713930590266366e-05,
+          0.46
+        ],
+        "rr_foot": [
+          0.002314361217719163,
+          -1.713930590266366e-05,
+          0.45999999999999996
+        ],
+        "rl_foot": [
+          0.002314361217719163,
+          -1.7139305902830193e-05,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.48568852517994715,
+      "snapshot_arm_joint_2_velocity_rps": 0.0006727322210493083,
+      "curve_line_residual_m": 1.6672297759100058e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31399999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 22.000001
+    },
+    {
+      "snapshot_capture_ns": 31442000000,
+      "probe_received_ns": 13533261848625,
+      "implied_command_translation_m": [
+        0.00227855821300856,
+        -3.740093396481514e-05,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 6.66360216442289e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0022785582130085413,
+          -3.740093396481514e-05,
+          0.46000000000000013
+        ],
+        "rr_foot": [
+          0.0022785582130085413,
+          -3.740093396481514e-05,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.002278558213008597,
+          -3.740093396481514e-05,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4857794069004197,
+      "snapshot_arm_joint_2_velocity_rps": 0.0007517133498618103,
+      "curve_line_residual_m": 3.90722278296571e-17,
+      "curve_implied_decision_ns_not_direct_trace": 31421999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 20.000001
+    },
+    {
+      "snapshot_capture_ns": 31462000000,
+      "probe_received_ns": 13533281741920,
+      "implied_command_translation_m": [
+        0.0022166994109570903,
+        -7.240805277132038e-05,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 1.1255297432203315e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0022166994109570903,
+          -7.240805277133888e-05,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          0.0022166994109570903,
+          -7.240805277133888e-05,
+          0.46000000000000013
+        ],
+        "rl_foot": [
+          0.0022166994109570903,
+          -7.240805277128337e-05,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4859363912344185,
+      "snapshot_arm_joint_2_velocity_rps": 0.001177699886741046,
+      "curve_line_residual_m": 1.4872488221442568e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31445999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 16.000001
+    },
+    {
+      "snapshot_capture_ns": 31482000000,
+      "probe_received_ns": 13533307104317,
+      "implied_command_translation_m": [
+        0.002143666918796342,
+        -0.00011373858367409266,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 6.727584914443393e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0021436669187963053,
+          -0.0001137385836740834,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          0.002143666918796361,
+          -0.0001137385836740834,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.002143666918796361,
+          -0.00011373858367411116,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.48612167170411247,
+      "snapshot_arm_joint_2_velocity_rps": 0.001712761583276398,
+      "curve_line_residual_m": 3.271216239156539e-17,
+      "curve_implied_decision_ns_not_direct_trace": 31465999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 16.000001
+    },
+    {
+      "snapshot_capture_ns": 31502000000,
+      "probe_received_ns": 13533321946452,
+      "implied_command_translation_m": [
+        0.0020484707312261132,
+        -0.00016761198790548235,
+        0.45999999999999996
+      ],
+      "fixed_leg_translation_spread_m": 6.732987695700463e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.002048470731226132,
+          -0.00016761198790546383,
+          0.45999999999999996
+        ],
+        "rr_foot": [
+          0.002048470731226104,
+          -0.00016761198790546383,
+          0.46
+        ],
+        "rl_foot": [
+          0.002048470731226104,
+          -0.00016761198790551934,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4863630825552436,
+      "snapshot_arm_joint_2_velocity_rps": 0.0020047309508626544,
+      "curve_line_residual_m": 1.665462138445014e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31485999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 16.000001
+    },
+    {
+      "snapshot_capture_ns": 31522000000,
+      "probe_received_ns": 13533341679161,
+      "implied_command_translation_m": [
+        0.0019797826864858723,
+        -0.00020648391013905476,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 1.1257757277906454e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0019797826864858536,
+          -0.00020648391013905476,
+          0.46000000000000013
+        ],
+        "rr_foot": [
+          0.0019797826864858814,
+          -0.00020648391013905476,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.0019797826864858814,
+          -0.00020648391013905476,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4865372017125471,
+      "snapshot_arm_joint_2_velocity_rps": 0.002238414410472628,
+      "curve_line_residual_m": 1.1925996274314524e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31497999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 24.000001
+    },
+    {
+      "snapshot_capture_ns": 31542000000,
+      "probe_received_ns": 13533368336221,
+      "implied_command_translation_m": [
+        0.0018446122063512926,
+        -0.0002829795566803295,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 7.850462293418876e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0018446122063512371,
+          -0.0002829795566803295,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          0.0018446122063513204,
+          -0.0002829795566803295,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.0018446122063513204,
+          -0.0002829795566803295,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.486879680273386,
+      "snapshot_arm_joint_2_velocity_rps": 0.0018837017876344518,
+      "curve_line_residual_m": 1.2930092788554552e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31517999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 24.000001
+    },
+    {
+      "snapshot_capture_ns": 31564000000,
+      "probe_received_ns": 13533384763681,
+      "implied_command_translation_m": [
+        0.001664163840528754,
+        -0.00038509885371295255,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 9.657839325284726e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0016641638405286985,
+          -0.0003850988537129896,
+          0.46
+        ],
+        "rr_foot": [
+          0.0016641638405287817,
+          -0.0003850988537129896,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.0016641638405287817,
+          -0.00038509885371287855,
+          0.45999999999999996
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4873365297103136,
+      "snapshot_arm_joint_2_velocity_rps": 0.002116179891022903,
+      "curve_line_residual_m": 1.2484828110739023e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31539999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 24.000001
+    },
+    {
+      "snapshot_capture_ns": 31588000000,
+      "probe_received_ns": 13533411678584,
+      "implied_command_translation_m": [
+        0.0015310517285438603,
+        -0.00046042962903177404,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 1.1293631104647008e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0015310517285438974,
+          -0.0004604296290317833,
+          0.4600000000000002
+        ],
+        "rr_foot": [
+          0.001531051728543814,
+          -0.0004604296290317833,
+          0.46000000000000013
+        ],
+        "rl_foot": [
+          0.0015310517285438696,
+          -0.00046042962903175555,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.48767328013653466,
+      "snapshot_arm_joint_2_velocity_rps": 0.002297032214922356,
+      "curve_line_residual_m": 5.525741435401603e-17,
+      "curve_implied_decision_ns_not_direct_trace": 31553999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 34.000001
+    },
+    {
+      "snapshot_capture_ns": 31608000000,
+      "probe_received_ns": 13533429805000,
+      "implied_command_translation_m": [
+        0.0009318791247527325,
+        -0.0007995132489994894,
+        0.45999999999999996
+      ],
+      "fixed_leg_translation_spread_m": 5.551115123125783e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0009318791247527325,
+          -0.0007995132489994894,
+          0.45999999999999996
+        ],
+        "rr_foot": [
+          0.0009318791247527325,
+          -0.0007995132489994894,
+          0.4599999999999999
+        ],
+        "rl_foot": [
+          0.0009318791247527325,
+          -0.0007995132489994894,
+          0.45999999999999996
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4891863936972858,
+      "snapshot_arm_joint_2_velocity_rps": 0.00158381557660443,
+      "curve_line_residual_m": 1.7926006717881747e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31603999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 4.000001
+    },
+    {
+      "snapshot_capture_ns": 31628000000,
+      "probe_received_ns": 13533457845936,
+      "implied_command_translation_m": [
+        0.0006354404730168906,
+        -0.0009672737415401903,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 9.254749998366762e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0006354404730168906,
+          -0.0009672737415401533,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          0.0006354404730168906,
+          -0.0009672737415401533,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.0006354404730168906,
+          -0.0009672737415402644,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.48993337382151086,
+      "snapshot_arm_joint_2_velocity_rps": -0.0017800930470630474,
+      "curve_line_residual_m": 7.427378399145284e-18,
+      "curve_implied_decision_ns_not_direct_trace": 31623999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 4.000001
+    },
+    {
+      "snapshot_capture_ns": 31650000000,
+      "probe_received_ns": 13533472079852,
+      "implied_command_translation_m": [
+        0.0003740860565335513,
+        -0.0011151793718627938,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 6.675622160904074e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          0.0003740860565335513,
+          -0.0011151793718628122,
+          0.46
+        ],
+        "rr_foot": [
+          0.0003740860565335513,
+          -0.0011151793718628122,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          0.0003740860565335513,
+          -0.0011151793718627567,
+          0.45999999999999996
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.49059105265899544,
+      "snapshot_arm_joint_2_velocity_rps": 0.0033244641427306555,
+      "curve_line_residual_m": 1.327957801711407e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31639999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 10.000001
+    },
+    {
+      "snapshot_capture_ns": 31670000000,
+      "probe_received_ns": 13533490949710,
+      "implied_command_translation_m": [
+        -0.00013595498142961646,
+        -0.0014038216769186966,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 6.921045670300843e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.00013595498142965345,
+          -0.001403821676918715,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          -0.00013595498142959794,
+          -0.001403821676918715,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          -0.00013595498142959794,
+          -0.0014038216769186596,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.49187211755859794,
+      "snapshot_arm_joint_2_velocity_rps": 0.0022786311663000923,
+      "curve_line_residual_m": 1.2095906772971101e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31667999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 2.000001
+    },
+    {
+      "snapshot_capture_ns": 31690000000,
+      "probe_received_ns": 13533520274724,
+      "implied_command_translation_m": [
+        -0.0005417710768139405,
+        -0.0016334810268178086,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 1.1481839218531158e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.0005417710768139683,
+          -0.001633481026817818,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          -0.0005417710768139683,
+          -0.001633481026817818,
+          0.46000000000000013
+        ],
+        "rl_foot": [
+          -0.000541771076813885,
+          -0.0016334810268177902,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4928891186558965,
+      "snapshot_arm_joint_2_velocity_rps": 0.0005512305042668856,
+      "curve_line_residual_m": 1.1273784226817025e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31687999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 2.000001
+    },
+    {
+      "snapshot_capture_ns": 31712000000,
+      "probe_received_ns": 13533533179340,
+      "implied_command_translation_m": [
+        -0.0005417710768139405,
+        -0.0016334810268178086,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 1.1481839218531158e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.0005417710768139683,
+          -0.001633481026817818,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          -0.0005417710768139683,
+          -0.001633481026817818,
+          0.46000000000000013
+        ],
+        "rl_foot": [
+          -0.000541771076813885,
+          -0.0016334810268177902,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4928891186558965,
+      "snapshot_arm_joint_2_velocity_rps": 0.0027168905877001416,
+      "curve_line_residual_m": 1.1273784226817025e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31687999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 24.000001
+    },
+    {
+      "snapshot_capture_ns": 31732000000,
+      "probe_received_ns": 13533558053332,
+      "implied_command_translation_m": [
+        -0.0012157155494726863,
+        -0.0020148795253480214,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 9.310235401529606e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.0012157155494726957,
+          -0.0020148795253480123,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          -0.0012157155494726957,
+          -0.0020148795253480956,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          -0.001215715549472668,
+          -0.0020148795253479568,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4945735924740346,
+      "snapshot_arm_joint_2_velocity_rps": 0.0010587687084132424,
+      "curve_line_residual_m": 1.1176604729420388e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31717999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 14.000001
+    },
+    {
+      "snapshot_capture_ns": 31754000000,
+      "probe_received_ns": 13533571178275,
+      "implied_command_translation_m": [
+        -0.0017084185002031367,
+        -0.0022937098641274876,
+        0.45999999999999996
+      ],
+      "fixed_leg_translation_spread_m": 7.641556593633762e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.001708418500203146,
+          -0.0022937098641275244,
+          0.45999999999999996
+        ],
+        "rr_foot": [
+          -0.001708418500203146,
+          -0.0022937098641275244,
+          0.45999999999999996
+        ],
+        "rl_foot": [
+          -0.0017084185002031183,
+          -0.0022937098641274134,
+          0.45999999999999996
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.49580152927648624,
+      "snapshot_arm_joint_2_velocity_rps": -0.003315822856836412,
+      "curve_line_residual_m": 1.6776948761135694e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31737999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 16.000001
+    },
+    {
+      "snapshot_capture_ns": 31782000000,
+      "probe_received_ns": 13533602512005,
+      "implied_command_translation_m": [
+        -0.0019677131626330002,
+        -0.0024404498389172433,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 3.3438454307909625e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.0019677131626330002,
+          -0.0024404498389172524,
+          0.46
+        ],
+        "rr_foot": [
+          -0.001967713162633028,
+          -0.0024404498389172524,
+          0.46
+        ],
+        "rl_foot": [
+          -0.0019677131626329725,
+          -0.0024404498389172247,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.49644655430355894,
+      "snapshot_arm_joint_2_velocity_rps": 0.0025195304227159042,
+      "curve_line_residual_m": 1.131599628005486e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31747999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 34.000001
+    },
+    {
+      "snapshot_capture_ns": 31802000000,
+      "probe_received_ns": 13533621160711,
+      "implied_command_translation_m": [
+        -0.0027967973547443716,
+        -0.0029096449712386896,
+        0.45999999999999996
+      ],
+      "fixed_leg_translation_spread_m": 8.518821470271855e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.002796797354744307,
+          -0.0029096449712386896,
+          0.46
+        ],
+        "rr_foot": [
+          -0.002796797354744418,
+          -0.0029096449712386896,
+          0.46
+        ],
+        "rl_foot": [
+          -0.0027967973547443903,
+          -0.0029096449712386896,
+          0.45999999999999996
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.4985034326202684,
+      "snapshot_arm_joint_2_velocity_rps": 0.0006036993060495593,
+      "curve_line_residual_m": 1.8564428796557218e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31777999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 24.000001
+    },
+    {
+      "snapshot_capture_ns": 31824000000,
+      "probe_received_ns": 13533660713857,
+      "implied_command_translation_m": [
+        -0.0033915282458977978,
+        -0.003246214938227965,
+        0.45999999999999996
+      ],
+      "fixed_leg_translation_spread_m": 7.903112490299739e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.003391528245897779,
+          -0.0032462149382279926,
+          0.45999999999999996
+        ],
+        "rr_foot": [
+          -0.003391528245897807,
+          -0.0032462149382279926,
+          0.46
+        ],
+        "rl_foot": [
+          -0.003391528245897807,
+          -0.0032462149382279093,
+          0.4599999999999999
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.49997367697808787,
+      "snapshot_arm_joint_2_velocity_rps": -0.0009808702541001576,
+      "curve_line_residual_m": 1.6686290597768286e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31797999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 26.000001
+    },
+    {
+      "snapshot_capture_ns": 31848000000,
+      "probe_received_ns": 13533670217260,
+      "implied_command_translation_m": [
+        -0.003954877712149557,
+        -0.003565025536567845,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 1.1443916996305594e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.003954877712149529,
+          -0.003565025536567845,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          -0.003954877712149585,
+          -0.003565025536567845,
+          0.46000000000000013
+        ],
+        "rl_foot": [
+          -0.003954877712149557,
+          -0.003565025536567845,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5013623114968564,
+      "snapshot_arm_joint_2_velocity_rps": 0.003801864284288208,
+      "curve_line_residual_m": 1.1257423140506466e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31815999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 32.000001
+    },
+    {
+      "snapshot_capture_ns": 31870000000,
+      "probe_received_ns": 13533690795247,
+      "implied_command_translation_m": [
+        -0.005158918800678952,
+        -0.004246416188118367,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 6.279243721422309e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.005158918800678924,
+          -0.004246416188118357,
+          0.46
+        ],
+        "rr_foot": [
+          -0.00515891880067898,
+          -0.004246416188118357,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          -0.005158918800678952,
+          -0.004246416188118385,
+          0.45999999999999996
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5043170568149526,
+      "snapshot_arm_joint_2_velocity_rps": 0.0022619565005793114,
+      "curve_line_residual_m": 1.2964084244680276e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31851999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 18.000001
+    },
+    {
+      "snapshot_capture_ns": 31890000000,
+      "probe_received_ns": 13533722823253,
+      "implied_command_translation_m": [
+        -0.006163659802201238,
+        -0.004815018980987194,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 6.687690861581925e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.006163659802201238,
+          -0.004815018980987212,
+          0.46
+        ],
+        "rr_foot": [
+          -0.006163659802201238,
+          -0.004815018980987212,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          -0.006163659802201238,
+          -0.004815018980987157,
+          0.45999999999999996
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5067689562561594,
+      "snapshot_arm_joint_2_velocity_rps": -0.0022450726865017694,
+      "curve_line_residual_m": 1.1387571084335418e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31879999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 10.000001
+    },
+    {
+      "snapshot_capture_ns": 31912000000,
+      "probe_received_ns": 13533748487009,
+      "implied_command_translation_m": [
+        -0.0068395032582610855,
+        -0.005197492151760112,
+        0.45999999999999996
+      ],
+      "fixed_leg_translation_spread_m": 9.277932998114134e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.006839503258261048,
+          -0.005197492151760075,
+          0.46
+        ],
+        "rr_foot": [
+          -0.0068395032582611315,
+          -0.005197492151760075,
+          0.4599999999999999
+        ],
+        "rl_foot": [
+          -0.006839503258261076,
+          -0.005197492151760186,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5084111818517948,
+      "snapshot_arm_joint_2_velocity_rps": -0.0015561093916174442,
+      "curve_line_residual_m": 1.6866339095396968e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31897999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 14.000001
+    },
+    {
+      "snapshot_capture_ns": 31936000000,
+      "probe_received_ns": 13533785548500,
+      "implied_command_translation_m": [
+        -0.007302534217817698,
+        -0.005459530524225977,
+        0.45999999999999996
+      ],
+      "fixed_leg_translation_spread_m": 6.931300333692605e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.00730253421781768,
+          -0.005459530524225958,
+          0.45999999999999996
+        ],
+        "rr_foot": [
+          -0.0073025342178177355,
+          -0.005459530524225958,
+          0.46
+        ],
+        "rl_foot": [
+          -0.00730253421781768,
+          -0.005459530524226014,
+          0.46
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5095330159086382,
+      "snapshot_arm_joint_2_velocity_rps": 0.0028432890305719184,
+      "curve_line_residual_m": 1.66734361657695e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31909999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 26.000001
+    },
+    {
+      "snapshot_capture_ns": 31956000000,
+      "probe_received_ns": 13533788983378,
+      "implied_command_translation_m": [
+        -0.007695766374937897,
+        -0.005682068374722395,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 1.1183922482355494e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.007695766374937907,
+          -0.005682068374722404,
+          0.46
+        ],
+        "rr_foot": [
+          -0.007695766374937935,
+          -0.005682068374722404,
+          0.4600000000000001
+        ],
+        "rl_foot": [
+          -0.007695766374937851,
+          -0.005682068374722377,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5104836441604941,
+      "snapshot_arm_joint_2_velocity_rps": 0.001510162332084346,
+      "curve_line_residual_m": 3.878959614448864e-18,
+      "curve_implied_decision_ns_not_direct_trace": 31919999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 36.000001
+    },
+    {
+      "snapshot_capture_ns": 31976000000,
+      "probe_received_ns": 13533822797756,
+      "implied_command_translation_m": [
+        -0.008338414387340592,
+        -0.006045755587775463,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 6.279243721422309e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.008338414387340565,
+          -0.006045755587775453,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          -0.00833841438734062,
+          -0.006045755587775453,
+          0.46000000000000013
+        ],
+        "rl_foot": [
+          -0.008338414387340592,
+          -0.006045755587775481,
+          0.46000000000000013
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.512033078500918,
+      "snapshot_arm_joint_2_velocity_rps": -0.002659849058575013,
+      "curve_line_residual_m": 1.5636586103463754e-17,
+      "curve_implied_decision_ns_not_direct_trace": 31935999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 40.000001
+    },
+    {
+      "snapshot_capture_ns": 31996000000,
+      "probe_received_ns": 13533823731438,
+      "implied_command_translation_m": [
+        -0.008338414387340592,
+        -0.006045755587775463,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 6.279243721422309e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.008338414387340565,
+          -0.006045755587775453,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          -0.00833841438734062,
+          -0.006045755587775453,
+          0.46000000000000013
+        ],
+        "rl_foot": [
+          -0.008338414387340592,
+          -0.006045755587775481,
+          0.46000000000000013
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.512033078500918,
+      "snapshot_arm_joint_2_velocity_rps": -0.0034209180074934267,
+      "curve_line_residual_m": 1.5636586103463754e-17,
+      "curve_implied_decision_ns_not_direct_trace": 31935999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 60.000001
+    },
+    {
+      "snapshot_capture_ns": 32018000000,
+      "probe_received_ns": 13533846620196,
+      "implied_command_translation_m": [
+        -0.010445706867576648,
+        -0.007238314055916406,
+        0.46
+      ],
+      "fixed_leg_translation_spread_m": 8.326672684688674e-17,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.010445706867576676,
+          -0.007238314055916351,
+          0.4600000000000001
+        ],
+        "rr_foot": [
+          -0.010445706867576648,
+          -0.007238314055916434,
+          0.46
+        ],
+        "rl_foot": [
+          -0.01044570686757662,
+          -0.007238314055916434,
+          0.45999999999999996
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5170775850096944,
+      "snapshot_arm_joint_2_velocity_rps": -0.0027684773980110773,
+      "curve_line_residual_m": 1.1125245686377491e-16,
+      "curve_implied_decision_ns_not_direct_trace": 31985999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 32.000001
+    },
+    {
+      "snapshot_capture_ns": 32044000000,
+      "probe_received_ns": 13533868588754,
+      "implied_command_translation_m": [
+        -0.012045182261048976,
+        -0.008143488796944673,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 1.1265022314309467e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.012045182261049003,
+          -0.008143488796944653,
+          0.46000000000000013
+        ],
+        "rr_foot": [
+          -0.012045182261048976,
+          -0.008143488796944653,
+          0.46
+        ],
+        "rl_foot": [
+          -0.012045182261048948,
+          -0.008143488796944709,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5208692969113139,
+      "snapshot_arm_joint_2_velocity_rps": 0.013058807517432176,
+      "curve_line_residual_m": 3.878959614448864e-18,
+      "curve_implied_decision_ns_not_direct_trace": 32021999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 22.000001
+    },
+    {
+      "snapshot_capture_ns": 32066000000,
+      "probe_received_ns": 13533902338924,
+      "implied_command_translation_m": [
+        -0.012045182261048976,
+        -0.008143488796944673,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 1.1265022314309467e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.012045182261049003,
+          -0.008143488796944653,
+          0.46000000000000013
+        ],
+        "rr_foot": [
+          -0.012045182261048976,
+          -0.008143488796944653,
+          0.46
+        ],
+        "rl_foot": [
+          -0.012045182261048948,
+          -0.008143488796944709,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5208692969113139,
+      "snapshot_arm_joint_2_velocity_rps": -0.0002853854297696153,
+      "curve_line_residual_m": 3.878959614448864e-18,
+      "curve_implied_decision_ns_not_direct_trace": 32021999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 44.000001
+    },
+    {
+      "snapshot_capture_ns": 32088000000,
+      "probe_received_ns": 13533920950664,
+      "implied_command_translation_m": [
+        -0.012045182261048976,
+        -0.008143488796944673,
+        0.46000000000000013
+      ],
+      "fixed_leg_translation_spread_m": 1.1265022314309467e-16,
+      "per_leg_translation_m": {
+        "fr_foot": [
+          -0.012045182261049003,
+          -0.008143488796944653,
+          0.46000000000000013
+        ],
+        "rr_foot": [
+          -0.012045182261048976,
+          -0.008143488796944653,
+          0.46
+        ],
+        "rl_foot": [
+          -0.012045182261048948,
+          -0.008143488796944709,
+          0.4600000000000001
+        ]
+      },
+      "fr_thigh_staged_ctrl_rad": -0.5208692969113139,
+      "snapshot_arm_joint_2_velocity_rps": 0.007218714701591233,
+      "curve_line_residual_m": 3.878959614448864e-18,
+      "curve_implied_decision_ns_not_direct_trace": 32021999999,
+      "curve_implied_lag_vs_snapshot_ms_not_apply_latency": 66.000001
+    }
+  ],
+  "clock_publish_window": [
+    {
+      "capture_ns": 31833999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13550,
+      "nanosec": 833999999,
+      "outputs": 2883,
+      "published_wall_ns": 13533656563881,
+      "received_wall_ns": 13533642066986,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31851999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13553,
+      "nanosec": 851999999,
+      "outputs": 2884,
+      "published_wall_ns": 13533667961433,
+      "received_wall_ns": 13533662876307,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31869999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13557,
+      "nanosec": 869999999,
+      "outputs": 2885,
+      "published_wall_ns": 13533678639301,
+      "received_wall_ns": 13533677692134,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31879999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13561,
+      "nanosec": 879999999,
+      "outputs": 2886,
+      "published_wall_ns": 13533688907426,
+      "received_wall_ns": 13533688327716,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31889999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13563,
+      "nanosec": 889999999,
+      "outputs": 2887,
+      "published_wall_ns": 13533699393494,
+      "received_wall_ns": 13533698041355,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31897999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13567,
+      "nanosec": 897999999,
+      "outputs": 2888,
+      "published_wall_ns": 13533711335534,
+      "received_wall_ns": 13533709375433,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31909999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13570,
+      "nanosec": 909999999,
+      "outputs": 2889,
+      "published_wall_ns": 13533722836921,
+      "received_wall_ns": 13533718029817,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31919999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13572,
+      "nanosec": 919999999,
+      "outputs": 2890,
+      "published_wall_ns": 13533738020571,
+      "received_wall_ns": 13533729396732,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31935999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13575,
+      "nanosec": 935999999,
+      "outputs": 2891,
+      "published_wall_ns": 13533748812546,
+      "received_wall_ns": 13533744798049,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31967999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13579,
+      "nanosec": 967999999,
+      "outputs": 2892,
+      "published_wall_ns": 13533787548044,
+      "received_wall_ns": 13533775892740,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31985999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13584,
+      "nanosec": 985999999,
+      "outputs": 2893,
+      "published_wall_ns": 13533797865243,
+      "received_wall_ns": 13533797718389,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31993999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13586,
+      "nanosec": 993999999,
+      "outputs": 2894,
+      "published_wall_ns": 13533813421394,
+      "received_wall_ns": 13533803704360,
+      "sec": 31
+    },
+    {
+      "capture_ns": 31997999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13587,
+      "nanosec": 997999999,
+      "outputs": 2895,
+      "published_wall_ns": 13533823775375,
+      "received_wall_ns": 13533821901589,
+      "sec": 31
+    },
+    {
+      "capture_ns": 32021999999,
+      "event": "publish",
+      "gid": "010fb4056e0437350000000000004a03",
+      "inputs": 13589,
+      "nanosec": 21999999,
+      "outputs": 2896,
+      "published_wall_ns": 13533834109544,
+      "received_wall_ns": 13533830176959,
+      "sec": 32
+    }
+  ],
+  "tick_spans_end_clock_not_decision_clock": [
+    {
+      "started_ns": 13533537589361,
+      "finished_ns": 13533549846848,
+      "ros_ns": 31717999999
+    },
+    {
+      "started_ns": 13533558588922,
+      "finished_ns": 13533567024630,
+      "ros_ns": 31737999999
+    },
+    {
+      "started_ns": 13533580206535,
+      "finished_ns": 13533588029144,
+      "ros_ns": 31761999999
+    },
+    {
+      "started_ns": 13533597379823,
+      "finished_ns": 13533602112903,
+      "ros_ns": 31777999999
+    },
+    {
+      "started_ns": 13533617845353,
+      "finished_ns": 13533627023585,
+      "ros_ns": 31807999999
+    },
+    {
+      "started_ns": 13533637638712,
+      "finished_ns": 13533644113035,
+      "ros_ns": 31815999999
+    },
+    {
+      "started_ns": 13533658752656,
+      "finished_ns": 13533664100395,
+      "ros_ns": 31829999999
+    },
+    {
+      "started_ns": 13533677757168,
+      "finished_ns": 13533684374676,
+      "ros_ns": 31869999999
+    },
+    {
+      "started_ns": 13533702220959,
+      "finished_ns": 13533709888459,
+      "ros_ns": 31879999999
+    },
+    {
+      "started_ns": 13533718333339,
+      "finished_ns": 13533732348212,
+      "ros_ns": 31897999999
+    },
+    {
+      "started_ns": 13533738300887,
+      "finished_ns": 13533752517282,
+      "ros_ns": 31909999999
+    },
+    {
+      "started_ns": 13533766656169,
+      "finished_ns": 13533772705248,
+      "ros_ns": 31935999999
+    },
+    {
+      "started_ns": 13533786693429,
+      "finished_ns": 13533802370475,
+      "ros_ns": 31967999999
+    },
+    {
+      "started_ns": 13533804411938,
+      "finished_ns": 13533808459639,
+      "ros_ns": 31985999999
+    },
+    {
+      "started_ns": 13533822581832,
+      "finished_ns": 13533826638064,
+      "ros_ns": 31985999999
+    },
+    {
+      "started_ns": 13533839594414,
+      "finished_ns": 13533853812736,
+      "ros_ns": 32033999999
+    }
+  ],
+  "cleanup": {
+    "normal_runtime_exit": true,
+    "normal_engine_exit": true,
+    "parent_reaped": true,
+    "no_residual_members": true
+  },
+  "conclusions": {
+    "observed_vectors_coherent": true,
+    "staged_ctrl_with_older_physics_snapshot": true,
+    "mixed_joint_write_demonstrated": false,
+    "applied_command_timing_measured": false,
+    "leg_command_to_arm_peak_causality_proven": false,
+    "section_completed": false
+  }
+}

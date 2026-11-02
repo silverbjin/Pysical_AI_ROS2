@@ -1,0 +1,393 @@
+BOOT 4168443c-fca7-4937-a0bd-678d12663374
+OWNED_RELATED_PROCESSES []
+FILES {"shutdown_lifecycle_release.json": 140, "control_clock_before_stop.json": 329, "control_clock.jsonl": 24324012, "carry_failure_report.json": 950, "recording_report.json": 90831, "g2_command_assessment.json": 121, "observer_snapshot.pickle": 681618417, "result.json": 9523, "control_clock_ingress_owner.json": 769, "shutdown_action_results.json": 953, "controller_report.json": 1086434, "observer_startup.json": 905, "source_manifest.json": 23318, "system.log": 35433, "observer_process_report.json": 2448, "ownership.json": 2203, "native_command_trace.json": 7401366, "observations.jsonl": 1890197799, "control_clock_stop.json": 328, "control_clock_ingress_report.json": 852195, "process_metrics.jsonl": 5861964, "g2_command_source.json": 90632, "native_mapping.json": 289, "native_worker_stop_reply.json": 195, "control_clock_graph.json": 761, "validated_profile.json": 2357, "journal_writer.json": 422, "g2_commands.jsonl": 3468128, "action_results.json": 950, "tf_provenance.jsonl": 6824, "install_manifest.json": 33380, "mission_probe/recording_report.json": 15457, "mission_probe/observations.jsonl": 438973460}
+result.json {
+  "schema_version": 1,
+  "run_id": "3dc569a3-c786-421e-aeeb-65330c410fb1",
+  "expected_run_id": "3dc569a3-c786-421e-aeeb-65330c410fb1",
+  "invocation_started_at": 1793087902.7577581,
+  "started_at": 1793087902.7577581,
+  "status": "FAIL",
+  "checks": {},
+  "errors": [
+    "observation journal restoration: RuntimeError('observer process not joined; resources retained')",
+    "post-join native command trace validation: RuntimeError('native trace decoding requires parent reap and all receiver joins')",
+    "RuntimeError('full observer still owns live resources')"
+  ],
+  "artifact_root": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g2-mujoco-e5f0aea4-bbea-427d-8d25-f020bfbe78fd",
+  "artifacts": [],
+  "required_checks": [
+    "bounded_test_commands",
+    "carry_collision_free",
+    "carry_measured_settle",
+    "carry_terminal_received",
+    "command_source_shutdown",
+    "contact_frames_force",
+    "contact_support",
+    "control_clock_contract",
+    "crawl_admission_accepted",
+    "forward",
+    "g1_profile_verified",
+    "imu_frame",
+    "joint_envelope",
+    "joint_tf_ownership",
+    "left",
+    "native_com_consistent",
+    "native_ctrl_observed",
+    "native_library_loaded",
+    "native_observations",
+    "no_residual_members",
+    "normal_engine_exit",
+    "normal_runtime_exit",
+    "parent_reaped",
+    "right",
+    "scan_world_not_self",
+    "sensor_freshness",
+    "stability",
+    "stance_slip",
+    "stand10",
+    "stopped",
+    "tf_observer_owned"
+  ],
+  "kind": "native",
+  "gate": "G2",
+  "engine": "mujoco",
+  "engine_started": true,
+  "phase": "owner_attestation",
+  "native_scope": "in-progress: no promotion without every required measurement",
+  "command": [
+    "ros2",
+    "launch",
+    "integrated_robot_navigation",
+    "crawl_system.launch.py",
+    "engine:=mujoco",
+    "navigation_scene:=/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-mujoco-a35c40ac-8c1f-4ca8-8d45-8fae6d955ce5-prepared/scene",
+    "carry_profile:=/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g2-mujoco-e5f0aea4-bbea-427d-8d25-f020bfbe78fd/validated_profile.json",
+    "validation_mode:=true",
+    "tf_provenance_output:=/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g2-mujoco-e5f0aea4-bbea-427d-8d25-f020bfbe78fd/tf_provenance.jsonl",
+    "control_clock_mode:=relay100",
+    "control_clock_output:=/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g2-mujoco-e5f0aea4-bbea-427d-8d25-f020bfbe78fd/control_clock.jsonl",
+    "g2_validation_mode:=true"
+  ],
+  "model_sha256": "94a60aaa1f442c34a31feeb2ba3b7f2863f1f06d8bac7a37c848339825e22d28",
+  "execution_mode": {
+    "control_clock": "relay100",
+    "validation_only": true,
+    "g2_validation_mode": true,
+    "native_execution_profile": {
+      "control_clock": "relay100",
+      "position_reference_mode": "native",
+      "dart_contact": "native",
+      "native_physics_sha256": "74188bf37877cb3c5d2b7646252c82da6b0e4886f8d97e273f573021b8fadd6d"
+    },
+    "dart_contact": "native",
+    "diagnostic_profile_node": null,
+    "crawl_clock_dispatch": "isolated_2worker"
+  },
+  "config_sha256": "8c954ee889c4209e68dad0a7fb6d477136f1114c8a2a3312f714443655a87baa",
+  "physics_sha256": "993e980e58d172d5d76735d01af6288a42eb2488666016340230ec8f58cff96b",
+  "native_physics_sha256": "74188bf37877cb3c5d2b7646252c82da6b0e4886f8d97e273f573021b8fadd6d",
+  "scene": {
+    "schema": 1,
+    "engine": "mujoco",
+    "scenario": "g1",
+    "target": [
+      1.6,
+      0.0
+    ],
+    "position_reference_mode": "native",
+    "dart_contact_mode": "native",
+    "localization": "native_ground_truth",
+    "world": {
+      "path": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-mujoco-a35c40ac-8c1f-4ca8-8d45-8fae6d955ce5-prepared/scene/world.xml",
+      "sha256": "488bfce71aeb9e093f34eeed5dc89dbb07d8bde31ac97b6478261f268f40708c"
+    },
+    "robot": {
+      "path": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-mujoco-a35c40ac-8c1f-4ca8-8d45-8fae6d955ce5-prepared/scene/robot.urdf",
+      "sha256": "94a60aaa1f442c34a31feeb2ba3b7f2863f1f06d8bac7a37c848339825e22d28"
+    },
+    "map": {
+      "path": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-mujoco-a35c40ac-8c1f-4ca8-8d45-8fae6d955ce5-prepared/scene/map.yaml",
+      "sha256": "c8bebb9de00f8f3da1ed5418c539b7ecb56b845946e8509840cde7c07985ecde"
+    },
+    "map_image": {
+      "path": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-mujoco-a35c40ac-8c1f-4ca8-8d45-8fae6d955ce5-prepared/scene/map.pgm",
+      "sha256": "b5b738ec3c47a46a03e63bd6b44273bab5bc31f462a4c79243993a0f95cc1fcc"
+    },
+    "controllers": {
+      "path": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g1-mujoco-a35c40ac-8c1f-4ca8-8d45-8fae6d955ce5-prepared/scene/controllers.yaml",
+      "sha256": "1927b0a9a09dae5721171c4689e8967556f0a09358a31443f647a1f7e6dea46e"
+    },
+    "native_controllers": {
+      "path": "/tmp/ch13_5_controllers_1927b0a9a09dae57.yaml",
+      "sha256": "1927b0a9a09dae5721171c4689e8967556f0a09358a31443f647a1f7e6dea46e"
+    },
+    "native_physics_sha256": "74188bf37877cb3c5d2b7646252c82da6b0e4886f8d97e273f573021b8fadd6d"
+  },
+  "environment": {
+    "ROS_DOMAIN_ID": "159",
+    "MUJOCO_GL": "egl",
+    "OMP_NUM_THREADS": null,
+    "OPENBLAS_NUM_THREADS": null,
+    "LP_NUM_THREADS": "2"
+  },
+  "probe_receiver": {
+    "executor": "EventsExecutor",
+    "serial_callbacks": true,
+    "owner": {
+      "pid": 1475,
+      "ppid": 1474,
+      "pgid": 748,
+      "start_ticks": 17547
+    },
+    "callback_thread_tid": 1539,
+    "dependency_files": {
+      "rclpy_version": "7.1.12",
+      "callbacks": "serial",
+      "parallel_callback_groups": false,
+      "reviewed_tag": "7.1.12",
+      "reviewed_commit": "bd637294dd02
+journal_writer.json {
+  "scope": "actual_file_writer_not_ingress_enqueue",
+  "submitted": 612099,
+  "written": 612099,
+  "outstanding_records": 0,
+  "outstanding_bytes": 0,
+  "max_records": 256,
+  "max_bytes": 8388608,
+  "peak_records": 21,
+  "peak_bytes": 16263,
+  "error": null,
+  "accepting": false,
+  "joined": true,
+  "write_wall_ns": 14247449276,
+  "write_cpu_ns": 5630487700,
+  "max_write_wall_ns": 45216506,
+  "first_failure": null
+}
+
+observer_process_report.json {
+  "identity": {
+    "pid": 1507,
+    "ppid": 1475,
+    "uid": 1000,
+    "pgid": 1507,
+    "start_ticks": 18212,
+    "executable": "/home/jinho/ch13_vision_13_4_venv/bin/python",
+    "module_files": {
+      "integrated_robot_navigation": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/__init__.py",
+      "integrated_robot_runtime": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_runtime/lib/python3.12/site-packages/integrated_robot_runtime/__init__.py",
+      "integrated_robot_vision": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_vision/lib/python3.12/site-packages/integrated_robot_vision/__init__.py"
+    },
+    "worker_entry_wall_ns": 183110562968,
+    "node_ready_wall_ns": 183240783878,
+    "receiver_ready_wall_ns": 183347401368
+  },
+  "receiver": {
+    "node": "navigation_native_probe",
+    "thread_ident": 124961469494976,
+    "thread_native_id": 1526,
+    "dispatch": "continuous_native",
+    "thread_alive": false,
+    "closed": true,
+    "error": null,
+    "recording": {
+      "node": "navigation_probe_recording",
+      "thread_ident": 124961833449152,
+      "thread_native_id": 1523,
+      "dispatch": "continuous_native",
+      "thread_alive": false,
+      "closed": true,
+      "error": null,
+      "recording": null,
+      "ingress": null
+    },
+    "ingress": {
+      "node": "navigation_probe_ingress",
+      "thread_ident": 124961816663744,
+      "thread_native_id": 1525,
+      "dispatch": "continuous_native",
+      "thread_alive": false,
+      "closed": true,
+      "error": null,
+      "recording": null,
+      "ingress": null
+    }
+  },
+  "journal": {
+    "scope": "actual_file_writer_not_ingress_enqueue",
+    "submitted": 929268,
+    "written": 929268,
+    "outstanding_records": 0,
+    "outstanding_bytes": 0,
+    "max_records": 256,
+    "max_bytes": 8388608,
+    "peak_records": 71,
+    "peak_bytes": 152369,
+    "error": null,
+    "accepting": false,
+    "joined": true,
+    "write_wall_ns": 59515654161,
+    "write_cpu_ns": 15675830900,
+    "max_write_wall_ns": 109525194
+  },
+  "ipc_requests": 8,
+  "failure": null,
+  "runtime_fault": null,
+  "snapshot": "observer_snapshot.pickle",
+  "snapshot_size": 681618417,
+  "snapshot_sha256": "78407643f9a0fc616ff5661772306b41c2fa29e5cf47b3a1112db10b36be1362"
+}
+shutdown_lifecycle_release.json {
+  "success": true,
+  "state_before": 3,
+  "state_after": 2,
+  "transition_sent": true,
+  "scope": "lifecycle_release_not_measured_stop"
+}
+
+native_worker_stop_reply.json {"applied_dropped_busy":86,"applied_overwritten":0,"applied_published":51722,"applied_submitted":51722,"applied_worker_joined":true,"engine_exit_acknowledgment":false,"sensor_worker_joined":true}
+TAIL /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/g2-driver-e5f0aea4-bbea-427d-8d25-f020bfbe78fd.log [INFO] [1793087909.598388150] [navigation_native_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1793087909.598872650] [navigation_probe_recording]: Serial navigation callbacks use EventsExecutor
+[INFO] [1793087909.599751151] [navigation_probe_ingress]: Serial navigation callbacks use EventsExecutor
+[INFO] [1793087909.753396881] [navigation_mission_probe]: Serial navigation callbacks use EventsExecutor
+[INFO] [1793087909.753860381] [navigation_mission_ingress]: Serial navigation callbacks use EventsExecutor
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 1241, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 1236, in main
+    run(args)
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 1174, in run
+    probe.destroy_node()
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/split_observer_13_5.py", line 234, in destroy_node
+    if not self.observer.joined:raise RuntimeError('full observer still owns live resources')
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: full observer still owns live resources
+
+TAIL /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/evidence/native-g2-mujoco-e5f0aea4-bbea-427d-8d25-f020bfbe78fd/system.log 
+[ros2_control_node-1] [INFO] [1793087919.089274005] [controller_manager]: Successfully switched controllers!
+[spawner-12] [INFO] [1793087919.100742905] [spawner_joint_state_broadcaster]: Configured and activated joint_state_broadcaster
+[INFO] [spawner-12]: process has finished cleanly [pid 1751]
+[spawner-13] [INFO] [1793087919.333369905] [spawner_leg_position_controller]: waiting for service /controller_manager/list_controllers to become available...
+[motion_guard-5] [INFO] [1793087919.457843709] [motion_guard]: G2 guard isolates admission from clock/sensors with two workers
+[spawner-13] [INFO] [1793087922.137922088] [spawner_leg_position_controller]: Setting controller param "params_file" to "['/tmp/ch13_2_controllers_37af21f868b7.yaml']" for leg_position_controller
+[ros2_control_node-1] [INFO] [1793087922.241420198] [controller_manager]: Loading controller : 'leg_position_controller' of type 'forward_command_controller/ForwardCommandController'
+[ros2_control_node-1] [INFO] [1793087922.241497398] [controller_manager]: Loading controller 'leg_position_controller'
+[ros2_control_node-1] [INFO] [1793087922.245161895] [controller_manager]: Controller 'leg_position_controller' node arguments: --ros-args --params-file /tmp/launch_params_b58fxgn0 --params-file /tmp/ch13_2_controllers_37af21f868b7.yaml --params-file /tmp/ch13_2_controllers_37af21f868b7.yaml --param use_sim_time:=true 
+[spawner-13] [INFO] [1793087922.312034437] [spawner_leg_position_controller]: Loaded leg_position_controller
+[ros2_control_node-1] [INFO] [1793087922.318908731] [controller_manager]: Configuring controller: 'leg_position_controller'
+[ros2_control_node-1] [INFO] [1793087922.322607928] [leg_position_controller]: configure successful
+[ros2_control_node-1] [INFO] [1793087922.336874316] [controller_manager]: Activating controllers: [ leg_position_controller ]
+[ros2_control_node-1] [INFO] [1793087922.338854314] [MujocoSystemInterface]: Joint fr_hip_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338898014] [MujocoSystemInterface]: Joint fr_thigh_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338907514] [MujocoSystemInterface]: Joint fr_calf_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338915614] [MujocoSystemInterface]: Joint fl_hip_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338923514] [MujocoSystemInterface]: Joint fl_thigh_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338931714] [MujocoSystemInterface]: Joint fl_calf_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338939714] [MujocoSystemInterface]: Joint rr_hip_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338947014] [MujocoSystemInterface]: Joint rr_thigh_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338955314] [MujocoSystemInterface]: Joint rr_calf_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338963814] [MujocoSystemInterface]: Joint rl_hip_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338971414] [MujocoSystemInterface]: Joint rl_thigh_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.338979614] [MujocoSystemInterface]: Joint rl_calf_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087922.339075814] [leg_position_controller]: activate successful
+[ros2_control_node-1] [INFO] [1793087922.339186314] [controller_manager]: Successfully switched controllers!
+[spawner-13] [INFO] [1793087922.350992004] [spawner_leg_position_controller]: Configured and activated leg_position_controller
+[INFO] [spawner-13]: process has finished cleanly [pid 1752]
+[spawner-15] [INFO] [1793087922.573223511] [spawner_gripper_position_controller]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-15] [INFO] [1793087925.364929494] [spawner_gripper_position_controller]: Setting controller param "params_file" to "['/tmp/ch13_2_controllers_37af21f868b7.yaml']" for gripper_position_controller
+[ros2_control_node-1] [INFO] [1793087925.387289275] [controller_manager]: Loading controller : 'gripper_position_controller' of type 'forward_command_controller/ForwardCommandController'
+[ros2_control_node-1] [INFO] [1793087925.387366975] [controller_manager]: Loading controller 'gripper_position_controller'
+[ros2_control_node-1] [INFO] [1793087925.387936774] [controller_manager]: Controller 'gripper_position_controller' node arguments: --ros-args --params-file /tmp/launch_params_b58fxgn0 --params-file /tmp/ch13_2_controllers_37af21f868b7.yaml --params-file /tmp/ch13_2_controllers_37af21f868b7.yaml --param use_sim_time:=true 
+[spawner-15] [INFO] [1793087925.458212013] [spawner_gripper_position_controller]: Loaded gripper_position_controller
+[ros2_control_node-1] [INFO] [1793087925.461685010] [controller_manager]: Configuring controller: 'gripper_position_controller'
+[ros2_control_node-1] [INFO] [1793087925.465207107] [gripper_position_controller]: configure successful
+[ros2_control_node-1] [INFO] [1793087925.559418226] [controller_manager]: Activating controllers: [ gripper_position_controller ]
+[ros2_control_node-1] [INFO] [1793087925.562880423] [MujocoSystemInterface]: Joint gripper_left_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087925.562933223] [MujocoSystemInterface]: Joint gripper_right_joint: position control enabled (velocity, effort disabled)
+[ros2_control_node-1] [INFO] [1793087925.562979723] [gripper_position_controller]: activate successful
+[ros2_control_node-1] [INFO] [1793087925.563062922] [controller_manager]: Successfully switched controllers!
+[spawner-15] [INFO] [1793087925.574004013] [spawner_gripper_position_controller]: Configured and activated gripper_position_controller
+[INFO] [spawner-15]: process has finished cleanly [pid 1754]
+[ros2_control_node-1] [INFO] [1793087928.527050682] [arm_trajectory_controller]: Received new action goal
+[ros2_control_node-1] [INFO] [1793087928.527226782] [arm_trajectory_controller]: Accepted new action goal
+[ros2_control_node-1] [INFO] [1793087931.526803358] [arm_trajectory_controller]: Goal reached, success!
+[motion_guard-5] [INFO] [1793087944.514134818] [motion_guard]: G2 admission identity check {"started_wall_ns": 217925350218, "started_ros_ns": 31559999999, "finished_wall_ns": 218257436135, "finished_ros_ns": 31885999999, "accepted": true, "reason": ""}
+[motion_guard-5] [INFO] [1793088735.134964498] [motion_guard]: G2 admission identity check {"started_wall_ns": 1008521246315, "started_ros_ns": 822157999994, "finished_wall_ns": 1008879839715, "finished_ros_ns": 822507999994, "accepted": true, "reason": ""}
+[motion_guard-5] [INFO] [1793088923.968746133] [motion_guard]: G2 admission identity check {"started_wall_ns": 1197156318448, "started_ros_ns": 1010789999989, "finished_wall_ns": 1197712806250, "finished_ros_ns": 1011345999989, "accepted": true, "reason": ""}
+[tf_provenance-11] [INFO] [1793089108.817429605] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[crawl_controller-6] [INFO] [1793089108.965600105] [crawl_controller]: Navigation ingress closed: {"dispatch": "owned_serial_waitset", "alive": false, "joined": true, "error": null, "pid": 1552, "uid": 1000, "native_tid": 1730, "node_name": "crawl_controller_ingress", "namespace": "/", "clock_subscriptions": []}
+[INFO] [tf_provenance-11]: process has finished cleanly [pid 1561]
+[INFO] [nav_projection-8]: process has finished cleanly [pid 1554]
+[INFO] [crawl_startup-9]: process has finished cleanly [pid 1555]
+[INFO] [motion_guard-5]: process has finished cleanly [pid 1551]
+[INFO] [native_camera_info_adapter-4]: process has finished cleanly [pid 1550]
+[INFO] [carry_manager-7]: process has finished cleanly [pid 1553]
+[INFO] [native_pose_adapter-3]: process has finished cleanly [pid 1549]
+[INFO] [crawl_controller-6]: process has finished cleanly [pid 1552]
+[control_clock_relay-10] [INFO] [1793089109.268969906] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [control_clock_relay-10]: process has finished cleanly [pid 1556]
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [robot_state_publisher-2]: sending signal 'SIGINT' to process[robot_state_publisher-2]
+[INFO] [ros2_control_node-1]: sending signal 'SIGINT' to process[ros2_control_node-1]
+[robot_state_publisher-2] [INFO] [1793089109.423798506] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[ros2_control_node-1] [INFO] [1793089109.427292606] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[ros2_control_node-1] [INFO] [1793089109.427361006] [controller_manager]: Shutdown request received....
+[ros2_control_node-1] [INFO] [1793089109.427492806] [controller_manager]: Shutting down all controllers in the controller manager.
+[ros2_control_node-1] [INFO] [1793089109.427533206] [controller_manager]: Deactivating controller 'gripper_position_controller'
+[ros2_control_node-1] [INFO] [1793089109.427577606] [controller_manager]: Shutting down controller 'gripper_position_controller'
+[ros2_control_node-1] [INFO] [1793089109.427745406] [controller_manager]: Deactivating controller 'leg_position_controller'
+[ros2_control_node-1] [INFO] [1793089109.427788406] [controller_manager]: Shutting down controller 'leg_position_controller'
+[ros2_control_node-1] [INFO] [1793089109.427852706] [controller_manager]: Deactivating controller 'joint_state_broadcaster'
+[ros2_control_node-1] [INFO] [1793089109.427899306] [controller_manager]: Shutting down controller 'joint_state_broadcaster'
+[ros2_control_node-1] [INFO] [1793089109.427937506] [controller_manager]: Deactivating controller 'arm_trajectory_controller'
+[ros2_control_node-1] [INFO] [1793089109.428119406] [controller_manager]: Shutting down controller 'arm_trajectory_controller'
+[ros2_control_node-1] [INFO] [1793089109.428192206] [resource_manager]: 'deactivate' hardware 'IntegratedRobotSystem' 
+[ros2_control_node-1] [INFO] [1793089109.428215406] [MujocoSystemInterface]: Deactivating MuJoCo hardware interface and shutting down Simulate...
+[ros2_control_node-1] [INFO] [1793089109.428222606] [resource_manager]: Successful 'deactivate' of hardware 'IntegratedRobotSystem'
+[ros2_control_node-1] [INFO] [1793089109.428226306] [resource_manager]: 'shutdown' hardware 'IntegratedRobotSystem' 
+[ros2_control_node-1] [INFO] [1793089109.428230206] [resource_manager]: Successful 'shutdown' of hardware 'IntegratedRobotSystem'
+[ros2_control_node-1] [INFO] [1793089109.428295906] [controller_manager]: Shutting down the controller manager.
+[ros2_control_node-1] [ERROR] [1793089109.428478906] [controller_manager.pal_statistics]: Exception in publisher thread: context cannot be slept with because it's invalid!. Aborting!
+[ros2_control_node-1] [ERROR] [1793089109.428540406] [controller_manager.pal_statistics]: Exception in publisher thread: context cannot be slept with because it's invalid!. Aborting!
+[ros2_control_node-1] [INFO] [1793089109.434872706] [controller_manager.pal_statistics]: Async messages lost 0
+[ros2_control_node-1] [INFO] [1793089109.434912706] [controller_manager.pal_statistics]: publish_async_failures_ 0
+[ros2_control_node-1] [INFO] [1793089109.436932906] [controller_manager.pal_statistics]: Async messages lost 0
+[ros2_control_node-1] [INFO] [1793089109.436973906] [controller_manager.pal_statistics]: publish_async_failures_ 0
+[ros2_control_node-1] [INFO] [1793089109.494417006] [mujoco_ros2_control_node.native_pose]: FreeJointStatePublisherPlugin cleanup.
+[INFO] [robot_state_publisher-2]: process has finished cleanly [pid 1548]
+[INFO] [ros2_control_node-1]: process has finished cleanly [pid 1547]
+
+MEMINFO MemTotal:       16228728 kB
+MemFree:        14044332 kB
+MemAvailable:   15409144 kB
+Buffers:           78752 kB
+Cached:          1463868 kB
+SwapCached:            0 kB
+Active:           175396 kB
+Inactive:        1632284 kB
+Active(anon):       3592 kB
+Inactive(anon):   268668 kB
+Active(file):     171804 kB
+Inactive(file):  1363616 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:       4194304 kB
+SwapFree:        4194304 kB
+Dirty:              7436 kB
+Writeback:             0 kB
+AnonPages:        265392 kB
+Mapped:           298116 kB
+Shmem:              6992 kB
+KReclaimable:      32108 kB
+Slab:              86012 kB
+SReclaimable:      32108 kB
+SUnreclaim:        53904 kB
+KernelStack:        5696 kB
+PageTables:        10456 kB
+SecPageTables:         0 kB
+NFS_Unstable:   
+DISK {"available": 915793805312, "total": 1081101176832}
+KERNEL_READ_RETURN 0
+

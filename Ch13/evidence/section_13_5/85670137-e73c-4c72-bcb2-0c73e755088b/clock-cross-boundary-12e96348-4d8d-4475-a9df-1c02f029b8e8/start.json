@@ -1,0 +1,7 @@
+{
+  "scope": "read_only_host_QPC_brackets_original_guest_clocks",
+  "qpc_frequency": 10000000,
+  "command": "import json,time,pathlib,os; a=time.clock_gettime_ns(time.CLOCK_MONOTONIC_RAW); r=time.time_ns(); m=time.monotonic_ns(); b=time.clock_gettime_ns(time.CLOCK_MONOTONIC_RAW); print(json.dumps(dict(raw_before_ns=a,realtime_ns=r,monotonic_ns=m,raw_after_ns=b,uid=os.getuid(),boot_id=pathlib.Path(\"/proc/sys/kernel/random/boot_id\").read_text().strip())))",
+  "duration_seconds": 60,
+  "writes_system_settings": false
+}

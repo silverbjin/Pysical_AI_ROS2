@@ -1,0 +1,93 @@
+............FF.FF                                                        [100%]
+=================================== FAILURES ===================================
+___ test_service_only_comparison_does_not_write_over_chrony_owned_tick[9167] ___
+
+initial_tick = 9167
+
+    @pytest.mark.parametrize('initial_tick',[9166,9167,9500,10000,10833])
+    def test_service_only_comparison_does_not_write_over_chrony_owned_tick(initial_tick):
+        ops=Ops();ops.tick=initial_tick;journal=[]
+        owner=ClockLease(ops,lambda r:journal.append(deepcopy(r)),normalize_tick=False)
+>       owner.begin()
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <temporary_clock_lease.ClockLease object at 0x75f83a6d93a0>
+
+    def begin(self):
+        initial={d:self.ops.inspect(d) for d in self.DISTROS}
+        clock=self.ops.clock()
+        if any(v['active']!='active' or v['clock_ticks']!=100
+               or v['boot']!=clock['boot_id'] or v['namespace']!=initial[self.DISTROS[0]]['namespace']
+               for v in initial.values()) or clock['tick_us'] not in ((9166,) if self.normalize_tick else (9166,10000)):
+>           raise RuntimeError('initial environment differs from approved observation; no mutation')
+E           RuntimeError: initial environment differs from approved observation; no mutation
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/temporary_clock_lease.py:15: RuntimeError
+___ test_service_only_comparison_does_not_write_over_chrony_owned_tick[9500] ___
+
+initial_tick = 9500
+
+    @pytest.mark.parametrize('initial_tick',[9166,9167,9500,10000,10833])
+    def test_service_only_comparison_does_not_write_over_chrony_owned_tick(initial_tick):
+        ops=Ops();ops.tick=initial_tick;journal=[]
+        owner=ClockLease(ops,lambda r:journal.append(deepcopy(r)),normalize_tick=False)
+>       owner.begin()
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <temporary_clock_lease.ClockLease object at 0x75f83a6db4a0>
+
+    def begin(self):
+        initial={d:self.ops.inspect(d) for d in self.DISTROS}
+        clock=self.ops.clock()
+        if any(v['active']!='active' or v['clock_ticks']!=100
+               or v['boot']!=clock['boot_id'] or v['namespace']!=initial[self.DISTROS[0]]['namespace']
+               for v in initial.values()) or clock['tick_us'] not in ((9166,) if self.normalize_tick else (9166,10000)):
+>           raise RuntimeError('initial environment differs from approved observation; no mutation')
+E           RuntimeError: initial environment differs from approved observation; no mutation
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/temporary_clock_lease.py:15: RuntimeError
+__ test_service_only_comparison_does_not_write_over_chrony_owned_tick[10833] ___
+
+initial_tick = 10833
+
+    @pytest.mark.parametrize('initial_tick',[9166,9167,9500,10000,10833])
+    def test_service_only_comparison_does_not_write_over_chrony_owned_tick(initial_tick):
+        ops=Ops();ops.tick=initial_tick;journal=[]
+        owner=ClockLease(ops,lambda r:journal.append(deepcopy(r)),normalize_tick=False)
+>       owner.begin()
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <temporary_clock_lease.ClockLease object at 0x75f83a6d8e30>
+
+    def begin(self):
+        initial={d:self.ops.inspect(d) for d in self.DISTROS}
+        clock=self.ops.clock()
+        if any(v['active']!='active' or v['clock_ticks']!=100
+               or v['boot']!=clock['boot_id'] or v['namespace']!=initial[self.DISTROS[0]]['namespace']
+               for v in initial.values()) or clock['tick_us'] not in ((9166,) if self.normalize_tick else (9166,10000)):
+>           raise RuntimeError('initial environment differs from approved observation; no mutation')
+E           RuntimeError: initial environment differs from approved observation; no mutation
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/temporary_clock_lease.py:15: RuntimeError
+__________ test_rejected_initial_environment_has_no_restoration_debt ___________
+
+    def test_rejected_initial_environment_has_no_restoration_debt():
+        ops=Ops();ops.states['Ubuntu-22.04']['boot']='different';owner,_=lease(ops)
+        with pytest.raises(RuntimeError):owner.begin()
+        assert owner.close() is True
+>       assert owner.record['restored'] and not owner.record['restoration_pending']
+E       assert (False)
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py:90: AssertionError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py::test_service_only_comparison_does_not_write_over_chrony_owned_tick[9167]
+FAILED .superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py::test_service_only_comparison_does_not_write_over_chrony_owned_tick[9500]
+FAILED .superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py::test_service_only_comparison_does_not_write_over_chrony_owned_tick[10833]
+FAILED .superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py::test_rejected_initial_environment_has_no_restoration_debt
+4 failed, 13 passed in 0.30s

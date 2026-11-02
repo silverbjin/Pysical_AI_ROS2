@@ -1,0 +1,15 @@
+F
+=================================== FAILURES ===================================
+____ test_normal_lease_records_before_write_and_restores_all_owned_changes _____
+
+    def test_normal_lease_records_before_write_and_restores_all_owned_changes():
+        ops=Ops();owner,journal=lease(ops);owner.begin()
+>       assert ops.tick==10000
+E       assert 9166 == 10000
+E        +  where 9166 = <test_temporary_clock_lease.Ops object at 0x7339b2ed4fb0>.tick
+
+.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py:28: AssertionError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/test_temporary_clock_lease.py::test_normal_lease_records_before_write_and_restores_all_owned_changes
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 0.12s
