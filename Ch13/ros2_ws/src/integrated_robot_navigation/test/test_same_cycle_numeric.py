@@ -32,7 +32,7 @@ def test_same_original_success_is_unsafe_at_the_recorded_newer_snapshot():
         finally:k.close()
 
 
-def test_same_cycle_uses_current_capture_once_and_keeps_exact_limits():
+def test_same_cycle_uses_current_capture_once_and_keeps_actuator_limits_and_geometry():
     c,model=recorded();a=c['args'];fault=c['parent']['fault'];m=None
     with NativeMassEvaluator(model) as mass:
         m=CrawlMachine(model,c['limits'],mass_evaluator=mass,load_transfer_policy='coupled_contact',
@@ -59,7 +59,15 @@ def test_same_cycle_uses_current_capture_once_and_keeps_exact_limits():
             assert m.load_transfer_observation['queued_next'] is False
             assert max(np.linalg.norm(m._targets[f]-before[f]) for f in model.feet)<=a['speed']*a['dt']+1e-12
             exact=m._solve(q,True)
-            assert all(abs(m._load_transfer.gains[n]*(exact[n]-q[n]))<=model.limits[n][3]+1e-6 for n in model.joint_names)
+            proof=m._load_transfer.last_model
+            assert proof['force_model']=='gazebo_discrete_equilibrium_v1'
+            assert proof['all_actuator_caps_validated'] is True and proof['actuator_count']==20
+            assert proof['constraint_rows']==148 and proof['raw_P_is_tracking_diagnostic'] is True
+            raw=proof['predicted_servo_command_efforts']
+            for n,value in proof['bounded_actuator_efforts'].items():
+                assert value==pytest.approx(np.clip(raw[n],-model.limits[n][3],model.limits[n][3]))
+                assert abs(value)<=model.limits[n][3]+1e-6
+            assert all(model.limits[n][0]<=exact[n]<=model.limits[n][1] for n in model.joint_names)
             assert m._load_transfer.last_transaction['wall_ns']<=10_000_000
             assert m._transfer_stance_load(bundle,q,pose,points,a['foot'],a['dt']) is True
             assert m._load_transfer.snapshot()['submitted']==1,'same capture submitted twice'

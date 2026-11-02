@@ -1,0 +1,72 @@
+[1.487s] WARNING:colcon.colcon_core.package_selection:Some selected packages are already built in one or more underlay workspaces:
+	'integrated_robot_interfaces' is in: /home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_interfaces
+If a package in a merged underlay workspace is overridden and it installs headers, then all packages in the overlay must sort their include directories by workspace order. Failure to do so may result in build failures or undefined behavior at run time.
+If the overridden package is used by another package in any underlay, then the overriding package in the overlay must be API and ABI compatible or undefined behavior at run time may occur.
+
+If you understand the risks and want to override a package anyways, add the following to the command line:
+	--allow-overriding integrated_robot_interfaces
+
+This may be promoted to an error in a future release of colcon-override-check.
+Starting >>> integrated_robot_interfaces
+Finished <<< integrated_robot_interfaces [0.85s]
+Starting >>> integrated_robot_navigation_sensors
+--- stderr: integrated_robot_navigation_sensors
+-- GLOB mismatch!
+CMake Deprecation Warning at /opt/ros/jazzy/share/tl_expected/cmake/tl_expectedConfig.cmake:37 (message):
+  Package 'tl_expected' is deprecated (This package will be removed in ROS 2
+  Lyrical Luth.
+
+        Use tl/expected.hpp from libexpected-dev,
+        or rcpputils/tl_expected/expected.hpp if the system header is not available)
+Call Stack (most recent call first):
+  /opt/ros/jazzy/share/parameter_traits/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/parameter_traits/cmake/parameter_traitsConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/controller_manager/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/controller_manager/cmake/controller_managerConfig.cmake:41 (include)
+  /opt/ros/jazzy/share/gz_ros2_control/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /opt/ros/jazzy/share/gz_ros2_control/cmake/gz_ros2_controlConfig.cmake:41 (include)
+  CMakeLists.txt:23 (find_package)
+
+
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp: In function ‘T {anonymous}::matrix(const nlohmann::json_abi_v3_11_3::json&)’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp:16:209: warning: expected ‘template’ keyword before dependent template name [-Wmissing-template-keyword]
+   16 | template<class T>T matrix(const nlohmann::json &v){T m;if(v.size()!=size_t(m.size()))throw std::invalid_argument("matrix size");for(int i=0;i<m.rows();++i)for(int j=0;j<m.cols();++j)m(i,j)=v.at(i*m.cols()+j).get<double>();if(!m.allFinite())throw std::invalid_argument("nonfinite plan");return m;}
+      |                                                                                                                                                                                                                 ^~~
+      |                                                                                                                                                                                                                 template
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp:16:213: error: expected primary-expression before ‘double’
+   16 | template<class T>T matrix(const nlohmann::json &v){T m;if(v.size()!=size_t(m.size()))throw std::invalid_argument("matrix size");for(int i=0;i<m.rows();++i)for(int j=0;j<m.cols();++j)m(i,j)=v.at(i*m.cols()+j).get<double>();if(!m.allFinite())throw std::invalid_argument("nonfinite plan");return m;}
+      |                                                                                                                                                                                                                     ^~~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp:16:213: error: expected ‘;’ before ‘double’
+   16 | template<class T>T matrix(const nlohmann::json &v){T m;if(v.size()!=size_t(m.size()))throw std::invalid_argument("matrix size");for(int i=0;i<m.rows();++i)for(int j=0;j<m.cols();++j)m(i,j)=v.at(i*m.cols()+j).get<double>();if(!m.allFinite())throw std::invalid_argument("nonfinite plan");return m;}
+      |                                                                                                                                                                                                                     ^~~~~~
+      |                                                                                                                                                                                                                     ;
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp: In constructor ‘{anonymous}::Plan::Plan(const nlohmann::json_abi_v3_11_3::json&)’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp:29:3: warning: this ‘for’ clause does not guard... [-Wmisleading-indentation]
+   29 |   for(int i:feet)if(i<0||i>=int(nodes.size()))throw std::invalid_argument("foot index");for(int i:legs)if(i<0||i>=nq)throw std::invalid_argument("leg index");
+      |   ^~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp:29:89: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘for’
+   29 |   for(int i:feet)if(i<0||i>=int(nodes.size()))throw std::invalid_argument("foot index");for(int i:legs)if(i<0||i>=nq)throw std::invalid_argument("leg index");
+      |                                                                                         ^~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp: In function ‘int ch13_equilibrium_evaluate(void*, const double*, size_t, double*, size_t, char*, size_t)’:
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp:63:2: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+   63 |  if(!handle||!input||!output)throw std::invalid_argument("missing equilibrium buffers");const auto&p=*static_cast<Plan*>(handle);if(count!=size_t(2*p.nq+28)||size!=size_t(144+p.nd*12+4))throw std::invalid_argument("equilibrium dimensions");for(size_t i=0;i<count;++i)if(!std::isfinite(input[i]))throw std::invalid_argument("nonfinite equilibrium input");
+      |  ^~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp:63:89: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+   63 |  if(!handle||!input||!output)throw std::invalid_argument("missing equilibrium buffers");const auto&p=*static_cast<Plan*>(handle);if(count!=size_t(2*p.nq+28)||size!=size_t(144+p.nd*12+4))throw std::invalid_argument("equilibrium dimensions");for(size_t i=0;i<count;++i)if(!std::isfinite(input[i]))throw std::invalid_argument("nonfinite equilibrium input");
+      |                                                                                         ^~~~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp:65:2: warning: this ‘for’ clause does not guard... [-Wmisleading-indentation]
+   65 |  for(int i=0;i<12;++i)for(int j=0;j<12;++j)output[12*i+j]=solution(p.nd+i,j);for(int i=0;i<p.nd;++i)for(int j=0;j<12;++j)output[144+12*i+j]=solution(i,j);output[size-4]=p.total;output[size-3]=residual;output[size-2]=wall;output[size-1]=now(CLOCK_THREAD_CPUTIME_ID)-cpu;return 0;
+      |  ^~~
+/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/ros2_ws/src/integrated_robot_navigation_sensors/src/equilibrium.cpp:65:78: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘for’
+   65 |  for(int i=0;i<12;++i)for(int j=0;j<12;++j)output[12*i+j]=solution(p.nd+i,j);for(int i=0;i<p.nd;++i)for(int j=0;j<12;++j)output[144+12*i+j]=solution(i,j);output[size-4]=p.total;output[size-3]=residual;output[size-2]=wall;output[size-1]=now(CLOCK_THREAD_CPUTIME_ID)-cpu;return 0;
+      |                                                                              ^~~
+gmake[2]: *** [CMakeFiles/navigation_equilibrium.dir/build.make:76: CMakeFiles/navigation_equilibrium.dir/src/equilibrium.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:213: CMakeFiles/navigation_equilibrium.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< integrated_robot_navigation_sensors [50.3s, exited with code 2]
+
+Summary: 1 package finished [52.0s]
+  1 package failed: integrated_robot_navigation_sensors
+  1 package had stderr output: integrated_robot_navigation_sensors
+  1 package not processed

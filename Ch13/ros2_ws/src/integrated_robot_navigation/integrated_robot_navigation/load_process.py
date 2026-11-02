@@ -95,10 +95,16 @@ class SpatialLoadProcess:
 
     def __init__(self,model,*,expected_library_sha256=None,command_space='height',limits=None,
                  expected_reference_library_sha256=None,expected_optimizer_library_sha256=None,
-                 receipt_mode='model_poll'):
+                 receipt_mode='model_poll',force_model='spring'):
         from .load_transition import SpatialLoadTransition
         if command_space not in ('height','stance_xyz'):raise ValueError('unknown numerical command space')
         if receipt_mode not in ('model_poll','event_receiver'):raise ValueError('unknown numerical receipt mode')
+        if force_model not in ('spring','gazebo_discrete_equilibrium_v1') or force_model!='spring' and command_space!='stance_xyz':
+            raise ValueError('explicit stance XYZ force model required')
+        self.force_model=force_model;self._expected_equilibrium_sha=None
+        if force_model=='gazebo_discrete_equilibrium_v1':
+            from .native_equilibrium import equilibrium_library_path
+            self._expected_equilibrium_sha=hashlib.sha256(equilibrium_library_path().read_bytes()).hexdigest()
         self.receipt_mode=receipt_mode;self._receipts=None
         if command_space=='stance_xyz':
             from .carry_profile import _validate_limits
@@ -136,12 +142,14 @@ class SpatialLoadProcess:
             raise ValueError('numerical worker preparation: '+self._fault) from error
         child.close();parent.settimeout(5.)
         try:
-            parent.sendall(_packet(dict(kind='init',urdf=self._urdf,command_space=self.command_space,limits=self._limits)))
+            parent.sendall(_packet(dict(kind='init',urdf=self._urdf,command_space=self.command_space,limits=self._limits,force_model=self.force_model)))
             ready=_blocking_message(parent)
             if (not isinstance(ready,dict) or ready.get('kind')!='ready' or ready.get('ok') is not True
                     or ready.get('model_sha256')!=self._model_sha
                     or ready.get('pid')!=self._process.pid
                     or ready.get('command_space')!=self.command_space
+                    or ready.get('force_model','spring')!=self.force_model
+                    or self._expected_equilibrium_sha is not None and ready.get('equilibrium_library_sha256')!=self._expected_equilibrium_sha
                     or self.command_space=='stance_xyz'
                     and (ready.get('reference_library_sha256')!=self._expected_reference_sha
                         or ready.get('optimization_library_sha256')!=self._expected_optimizer_sha
@@ -404,7 +412,7 @@ def _worker_main(fd):
                 if space=='height':kernel=SpatialLoadTransition(model,terms_evaluator=core.contact_terms)
                 elif space=='stance_xyz':
                     from .native_complete_xyz import CompleteXYZTransition
-                    kernel=CompleteXYZTransition(model,init['limits'],native_mass=core)
+                    kernel=CompleteXYZTransition(model,init['limits'],native_mass=core,force_model=init.get('force_model','spring'))
                     resources.callback(kernel.close)
                 else:raise ValueError('explicit numerical command space required')
                 preparation=kernel.prepare()
@@ -416,7 +424,9 @@ def _worker_main(fd):
                     complete_kernel_abi=1 if space=='stance_xyz' else None,
                     force_objective=kernel.force_objective if space=='stance_xyz' else None,
                     optimization_library_sha256=kernel._optimizer.provenance['library_sha256'] if space=='stance_xyz' else None,
-                    reference_library_sha256=kernel.geometry.provenance['library_sha256'] if space=='stance_xyz' else None)))
+                    reference_library_sha256=kernel.geometry.provenance['library_sha256'] if space=='stance_xyz' else None,
+                    force_model=init.get('force_model','spring'),
+                    equilibrium_library_sha256=kernel._optimizer.provenance['equilibrium_library_sha256'] if space=='stance_xyz' else None)))
                 last=0
                 while True:
                     message=_blocking_message(channel)

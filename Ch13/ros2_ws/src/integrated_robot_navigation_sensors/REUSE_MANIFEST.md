@@ -256,3 +256,34 @@ QPMAD 고정 vendor/라이선스는 그대로다.
 다시 검사한다. 이후 모든 힘/토크/servo/기하 증명은 복원된 값으로 수행한다.
 부모의 엄격한 비음수 조건을 완화하거나 유의미한 위반을 보정하지 않는다.
 
+
+## 2026-11-02 independent discrete-equilibrium arithmetic
+
+`src/equilibrium.cpp` is original Ch13 Apache-2.0 energy/Jacobian arithmetic,
+with existing Eigen/nlohmann dependencies only. No DART/ROS implementation was
+copied. It evaluates URDF full inertia, gravity, sphere-plane contact Jacobians,
+implicit native damping and fixed PD saturation. The derivative is formed from
+the complete equilibrium equation, including geometry and gravity derivatives;
+it is neither symmetrized nor multiplied by an empirical coefficient. The exact
+saturation boundary, nonpositive inertia, singular systems, nonfinite values and
+linear residual errors are rejected. This library alone has no motor authority
+and is not enabled in the crawl runtime until independent regressions pass.
+Official model semantics: https://github.com/dartsim/dart/blob/v6.13.2/dart/dynamics/detail/GenericJoint.hpp
+and https://github.com/dartsim/dart/blob/v6.13.2/dart/simulation/World.cpp .
+
+## 2026-11-02 explicit Gazebo discrete complete path
+
+`xyz_optimizer.cpp` optionally owns the new equilibrium plan for explicit
+`gazebo_discrete_equilibrium_v1` only. The default spring/132-row path and
+existing ABIs remain. The complete call includes all current20 q and command
+values, uses the command IK Jacobian to map12 XYZ inputs, and includes measured
+posture response in the20-axis PD effort derivative. The discrete path has148
+rows: original physical torque/force/friction/rate/offset conditions plus all20
+predicted actuator effort caps. Every row is postchecked; fixed-coordinate,
+QPMAD1.5.1 upstream,32-iteration and total10ms checks remain. The original
+28-point geometry/IK branch proof remains. At a clipped actuator the derivative
+is zero, matching the installed PD clamp. Raw preclip P is retained as a tracking
+diagnostic and is not represented as measured output torque. Actual hardware
+clamping and its20/30Nm leg caps are unchanged. This local quasistatic predictor
+is not an exact transient or full-path proof; measured release remains required.
+No worker, cache, warmstart, fallback, retry or command owner was added.

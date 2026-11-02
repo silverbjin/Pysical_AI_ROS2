@@ -69,6 +69,7 @@ class CrawlMachine:
                     mass_evaluator.provenance['library_sha256'] if mass_evaluator is not None else None),
                     command_space='stance_xyz',limits=limits,
                     receipt_mode=load_receipt_mode,
+                    force_model=('gazebo_discrete_equilibrium_v1' if load_result_timing=='same_cycle' else 'spring'),
                     expected_reference_library_sha256=self._reference_geometry.provenance['library_sha256'])
             else:
                 from .load_transition import SpatialLoadTransition
@@ -960,7 +961,13 @@ class CrawlMachine:
                     raise ValueError('transition optimization current geometry: '+str(error)) from error
                 target={n:exact[n] for n in self.model.joint_names}
             else:target=self._solve(joints,True,foot_targets=proposed)
-            if any(abs(worker.gains[n]*(target[n]-joints[n]))>self.model.limits[n][3]+1e-6
+            discrete=(getattr(worker,'force_model','spring')=='gazebo_discrete_equilibrium_v1')
+            if discrete and (not isinstance(worker.last_model,dict)
+                    or worker.last_model.get('force_model')!='gazebo_discrete_equilibrium_v1'
+                    or worker.last_model.get('all_actuator_caps_validated') is not True
+                    or worker.last_model.get('actuator_count')!=20):
+                raise ValueError('transition optimization actuator proof missing')
+            if not discrete and any(abs(worker.gains[n]*(target[n]-joints[n]))>self.model.limits[n][3]+1e-6
                    for n in self.model.joint_names):
                 raise ValueError('transition optimization current servo effort')
             model,attempt=deepcopy(worker.last_model),deepcopy(worker.last_attempt)

@@ -15,7 +15,7 @@ def optimizer_library_path():
 
 
 class _NativeXYZPlan:
-    def __init__(self,model,limits,gains,force_objective):
+    def __init__(self,model,limits,gains,force_objective,*,force_model='spring',equilibrium=None):
         self.names=tuple(n for f in model.feet for n in _leg_spec(model.urdf,f)[4])
         legs=[]
         for f in model.feet:
@@ -24,8 +24,16 @@ class _NativeXYZPlan:
         data=dict(gains=[gains[n] for n in self.names],effort=[model.limits[n][3] for n in self.names],
             physical=[v for n in self.names for v in model.limits[n][:2]],legs=legs,
             cap=limits['max_unload_height_m'],speed=limits['unload_speed_mps'],min_force=limits['min_contact_force_n'],
-            force_objective=force_objective)
+            force_objective=force_objective,force_model=force_model)
+        if force_model=='gazebo_discrete_equilibrium_v1':data['equilibrium']=equilibrium
+        elif force_model!='spring':raise ValueError('unknown force model')
         payload=json.dumps(data,allow_nan=False).encode();path=optimizer_library_path();lib=ctypes.CDLL(str(path))
+        equilibrium_sha=None
+        if force_model=='gazebo_discrete_equilibrium_v1':
+            from .native_equilibrium import equilibrium_library_path
+            lib.ch13_xyz_force_model_abi_version.restype=ctypes.c_int
+            if lib.ch13_xyz_force_model_abi_version()!=1:raise ValueError('force model ABI mismatch')
+            equilibrium_sha=hashlib.sha256(equilibrium_library_path().read_bytes()).hexdigest()
         upstream=path.parent.parent/'share/integrated_robot_navigation_sensors/third_party/qpmad/UPSTREAM.json'
         manifest=json.loads(upstream.read_text())
         if manifest['commit']!=UPSTREAM_COMMIT:raise ValueError('native XYZ upstream identity')
@@ -45,7 +53,7 @@ class _NativeXYZPlan:
             library=str(path),library_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
             geometry_sha256=hashlib.sha256(payload).hexdigest(),upstream_commit=UPSTREAM_COMMIT,
             upstream_manifest_sha256=hashlib.sha256(upstream.read_bytes()).hexdigest(),max_iterations=32,
-            force_objective=force_objective,model_sha256=model.model_sha256)
+            force_objective=force_objective,force_model=force_model,equilibrium_library_sha256=equilibrium_sha,model_sha256=model.model_sha256)
 
     def prepare(self):
         if not self._finalize.alive:raise RuntimeError('native XYZ optimizer closed')
@@ -69,12 +77,12 @@ class _NativeXYZPlan:
 
 
 class NativeXYZTransition(SpatialXYZTransition):
-    def __init__(self,model,limits,*,terms_evaluator=None,force_objective='rate_1_per_s'):
+    def __init__(self,model,limits,*,terms_evaluator=None,force_objective='rate_1_per_s',force_model='spring',equilibrium=None):
         if force_objective not in ('rate_1_per_s','bounded_terminal_force'):
             raise ValueError('unknown spatial force objective')
         self.force_objective=force_objective
         super().__init__(model,limits,terms_evaluator=terms_evaluator)
-        try:self._optimizer=_NativeXYZPlan(model,limits,self.gains,force_objective)
+        try:self._optimizer=_NativeXYZPlan(model,limits,self.gains,force_objective,force_model=force_model,equilibrium=equilibrium)
         except BaseException:
             self.geometry.close();raise
 

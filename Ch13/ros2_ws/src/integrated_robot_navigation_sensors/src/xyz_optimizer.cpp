@@ -15,6 +15,10 @@
 #include <ctime>
 #include <limits>
 #include <stdexcept>
+#include <memory>
+extern "C" void * ch13_equilibrium_create(const char *,char *,size_t);
+extern "C" void ch13_equilibrium_destroy(void *);
+extern "C" int ch13_equilibrium_evaluate(void *,const double *,size_t,double *,size_t,char *,size_t);
 
 namespace {
 using M=Eigen::MatrixXd;using V=Eigen::VectorXd;using V3=Eigen::Vector3d;using M3=Eigen::Matrix3d;
@@ -64,7 +68,11 @@ ServoLinearization servo_linearization(const Leg & leg,const V3 & command,
   return {bound.inverse*inverse*unit,bound.inverse*error,bound.radius,
     bound.joint_remainder+bound.inverse_norm_bound*rounding};
 }
+struct Actuation {M response,derivative;V effort;};
 struct Plan {
+  std::unique_ptr<void,void(*)(void*)> discrete{nullptr,ch13_equilibrium_destroy};
+  V all_gains,all_effort;std::vector<int> leg_indices;
+
   V gains,effort,physical;std::array<Leg,4> legs;double cap,speed,min_force;bool terminal_force;qpmad::Solver solver;
   explicit Plan(const nlohmann::json & j):gains(array<12>(j.at("gains"))),effort(array<12>(j.at("effort"))),physical(array<24>(j.at("physical"))),
     legs{Leg(j.at("legs").at(0)),Leg(j.at("legs").at(1)),Leg(j.at("legs").at(2)),Leg(j.at("legs").at(3))},
@@ -75,7 +83,17 @@ struct Plan {
     if((gains.array()<=0.).any() || (effort.array()<=0.).any() || !std::isfinite(cap) || cap<=0.
       || !std::isfinite(speed) || speed<=0. || !std::isfinite(min_force) || min_force<0.) {throw std::invalid_argument("XYZ positive limits required");}
     for(int i=0;i<12;++i) {if(physical(2*i)>physical(2*i+1)) {throw std::invalid_argument("XYZ physical bounds");}}
-    solver.reserve(12,12,132);
+    const auto mode=j.value("force_model",std::string("spring"));
+    if(mode!="spring" && mode!="gazebo_discrete_equilibrium_v1") {throw std::invalid_argument("unknown force model");}
+    if(mode=="gazebo_discrete_equilibrium_v1") {
+      const auto & spec=j.at("equilibrium");const size_t nq=spec.at("names").size();
+      all_gains=V(nq);all_effort=V(nq);
+      for(size_t i=0;i<nq;++i) {all_gains(i)=spec.at("gains").at(i);all_effort(i)=spec.at("effort").at(i);}
+      leg_indices=spec.at("leg_indices").get<std::vector<int>>();
+      char error[1024]{};discrete.reset(ch13_equilibrium_create(spec.dump().c_str(),error,sizeof(error)));
+      if(!discrete) {throw std::invalid_argument(std::string("discrete equilibrium plan: ")+error);}
+    }
+    solver.reserve(12,12,132+2*std::max(0,int(all_gains.size())-12));
   }
 };
 qpmad::SolverParameters parameters() {qpmad::SolverParameters p;p.max_iter_=32;p.tolerance_=1e-12;p.hessian_type_=qpmad::SolverParameters::HESSIAN_LOWER_TRIANGULAR;return p;}
@@ -96,8 +114,8 @@ extern "C" int ch13_xyz_prepare(void * handle,char * error,size_t size) {
     if(status!=qpmad::Solver::OK || (x.array()+.1).abs().maxCoeff()>1e-9) {throw std::runtime_error("XYZ solver preparation failed");}return 0;
   } catch(const std::exception & e) {if(error && size) {std::snprintf(error,size,"%s",e.what());}return 1;}
 }
-extern "C" int ch13_xyz_evaluate(void * handle,const double * input,size_t count,int selected,
-  double * output,size_t output_size,double * timings,size_t timing_size,char * error,size_t error_size) {
+static int xyz_evaluate(void * handle,const double * input,size_t count,int selected,
+  double * output,size_t output_size,double * timings,size_t timing_size,char * error,size_t error_size,const Actuation * discrete) {
   if(!handle || !input || !output || !timings || count!=175 || output_size!=208 || timing_size!=8 || selected<0 || selected>3) {return 1;}
   std::fill(timings,timings+8,0.);
   try {
@@ -120,6 +138,7 @@ extern "C" int ch13_xyz_evaluate(void * handle,const double * input,size_t count
       if(i==selected) {if((refs.row(i).head<2>()-rest.row(i).head<2>()).cwiseAbs().maxCoeff()>1e-12) {throw std::invalid_argument("XYZ selected XY");}lo(3*i+2)=std::max(0.,lo(3*i+2));}
     }
     if((lo-hi).maxCoeff()>1e-12) {throw std::invalid_argument("XYZ proven envelope");}hi=hi.cwiseMax(lo);
+    if(bool(p.discrete)!=bool(discrete)) {throw std::invalid_argument("force model requires complete current input");}
     M stiffness=M::Zero(12,12),b=M::Zero(12,6);std::array<M3,4> js;
     for(int i=0;i<4;++i) {
       js[i]=Eigen::Map<const R3>(input+124+9*i);M3 compliance=js[i]*p.gains.segment<3>(3*i).cwiseInverse().asDiagonal()*js[i].transpose();
@@ -131,13 +150,14 @@ extern "C" int ch13_xyz_evaluate(void * handle,const double * input,size_t count
     M product=stiffness*b,system=b.transpose()*product;Eigen::JacobiSVD<M> sys_svd(system);
     if(!system.allFinite() || sys_svd.singularValues()(5)<=0. || sys_svd.singularValues()(0)/sys_svd.singularValues()(5)>1e12) {throw std::invalid_argument("singular floating body response");}
     M projector=stiffness-product*system.partialPivLu().solve(product.transpose());
-    M response=-.5*(projector+projector.transpose()),a=response*unit;mark(0);
+    M response=discrete ? discrete->response : M(-.5*(projector+projector.transpose())),a=response*unit;mark(0);
     Eigen::Map<const V> flat(force.data(),12),destination(target.data(),12);
     // Decision is a displacement, so a*x and the terminal error both use N.
     // dt still bounds every foot displacement; no force/rate bound is relaxed.
     // Keep the old 1/s error decay solely for independent legacy parity tests.
     V desired=(destination-flat)*(p.terminal_force ? 1. : dt),tau(12),servo=p.gains.array()*(command-q).array();
-    M rows=M::Zero(132,12);V rhs(132);int row=0;V3 tangent=body.block<3,1>(0,0);tangent.z()=0.;
+    const int extra=discrete ? 2*(int(discrete->effort.size())-12) : 0,total_rows=132+extra;
+    M rows=M::Zero(total_rows,12);V rhs(total_rows);int row=0;V3 tangent=body.block<3,1>(0,0);tangent.z()=0.;
     if(tangent.norm()<1e-9) {throw std::invalid_argument("undefined flat tangent");}tangent.normalize();V3 second=V3::UnitZ().cross(tangent);
     for(int i=0;i<4;++i) {
       rows.row(row)=-a.row(3*i+2);rhs(row++)=force(i,2)-(i==selected ? 0. : minimum);
@@ -152,8 +172,23 @@ extern "C" int ch13_xyz_evaluate(void * handle,const double * input,size_t count
         V position=V::Zero(12);position.segment<3>(3*i)=gain*servo_bound.displacement.row(k).transpose();
         for(double sign:{1.,-1.}) {
           rows.row(row)=sign*mapping.row(k);rhs(row++)=p.effort(3*i+k)-sign*tau(3*i+k);
-          rows.row(row)=sign*position.transpose();rhs(row++)=p.effort(3*i+k)-gain*servo_bound.remainder-
-            sign*(servo(3*i+k)+gain*servo_bound.bias(k));
+          if(discrete) {
+            const int joint=p.leg_indices.at(3*i+k);
+            rows.row(row)=sign*unit*discrete->derivative.row(joint);
+            rhs(row++)=p.all_effort(joint)-sign*discrete->effort(joint);
+          } else {
+            rows.row(row)=sign*position.transpose();rhs(row++)=p.effort(3*i+k)-gain*servo_bound.remainder-
+              sign*(servo(3*i+k)+gain*servo_bound.bias(k));
+          }
+        }
+      }
+    }
+    if(discrete) {
+      for(int joint=0;joint<discrete->effort.size();++joint) {
+        if(std::find(p.leg_indices.begin(),p.leg_indices.end(),joint)!=p.leg_indices.end()) {continue;}
+        for(double sign:{1.,-1.}) {
+          rows.row(row)=sign*unit*discrete->derivative.row(joint);
+          rhs(row++)=p.all_effort(joint)-sign*discrete->effort(joint);
         }
       }
     }
@@ -162,7 +197,7 @@ extern "C" int ch13_xyz_evaluate(void * handle,const double * input,size_t count
       rows.block<1,3>(row,3*i)=sign.transpose()*(total ? unit/p.cap : 1.);
       rhs(row++)=total ? 1.-sign.dot((refs.row(i)-rest.row(i)).transpose()/p.cap) : 1.;
     }}}
-    if(row!=132) {throw std::runtime_error("XYZ row count");}
+    if(row!=total_rows) {throw std::runtime_error("XYZ row count");}
     Eigen::JacobiSVD<M> a_svd(a);double scale=std::max(a_svd.singularValues()(0)*a_svd.singularValues()(0),1e-12);
     M h=a.transpose()*a/scale+.001*M::Identity(12,12);V linear=-a.transpose()*desired/scale;
     bool origin=(-rhs).maxCoeff()<=1e-7 && lo.maxCoeff()<=1e-9 && hi.minCoeff()>=-1e-9;
@@ -172,7 +207,7 @@ extern "C" int ch13_xyz_evaluate(void * handle,const double * input,size_t count
     auto keep=integrated_robot_navigation_sensors::strict_box_rows(rows,rhs,lo,hi);
     // Unit L1 facets imply the omitted +/-1 coordinate bounds. Retain all of
     // them so box-implied row pruning has no circular logical dependency.
-    constexpr Eigen::Index first_step_l1=68,step_l1_count=32;
+    const Eigen::Index first_step_l1=68+extra,step_l1_count=32;
     const auto solver_bounds=integrated_robot_navigation_sensors::l1_implied_unit_bounds(
       rows,rhs,first_step_l1,lo,hi);
     for(Eigen::Index r=first_step_l1;r<first_step_l1+step_l1_count;++r) {
@@ -208,6 +243,12 @@ extern "C" int ch13_xyz_evaluate(void * handle,const double * input,size_t count
   } catch(const std::exception & e) {if(error && error_size) {std::snprintf(error,error_size,"%s",e.what());}return 2;}
 }
 
+extern "C" int ch13_xyz_evaluate(void * handle,const double * input,size_t count,int selected,
+  double * output,size_t output_size,double * timings,size_t timing_size,char * error,size_t error_size) {
+  return xyz_evaluate(handle,input,count,selected,output,output_size,timings,timing_size,error,error_size,nullptr);
+}
+extern "C" int ch13_xyz_force_model_abi_version() {return 1;}
+
 // Compose the existing three arithmetic ABIs without returning through Python.
 // All plans remain owned by the numerical child. Output commits only after
 // the same QP, all 28 geometry samples and nonlinear servo proof have passed.
@@ -219,8 +260,9 @@ extern "C" int ch13_xyz_complete_evaluate(void * handle,const void * mass,void *
   const double * input,size_t count,size_t nq,const size_t * indices,size_t index_count,int selected,
   double budget_ns,double * output,size_t output_size,double * timings,size_t timing_size,
   char * error,size_t error_size) {
+  const bool use_discrete=handle && bool(static_cast<Plan *>(handle)->discrete);
   if(!handle || !mass || !geometry || !input || !indices || !output || !timings
-    || nq==0 || nq>64 || count!=nq+127 || index_count!=12 || selected<0 || selected>3
+    || nq==0 || nq>64 || count!=nq+127+(use_discrete ? nq : 0) || index_count!=12 || selected<0 || selected>3
     || output_size!=220 || timing_size!=12 || !std::isfinite(budget_ns)
     || budget_ns<=0. || budget_ns>10000000.) {return 1;}
   std::fill(timings,timings+12,0.);
@@ -239,9 +281,40 @@ extern "C" int ch13_xyz_complete_evaluate(void * handle,const void * mass,void *
     const int contact=ch13_mass_contact_terms(mass,input,nq,a+12,a+44,indices,12,qp.data()+124,qp.data()+160);
     if(contact) {throw std::invalid_argument("complete XYZ contact rejected: "+std::to_string(contact));}
     std::copy(a+124,a+127,qp.begin()+172);mark(0);
+    Actuation actuation;auto & plan=*static_cast<Plan *>(handle);
+    if(use_discrete) {
+      if(plan.all_gains.size()!=int(nq)) {throw std::invalid_argument("discrete joint order dimensions");}
+      for(size_t i=0;i<12;++i) {if(plan.leg_indices.at(i)!=int(indices[i]-1)) {throw std::invalid_argument("discrete joint order binding");}}
+      V values(2*nq+28);values.head(nq)=Eigen::Map<const V>(input,nq);
+      values.segment(nq,nq)=Eigen::Map<const V>(input+nq+127,nq);
+      values.segment(2*nq,16)=Eigen::Map<const V>(a+12,16);
+      values.tail(12)=Eigen::Map<const V>(a+56,12);
+      V solved(144+(nq+6)*12+4);
+      if(ch13_equilibrium_evaluate(plan.discrete.get(),values.data(),values.size(),solved.data(),solved.size(),error,error_size)) {return 2;}
+      using RowMatrix=Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor>;
+      const M joint_response=Eigen::Map<const RowMatrix>(solved.data(),12,12);
+      const M measured_response=Eigen::Map<const RowMatrix>(solved.data()+144,nq+6,12);
+      M inverse=M::Zero(12,12);const R4 frame=Eigen::Map<const R4>(a+28);
+      for(int leg=0;leg<4;++leg) {
+        const auto bound=servo_linearization(plan.legs[leg],Eigen::Map<const V3>(a+3*leg),frame,
+          Eigen::Map<const V3>(a+80+3*leg),qp[172]*qp[173]);
+        inverse.block<3,3>(3*leg,3*leg)=bound.displacement/(qp[172]*qp[173]);
+      }
+      actuation.response=joint_response*inverse;
+      const M motion=measured_response*inverse;
+      actuation.derivative=M::Zero(nq,12);actuation.effort=V(nq);
+      for(size_t j=0;j<nq;++j) {
+        const double raw=plan.all_gains(j)*(values(nq+j)-values(j));
+        actuation.effort(j)=std::clamp(raw,-plan.all_effort(j),plan.all_effort(j));
+        if(std::abs(raw)<plan.all_effort(j)) {
+          actuation.derivative.row(j)=-plan.all_gains(j)*motion.row(6+j);
+          for(int leg=0;leg<12;++leg) {if(plan.leg_indices.at(leg)==int(j)) {actuation.derivative.row(j)+=plan.all_gains(j)*inverse.row(leg);}}
+        }
+      }
+    }
     const double offset=ns(CLOCK_MONOTONIC)-start,offset_cpu=ns(CLOCK_THREAD_CPUTIME_ID)-cpu;
-    const int code=ch13_xyz_evaluate(handle,qp.data(),qp.size(),selected,result.data(),result.size(),
-      stages.data(),stages.size(),error,error_size);
+    const int code=xyz_evaluate(handle,qp.data(),qp.size(),selected,result.data(),result.size(),
+      stages.data(),stages.size(),error,error_size,use_discrete ? &actuation : nullptr);
     for(int i=0;i<4;++i) {if(stages[2*i]>0.) {
       timings[2*(i+1)]=offset+stages[2*i];timings[2*(i+1)+1]=offset_cpu+stages[2*i+1];
     }}
@@ -282,7 +355,7 @@ extern "C" int ch13_xyz_complete_evaluate(void * handle,const void * mass,void *
     std::copy(result.begin(),result.end(),complete.begin());
     for(size_t i=0;i<12;++i) {
       complete[208+i]=p.gains(i)*(checked[i]-qp[i]);
-      if(!std::isfinite(complete[208+i]) || std::abs(complete[208+i])>p.effort(i)+1e-6) {
+      if(!std::isfinite(complete[208+i]) || (!use_discrete && std::abs(complete[208+i])>p.effort(i)+1e-6)) {
         throw std::invalid_argument("complete XYZ nonlinear servo residual");
       }
     }
