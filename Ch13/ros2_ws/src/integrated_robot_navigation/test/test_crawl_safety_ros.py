@@ -1,8 +1,11 @@
 """Fresh feedback, mode generation, pause, and sole-leg ownership over DDS."""
 from lifecycle_msgs.msg import Transition
 from std_msgs.msg import Float64MultiArray
+from geometry_msgs.msg import Twist
 from integrated_robot_interfaces.msg import FootContacts
 from threading import Event, Thread
+import json,os,time,uuid
+from pathlib import Path
 from test_crawl_lifecycle import crawl_rig
 
 
@@ -69,6 +72,14 @@ def test_invalid_parallel_ingress_is_latched_without_mutating_model_or_publishin
     advance = owner.machine.advance
     received = Event()
     states, workers = [], []
+    publications=[];publish=owner.legs.publish
+    # Deliberately leave one valid, pre-fault DDS publication undelivered.
+    # Receipt count cannot identify when that message was originally sent.
+    owner.legs.publish(Float64MultiArray(data=list(rig.commands[-1].data)))
+    def monitored_publish(message):
+        publications.append(dict(wall_ns=time.monotonic_ns(),ingress_seen=received.is_set()))
+        publish(message)
+    monkeypatch.setattr(owner.legs,'publish',monitored_publish)
 
     def during_advance(*args, **kwargs):
         result = advance(*args, **kwargs)
@@ -93,9 +104,45 @@ def test_invalid_parallel_ingress_is_latched_without_mutating_model_or_publishin
         for worker in workers:
             worker.join(timeout=1.)
             assert not worker.is_alive()
+        target=os.environ.get('CH13_NAV_EVIDENCE')
+        if target:
+            Path(target, 'ingress-publication-boundary-'+str(uuid.uuid4())+'.json').write_text(json.dumps(dict(
+                pre_fault_receipt_count=count,post_fault_receipt_count=len(rig.commands),
+                actual_publications=publications,ingress_seen=received.is_set(),states=states)))
     assert rig.crawl_states[-1].state == 'FAULT'
     assert 'engine epoch changed' in rig.crawl_states[-1].fault_reason
-    assert len(rig.commands) == count
+    assert not publications, 'the model owner published after the injected input fault'
     monkeypatch.setattr(owner.machine, 'advance', advance)
     rig.pump(.1)
-    assert rig.crawl_states[-1].state == 'FAULT' and len(rig.commands) == count
+    assert rig.crawl_states[-1].state == 'FAULT' and not publications
+
+
+def test_parallel_final_command_error_is_latched_before_owner_publishes(crawl_rig, monkeypatch):
+    rig=crawl_rig
+    activate(rig)
+    owner=rig.guard
+    advance=owner.machine.advance
+    seen=Event(); workers=[]; states=[]; publications=[]
+    def during_advance(*args,**kwargs):
+        result=advance(*args,**kwargs)
+        if seen.is_set():return result
+        def receive_invalid():
+            msg=Twist();msg.linear.y=1.
+            info=dict(source_timestamp=time.time_ns(),
+                publication_sequence_number=owner.command_order.last_publication_sequence+1000)
+            owner._command(msg,info)
+            states.append(owner.machine.state)
+            seen.set()
+        worker=Thread(target=receive_invalid);workers.append(worker);worker.start()
+        assert seen.wait(.15), 'final command ingress waited on the model owner'
+        assert states==['STAND'], 'a receiver mutated the state machine'
+        return result
+    monkeypatch.setattr(owner.machine,'advance',during_advance)
+    monkeypatch.setattr(owner.legs,'publish',publications.append)
+    try:rig.pump(.06)
+    finally:
+        for worker in workers:
+            worker.join(timeout=1.);assert not worker.is_alive()
+    assert not publications
+    assert owner.machine.state=='FAULT'
+    assert owner.machine.reason=='nonplanar final command'

@@ -150,6 +150,21 @@ def test_raw_loss_zeros_while_ros_clock_paused_and_smoother_continues(rig):
     assert not rig.mode('CRAWL').accepted
 
 
+def test_faulted_guard_acknowledges_stop_but_cannot_reenable_motion(rig):
+    assert rig.mode('CRAWL').accepted
+    rig.pump(.26, raw=False)
+    fault = rig.guard.core.fault
+    assert fault
+    generation = rig.guard.core.generation
+    response = rig.mode('STOP')
+    assert response.accepted and response.message == fault
+    rig.pump(.08)
+    assert rig.guard.core.fault == fault and rig.guard.core.generation == generation
+    assert rig.states[-1].fault_reason == fault and not rig.states[-1].ready
+    assert rig.outputs[-1][1:] == (0.,0.)
+    assert not rig.mode('CRAWL').accepted
+
+
 def test_offline_profile_is_rejected_by_real_ros_activation_service(rig, monkeypatch):
     from integrated_robot_navigation.carry_profile import validate_profile
     module = importlib.import_module('integrated_robot_navigation.motion_guard')

@@ -53,15 +53,17 @@ def test_reference_speed_envelope_and_real_landing_not_timer_completion():
         assert not result.complete
         previous = result.z
     assert result.phase == 'TOUCHDOWN'
-    for index in range(27,60):
+    # Lower nominal G1 descent takes longer, still inside the original10s.
+    for index in range(27,350):
         result = tick(value,index,center=.020,forces=(30.,3.,30.,30.))
         assert abs(result.z-previous)/.02 <= .020000001, 'approved G1 planned return stays bounded under load'
         assert not result.complete, 'sub-margin load is not restored stable support'
         previous = result.z
     assert result.z == pytest.approx(.017,abs=1e-12), 'reference endpoint precedes loaded completion'
-    assert tick(value,60,center=.020,forces=(30.,4.1,30.,30.)).complete is False
-    assert tick(value,61,center=.020,forces=(30.,4.1,30.,30.)).complete is False
-    landed = tick(value,62,center=.020,forces=(30.,4.1,30.,30.))
+    assert value.last_wall+1_000_000_000<value.deadline
+    assert tick(value,350,center=.020,forces=(30.,4.1,30.,30.)).complete is False
+    assert tick(value,351,center=.020,forces=(30.,4.1,30.,30.)).complete is False
+    landed = tick(value,352,center=.020,forces=(30.,4.1,30.,30.))
     assert landed.complete and landed.phase == 'STAND'
     assert value.snapshot()['scope'] == 'candidate_requires_owner_measured_stand_settle'
 
@@ -77,7 +79,7 @@ def test_airborne_return_is_not_mistaken_for_loaded_seek_by_height_alone():
         assert not result.complete and result.phase=='TOUCHDOWN'
         assert .017<=result.z<=.040
         previous=result.z
-    assert max(speeds)>.01, 'airborne proximity incorrectly selects the2mm/s loaded-contact seek'
+    assert max(speeds)>value.seek, 'airborne proximity incorrectly selects the2mm/s loaded-contact seek'
     assert max(speeds)<=.020000001
     result=tick(value,15,center=.020,forces=(30.,2.5,30.,30.))
     assert 0<previous-result.z<=.02*.02000001, 'G1 planned return is not a separate contact-seek trajectory'
@@ -87,16 +89,16 @@ def test_airborne_return_is_not_mistaken_for_loaded_seek_by_height_alone():
 def test_duplicate_landing_or_other_foot_unloaded_is_not_completion():
     value = trajectory()
     for index in range(1,4): tick(value,index,center=.027)
-    for index in range(4,60):
+    for index in range(4,120):
         assert not tick(value,index,center=.020,forces=(30.,0.,30.,30.)).complete
     assert value.z == pytest.approx(.017,abs=1e-12)
-    tick(value,60,center=.020,forces=(30.,5.,30.,30.))
-    for index in range(61,65):
-        assert not tick(value,index,center=.020,forces=(30.,5.,30.,30.),capture=2_200_000_000).complete
-    assert not tick(value,65,center=.020,forces=(30.,5.,0.,30.)).complete
-    for index in (66,67):
+    tick(value,120,center=.020,forces=(30.,5.,30.,30.))
+    for index in range(121,125):
+        assert not tick(value,index,center=.020,forces=(30.,5.,30.,30.),capture=3_400_000_000).complete
+    assert not tick(value,125,center=.020,forces=(30.,5.,0.,30.)).complete
+    for index in (126,127):
         assert not tick(value,index,center=.020,forces=(30.,5.,30.,30.)).complete
-    assert tick(value,68,center=.020,forces=(30.,5.,30.,30.)).complete
+    assert tick(value,128,center=.020,forces=(30.,5.,30.,30.)).complete
 
 
 @pytest.mark.parametrize('kind',['rollback','deadline','future_capture','nonfinite'])

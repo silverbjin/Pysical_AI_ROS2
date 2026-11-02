@@ -26,9 +26,10 @@ G1_SENSOR_REQUIRED = frozenset({'contact_frames_force', 'imu_frame', 'scan_world
 
 def operational_frames(frames):
     """Explicit stages only; never drop an operational fault or outlier."""
-    if any(row.get('stage') not in ('bootstrap', 'stand', 'calibrate', 'shutdown') for row in frames):
+    stages={'stand','calibrate','forward','left','right','reverse','stopped'}
+    if any(row.get('stage') not in stages|{'bootstrap','shutdown'} for row in frames):
         raise ValueError('unknown measurement stage cannot be filtered')
-    return [row for row in frames if row.get('stage') in ('stand', 'calibrate')]
+    return [row for row in frames if row.get('stage') in stages]
 
 
 def assess_carry_hold(observations, arm_q):
@@ -587,11 +588,13 @@ def assess_frames(observations, limits):
         return checks  # malformed/missing raw measurements never become an empty PASS
 
 
-def assess_crawl(observations, limits):
-    checks = dict.fromkeys(G2_REQUIRED, False)
+def assess_crawl(observations, limits, *, scenario='crawl-cycle'):
+    if scenario not in ('crawl-cycle','crawl-reverse'):raise ValueError('unknown G2 assessment scenario')
+    required=G2_REQUIRED if scenario=='crawl-cycle' else FRAME_REQUIRED|{'stand10','reverse','stopped'}
+    checks = dict.fromkeys(required, False)
     checks.update(assess_frames(observations, limits))
     phases = observations.get('phases', {})
-    for phase in ('forward', 'left', 'right'):
+    for phase in (('forward','left','right') if scenario=='crawl-cycle' else ('reverse',)):
         try:
             checks[phase] = motion_phase(phases[phase]['start'], phases[phase]['end'], phase)['passed']
         except (KeyError, TypeError, ValueError):

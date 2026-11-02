@@ -28,6 +28,14 @@ def test_dart_setting_requires_actual_native_witnesses_in_both_operational_phase
     assert result['scope']=='native_api_configuration_not_contact_task_success'
 
 
+def test_component_witnesses_cannot_satisfy_full_G2_phase_coverage(tmp_path):
+    rows,probe=records(tmp_path)
+    actual=[dict(deepcopy(rows[0]),sequence=i,capture_ns=i*20_000_000,stage=stage)
+        for i,stage in enumerate(('stand','forward','stopped'),1)]
+    assert runner.assess_dart_contact_configuration(actual,probe,scenario='contact-component')['passed']
+    assert not runner.assess_dart_contact_configuration(actual,probe,scenario='crawl-cycle')['passed']
+
+
 @pytest.mark.parametrize('fault',['empty','missing','effective','before','worlds','flag','version',
     'provider','changed_library','probe_already_changed','duplicate','missing_calibration'])
 def test_dart_setting_rejects_unapplied_misbound_or_later_changed_values(tmp_path,fault):
@@ -57,3 +65,27 @@ def test_dart_required_check_is_additive_and_not_available_for_mujoco():
     assert experiment-baseline=={'control_clock_contract','dart_contact_contract'}
     assert baseline<=experiment and len(experiment)==25
     with pytest.raises(ValueError):runner.native_required_checks('native','allowance50um','mujoco')
+
+
+@pytest.mark.parametrize('scenario,stages',[
+    ('crawl-cycle',('stand','forward','left','right','stopped')),
+    ('crawl-reverse',('stand','reverse','stopped')),
+])
+def test_g2_dart_witnesses_follow_actual_scenario_without_repeating_g1_calibration(tmp_path,scenario,stages):
+    rows,probe=records(tmp_path)
+    seed=rows[0]
+    actual=[dict(deepcopy(seed),sequence=i,capture_ns=i*20_000_000,stage=stage)
+            for i,stage in enumerate(stages,1)]
+    result=runner.assess_dart_contact_configuration(actual,probe,scenario=scenario)
+    assert result['passed']
+    assert result['required_phases']==sorted(stages)
+    # Every actual movement and stop phase remains required; G1's calibration
+    # is already independently proved by the immutable admission profile.
+    for missing in stages:
+        assert not runner.assess_dart_contact_configuration(
+            [r for r in actual if r['stage']!=missing],probe,scenario=scenario)['passed']
+
+
+def test_unknown_dart_scenario_cannot_bypass_operational_witnesses(tmp_path):
+    rows,probe=records(tmp_path)
+    assert not runner.assess_dart_contact_configuration(rows,probe,scenario='unknown')['passed']

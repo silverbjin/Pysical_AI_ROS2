@@ -84,6 +84,14 @@ def make_navigation_executor(node):
     """
     if not isinstance(node,NavigationNode):
         raise ValueError('event dispatch is restricted to ordinary navigation nodes')
+    if getattr(node,'parallel_mode_admission',False):
+        # Explicit G2 guard only: its separate mutually-exclusive service group
+        # may block on proof stat I/O without freezing clock/sensor callbacks.
+        # Reuse the already verified Ch13 pool-before-guard teardown contract.
+        from integrated_robot_runtime.common import DrainingExecutor
+        executor=DrainingExecutor(num_threads=2,context=node.context)
+        node.get_logger().info('G2 guard isolates admission from clock/sensors with two workers')
+        return executor
     from rclpy.experimental.events_executor import EventsExecutor
     executor=EventsExecutor(context=node.context)
     if executor.context is not node.context:

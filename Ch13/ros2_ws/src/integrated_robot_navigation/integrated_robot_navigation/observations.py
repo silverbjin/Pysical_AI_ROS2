@@ -27,6 +27,8 @@ def sensor_sample(key, msg, receipt, epoch):
             raise ValueError('engine epoch changed; restart required')
         data = dict(names=tuple(msg.names), points=tuple((p.x, p.y, p.z) for p in msg.points),
             forces=tuple(msg.normal_forces), touching=tuple(msg.touching), unexpected_contacts=msg.unexpected_contacts)
+        data.update(forces_world=tuple((f.x,f.y,f.z) for f in getattr(msg,'forces_world',())),
+            force_vectors_valid=bool(getattr(msg,'force_vectors_valid',False)))
     elif key == 'body':
         data = body_data(msg)
     elif key == 'scan':

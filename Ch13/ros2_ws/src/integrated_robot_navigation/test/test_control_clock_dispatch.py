@@ -1,9 +1,10 @@
-"""Actual DDS: two executor workers alone cannot bypass a shared callback group.
+"""Actual DDS: isolated ingress progresses while the serial model owner is busy.
 This controlled blocking-work fixture is NOT a native safety/locomotion verdict.
 """
 from threading import Event, Thread
 import importlib
 import time
+import json
 import pytest
 
 import rclpy
@@ -20,18 +21,26 @@ from integrated_robot_interfaces.msg import FootContacts,MotionState
 from integrated_robot_navigation.crawl_controller import CrawlController
 
 
-@pytest.mark.parametrize('observe', ['clock', 'contacts', 'guard'])
-def test_ingress_can_update_while_default_control_group_owns_model_lock(observe):
+@pytest.mark.parametrize('observe', ['clock', 'contacts', 'guard', 'command'])
+@pytest.mark.parametrize('g2_scope',[False,True])
+@pytest.mark.parametrize('engine',['mujoco','gazebo'])
+def test_ingress_can_update_while_default_control_group_owns_model_lock(observe,g2_scope,engine):
     context = Context()
     rclpy.init(context=context)
-    node = CrawlController(context=context,
+    node = CrawlController(engine=engine,context=context,
         cli_args=['--ros-args','-r','/clock:=/navigation/control_clock'],
         parameter_overrides=[Parameter('use_sim_time',value=True),
-            Parameter('validation_mode',value=True),Parameter('control_clock_mode',value='relay100')])
+            Parameter('validation_mode',value=True),Parameter('control_clock_mode',value='relay100'),
+            Parameter('g2_validation_mode',value=g2_scope),
+            Parameter('native_execution_profile',value=json.dumps(dict(control_clock='relay100',
+                position_reference_mode='g1_ramp20ms' if engine=='gazebo' else 'native',
+                dart_contact='allowance50um' if engine=='gazebo' else 'native',
+                native_physics_sha256='a'*64)) if g2_scope else '')])
     peer = Node('clock_dispatch_peer',context=context)
     from integrated_robot_navigation.clock_execution import make_control_executor
     executor = make_control_executor(node)
-    assert isinstance(executor,MultiThreadedExecutor)
+    from rclpy.executors import SingleThreadedExecutor
+    assert isinstance(executor,SingleThreadedExecutor)
     entered, release, finished = Event(), Event(), Event()
     def controlled_work(request,response):
         with node.lock:
@@ -44,9 +53,16 @@ def test_ingress_can_update_while_default_control_group_owns_model_lock(observe)
     source = peer.create_publisher(Clock,'/navigation/control_clock',qos_profile_sensor_data)
     contacts = peer.create_publisher(FootContacts,'/navigation/foot_contacts',qos_profile_sensor_data)
     guard = peer.create_publisher(MotionState,'/navigation/guard_state',10)
+    from geometry_msgs.msg import Twist
+    command = peer.create_publisher(Twist,'/navigation/cmd_vel',10)
     client = peer.create_client(Trigger,'/clock_dispatch_test_work')
     executor.add_node(node); executor.add_node(peer)
-    thread = Thread(target=executor.spin)
+    stopping=Event();dispatch_errors=[]
+    def spin_owned_dispatch():
+        try:
+            while not stopping.is_set():executor.spin_once(timeout_sec=.01)
+        except BaseException as error:dispatch_errors.append(repr(error))
+    thread = Thread(target=spin_owned_dispatch)
     thread.start()
     def publish_until(stamp,predicate,seconds):
         deadline = time.monotonic()+seconds
@@ -61,8 +77,8 @@ def test_ingress_can_update_while_default_control_group_owns_model_lock(observe)
         assert publish_until(1,lambda: node.get_clock().now().nanoseconds == 1000000000,1.)
         assert len(peer.get_publishers_info_by_topic('/navigation/control_clock')) == 1
         subscriptions = peer.get_subscriptions_info_by_topic('/navigation/control_clock')
-        assert [item.node_name for item in subscriptions] == ['crawl_controller'], \
-            'isolation must reuse the one TimeSource subscriber, not duplicate it'
+        assert [item.node_name for item in subscriptions] == ['crawl_controller_ingress'], \
+            'the original TimeSource must have one owned ingress subscriber, never a duplicate'
         future = client.call_async(Trigger.Request())
         assert entered.wait(1.)
         if observe == 'clock':
@@ -83,6 +99,17 @@ def test_ingress_can_update_while_default_control_group_owns_model_lock(observe)
             assert sample.data['forces'] == (30.,30.,30.,30.)
             assert before <= sample.received_ns <= time.monotonic_ns()
             assert node.machine is None and not node.active, 'ingress must not configure/activate a machine'
+        elif observe == 'command':
+            msg = Twist(); msg.linear.x = .01
+            before = time.monotonic_ns()
+            deadline = time.monotonic()+.15
+            while node.command is None and time.monotonic()<deadline:
+                command.publish(msg)
+                time.sleep(.005)
+            assert node.command is not None, 'final command ingress starved behind control work/model lock'
+            assert node.command.data == (.01,0.,0.)
+            assert before<=node.command.received_ns<=time.monotonic_ns()
+            assert node.machine is None and not node.active
         else:
             msg = MotionState(state='FAULT',generation=3,model_sha256='original-model',
                               fault_reason='original fault must remain visible')
@@ -107,10 +134,15 @@ def test_ingress_can_update_while_default_control_group_owns_model_lock(observe)
         assert future.done() and future.result().success
     finally:
         release.set()
-        executor.shutdown(timeout_sec=2.)
+        # Production stops dispatch before draining its pool. A fixture-owned
+        # background spin must be joined first, otherwise it can submit into
+        # the pool while DrainingExecutor closes that pool (full-suite warning).
+        stopping.set();executor.wake()
         thread.join(timeout=2.)
         assert not thread.is_alive()
+        executor.shutdown(timeout_sec=2.)
         node.destroy_node(); peer.destroy_node(); context.try_shutdown()
+        assert not dispatch_errors,dispatch_errors
 
 
 def test_native_executor_keeps_single_worker_and_relay_requires_explicit_validation():
@@ -133,3 +165,22 @@ def test_native_executor_keeps_single_worker_and_relay_requires_explicit_validat
         if executor is not None:
             executor.shutdown(timeout_sec=2.)
         node.destroy_node(); context.try_shutdown()
+
+
+def test_gazebo_relay_model_direct_owner_keeps_independent_serial_event_ingress():
+    from integrated_robot_navigation.clock_execution import make_control_executor
+    from rclpy.executors import SingleThreadedExecutor
+    context=Context();rclpy.init(context=context)
+    node=CrawlController(engine='gazebo',context=context,
+        cli_args=['--ros-args','-r','/clock:=/navigation/control_clock'],parameter_overrides=[
+            Parameter('use_sim_time',value=True),Parameter('validation_mode',value=True),
+            Parameter('control_clock_mode',value='relay100')])
+    executor=make_control_executor(node)
+    try:
+        assert isinstance(executor,SingleThreadedExecutor)
+        assert node.direct_model_dispatch and not node.simulation_cadence
+        assert node.ingress_worker.snapshot()['dispatch']=='owned_serial_events'
+        assert node.command_publication_count==0
+    finally:
+        assert executor.shutdown(timeout_sec=2.)
+        node.destroy_node();context.try_shutdown()

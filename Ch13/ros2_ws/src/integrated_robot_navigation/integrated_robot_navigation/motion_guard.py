@@ -13,6 +13,7 @@ import rclpy
 from .dispatch_node import NavigationNode as Node
 from rclpy.clock import Clock
 from rclpy.clock_type import ClockType
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.qos import qos_profile_sensor_data
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
@@ -21,6 +22,9 @@ from integrated_robot_interfaces.msg import FootContacts, MotionState
 from integrated_robot_interfaces.srv import SetMode
 
 from .carry_profile import CarryProfile, _validate_limits, validate_profile
+from .admission import prepare_admission
+from .command_order import CommandOrder
+from .execution_contract import read_g2_execution_scope
 from .model import compile_model
 from .projection import body_rotation
 from .observations import SensorInbox, sensor_sample
@@ -60,6 +64,11 @@ class MotionGuard:
             return True, ''
         if mode not in ('STAND', 'CRAWL', 'HOLD', 'STOP'):
             return False, 'unsupported_mode'
+        if mode == 'STOP':
+            # Acknowledging a stop is not rearming. Keep the original fault
+            # and generation; the sole leg owner must still prove settling.
+            self.mode = 'STOP'
+            return True, self.fault
         if self.fault:
             return False, self.fault
         self.mode = mode
@@ -166,11 +175,23 @@ class MotionGuardNode(Node):
         self.model = model if model is not None else compile_model(Path(model_file).read_text())
         self.profile = profile if profile is not None else CarryProfile(**json.loads(Path(profile_file).read_text()))
         self.engine = engine or selected
+        self.g2_validation_mode=self.declare_parameter('g2_validation_mode',False).value
+        serialized=self.declare_parameter('native_execution_profile','').value
+        try:
+            self.execution_profile=read_g2_execution_scope(self.validation_mode,self.g2_validation_mode,serialized,self.engine)
+        except ValueError:
+            super().destroy_node();raise
+        # Complete bulk artifact verification before subscriptions and watchdog
+        # start. Offline candidates still take the original cheap rejection path.
+        self.prepared_admission=(prepare_admission(self.profile,self.model,self.engine,
+            execution_profile=self.execution_profile,checker=validate_profile)
+            if self.profile.state=='native_validated' else None)
         self.core = MotionGuard(self.model, self.profile.limits, self.profile.arm_q)
         self.lock = threading.RLock()
         self.inbox = SensorInbox(0)
         self.commands = {'raw': None, 'smoothed': None}
         self.command_sources = {}
+        self.command_orders = {key:CommandOrder() for key in ('raw','smoothed')}
         self.owner_ids = {}
         self.reset_ros = -1
         self.reset_system = time.time_ns()
@@ -188,7 +209,13 @@ class MotionGuardNode(Node):
         self.create_subscription(MotionState, self.TOPICS['carry'], lambda msg: self._sensor('carry', msg), qos)
         self.create_subscription(Twist, self.TOPICS['raw'], self._raw, 10)
         self.create_subscription(Twist, self.TOPICS['smoothed'], self._smoothed, 10)
-        self.create_service(SetMode, '/navigation/set_mode', self._mode)
+        # The original /clock must keep dispatching while a G2 proof identity
+        # check waits on filesystem I/O. No motion grant precedes that check.
+        self.parallel_mode_admission = self.g2_validation_mode
+        self.mode_group = (MutuallyExclusiveCallbackGroup()
+                           if self.parallel_mode_admission else None)
+        self.create_service(SetMode, '/navigation/set_mode', self._mode,
+                            callback_group=self.mode_group)
         self.create_timer(.05, self._owners, clock=Clock(clock_type=ClockType.STEADY_TIME))
         self.stopping = threading.Event()
         self.worker = threading.Thread(target=self._watchdog, name='navigation_motion_watchdog')
@@ -215,14 +242,16 @@ class MotionGuardNode(Node):
         self._command('smoothed', msg, info)
 
     def _command(self, key, msg, info):
-        source = info.get('source_timestamp', 0) if isinstance(info, dict) else getattr(info, 'source_timestamp', 0)
         with self.lock:
-            if self.closing or source < self.reset_system or source <= self.command_sources.get(key, -1):
+            if self.closing:return
+            order=self.command_orders[key];stepped=order.system_backstep
+            accepted,reason=order.accept(info,self.reset_system)
+            if not accepted:
+                if reason.startswith('missing_') and self.core.mode=='CRAWL':self.core.fail('command:'+reason)
                 return
-            if source <= 0:
-                if self.core.mode == 'CRAWL':
-                    self.core.fail('command:missing_dds_source_time')
-                return
+            source=order.last_source_system_ns
+            if order.system_backstep and not stepped:
+                self.get_logger().warning('Command SYSTEM clock backstep; DDS publication order retained; RESET requires receiver restart: '+json.dumps(order.snapshot()))
             self.command_sources[key] = source
             value = (msg.linear.x, msg.linear.y, msg.angular.z)
             if any(v != 0. for v in (msg.linear.z, msg.angular.x, msg.angular.y)):
@@ -251,12 +280,30 @@ class MotionGuardNode(Node):
     def _mode(self, request, response):
         with self.lock:
             generation = self.core.generation
+            if request.mode=='RESET' and any(order.system_backstep for order in self.command_orders.values()):
+                self.core.restart_required=True
+                self.core.fail('command_clock_step_requires_restart')
+                response.accepted,response.message=False,'command_clock_step_requires_restart'
+                return response
         if request.mode == 'CRAWL':
-            if self.validation_mode:
+            if self.validation_mode and not self.g2_validation_mode:
                 response.accepted, response.message = False, 'validation_mode_forbids_crawl'
                 return response
-            accepted, reason = validate_profile(self.profile, self.model, self.engine)
+            if self.prepared_admission is not None:
+                started = (time.monotonic_ns(), self.get_clock().now().nanoseconds)
+                accepted,reason=self.prepared_admission.check(self.profile,self.model,self.engine,
+                    execution_profile=self.execution_profile)
+                if self.g2_validation_mode:
+                    self.get_logger().info('G2 admission identity check '+json.dumps(dict(
+                        started_wall_ns=started[0],started_ros_ns=started[1],
+                        finished_wall_ns=time.monotonic_ns(),finished_ros_ns=self.get_clock().now().nanoseconds,
+                        accepted=accepted,reason=reason)))
+            else:
+                accepted,reason=(validate_profile(self.profile,self.model,self.engine) if self.execution_profile is None else
+                    validate_profile(self.profile,self.model,self.engine,execution_profile=self.execution_profile))
             if not accepted:
+                with self.lock:
+                    if self.core.mode=='CRAWL':self.core.fail('admission:'+reason)
                 response.accepted, response.message = False, reason
                 return response
         with self.lock:
@@ -270,6 +317,7 @@ class MotionGuardNode(Node):
                 self.inbox.clear(self.reset_ros)
                 self.commands = {'raw': None, 'smoothed': None}
                 self.command_sources.clear()
+                self.command_orders={key:CommandOrder() for key in ('raw','smoothed')}
                 self.owner_ids.clear()
         return response
 

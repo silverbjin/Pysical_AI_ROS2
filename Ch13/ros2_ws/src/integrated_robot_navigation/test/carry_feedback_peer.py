@@ -53,7 +53,12 @@ def _publish(model_hash, positions, values, enabled, stopping, ready, phase, res
                     msg.header.stamp, msg.header.frame_id = stamp, 'base_link'
                     publisher.publish(msg)
             published = time.monotonic_ns()
-            stopping.wait(.02)  # actual controller-state input rate, no forged timestamps
+            # CPython3.12 multiprocessing.Event uses a realtime semaphore
+            # deadline. Local comparison measured 305ms for a requested20ms
+            # while sleep/thread-event stayed below22ms. Pace this independent
+            # fixture on monotonic sleep; poll the same stop flag next loop.
+            # No catch-up, retagging, watchdog relaxation or product change.
+            time.sleep(.02)
             spans.append(dict(begin_ns=begin, published_ns=published, end_ns=time.monotonic_ns(),
                               cpu_ns=time.thread_time_ns()-cpu_begin, enabled=enabled.is_set(),
                               source_system_ns=time.time_ns(),

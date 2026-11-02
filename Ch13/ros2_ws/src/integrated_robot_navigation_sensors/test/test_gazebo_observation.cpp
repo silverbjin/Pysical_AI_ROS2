@@ -20,6 +20,8 @@
 #include <gz/sim/components/AngularVelocity.hh>
 #include <cmath>
 #include <limits>
+#include <iostream>
+#include <time.h>
 #include <nlohmann/json.hpp>
 #include <gz/plugin/Loader.hh>
 #include <gz/sim/System.hh>
@@ -51,6 +53,8 @@ TEST(GazeboBodyReference, InstantWorldVelocityRotatesToBodyWithoutReadingGyroOrW
   const auto result = nav::read_gazebo_body_reference(robot,ecm,std::chrono::seconds(3),9);
   ASSERT_TRUE(result);
   const auto reference = nlohmann::json::parse(result->data());
+  const auto direct=nav::read_gazebo_body_reference_json(robot,ecm,std::chrono::seconds(3),9);
+  ASSERT_TRUE(direct);EXPECT_EQ(*direct,reference);
   EXPECT_EQ(reference.at("capture_ns"),3000000000);
   EXPECT_EQ(reference.at("sequence"),9);
   EXPECT_EQ(reference.at("epoch"),0);
@@ -63,6 +67,7 @@ TEST(GazeboBodyReference, InstantWorldVelocityRotatesToBodyWithoutReadingGyroOrW
   EXPECT_EQ(ecm.Component<comp::AngularVelocity>(link)->Data(),gz::math::Vector3d(99,98,97));
   ecm.SetComponentData<comp::Name>(link,"different_base");
   EXPECT_THROW(nav::read_gazebo_body_reference(robot,ecm,std::chrono::seconds(3),9),std::runtime_error);
+  EXPECT_EQ(direct->at("angular_velocity").at(2),.3);  // prior snapshot owns its values
   ecm.SetComponentData<comp::Name>(link,"base_footprint");
   ecm.SetComponentData<comp::WorldAngularVelocity>(link,
     gz::math::Vector3d(std::numeric_limits<double>::quiet_NaN(),0,0));
@@ -150,6 +155,7 @@ TEST(GazeboControls, ActualScalarComponentsAndJointFrameEffortNotInferredTorque)
   const auto observed = nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(2), 3);
   ASSERT_TRUE(observed);
   const auto data = nlohmann::json::parse(observed->data());
+  EXPECT_EQ(*nav::read_gazebo_controls_json(robot,ecm,std::chrono::seconds(2),3),data);
   EXPECT_EQ(data.at("schema"), 2);
   EXPECT_EQ(data.at("engine"), "gazebo");
   EXPECT_EQ(data.at("capture_ns"), 2000000000);
@@ -179,6 +185,7 @@ TEST(GazeboControls, ActualScalarComponentsAndJointFrameEffortNotInferredTorque)
   ecm.SetComponentData<comp::JointType>(joint, sdf::JointType::PRISMATIC);
   const auto prismatic = nlohmann::json::parse(
     nav::read_gazebo_controls(robot, ecm, std::chrono::seconds(3), 4)->data());
+  EXPECT_EQ(*nav::read_gazebo_controls_json(robot,ecm,std::chrono::seconds(3),4),prismatic);
   EXPECT_EQ(prismatic.at("joints").at(0).at("projected_transmitted_effort"), 123.);
   EXPECT_EQ(prismatic.at("joints").at(0).at("effort_unit"), "N");
   // Physics may clear command components after consuming them. This state is
@@ -188,6 +195,7 @@ TEST(GazeboControls, ActualScalarComponentsAndJointFrameEffortNotInferredTorque)
   const auto post=nav::read_gazebo_controls(robot,ecm,std::chrono::seconds(3),4,false);
   ASSERT_TRUE(post);
   const auto post_row=nlohmann::json::parse(post->data()).at("joints").at(0);
+  EXPECT_EQ(*nav::read_gazebo_controls_json(robot,ecm,std::chrono::seconds(3),4,false),nlohmann::json::parse(post->data()));
   EXPECT_TRUE(post_row.at("velocity_command").is_null());
   EXPECT_TRUE(post_row.at("force_command").is_null());
   EXPECT_EQ(post_row.at("position"),.12);
@@ -246,6 +254,7 @@ TEST(GazeboObservation, NativeEcMassPoseFootNamesAndEmptyContactTick)
   // foot center must NEVER be promoted to a measured contact/load.
   const auto empty = nlohmann::json::parse(nav::read_gazebo_contact_reference(
     robot,ecm,std::chrono::seconds(3))->data());
+  EXPECT_EQ(*nav::read_gazebo_contact_reference_json(robot,ecm,std::chrono::seconds(3)),empty);
   EXPECT_EQ(empty.at("capture_ns"),3000000000);
   ASSERT_EQ(empty.at("feet").size(),4);
   EXPECT_EQ(empty.at("feet").at(0).at("pairs").size(),0);
@@ -257,6 +266,10 @@ TEST(GazeboObservation, NativeEcMassPoseFootNamesAndEmptyContactTick)
   pair->add_position()->set_z(.001);
   pair->add_depth(.0002);
   pair->add_wrench()->mutable_body_1_wrench()->mutable_force()->set_z(-12.);
+  auto * force1=pair->mutable_wrench(0)->mutable_body_1_wrench()->mutable_force();
+  force1->set_x(3.);force1->set_y(-4.);
+  auto * force2=pair->mutable_wrench(0)->mutable_body_2_wrench()->mutable_force();
+  force2->set_x(-3.);force2->set_y(4.);force2->set_z(12.);
   ecm.SetComponentData<comp::ContactSensorData>(collisions[0],native);
   const auto loaded = nlohmann::json::parse(nav::read_gazebo_contact_reference(
     robot,ecm,std::chrono::seconds(4))->data());
@@ -266,6 +279,9 @@ TEST(GazeboObservation, NativeEcMassPoseFootNamesAndEmptyContactTick)
   EXPECT_EQ(raw.at("collision2_id"),collisions[1]);
   EXPECT_EQ(raw.at("depths").at(0),.0002);
   EXPECT_EQ(raw.at("force1_world").at(0).at(2),-12.);
+  EXPECT_TRUE(loaded.at("feet").at(0).at("force_on_collision_valid").get<bool>());
+  EXPECT_EQ(loaded.at("feet").at(0).at("sum_force_on_collision_world_n"),
+    nlohmann::json::array({3.,-4.,-12.}));
   EXPECT_EQ(ecm.Component<comp::ContactSensorData>(collisions[0])->Data().SerializeAsString(),
     native.SerializeAsString());
   EXPECT_THROW(nav::read_gazebo_contact_reference(robot,ecm,std::chrono::seconds(-1)),std::runtime_error);
@@ -278,10 +294,13 @@ TEST(GazeboObservation, NativeEcMassPoseFootNamesAndEmptyContactTick)
   }
   const auto compact=nlohmann::json::parse(nav::read_gazebo_contact_reference(
     robot,ecm,std::chrono::seconds(5),true)->data());
+  EXPECT_EQ(*nav::read_gazebo_contact_reference_json(robot,ecm,std::chrono::seconds(5),true),compact);
   EXPECT_FALSE(compact.at("details_included").get<bool>());
   for (const auto & foot : compact.at("feet")) {
     EXPECT_EQ(foot.at("pair_count"),1);
     EXPECT_EQ(foot.at("sum_abs_force1_world_z_n"),12.);
+    EXPECT_TRUE(foot.at("force_on_collision_valid").get<bool>());
+    EXPECT_EQ(foot.at("sum_force_on_collision_world_n"),nlohmann::json::array({3.,-4.,-12.}));
     EXPECT_FALSE(foot.contains("pairs"));
   }
   ecm.SetComponentData<comp::ContactSensorData>(collisions[2],gz::msgs::Contacts());
@@ -292,4 +311,44 @@ TEST(GazeboObservation, NativeEcMassPoseFootNamesAndEmptyContactTick)
   EXPECT_EQ(lost.at("feet").at(2).at("pairs").size(),0);
   EXPECT_EQ(lost.at("feet").at(2).at("sum_abs_force1_world_z_n"),0.);
   EXPECT_EQ(lost.at("feet").at(0).at("pairs").at(0).at("force1_world").at(0).at(2),-12.);
+  // Select the wrench belonging to this exact collision, not an absolute
+  // normal or whichever body happens to be first in the contact pair.
+  auto reversed=native;
+  reversed.mutable_contact(0)->mutable_collision1()->set_id(collisions[1]);
+  reversed.mutable_contact(0)->mutable_collision2()->set_id(collisions[0]);
+  ecm.SetComponentData<comp::ContactSensorData>(collisions[0],reversed);
+  const auto other_side=nlohmann::json::parse(nav::read_gazebo_contact_reference(
+    robot,ecm,std::chrono::seconds(7),true)->data());
+  EXPECT_EQ(other_side.at("feet").at(0).at("sum_force_on_collision_world_n"),
+    nlohmann::json::array({-3.,4.,12.}));
+  reversed.mutable_contact(0)->mutable_collision2()->set_id(collisions[2]);
+  ecm.SetComponentData<comp::ContactSensorData>(collisions[0],reversed);
+  const auto unknown=nlohmann::json::parse(nav::read_gazebo_contact_reference(
+    robot,ecm,std::chrono::seconds(8),true)->data());
+  EXPECT_FALSE(unknown.at("feet").at(0).at("force_on_collision_valid").get<bool>());
+  EXPECT_TRUE(unknown.at("feet").at(0).at("sum_force_on_collision_world_n").is_null());
+  EXPECT_EQ(*nav::read_gazebo_contact_reference_json(robot,ecm,std::chrono::seconds(8),true),unknown);
+  // Same ECM/capture/contract; record CPU cost only, no timing pass threshold
+  // or claim of real-engine scheduling success from this arithmetic comparison.
+  auto cpu=[](){timespec t{};clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t);
+      return int64_t(t.tv_sec)*1000000000+t.tv_nsec;};
+  nlohmann::json encoded,direct;
+  const auto begin=cpu();
+  for(int i=0;i<400;++i){encoded=nlohmann::json::parse(nav::read_gazebo_contact_reference(robot,ecm,std::chrono::seconds(8),true)->data());}
+  const auto middle=cpu();
+  for(int i=0;i<400;++i){direct=*nav::read_gazebo_contact_reference_json(robot,ecm,std::chrono::seconds(8),true);}
+  const auto end=cpu();EXPECT_EQ(encoded,direct);EXPECT_EQ(direct,unknown);
+  std::cout<<"ContactSnapshotCPU iterations=400 legacy_ns="<<(middle-begin)<<" direct_ns="<<(end-middle)<<std::endl;
+}
+
+TEST(GazeboSnapshotOwnership, CompletedBatchTransfersOwnershipWithoutDuplicatingJsonTrees)
+{
+  std::vector<nlohmann::json> batch;
+  for(int i=0;i<10;++i){batch.push_back({{"capture_ns",i*2000000},{"angular_velocity",{.1,.2,.3}}});}
+  const auto * original=batch.data();
+  nlohmann::json packet;packet["body_references"]=std::move(batch);batch.clear();
+  const auto & owned=packet.at("body_references").get_ref<const nlohmann::json::array_t &>();
+  EXPECT_EQ(owned.data(),original);ASSERT_EQ(owned.size(),10u);
+  batch.push_back({{"capture_ns",999}});
+  EXPECT_EQ(owned.at(9).at("capture_ns"),18000000);  // next capture cannot mutate completed batch
 }

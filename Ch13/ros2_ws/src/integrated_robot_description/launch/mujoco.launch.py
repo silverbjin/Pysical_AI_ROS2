@@ -169,10 +169,10 @@ def launch_nodes(context):
     nodes = [control_node, state_publisher, TimerAction(period=3.0, actions=spawners)]
     if vision:
         nodes.append(Node(package='integrated_robot_vision', executable='native_pose_adapter',
-                          parameters=[{'engine': 'mujoco', 'use_sim_time': True}]))
+                          parameters=[{'engine': 'mujoco', 'use_sim_time': not navigation}]))
         nodes.append(Node(package='integrated_robot_vision',
                           executable='native_camera_info_adapter',
-                          parameters=[{'use_sim_time': True}]))
+                          parameters=[{'use_sim_time': not navigation}]))
     return nodes
 
 

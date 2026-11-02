@@ -1,5 +1,6 @@
 """Actual Jazzy delivers TF MessageInfo dictionaries as well as object APIs."""
 from types import SimpleNamespace
+from threading import RLock
 from pathlib import Path
 import sys
 
@@ -13,7 +14,7 @@ from probe_navigation_13_5 import NavigationProbe
 
 @pytest.mark.parametrize('mapping', [True, False])
 def test_tf_publisher_identity_accepts_both_supported_message_info_shapes(mapping):
-    record = SimpleNamespace(transforms=[], errors=[])
+    record = SimpleNamespace(_lock=RLock(),transforms=[], errors=[], bounded_history=False)
     transform = TransformStamped(child_frame_id='nav_base')
     transform.header.frame_id = 'odom'
     gid = [1, 2, 3, 4]
@@ -24,13 +25,13 @@ def test_tf_publisher_identity_accepts_both_supported_message_info_shapes(mappin
 
 
 def test_bad_tf_metadata_reports_fault_without_breaking_cleanup_executor():
-    record = SimpleNamespace(transforms=[], errors=[])
+    record = SimpleNamespace(_lock=RLock(),transforms=[], errors=[], bounded_history=False)
     NavigationProbe._tf(record, TFMessage(), {})
     assert not record.transforms and record.errors
 
 
 def test_actual_jazzy_metadata_capability_is_not_invented_as_a_publisher_identity():
-    record = SimpleNamespace(transforms=[], errors=[], tf_api={})
+    record = SimpleNamespace(_lock=RLock(),transforms=[], errors=[], tf_api={}, bounded_history=False)
     transform = TransformStamped(child_frame_id='nav_base')
     transform.header.frame_id = 'odom'
     NavigationProbe._tf(record, TFMessage(transforms=[transform]), {
@@ -46,7 +47,7 @@ def test_body_transport_trace_keeps_capture_and_clock_domains_separate(monkeypat
     from integrated_robot_navigation.observations import SensorInbox
     import probe_navigation_13_5 as probe
     rows = []
-    record = SimpleNamespace(engine='gazebo',body_references=[],inbox=SensorInbox(0), errors=[],
+    record = SimpleNamespace(_lock=RLock(),engine='gazebo',body_references=[],inbox=SensorInbox(0), errors=[],bounded_history=False,
                              _write=lambda kind, value: rows.append((kind, value)))
     msg = Odometry(child_frame_id='base_footprint')
     msg.header.frame_id = 'odom'
@@ -63,10 +64,27 @@ def test_body_transport_trace_keeps_capture_and_clock_domains_separate(monkeypat
         callback_system_ns=5000, source_system_ns=101, rmw_received_system_ns=121)
 
 
+def test_scan_latency_is_measured_directly_not_inferred_from_nearby_body(monkeypatch):
+    from sensor_msgs.msg import LaserScan
+    from integrated_robot_navigation.observations import SensorInbox
+    import probe_navigation_13_5 as probe
+    rows=[]
+    record=SimpleNamespace(_lock=RLock(),inbox=SensorInbox(0),errors=[],bounded_history=False,
+        _write=lambda kind,value:rows.append((kind,value)))
+    message=LaserScan(range_min=.05,range_max=10.,ranges=[10.]*360)
+    message.header.stamp.sec=1;message.header.frame_id='lidar_link'
+    monkeypatch.setattr(probe.time,'monotonic_ns',lambda:2000)
+    monkeypatch.setattr(probe.time,'time_ns',lambda:5000)
+    NavigationProbe._sensor(record,'scan',message,dict(source_timestamp=101,received_timestamp=121))
+    selected=[value for kind,value in rows if kind=='scan_transport']
+    assert selected==[dict(stamp_ns=1_000_000_000,received_ns=2000,callback_system_ns=5000,
+        source_system_ns=101,rmw_received_system_ns=121)], 'scan delay boundary was not recorded'
+
+
 def test_gazebo_body_reference_keeps_each_native_capture_independent_of_imu():
     from nav_msgs.msg import Odometry
     from integrated_robot_navigation.observations import SensorInbox
-    record = SimpleNamespace(engine='gazebo',body_references=[],inbox=SensorInbox(0),errors=[],
+    record = SimpleNamespace(_lock=RLock(),engine='gazebo',body_references=[],inbox=SensorInbox(0),errors=[],bounded_history=False,
         _write=lambda *_: None)
     msg = Odometry(child_frame_id='base_footprint')
     msg.header.frame_id = 'odom'
@@ -86,7 +104,7 @@ def test_native_body_source_trace_matches_original_capture_without_republishing(
     from mujoco_ros2_control_msgs.msg import FreeJointState, FreeJointStateArray
     import probe_navigation_13_5 as probe
     rows = []
-    record = SimpleNamespace(transport_errors=[],
+    record = SimpleNamespace(_lock=RLock(),transport_errors=[],
                              _write=lambda kind, value: rows.append((kind, value)))
     state = FreeJointState(name='base_link')
     state.pose.header.stamp.sec = 3
@@ -106,7 +124,7 @@ def test_native_controls_record_keeps_source_capture_and_actual_ctrl(monkeypatch
     from std_msgs.msg import String
     import probe_navigation_13_5 as probe
     rows = []
-    record = SimpleNamespace(engine='mujoco', stage='stand', native_controls=[], transport_errors=[],
+    record = SimpleNamespace(_lock=RLock(),engine='mujoco', stage='stand', native_controls=[], transport_errors=[],
                              _write=lambda kind, value: rows.append((kind, value)))
     payload = dict(schema=1, capture_ns=123, epoch=0, sequence=7,
                    actuators=[dict(joint_name='fr_hip_joint', ctrl=.1, position=.09)])
@@ -166,7 +184,7 @@ def test_gazebo_controls_actual_dds_subscription_preserves_distinct_native_schem
 def test_native_controls_do_not_mislabel_another_backend_schema(engine, payload):
     import json
     from std_msgs.msg import String
-    record = SimpleNamespace(engine=engine, stage='stand', native_controls=[], transport_errors=[],
+    record = SimpleNamespace(_lock=RLock(),engine=engine, stage='stand', native_controls=[], transport_errors=[],
                              _write=lambda *_: None)
     NavigationProbe._controls(record, String(data=json.dumps(payload)))
     assert not record.native_controls

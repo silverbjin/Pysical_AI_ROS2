@@ -81,7 +81,7 @@ def test_clock_arm_record_requires_one_fresh_open_original_source(bad):
 
 def test_clock_graph_rejects_unintended_consumers_or_original_clock_leak():
     assert hasattr(runner, 'assess_control_clock_graph'), 'five-node graph boundary assessment missing'
-    consumers = ['motion_guard', 'crawl_controller', 'carry_manager', 'nav_projection', 'crawl_startup']
+    consumers = ['motion_guard', 'crawl_controller_ingress', 'carry_manager', 'nav_projection', 'crawl_startup']
     graph = dict(source_publishers=['engine'], relay_publishers=['navigation_control_clock'],
                  source_subscribers=['navigation_control_clock', 'probe', 'robot_state_publisher'],
                  relay_subscribers=consumers)
@@ -93,6 +93,59 @@ def test_clock_graph_rejects_unintended_consumers_or_original_clock_leak():
         bad[key].append(extra)
         assert not runner.assess_control_clock_graph(bad)
     assert not runner.assess_control_clock_graph({})
+
+
+def test_serial_timesource_role_keeps_exact_five_consumers_and_no_legacy_clock_leak():
+    graph=dict(source_publishers=['engine'],relay_publishers=['navigation_control_clock'],
+        source_subscribers=['navigation_control_clock','probe'],relay_subscribers=[
+            'motion_guard','crawl_controller_ingress','carry_manager','nav_projection','crawl_startup'])
+    assert runner.assess_control_clock_graph(graph),'original TimeSource ingress role was not recognized'
+    for topic,name in [('relay_subscribers','crawl_controller'),
+                       ('relay_subscribers','crawl_controller_ingress'),
+                       ('source_subscribers','crawl_controller'),
+                       ('source_subscribers','crawl_controller_ingress')]:
+        bad=deepcopy(graph);bad[topic].append(name)
+        assert not runner.assess_control_clock_graph(bad)
+
+
+@pytest.mark.parametrize('backend',['waitset','events'])
+@pytest.mark.parametrize('bad',['','parent','group','script','thread','node','uid','clock','failed','backend','manifest','type'])
+def test_serial_clock_receiver_requires_owned_live_crawl_process_and_thread(tmp_path,bad,backend):
+    assert hasattr(runner,'attest_crawl_ingress'),'live receiver/process association missing'
+    expected=tmp_path/'install/integrated_robot_navigation/lib/integrated_robot_navigation/crawl_controller'
+    expected.parent.mkdir(parents=True);expected.write_text('owned installed entrypoint')
+    directory=tmp_path/'proc/11';directory.mkdir(parents=True)
+    fields=['S']+['0']*21
+    fields[1]=fields[2]='100';fields[19]='123';fields[20]='4096'
+    if bad=='parent':fields[1]='99'
+    if bad=='group':fields[2]='99'
+    (directory/'stat').write_text('11 (owned crawl) '+' '.join(fields))
+    executable=expected if bad!='script' else tmp_path/'foreign'
+    (directory/'cmdline').write_bytes(b'/usr/bin/python3\0'+str(executable).encode()+b'\0')
+    if bad!='thread':(directory/'task/12').mkdir(parents=True)
+    dispatch='owned_serial_'+backend
+    snapshot=dict(dispatch=dispatch,pid=11,uid=os.getuid(),native_tid=12,
+        node_name='crawl_controller_ingress',namespace='/',alive=True,joined=False,error=None,
+        clock_subscriptions=['/navigation/control_clock'])
+    if backend=='events':snapshot.update(executor_type='EventsExecutor',backend_manifest=runner.event_backend_manifest())
+    if bad=='node':snapshot['node_name']='foreign'
+    if bad=='uid':snapshot['uid']+=1
+    if bad=='clock':snapshot['clock_subscriptions']*=2
+    if bad=='failed':snapshot['error']='original receiver failure'
+    if bad=='backend':snapshot['dispatch']='owned_serial_events' if backend=='waitset' else 'owned_serial_waitset'
+    if bad=='manifest':
+        if backend=='events':snapshot['backend_manifest']['extension']['sha256']='0'*64
+        else:snapshot['dispatch']='owned_serial_events'
+    if bad=='type':
+        if backend=='events':snapshot['executor_type']='SingleThreadedExecutor'
+        else:snapshot['dispatch']='owned_serial_events'
+    if bad:
+        with pytest.raises(RuntimeError,match='ingress'):
+            runner.attest_crawl_ingress(SimpleNamespace(pid=100),snapshot,expected,proc_root=tmp_path/'proc',expected_dispatch=dispatch)
+    else:
+        row=runner.attest_crawl_ingress(SimpleNamespace(pid=100),snapshot,expected,proc_root=tmp_path/'proc',expected_dispatch=dispatch)
+        assert row['pid']==11 and row['start_ticks']==123 and row['native_tid']==12
+        assert row['entrypoint_sha256']==runner.file_digest(expected)
 
 
 @pytest.mark.parametrize('bad', ['', 'parent', 'group', 'exe', 'library', 'inode', 'hash'])

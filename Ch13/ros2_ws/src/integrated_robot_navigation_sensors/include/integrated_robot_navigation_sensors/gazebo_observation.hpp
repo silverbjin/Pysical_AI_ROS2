@@ -2,6 +2,7 @@
 #pragma once
 #include <chrono>
 #include <optional>
+#include <nlohmann/json.hpp>
 #include <gz/msgs/stringmsg.pb.h>
 #include <gz/msgs/contacts.pb.h>
 #include <gz/msgs/pose.pb.h>
@@ -17,6 +18,16 @@ struct GazeboObservation
   gz::msgs::Contacts contacts;
 };
 void request_gazebo_observations(gz::sim::Entity model, gz::sim::EntityComponentManager &);
+// Owned value snapshots for the in-process observer. Same validation/schema
+// as the legacy StringMsg wrappers below; no ECM references escape the call.
+std::optional<nlohmann::json> read_gazebo_body_reference_json(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager &,std::chrono::steady_clock::duration,uint64_t sequence);
+std::optional<nlohmann::json> read_gazebo_contact_reference_json(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager &,std::chrono::steady_clock::duration,
+  bool compact_when_supported=false);
+std::optional<nlohmann::json> read_gazebo_controls_json(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager &,std::chrono::steady_clock::duration,
+  uint64_t sequence,bool require_commands=true);
 // Independent completed-step body reference, never gyro/odometry/command data.
 std::optional<gz::msgs::StringMsg> read_gazebo_body_reference(gz::sim::Entity model,
   const gz::sim::EntityComponentManager &, std::chrono::steady_clock::duration stamp,

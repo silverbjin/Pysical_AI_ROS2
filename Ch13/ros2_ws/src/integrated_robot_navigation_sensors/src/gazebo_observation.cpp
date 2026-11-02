@@ -63,8 +63,13 @@ void point(gz::msgs::Vector3d * target, const gz::math::Vector3d & value)
 {
   target->set_x(value.X()); target->set_y(value.Y()); target->set_z(value.Z());
 }
+std::optional<gz::msgs::StringMsg> encode_snapshot(std::optional<nlohmann::json> snapshot)
+{
+  if(!snapshot){return std::nullopt;}
+  gz::msgs::StringMsg result;result.set_data(snapshot->dump());return result;
 }
-std::optional<gz::msgs::StringMsg> read_gazebo_controls(gz::sim::Entity model,
+}
+std::optional<nlohmann::json> read_gazebo_controls_json(gz::sim::Entity model,
   const gz::sim::EntityComponentManager & ecm,
   std::chrono::steady_clock::duration stamp, uint64_t sequence, bool require_commands)
 {
@@ -140,10 +145,8 @@ std::optional<gz::msgs::StringMsg> read_gazebo_controls(gz::sim::Entity model,
   if (!ready || rows.empty()) {return std::nullopt;}
   const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stamp).count();
   if (ns < 0) {throw std::runtime_error("negative native capture");}
-  gz::msgs::StringMsg result;
-  result.set_data(Json{{"schema", 2}, {"engine", "gazebo"}, {"capture_ns", ns},
-    {"epoch", 0}, {"sequence", sequence}, {"joints", rows}}.dump());
-  return result;
+  return Json{{"schema", 2}, {"engine", "gazebo"}, {"capture_ns", ns},
+    {"epoch", 0}, {"sequence", sequence}, {"joints", std::move(rows)}};
 }
 void request_gazebo_observations(gz::sim::Entity model, gz::sim::EntityComponentManager & ecm)
 {
@@ -161,7 +164,7 @@ void request_gazebo_observations(gz::sim::Entity model, gz::sim::EntityComponent
   });
   for (auto entity : requested) {ecm.CreateComponent(entity, comp::ContactSensorData());}
 }
-std::optional<gz::msgs::StringMsg> read_gazebo_body_reference(gz::sim::Entity model,
+std::optional<nlohmann::json> read_gazebo_body_reference_json(gz::sim::Entity model,
   const gz::sim::EntityComponentManager & ecm,
   std::chrono::steady_clock::duration stamp, uint64_t sequence)
 {
@@ -183,13 +186,11 @@ std::optional<gz::msgs::StringMsg> read_gazebo_body_reference(gz::sim::Entity mo
     throw std::runtime_error("invalid native body reference time/velocity/pose");
   }
   const auto body = rotation.RotateVectorReverse(velocity->Data());
-  gz::msgs::StringMsg result;
-  result.set_data(nlohmann::json{{"capture_ns",ns},{"epoch",0},{"sequence",sequence},
+  return nlohmann::json{{"capture_ns",ns},{"epoch",0},{"sequence",sequence},
     {"frame_id","base_footprint"},{"source","gazebo_ecm_world_angular_velocity"},
-    {"entity",canonical},{"angular_velocity",{body.X(),body.Y(),body.Z()}}}.dump());
-  return result;
+    {"entity",canonical},{"angular_velocity",{body.X(),body.Y(),body.Z()}}};
 }
-std::optional<gz::msgs::StringMsg> read_gazebo_contact_reference(gz::sim::Entity model,
+std::optional<nlohmann::json> read_gazebo_contact_reference_json(gz::sim::Entity model,
   const gz::sim::EntityComponentManager & ecm, std::chrono::steady_clock::duration stamp,
   bool compact_when_supported)
 {
@@ -201,6 +202,8 @@ std::optional<gz::msgs::StringMsg> read_gazebo_contact_reference(gz::sim::Entity
   std::array<gz::sim::Entity,4> entities{};
   std::array<gz::math::Vector3d,4> centers;
   std::array<double,4> loads{};
+  std::array<gz::math::Vector3d,4> collision_forces{};
+  std::array<bool,4> collision_force_valid{true,true,true,true};
   ecm.Each<comp::Collision,comp::Name,comp::ContactSensorData>(
     [&](const gz::sim::Entity & entity,const comp::Collision *,const comp::Name * name,
       const comp::ContactSensorData * data) {
@@ -219,6 +222,16 @@ std::optional<gz::msgs::StringMsg> read_gazebo_contact_reference(gz::sim::Entity
               if (!std::isfinite(value)) {throw std::runtime_error("nonfinite native diagnostic force");}
             }
             loads[i]+=std::abs(fa.z());
+            // Diagnostic sum on this exact collision. Preserve tangential
+            // signs/body ordering; do not promote it to a ground-mapped,
+            // deduplicated FootContacts load or controller feedback.
+            if (pair.collision1().id()==entity) {
+              collision_forces[i]+=gz::math::Vector3d(fa.x(),fa.y(),fa.z());
+            } else if (pair.collision2().id()==entity) {
+              collision_forces[i]+=gz::math::Vector3d(fb.x(),fb.y(),fb.z());
+            } else {
+              collision_force_valid[i]=false;
+            }
           }
         }
       }
@@ -235,6 +248,10 @@ std::optional<gz::msgs::StringMsg> read_gazebo_contact_reference(gz::sim::Entity
     Json row{{"name",feet[i]},{"entity",entities[i]},
       {"center_world",{center.X(),center.Y(),center.Z()}},
       {"pair_count",sources[i]->Data().contact_size()},{"sum_abs_force1_world_z_n",loads[i]}};
+    row["force_on_collision_valid"]=collision_force_valid[i];
+    const auto & force=collision_forces[i];
+    row["sum_force_on_collision_world_n"]=collision_force_valid[i] ?
+      Json::array({force.X(),force.Y(),force.Z()}) : Json(nullptr);
     if (details) {
       Json pairs=Json::array();
       for (const auto & pair : sources[i]->Data().contact()) {
@@ -253,11 +270,19 @@ std::optional<gz::msgs::StringMsg> read_gazebo_contact_reference(gz::sim::Entity
     }
     rows.push_back(std::move(row));
   }
-  gz::msgs::StringMsg result;
-  result.set_data(Json{{"capture_ns",ns},{"sample_phase","post_physics"},
-    {"source","gazebo_ecm_raw_contact_sensor_data"},{"details_included",details},{"feet",rows}}.dump());
-  return result;
+  return Json{{"capture_ns",ns},{"sample_phase","post_physics"},
+    {"source","gazebo_ecm_raw_contact_sensor_data"},{"details_included",details},{"feet",std::move(rows)}};
 }
+std::optional<gz::msgs::StringMsg> read_gazebo_controls(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager & ecm,std::chrono::steady_clock::duration stamp,
+  uint64_t sequence,bool require_commands)
+{return encode_snapshot(read_gazebo_controls_json(model,ecm,stamp,sequence,require_commands));}
+std::optional<gz::msgs::StringMsg> read_gazebo_body_reference(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager & ecm,std::chrono::steady_clock::duration stamp,uint64_t sequence)
+{return encode_snapshot(read_gazebo_body_reference_json(model,ecm,stamp,sequence));}
+std::optional<gz::msgs::StringMsg> read_gazebo_contact_reference(gz::sim::Entity model,
+  const gz::sim::EntityComponentManager & ecm,std::chrono::steady_clock::duration stamp,bool compact_when_supported)
+{return encode_snapshot(read_gazebo_contact_reference_json(model,ecm,stamp,compact_when_supported));}
 GazeboObservation read_gazebo_observations(gz::sim::Entity model,
   const gz::sim::EntityComponentManager & ecm, std::chrono::steady_clock::duration stamp)
 {

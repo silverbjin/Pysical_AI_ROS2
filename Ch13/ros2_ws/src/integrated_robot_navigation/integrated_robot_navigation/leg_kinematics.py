@@ -10,6 +10,82 @@ from .model import ModelContract
 from .samples import Vec3
 
 
+@lru_cache(maxsize=32)
+def _thigh_box_spec(urdf,foot):
+    tree=ET.fromstring(urdf)
+    base=tree.find("link[@name='base_link']/collision")
+    thigh=tree.find(f"link[@name='{foot[:2]}_thigh_link']/collision")
+    if base is None or thigh is None:raise ValueError('missing thigh/trunk collision geometry')
+    box=base.find('geometry/box');cylinder=thigh.find('geometry/cylinder')
+    if box is None or cylinder is None:raise ValueError('unsupported thigh/trunk collision geometry')
+    half=np.array(tuple(float(v)/2 for v in box.get('size').split()))
+    radius,length=float(cylinder.get('radius')),float(cylinder.get('length'))
+    _,_,upper,_,_=_leg_spec(urdf,foot)
+    expected=np.eye(4);expected[2,3]=-upper/2
+    if (half.shape!=(3,) or not np.isfinite(half).all() or np.any(half<=0)
+            or not math.isfinite(radius) or radius<=0 or abs(length-upper)>1e-12
+            or not np.allclose(origin_matrix(thigh.find('origin')),expected,atol=1e-12)):
+        raise ValueError('unsupported thigh capsule enclosure')
+    inverse=np.linalg.inv(origin_matrix(base.find('origin')))
+    return (tuple(float(v) for v in half),
+        tuple(tuple(float(v) for v in row) for row in inverse),radius)
+
+
+def _segment_box_distance(start,end,half):
+    """Same piecewise quadratic distance with fixed three-scalar vectors.
+
+    Avoid small ndarray construction/boolean indexing in the control path.
+    This computes current geometry; no measured pose or distance is cached.
+    """
+    start,end,half=(tuple(float(v) for v in value) for value in (start,end,half))
+    if (any(len(value)!=3 for value in (start,end,half))
+            or not all(math.isfinite(v) for value in (start,end,half) for v in value)
+            or any(v<0. for v in half)):
+        raise ValueError('finite Vec3 segment and nonnegative box extents required')
+    delta=tuple(b-a for a,b in zip(start,end))
+    boundaries=[0.,1.]
+    for axis in range(3):
+        if delta[axis]!=0:
+            for edge in (-half[axis],half[axis]):
+                t=float((edge-start[axis])/delta[axis])
+                if 0.<t<1.:boundaries.append(t)
+    boundaries=sorted(boundaries);best=math.inf
+    for lo,hi in zip(boundaries,boundaries[1:]):
+        middle=(lo+hi)/2;norm=product=0.
+        for a,d,h in zip(start,delta,half):
+            value=a+d*middle
+            if abs(value)>h:
+                norm+=d*d
+                product+=(a-math.copysign(h,value))*d
+        t=min(hi,max(lo,-product/norm)) if norm else lo
+        distance=0.
+        for a,d,h in zip(start,delta,half):
+            gap=max(abs(a+d*t)-h,0.)
+            distance+=gap*gap
+        best=min(best,distance)
+    return math.sqrt(best)
+
+
+def thigh_trunk_clearance(model: ModelContract,foot: str,q: Vec3) -> float:
+    """Conservative URDF cylinder capsule vs trunk, also native MJCF shape.
+
+    This checks the diagnosed nonadjacent thigh/trunk pair, not all robot
+    collisions. Native unexpected-contact checks remain mandatory.
+    """
+    fk_leg(model,foot,q)
+    hip,offset,upper,_,_=_leg_spec(model.urdf,foot)
+    half,inverse,radius=_thigh_box_spec(model.urdf,foot)
+    roll,thigh,_=q;c,s=math.cos(roll),math.sin(roll)
+    start=(float(hip[0]),float(hip[1])+offset*c,float(hip[2])+offset*s)
+    end=(start[0]-upper*math.sin(thigh),start[1]+upper*math.cos(thigh)*s,
+        start[2]-upper*math.cos(thigh)*c)
+    def transform(point):
+        x,y,z=point
+        return tuple(row[0]*x+row[1]*y+row[2]*z+row[3] for row in inverse[:3])
+    start,end=transform(start),transform(end)
+    return _segment_box_distance(start,end,half)-radius
+
+
 def fk_leg(model: ModelContract, foot: str, q: Vec3) -> Vec3:
     if foot not in model.feet:
         raise ValueError('unknown foot')

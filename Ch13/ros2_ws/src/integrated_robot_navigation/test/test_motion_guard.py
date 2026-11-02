@@ -19,6 +19,21 @@ def armed(model):
     return guard
 
 
+def test_fault_allows_stop_ack_without_resetting_fault_or_generation(nav_robot_model):
+    guard = armed(nav_robot_model)
+    guard.fail('carry:not_ready_or_binding')
+    generation = guard.generation
+    accepted, reason = guard.set_mode('STOP')
+    assert accepted, 'a latched fault must not prevent the measured-stop shutdown sequence'
+    assert reason == guard.fault == 'carry:not_ready_or_binding'
+    assert guard.mode == 'STOP' and guard.generation == generation
+    assert not guard.set_mode('CRAWL')[0]
+    assert not guard.set_mode('STAND')[0]
+    output, reason = guard.evaluate(bundle(nav_robot_model), command(), command(),
+                                    1_000_000_000, 10_000_000_000)
+    assert output == (0.,0.,0.) and reason == 'carry:not_ready_or_binding'
+
+
 def test_raw_loss_latches_even_when_smoother_and_sensors_are_fresh(nav_robot_model):
     model = nav_robot_model
     guard = armed(model)

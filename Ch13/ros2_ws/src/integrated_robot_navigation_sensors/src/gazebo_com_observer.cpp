@@ -2,6 +2,7 @@
 #include "integrated_robot_navigation_sensors/gazebo_observation.hpp"
 #include "integrated_robot_navigation_sensors/contact_detail_window.hpp"
 #include "integrated_robot_navigation_sensors/dart_contact.hpp"
+#include "integrated_robot_navigation_sensors/observer_cost.hpp"
 #include <gz/sim/components/World.hh>
 #include <gz/sim/System.hh>
 #include <gz/plugin/Register.hh>
@@ -77,17 +78,18 @@ public:
   void Update(const gz::sim::UpdateInfo & info, gz::sim::EntityComponentManager & ecm) override
   {
     std::lock_guard<std::mutex> lock(state_->mutex);
+    ObserverCost::Scope measured_work(cost_,ObserverCost::Update,&update_finished_);
     if (info.dt < std::chrono::steady_clock::duration::zero() ||
       (last_seen_ && info.simTime < *last_seen_)) {state_->stopped = true;}
     if (state_->stopped || info.paused || (last_controls_publish_ &&
       info.simTime-*last_controls_publish_ < std::chrono::milliseconds(20))) {return;}
     try {
-      const auto controls = read_gazebo_controls(model_, ecm, info.simTime, controls_sequence_+1);
+      auto controls = read_gazebo_controls_json(model_, ecm, info.simTime, controls_sequence_+1);
       if (controls_seen_ && !controls) {
         throw std::runtime_error("native joint command/state observation disappeared");
       }
       if (controls) {
-        auto packet = nlohmann::json::parse(controls->data());
+        auto packet = std::move(*controls);
         const auto step_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(info.dt).count();
         const auto capture_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(info.simTime).count();
         if (capture_ns < step_ns) {throw std::runtime_error("native pre-physics state time underflow");}
@@ -98,7 +100,10 @@ public:
         packet["step_ns"] = step_ns;
         // Previous completed PostUpdates, each with its own original capture.
         // Batching avoids a new 500Hz Python/ROS subscriber. Never interpolate.
-        packet["body_references"] = body_references_;
+        packet["body_references"] = std::move(body_references_);
+        // Completed preceding callbacks only. Neither cumulative timing nor
+        // the interphase wall span is a sensor capture or a physics CPU claim.
+        packet["observer_work"] = cost_.report();
         if (dart_contact_) {
           if (inspect_dart_contact().effective_m!=(*dart_contact_)["effective_m"].get<double>()) {
             throw std::runtime_error("DART contact allowance changed after configuration");
@@ -122,19 +127,21 @@ public:
     const gz::sim::EntityComponentManager & ecm) override
   {
     std::lock_guard<std::mutex> lock(state_->mutex);
+    ObserverCost::Scope measured_work(cost_,ObserverCost::PostUpdate);
+    if(update_finished_){cost_.boundary(*update_finished_,measured_work.start_wall());}
     if (info.dt < std::chrono::steady_clock::duration::zero() ||
       (last_seen_ && info.simTime < *last_seen_)) {state_->stopped = true;}
     last_seen_ = info.simTime;
     if (state_->stopped || info.paused) {return;}
     try {
       if (controls_seen_ && (!last_body_ || info.simTime > *last_body_)) {
-        const auto reference = read_gazebo_body_reference(model_,ecm,info.simTime,body_sequence_+1);
+        auto reference = read_gazebo_body_reference_json(model_,ecm,info.simTime,body_sequence_+1);
         if (!reference) {throw std::runtime_error("native instantaneous body reference unavailable");}
         if (body_references_.size() >= 64) {throw std::runtime_error("native body reference batch overflow");}
-        auto packet = nlohmann::json::parse(reference->data());
-        const auto contacts = read_gazebo_contact_reference(model_,ecm,info.simTime,true);
+        auto packet = std::move(*reference);
+        auto contacts = read_gazebo_contact_reference_json(model_,ecm,info.simTime,true);
         if (!contacts) {throw std::runtime_error("native raw contact reference unavailable");}
-        packet["raw_contacts"] = nlohmann::json::parse(contacts->data());
+        packet["raw_contacts"] = std::move(*contacts);
         unsigned loaded_mask=0,index=0;
         for (const auto & foot : packet["raw_contacts"]["feet"]) {
           if (foot["sum_abs_force1_world_z_n"].get<double>()>=2.) {loaded_mask|=1u<<index;}
@@ -144,13 +151,13 @@ public:
         packet["contact_event_window"]=event;
         if (event) {
           if (!packet["raw_contacts"]["details_included"].get<bool>()) {
-            const auto details=read_gazebo_contact_reference(model_,ecm,info.simTime,false);
+            auto details=read_gazebo_contact_reference_json(model_,ecm,info.simTime,false);
             if (!details) {throw std::runtime_error("contact event detail unavailable");}
-            packet["raw_contacts"]=nlohmann::json::parse(details->data());
+            packet["raw_contacts"]=std::move(*details);
           }
-          const auto joints=read_gazebo_controls(model_,ecm,info.simTime,controls_sequence_,false);
+          auto joints=read_gazebo_controls_json(model_,ecm,info.simTime,controls_sequence_,false);
           if (!joints) {throw std::runtime_error("contact event joint snapshot unavailable");}
-          auto snapshot=nlohmann::json::parse(joints->data());
+          auto snapshot=std::move(*joints);
           snapshot["sample_phase"]="post_physics_debug";
           snapshot["state_capture_ns"]=packet["capture_ns"];
           // Forces/references were applied BEFORE this completed step. Each
@@ -182,6 +189,8 @@ private:
   std::optional<std::chrono::steady_clock::duration> last_body_;
   std::optional<std::chrono::steady_clock::duration> last_seen_, last_publish_;
   std::optional<std::chrono::steady_clock::duration> last_controls_publish_;
+  ObserverCost cost_;
+  std::optional<int64_t> update_finished_;
   std::shared_ptr<EgressState> state_{std::make_shared<EgressState>()};
   gz::transport::Node::Publisher com_, feet_, contacts_, controls_;
   gz::transport::Node node_;  // destroyed first; callbacks hold no raw plugin pointer

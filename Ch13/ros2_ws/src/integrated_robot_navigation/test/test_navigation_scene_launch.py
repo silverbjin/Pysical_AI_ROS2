@@ -38,10 +38,32 @@ def test_navigation_launch_uses_exact_scene_urdf(tmp_path, monkeypatch, engine):
         world='', model_path='', navigation_enabled='true', navigation_scene=str(tmp_path/'scene'),
         navigation_plugins=str(config/'mujoco_navigation_plugins.yaml'),
         navigation_bridge=str(config/'navigation_bridge.yaml')))
-    parameters = [p for action in module.launch_nodes(ctx) if isinstance(action, Node)
+    actions=module.launch_nodes(ctx)
+    parameters = [p for action in actions if isinstance(action, Node)
                   for p in evaluate_parameters(ctx, action._Node__parameters) if isinstance(p, dict)]
     descriptions = [p['robot_description'] for p in parameters if 'robot_description' in p]
     assert descriptions and all(value == Path(record['robot']['path']).read_text() for value in descriptions)
+
+
+@pytest.mark.parametrize('engine', ['mujoco', 'gazebo'])
+def test_navigation_header_forwarders_do_not_subscribe_to_unused_sim_clock(tmp_path,monkeypatch,engine):
+    scene.materialize_scene(engine,'g1',tmp_path/'scene')
+    module=launch_module(engine);original=module.get_package_share_directory
+    monkeypatch.setattr(module,'get_package_share_directory',lambda name:
+        str(description_dir()) if name=='integrated_robot_description' else original(name))
+    if engine=='mujoco':monkeypatch.setattr(module,'probe_snapshot_plugin',lambda path:{})
+    ctx=LaunchContext();config=Path(__file__).resolve().parents[1]/'config'
+    ctx.launch_configurations.update(dict(vision_enabled='true',vision_camera_backend='snapshot',
+        mujoco_headless='true',world='',model_path='',navigation_enabled='true',
+        navigation_scene=str(tmp_path/'scene'),navigation_plugins=str(config/'mujoco_navigation_plugins.yaml'),
+        navigation_bridge=str(config/'navigation_bridge.yaml')))
+    adapters=[action for action in module.launch_nodes(ctx) if isinstance(action,Node)
+        and action.node_executable in ('native_pose_adapter','native_camera_info_adapter')]
+    assert len(adapters)==(2 if engine=='mujoco' else 1)
+    for action in adapters:
+        values=evaluate_parameters(ctx,action._Node__parameters)
+        assert any(isinstance(p,dict) and p.get('use_sim_time') is False for p in values), \
+            'header-only forwarder still handles the unused high-rate clock'
 
 
 def test_navigation_gazebo_launch_owns_engine_pid_not_shell_wrapper(tmp_path, monkeypatch):
@@ -80,6 +102,10 @@ def test_legacy_gazebo_keeps_the_upstream_launch_path(monkeypatch):
     assert len([action for action in actions if isinstance(action, IncludeLaunchDescription)]) == 1
     assert not [action for action in actions if isinstance(action, ExecuteProcess)
                 and not isinstance(action, Node)]
+    adapters=[a for a in actions if isinstance(a,Node) and a.node_executable=='native_pose_adapter']
+    assert len(adapters)==1
+    assert any(isinstance(p,dict) and p.get('use_sim_time') is True
+               for p in evaluate_parameters(ctx,adapters[0]._Node__parameters))
 
 
 def test_scene_loader_rejects_changed_bound_model(tmp_path):

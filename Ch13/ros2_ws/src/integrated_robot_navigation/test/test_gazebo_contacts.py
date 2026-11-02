@@ -110,3 +110,34 @@ def test_clock_reset_never_reactivates_old_or_new_contact_packets():
     join.receive_feet(feet, 8_000_000_000)
     assert join.take(4_100_000_000, 8_100_000_000) is None
     assert join.stopped
+
+
+def test_pair_diagnostic_distinguishes_one_missing_member_and_keeps_first_receipt():
+    join=api().GazeboContactJoiner(MAP,GROUND);contacts,feet=pair()
+    join.receive_contacts(contacts,8_000_000_000)
+    join.receive_contacts(contacts,8_100_000_000)
+    snapshot=join.snapshot()
+    assert snapshot['pending']['contacts']==[dict(stamp_ns=4_000_000_000,received_ns=8_000_000_000)]
+    assert snapshot['pending']['feet']==[]
+    assert snapshot['counts']['contacts']==2 and snapshot['duplicates']['contacts']==1
+    join.receive_feet(feet,8_110_000_000)
+    assert join.take(4_010_000_000,8_120_000_000) is not None
+    snapshot=join.snapshot()
+    assert snapshot['outputs']==1 and snapshot['last_pair']['capture_ns']==4_000_000_000
+    assert snapshot['last_pair']['contacts_received_ns']==8_000_000_000
+    assert snapshot['last_pair']['feet_received_ns']==8_110_000_000
+    join.stop();assert join.snapshot()['last_pair']==snapshot['last_pair']
+
+
+def test_pair_diagnostic_preserves_expiry_cause_and_largest_delivery_gap():
+    join=api().GazeboContactJoiner(MAP,GROUND);contacts,feet=pair()
+    join.receive_contacts(contacts,8_000_000_000)
+    contacts.header.stamp.nanosec=20_000_000
+    join.receive_contacts(contacts,8_210_000_000)
+    join.take(4_030_000_000,8_220_000_000)
+    snapshot=join.snapshot()
+    assert snapshot['expired']['contacts']==1
+    gap=snapshot['maximum_receipt_gap']['contacts']
+    assert gap==dict(previous_stamp_ns=4_000_000_000,stamp_ns=4_020_000_000,
+                    previous_received_ns=8_000_000_000,received_ns=8_210_000_000,gap_ns=210_000_000)
+    assert snapshot['pending']['contacts']==[dict(stamp_ns=4_020_000_000,received_ns=8_210_000_000)]

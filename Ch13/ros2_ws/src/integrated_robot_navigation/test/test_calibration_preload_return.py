@@ -14,7 +14,7 @@ def test_loaded_return_reaches_original_preload_with_continuous_bounded_velocity
         tick(value,index,center=.027)
     previous, velocity = value.z,value.velocity
     complete = False
-    for index in range(4,120):
+    for index in range(4,350):
         result = tick(value,index,forces=(30.,5.,30.,30.))
         assert abs(result.z-previous)/.02 <= .020000001
         assert abs(value.velocity-velocity)/.02 <= .20000001
@@ -25,6 +25,7 @@ def test_loaded_return_reaches_original_preload_with_continuous_bounded_velocity
             complete = True
             break
     assert complete
+    assert value.last_wall+1_000_000_000<value.deadline
     assert result.z == pytest.approx(.017,abs=1e-12)
     assert value.velocity == pytest.approx(0.,abs=1e-12)
     assert len(value.snapshot()['landing_captures']) == 3

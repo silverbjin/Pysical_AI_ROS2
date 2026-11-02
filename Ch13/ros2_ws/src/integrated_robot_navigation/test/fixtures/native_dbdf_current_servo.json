@@ -1,0 +1,2276 @@
+{
+  "scope": "successful_numeric_reply_rejected_by_current_parent_not_failed_numeric_job",
+  "urdf": "<robot name=\"quadruped_arm_system\"><material name=\"body_black\"><color rgba=\"0.08 0.09 0.10 1\" /></material><material name=\"joint_grey\"><color rgba=\"0.35 0.38 0.42 1\" /></material><material name=\"arm_orange\"><color rgba=\"0.95 0.42 0.08 1\" /></material><material name=\"gripper_white\"><color rgba=\"0.90 0.92 0.95 1\" /></material><material name=\"sensor_blue\"><color rgba=\"0.05 0.30 0.70 1\" /></material><link name=\"base_footprint\"><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.0001\" /><inertia ixx=\"1.6666666666666667e-09\" ixy=\"0\" ixz=\"0\" iyy=\"1.6666666666666667e-09\" iyz=\"0\" izz=\"1.6666666666666667e-09\" /></inertial></link><joint name=\"base_footprint_joint\" type=\"fixed\"><parent link=\"base_footprint\" /><child link=\"base_link\" /></joint><link name=\"base_link\"><visual><geometry><box size=\"0.60 0.30 0.15\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__base_link__0\"><geometry><box size=\"0.60 0.30 0.15\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"6.0\" /><inertia ixx=\"0.056249999999999994\" ixy=\"0\" ixz=\"0\" iyy=\"0.19125\" iyz=\"0\" izz=\"0.22499999999999998\" /></inertial></link><joint name=\"fr_hip_joint\" type=\"revolute\"><parent link=\"base_link\" /><child link=\"fr_hip_link\" /><origin rpy=\"0 0 0\" xyz=\"0.25 -0.13 0\" /><axis xyz=\"1 0 0\" /><limit effort=\"20\" lower=\"-0.8\" upper=\"0.8\" velocity=\"10\" /><dynamics damping=\"4.47213595499958\" /></joint><link name=\"fr_hip_link\"><visual><geometry><box size=\"0.08 0.04 0.04\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__fr_hip_link__0\"><geometry><box size=\"0.08 0.04 0.04\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.2\" /><inertia ixx=\"5.333333333333334e-05\" ixy=\"0\" ixz=\"0\" iyy=\"0.00013333333333333334\" iyz=\"0\" izz=\"0.00013333333333333334\" /></inertial></link><joint name=\"fr_thigh_joint\" type=\"revolute\"><parent link=\"fr_hip_link\" /><child link=\"fr_thigh_link\" /><origin rpy=\"0 0 0\" xyz=\"0 -0.05 0\" /><axis xyz=\"0 1 0\" /><limit effort=\"30\" lower=\"-1.0\" upper=\"4.0\" velocity=\"10\" /><dynamics damping=\"8.94427190999916\" /></joint><link name=\"fr_thigh_link\"><visual><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.02\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__fr_thigh_link__0\"><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.02\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 -0.125\" /><mass value=\"0.7\" /><inertia ixx=\"0.0037158333333333336\" ixy=\"0\" ixz=\"0\" iyy=\"0.0037158333333333336\" iyz=\"0\" izz=\"0.00014\" /></inertial></link><joint name=\"fr_calf_joint\" type=\"revolute\"><parent link=\"fr_thigh_link\" /><child link=\"fr_calf_link\" /><origin rpy=\"0 0 0\" xyz=\"0 0 -0.25\" /><axis xyz=\"0 1 0\" /><limit effort=\"30\" lower=\"-2.8\" upper=\"2.8\" velocity=\"10\" /><dynamics damping=\"10.954451150103322\" /></joint><link name=\"fr_calf_link\"><visual><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.015\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__fr_calf_link__0\"><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.015\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 -0.125\" /><mass value=\"0.5\" /><inertia ixx=\"0.0026322916666666665\" ixy=\"0\" ixz=\"0\" iyy=\"0.0026322916666666665\" iyz=\"0\" izz=\"5.625e-05\" /></inertial></link><joint name=\"fr_foot_fixed\" type=\"fixed\"><parent link=\"fr_calf_link\" /><child link=\"fr_foot\" /><origin xyz=\"0 0 -0.25\" /></joint><link name=\"fr_foot\"><visual><geometry><sphere radius=\"0.02\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__fr_foot__0\"><geometry><sphere radius=\"0.02\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.1\" /><inertia ixx=\"1.6000000000000003e-05\" ixy=\"0\" ixz=\"0\" iyy=\"1.6000000000000003e-05\" iyz=\"0\" izz=\"1.6000000000000003e-05\" /></inertial></link><gazebo reference=\"fr_foot\"><mu1 value=\"1.0\" /><mu2 value=\"1.0\" /></gazebo><joint name=\"fl_hip_joint\" type=\"revolute\"><parent link=\"base_link\" /><child link=\"fl_hip_link\" /><origin rpy=\"0 0 0\" xyz=\"0.25 0.13 0\" /><axis xyz=\"1 0 0\" /><limit effort=\"20\" lower=\"-0.8\" upper=\"0.8\" velocity=\"10\" /><dynamics damping=\"4.47213595499958\" /></joint><link name=\"fl_hip_link\"><visual><geometry><box size=\"0.08 0.04 0.04\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__fl_hip_link__0\"><geometry><box size=\"0.08 0.04 0.04\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.2\" /><inertia ixx=\"5.333333333333334e-05\" ixy=\"0\" ixz=\"0\" iyy=\"0.00013333333333333334\" iyz=\"0\" izz=\"0.00013333333333333334\" /></inertial></link><joint name=\"fl_thigh_joint\" type=\"revolute\"><parent link=\"fl_hip_link\" /><child link=\"fl_thigh_link\" /><origin rpy=\"0 0 0\" xyz=\"0 0.05 0\" /><axis xyz=\"0 1 0\" /><limit effort=\"30\" lower=\"-1.0\" upper=\"4.0\" velocity=\"10\" /><dynamics damping=\"8.94427190999916\" /></joint><link name=\"fl_thigh_link\"><visual><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.02\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__fl_thigh_link__0\"><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.02\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 -0.125\" /><mass value=\"0.7\" /><inertia ixx=\"0.0037158333333333336\" ixy=\"0\" ixz=\"0\" iyy=\"0.0037158333333333336\" iyz=\"0\" izz=\"0.00014\" /></inertial></link><joint name=\"fl_calf_joint\" type=\"revolute\"><parent link=\"fl_thigh_link\" /><child link=\"fl_calf_link\" /><origin rpy=\"0 0 0\" xyz=\"0 0 -0.25\" /><axis xyz=\"0 1 0\" /><limit effort=\"30\" lower=\"-2.8\" upper=\"2.8\" velocity=\"10\" /><dynamics damping=\"10.954451150103322\" /></joint><link name=\"fl_calf_link\"><visual><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.015\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__fl_calf_link__0\"><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.015\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 -0.125\" /><mass value=\"0.5\" /><inertia ixx=\"0.0026322916666666665\" ixy=\"0\" ixz=\"0\" iyy=\"0.0026322916666666665\" iyz=\"0\" izz=\"5.625e-05\" /></inertial></link><joint name=\"fl_foot_fixed\" type=\"fixed\"><parent link=\"fl_calf_link\" /><child link=\"fl_foot\" /><origin xyz=\"0 0 -0.25\" /></joint><link name=\"fl_foot\"><visual><geometry><sphere radius=\"0.02\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__fl_foot__0\"><geometry><sphere radius=\"0.02\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.1\" /><inertia ixx=\"1.6000000000000003e-05\" ixy=\"0\" ixz=\"0\" iyy=\"1.6000000000000003e-05\" iyz=\"0\" izz=\"1.6000000000000003e-05\" /></inertial></link><gazebo reference=\"fl_foot\"><mu1 value=\"1.0\" /><mu2 value=\"1.0\" /></gazebo><joint name=\"rr_hip_joint\" type=\"revolute\"><parent link=\"base_link\" /><child link=\"rr_hip_link\" /><origin rpy=\"0 0 0\" xyz=\"-0.25 -0.13 0\" /><axis xyz=\"1 0 0\" /><limit effort=\"20\" lower=\"-0.8\" upper=\"0.8\" velocity=\"10\" /><dynamics damping=\"4.47213595499958\" /></joint><link name=\"rr_hip_link\"><visual><geometry><box size=\"0.08 0.04 0.04\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__rr_hip_link__0\"><geometry><box size=\"0.08 0.04 0.04\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.2\" /><inertia ixx=\"5.333333333333334e-05\" ixy=\"0\" ixz=\"0\" iyy=\"0.00013333333333333334\" iyz=\"0\" izz=\"0.00013333333333333334\" /></inertial></link><joint name=\"rr_thigh_joint\" type=\"revolute\"><parent link=\"rr_hip_link\" /><child link=\"rr_thigh_link\" /><origin rpy=\"0 0 0\" xyz=\"0 -0.05 0\" /><axis xyz=\"0 1 0\" /><limit effort=\"30\" lower=\"-1.0\" upper=\"4.0\" velocity=\"10\" /><dynamics damping=\"8.94427190999916\" /></joint><link name=\"rr_thigh_link\"><visual><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.02\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__rr_thigh_link__0\"><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.02\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 -0.125\" /><mass value=\"0.7\" /><inertia ixx=\"0.0037158333333333336\" ixy=\"0\" ixz=\"0\" iyy=\"0.0037158333333333336\" iyz=\"0\" izz=\"0.00014\" /></inertial></link><joint name=\"rr_calf_joint\" type=\"revolute\"><parent link=\"rr_thigh_link\" /><child link=\"rr_calf_link\" /><origin rpy=\"0 0 0\" xyz=\"0 0 -0.25\" /><axis xyz=\"0 1 0\" /><limit effort=\"30\" lower=\"-2.8\" upper=\"2.8\" velocity=\"10\" /><dynamics damping=\"10.954451150103322\" /></joint><link name=\"rr_calf_link\"><visual><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.015\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__rr_calf_link__0\"><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.015\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 -0.125\" /><mass value=\"0.5\" /><inertia ixx=\"0.0026322916666666665\" ixy=\"0\" ixz=\"0\" iyy=\"0.0026322916666666665\" iyz=\"0\" izz=\"5.625e-05\" /></inertial></link><joint name=\"rr_foot_fixed\" type=\"fixed\"><parent link=\"rr_calf_link\" /><child link=\"rr_foot\" /><origin xyz=\"0 0 -0.25\" /></joint><link name=\"rr_foot\"><visual><geometry><sphere radius=\"0.02\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__rr_foot__0\"><geometry><sphere radius=\"0.02\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.1\" /><inertia ixx=\"1.6000000000000003e-05\" ixy=\"0\" ixz=\"0\" iyy=\"1.6000000000000003e-05\" iyz=\"0\" izz=\"1.6000000000000003e-05\" /></inertial></link><gazebo reference=\"rr_foot\"><mu1 value=\"1.0\" /><mu2 value=\"1.0\" /></gazebo><joint name=\"rl_hip_joint\" type=\"revolute\"><parent link=\"base_link\" /><child link=\"rl_hip_link\" /><origin rpy=\"0 0 0\" xyz=\"-0.25 0.13 0\" /><axis xyz=\"1 0 0\" /><limit effort=\"20\" lower=\"-0.8\" upper=\"0.8\" velocity=\"10\" /><dynamics damping=\"4.47213595499958\" /></joint><link name=\"rl_hip_link\"><visual><geometry><box size=\"0.08 0.04 0.04\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__rl_hip_link__0\"><geometry><box size=\"0.08 0.04 0.04\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.2\" /><inertia ixx=\"5.333333333333334e-05\" ixy=\"0\" ixz=\"0\" iyy=\"0.00013333333333333334\" iyz=\"0\" izz=\"0.00013333333333333334\" /></inertial></link><joint name=\"rl_thigh_joint\" type=\"revolute\"><parent link=\"rl_hip_link\" /><child link=\"rl_thigh_link\" /><origin rpy=\"0 0 0\" xyz=\"0 0.05 0\" /><axis xyz=\"0 1 0\" /><limit effort=\"30\" lower=\"-1.0\" upper=\"4.0\" velocity=\"10\" /><dynamics damping=\"8.94427190999916\" /></joint><link name=\"rl_thigh_link\"><visual><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.02\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__rl_thigh_link__0\"><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.02\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 -0.125\" /><mass value=\"0.7\" /><inertia ixx=\"0.0037158333333333336\" ixy=\"0\" ixz=\"0\" iyy=\"0.0037158333333333336\" iyz=\"0\" izz=\"0.00014\" /></inertial></link><joint name=\"rl_calf_joint\" type=\"revolute\"><parent link=\"rl_thigh_link\" /><child link=\"rl_calf_link\" /><origin rpy=\"0 0 0\" xyz=\"0 0 -0.25\" /><axis xyz=\"0 1 0\" /><limit effort=\"30\" lower=\"-2.8\" upper=\"2.8\" velocity=\"10\" /><dynamics damping=\"10.954451150103322\" /></joint><link name=\"rl_calf_link\"><visual><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.015\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__rl_calf_link__0\"><origin xyz=\"0 0 -0.125\" /><geometry><cylinder length=\"0.25\" radius=\"0.015\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 -0.125\" /><mass value=\"0.5\" /><inertia ixx=\"0.0026322916666666665\" ixy=\"0\" ixz=\"0\" iyy=\"0.0026322916666666665\" iyz=\"0\" izz=\"5.625e-05\" /></inertial></link><joint name=\"rl_foot_fixed\" type=\"fixed\"><parent link=\"rl_calf_link\" /><child link=\"rl_foot\" /><origin xyz=\"0 0 -0.25\" /></joint><link name=\"rl_foot\"><visual><geometry><sphere radius=\"0.02\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__rl_foot__0\"><geometry><sphere radius=\"0.02\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.1\" /><inertia ixx=\"1.6000000000000003e-05\" ixy=\"0\" ixz=\"0\" iyy=\"1.6000000000000003e-05\" iyz=\"0\" izz=\"1.6000000000000003e-05\" /></inertial></link><gazebo reference=\"rl_foot\"><mu1 value=\"1.0\" /><mu2 value=\"1.0\" /></gazebo><joint name=\"arm_mount_joint\" type=\"fixed\"><parent link=\"base_link\" /><child link=\"arm_mount\" /><origin rpy=\"0 0 0\" xyz=\"0 0 0.095\" /></joint><link name=\"arm_mount\"><visual><geometry><box size=\"0.16 0.14 0.04\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__arm_mount__0\"><geometry><box size=\"0.15 0.13 0.038\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.3\" /><inertia ixx=\"0.0005300000000000001\" ixy=\"0\" ixz=\"0\" iyy=\"0.00068\" iyz=\"0\" izz=\"0.0011300000000000001\" /></inertial></link><joint name=\"arm_base_fixed\" type=\"fixed\"><parent link=\"arm_mount\" /><child link=\"arm_base_link\" /><origin xyz=\"0 0 0.035\" /></joint><link name=\"arm_base_link\"><visual><origin xyz=\"0 0 0.03\" /><geometry><cylinder length=\"0.06\" radius=\"0.065\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__arm_base_link__0\"><origin xyz=\"0 0 0.03\" /><geometry><cylinder length=\"0.06\" radius=\"0.06\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.03\" /><mass value=\"0.45\" /><inertia ixx=\"0.0006103125000000001\" ixy=\"0\" ixz=\"0\" iyy=\"0.0006103125000000001\" iyz=\"0\" izz=\"0.0009506250000000001\" /></inertial></link><link name=\"arm_link_1\"><visual><origin xyz=\"0 0 0.05\" /><geometry><cylinder length=\"0.1\" radius=\"0.04\" /></geometry><material name=\"arm_orange\" /></visual><collision name=\"navcol__arm_link_1__0\"><origin xyz=\"0 0 0.05\" /><geometry><cylinder length=\"0.096\" radius=\"0.036000000000000004\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.05\" /><mass value=\"0.35\" /><inertia ixx=\"0.0004316666666666666\" ixy=\"0\" ixz=\"0\" iyy=\"0.0004316666666666666\" iyz=\"0\" izz=\"0.00028\" /></inertial></link><joint name=\"arm_joint_1\" type=\"revolute\"><parent link=\"arm_base_link\" /><child link=\"arm_link_1\" /><origin xyz=\"0 0 0.06\" /><axis xyz=\"0 0 1\" /><limit effort=\"35\" lower=\"-3.14159\" upper=\"3.14159\" velocity=\"2.0\" /><dynamics damping=\"25.0\" /></joint><link name=\"arm_link_2\"><visual><origin xyz=\"0 0 0.09\" /><geometry><cylinder length=\"0.18\" radius=\"0.035\" /></geometry><material name=\"arm_orange\" /></visual><collision name=\"navcol__arm_link_2__0\"><origin xyz=\"0 0 0.09\" /><geometry><cylinder length=\"0.17279999999999998\" radius=\"0.03150000000000001\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.09\" /><mass value=\"0.55\" /><inertia ixx=\"0.0016534374999999997\" ixy=\"0\" ixz=\"0\" iyy=\"0.0016534374999999997\" iyz=\"0\" izz=\"0.0003368750000000001\" /></inertial></link><joint name=\"arm_joint_2\" type=\"revolute\"><parent link=\"arm_link_1\" /><child link=\"arm_link_2\" /><origin xyz=\"0 0 0.10\" /><axis xyz=\"0 1 0\" /><limit effort=\"35\" lower=\"-1.5708\" upper=\"1.5708\" velocity=\"2.0\" /><dynamics damping=\"25.0\" /></joint><link name=\"arm_link_3\"><visual><origin xyz=\"0 0 0.08\" /><geometry><cylinder length=\"0.16\" radius=\"0.032\" /></geometry><material name=\"arm_orange\" /></visual><collision name=\"navcol__arm_link_3__0\"><origin xyz=\"0 0 0.08\" /><geometry><cylinder length=\"0.1536\" radius=\"0.028800000000000003\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.08\" /><mass value=\"0.45\" /><inertia ixx=\"0.0010752000000000001\" ixy=\"0\" ixz=\"0\" iyy=\"0.0010752000000000001\" iyz=\"0\" izz=\"0.00023040000000000002\" /></inertial></link><joint name=\"arm_joint_3\" type=\"revolute\"><parent link=\"arm_link_2\" /><child link=\"arm_link_3\" /><origin xyz=\"0 0 0.18\" /><axis xyz=\"0 1 0\" /><limit effort=\"30\" lower=\"-2.0944\" upper=\"2.0944\" velocity=\"2.2\" /><dynamics damping=\"40.0\" /></joint><link name=\"arm_link_4\"><visual><origin xyz=\"0 0 0.05\" /><geometry><cylinder length=\"0.1\" radius=\"0.028\" /></geometry><material name=\"arm_orange\" /></visual><collision name=\"navcol__arm_link_4__0\"><origin xyz=\"0 0 0.05\" /><geometry><cylinder length=\"0.096\" radius=\"0.0252\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.05\" /><mass value=\"0.28\" /><inertia ixx=\"0.0002882133333333334\" ixy=\"0\" ixz=\"0\" iyy=\"0.0002882133333333334\" iyz=\"0\" izz=\"0.00010976000000000002\" /></inertial></link><joint name=\"arm_joint_4\" type=\"revolute\"><parent link=\"arm_link_3\" /><child link=\"arm_link_4\" /><origin xyz=\"0 0 0.16\" /><axis xyz=\"1 0 0\" /><limit effort=\"20\" lower=\"-3.14159\" upper=\"3.14159\" velocity=\"2.8\" /><dynamics damping=\"15.0\" /></joint><link name=\"arm_link_5\"><visual><origin xyz=\"0 0 0.04\" /><geometry><cylinder length=\"0.08\" radius=\"0.025\" /></geometry><material name=\"arm_orange\" /></visual><collision name=\"navcol__arm_link_5__0\"><origin xyz=\"0 0 0.04\" /><geometry><cylinder length=\"0.0768\" radius=\"0.022500000000000003\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.04\" /><mass value=\"0.2\" /><inertia ixx=\"0.0001379166666666667\" ixy=\"0\" ixz=\"0\" iyy=\"0.0001379166666666667\" iyz=\"0\" izz=\"6.250000000000001e-05\" /></inertial></link><joint name=\"arm_joint_5\" type=\"revolute\"><parent link=\"arm_link_4\" /><child link=\"arm_link_5\" /><origin xyz=\"0 0 0.10\" /><axis xyz=\"0 1 0\" /><limit effort=\"15\" lower=\"-1.5708\" upper=\"1.5708\" velocity=\"3.0\" /><dynamics damping=\"15.0\" /></joint><link name=\"arm_link_6\"><visual><origin xyz=\"0 0 0.03\" /><geometry><cylinder length=\"0.06\" radius=\"0.022\" /></geometry><material name=\"arm_orange\" /></visual><collision name=\"navcol__arm_link_6__0\"><origin xyz=\"0 0 0.03\" /><geometry><cylinder length=\"0.0576\" radius=\"0.019799999999999998\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.03\" /><mass value=\"0.15\" /><inertia ixx=\"6.315e-05\" ixy=\"0\" ixz=\"0\" iyy=\"6.315e-05\" iyz=\"0\" izz=\"3.6299999999999995e-05\" /></inertial></link><joint name=\"arm_joint_6\" type=\"revolute\"><parent link=\"arm_link_5\" /><child link=\"arm_link_6\" /><origin xyz=\"0 0 0.08\" /><axis xyz=\"0 0 1\" /><limit effort=\"12\" lower=\"-3.14159\" upper=\"3.14159\" velocity=\"3.0\" /><dynamics damping=\"10.0\" /></joint><joint name=\"arm_tool0_fixed\" type=\"fixed\"><parent link=\"arm_link_6\" /><child link=\"arm_tool0\" /><origin xyz=\"0 0 0.06\" /></joint><link name=\"arm_tool0\"><visual><geometry><sphere radius=\"0.015\" /></geometry><material name=\"sensor_blue\" /></visual><collision name=\"navcol__arm_tool0__0\"><geometry><sphere radius=\"0.012\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.03\" /><inertia ixx=\"2.6999999999999996e-06\" ixy=\"0\" ixz=\"0\" iyy=\"2.6999999999999996e-06\" iyz=\"0\" izz=\"2.6999999999999996e-06\" /></inertial></link><joint name=\"gripper_base_fixed\" type=\"fixed\"><parent link=\"arm_tool0\" /><child link=\"gripper_base_link\" /></joint><link name=\"gripper_base_link\"><visual><origin xyz=\"0 0 0.02\" /><geometry><box size=\"0.10 0.06 0.04\" /></geometry><material name=\"joint_grey\" /></visual><collision name=\"navcol__gripper_base_link__0\"><origin xyz=\"0 0 0.02\" /><geometry><box size=\"0.09 0.055 0.038\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.02\" /><mass value=\"0.16\" /><inertia ixx=\"6.933333333333333e-05\" ixy=\"0\" ixz=\"0\" iyy=\"0.0001546666666666667\" iyz=\"0\" izz=\"0.00018133333333333337\" /></inertial></link><joint name=\"gripper_left_joint\" type=\"prismatic\"><parent link=\"gripper_base_link\" /><child link=\"gripper_left_finger\" /><origin xyz=\"0 0.025 0.04\" /><axis xyz=\"0 1 0\" /><limit effort=\"15\" lower=\"0\" upper=\"0.03\" velocity=\"0.15\" /><dynamics damping=\"15.0\" /></joint><link name=\"gripper_left_finger\"><visual><origin xyz=\"0 0 0.04\" /><geometry><box size=\"0.018 0.018 0.08\" /></geometry><material name=\"gripper_white\" /></visual><collision name=\"navcol__gripper_left_finger__0\"><origin xyz=\"0 0 0.04\" /><geometry><box size=\"0.016 0.016 0.076\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.04\" /><mass value=\"0.06\" /><inertia ixx=\"3.362e-05\" ixy=\"0\" ixz=\"0\" iyy=\"3.362e-05\" iyz=\"0\" izz=\"3.2399999999999995e-06\" /></inertial></link><joint name=\"gripper_right_joint\" type=\"prismatic\"><parent link=\"gripper_base_link\" /><child link=\"gripper_right_finger\" /><origin xyz=\"0 -0.025 0.04\" /><axis xyz=\"0 -1 0\" /><limit effort=\"15\" lower=\"0\" upper=\"0.03\" velocity=\"0.15\" /><dynamics damping=\"15.0\" /></joint><link name=\"gripper_right_finger\"><visual><origin xyz=\"0 0 0.04\" /><geometry><box size=\"0.018 0.018 0.08\" /></geometry><material name=\"gripper_white\" /></visual><collision name=\"navcol__gripper_right_finger__0\"><origin xyz=\"0 0 0.04\" /><geometry><box size=\"0.016 0.016 0.076\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0.04\" /><mass value=\"0.06\" /><inertia ixx=\"3.362e-05\" ixy=\"0\" ixz=\"0\" iyy=\"3.362e-05\" iyz=\"0\" izz=\"3.2399999999999995e-06\" /></inertial></link><joint name=\"lidar_mount_joint\" type=\"fixed\"><parent link=\"base_link\" /><child link=\"lidar_link\" /><origin xyz=\"-0.18 0 0.12\" /></joint><link name=\"lidar_link\"><visual><geometry><cylinder length=\"0.045\" radius=\"0.035\" /></geometry><material name=\"sensor_blue\" /></visual><collision name=\"navcol__lidar_link__0\"><geometry><cylinder length=\"0.043\" radius=\"0.033\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.12\" /><inertia ixx=\"5.7e-05\" ixy=\"0\" ixz=\"0\" iyy=\"5.7e-05\" iyz=\"0\" izz=\"7.350000000000001e-05\" /></inertial></link><joint name=\"camera_mount_joint\" type=\"fixed\"><parent link=\"arm_link_6\" /><child link=\"camera_link\" /><origin rpy=\"0 -1.5707963267948966 0\" xyz=\"0.03 0 0.03\" /></joint><link name=\"camera_link\"><visual><geometry><box size=\"0.02 0.05 0.02\" /></geometry><material name=\"body_black\" /></visual><collision name=\"navcol__camera_link__0\"><geometry><box size=\"0.018 0.048 0.018\" /></geometry></collision><inertial><origin rpy=\"0 0 0\" xyz=\"0 0 0\" /><mass value=\"0.05\" /><inertia ixx=\"1.2083333333333335e-05\" ixy=\"0\" ixz=\"0\" iyy=\"3.3333333333333337e-06\" iyz=\"0\" izz=\"1.2083333333333335e-05\" /></inertial></link><link name=\"camera_sensor_frame\" /><joint name=\"camera_sensor_joint\" type=\"fixed\"><parent link=\"camera_link\" /><child link=\"camera_sensor_frame\" /><origin rpy=\"0 2.0943951023931953 0\" /></joint><link name=\"camera_optical_frame\" /><joint name=\"camera_optical_joint\" type=\"fixed\"><parent link=\"camera_sensor_frame\" /><child link=\"camera_optical_frame\" /><origin rpy=\"-1.5707963267948966 0 -1.5707963267948966\" /></joint><gazebo reference=\"camera_sensor_frame\"><sensor name=\"eye_in_hand\" type=\"rgbd_camera\"><always_on>true</always_on><update_rate>15</update_rate><topic>/camera</topic><gz_frame_id>camera_optical_frame</gz_frame_id><camera><horizontal_fov>1.0471975511965976</horizontal_fov><image><width>320</width><height>240</height><format>R8G8B8</format></image><clip><near>0.10</near><far>5.0</far></clip><depth_camera><clip><near>0.10</near><far>5.0</far></clip></depth_camera></camera></sensor></gazebo><gazebo><plugin filename=\"gz-sim-odometry-publisher-system\" name=\"gz::sim::systems::OdometryPublisher\"><odom_frame>odom</odom_frame><robot_base_frame>base_footprint</robot_base_frame><odom_publish_frequency>50</odom_publish_frequency><dimensions>3</dimensions><odom_topic>/native/odom</odom_topic><tf_topic>/native/pose_tf_unused</tf_topic></plugin></gazebo><ros2_control name=\"IntegratedRobotSystem\" type=\"system\"><hardware><plugin>integrated_robot_navigation_sensors/PositionPDSystem</plugin><param name=\"ch13_g1_reference_experiment\">true</param></hardware><joint name=\"fr_hip_joint\"><command_interface name=\"position\"><param name=\"min\">-0.8</param><param name=\"max\">0.8</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">200.0</param><param name=\"ch13_kd\">4.47213595499958</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">4.47213595499958</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"fr_thigh_joint\"><command_interface name=\"position\"><param name=\"min\">-1.0</param><param name=\"max\">4.0</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">-0.5</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">500.0</param><param name=\"ch13_kd\">8.94427190999916</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">8.94427190999916</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"fr_calf_joint\"><command_interface name=\"position\"><param name=\"min\">-2.8</param><param name=\"max\">2.8</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">1.0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">750.0</param><param name=\"ch13_kd\">10.954451150103322</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">10.954451150103322</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"fl_hip_joint\"><command_interface name=\"position\"><param name=\"min\">-0.8</param><param name=\"max\">0.8</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">200.0</param><param name=\"ch13_kd\">4.47213595499958</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">4.47213595499958</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"fl_thigh_joint\"><command_interface name=\"position\"><param name=\"min\">-1.0</param><param name=\"max\">4.0</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">-0.5</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">500.0</param><param name=\"ch13_kd\">8.94427190999916</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">8.94427190999916</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"fl_calf_joint\"><command_interface name=\"position\"><param name=\"min\">-2.8</param><param name=\"max\">2.8</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">1.0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">750.0</param><param name=\"ch13_kd\">10.954451150103322</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">10.954451150103322</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"rr_hip_joint\"><command_interface name=\"position\"><param name=\"min\">-0.8</param><param name=\"max\">0.8</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">200.0</param><param name=\"ch13_kd\">4.47213595499958</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">4.47213595499958</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"rr_thigh_joint\"><command_interface name=\"position\"><param name=\"min\">-1.0</param><param name=\"max\">4.0</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">-0.5</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">500.0</param><param name=\"ch13_kd\">8.94427190999916</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">8.94427190999916</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"rr_calf_joint\"><command_interface name=\"position\"><param name=\"min\">-2.8</param><param name=\"max\">2.8</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">1.0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">750.0</param><param name=\"ch13_kd\">10.954451150103322</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">10.954451150103322</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"rl_hip_joint\"><command_interface name=\"position\"><param name=\"min\">-0.8</param><param name=\"max\">0.8</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">200.0</param><param name=\"ch13_kd\">4.47213595499958</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">4.47213595499958</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"rl_thigh_joint\"><command_interface name=\"position\"><param name=\"min\">-1.0</param><param name=\"max\">4.0</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">-0.5</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">500.0</param><param name=\"ch13_kd\">8.94427190999916</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">8.94427190999916</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"rl_calf_joint\"><command_interface name=\"position\"><param name=\"min\">-2.8</param><param name=\"max\">2.8</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">1.0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">750.0</param><param name=\"ch13_kd\">10.954451150103322</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">10.954451150103322</param><param name=\"ch13_reference_ramp_s\">0.02</param></joint><joint name=\"arm_joint_1\"><command_interface name=\"position\"><param name=\"min\">-3.14159</param><param name=\"max\">3.14159</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">120.0</param><param name=\"ch13_kd\">25.0</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">25.0</param></joint><joint name=\"arm_joint_2\"><command_interface name=\"position\"><param name=\"min\">-1.5708</param><param name=\"max\">1.5708</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">120.0</param><param name=\"ch13_kd\">25.0</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">25.0</param></joint><joint name=\"arm_joint_3\"><command_interface name=\"position\"><param name=\"min\">-2.0944</param><param name=\"max\">2.0944</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">105.0</param><param name=\"ch13_kd\">40.0</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">40.0</param></joint><joint name=\"arm_joint_4\"><command_interface name=\"position\"><param name=\"min\">-3.14159</param><param name=\"max\">3.14159</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">75.0</param><param name=\"ch13_kd\">15.0</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">15.0</param></joint><joint name=\"arm_joint_5\"><command_interface name=\"position\"><param name=\"min\">-1.5708</param><param name=\"max\">1.5708</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">67.5</param><param name=\"ch13_kd\">15.0</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">15.0</param></joint><joint name=\"arm_joint_6\"><command_interface name=\"position\"><param name=\"min\">-3.14159</param><param name=\"max\">3.14159</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">60.0</param><param name=\"ch13_kd\">10.0</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">10.0</param></joint><joint name=\"gripper_left_joint\"><command_interface name=\"position\"><param name=\"min\">0</param><param name=\"max\">0.03</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0.015</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">100.0</param><param name=\"ch13_kd\">15.0</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">15.0</param></joint><joint name=\"gripper_right_joint\"><command_interface name=\"position\"><param name=\"min\">0</param><param name=\"max\">0.03</param></command_interface><state_interface name=\"position\"><param name=\"initial_value\">0.015</param></state_interface><state_interface name=\"velocity\" /><param name=\"ch13_kp\">100.0</param><param name=\"ch13_kd\">15.0</param><param name=\"ch13_damping_mode\">native</param><param name=\"ch13_base_damping\">0.0</param><param name=\"ch13_native_damping\">15.0</param></joint></ros2_control><gazebo reference=\"base_link\"><sensor name=\"navigation_imu\" type=\"imu\"><always_on>true</always_on><update_rate>50</update_rate><topic>/navigation/imu</topic><gz_frame_id>base_link</gz_frame_id><imu><enable_orientation>false</enable_orientation></imu></sensor></gazebo><gazebo reference=\"lidar_link\"><sensor name=\"navigation_lidar\" type=\"gpu_lidar\"><always_on>true</always_on><update_rate>20</update_rate><topic>/navigation/scan</topic><gz_frame_id>lidar_link</gz_frame_id><lidar><scan><horizontal><samples>360</samples><resolution>1</resolution><min_angle>-3.141592653589793</min_angle><max_angle>3.12413936106985</max_angle></horizontal></scan><range><min>0.05</min><max>10</max><resolution>0.001</resolution></range><visibility_mask>1</visibility_mask></lidar></sensor></gazebo><gazebo><plugin filename=\"navigation_gazebo_observer\" name=\"integrated_robot_navigation_sensors::GazeboObserver\"><g1_validation_contact_experiment>true</g1_validation_contact_experiment><g1_contact_allowance_m>0.00005</g1_contact_allowance_m></plugin></gazebo><gazebo><plugin filename=\"gz_ros2_control-system\" name=\"gz_ros2_control::GazeboSimROS2ControlPlugin\"><parameters>/tmp/ch13_5_controllers_1927b0a9a09dae57.yaml</parameters></plugin></gazebo></robot>",
+  "limits": {
+    "control_hz": 50.0,
+    "cycle_s": 8.0,
+    "swing_height_m": 0.02,
+    "max_swing_speed_mps": 0.02,
+    "max_foot_displacement_m": 0.08,
+    "max_vx": 0.01,
+    "max_vy": 0.0,
+    "max_wz": 0.03,
+    "max_accel_x": 0.02,
+    "max_accel_wz": 0.06,
+    "max_support_shift_accel_mps2": 0.1,
+    "unload_speed_mps": 0.002,
+    "max_unload_height_m": 0.01,
+    "max_roll_pitch": 0.15,
+    "min_body_height_m": 0.3,
+    "max_body_height_m": 0.7,
+    "nominal_body_height_m": 0.46,
+    "min_contact_force_n": 2.0,
+    "min_support_margin_m": 0.01,
+    "max_stance_slip_m": 0.02,
+    "sensor_max_age_s": 0.2,
+    "raw_max_age_s": 0.2,
+    "scan_max_age_s": 0.3,
+    "stop_landing_s": 1.0,
+    "stopped_v_mps": 0.003,
+    "stopped_wz_rps": 0.01,
+    "settle_s": 1.0,
+    "carry_error_rad": 0.03,
+    "carry_velocity_rps": 0.02,
+    "footprint_margin_m": 0.05,
+    "hip_mount_y_m": 0.13,
+    "gait_joint_bounds": {
+      "hip": [
+        -0.2,
+        0.2
+      ],
+      "thigh": [
+        -0.8,
+        -0.2
+      ],
+      "calf": [
+        0.8,
+        1.4
+      ]
+    }
+  },
+  "args": {
+    "foot": "fr_foot",
+    "joints": {
+      "arm_joint_1": -0.005014385309677561,
+      "arm_joint_2": 1.2077409149316316,
+      "arm_joint_3": -2.020657159535081,
+      "arm_joint_4": 0.0031200972488907523,
+      "arm_joint_5": 0.7977461188812945,
+      "arm_joint_6": 0.0009248183891359423,
+      "fl_calf_joint": 1.0198267483794339,
+      "fl_hip_joint": -0.10809925212172054,
+      "fl_thigh_joint": -0.5254982551065599,
+      "fr_calf_joint": 0.9210065716879308,
+      "fr_hip_joint": -0.10193015297609193,
+      "fr_thigh_joint": -0.43020127972391214,
+      "gripper_left_joint": 0.015185186894175962,
+      "gripper_right_joint": 0.014814814129520553,
+      "rl_calf_joint": 1.0131806429737615,
+      "rl_hip_joint": -0.11241608874592124,
+      "rl_thigh_joint": -0.47915870348132583,
+      "rr_calf_joint": 0.9086690058236233,
+      "rr_hip_joint": -0.10762410755227453,
+      "rr_thigh_joint": -0.4972045614823363
+    },
+    "body_pose": [
+      [
+        0.9999623904573847,
+        0.008564779145072204,
+        0.0013646350974539686,
+        0.01593611993451494
+      ],
+      [
+        -0.008568854182770596,
+        0.9999587599366674,
+        0.003008847606129125,
+        0.05072332759294795
+      ],
+      [
+        -0.0013388087045884485,
+        -0.003020427803909633,
+        0.9999945422886737,
+        0.459880096007144
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "points": {
+      "fr_foot": [
+        0.24982011800624127,
+        -0.17791842032230265,
+        0.0
+      ],
+      "fl_foot": [
+        0.2732632822772614,
+        0.17982366002280167,
+        0.0
+      ],
+      "rr_foot": [
+        -0.2173602528666804,
+        -0.1765394925923566,
+        0.0
+      ],
+      "rl_foot": [
+        -0.2455275633441438,
+        0.18230074841194063,
+        0.0
+      ]
+    },
+    "forces_world": {
+      "fr_foot": [
+        -4.153039454487702,
+        0.5641045464862914,
+        13.924310282568076
+      ],
+      "fl_foot": [
+        -0.8568113882522101,
+        -1.4366324709202616,
+        65.89159043620974
+      ],
+      "rr_foot": [
+        5.206574832513384,
+        4.170966080317041,
+        43.75200034292028
+      ],
+      "rl_foot": [
+        -0.14362397907600322,
+        -3.2961241648551316,
+        25.598825062757363
+      ]
+    },
+    "target_forces": {
+      "fl_foot": [
+        11.111047594574353,
+        1.6162924934747203,
+        78.7177868549116
+      ],
+      "rr_foot": [
+        -2.4874666937075927,
+        0.9604951423341134,
+        58.29770907886103
+      ],
+      "rl_foot": [
+        -8.623580900866761,
+        -2.5767876358088335,
+        12.195585066227368
+      ]
+    },
+    "allowed_z": {
+      "fr_foot": [
+        0.014705157632233514,
+        0.039949713836376896
+      ],
+      "fl_foot": [
+        0.006705157632233458,
+        0.01670515763223346
+      ],
+      "rr_foot": [
+        0.007727046727298523,
+        0.017727046727298523
+      ],
+      "rl_foot": [
+        0.017727046727298468,
+        0.02772704672729847
+      ]
+    },
+    "dt": 0.016,
+    "speed": 0.002,
+    "min_force": 2.0,
+    "command_joints": {
+      "arm_joint_1": -0.005014385309677561,
+      "arm_joint_2": 1.2077409149316316,
+      "arm_joint_3": -2.020657159535081,
+      "arm_joint_4": 0.0031200972488907523,
+      "arm_joint_5": 0.7977461188812945,
+      "arm_joint_6": 0.0009248183891359423,
+      "fl_calf_joint": 0.9798298826133248,
+      "fl_hip_joint": -0.10133295992767177,
+      "fl_thigh_joint": -0.5149046188104294,
+      "fr_calf_joint": 0.9104960012890726,
+      "fr_hip_joint": -0.10068091651469002,
+      "fr_thigh_joint": -0.43314660107070835,
+      "gripper_left_joint": 0.015185186894175962,
+      "gripper_right_joint": 0.014814814129520553,
+      "rl_calf_joint": 0.9985075217819247,
+      "rl_hip_joint": -0.10183475528171958,
+      "rl_thigh_joint": -0.4766434573133807,
+      "rr_calf_joint": 0.8880855016404362,
+      "rr_hip_joint": -0.10018665630189826,
+      "rr_thigh_joint": -0.4840969231965655
+    },
+    "reference_pose": [
+      [
+        0.9999979114831739,
+        6.486552252839834e-16,
+        0.002043778190130021,
+        0.015764723626028945
+      ],
+      [
+        -6.48883124732666e-16,
+        1.0,
+        1.1084580824494727e-16,
+        0.04487281148598349
+      ],
+      [
+        -0.002043778190130021,
+        -1.1217174991988367e-16,
+        0.9999979114831739,
+        0.46
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "reference_xyz": {
+      "fr_foot": [
+        0.2549371521784266,
+        -0.18000000000000016,
+        0.017843060864233515
+      ],
+      "fl_foot": [
+        0.27588101887300964,
+        0.1799999999999998,
+        0.015623265446538645
+      ],
+      "rr_foot": [
+        -0.21706192582227216,
+        -0.17999999999999985,
+        0.016589143495298518
+      ],
+      "rl_foot": [
+        -0.24506180356316004,
+        0.18000000000000016,
+        0.018864949959298466
+      ]
+    },
+    "origins": {
+      "fr_foot": [
+        0.2549371521784266,
+        -0.18000000000000016,
+        0.016705157632233514
+      ],
+      "fl_foot": [
+        0.27593702991931485,
+        0.1799999999999998,
+        0.01670515763223346
+      ],
+      "rr_foot": [
+        -0.21706192582227216,
+        -0.17999999999999985,
+        0.017727046727298523
+      ],
+      "rl_foot": [
+        -0.24506180356316004,
+        0.18000000000000016,
+        0.017727046727298468
+      ]
+    },
+    "future_targets": {
+      "fr_foot": [
+        0.28993701529969684,
+        -0.1800000000000002,
+        0.016705157632233514
+      ],
+      "fl_foot": [
+        0.27593702991931485,
+        0.1799999999999998,
+        0.01670515763223346
+      ],
+      "rr_foot": [
+        -0.21706192582227216,
+        -0.17999999999999985,
+        0.017727046727298523
+      ],
+      "rl_foot": [
+        -0.24506180356316004,
+        0.18000000000000016,
+        0.017727046727298468
+      ]
+    }
+  },
+  "parent": {
+    "fault": {
+      "scope": "first_tick_observing_fault",
+      "reason": "transition optimization current servo effort",
+      "ros_ns": 58588000000,
+      "wall_ns": 11715110565103,
+      "generation": 0,
+      "model_sha256": "113a4bb3e0852eb4e47f5f032a8ebfb8f13f296b7eb95e5f549d694661aa5651",
+      "samples": {
+        "joints": {
+          "stamp_ns": 58580000000,
+          "received_ns": 11715097405500,
+          "epoch": 0,
+          "sequence": 58580000000,
+          "frame_id": "base_link",
+          "data": {
+            "position": {
+              "arm_joint_1": -0.005029581417999122,
+              "arm_joint_2": 1.2077275027769832,
+              "arm_joint_3": -2.0206608834147968,
+              "arm_joint_4": 0.003145070237156767,
+              "arm_joint_5": 0.7977506085255008,
+              "arm_joint_6": 0.0009252938458441547,
+              "fl_calf_joint": 1.0198520130690882,
+              "fl_hip_joint": -0.10808493498867693,
+              "fl_thigh_joint": -0.5255156280772011,
+              "fr_calf_joint": 0.9210226506116166,
+              "fr_hip_joint": -0.10191626341718277,
+              "fr_thigh_joint": -0.430227377094695,
+              "gripper_left_joint": 0.0151849020559505,
+              "gripper_right_joint": 0.014815098909423216,
+              "rl_calf_joint": 1.0131929307082572,
+              "rl_hip_joint": -0.1124217853520015,
+              "rl_thigh_joint": -0.4791691867435904,
+              "rr_calf_joint": 0.9086502155393428,
+              "rr_hip_joint": -0.1076278036816983,
+              "rr_thigh_joint": -0.49721245852028306
+            },
+            "velocity": {
+              "arm_joint_1": -0.0015090245034254518,
+              "arm_joint_2": -0.0013199002007726664,
+              "arm_joint_3": -0.00039074774001203374,
+              "arm_joint_4": 0.0025197542576209167,
+              "arm_joint_5": 0.00044721366421341703,
+              "arm_joint_6": 4.430829503694611e-05,
+              "fl_calf_joint": 0.0032654202019206657,
+              "fl_hip_joint": 0.0016985971711532266,
+              "fl_thigh_joint": -0.0021332572208098144,
+              "fr_calf_joint": 0.0020743073160744974,
+              "fr_hip_joint": 0.0016571749203417967,
+              "fr_thigh_joint": -0.0030070453098721417,
+              "gripper_left_joint": -4.9763640696414086e-05,
+              "gripper_right_joint": 4.975794024145359e-05,
+              "rl_calf_joint": 0.0015279450555579777,
+              "rl_hip_joint": -0.0005118015288622449,
+              "rl_thigh_joint": -0.0012105834312365893,
+              "rr_calf_joint": -0.0020646842502973772,
+              "rr_hip_joint": -0.0002853197204215818,
+              "rr_thigh_joint": -0.0008494880492040391
+            }
+          }
+        },
+        "imu": {
+          "stamp_ns": 58580000000,
+          "received_ns": 11715097222400,
+          "epoch": 0,
+          "sequence": 58580000000,
+          "frame_id": "base_link",
+          "data": {
+            "acceleration": [
+              -0.007262578931795913,
+              -0.028775536452197523,
+              9.800521727823707
+            ],
+            "angular_velocity": [
+              -0.0009797842628145482,
+              0.0004316131509943324,
+              -0.00200304466216571
+            ]
+          }
+        },
+        "contacts": {
+          "stamp_ns": 58584000000,
+          "received_ns": 11715104487202,
+          "epoch": 0,
+          "sequence": 58584000000,
+          "frame_id": "odom",
+          "data": {
+            "names": [
+              "fr_foot",
+              "fl_foot",
+              "rr_foot",
+              "rl_foot"
+            ],
+            "points": [
+              [
+                0.24981977444494502,
+                -0.17791863721472298,
+                0.0
+              ],
+              [
+                0.27326358934579964,
+                0.1798234206618275,
+                0.0
+              ],
+              [
+                -0.21736114462069403,
+                -0.17653903007579946,
+                0.0
+              ],
+              [
+                -0.24552739318520844,
+                0.18230128347998176,
+                0.0
+              ]
+            ],
+            "forces": [
+              13.34762297049718,
+              66.27536333619916,
+              44.4638563946187,
+              25.003940944065935
+            ],
+            "touching": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "unexpected_contacts": 0,
+            "forces_world": [
+              [
+                -4.1884071979880515,
+                0.46511310367563846,
+                13.34762297049718
+              ],
+              [
+                -0.7378462666652297,
+                -1.4246677026865397,
+                66.27536333619916
+              ],
+              [
+                5.278158082562694,
+                4.3169551340524235,
+                44.4638563946187
+              ],
+              [
+                -0.20609755266053223,
+                -3.2982563763790664,
+                25.003940944065935
+              ]
+            ],
+            "force_vectors_valid": true
+          }
+        },
+        "body": {
+          "stamp_ns": 58580000000,
+          "received_ns": 11715097714600,
+          "epoch": 0,
+          "sequence": 58580000000,
+          "frame_id": "odom",
+          "data": {
+            "position": [
+              0.01593044083404812,
+              0.05072630354735521,
+              0.4598785952078711
+            ],
+            "orientation": [
+              -0.0015133536833126925,
+              0.0006772060889466976,
+              -0.00430025340868712,
+              0.9999893794301834
+            ],
+            "linear_velocity": [
+              -0.0002851213556280707,
+              0.0001465818968474257,
+              -7.497863439855467e-05
+            ],
+            "angular_velocity": [
+              -0.0006013399781264392,
+              0.00013375586549841894,
+              -0.001680220571382656
+            ],
+            "child_frame_id": "base_footprint"
+          }
+        },
+        "scan": {
+          "stamp_ns": 58550000000,
+          "received_ns": 11715082785597,
+          "epoch": 0,
+          "sequence": 58550000000,
+          "frame_id": "lidar_link",
+          "data": {
+            "ranges": [
+              4.4868035316467285,
+              4.486700534820557,
+              4.488290309906006,
+              4.490971565246582,
+              4.494741916656494,
+              4.499597549438477,
+              4.5055341720581055,
+              4.512546062469482,
+              4.520627975463867,
+              4.539975166320801,
+              4.551224708557129,
+              4.563514232635498,
+              4.576833724975586,
+              4.59117317199707,
+              4.606523036956787,
+              4.640208721160889,
+              4.65852165222168,
+              4.677797794342041,
+              4.698024749755859,
+              4.741279602050781,
+              4.764279365539551,
+              4.788177013397217,
+              4.8129563331604,
+              4.86510705947876,
+              4.8924479484558105,
+              4.920613765716553,
+              4.979359149932861,
+              5.009908199310303,
+              5.073287010192871,
+              5.106086254119873,
+              5.139605522155762,
+              5.208745956420898,
+              5.244338035583496,
+              5.317492485046387,
+              5.393181800842285,
+              5.431941986083984,
+              5.511226177215576,
+              5.592772960662842,
+              5.676479339599609,
+              5.719112396240234,
+              5.805874347686768,
+              5.89455509185791,
+              5.985063552856445,
+              6.07731294631958,
+              6.171221733093262,
+              6.266709327697754,
+              6.4177446365356445,
+              6.472635746002197,
+              6.370979309082031,
+              6.27128267288208,
+              6.173635482788086,
+              6.078129291534424,
+              6.0312089920043945,
+              5.939096927642822,
+              5.849374771118164,
+              5.76214599609375,
+              5.719501495361328,
+              5.636220455169678,
+              5.555710792541504,
+              5.516531944274902,
+              5.440398693084717,
+              5.403473377227783,
+              5.367330074310303,
+              5.297447204589844,
+              5.263737678527832,
+              5.198859214782715,
+              5.167719841003418,
+              5.137467384338379,
+              5.07968282699585,
+              5.05217981338501,
+              5.025622367858887,
+              5.000024795532227,
+              4.951763153076172,
+              4.929126739501953,
+              4.907503604888916,
+              4.886906147003174,
+              4.8488383293151855,
+              4.831390380859375,
+              4.815013885498047,
+              4.799718856811523,
+              4.785514831542969,
+              4.772411346435547,
+              4.749535083770752,
+              4.739777565002441,
+              4.7311482429504395,
+              4.723651885986328,
+              4.717294216156006,
+              4.712077617645264,
+              4.708006858825684,
+              4.705082416534424,
+              4.703306198120117,
+              4.7031965255737305,
+              4.704862117767334,
+              4.707672595977783,
+              4.711624622344971,
+              4.716714382171631,
+              4.722937107086182,
+              4.730287075042725,
+              4.7387590408325195,
+              4.759039402008057,
+              4.77083158493042,
+              4.783713340759277,
+              4.797674179077148,
+              4.812706470489502,
+              4.828795909881592,
+              4.864107131958008,
+              4.883302211761475,
+              4.90350866317749,
+              4.924711227416992,
+              4.970052719116211,
+              4.994162082672119,
+              5.019212245941162,
+              5.045186996459961,
+              5.099853515625,
+              5.128513813018799,
+              5.158038139343262,
+              5.219616413116455,
+              5.2516398429870605,
+              5.318076133728027,
+              5.3524580001831055,
+              5.387593746185303,
+              5.46006965637207,
+              5.497378349304199,
+              5.574062347412109,
+              5.653402805328369,
+              5.694032192230225,
+              5.777141571044922,
+              5.862622261047363,
+              5.950366973876953,
+              5.99505615234375,
+              6.08600378036499,
+              6.178962230682373,
+              6.273837089538574,
+              6.370537281036377,
+              6.468975067138672,
+              6.569069862365723,
+              6.727388858795166,
+              6.625961780548096,
+              6.5218987464904785,
+              6.419841289520264,
+              6.319881439208984,
+              6.222113132476807,
+              6.1740827560424805,
+              6.0797882080078125,
+              5.987941265106201,
+              5.898647308349609,
+              5.8549933433532715,
+              5.769739627838135,
+              5.687323570251465,
+              5.647216796875,
+              5.569280624389648,
+              5.531482219696045,
+              5.494482040405273,
+              5.42294454574585,
+              5.388436794281006,
+              5.322021961212158,
+              5.290144920349121,
+              5.259175777435303,
+              5.200023651123047,
+              5.171869277954102,
+              5.144682884216309,
+              5.118478775024414,
+              5.069075107574463,
+              5.045902252197266,
+              5.023766994476318,
+              5.002682685852051,
+              4.9637131690979,
+              4.945852279663086,
+              4.929087162017822,
+              4.913430690765381,
+              4.898890972137451,
+              4.885476589202881,
+              4.862059593200684,
+              4.8520708084106445,
+              4.843237400054932,
+              4.835563659667969,
+              4.829056262969971,
+              4.823716640472412,
+              4.819549083709717,
+              4.816555976867676,
+              4.814737796783447,
+              4.814626693725586,
+              4.8163323402404785,
+              4.819209575653076,
+              4.82325553894043,
+              4.828466415405273,
+              4.834836006164551,
+              4.842360973358154,
+              4.851033687591553,
+              4.871795177459717,
+              4.883866786956787,
+              4.897054195404053,
+              4.911346912384033,
+              4.9267354011535645,
+              4.943206787109375,
+              4.979354381561279,
+              4.999005317687988,
+              5.019690036773682,
+              5.041396617889404,
+              5.0878119468688965,
+              5.112493515014648,
+              5.138136863708496,
+              5.164727687835693,
+              5.22068977355957,
+              5.25002908706665,
+              5.2802534103393555,
+              5.343291759490967,
+              5.376074314117432,
+              5.444085121154785,
+              5.479281902313232,
+              5.5152506828308105,
+              5.589444160461426,
+              5.62763786315918,
+              5.706140041351318,
+              5.787360668182373,
+              5.828953742980957,
+              5.914032459259033,
+              6.0015387535095215,
+              6.09136438369751,
+              6.137112140655518,
+              6.230215549468994,
+              6.325377941131592,
+              6.4225006103515625,
+              6.521493911743164,
+              6.622265338897705,
+              6.584595203399658,
+              6.42929744720459,
+              6.3280792236328125,
+              6.228693962097168,
+              6.131224155426025,
+              6.035757064819336,
+              5.942383289337158,
+              5.896511077880859,
+              5.806456089019775,
+              5.7187371253967285,
+              5.633457183837891,
+              5.591764450073242,
+              5.5103440284729,
+              5.4316325187683105,
+              5.3933281898498535,
+              5.31889533996582,
+              5.282794952392578,
+              5.2474589347839355,
+              5.179136276245117,
+              5.14617919921875,
+              5.08275032043457,
+              5.052306175231934,
+              5.022729396820068,
+              4.966235637664795,
+              4.9393463134765625,
+              4.913382530212402,
+              4.8883562088012695,
+              4.841172695159912,
+              4.8190412521362305,
+              4.797901630401611,
+              4.777764320373535,
+              4.740545749664307,
+              4.723487854003906,
+              4.70747709274292,
+              4.692523956298828,
+              4.6786370277404785,
+              4.665825843811035,
+              4.643460750579834,
+              4.633921146392822,
+              4.625483989715576,
+              4.618155479431152,
+              4.611939907073975,
+              4.60684061050415,
+              4.602859973907471,
+              4.600000381469727,
+              4.598263740539551,
+              4.598156929016113,
+              4.599786281585693,
+              4.602533340454102,
+              4.60639762878418,
+              4.611373424530029,
+              4.617456912994385,
+              4.624643325805664,
+              4.632925987243652,
+              4.6527533531188965,
+              4.664281845092773,
+              4.676875591278076,
+              4.690526008605957,
+              4.705221176147461,
+              4.72095251083374,
+              4.755473613739014,
+              4.774240970611572,
+              4.793995380401611,
+              4.814724922180176,
+              4.859053134918213,
+              4.882624626159668,
+              4.9071149826049805,
+              4.932509899139404,
+              4.985955238342285,
+              5.013975143432617,
+              5.042840480804443,
+              5.103044033050537,
+              5.134352207183838,
+              5.199304103851318,
+              5.232917785644531,
+              5.267268657684326,
+              5.3381266593933105,
+              5.3746018409729,
+              5.449573040008545,
+              5.527141571044922,
+              5.566864013671875,
+              5.648116588592529,
+              5.731688022613525,
+              5.817473411560059,
+              5.8611650466918945,
+              5.950080871582031,
+              6.0409626960754395,
+              6.133718967437744,
+              6.228259086608887,
+              6.324499130249023,
+              6.422357559204102,
+              6.273427963256836,
+              6.17466402053833,
+              6.077688217163086,
+              5.982583045959473,
+              5.889430522918701,
+              5.798321723937988,
+              5.7535624504089355,
+              5.665690898895264,
+              5.580099582672119,
+              5.496887683868408,
+              5.456206798553467,
+              5.376760005950928,
+              5.299957275390625,
+              5.262582302093506,
+              5.1899542808532715,
+              5.154729843139648,
+              5.120250225067139,
+              5.053585052490234,
+              5.021427631378174,
+              4.959536075592041,
+              4.929831027984619,
+              4.900971412658691,
+              4.8458476066589355,
+              4.819610595703125,
+              4.794276237487793,
+              4.769856929779053,
+              4.723818302154541,
+              4.702223300933838,
+              4.681595802307129,
+              4.661947727203369,
+              4.6256327629089355,
+              4.608988285064697,
+              4.593365669250488,
+              4.578774929046631,
+              4.565225601196289,
+              4.552724838256836,
+              4.530902862548828,
+              4.521594047546387,
+              4.513361930847168,
+              4.506211757659912,
+              4.500146865844727,
+              4.495171546936035,
+              4.491287708282471,
+              4.488498210906982
+            ],
+            "hits": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "range_min": 0.05000000074505806,
+            "range_max": 10.0,
+            "angle_min": -3.1415927410125732,
+            "angle_increment": 0.01745329238474369
+          }
+        },
+        "carry": {
+          "stamp_ns": 58588000000,
+          "received_ns": 11715108798103,
+          "epoch": 0,
+          "sequence": 58588000000,
+          "frame_id": "base_link",
+          "data": {
+            "ready": true,
+            "generation": 0,
+            "model_sha256": "113a4bb3e0852eb4e47f5f032a8ebfb8f13f296b7eb95e5f549d694661aa5651"
+          }
+        }
+      },
+      "clock_read_span": {
+        "started_wall_ns": 11715110541803,
+        "finished_wall_ns": 11715110565103,
+        "ros_ns": 58588000000,
+        "dispatch_started_wall_ns": 11715110533103
+      },
+      "contact_ingress": [
+        {
+          "stamp_ns": 58284000000,
+          "received_wall_ns": 11714647109104,
+          "cache_admitted_wall_ns": 11714647156304
+        },
+        {
+          "stamp_ns": 58304000000,
+          "received_wall_ns": 11714679936611,
+          "cache_admitted_wall_ns": 11714680053811
+        },
+        {
+          "stamp_ns": 58324000000,
+          "received_wall_ns": 11714704187816,
+          "cache_admitted_wall_ns": 11714704233716
+        },
+        {
+          "stamp_ns": 58344000000,
+          "received_wall_ns": 11714729312922,
+          "cache_admitted_wall_ns": 11714729348522
+        },
+        {
+          "stamp_ns": 58364000000,
+          "received_wall_ns": 11714759599928,
+          "cache_admitted_wall_ns": 11714759647528
+        },
+        {
+          "stamp_ns": 58384000000,
+          "received_wall_ns": 11714786854334,
+          "cache_admitted_wall_ns": 11714786900734
+        },
+        {
+          "stamp_ns": 58404000000,
+          "received_wall_ns": 11714807069538,
+          "cache_admitted_wall_ns": 11714807116938
+        },
+        {
+          "stamp_ns": 58424000000,
+          "received_wall_ns": 11714842169346,
+          "cache_admitted_wall_ns": 11714842223146
+        },
+        {
+          "stamp_ns": 58444000000,
+          "received_wall_ns": 11714866145151,
+          "cache_admitted_wall_ns": 11714866181251
+        },
+        {
+          "stamp_ns": 58464000000,
+          "received_wall_ns": 11714917139762,
+          "cache_admitted_wall_ns": 11714917186262
+        },
+        {
+          "stamp_ns": 58484000000,
+          "received_wall_ns": 11714937517266,
+          "cache_admitted_wall_ns": 11714937558966
+        },
+        {
+          "stamp_ns": 58504000000,
+          "received_wall_ns": 11714996504979,
+          "cache_admitted_wall_ns": 11714996545179
+        },
+        {
+          "stamp_ns": 58524000000,
+          "received_wall_ns": 11715009360082,
+          "cache_admitted_wall_ns": 11715009398282
+        },
+        {
+          "stamp_ns": 58544000000,
+          "received_wall_ns": 11715041847189,
+          "cache_admitted_wall_ns": 11715041902189
+        },
+        {
+          "stamp_ns": 58564000000,
+          "received_wall_ns": 11715084041098,
+          "cache_admitted_wall_ns": 11715084085298
+        },
+        {
+          "stamp_ns": 58584000000,
+          "received_wall_ns": 11715104487202,
+          "cache_admitted_wall_ns": 11715104537502
+        }
+      ],
+      "ingress_snapshot_wall_ns": 11715114486804,
+      "pending_capture_receipts": {
+        "joints": [
+          {
+            "stamp_ns": 58590000000,
+            "received_ns": 11715105966002
+          }
+        ],
+        "imu": [],
+        "contacts": [],
+        "body": [],
+        "scan": [],
+        "carry": []
+      },
+      "tick_spans": [
+        {
+          "started_ns": 11714791965935,
+          "finished_ns": 11714802947538,
+          "ros_ns": 58392000000
+        },
+        {
+          "started_ns": 11714810614239,
+          "finished_ns": 11714821272741,
+          "ros_ns": 58408000000
+        },
+        {
+          "started_ns": 11714830882443,
+          "finished_ns": 11714845519947,
+          "ros_ns": 58430000000
+        },
+        {
+          "started_ns": 11714851008048,
+          "finished_ns": 11714864504151,
+          "ros_ns": 58436000000
+        },
+        {
+          "started_ns": 11714870949152,
+          "finished_ns": 11714885633555,
+          "ros_ns": 58448000000
+        },
+        {
+          "started_ns": 11714890796156,
+          "finished_ns": 11714899389658,
+          "ros_ns": 58464000000
+        },
+        {
+          "started_ns": 11714910602061,
+          "finished_ns": 11714916101562,
+          "ros_ns": 58466000000
+        },
+        {
+          "started_ns": 11714935559766,
+          "finished_ns": 11714949302169,
+          "ros_ns": 58486000000
+        },
+        {
+          "started_ns": 11714952069669,
+          "finished_ns": 11714960467471,
+          "ros_ns": 58490000000
+        },
+        {
+          "started_ns": 11714972079574,
+          "finished_ns": 11714989913177,
+          "ros_ns": 58500000000
+        },
+        {
+          "started_ns": 11714991772078,
+          "finished_ns": 11715006321581,
+          "ros_ns": 58514000000
+        },
+        {
+          "started_ns": 11715010674782,
+          "finished_ns": 11715017824483,
+          "ros_ns": 58522000000
+        },
+        {
+          "started_ns": 11715030586086,
+          "finished_ns": 11715050117490,
+          "ros_ns": 58550000000
+        },
+        {
+          "started_ns": 11715050635290,
+          "finished_ns": 11715062851793,
+          "ros_ns": 58550000000
+        },
+        {
+          "started_ns": 11715071662995,
+          "finished_ns": 11715080480297,
+          "ros_ns": 58560000000
+        },
+        {
+          "started_ns": 11715090841599,
+          "finished_ns": 11715100571701,
+          "ros_ns": 58580000000
+        }
+      ],
+      "calibration": null,
+      "decision_cost_current": {
+        "started_wall_ns": 11715110533103,
+        "stages": [
+          [
+            "clock",
+            11715110568603,
+            18102160100
+          ],
+          [
+            "bundle",
+            11715110606703,
+            18102198200
+          ],
+          [
+            "command",
+            11715110648503,
+            18102240300
+          ],
+          [
+            "leg_owner",
+            11715110766703,
+            18102358700
+          ],
+          [
+            "guard",
+            11715111041003,
+            18102633800
+          ],
+          [
+            "command_gate",
+            11715111063503,
+            18102655100
+          ],
+          [
+            "native_credit",
+            11715111065503,
+            18102657000
+          ],
+          [
+            "reference_rate",
+            11715111067503,
+            18102658900
+          ],
+          [
+            "model_collect",
+            11715111153003,
+            18102744900
+          ],
+          [
+            "model_validate",
+            11715111464603,
+            18103056700
+          ],
+          [
+            "model_fk",
+            11715111584603,
+            18103176300
+          ],
+          [
+            "model_mass",
+            11715111691403,
+            18103283200
+          ],
+          [
+            "model_safety",
+            11715111949004,
+            18103454200
+          ],
+          [
+            "model_solve",
+            11715113731204,
+            18105237500
+          ],
+          [
+            "model",
+            11715114475604,
+            18105981700
+          ]
+        ],
+        "started_thread_ns": 18102125800,
+        "native_tid": 48098,
+        "publication_before": 2935,
+        "decision_ros_ns": 58588000000,
+        "reference_permitted": true
+      },
+      "state_before": {
+        "state": "CRAWL",
+        "phase": "SHIFT",
+        "swing_foot": "fr_foot"
+      },
+      "transition_during_advance": true,
+      "reference_body": [
+        [
+          0.9999979114831739,
+          6.486552252839834e-16,
+          0.002043778190130021,
+          0.015764723626028945
+        ],
+        [
+          -6.48883124732666e-16,
+          1.0,
+          1.1084580824494727e-16,
+          0.04487281148598349
+        ],
+        [
+          -0.002043778190130021,
+          -1.1217174991988367e-16,
+          0.9999979114831739,
+          0.46
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "targets": {
+        "fr_foot": [
+          0.2549371521784266,
+          -0.18000000000000016,
+          0.017843060864233515
+        ],
+        "fl_foot": [
+          0.27588101887300964,
+          0.1799999999999998,
+          0.015623265446538645
+        ],
+        "rr_foot": [
+          -0.21706192582227216,
+          -0.17999999999999985,
+          0.016589143495298518
+        ],
+        "rl_foot": [
+          -0.24506180356316004,
+          0.18000000000000016,
+          0.018864949959298466
+        ]
+      },
+      "load_transfer_observation": {
+        "contact_capture": [
+          58584000000,
+          58584000000
+        ],
+        "selected": "fr_foot",
+        "dt": 0.018,
+        "outcome": "rejected_optimization",
+        "force_vectors_valid": true,
+        "measured_forces": [
+          13.34762297049718,
+          66.27536333619916,
+          44.4638563946187,
+          25.003940944065935
+        ],
+        "measured_forces_world": [
+          [
+            -4.1884071979880515,
+            0.46511310367563846,
+            13.34762297049718
+          ],
+          [
+            -0.7378462666652297,
+            -1.4246677026865397,
+            66.27536333619916
+          ],
+          [
+            5.278158082562694,
+            4.3169551340524235,
+            44.4638563946187
+          ],
+          [
+            -0.20609755266053223,
+            -3.2982563763790664,
+            25.003940944065935
+          ]
+        ],
+        "error": "transition optimization current servo effort",
+        "attempt": {
+          "scope": "current_attempt_timing_not_force_measurement",
+          "stages": {
+            "input_bounds": {
+              "wall_ns": 120700,
+              "thread_cpu_ns": 120200
+            },
+            "contact_terms": {
+              "wall_ns": 138200,
+              "thread_cpu_ns": 137600
+            },
+            "spatial_response": {
+              "wall_ns": 176600,
+              "thread_cpu_ns": 176000
+            },
+            "constraints_ready": {
+              "wall_ns": 300500,
+              "thread_cpu_ns": 300000
+            },
+            "solver_finished": {
+              "wall_ns": 332100,
+              "thread_cpu_ns": 331500
+            },
+            "native_result_validated": {
+              "wall_ns": 340400,
+              "thread_cpu_ns": 339900
+            },
+            "exact_ik_validated": {
+              "wall_ns": 430100,
+              "thread_cpu_ns": 429700
+            },
+            "complete_result_ready": {
+              "wall_ns": 563100,
+              "thread_cpu_ns": 562700
+            }
+          },
+          "preparation": {
+            "scope": "numeric_solver_initialization_not_contact_admission",
+            "solver_verified": true,
+            "calls": 1,
+            "backend": "qpmad_1_5_1_native",
+            "force_objective": "bounded_terminal_force",
+            "wall_ns": 54500,
+            "thread_cpu_ns": 53500,
+            "kernel_backend": "native_complete_1",
+            "complete_kernel_abi": 1
+          },
+          "command_space": "stance_xyz",
+          "optimization_backend": "qpmad_1_5_1_native",
+          "force_objective": "bounded_terminal_force",
+          "kernel_backend": "native_complete_1"
+        },
+        "worker": {
+          "scope": "one_numerical_job_no_command_authority",
+          "command_space": "stance_xyz",
+          "optimization_backend": "qpmad_1_5_1_native",
+          "kernel_backend": "native_complete_1",
+          "complete_kernel_abi": 1,
+          "force_objective": "bounded_terminal_force",
+          "optimization_library_sha256": "8da96c3491ec171ce333c16865df13898c5d157c5f8566d1d2e76669705193c7",
+          "reference_library_sha256": "af982840d8e8bb96f77a6eb1c167867ab25f584c099616c8c39f9b840f7d2c35",
+          "library_sha256": "63d1bd5aab771690c486a85e9dca3f20a5567d03262780898994db7fd049420b",
+          "pid": 48405,
+          "alive": true,
+          "submitted": 325,
+          "completed": 323,
+          "discarded": 2,
+          "failed": 0,
+          "last_reply": {
+            "id": 325,
+            "submitted_wall_ns": 11715094907000,
+            "poll_started_wall_ns": 11715110565103,
+            "received_wall_ns": 11715098086901,
+            "computed_wall_ns": 11715096187800,
+            "ok": true,
+            "numeric_error": null,
+            "dispatch_deadline_ns": 40000000,
+            "receipt_mode": "event_receiver",
+            "consumed_wall_ns": 11715111141103
+          },
+          "last_input_id": 325,
+          "pending": false,
+          "fault": "",
+          "closed": false,
+          "receipt_mode": "event_receiver",
+          "receipt_inbox": {
+            "scope": "single_read_only_complete_frame_slot",
+            "tid": 48407,
+            "alive": true,
+            "slot_full": false,
+            "received_wall_ns": 11715098086901,
+            "stopping": false,
+            "error": ""
+          }
+        },
+        "numeric_input": {
+          "foot": "fr_foot",
+          "joints": {
+            "arm_joint_1": -0.005014385309677561,
+            "arm_joint_2": 1.2077409149316316,
+            "arm_joint_3": -2.020657159535081,
+            "arm_joint_4": 0.0031200972488907523,
+            "arm_joint_5": 0.7977461188812945,
+            "arm_joint_6": 0.0009248183891359423,
+            "fl_calf_joint": 1.0198267483794339,
+            "fl_hip_joint": -0.10809925212172054,
+            "fl_thigh_joint": -0.5254982551065599,
+            "fr_calf_joint": 0.9210065716879308,
+            "fr_hip_joint": -0.10193015297609193,
+            "fr_thigh_joint": -0.43020127972391214,
+            "gripper_left_joint": 0.015185186894175962,
+            "gripper_right_joint": 0.014814814129520553,
+            "rl_calf_joint": 1.0131806429737615,
+            "rl_hip_joint": -0.11241608874592124,
+            "rl_thigh_joint": -0.47915870348132583,
+            "rr_calf_joint": 0.9086690058236233,
+            "rr_hip_joint": -0.10762410755227453,
+            "rr_thigh_joint": -0.4972045614823363
+          },
+          "body_pose": [
+            [
+              0.9999623904573847,
+              0.008564779145072204,
+              0.0013646350974539686,
+              0.01593611993451494
+            ],
+            [
+              -0.008568854182770596,
+              0.9999587599366674,
+              0.003008847606129125,
+              0.05072332759294795
+            ],
+            [
+              -0.0013388087045884485,
+              -0.003020427803909633,
+              0.9999945422886737,
+              0.459880096007144
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "points": {
+            "fr_foot": [
+              0.24982011800624127,
+              -0.17791842032230265,
+              0.0
+            ],
+            "fl_foot": [
+              0.2732632822772614,
+              0.17982366002280167,
+              0.0
+            ],
+            "rr_foot": [
+              -0.2173602528666804,
+              -0.1765394925923566,
+              0.0
+            ],
+            "rl_foot": [
+              -0.2455275633441438,
+              0.18230074841194063,
+              0.0
+            ]
+          },
+          "forces_world": {
+            "fr_foot": [
+              -4.153039454487702,
+              0.5641045464862914,
+              13.924310282568076
+            ],
+            "fl_foot": [
+              -0.8568113882522101,
+              -1.4366324709202616,
+              65.89159043620974
+            ],
+            "rr_foot": [
+              5.206574832513384,
+              4.170966080317041,
+              43.75200034292028
+            ],
+            "rl_foot": [
+              -0.14362397907600322,
+              -3.2961241648551316,
+              25.598825062757363
+            ]
+          },
+          "target_forces": {
+            "fl_foot": [
+              11.111047594574353,
+              1.6162924934747203,
+              78.7177868549116
+            ],
+            "rr_foot": [
+              -2.4874666937075927,
+              0.9604951423341134,
+              58.29770907886103
+            ],
+            "rl_foot": [
+              -8.623580900866761,
+              -2.5767876358088335,
+              12.195585066227368
+            ]
+          },
+          "allowed_z": {
+            "fr_foot": [
+              0.014705157632233514,
+              0.039949713836376896
+            ],
+            "fl_foot": [
+              0.006705157632233458,
+              0.01670515763223346
+            ],
+            "rr_foot": [
+              0.007727046727298523,
+              0.017727046727298523
+            ],
+            "rl_foot": [
+              0.017727046727298468,
+              0.02772704672729847
+            ]
+          },
+          "dt": 0.016,
+          "speed": 0.002,
+          "min_force": 2.0,
+          "command_joints": {
+            "arm_joint_1": -0.005014385309677561,
+            "arm_joint_2": 1.2077409149316316,
+            "arm_joint_3": -2.020657159535081,
+            "arm_joint_4": 0.0031200972488907523,
+            "arm_joint_5": 0.7977461188812945,
+            "arm_joint_6": 0.0009248183891359423,
+            "fl_calf_joint": 0.9798298826133248,
+            "fl_hip_joint": -0.10133295992767177,
+            "fl_thigh_joint": -0.5149046188104294,
+            "fr_calf_joint": 0.9104960012890726,
+            "fr_hip_joint": -0.10068091651469002,
+            "fr_thigh_joint": -0.43314660107070835,
+            "gripper_left_joint": 0.015185186894175962,
+            "gripper_right_joint": 0.014814814129520553,
+            "rl_calf_joint": 0.9985075217819247,
+            "rl_hip_joint": -0.10183475528171958,
+            "rl_thigh_joint": -0.4766434573133807,
+            "rr_calf_joint": 0.8880855016404362,
+            "rr_hip_joint": -0.10018665630189826,
+            "rr_thigh_joint": -0.4840969231965655
+          },
+          "reference_pose": [
+            [
+              0.9999979114831739,
+              6.486552252839834e-16,
+              0.002043778190130021,
+              0.015764723626028945
+            ],
+            [
+              -6.48883124732666e-16,
+              1.0,
+              1.1084580824494727e-16,
+              0.04487281148598349
+            ],
+            [
+              -0.002043778190130021,
+              -1.1217174991988367e-16,
+              0.9999979114831739,
+              0.46
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "reference_xyz": {
+            "fr_foot": [
+              0.2549371521784266,
+              -0.18000000000000016,
+              0.017843060864233515
+            ],
+            "fl_foot": [
+              0.27588101887300964,
+              0.1799999999999998,
+              0.015623265446538645
+            ],
+            "rr_foot": [
+              -0.21706192582227216,
+              -0.17999999999999985,
+              0.016589143495298518
+            ],
+            "rl_foot": [
+              -0.24506180356316004,
+              0.18000000000000016,
+              0.018864949959298466
+            ]
+          },
+          "origins": {
+            "fr_foot": [
+              0.2549371521784266,
+              -0.18000000000000016,
+              0.016705157632233514
+            ],
+            "fl_foot": [
+              0.27593702991931485,
+              0.1799999999999998,
+              0.01670515763223346
+            ],
+            "rr_foot": [
+              -0.21706192582227216,
+              -0.17999999999999985,
+              0.017727046727298523
+            ],
+            "rl_foot": [
+              -0.24506180356316004,
+              0.18000000000000016,
+              0.017727046727298468
+            ]
+          },
+          "future_targets": {
+            "fr_foot": [
+              0.28993701529969684,
+              -0.1800000000000002,
+              0.016705157632233514
+            ],
+            "fl_foot": [
+              0.27593702991931485,
+              0.1799999999999998,
+              0.01670515763223346
+            ],
+            "rr_foot": [
+              -0.21706192582227216,
+              -0.17999999999999985,
+              0.017727046727298523
+            ],
+            "rl_foot": [
+              -0.24506180356316004,
+              0.18000000000000016,
+              0.017727046727298468
+            ]
+          }
+        },
+        "original_snapshot": {
+          "generation": 0,
+          "foot": "fr_foot",
+          "dt": 0.016,
+          "requested_ros_ns": 58570000000,
+          "requested_wall_ns": 11715090894699,
+          "reference": [
+            [
+              0.9999979114831739,
+              6.486552252839834e-16,
+              0.002043778190130021,
+              0.015764723626028945,
+              -6.48883124732666e-16,
+              1.0,
+              1.1084580824494727e-16,
+              0.04487281148598349,
+              -0.002043778190130021,
+              -1.1217174991988367e-16,
+              0.9999979114831739,
+              0.46,
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              [
+                0.2549371521784266,
+                -0.18000000000000016,
+                0.017843060864233515
+              ],
+              [
+                0.27588101887300964,
+                0.1799999999999998,
+                0.015623265446538645
+              ],
+              [
+                -0.21706192582227216,
+                -0.17999999999999985,
+                0.016589143495298518
+              ],
+              [
+                -0.24506180356316004,
+                0.18000000000000016,
+                0.018864949959298466
+              ]
+            ]
+          ],
+          "capture": [
+            58564000000,
+            58564000000
+          ],
+          "samples": {
+            "joints": [
+              58570000000,
+              11715084225598,
+              0
+            ],
+            "imu": [
+              58560000000,
+              11715071036995,
+              0
+            ],
+            "body": [
+              58560000000,
+              11715071357295,
+              0
+            ],
+            "contacts": [
+              58564000000,
+              11715084041098,
+              0
+            ]
+          },
+          "forces_world": [
+            [
+              -4.153039454487702,
+              0.5641045464862914,
+              13.924310282568076
+            ],
+            [
+              -0.8568113882522101,
+              -1.4366324709202616,
+              65.89159043620974
+            ],
+            [
+              5.206574832513384,
+              4.170966080317041,
+              43.75200034292028
+            ],
+            [
+              -0.14362397907600322,
+              -3.2961241648551316,
+              25.598825062757363
+            ]
+          ],
+          "geometry": [
+            [
+              [
+                0.2549371521784266,
+                -0.18000000000000016,
+                0.016705157632233514
+              ],
+              [
+                0.28993701529969684,
+                -0.1800000000000002,
+                0.016705157632233514
+              ],
+              [
+                0.014705157632233514,
+                0.039949713836376896
+              ]
+            ],
+            [
+              [
+                0.27593702991931485,
+                0.1799999999999998,
+                0.01670515763223346
+              ],
+              [
+                0.27593702991931485,
+                0.1799999999999998,
+                0.01670515763223346
+              ],
+              [
+                0.006705157632233458,
+                0.01670515763223346
+              ]
+            ],
+            [
+              [
+                -0.21706192582227216,
+                -0.17999999999999985,
+                0.017727046727298523
+              ],
+              [
+                -0.21706192582227216,
+                -0.17999999999999985,
+                0.017727046727298523
+              ],
+              [
+                0.007727046727298523,
+                0.017727046727298523
+              ]
+            ],
+            [
+              [
+                -0.24506180356316004,
+                0.18000000000000016,
+                0.017727046727298468
+              ],
+              [
+                -0.24506180356316004,
+                0.18000000000000016,
+                0.017727046727298468
+              ],
+              [
+                0.017727046727298468,
+                0.02772704672729847
+              ]
+            ]
+          ]
+        },
+        "numeric_input_job_id": 325
+      },
+      "load_balance_plan": {
+        "scope": "actuation_aware_common_support_plan",
+        "search_method": "projection",
+        "equilibrium": {
+          "scope": "quasistatic_point_contact_prediction_not_measured_force",
+          "feasible": true,
+          "torque_utilization": 0.2014800145533429,
+          "margin": 0.7985199854466571,
+          "forces_world": {
+            "fl_foot": [
+              11.111047594574353,
+              1.6162924934747203,
+              78.7177868549116
+            ],
+            "rr_foot": [
+              -2.4874666937075927,
+              0.9604951423341134,
+              58.29770907886103
+            ],
+            "rl_foot": [
+              -8.623580900866761,
+              -2.5767876358088335,
+              12.195585066227368
+            ]
+          },
+          "joint_torques": {
+            "fr_hip_joint": -0.9235878056249487,
+            "fr_thigh_joint": -0.567999526625522,
+            "fr_calf_joint": 0.390001993486207,
+            "fl_hip_joint": -0.7028409246615388,
+            "fl_thigh_joint": 4.93054724643791,
+            "fl_calf_joint": -6.044400436600284,
+            "rr_hip_joint": 4.029600291066858,
+            "rr_thigh_joint": -0.8778494117255811,
+            "rr_calf_joint": -6.044400436600285,
+            "rl_hip_joint": 1.4579530927014204,
+            "rl_thigh_joint": -4.7023031630075955,
+            "rl_calf_joint": -3.0742167246626244
+          },
+          "com_world": [
+            0.039703325345056516,
+            0.039759044834232385,
+            0.46118826427781234
+          ],
+          "equilibrium_residual_n": 4.440892098500626e-15,
+          "inequality_residual": 1.6653345369377348e-15,
+          "compute_wall_ns": 7051202
+        },
+        "candidates": [
+          {
+            "delta_xy": [
+              -0.01517680220403937,
+              0.02106967006842799
+            ],
+            "torque_utilization": 0.2014800145533429
+          },
+          {
+            "delta_xy": [
+              -0.02517680220403937,
+              0.02106967006842799
+            ],
+            "rejected": "planned reference envelope clearance/bounds"
+          },
+          {
+            "delta_xy": [
+              -0.00517680220403937,
+              0.02106967006842799
+            ],
+            "rejected": "support inset"
+          },
+          {
+            "delta_xy": [
+              -0.01517680220403937,
+              0.011069670068427991
+            ],
+            "rejected": "support inset"
+          },
+          {
+            "delta_xy": [
+              -0.01517680220403937,
+              0.031069670068427993
+            ],
+            "rejected": "planned reference envelope clearance/bounds"
+          },
+          {
+            "delta_xy": [
+              -0.02517680220403937,
+              0.011069670068427991
+            ],
+            "rejected": "support inset"
+          },
+          {
+            "delta_xy": [
+              -0.02517680220403937,
+              0.031069670068427993
+            ],
+            "rejected": "planned reference envelope clearance/bounds"
+          },
+          {
+            "delta_xy": [
+              -0.00517680220403937,
+              0.011069670068427991
+            ],
+            "rejected": "support inset"
+          },
+          {
+            "delta_xy": [
+              -0.00517680220403937,
+              0.031069670068427993
+            ],
+            "rejected": "planned reference envelope clearance/bounds"
+          }
+        ],
+        "path_rejection": null
+      },
+      "support_feasibility_evaluations": 35,
+      "fault_events": [
+        {
+          "reason": "transition optimization current servo effort",
+          "occurrences": 1,
+          "ros_ns": 58588000000,
+          "wall_ns": 11715110565103
+        }
+      ],
+      "fault_recovery_stage": "WAIT_EXPLICIT_STOP",
+      "planning_reference_envelope": {
+        "fr_foot": [
+          0.014705157632233514,
+          0.039949713836376896
+        ],
+        "fl_foot": [
+          0.006705157632233458,
+          0.01670515763223346
+        ],
+        "rr_foot": [
+          0.007727046727298523,
+          0.017727046727298523
+        ],
+        "rl_foot": [
+          0.017727046727298468,
+          0.02772704672729847
+        ]
+      },
+      "stance_reference_z": {
+        "fr_foot": 0.016705157632233514,
+        "fl_foot": 0.01670515763223346,
+        "rr_foot": 0.017727046727298523,
+        "rl_foot": 0.017727046727298468
+      },
+      "phase_context": {
+        "_phase_start": 54808000000,
+        "_shift_duration": 2.625,
+        "_shift_settled_start": 57516000000,
+        "_unload_start": 57620000000
+      }
+    },
+    "report_sha256": "a10bed0023587d9a924c19050eeef7478078e44413c079ebc25dac863b2828dc"
+  },
+  "provenance": {
+    "job_id": 325,
+    "trial": "native-contact-component-gazebo-dbdfa89a-17bf-457f-9f6a-a049f25ca718",
+    "last_reply": {
+      "id": 325,
+      "submitted_wall_ns": 11715094907000,
+      "poll_started_wall_ns": 11715110565103,
+      "received_wall_ns": 11715098086901,
+      "computed_wall_ns": 11715096187800,
+      "ok": true,
+      "numeric_error": null,
+      "dispatch_deadline_ns": 40000000,
+      "receipt_mode": "event_receiver",
+      "consumed_wall_ns": 11715111141103
+    }
+  }
+}

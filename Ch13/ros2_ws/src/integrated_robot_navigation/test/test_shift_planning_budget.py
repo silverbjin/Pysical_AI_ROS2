@@ -8,9 +8,13 @@ from gait_fixture import IdealFeedback
 
 
 @pytest.mark.parametrize('calibration,candidate_budget',[(True,4),(False,1)])
-def test_support_search_is_sliced_across_fresh_safety_ticks(nav_robot_model, monkeypatch,calibration,candidate_budget):
+@pytest.mark.parametrize('load_policy',['geometric','stance_admittance'])
+def test_support_search_is_sliced_across_fresh_safety_ticks(nav_robot_model, monkeypatch,calibration,candidate_budget,load_policy):
+    if load_policy=='stance_admittance':
+        from test_stance_load_transfer import helper
+        nav_robot_model=helper(nav_robot_model).model
     plant = IdealFeedback(nav_robot_model)
-    machine = gait.CrawlMachine(nav_robot_model, default_limits())
+    machine = gait.CrawlMachine(nav_robot_model, default_limits(),load_transfer_policy=load_policy)
     machine.reset(plant.state, plant.ros, plant.wall)
     if calibration:machine.request_contact_calibration()
     actual_com = gait.center_of_mass

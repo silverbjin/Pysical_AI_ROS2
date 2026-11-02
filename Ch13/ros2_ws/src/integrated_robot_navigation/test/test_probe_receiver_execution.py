@@ -21,6 +21,28 @@ def receiver_type():
     return runner.ProbeReceiver
 
 
+def test_probe_separates_callback_wait_cpu_and_journal_cost(tmp_path):
+    """Controlled 15ms wait is telemetry, never a native latency verdict."""
+    from probe_navigation_13_5 import NavigationProbe
+    context=Context();rclpy.init(context=context)
+    probe=NavigationProbe(tmp_path,engine='gazebo',context=context)
+    try:
+        assert hasattr(probe,'timing_snapshot'),'callback/journal timing boundary missing'
+        def controlled_wait():
+            time.sleep(.015)
+            probe._write('controlled_record',dict(original_capture_ns=123))
+        probe._dispatch(controlled_wait)
+        report=probe.timing_snapshot()
+        row=report['callbacks']['controlled_wait']
+        assert row['count']==1 and row['max_wall_ns']>=15_000_000
+        assert row['cpu_ns']<row['wall_ns']
+        assert report['journal']['controlled_record']['count']==1
+        assert report['slow_callbacks'][-1]['callback']=='controlled_wait'
+        assert report['scope']=='local_observer_cost_not_dds_queue_or_capture_latency'
+    finally:
+        probe.close_log();probe.destroy_node();context.try_shutdown()
+
+
 @pytest.mark.parametrize('engine',['mujoco','gazebo'])
 def test_native_capture_diagnostic_requests_reliable_transport(tmp_path,engine):
     """Catch a best-effort consumer silently dropping the gyro reference pair."""

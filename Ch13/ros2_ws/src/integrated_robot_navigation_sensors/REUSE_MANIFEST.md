@@ -2,6 +2,13 @@
 
 이 패키지는 13.5절을 위해 작성한 Apache-2.0 코드다. 외부 checkout과 앞 장 원본은 수정하지 않는다.
 
+## 2026-10-28: 독립 원본 CDR 관측기
+
+`cdr_journal.hpp`, `navigation_evidence_recorder.cpp`, `test_cdr_journal.cpp`는 Ch13 자체 작성이다. 설치 Jazzy rclcpp28.1.22의 공개 GenericSubscription/SerializedMessage/MessageInfo와 ROS 시계 타이머, 표준 thread/POSIX 파일 API 및 zlib CRC32를 사용한다.
+[rosbag2 0.26.11 recorder](https://github.com/ros2/rosbag2/blob/cb8fa198b93bfed90e2417b52b8645fb9ef89c2b/rosbag2_transport/src/rosbag2_transport/recorder.cpp)의 불변 직렬 메시지 수명 원칙을 참고했다. commit `cb8fa198b93bfed90e2417b52b8645fb9ef89c2b`, 파일 blob `d7d3527e19a3a02f9c07901d3197f498cdd50810`, Apache-2.0/OSRF 원본의 코드 복사는 없다.
+
+센서·TF·native 적용 ACK를 직접 수신해 원본 CDR, 첫 MONOTONIC 수신, 별도 SYSTEM/RMW 시각·GID를 기록한다. 새 motor/TF/clock 명령 발행은 없다. 원래 ROS20ms 프레임의 수신 prefix를 보존하고 종료 후 Python의 기존 정규화·SensorInbox로 전체 해석한다. 256레코드/8MiB 큐 초과·기록 실패·부모 손실은 실패를 유지한다. 부모 연결 손실 시에도 drain/join 후 별도 native 종료 보고서를 남긴다. 기존 Python 경로·QoS·주기·원본 시각·안전/인수 기준은 보존하며 `native_cdr`만 명시적으로 선택한다. 독립 ACK 수신을 제어 클라이언트의 수신/credit으로 대신하지 않는다. 실제 엔진 인수는 별도다.
+
 `dart_contact.hpp/.cpp`, `navigation_dart_contact_probe`는 사용자승인2026-10-25의
 G1 전용 수치접촉비교를 위한 Ch13 신규코드다(기준checkpoint `3fd278c6078d2e941a60d07476d7866b2ecea598`).
 설치 `gz_dartsim_vendor`/DART6.13.2의공개 `ContactConstraint` getter/setter와공식
@@ -41,6 +48,18 @@ wrench/깊이·관절상태·실제적용참조를기존batch에보존하는 Ch1
 | Gazebo 관절 구동 관측 | 설치된 gz-sim8.15.0 `JointPosition`, `JointVelocity`, `JointVelocityCmd`, `JointForceCmd`, `JointForce`, `JointTransmittedWrench`, `JointAxis` 헤더와 [gz_ros2_control1.2.20](https://github.com/ros-controls/gz_ros2_control/blob/1.2.20/gz_ros2_control/src/gz_system.cpp) | 공개 API를 include한 Ch13 신규 읽기 전용 구현. 외부 코드 복사·수정 없음. 설치 apt는 `1.2.20-1noble.20261006.040504`; position-to-velocity 경로와 read의 joint-frame wrench 투영을 참고하며 무제한 토크/PD 동등성을 가정하지 않음 |
 | `gazebo_position_system.cpp` / factory XML | 설치된 `gz_ros2_control::GazeboSimSystemInterface`, `hardware_interface`의 Jazzy ABI와 [1.2.20 resource 초기화](https://github.com/ros-controls/gz_ros2_control/blob/1.2.20/gz_ros2_control/src/gz_ros2_control_plugin.cpp) | Ch13 신규 bounded scalar position PD 후보. 외부 구현 복사·수정 없음. 공식 CMake target `gz_ros2_control::gz_ros2_control-system`의 공개 헤더/ABI에 link. 새 background thread/ROS command publisher 없음 |
 | `tf_provenance` | 설치된 Jazzy `rclcpp::MessageInfo`/`tf2_msgs` API, nlohmann_json3.11.3 | Ch13 신규 읽기 전용 관측기. 외부 소스 복사·수정 없음. Python callback에 없는 실제 메시지 GID를 C++ RMW metadata에서 읽고 첫 parent/child/topic/GID 조합을 보존 |
+
+## 순수 질량 모델 산술 후보
+
+`src/mass_kinematics.cpp`는 Ch13 신규 Apache-2.0 구현이다. 기존 Ch13
+`integrated_robot_navigation/support.py`의 `_mass_plan`이 만든 불변 질량·고정 변환을
+그대로 받아 현재 관절값의 행렬 곱/질량 1차 모멘트 합만 한 번에 계산한다.
+외부 구현 복사·모델 교체·질량/관성/충돌/모터 값 쓰기는 없다. 기존 의존성
+nlohmann_json은 구성 단계에만 사용하며, 계산에는 ROS·MuJoCo·Gazebo·스레드·시계가 없다.
+기하 상한64관절/65모멘트와 원래 유한값·관절 한계·강체 변환 검사를 유지한다.
+호출 중 현재 관절/몸체 pose를 캐시하지 않는다. C ABI1의 불변 기하 객체는 Python
+소유자가 생성·해제하고, 오류 시 기존 Python 구현으로 자동 재시도하지 않는다.
+독립 full-link FK 동등성·수신 부하 비교 뒤에만 명시적 MuJoCo G2 후보로 연결한다.
 
 ## 안전·수명 계약
 
@@ -141,3 +160,99 @@ raw하중2N이상발이셋미만일때만pair/position/depth/양측wrench상세�
 이는진단상세선택용휴리스틱이며ground매핑/중복제거된FootContacts지지판정을
 대체하지않는다. 정상구간의상세누락은`details_included=false`로명시하고
 기준gyro/원본시각/주기/기존접촉판정은삭제하거나줄이지않았다. 외부복사없음.
+
+2026-10-26 적용 참조 관측은 Ch13 자체 구현이다. 새 applied_reference.hpp는
+물리 pre_step의 실제 ctrl을 고정64차원 수치로 try-lock 복사하고, 전용 소유 worker가
+sensor_msgs/JointState를 /navigation/applied_reference에 RELIABLE KEEP_LAST1으로
+변경 사건마다 발행한다. 원본 적용 시각을 유지하며 CM snapshot/최신시각으로
+대체하지 않는다. qpos/qvel/ctrl/외력/물리를 쓰지 않는다. 동일 값의 재태깅 없음,
+stop/reset의 자동 재개 없음, worker join·오류·drop/overwrite 계수를 보고한다.
+기존 공개 MuJoCo plugin pre_step API와 rclcpp 표준 publisher/thread API를 사용하며
+외부 소스 복사나 underlay 변경은 없다. 실제 엔진 G1/G2 인수는 별도다.
+
+## 2026-10-27: 적용 사건 촬영 시각의 원본 Clock 표현 일치
+
+`src/native_navigation_plugin.cpp`의 pre_step ACK 시각 표현 3개 구문은 고정 외부 `mujoco_ros2_control`의 `MujocoSimulation::publish_clock()`을 최소 재사용·적응했다.
+- 원본 checkout: `/home/jinho/ch13_mujoco_ws/src/mujoco_ros2_control` (읽기 전용, clean 확인).
+- 커밋: `c261f5552edf124d1000a23fb25b6c07cadeb807`.
+- 원본 파일: `mujoco_ros2_control/src/mujoco_simulation.cpp`, `publish_clock()` (검토 당시1681~1695행).
+- 라이선스: Apache-2.0. 패키지 LICENSE에 전문이 있으며, 수정 파일 상단에 원본 저작권 표시를 보존했다.
+- 원본 저작권: Copyright (c) 2025, United States Government, as represented by the Administrator of the National Aeronautics and Space Administration. All rights reserved.
+- 변경 이유: 기존 Ch13 ACK의 전체 나노초 반올림은 같은 `mjData.time`을 원본 Clock보다1ns 앞서 표현할 수 있었다. 정수초 floor/소수부 나노초 절단이라는 원본 표현만 일치시킨다. 현재시각·최신Clock을 읽지 않고 같은 pre_step capture에서만 계산한다. 외부 원본·실제 /clock·카메라·기존 sensor/trace header는 바꾸지 않는다.
+- 기존의 ‘외부 복사 없음’ 기록은 최초 worker 구현을 설명한다. 이 추가분에는 위 원본 최소 구문을 명시적으로 재사용한다. 실제 물리·게인·controller·미래거부·모든 인수 기준은 유지한다. 단독 해결 및 실제 G1/G2 성공은 별도 재검증한다.
+# 2026-10-28 control clock receipt/publication boundary
+
+The clock deadline anchor and bounded input/publication records are Ch13-owned
+code. The preserved pre-change source is tied to native G2 `22afb6c3`, source
+manifest `34a8e9412255b67ea601eec208a9d0ddb2b497e15de03e0573ba808c38618297`.
+`ros-tooling/topic_tools` 1.3.4, commit
+`462af78b06ad8baafc27ce09cb3dfee96421cfab`, Apache-2.0, was reviewed as a
+rate-limited forwarding reference; no external source was copied. Ch13 retains
+its original clock objects, sticky faults, owner checks and 100Hz ceiling.
+RAW/SYSTEM/MONOTONIC observations are separate diagnostic domains. Publication
+and receipt records are emitted after closing the gate; no input file I/O or
+new callback worker is introduced.
+
+## 2026-10-30 공간 접촉 기구학의 컴파일 계산 재사용
+
+자체 `mass_kinematics.cpp`의 현재-q FK·고정 질량 모멘트 집계를 접촉 Jacobian과 다리 중력 effort에도 공유한다. 기존 mass C ABI1은 유지하고 별도 contact ABI1을 추가한다. 자체 Python `contact_equilibrium.leg_terms`와 독립 무작위 자세/원본 실제 입력으로 비교한다. 외부 코드/라이선스 소스 복사·의존성 추가0. 모델/현재 관절/강체 자세/접촉점/핸들 수명을 검증하며 ROS·엔진·시각·명령 쓰기·worker·측정 캐시는 없다. CRAWL 명령 권한과 모든 물리/마감 인수는 기존 소유자가 판단한다. 근거는 실제 부품 b09405c9의 공간 응답 CPU7.3429ms이며 solver 초기화만으로 실패가 해결되지 않은 기록을 보존한다.
+
+## 2026-10-30 현재·미래 참조 형상의 C++ 일괄 계산
+
+`reference_geometry.cpp`와 navigation의 `native_reference.py`는 Ch13 자체 Apache-2.0 코드다. 기존 자체 `compiled_reference.py`/`leg_kinematics.py`의 Rx/Ry/Ry 역기구학·정확 FK 잔차·piecewise quadratic capsule/box 거리를 같은28표본으로 옮겼다. 별도 reference C ABI1이며 기존 mass/contact ABI는 불변이다. 불변 형상 계획만 소유하고 현재 입력·배열 차원·유한성·IK 오류·핸들 수명을 검사한다. 실패 시 출력은 확정하지 않고 Python 대체 계산이나 자동 재시도는 없다. 외부 코드 복사/추가 라이브러리0, ROS·시각·측정 캐시·명령 쓰기0. 근거는 실제8d4fff0e의8번째 작업 CPU7.902/경과10.8885ms이며 검사 표본·10ms 기준은 유지한다.
+부모/수치 자식은 같은 reference 라이브러리 SHA를 준비 응답에서 대조한다. 자식의 정상 종료 ACK 전 형상 핸들을 명시적으로 해제하고, 부모도 수치 소유자 종료 뒤 자신의 동기 핸들을 해제한다. 정상 프로세스 회수를 물리 성공으로 바꾸지 않는다.
+
+## 2026-11-01 현재 공간 QP의 native 계산
+
+`src/xyz_optimizer.cpp`와 navigation의 `native_xyz.py`는 Ch13 자체 Apache-2.0 구현이다. 기존 자체 `load_xyz.py`의12변수/132선형 제약·동일 정규화 이차 목적·공간 응답을 C++로 옮긴다. 기존 mass/contact/reference ABI는 불변이고 별도 XYZ ABI1이다. 현재 입력만 계산하며 수치 workspace 외에 이전 관측/해를 다음 계산의 warmstart로 사용하지 않는다.10ms/32반복·독립 잔차·정확 후속 기하·명령 소유권은 유지하고 fallback/자동재시도·ROS/엔진 제어는 없다.
+
+- QP 의존성: [asherikov/qpmad](https://github.com/asherikov/qpmad),1.5.1, 커밋 `11602ec9f87a62a97ba8318ebd81da6646f3c631`, Apache-2.0.
+- 저작권: Copyright2017 Alexander Sherikov. 원본 `LICENSE`/`NOTICE` 및 각 헤더 표시를 그대로 보존한다.
+- 최소복사: `third_party/qpmad/`의 원본 runtime헤더/템플릿·LICENSE·NOTICE14파일79,301바이트. 테스트/benchmark/빌드 시스템/`testing.h`는 복사하지 않았다. 모든 blobSHA1·SHA256·URL은 `UPSTREAM.json`에 있고 원본바이트를검증했다. 기존외부checkout/underlay 수정0.
+- `config.h`만 고정 `config.h.in`에서 생성한다. tracing/householder는끄고 `QPMAD_PEDANTIC_LICENSE`로 Eigen의 MPL2-only dense 경로를 사용한다. 원본 헤더 수정0. Eigen은 기존 시스템 패키지에 의존하며 헤더를 복사하지 않는다. 라이브러리와LICENSE/NOTICE/UPSTREAM메타데이터를 함께 설치한다.
+- [공식 라이선스 선택 근거](https://github.com/asherikov/qpmad/issues/9)는 dense/MPL2-only 범위를 확인하는 데 사용했다. 사용하지 않는 sparse 기능이나 전체 SEIKO/WBC 이식을 주장하지 않는다.
+
+근거는 실제141b0434의 solver경과12.542/CPU4.456ms, 실제1스레드, 코어 분리 합성비교의 개선 부재다. native 구현·수치 비교를 실제 보행 인수 성공으로 해석하지 않는다.
+
+2026-11-01 C1 76b1aac2의실제6초미해제(FL29.5→5.58N)를근거로자체native구성에force_objective를추가했다. 기존rate_1_per_s는독립수치비교기준으로보존하고명시적GZG2자식만bounded_terminal_force를선택한다. 변위결정Rδr[N]의목표를최종힘오차[N]로직접설정하고dt는기존속도제약에유지한다. 기존12변수/132제약·H정규화·32반복·10ms/40ms·28격자·원본모터게인/30Nm/변위/6초는변경하지않는다. 새로운SEIKO코드복사/외부소스변경0이며실측모터토크나과제성공을주장하지않는다. 준비/작업보고서에서선택목적을확인한다.
+
+## 2026-11-01 시계 중계의 보조 파일 기록 분리
+
+`include/.../async_trace.hpp` 및 관련 시험은 Ch13 자체 Apache-2.0 코드다. 기존 std::thread/condition_variable/nlohmann_json만 사용하며 외부 복사·의존성 추가는 없다. G1 8500b070에서 시계 trace 처리216.189ms 동안 최신 센서가 수신되지만 제어 시계는19.210초에 머물렀다. 이 경과에는 스케줄링이 포함될 수 있어 정확한 write syscall 시간·디스크 단독 원인으로 단정하지 않는다. 시계 executor에는 유계 직렬화/큐 제출만 남기고 파일 쓰기는 단일 작업자로 분리한다. 미기록/in-flight 합128개·4MiB 고정 상한, FIFO, 초과·쓰기 실패는 terminal 오류, 무시/재시도/덮어쓰기 없음. ROS/물리/TF/명령/시각 쓰기 권한은 작업자에게 없다. 원래 relay close 뒤 drain/join, 그 뒤에만 fd를 닫으며 실제 writer witness와 모든 기존 종료·시각 기준을 함께 요구한다.
+
+`observer_cost.hpp`는 후속 G1 05379a5f의 전체 처리량 저하를 판별할 자체 유계 계측이다. 기존 observer mutex 안에서 Update/PostUpdate의 경과·스레드CPU 합계/최대와 두 단계 사이 경과만 고정 크기로 집계한다. 이미 있는50Hz native_controls packet에 이전 완료 callback의 누적값만 추가하며, 센서/명령/header/물리/인수에 사용하지 않는다. 별도 이력/파일/worker/외부 소스/의존성0이다. 단계 사이 경과를 DART CPU 비용으로 단정하지 않고, 오류 카운터가 있으면 성능 증거로 사용하지 않는다. 이 계측 자체는 보행 실패의 해결이나 인수 성공이 아니다.
+
+## 2026-11-01 관측 snapshot 직접 전달
+
+실제 C1 7e642180에서 수치 계산 CPU3.4507ms/경과10.4469ms였고, 같은 물리 구간의 Ch13 observer Update/PostUpdate는 스텝당CPU451.10µs/경과494.03µs였다. `gazebo_observation.cpp`의 기존 검증/스키마를 자체 JSON 값 snapshot API로 공유하고, 기존 StringMsg API는 같은 값을 인코딩하는 호환 wrapper로 유지한다. 엔진 내부는 문자열 dump/parse 왕복을 제거하고 완료된 body batch의 소유권을 move한다. ECM 참조·포인터를 callback 밖으로 공유하지 않는다. 기존 scalar/frame/time/command-null/force 부호/NaN 거절과 모든 빈 접촉 표본을 유지한다. 관측 횟수·2ms/50Hz·전달할 관측값·모터·물리·10ms/32회·40ms·모든 인수 기준은 불변이다. 외부 코드/의존성/worker 추가0이며 micro CPU 비교는 실제 엔진 성공을 대체하지 않는다.
+
+## 2026-11-01 접촉·QP·28표본 기하의 단일 호출
+
+실제 C1 9c62136f에서도 전체10.5811ms/스레드CPU3.6444ms로 탈락했다. 관측 JSON 개선만으로 해결되지 않아 Ch13 자체 `ch13_xyz_complete_evaluate` ABI1과 `native_complete_xyz.py`를 추가한다. 기존 contact ABI1→동일 XYZ ABI1(QPMAD1.5.1,12변수/132제약)→기존 reference ABI1(28표본)→정확 servo 제약을 C++에서 연결한다. 같은 라이브러리를 링크하며 외부 소스·헤더 변경/의존성 추가0이다. Python은 재사용 버퍼를 소유하고 기존10ms 시작 시점부터 남은 예산만 전달한다. 출력은 모든 검증 후에만 확정하며 부모만 명령을 발행한다. 일반 affine 역행렬을 유지하고 rigid transpose로 대체하지 않는다. 기존 분리 경로와 독립 primal 검사를 회귀 기준으로 보존한다. 10ms/32회/40ms·모든 물리·미래 기하 기준을 유지하고 캐시·warmstart·fallback·재시도·권한 추가는 없다. 새 ABI의 출력/핸들/준비·종료 계약은 별도로 검증하며 실제 엔진 성공은 아직 주장하지 않는다.
+## Ch13 strict box implication presolve (2026-11-01)
+
+Own code `include/integrated_robot_navigation_sensors/box_presolve.hpp` and its tests; no external source copied. The fixed QPMAD upstream headers/commit remain unchanged. Analytically box-implied rows may be omitted from the solver with a conservative floating-point guard; the original12 variables, box, objective,132-row post-validation,32 iterations and10ms cap remain. Based on the standard presolve principle documented by [SciPy](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html); this is an independently written bounded QP adapter, not SciPy code. Exact failed job72 from C1 `4d26fb83` is bound by matching request/input/reply IDs before replay. Original failed evidence is preserved.
+
+# Ch13 고정 좌표 전처리 추가 기록 (2026-11-01)
+
+2026-11-02 추가 `include/integrated_robot_navigation_sensors/inverse_remainder.hpp`는
+자체 작성 Apache-2.0 코드다. 기존3관절 다리의 삼각함수 FK Hessian 전역 상한과
+Jacobian 역함수의 수축 조건으로 보수적인 servo 선형 제약 여유를 직접 유도한다.
+임의 토크 여유나 한도 상향이 아니며, 실제 IK가 증명된 반경에 속하는지와 원래
+비선형 토크 상한을 모두 후검증한다. SEIKO 공식 논문/저장소의 위치 제어 기반
+힘/토크 제약 통합 구조를 참고했으나 이 나머지 경계식이나 외부 구현을 복사하지 않았다.
+
+`include/integrated_robot_navigation_sensors/fixed_coordinate_qp.hpp`와
+`test/test_box_presolve.cpp` 추가 증명은 Ch13 자체 작성 Apache-2.0 코드다.
+PlaCo 공식 hard equality elimination 및 MathWorks 공식 presolve/postsolve의
+표준 치환 원리만 참고했고 외부 구현은 복사하지 않았다. 원래12차원 해를
+복원해 모든 원래 제약을 재검사한다. 같은 자체 작성 헤더에 추가된
+`equilibrate_all_constraints`는 모든 finite bounds를 일반 행에 포함하고
+양의 Hessian metric으로 행을 스케일한다. Eigen 기존 LLT API만 사용하며
+QPMAD 고정 vendor/라이선스는 그대로다.
+
+같은 자체 작성 헤더의 `canonicalize_original_primal`은 원래 normalized box
+오차1e-9 이내에서만 정확한 경계값을 복원하고, 원래 전체 행 residual1e-7을
+다시 검사한다. 이후 모든 힘/토크/servo/기하 증명은 복원된 값으로 수행한다.
+부모의 엄격한 비음수 조건을 완화하거나 유의미한 위반을 보정하지 않는다.
+

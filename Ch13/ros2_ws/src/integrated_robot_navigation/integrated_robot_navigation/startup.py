@@ -95,7 +95,7 @@ class StartupManager(Node):
             return False
         value = self.future.result()
         if value is None or not getattr(value, attribute):
-            reason = getattr(value, 'message', 'no response') if value is not None else 'no response'
+            reason = getattr(value, 'message', 'negative '+attribute+' response') if value is not None else 'no response'
             raise ValueError('startup service rejected: '+self.state+': '+reason)
         return True
 

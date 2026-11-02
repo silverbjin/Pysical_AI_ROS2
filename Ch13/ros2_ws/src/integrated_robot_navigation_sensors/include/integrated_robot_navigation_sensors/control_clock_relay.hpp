@@ -6,6 +6,7 @@
 #include <std_srvs/srv/trigger.hpp>
 #include <nlohmann/json.hpp>
 #include <functional>
+#include <deque>
 
 namespace integrated_robot_navigation_sensors
 {
@@ -23,6 +24,19 @@ private:
   void tick();
   void trace(nlohmann::json row);
   static int64_t wall_now();
+  static int64_t raw_now();
+  struct InputReceipt {
+    uint64_t sequence;
+    int64_t capture, wall, system, source_system, rmw_system, raw_before, raw_after;
+    std::string verdict;
+  };
+  struct PublicationSpan {
+    uint64_t sequence;
+    int64_t poll_wall, publish_start, publish_finish, trace_start, trace_finish;
+  };
+  void retain(InputReceipt receipt);
+  nlohmann::json input_transport() const;
+  nlohmann::json publication_work() const;
   ControlClockGate gate_;
   std::function<void(const nlohmann::json &)> sink_;
   rosgraph_msgs::msg::Clock latest_;
@@ -31,5 +45,8 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr report_, stop_, arm_;
   bool fault_recorded_{false}, finished_{false};
+  uint64_t input_receipts_{0};
+  std::deque<InputReceipt> input_transport_;
+  std::deque<PublicationSpan> publication_work_;
 };
 }  // namespace integrated_robot_navigation_sensors

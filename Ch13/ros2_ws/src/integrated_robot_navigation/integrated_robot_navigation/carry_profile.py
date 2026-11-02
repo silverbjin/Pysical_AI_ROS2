@@ -20,6 +20,49 @@ G1_REQUIRED = frozenset({
     'carry_measured_settle', 'unvalidated_crawl_rejected', 'normal_runtime_exit',
     'normal_engine_exit', 'parent_reaped', 'no_residual_members',
 })
+G1_NATIVE_REQUIRED = G1_REQUIRED | frozenset({
+    'native_observations','sensor_freshness','stability','contact_support',
+    'native_com_consistent','stance_slip','joint_envelope','contact_lift',
+    'native_ctrl_observed','native_library_loaded','tf_observer_owned',
+})
+
+
+def _file_digest(path):
+    value=hashlib.sha256()
+    with path.open('rb') as source:
+        for block in iter(lambda:source.read(1024*1024),b''):value.update(block)
+    return value.hexdigest()
+
+
+def _native_artifacts(evidence,root,model_sha256):
+    """Read the real EvidenceRun list; never fabricate a role-based PASS file."""
+    if not isinstance(evidence.get('artifacts'),list):return False
+    verified={};resolved=set()
+    for artifact in evidence['artifacts']:
+        relative=Path(artifact['path'])
+        if relative.is_absolute() or '..' in relative.parts:return False
+        target=(root/relative).resolve(strict=True)
+        if not target.is_relative_to(root) or target in resolved:return False
+        if (type(artifact['size']) is not int or artifact['size']<=0
+                or target.stat().st_size!=artifact['size'] or _file_digest(target)!=artifact['sha256']):
+            return False
+        resolved.add(target);verified[str(relative)]=target
+    required={'frames.json','action_results.json','source_manifest.json','install_manifest.json','teardown.json'}
+    if not required.issubset(verified):return False
+    action=json.loads(verified['action_results.json'].read_text())
+    if not (action.get('terminal') is True and action.get('result_future_done') is True
+            and action.get('result_status')==4 and action.get('result_error_code')==0
+            and action.get('pending_uuid','missing') is None
+            and action.get('model_sha256')==model_sha256 and not action.get('fault')):
+        return False
+    teardown=json.loads(verified['teardown.json'].read_text())
+    if (not all(teardown.get(key) is True for key in ('runtime_exit','engine_exit','parent_reaped'))
+            or teardown.get('launch_returncode')!=0 or teardown.get('engine_returncodes')!=[0]
+            or teardown.get('forced_cleanup') is not False or teardown.get('residual_live_pids')!=[]):
+        return False
+    source=json.loads(verified['source_manifest.json'].read_text())
+    installed=json.loads(verified['install_manifest.json'].read_text())
+    return isinstance(source.get('files'),dict) and bool(source['files']) and isinstance(installed,dict) and bool(installed)
 
 
 @dataclass(frozen=True)
@@ -111,7 +154,7 @@ def swept_footprint(model: ModelContract, profile: CarryProfile, limits: dict) -
 
 
 def validate_profile(profile: CarryProfile, model: ModelContract,
-                     engine: str) -> tuple[bool, str]:
+                     engine: str, *, execution_profile=None) -> tuple[bool, str]:
     if profile.model_sha256 != model.model_sha256:
         return False, 'model_hash'
     try:
@@ -141,16 +184,32 @@ def validate_profile(profile: CarryProfile, model: ModelContract,
                 or evidence['config_sha256'] != profile.config_sha256
                 or evidence['physics_sha256'] != profile.physics_sha256):
             return False, 'evidence_binding'
-        if not all(evidence['checks'].get(key) is True for key in G1_REQUIRED):
+        required=evidence.get('required_checks')
+        if (not isinstance(required,list) or not G1_NATIVE_REQUIRED.issubset(required)
+                or evidence.get('errors')!=[]
+                or not all(evidence['checks'].get(key) is True for key in required)):
             return False, 'evidence_checks'
-        for role in ('observations', 'action_results', 'source_manifest', 'install_manifest', 'teardown'):
-            artifact = evidence['artifacts'][role]
-            target = (path.parent / artifact['path']).resolve(strict=True)
-            if not target.is_relative_to(path.parent):
-                return False, 'evidence_path'
-            content = target.read_bytes()
-            if not content or hashlib.sha256(content).hexdigest() != artifact['sha256']:
-                return False, 'evidence_artifact'
-    except (OSError, ValueError, KeyError, TypeError):
+        mode=evidence.get('execution_mode',{})
+        scene=evidence.get('scene',{})
+        if mode.get('diagnostic_profile_node') is not None or mode.get('validation_only') is not True:
+            return False, 'evidence_execution_profile'
+        if execution_profile is not None:
+            from .execution_contract import normalize_execution_profile
+            expected=normalize_execution_profile(execution_profile,engine)
+            actual=dict(control_clock=mode.get('control_clock'),
+                position_reference_mode=scene.get('position_reference_mode','native'),
+                dart_contact=mode.get('dart_contact'),native_physics_sha256=evidence.get('native_physics_sha256'))
+            if actual!=expected or scene.get('dart_contact_mode','native')!=actual['dart_contact']:
+                return False, 'evidence_execution_profile'
+            mode_checks=({'control_clock_contract'} if actual['control_clock']=='relay100' else set()) | (
+                {'dart_contact_contract'} if actual['dart_contact']=='allowance50um' else set())
+            if not mode_checks.issubset(required):return False, 'evidence_checks'
+        elif (mode.get('control_clock')!='native' or mode.get('dart_contact')!='native'
+                or scene.get('position_reference_mode','native')!='native'
+                or scene.get('dart_contact_mode','native')!='native'):
+            return False, 'g1_experiment_not_crawl_admission'
+        if not _native_artifacts(evidence,path.parent,profile.model_sha256):
+            return False, 'evidence_artifact'
+    except (OSError, ValueError, KeyError, TypeError,AttributeError):
         return False, 'invalid_native_evidence'
     return True, ''

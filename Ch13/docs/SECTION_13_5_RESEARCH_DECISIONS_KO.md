@@ -73,6 +73,41 @@ receiver를 재사용해 terminal 수신과 실제 STOPPED/carry를 모두 확�
 - 인수: 정지10초→전진0.40m→좌/우 각0.30rad→실측 STOPPED를3회 연속, 후진0.10m 별도.
   첫 실패에 중단하며 실패 뒤 재활성화·무조건 재시도·합성 odometry는 사용하지 않는다.
 
-이 범위 확정 전에는 G1 실험을 일반 보행으로 자동 확장하지 않는다. MuJoCo 기본 native
-프로필의 증거 연결과 이동기 구현은 별도로 진행할 수 있다. 전체 설계·일정은 기존
+사용자는 후속 답변에서 **G2 전용 검증 프로필 확장을 승인**했다. 위의 모드·물리·증거 연결과
+기본 launch 유지 조건으로 구현한다. 이 승인은 G2 성공 판정이나 일반 프로필의 자동 승격이
+아니다. MuJoCo 기본 native 프로필의 증거 연결과 이동기 구현은 독립 진행한다. 전체 설계·일정은 기존
 `SECTION_13_5_IMPLEMENTATION_PLAN_KO.md` Task8–14를 유지한다.
+
+## G2 관절 경계 실패 후의 표적 추가 조사
+
+2026-10-25, libchamp core `8c50f649b3fd28a123beaf6f9618ddfaa1589559`의
+`leg_controller/leg_controller.h`, `trajectory_planner.h`, root LICENSE를 직접 읽었다.
+BSD-3-Clause. zero_stance를 중심으로 half stance 속도 변위를 구하고 중립 양쪽으로
+궤적을 배치하는 개념을 확인했다. Ch13은 이전 world endpoint 누적 대신 명령 중립발과
+기존 travel budget의 SE(2) 목표를 독립 구현하는 후보로 판별한다. 외부 C++ 코드,
+Bezier control points, 속도·게인·다른 로봇 보행기 또는 odometry scaler는 복사하지 않는다.
+관절/8cm·속도·하중·가속도 기준은 유지하고 native 인수는 별도로 실행한다.
+
+## 2026-10-25 회전 간섭 이후 정적 crawl 구조 검토
+
+[Wang 등, A Static Gait Generation for Quadruped Robots with Optimized Walking Speed, SMC2020](https://linqi-ye.github.io/docs/2020A%20Static%20Gait%20Generation%20for%20Quadruped%20Robots%20with%20Optimized%20Walking%20Speed.pdf)의 II.D/III를 원문 확인했다. 네 발 지지 때 몸체 위치를 정하고 한 발 스윙을 분리하는 단계 구조, 지지 영역과 기구학 영역의 교집합을 쓰는 원칙만 참고한다. 논문의 중앙 CoG 가정·다른 형상·게인·속도 최적화·7cm 스윙·발 순서·V-REP 성과를 이 프로젝트의 검증으로 가져오지 않는다. 코드 복사 없음.
+
+현재 Ch13은 실측 정착/해제 뒤에도 SWING/TOUCHDOWN/SETTLE에 몸체 이동을 적분해, 정적 지지 계획 이후 새로운 충돌 구성을 만들었다. 끝점 검사·2D 제약 탐색만 추가하는 후보는 각각 후속 SWING 간섭/미래 제약 불가로 실패했다. 원본 실패 회귀를 보존하고 구조를 재검토한다.
+
+선택: 일반 CRAWL은 기존 SHIFT 0.7의 몸체 이동 예산만 네 발 지지 단계에서 실행하고, 실제 해제 이후 발 이동·착지·정착에서는 몸체 참조를 유지한다. 한 cycle의 실제 적분 예산에 맞춰 중립 발의 half-stance 예측도 바꾼다. 기존 명령 최대 속도/가속도·발8cm/0.02m/s·하중/관절/CoM/단일 소유권과 실제 G2의0.4m/±0.3rad/기존 시간 제한은 유지한다. 원래 G1의 별도 제자리 교정과10wall초는 유지한다. 따라서 이동 평균 속도는 낮아질 수 있으며 실제 완주·시간 예산은 새 인수에서 확인해야 한다.
+
+## Task9 착수 전 공식 Jazzy 구성 재확인 (2026-10-26)
+
+현재 Task8 실제 시험 중에는 runtime·설치를 동결하고 참고 자료만 확인했다. 다음 Task의 채택 방향은 이전 계획을 유지한다.
+
+- [Jazzy navigation_launch.py 공식 소스](https://api.nav2.org/nav2-jazzy/html/navigation__launch_8py_source.html): planner/controller/BT/lifecycle의 실제 연결과 remapping을 참고한다. 공개 소스에는 route/docking 등 추가 노드도 있으므로 전체 기본 launch를 그대로 활성화하지 않는다. 실제 설치 버전과 선택한 노드의 의존성부터 대조한다. 문서 열람일과 고정 저장소 커밋을 혼동하지 않는다.
+- [Jazzy Collision Monitor 공식 예제](https://docs.nav2.org/jazzy/tutorials/general_tutorials/using_collision_monitor/using_collision_monitor/): Nav2 내부 명령 후처리는 controller → velocity smoother → collision monitor 순서로 연결한다. Ch13의 기존 최종 motion guard는 그 출력 뒤에서 수납·센서·소유권 계약을 계속 검사한다. Nav2 예제의 성공을 Ch13 실제 엔진 성공으로 간주하지 않는다.
+- [Jazzy Velocity Smoother 공식 구현 설명](https://api.nav2.org/nav2-jazzy/html/md_nav2_velocity_smoother_README.html): CLOSED_LOOP는 실제 odometry를 사용하며, smoothing 주기가 odometry보다 빨라지면 지연·진동 위험이 있다. Task9의50Hz/실제 navigation odom/0.20초 timeout을 실제 수신 주기와 대조한다. 단순 open-loop 입력 적분을 실제 이동으로 바꾸지 않는다.
+
+채택하지 않는 것: 자동 재시동, 기본 Spin/BackUp 복구, 미검증 장애물 높이 무시, 바퀴형 모델의 속도/footprint 복사. 소스 복사는 아직 하지 않았으며 새 launch를 구현했다는 뜻이 아니다. 실제 Task8 고정본 양 엔진 인수 이후 Task9의 최소 launch/실제 lifecycle/출력/즉시 정지 시험으로 진행한다.
+
+## 2026-10-29 — 반복 하중 전환 실패에 직접 대응하는 논문·코드 조사
+
+최신 구조 검토 뒤 SEIKO(RA-L2024), Feasible Region(TRO2020)·Improved Feasible Region(TRO2023), Passive WBC(RA-L2019), legged_control의 제약 구성, mc_rtc의 상태 수명을 조사했다. 고정5저장소17파일과5논문을 확인한 범위·한계·우선순위는 [CONTACT_CONTROL_REFERENCES](SECTION_13_5_CONTACT_CONTROL_REFERENCES_KO.md)에 있다. 현재 위치 인터페이스에는 SEIKO의 힘 응답/접촉 전환 원리, 공통 계획 승인에는 Improved Feasible Region이 가장 직접적이다. 부품 검증 후 통합하는 방향을 권고하며 전체 WBC/NMPC 도입으로 확정한 것은 아니다. SEIKO의 빠른 보행 한계와 실패, mc_rtc의 접촉 제거 방식 차이, legged_control의 기존 ROS1 의존성도 구분했다. Actuators2025의 MuJoCo/Solo12 논문은 참고했지만 연결된 ftn_solo 저장소는API/웹404로코드를확인하지못했다.
+
+source-index는 contact-research-344afd17-d0a6-4936-b746-35177f5017af/source-index.json에 커밋·라이선스·파일·논문·접근 제한만 보존한다. 외부소스복사0/새엔진0/런타임변경0이다. 이번조사로실제보행성공이나인수기준변경을선언하지않는다.

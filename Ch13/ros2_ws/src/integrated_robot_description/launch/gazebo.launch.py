@@ -187,7 +187,7 @@ def launch_nodes(context):
                      package_share, 'config', 'vision_bridge.yaml') if not navigation else
                      LaunchConfiguration('navigation_bridge').perform(context)}]),
             Node(package='integrated_robot_vision', executable='native_pose_adapter',
-                 parameters=[{'engine': 'gazebo', 'use_sim_time': True}]),
+                 parameters=[{'engine': 'gazebo', 'use_sim_time': not navigation}]),
         ])
     return nodes
 

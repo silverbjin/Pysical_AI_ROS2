@@ -147,6 +147,13 @@ def materialize_scene(engine: str, scenario: str, output: Path, *, controllers_f
         for i, collision in enumerate(link.findall('collision')):
             collision.set('name', f"navcol__{link.get('name')}__{i}")
     if engine == 'gazebo':
+        # Native scans are scheduled in simulation time, safety leases in
+        # monotonic wall time. Recorded100ms SIM/358ms WALL exceeded the300ms
+        # lease at0.279RTF. Acquire real scans more often; never renew headers
+        # or loosen the consumer lease. Raw/legacy Xacro stays at10Hz.
+        lidar=urdf_tree.find('.//sensor[@name="navigation_lidar"]')
+        if lidar is None:raise ValueError('navigation lidar capture source missing')
+        lidar.find('update_rate').text='20'
         if g1_contact_allowance:
             observer=urdf_tree.find("gazebo/plugin[@filename='navigation_gazebo_observer']")
             if observer is None:raise ValueError('G1 native contact observer missing')
