@@ -13,7 +13,7 @@ class SafetyTests(unittest.TestCase):
         g=Guard();g.clock(2_000_000_000,0);g.command(2_000_000_000,0,'raw',[.2,0,0,0,0,.2]);self.assertEqual(g.output(.1).vx,0)
     def test_velocity_caps_and_acceleration(self):
         g=self.ready();g.clock(2_020_000_000,.02);g.command(2_020_000_000,.02,'raw',[1,0,0,0,0,1]);d=g.output(.1)
-        self.assertAlmostEqual(d.vx,.03);self.assertAlmostEqual(d.wz,.05);self.assertEqual(d.stamp_ns,2_020_000_000)
+        self.assertAlmostEqual(d.vx,.006);self.assertAlmostEqual(d.wz,.010);self.assertEqual(d.stamp_ns,2_020_000_000)
     def test_expiry_latches_and_returning_input_cannot_resume(self):
         g=self.ready();g.output(.31);self.assertEqual(g.mode,'FAULT')
         g.clock(2_100_000_000,.32);g.command(2_100_000_000,.32,'raw',[.2,0,0,0,0,0]);self.assertEqual(g.output(.32).vx,0);self.assertFalse(g.arm(.32))

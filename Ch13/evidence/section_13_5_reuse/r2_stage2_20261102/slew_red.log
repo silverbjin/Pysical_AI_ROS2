@@ -1,0 +1,26 @@
+test_repeated_output_without_sim_progress_does_not_ramp (test_slew_clock.SlewClockTests.test_repeated_output_without_sim_progress_does_not_ramp) ... FAIL
+test_slow_simulation_does_not_accelerate_command_per_sim_second (test_slew_clock.SlewClockTests.test_slow_simulation_does_not_accelerate_command_per_sim_second) ... FAIL
+test_wall_pause_still_latches (test_slew_clock.SlewClockTests.test_wall_pause_still_latches) ... ok
+
+======================================================================
+FAIL: test_repeated_output_without_sim_progress_does_not_ramp (test_slew_clock.SlewClockTests.test_repeated_output_without_sim_progress_does_not_ramp)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Jinho\.codex\.chatgpt-projects\g-p-6ad1e56cf8f881919fe23e1ab94d2855\work\Pysical_AI_ROS2_reuse\Ch13\ros2_ws\src\ch13_navigation_reuse\test\test_slew_clock.py", line 16, in test_repeated_output_without_sim_progress_does_not_ramp
+    self.assertEqual(d.vx,0.);self.assertEqual(e.vx,0.);self.assertEqual(e.wz,0.)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.006 != 0.0
+
+======================================================================
+FAIL: test_slow_simulation_does_not_accelerate_command_per_sim_second (test_slew_clock.SlewClockTests.test_slow_simulation_does_not_accelerate_command_per_sim_second)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Jinho\.codex\.chatgpt-projects\g-p-6ad1e56cf8f881919fe23e1ab94d2855\work\Pysical_AI_ROS2_reuse\Ch13\ros2_ws\src\ch13_navigation_reuse\test\test_slew_clock.py", line 13, in test_slow_simulation_does_not_accelerate_command_per_sim_second
+    self.assertAlmostEqual(d.vx,.006);self.assertAlmostEqual(d.wz,.010)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.03 != 0.006 within 7 places (0.024 difference)
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (failures=2)

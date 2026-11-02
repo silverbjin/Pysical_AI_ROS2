@@ -20,7 +20,7 @@ class Guard:
     def reset(self):
         self.samples={};self.owners={};self.mode='DISARMED';self.fault=''
         self.clock_ns=0;self.clock_wall=None;self.counts={};self.graph_wall=None
-        self.values=(0.,0.);self.last_values=(0.,0.);self.last_output_wall=None
+        self.values=(0.,0.);self.last_values=(0.,0.);self.last_output_wall=None;self.last_output_clock_ns=None
     def trip(self, reason):
         if self.mode!='FAULT':self.fault=reason
         self.mode='FAULT';self.last_values=(0.,0.)
@@ -73,14 +73,15 @@ class Guard:
         return True
     def arm(self, wall):
         if self.mode!='DISARMED' or not self._fresh(wall) or any(abs(x)>1e-12 for x in self.values):return False
-        self.mode='ARMED';self.last_output_wall=wall;self.last_values=(0.,0.);return True
+        self.mode='ARMED';self.last_output_wall=wall;self.last_output_clock_ns=self.clock_ns;self.last_values=(0.,0.);return True
     def output(self, wall):
         if self.mode=='ARMED':
             if not self._fresh(wall):self.trip('INPUT_OR_CLOCK_TIMEOUT')
             elif self.last_output_wall is not None and (wall<self.last_output_wall or wall-self.last_output_wall>self.timeout_s):self.trip('CONTROL_TIMER_GAP')
         if self.mode!='ARMED':return Decision(0.,0.,self.clock_ns,self.mode,self.fault)
-        dt=min(.1,max(0.,wall-self.last_output_wall))
+        # Simulation seconds govern the command slew; wall time only governs liveness.
+        dt=min(.1,max(0.,(self.clock_ns-self.last_output_clock_ns)/1e9))
         def slew(previous,target,rate):return previous+max(-rate*dt,min(rate*dt,target-previous))
         vx=slew(self.last_values[0],self.values[0],.30);wz=slew(self.last_values[1],self.values[1],.50)
-        self.last_values=(vx,wz);self.last_output_wall=wall
+        self.last_values=(vx,wz);self.last_output_wall=wall;self.last_output_clock_ns=self.clock_ns
         return Decision(vx,wz,self.samples[self.control][0],self.mode,self.fault)

@@ -1,4 +1,4 @@
-revision: section_13_5_reuse_R2_v1
+revision: section_13_5_reuse_R2_v2
 role: frozen_descriptive_contract_runtime_constants_in_safety_py
 upstream_commit: d010212c3f5c9e6e5542ada61cfdacc19b00f775
 profile: corrected_A_native_arm_pd_consistent_walking_gains
@@ -7,7 +7,8 @@ policy_hz: 50
 command_type: geometry_msgs/msg/TwistStamped
 command_frame: reuse/nav_base
 axes: {vx_mps: [-0.2, 0.2], vy_mps: [0.0, 0.0], wz_radps: [-0.2, 0.2]}
-acceleration: {vx_mps2: 0.3, wz_radps2: 0.5}
+command_slew_per_sim_second: {vx_mps_per_sim_s: 0.3, wz_radps_per_sim_s: 0.5}
+# A command ramp limit; measured body acceleration is not guaranteed.
 wall_timeout_s: 0.30
 source_timeout_sim_s: 0.30
 cross_dds_future_slack_sim_s: 0.025

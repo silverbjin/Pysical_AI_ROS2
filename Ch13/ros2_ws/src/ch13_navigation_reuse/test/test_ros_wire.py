@@ -9,6 +9,7 @@ if ROS:
     from rclpy.node import Node
     from rclpy.executors import SingleThreadedExecutor
     from geometry_msgs.msg import TwistStamped
+    from builtin_interfaces.msg import Time
     from rosgraph_msgs.msg import Clock
     from nav_msgs.msg import Odometry
     from sensor_msgs.msg import JointState
@@ -32,7 +33,7 @@ class WireTests(unittest.TestCase):
         c=Clock();c.clock.sec=stamp_ns//1_000_000_000;c.clock.nanosec=stamp_ns%1_000_000_000;self.clock.publish(c)
         o=Odometry();o.header.stamp=c.clock;o.header.frame_id='reuse/odom';o.child_frame_id='reuse/base';o.pose.pose.position.z=.3;o.pose.pose.orientation.w=1.
         if self.future_base:
-            o.header.stamp.sec+=1
+            o.header.stamp=Time(sec=stamp_ns//1_000_000_000+1,nanosec=stamp_ns%1_000_000_000)
         if self.base_enabled:self.base.publish(o)
         j=JointState();j.header.stamp=c.clock;j.name=[f'{leg}_{joint}_joint' for leg in ['FL','FR','RL','RR'] for joint in ['hip','thigh','calf']]+[f'joint{i}' for i in range(1,9)];j.position=[0.]*20;j.velocity=[0.]*20;
         if self.joints_enabled:self.joints.publish(j)
