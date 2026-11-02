@@ -3,7 +3,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument,ExecuteProcess,SetEnvironmentVariable,RegisterEventHandler,EmitEvent
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration,PythonExpression
+from launch.conditions import IfCondition
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_prefix,get_package_share_directory
 
@@ -13,6 +14,7 @@ def generate_launch_description():
  platform=ExecuteProcess(cmd=[python,'-m','ch13_navigation_reuse.platform_adapter','--repo-root',repo,'--report',report,'--scene',scene,'--max-sim-s',limit],output='screen')
  actions=[DeclareLaunchArgument('python',default_value='/home/jinho/ch13_reuse_iit_d010212_venv/bin/python'),DeclareLaunchArgument('repo_root'),DeclareLaunchArgument('report'),DeclareLaunchArgument('scene',default_value='free'),DeclareLaunchArgument('max_sim_s',default_value='120'),SetEnvironmentVariable('ROS_LOCALHOST_ONLY','1'),SetEnvironmentVariable('ROS_DOMAIN_ID','135'),SetEnvironmentVariable('MUJOCO_GL','egl'),RegisterEventHandler(OnProcessExit(target_action=platform,on_exit=[EmitEvent(event=Shutdown(reason='owned engine exited'))])),ExecuteProcess(cmd=[get_package_prefix('ch13_reuse_wire')+'/lib/ch13_reuse_wire/ingress'],output='screen')]
  for module,args in [('command_gateway',[]),('navigation_boundary',[]),('world_map',['--scene',scene])]:actions.append(ExecuteProcess(cmd=[python,'-m','ch13_navigation_reuse.'+module]+args,output='screen'))
+ actions.append(ExecuteProcess(cmd=[python,'-m','ch13_navigation_reuse.vision_approach','--report',report],condition=IfCondition(PythonExpression(["'",scene,"' == 'vision'"])),output='screen'))
  actions.append(platform)
  for package,executable,name,remaps,extra in [
   ('nav2_planner','planner_server','planner_server',[],{}),

@@ -6,7 +6,9 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from nav2_msgs.action import NavigateToPose
 from lifecycle_msgs.srv import GetState
-from nav_msgs.msg import Odometry,Path as NavPath
+from nav_msgs.msg import Odometry,Path as NavPath,OccupancyGrid
+from sensor_msgs.msg import JointState
+from rclpy.qos import QoSProfile,DurabilityPolicy
 from rosgraph_msgs.msg import Clock
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
@@ -17,7 +19,7 @@ def yaw(q):return math.atan2(2*(q.w*q.z+q.x*q.y),1-2*(q.y*q.y+q.z*q.z))
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True);ap.add_argument('--case',choices=['free','obstacle','blocked','cancel','raw_loss','vision'],default='free');args=ap.parse_args()
  root=Path(args.repo_root);out=Path(args.evidence);out.mkdir(parents=True,exist_ok=True);scene=args.case if args.case in ['obstacle','blocked','vision'] else 'free'
- S={'result':'FAIL','case':args.case,'events':[]};node=None;launch=None;log=None;goal_handle=None;result_future=None;clock_ns=0;state=None;gateway={};platform={};boundary={};poses=[];plans=[];clients={}
+ S={'result':'FAIL','case':args.case,'events':[]};node=None;launch=None;log=None;goal_handle=None;result_future=None;clock_ns=0;state=None;gateway={};platform={};boundary={};poses=[];plans=[];clients={};observation=None;joints=None;grid=None;vision_status={};arm_model=None;vision_record=None
  try:
   (out/'boot_id.txt').write_text(Path('/proc/sys/kernel/random/boot_id').read_text());log=(out/'launch.log').open('w')
   launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch','ch13_navigation_reuse','navigation.launch.py','repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:='+scene],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
@@ -34,6 +36,19 @@ def main():
    if name=='gateway':gateway=value
    elif name=='platform':platform=value
    else:boundary=value
+  def on_observation(m):
+   nonlocal observation
+   observation=json.loads(m.data)
+  def on_joints(m):
+   nonlocal joints
+   joints=m
+  def on_grid(m):
+   nonlocal grid
+   grid={'width':m.info.width,'height':m.info.height,'resolution':m.info.resolution,'origin':[m.info.origin.position.x,m.info.origin.position.y],'data':list(m.data)}
+  def on_vision_status(m):
+   nonlocal vision_status
+   vision_status=json.loads(m.data)
+  node.create_subscription(String,N+'/vision/observation',on_observation,1);node.create_subscription(String,N+'/vision/status',on_vision_status,1);node.create_subscription(JointState,N+'/joint_states',on_joints,1);node.create_subscription(OccupancyGrid,N+'/map',on_grid,QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
   node.create_subscription(Clock,'/clock',on_clock,1);node.create_subscription(Odometry,N+'/engine_state',on_state,1)
   for name in ['gateway','platform','navigation']:node.create_subscription(String,N+'/'+name+'/status',lambda m,n=name:status(n,m),1)
   node.create_subscription(NavPath,'/plan',lambda m:plans.append([[p.pose.position.x,p.pose.position.y] for p in m.poses]),1)
@@ -58,9 +73,14 @@ def main():
   if args.case=='obstacle':target=[2.25,0.,0.]
   if args.case=='blocked':target=[1.2,0.,0.]
   if args.case in ['cancel','raw_loss']:target=[2.5,0.,0.]
-  if args.case=='vision':raise RuntimeError('vision admission not connected yet')
+  if args.case=='vision':
+   from vision_mission import select_goal
+   target,vision_record,arm_model=select_goal(root,node,until,lambda:observation,lambda:state,lambda:joints,lambda:grid,lambda:clock_ns);S['vision_admission']=vision_record
+   response=call('navigation/require_vision');assert response.success,response.message
+
   S['target']=target;start_xy=[state.pose.pose.position.x,state.pose.pose.position.y];start_sim=clock_ns;start_wall=time.monotonic();response=call('navigation/enable');assert response.success,response.message
-  goal=NavigateToPose.Goal();goal.pose.header.frame_id='reuse/map';set_stamp(goal.pose.header.stamp,clock_ns);goal.pose.pose.position.x=target[0];goal.pose.pose.position.y=target[1];goal.pose.pose.orientation.z=math.sin(target[2]/2);goal.pose.pose.orientation.w=math.cos(target[2]/2)
+  goal=NavigateToPose.Goal();goal.pose.header.frame_id='reuse/map';set_stamp(goal.pose.header.stamp,vision_record['source_observation']['capture_ns'] if vision_record is not None else clock_ns);goal.pose.pose.position.x=target[0];goal.pose.pose.position.y=target[1];goal.pose.pose.orientation.z=math.sin(target[2]/2);goal.pose.pose.orientation.w=math.cos(target[2]/2)
+  S['goal_header_stamp_ns']=ns(goal.pose.header.stamp)
   sent=action.send_goal_async(goal);assert until(sent.done,5),'goal admission deadline';goal_handle=sent.result();assert goal_handle.accepted,'Nav2 goal rejected';result_future=goal_handle.get_result_async();S['events'].append({'event':'goal_accepted','sim_ns':clock_ns,'wall':time.monotonic()})
   if args.case in ['cancel','raw_loss']:
    assert until(lambda:clock_ns-start_sim>=2_000_000_000 and boundary.get('phase')=='ACTIVE',12),'no active movement before injection'
@@ -81,10 +101,19 @@ def main():
   if expected==4:assert S['actual_goal_error_m']<=.10 and S['actual_goal_yaw_error_rad']<=.10
   if args.case=='obstacle':assert max(abs(p['y']) for p in poses)>.45,'no measured obstacle bypass'
   if args.case=='raw_loss':assert gateway['mode']=='FAULT'
+  if args.case=='vision':
+   from vision_mission import current_q
+   from ch13_navigation_reuse.approach_geometry import position_ik
+   from ch13_navigation_reuse.vision_geometry import admissible,manipulation_ready
+   assert until(lambda:observation is not None and admissible(observation['capture_ns'],observation['capture_wall'],clock_ns,time.monotonic(),observation['tf_stamp_ns']),2),'no fresh final observation'
+   final_observation=observation;reach=position_ik(arm_model,current_q(state,joints),final_observation['point']);S['final_arm_workspace']=reach
+   valid_observation=reach is not None and admissible(final_observation['capture_ns'],final_observation['capture_wall'],clock_ns,time.monotonic(),final_observation['tf_stamp_ns'])
+   ready=manipulation_ready(terminal.status,S['actual_goal_error_m'],S['actual_goal_yaw_error_rad'],platform.get('stationary_ready'),valid_observation,bool(gateway.get('fault') or boundary.get('fault') or vision_status.get('fault')));assert ready,'terminal/pose/stop/observation/workspace not ready'
+   ready_pub=node.create_publisher(String,N+'/ready_for_manipulation',1);payload={'state':'READY_FOR_MANIPULATION','terminal':terminal.status,'actual_position_error_m':S['actual_goal_error_m'],'actual_yaw_error_rad':S['actual_goal_yaw_error_rad'],'capture_ns':final_observation['capture_ns'],'workspace':reach,'stamp_ns':clock_ns,'capture_wall':final_observation['capture_wall'],'decision_wall':time.monotonic(),'tf_stamp_ns':final_observation['tf_stamp_ns']};ready_pub.publish(String(data=json.dumps(payload)));S['ready_for_manipulation']=payload;until(lambda:False,.15);ready_pub.publish(String(data=json.dumps({'state':'NOT_READY','reason':'normal_shutdown','stamp_ns':clock_ns})))
   S['plan_count']=len(plans);S['max_abs_y_m']=max(abs(p['y']) for p in poses);response=call('platform/shutdown');assert response.success,response.message;launch.wait(timeout=12);assert launch.returncode==0;S['engine']=json.loads((out/'engine.json').read_text());assert S['engine']['normal_shutdown_requested'] and S['engine']['rx_joined'] and S['engine']['upstream_threads_joined'];S['result']='PASS'
  except BaseException:S['error']=traceback.format_exc()
  finally:
-  S['gateway_last']=gateway;S['platform_last']=platform;S['navigation_last']=boundary
+  S['gateway_last']=gateway;S['platform_last']=platform;S['navigation_last']=boundary;S['vision_last']=vision_status
   if node is not None and launch is not None and launch.poll() is None:
    try:
     if goal_handle is not None and result_future is not None and not result_future.done():goal_handle.cancel_goal_async()

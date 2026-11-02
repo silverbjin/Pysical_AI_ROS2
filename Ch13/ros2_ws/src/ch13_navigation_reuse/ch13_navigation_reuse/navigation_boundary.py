@@ -11,16 +11,21 @@ from geometry_msgs.msg import TwistStamped
 from .nav_contract import NavigationContract,FutureInbox
 from .command_gateway import N,ns,set_stamp
 from .wire import decode
+from .vision_lease import VisionLease
 class NavigationBoundary(Node):
  def __init__(self):
-  super().__init__('ch13_reuse_navigation_boundary');self.c=NavigationContract();self.relay_gid=None;self.pending=FutureInbox()
+  super().__init__('ch13_reuse_navigation_boundary');self.c=NavigationContract();self.relay_gid=None;self.pending=FutureInbox();self.vision=VisionLease()
   self.raw=self.create_publisher(TwistStamped,N+'/cmd_vel_raw',1);self.status=self.create_publisher(String,N+'/navigation/status',1)
   self.create_subscription(String,N+'/ingress/navigation',self.packet,16)
-  self.create_service(Trigger,N+'/navigation/enable',self.enable);self.create_service(Trigger,N+'/navigation/idle',self.idle);self.create_service(Trigger,N+'/navigation/reset',self.reset)
+  self.create_service(Trigger,N+'/navigation/enable',self.enable);self.create_service(Trigger,N+'/navigation/require_vision',self.require_vision);self.create_service(Trigger,N+'/navigation/idle',self.idle);self.create_service(Trigger,N+'/navigation/reset',self.reset)
   self.create_timer(.02,self.tick,clock=Clock(clock_type=ClockType.STEADY_TIME))
  def consume(self,key,m,i):
   gid=i['publisher_gid'].hex();wall=i['receipt_wall']
-  if key in ('nav','smooth'):
+  if key=='vision_health':
+   data=json.loads(m.data);capture=float(data['capture_wall'])
+   if capture>i['receipt_wall']+.01:raise ValueError('vision capture after receipt')
+   self.vision.observe(data['capture_ns'],capture,gid)
+  elif key in ('nav','smooth'):
    v,w=m.twist.linear,m.twist.angular;values=(v.x,v.y,v.z,w.x,w.y,w.z)
    if key=='nav':self.c.nav(ns(m.header.stamp),wall,gid,values,m.header.frame_id)
    else:self.c.smooth(ns(m.header.stamp),wall,gid,values)
@@ -38,6 +43,7 @@ class NavigationBoundary(Node):
     self.c.clock(ns(m.clock),i['receipt_wall'],i['publisher_gid'].hex())
     for job in self.pending.ready(self.c.g.clock_ns,now):self.consume(*job)
     return
+   if key=='vision_health':self.consume(key,m,i);return
    jobs=[('transform',t,i) for t in m.transforms] if key in ('tf','tf_static') else [(key,m,i)]
    for kind,msg,info in jobs:
     if kind=='transform':
@@ -47,9 +53,10 @@ class NavigationBoundary(Node):
     source=kind+(':'+msg.child_frame_id if kind=='transform' else '')
     for job in self.pending.offer(source,ns(msg.header.stamp),info['receipt_wall'],(kind,msg,info),self.c.g.clock_ns,now,owner=info['publisher_gid'].hex()):self.consume(*job)
   except (ValueError,KeyError,TypeError) as exc:self.c.trip('INVALID_NAV_INGRESS:'+str(exc))
+ def require_vision(self,request,response):response.success=self.c.phase=='IDLE' and self.vision.enable(self.c.g.clock_ns,time.monotonic());response.message='vision lease required' if response.success else 'fresh original capture required';return response
  def enable(self,request,response):response.success=self.c.enable(time.monotonic());response.message=self.c.phase;return response
  def idle(self,request,response):self.c.idle();response.success=self.c.phase=='IDLE';response.message=self.c.phase;return response
- def reset(self,request,response):self.c=NavigationContract();self.relay_gid=None;self.pending=FutureInbox();response.success=True;response.message='IDLE; fresh inputs/explicit enable required';return response
+ def reset(self,request,response):self.c=NavigationContract();self.relay_gid=None;self.pending=FutureInbox();self.vision=VisionLease();response.success=True;response.message='IDLE; fresh inputs/explicit enable required';return response
  def tick(self):
   now=time.monotonic()
   try:
@@ -58,6 +65,8 @@ class NavigationBoundary(Node):
   self.c.graph({'clock':self.count_publishers('/clock'),'nav':self.count_publishers(N+'/nav_cmd'),'smooth':self.count_publishers(N+'/smoothed_cmd'),'scan':self.count_publishers(N+'/scan'),'tf':1 if self.c.frames_ready() else 0},now)
   if self.count_publishers(N+'/cmd_vel_raw')!=1:self.c.trip('RAW_BYPASS')
   if self.count_publishers(N+'/ingress/navigation')>1:self.c.trip('DUPLICATE_RELAY')
+  if self.vision.active and self.c.phase in ('WAITING','ACTIVE'):
+   if not self.vision.check(self.c.g.clock_ns,now) or self.count_publishers(N+'/vision/health')!=1:self.c.trip(self.vision.fault or 'VISION_OWNER_COUNT')
   stamp,vx,wz,phase,fault=self.c.output(now)
   if stamp>0:
    m=TwistStamped();set_stamp(m.header.stamp,stamp);m.header.frame_id='reuse/nav_base';m.twist.linear.x=vx;m.twist.angular.z=wz;self.raw.publish(m)

@@ -138,7 +138,7 @@ class Platform(Node):
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--repo-root',required=True);parser.add_argument('--max-sim-s',type=float,default=40.);parser.add_argument('--report',required=True);parser.add_argument('--scene',choices=['free','obstacle','blocked','vision']);args=parser.parse_args()
     root=Path(args.repo_root).resolve();report=Path(args.report);report.parent.mkdir(parents=True,exist_ok=True)
-    S={'pid':os.getpid(),'ppid':os.getppid(),'result':'ERROR','normal_shutdown_requested':False};node=p=None;executor=None;rx=None;owned_threads=[];rows=[];last_window=[];sensors=None
+    S={'pid':os.getpid(),'ppid':os.getppid(),'result':'ERROR','normal_shutdown_requested':False};node=p=None;executor=None;rx=None;owned_threads=[];rows=[];last_window=[];sensors=None;scheduler=None
     import fcntl
     lockfile=(root.parent/'ch13_reuse_engine.lock').open('a+')
     try:
@@ -170,7 +170,9 @@ def main():
         owned_threads=[t for t in threading.enumerate() if t not in threads_before]
         correction.freeze_arm_reference(p);caps=p.mjModel.actuator_ctrlrange.copy();correction.configure_native_arm_pd(p.mjModel,p.Kp_arm,p.Kd_arm)
         source=textwrap.dedent(inspect.getsource(upstream.PlayMujoco.run));source=correction.consistent_walking_run_source(source)
-        namespace=dict(upstream.PlayMujoco.run.__globals__);exec(compile(source,'ch13_pinned_run','exec'),namespace);p.run=types.MethodType(namespace['run'],p);p._ch13_mujoco=upstream.mujoco
+        from .scheduler import SteadyScheduler
+        scheduler=SteadyScheduler(p.simulation_dt);p.last_render_time=scheduler.time()
+        namespace=dict(upstream.PlayMujoco.run.__globals__);namespace['time']=scheduler;exec(compile(source,'ch13_pinned_run','exec'),namespace);p.run=types.MethodType(namespace['run'],p);p._ch13_mujoco=upstream.mujoco
         assert tuple(p.mjModel.joint(i).name for i in range(1,p.mjModel.njnt))==JOINT_NAMES
         if args.scene:sensors=SensorSuite(p.mjModel,p.mjData,args.scene,report.parent);p._ch13_sensors=sensors
         rclpy.init(args=[]);node=Platform();node.allow_tf_broadcasters=bool(args.scene)
@@ -219,6 +221,7 @@ def main():
         if not node.stop_requested or rx_error:raise RuntimeError('unrequested engine end or ROS receiver failure')
     except BaseException:S['error']=traceback.format_exc();S['result']='ERROR'
     finally:
+        if scheduler is not None:S['scheduler']=scheduler.summary()
         if sensors is not None:sensors.close()
         if p is not None:p.viewer.close()
         if executor is not None:executor.shutdown(timeout_sec=2.)

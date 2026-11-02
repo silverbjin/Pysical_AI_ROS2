@@ -8,4 +8,11 @@ metrics={'planar_rms_speed_mps':float(np.linalg.norm(rms(v[:,:2]))),'yaw_rate_rm
 checks={k:metrics[k]<=g[k]+1e-10 for k in metrics};checks.update(zero_command=all(r['vx']==0 and r['wz']==0 for r in w),unique_samples=len(w)>=g['minimum_unique_samples'],probe_pass=s['result']=='PASS',normal_engine=e['result']=='COMPLETED' and e['normal_shutdown_requested'],threads=e['rx_joined'] and e['upstream_threads_joined'],force_cap=e['max_force_cap_ratio']<=1+1e-8,processes=not s['remaining_launch_pids'] and s['clean_launch_exits']==len(s['owned_launch_pids']))
 if s['terminal_status']==4:
  actual=e['actual_pose'];target=s['target'];heading=math.atan2(2*(actual[3]*actual[6]+actual[4]*actual[5]),1-2*(actual[5]**2+actual[6]**2));checks['actual_goal_position']=math.hypot(actual[0]-target[0],actual[1]-target[1])<=.1;checks['actual_goal_yaw']=abs(math.atan2(math.sin(heading-target[2]),math.cos(heading-target[2])))<=.1
+if s['case']=='vision':
+ vision=[json.loads(x) for x in (out/'vision_observations.jsonl').read_text().splitlines()];captures={x['capture_ns']:x for x in json.loads((out/'sensor_summary.json').read_text())['captures']};ready=s.get('ready_for_manipulation',{});admission=s['vision_admission']['source_observation']
+ checks['actual_rgbd_observation']=bool(vision) and all(x['capture_ns'] in captures and x['rgb_sha256']==captures[x['capture_ns']]['rgb_sha256'] for x in vision)
+ checks['original_goal_capture_stamp']=s['goal_header_stamp_ns']==admission['capture_ns']
+ checks['ready_after_actual_terminal']=bool(ready) and ready['terminal']==4 and ready['decision_wall']>=s['events'][0]['wall']
+ checks['ready_fresh_original_capture']=bool(ready) and 0<=ready['decision_wall']-ready['capture_wall']<=.3 and 0<=ready['capture_ns']-ready['tf_stamp_ns']<=100_000_000
+ checks['actual_arm_workspace']=s.get('final_arm_workspace') is not None and s['final_arm_workspace']['residual_m']<=.02 and s['final_arm_workspace']['collision_free']
 result={'result':'PASS' if all(checks.values()) else 'FAIL','gate':g['revision'],'window_wall_s':last['wall']-w[0]['wall'],'window_sim_s':last['sim_s']-w[0]['sim_s'],'unique_samples':len(w),'metrics':metrics,'checks':checks};(out/'navigation_verification.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2));assert result['result']=='PASS'

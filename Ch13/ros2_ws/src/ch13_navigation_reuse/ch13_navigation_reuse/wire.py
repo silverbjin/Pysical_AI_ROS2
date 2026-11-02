@@ -5,8 +5,9 @@ from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState,LaserScan,Image,CameraInfo
 from tf2_msgs.msg import TFMessage
+from std_msgs.msg import String
 from rosgraph_msgs.msg import Clock
-TYPES={'raw':TwistStamped,'safe':TwistStamped,'base':Odometry,'joints':JointState,'clock':Clock,'nav':TwistStamped,'smooth':TwistStamped,'scan':LaserScan,'tf':TFMessage,'tf_static':TFMessage,'rgb':Image,'depth':Image,'camera_info':CameraInfo}
+TYPES={'raw':TwistStamped,'safe':TwistStamped,'base':Odometry,'joints':JointState,'clock':Clock,'nav':TwistStamped,'smooth':TwistStamped,'scan':LaserScan,'tf':TFMessage,'tf_static':TFMessage,'rgb':Image,'depth':Image,'camera_info':CameraInfo,'camera_meta':String,'vision_health':String}
 def decode(data):
     if len(data)>1050000:raise ValueError('oversized ingress')
     version,key,source_gid,relay_gid,receipt_ns,source_ns,payload=data.split('|',6)

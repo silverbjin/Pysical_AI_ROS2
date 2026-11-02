@@ -15,8 +15,10 @@ class WorldMap(Node):
   for y in range(100):
    for x in range(120):
     px=-2+(x+.5)*.05;py=-2.5+(y+.5)*.05;occupied=any(abs(px-p[0])<=z[0]+.025 and abs(py-p[1])<=z[1]+.025 for _,p,z in layout(profile));m.data.append(100 if occupied else 0)
-  self.pub.publish(m);self.map=m;self.create_timer(1.,lambda:self.pub.publish(self.map))
-  self.tf=StaticTransformBroadcaster(self);t=TransformStamped();t.header.frame_id='reuse/map';t.child_frame_id='reuse/odom';t.transform.rotation.w=1.;self.tf.sendTransform(t)
+  self.pub.publish(m);self.map=m
+  self.tf=StaticTransformBroadcaster(self);t=TransformStamped();t.header.frame_id='reuse/map';t.child_frame_id='reuse/odom';t.transform.rotation.w=1.;self.tf.sendTransform(t);self.static=t;self.create_timer(1.,self.republish)
+ def republish(self):
+  self.pub.publish(self.map);self.tf.sendTransform(self.static) # same static stamp/value, supports late relay consumers
 def main():
  parser=argparse.ArgumentParser();parser.add_argument('--scene',default='free');a,_=parser.parse_known_args();rclpy.init();n=WorldMap(a.scene)
  try:rclpy.spin(n)

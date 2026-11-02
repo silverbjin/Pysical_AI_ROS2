@@ -1,6 +1,6 @@
 {
   "revision": "section_13_5_reuse_v1",
-  "status": "R3_DEVELOPMENT_PASS_R4_R5_PENDING",
+  "status": "R4_ACTUAL_RGBD_AND_CORE_PASS_GOAL_APPROACH_PENDING",
   "upstream": {
     "url": "https://github.com/iit-DLSLab/locomanipulation-teleop-isaaclab",
     "commit": "d010212c3f5c9e6e5542ada61cfdacc19b00f775",
@@ -515,7 +515,7 @@
     "R1": "CORRECTED_A_LIMITED_STOP_HOLD_REPLAY_PASS; original failures preserved; down-to-stand and stow-envelope audit pending",
     "R2": "PASS:45 small/DDS/lifecycle tests; installed launch actual forward/turn/stop/arm ownership/raw-loss/cleanup PASS; four stage commits non-force pushed and remote SHA verified",
     "R3": "DEVELOPMENT_PASS:Nav2 actual free/obstacle/blocked/cancel and measured stop/cleanup; final frozen replay in R5 pending",
-    "R4": "NOT_STARTED",
+    "R4": "IN_PROGRESS:78 testsPASS, actual RGBD134 observations recorded, actual goal approach pending after temporal seam/scheduler corrections",
     "R5": "NOT_STARTED"
   },
   "fallback_candidate": {
@@ -860,7 +860,8 @@
     "source_helper_sha256": "39c4848ae5b769611860bd7bde1dcfa125e8a5ba112baacb7cfca761effd7582",
     "reuse_notice": "Ch13/scripts/reuse_13_5/REUSE_MANIFEST.md",
     "evidence": "0a384893-e928-4a23-919c-3d98b51f51be",
-    "result": "THREE_STOP_HOLD_WINDOWS_PASS; not full platform/manipulation acceptance"
+    "result": "THREE_STOP_HOLD_WINDOWS_PASS; not full platform/manipulation acceptance",
+    "scheduler_clock": "upstream run namespace uses CLOCK_MONOTONIC; per-sleep request <=physics_dt; absolute clock events recorded, no OS setting changes"
   },
   "r2": {
     "revision": "section_13_5_reuse_R2_v2",
@@ -1051,9 +1052,14 @@
         "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
       },
       {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/approach_geometry.py",
+        "bytes": 4016,
+        "sha256": "08fe1a7a4c51034ec17ab6b88f1f817d8195896eb09853717f2838af46769bb0"
+      },
+      {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/command_gateway.py",
-        "bytes": 5395,
-        "sha256": "8f562ecaa274cccf92b3abcc99366e76749677e38f3db23569766a213b86aeb8"
+        "bytes": 6887,
+        "sha256": "a344ee4680e991fcce1bce56867a0e7eee5a7d058cd749b0a677a3341a008490"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/nav_contract.py",
@@ -1062,13 +1068,13 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/navigation_boundary.py",
-        "bytes": 4996,
-        "sha256": "1beb86547a10c382654abf0157fc71ebd80766507ad4a82137653729c7622fe6"
+        "bytes": 5939,
+        "sha256": "4e6e121e252ba187e731d3efcdaa7029399cda3dc0074bd4a7d4131550040174"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/platform_adapter.py",
-        "bytes": 18590,
-        "sha256": "8a89d4efaec570116017b6c6589e73cf39ff1b692b7c8cd997a8344a50f1e3a3"
+        "bytes": 18838,
+        "sha256": "cd10c60dc36a8a0abed51c8b32f9adfdc7ccf58fec3336c1b1c940fd1c733d9d"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/safety.py",
@@ -1081,9 +1087,14 @@
         "sha256": "ba3eb2fbd2443d10bae23edfc6ce9d2cd84179709b37da9b7ed76b17a576b237"
       },
       {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/scheduler.py",
+        "bytes": 1069,
+        "sha256": "9e88234f35a5f39e8a0dc055590abd5796332774e9971599857380fdf046f527"
+      },
+      {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/sensors.py",
-        "bytes": 3823,
-        "sha256": "54de04efb10f04b18490eb0c38e75aab562e46486c7ae11b768c8b2ee306f079"
+        "bytes": 4433,
+        "sha256": "8980ba90102449f3a666f2b43e6070df4a1d40b249a424fa836e003173dff699"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/state_adapter.py",
@@ -1091,14 +1102,29 @@
         "sha256": "7277c4976a01927139855a70857e7b3cfa45ce3707998d96729fa1dc4b186563"
       },
       {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_approach.py",
+        "bytes": 6902,
+        "sha256": "a07459132b513dd21bbeeeea85933e8be180ba0df1d3804fc124dffdcc315ad3"
+      },
+      {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_geometry.py",
+        "bytes": 2123,
+        "sha256": "76787857f72789828318878f61333c6dac7def3b56ece132204bc25d3691bf55"
+      },
+      {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_lease.py",
+        "bytes": 1128,
+        "sha256": "b3f9a80877e838a0d5dd555801ddbc0a9fb1d7b10b2e1ba1ef33e1b01e58f9d0"
+      },
+      {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/wire.py",
-        "bytes": 1278,
-        "sha256": "253d961a90420f744d264d3f5bc55723b7706f7c0f3ac785b89980a9e2c95879"
+        "bytes": 1355,
+        "sha256": "d6cbb6561c70dfcbf951cf220ca39505599b7d9acb66ed8e3c1395e60464672a"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/world_map.py",
-        "bytes": 1647,
-        "sha256": "bc0136495ae363fb1aa05afa7e04a7e4e49324b284c454b846f8fac099333aa5"
+        "bytes": 1787,
+        "sha256": "bc9cad146190d4c05e2ce7ba095f70f8bb46f41494cbdfed4095df611e98a156"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/config/footprint.json",
@@ -1122,8 +1148,8 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/launch/navigation.launch.py",
-        "bytes": 2823,
-        "sha256": "6dddbec0fa3b1e31ffb1b1ee669e4d9b455b3f2c56cf45ce40b05ac0d80c2a93"
+        "bytes": 3078,
+        "sha256": "fe12ca3ba5c87d176882edaf2c7ab958c92a1bf5ccc9001c42497db868052beb"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/launch/platform.launch.py",
@@ -1132,8 +1158,8 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/package.xml",
-        "bytes": 929,
-        "sha256": "15623d9a7e7727f6d6bebb2443f699cc8c87956a2982dc57ddfc55c7afa28485"
+        "bytes": 979,
+        "sha256": "143c26f2c5cb5475cc09f23604371a4921a60b70d502d785f242249c90e21a92"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/resource/ch13_navigation_reuse",
@@ -1151,6 +1177,16 @@
         "sha256": "f1d1b74315cd9c1ec9b52b7277acf2cb1aba913f4199437700300215225c1dae"
       },
       {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_approach_geometry.py",
+        "bytes": 1330,
+        "sha256": "ea17981eed98ce232ccd9ac6a26f75bead35c0e72ddf45dd3aed99c5c42c3307"
+      },
+      {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_gateway_validation.py",
+        "bytes": 1073,
+        "sha256": "15673b1b4a37fcc509a782c6a21747dd9ff4df380bfe314ad06305a40bb6cf62"
+      },
+      {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_launch_lifecycle.py",
         "bytes": 1578,
         "sha256": "13d16a9664ec14063d2fba51ac0ea0f47a262f56c8d2f498f38b479ecc3a1a83"
@@ -1162,8 +1198,8 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_navigation_wire.py",
-        "bytes": 5055,
-        "sha256": "9b38e211409d70e81bafd4120b79ed20a65d36f0b216cf28111a6c58030ec187"
+        "bytes": 6013,
+        "sha256": "0b40c584ea20a5adf25d1d13633203179fa80b8278e635d279f3c93aaa8dfc86"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_concurrency.py",
@@ -1191,6 +1227,11 @@
         "sha256": "39df824e2872f639f8b827e28fefb31402f3d344b3205699a776437a354c3def"
       },
       {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_reuse_vision.py",
+        "bytes": 3140,
+        "sha256": "440d5f9c0b6310b13e7b94f82f653f5dbe4b21d7ee3cee3ab73a677bc8810109"
+      },
+      {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py",
         "bytes": 7493,
         "sha256": "b9b2d6fb9def161c63ab09e2eef807688ec465cb36c71ae70d7a5a27d1a903b3"
@@ -1204,6 +1245,11 @@
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_scene_sensor.py",
         "bytes": 1749,
         "sha256": "91f6806f2dc2c106567ded82e2c0f16f499775ab80e9a0378fe9127f9b31f235"
+      },
+      {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_scheduler.py",
+        "bytes": 728,
+        "sha256": "f0f7bea575f2290ef3d7b96def3ffa4298dc7f7a34b8559b6a594f416517bd76"
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_slew_clock.py",
@@ -1221,6 +1267,11 @@
         "sha256": "d89ced70d819027520833e03343f6384c5dbf18f68c71e6cf961e8a4cc6485e4"
       },
       {
+        "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_vision_lease.py",
+        "bytes": 698,
+        "sha256": "a3d2accf3ab30f78d29fa8a0022bb2e25760f942185fe8844f07ac21bad3aacd"
+      },
+      {
         "path": "Ch13/ros2_ws/src/ch13_reuse_wire/CMakeLists.txt",
         "bytes": 619,
         "sha256": "9d8eecfe6ccff630c15f506aaa6aea0efd29620cebdab9e64d93f75383f64819"
@@ -1232,8 +1283,8 @@
       },
       {
         "path": "Ch13/ros2_ws/src/ch13_reuse_wire/src/ingress.cpp",
-        "bytes": 4023,
-        "sha256": "34560d7f55817b108371487cd47778c10dfa62b7a6de244dfd17809e568e2b59"
+        "bytes": 4206,
+        "sha256": "38d1d57ec2d57c77a8aa9c66e78e3314662f5764f82383dd2caab0392fdf155a"
       }
     ],
     "development_runs": {
@@ -1253,9 +1304,14 @@
       "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
     },
     {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/approach_geometry.py",
+      "bytes": 4016,
+      "sha256": "08fe1a7a4c51034ec17ab6b88f1f817d8195896eb09853717f2838af46769bb0"
+    },
+    {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/command_gateway.py",
-      "bytes": 5395,
-      "sha256": "8f562ecaa274cccf92b3abcc99366e76749677e38f3db23569766a213b86aeb8"
+      "bytes": 6887,
+      "sha256": "a344ee4680e991fcce1bce56867a0e7eee5a7d058cd749b0a677a3341a008490"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/nav_contract.py",
@@ -1264,13 +1320,13 @@
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/navigation_boundary.py",
-      "bytes": 4996,
-      "sha256": "1beb86547a10c382654abf0157fc71ebd80766507ad4a82137653729c7622fe6"
+      "bytes": 5939,
+      "sha256": "4e6e121e252ba187e731d3efcdaa7029399cda3dc0074bd4a7d4131550040174"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/platform_adapter.py",
-      "bytes": 18590,
-      "sha256": "8a89d4efaec570116017b6c6589e73cf39ff1b692b7c8cd997a8344a50f1e3a3"
+      "bytes": 18838,
+      "sha256": "cd10c60dc36a8a0abed51c8b32f9adfdc7ccf58fec3336c1b1c940fd1c733d9d"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/safety.py",
@@ -1283,9 +1339,14 @@
       "sha256": "ba3eb2fbd2443d10bae23edfc6ce9d2cd84179709b37da9b7ed76b17a576b237"
     },
     {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/scheduler.py",
+      "bytes": 1069,
+      "sha256": "9e88234f35a5f39e8a0dc055590abd5796332774e9971599857380fdf046f527"
+    },
+    {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/sensors.py",
-      "bytes": 3823,
-      "sha256": "54de04efb10f04b18490eb0c38e75aab562e46486c7ae11b768c8b2ee306f079"
+      "bytes": 4433,
+      "sha256": "8980ba90102449f3a666f2b43e6070df4a1d40b249a424fa836e003173dff699"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/state_adapter.py",
@@ -1293,14 +1354,29 @@
       "sha256": "7277c4976a01927139855a70857e7b3cfa45ce3707998d96729fa1dc4b186563"
     },
     {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_approach.py",
+      "bytes": 6902,
+      "sha256": "a07459132b513dd21bbeeeea85933e8be180ba0df1d3804fc124dffdcc315ad3"
+    },
+    {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_geometry.py",
+      "bytes": 2123,
+      "sha256": "76787857f72789828318878f61333c6dac7def3b56ece132204bc25d3691bf55"
+    },
+    {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_lease.py",
+      "bytes": 1128,
+      "sha256": "b3f9a80877e838a0d5dd555801ddbc0a9fb1d7b10b2e1ba1ef33e1b01e58f9d0"
+    },
+    {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/wire.py",
-      "bytes": 1278,
-      "sha256": "253d961a90420f744d264d3f5bc55723b7706f7c0f3ac785b89980a9e2c95879"
+      "bytes": 1355,
+      "sha256": "d6cbb6561c70dfcbf951cf220ca39505599b7d9acb66ed8e3c1395e60464672a"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/world_map.py",
-      "bytes": 1647,
-      "sha256": "bc0136495ae363fb1aa05afa7e04a7e4e49324b284c454b846f8fac099333aa5"
+      "bytes": 1787,
+      "sha256": "bc9cad146190d4c05e2ce7ba095f70f8bb46f41494cbdfed4095df611e98a156"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/config/footprint.json",
@@ -1324,8 +1400,8 @@
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/launch/navigation.launch.py",
-      "bytes": 2823,
-      "sha256": "6dddbec0fa3b1e31ffb1b1ee669e4d9b455b3f2c56cf45ce40b05ac0d80c2a93"
+      "bytes": 3078,
+      "sha256": "fe12ca3ba5c87d176882edaf2c7ab958c92a1bf5ccc9001c42497db868052beb"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/launch/platform.launch.py",
@@ -1334,8 +1410,8 @@
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/package.xml",
-      "bytes": 929,
-      "sha256": "15623d9a7e7727f6d6bebb2443f699cc8c87956a2982dc57ddfc55c7afa28485"
+      "bytes": 979,
+      "sha256": "143c26f2c5cb5475cc09f23604371a4921a60b70d502d785f242249c90e21a92"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/resource/ch13_navigation_reuse",
@@ -1353,6 +1429,16 @@
       "sha256": "f1d1b74315cd9c1ec9b52b7277acf2cb1aba913f4199437700300215225c1dae"
     },
     {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_approach_geometry.py",
+      "bytes": 1330,
+      "sha256": "ea17981eed98ce232ccd9ac6a26f75bead35c0e72ddf45dd3aed99c5c42c3307"
+    },
+    {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_gateway_validation.py",
+      "bytes": 1073,
+      "sha256": "15673b1b4a37fcc509a782c6a21747dd9ff4df380bfe314ad06305a40bb6cf62"
+    },
+    {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_launch_lifecycle.py",
       "bytes": 1578,
       "sha256": "13d16a9664ec14063d2fba51ac0ea0f47a262f56c8d2f498f38b479ecc3a1a83"
@@ -1364,8 +1450,8 @@
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_navigation_wire.py",
-      "bytes": 5055,
-      "sha256": "9b38e211409d70e81bafd4120b79ed20a65d36f0b216cf28111a6c58030ec187"
+      "bytes": 6013,
+      "sha256": "0b40c584ea20a5adf25d1d13633203179fa80b8278e635d279f3c93aaa8dfc86"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_concurrency.py",
@@ -1393,6 +1479,11 @@
       "sha256": "39df824e2872f639f8b827e28fefb31402f3d344b3205699a776437a354c3def"
     },
     {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_reuse_vision.py",
+      "bytes": 3140,
+      "sha256": "440d5f9c0b6310b13e7b94f82f653f5dbe4b21d7ee3cee3ab73a677bc8810109"
+    },
+    {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py",
       "bytes": 7493,
       "sha256": "b9b2d6fb9def161c63ab09e2eef807688ec465cb36c71ae70d7a5a27d1a903b3"
@@ -1406,6 +1497,11 @@
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_scene_sensor.py",
       "bytes": 1749,
       "sha256": "91f6806f2dc2c106567ded82e2c0f16f499775ab80e9a0378fe9127f9b31f235"
+    },
+    {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_scheduler.py",
+      "bytes": 728,
+      "sha256": "f0f7bea575f2290ef3d7b96def3ffa4298dc7f7a34b8559b6a594f416517bd76"
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_slew_clock.py",
@@ -1423,6 +1519,11 @@
       "sha256": "d89ced70d819027520833e03343f6384c5dbf18f68c71e6cf961e8a4cc6485e4"
     },
     {
+      "path": "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_vision_lease.py",
+      "bytes": 698,
+      "sha256": "a3d2accf3ab30f78d29fa8a0022bb2e25760f942185fe8844f07ac21bad3aacd"
+    },
+    {
       "path": "Ch13/ros2_ws/src/ch13_reuse_wire/CMakeLists.txt",
       "bytes": 619,
       "sha256": "9d8eecfe6ccff630c15f506aaa6aea0efd29620cebdab9e64d93f75383f64819"
@@ -1434,8 +1535,24 @@
     },
     {
       "path": "Ch13/ros2_ws/src/ch13_reuse_wire/src/ingress.cpp",
-      "bytes": 4023,
-      "sha256": "34560d7f55817b108371487cd47778c10dfa62b7a6de244dfd17809e568e2b59"
+      "bytes": 4206,
+      "sha256": "38d1d57ec2d57c77a8aa9c66e78e3314662f5764f82383dd2caab0392fdf155a"
     }
-  ]
+  ],
+  "r4": {
+    "small_tests": 78,
+    "report": "Ch13/docs/SECTION_13_5_REUSE_R4_S1_REPORT_KO.md",
+    "sensor_contract": {
+      "width": 320,
+      "height": 240,
+      "camera_sim_hz": 15,
+      "inference_cap_wall_hz_default": 10,
+      "inference_cap_wall_hz_option": 15,
+      "photo_max_age_wall_s": 0.3,
+      "photo_max_age_sim_s": 0.3,
+      "past_tf_max_sim_s": 0.1
+    },
+    "first_actual_trial": "581e5c05-1f12-4191-b1bb-4d2be894ba12",
+    "result": "IN_PROGRESS"
+  }
 }

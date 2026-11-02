@@ -27,4 +27,9 @@ rows.append({'elf_relocation':'CMake install RPATH change','build_sha256':hashli
 rows.append({'source':'compiled ch13_reuse_wire ingress','installed':str(b),'sha256':hashlib.sha256(b.read_bytes()).hexdigest()})
 lock=json.loads((root/'Ch13/dependencies/section_13_5_reuse.lock.json').read_text());up=root.parent/'upstream-iit-locomanipulation-d010212'
 assert all(hashlib.sha256((up/f['path']).read_bytes()).hexdigest()==f['sha256'] for f in lock['files'])
+legacy=root/'Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision'
+for name in ['__init__','contracts','geometry']:
+ module=importlib.import_module('integrated_robot_vision'+('' if name=='__init__' else '.'+name));actual=Path(module.__file__);source_legacy=legacy/(name+'.py')
+ assert '/install/' in str(actual) and actual.read_bytes()==source_legacy.read_bytes()
+ rows.append({'legacy_geometry_source':str(source_legacy),'installed':str(actual),'sha256':hashlib.sha256(actual.read_bytes()).hexdigest()})
 out=Path(sys.argv[1]);out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps({'result':'PASS','upstream_files':len(lock['files']),'installed':rows},indent=2)+'\n');print('INSTALL_AUDIT_PASS',len(rows),'installed artifacts; original94 hashes match')

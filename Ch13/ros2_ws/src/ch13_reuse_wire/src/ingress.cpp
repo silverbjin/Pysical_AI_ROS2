@@ -58,6 +58,8 @@ public:
     connect<sensor_msgs::msg::Image>("rgb","/ch13/reuse/rgb",vision_);
     connect<sensor_msgs::msg::Image>("depth","/ch13/reuse/depth",vision_);
     connect<sensor_msgs::msg::CameraInfo>("camera_info","/ch13/reuse/camera_info",vision_);
+    connect<std_msgs::msg::String>("camera_meta","/ch13/reuse/camera_capture",vision_);
+    connect<std_msgs::msg::String>("vision_health","/ch13/reuse/vision/health",navigation_);
     connect<rosgraph_msgs::msg::Clock>("clock","/clock",gateway_);
     connect<nav_msgs::msg::Odometry>("base","/ch13/reuse/engine_state",gateway_);
     connect<sensor_msgs::msg::JointState>("joints","/ch13/reuse/joint_states",gateway_);
