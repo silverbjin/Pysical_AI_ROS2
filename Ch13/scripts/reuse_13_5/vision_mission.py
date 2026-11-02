@@ -9,6 +9,14 @@ from ch13_navigation_reuse.approach_geometry import candidates,position_ik,footp
 from ch13_navigation_reuse.vision_geometry import admissible
 from ch13_navigation_reuse.command_gateway import set_stamp
 
+def wait_new_capture(until,get_observation,get_clock,timeout=3):
+ previous=get_observation()['capture_ns'] if get_observation() is not None else 0
+ def fresh_new():
+  value=get_observation()
+  return value is not None and value['capture_ns']>previous and admissible(value['capture_ns'],value['capture_wall'],get_clock(),time.monotonic(),value['tf_stamp_ns'])
+ assert until(fresh_new,timeout),'no new original capture after planning'
+ return get_observation()
+
 def current_q(state,joints):
  q=np.zeros(27);p=state.pose.pose.position;r=state.pose.pose.orientation;q[:7]=[p.x,p.y,p.z,r.w,r.x,r.y,r.z];q[7:]=list(joints.position);return q
 
@@ -32,7 +40,7 @@ def select_goal(root,node,until,get_observation,get_state,get_joints,get_grid,ge
  assert evaluated,'all reachable candidates blocked by Nav2 planner'
  selected=min(evaluated,key=lambda c:c['path_cost_m'])
  for attempt in range(2):
-  assert until(lambda:fresh(get_observation()),3),'observation expired before goal admission';latest=get_observation();observed=np.array(latest['point']);delta=observed-point;assert np.linalg.norm(delta)<.03,'object moved beyond static-fixture assumption'
+  latest=wait_new_capture(until,get_observation,get_clock);observed=np.array(latest['point']);delta=observed-point;assert np.linalg.norm(delta)<.03,'object moved beyond static-fixture assumption'
   pose=list(selected['pose']);pose[0]+=float(delta[0]);pose[1]+=float(delta[1]);trial=current_q(get_state(),get_joints());trial[:2]=pose[:2];trial[3:7]=[math.cos(pose[2]/2),0,0,math.sin(pose[2]/2)];ik=position_ik(model,trial,observed)
   if ik is not None and footprint_clear(pose,grid,fp) and fresh(latest):
    return pose,{'ranking_capture_ns':initial['capture_ns'],'source_observation':latest,'candidate_evaluations':evaluated,'selected':dict(selected,pose=pose,final_ik=ik),'arm_model_source':'pinned mount/joints, position-only FK/Jacobian IK; no arm commands'},model

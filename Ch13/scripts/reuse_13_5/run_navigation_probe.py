@@ -68,6 +68,9 @@ def main():
     if response.current_state.id==3:break
     assert time.monotonic()<end,'Nav2 lifecycle not ACTIVE: '+name
     until(lambda:False,.1)
+  if args.case=='vision':
+   for name in ['navigation/enable','navigation/require_vision']:
+    full=N+'/'+name;client=node.create_client(Trigger,full);clients[full]=client;assert until(client.service_is_ready,3),'missing admission service '+full
   for name in ['platform/arm','gateway/arm']:response=call(name);assert response.success,response.message
   target=[.65,0.,0.]
   if args.case=='obstacle':target=[2.25,0.,0.]
@@ -76,6 +79,7 @@ def main():
   if args.case=='vision':
    from vision_mission import select_goal
    target,vision_record,arm_model=select_goal(root,node,until,lambda:observation,lambda:state,lambda:joints,lambda:grid,lambda:clock_ns);S['vision_admission']=vision_record
+   required_capture=vision_record['source_observation']['capture_ns'];assert until(lambda:boundary.get('vision_capture_ns',0)>=required_capture and boundary.get('vision_capture_age_wall_s',1.)<=.3,2),'navigation boundary has not received the same fresh capture'
    response=call('navigation/require_vision');assert response.success,response.message
 
   S['target']=target;start_xy=[state.pose.pose.position.x,state.pose.pose.position.y];start_sim=clock_ns;start_wall=time.monotonic();response=call('navigation/enable');assert response.success,response.message
@@ -92,7 +96,11 @@ def main():
     assert len(victims)==1,'owned boundary identity';os.kill(victims[0],signal.SIGTERM);S['injected_boundary_pid']=victims[0]
     assert until(lambda:gateway.get('mode')=='FAULT',2),'raw loss did not latch';receipt=gateway['source_receipts']['raw']['receipt_wall'];S['raw_expiry_decision_latency_s']=gateway['decision_wall']-receipt;assert S['raw_expiry_decision_latency_s']<=.35
    canceled=goal_handle.cancel_goal_async();assert until(canceled.done,3),'cancel ACK deadline';S['cancel_ack']=bool(canceled.result().goals_canceling);assert S['cancel_ack']
-  assert until(result_future.done,240),'NavigateToPose terminal deadline';terminal=result_future.result();S['terminal_status']=terminal.status;S['terminal_sim_ns']=clock_ns
+  if args.case not in ['cancel','raw_loss']:
+   assert until(lambda:result_future.done() or boundary.get('phase')=='FAULT' or gateway.get('mode')=='FAULT',240),'NavigateToPose terminal deadline'
+   if not result_future.done():
+    S['safety_fault_before_terminal']={'boundary':boundary.get('fault'),'gateway':gateway.get('fault')};canceled=goal_handle.cancel_goal_async();assert until(canceled.done,3);assert until(result_future.done,3),'terminal missing after safety cancellation'
+  assert until(result_future.done,3),'NavigateToPose terminal deadline';terminal=result_future.result();S['terminal_status']=terminal.status;S['terminal_sim_ns']=clock_ns
   expected=6 if args.case=='blocked' else (5 if args.case in ['cancel','raw_loss'] else 4);assert terminal.status==expected,('unexpected terminal',terminal.status,boundary,gateway)
   assert clock_ns-start_sim<=90_000_000_000,'navigation sim budget'
   if args.case!='raw_loss':response=call('navigation/idle');assert response.success,response.message

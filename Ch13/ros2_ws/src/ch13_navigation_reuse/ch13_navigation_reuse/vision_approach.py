@@ -14,12 +14,13 @@ from geometry_msgs.msg import PointStamped
 from .command_gateway import N,ns,set_stamp
 from .wire import decode
 from .vision_geometry import FrameCache,admissible,red_point
+from .image_artifact import write_rgb
 
 def matrix(t):
  q=t.transform.rotation;p=t.transform.translation;a=np.eye(4);a[:3,:3]=Rotation.from_quat([q.x,q.y,q.z,q.w]).as_matrix();a[:3,3]=[p.x,p.y,p.z];return a
 class VisionObserver(Node):
  def __init__(self,inference_hz=10.):
-  super().__init__('ch13_reuse_vision_observer');self.cache=FrameCache();self.clock_ns=0;self.clock_wall=None;self.fault='';self.relay={};self.tf_owners={};self.transforms={};self.map_odom=None;self.last_processed=0;self.last_processed_wall=-1e9;self.inference_hz=inference_hz;self.rows=[];self.rejected=Counter()
+  super().__init__('ch13_reuse_vision_observer');self.cache=FrameCache();self.clock_ns=0;self.clock_wall=None;self.fault='';self.relay={};self.tf_owners={};self.transforms={};self.map_odom=None;self.last_processed=0;self.last_processed_wall=-1e9;self.inference_hz=inference_hz;self.rows=[];self.last_accepted=None;self.rejected=Counter()
   self.observation=self.create_publisher(String,N+'/vision/observation',1);self.point=self.create_publisher(PointStamped,N+'/observed_target',1);self.health=self.create_publisher(String,N+'/vision/health',1);self.status=self.create_publisher(String,N+'/vision/status',1)
   self.create_subscription(String,N+'/ingress/vision',lambda m:self.packet(m,'camera'),4);self.create_subscription(String,N+'/ingress/navigation',lambda m:self.packet(m,'navigation'),16);self.create_timer(.02,self.tick,clock=TimerClock(clock_type=ClockType.STEADY_TIME))
  def packet(self,packet,channel):
@@ -67,8 +68,8 @@ class VisionObserver(Node):
       rgb_bytes=bytes(rgbm.data);digest=hashlib.sha256(rgb_bytes).hexdigest()
       if digest!=meta['rgb_sha256']:raise ValueError('capture content mismatch')
       rgb=np.frombuffer(rgb_bytes,dtype=np.uint8).reshape(240,320,3);depth=np.frombuffer(bytes(depthm.data),dtype='<f4').reshape(240,320);calibration=[info.k[0],info.k[4],info.k[2],info.k[5]];optical,box=red_point(rgb,depth,calibration);transform=self.transforms[tf_stamp];world=transform[:3,:3]@optical+transform[:3,3]
-      data={'capture_ns':stamp,'capture_wall':capture_wall,'first_receipt_wall':first,'receipt_wall_by_source':{k:v[1] for k,v in frame.items()},'tf_stamp_ns':tf_stamp,'source_frame':'reuse/camera_optical','frame':'reuse/map','optical_point':optical.tolist(),'point':world.tolist(),'T_map_camera':transform.tolist(),'calibration':calibration,'box':{'cx':box.cx,'cy':box.cy,'width':box.width,'height':box.height},'rgb_sha256':digest,'source_gids':dict(self.cache.owners),'source':'actual_Renderer_RGBD_red_fixture'}
-      self.observation.publish(String(data=json.dumps(data)));self.health.publish(String(data=json.dumps({'capture_ns':stamp,'capture_wall':capture_wall})));p=PointStamped();set_stamp(p.header.stamp,stamp);p.header.frame_id='reuse/map';p.point.x,p.point.y,p.point.z=map(float,world);self.point.publish(p);self.rows.append(data)
+      data={'inference_wall':now,'capture_ns':stamp,'capture_wall':capture_wall,'first_receipt_wall':first,'receipt_wall_by_source':{k:v[1] for k,v in frame.items()},'tf_stamp_ns':tf_stamp,'source_frame':'reuse/camera_optical','frame':'reuse/map','optical_point':optical.tolist(),'point':world.tolist(),'T_map_camera':transform.tolist(),'calibration':calibration,'box':{'cx':box.cx,'cy':box.cy,'width':box.width,'height':box.height},'rgb_sha256':digest,'source_gids':dict(self.cache.owners),'source':'actual_Renderer_RGBD_red_fixture'}
+      self.observation.publish(String(data=json.dumps(data)));self.health.publish(String(data=json.dumps({'capture_ns':stamp,'capture_wall':capture_wall})));p=PointStamped();set_stamp(p.header.stamp,stamp);p.header.frame_id='reuse/map';p.point.x,p.point.y,p.point.z=map(float,world);self.point.publish(p);self.rows.append(data);self.last_accepted=(rgb.copy(),depth.copy(),data)
      except (ValueError,IndexError) as exc:self.rejected[str(exc)]+=1
   self.status.publish(String(data=json.dumps({'fault':self.fault or self.cache.fault,'last_capture_ns':self.last_processed,'accepted':len(self.rows),'rejected':dict(self.rejected)})))
 def main():
@@ -76,5 +77,7 @@ def main():
  try:rclpy.spin(node)
  except (KeyboardInterrupt,ExternalShutdownException):pass
  finally:
+  if node.last_accepted is not None:
+   rgb,depth,meta=node.last_accepted;write_rgb(out/'last_accepted_rgb.png',rgb);np.save(out/'last_accepted_depth.npy',depth);(out/'last_accepted_observation.json').write_text(json.dumps(meta,indent=2)+'\n')
   (out/'vision_observations.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.rows));(out/'vision_summary.json').write_text(json.dumps({'inference_cap_wall_hz':node.inference_hz,'accepted':len(node.rows),'fault':node.fault or node.cache.fault,'rejected':dict(node.rejected)},indent=2)+'\n');node.destroy_node();rclpy.try_shutdown()
 if __name__=='__main__':main()

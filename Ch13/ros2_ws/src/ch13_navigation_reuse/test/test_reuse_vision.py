@@ -31,7 +31,9 @@ class ActualCameraTests(unittest.TestCase):
   source=root.parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml';m=make_model(source,'vision');d=mujoco.MjData(m);d.qpos[:]=m.key_qpos[m.key('home').id];mujoco.mj_forward(m,d)
   import tempfile
   from ch13_navigation_reuse.sensors import SensorSuite
-  temp=tempfile.TemporaryDirectory();suite=SensorSuite(m,d,'vision',temp.name);renderer=suite.renderer
+  temp=tempfile.TemporaryDirectory();suite=SensorSuite(m,d,'vision',temp.name)
   try:
-   rgb=renderer.render().copy();renderer.enable_depth_rendering();depth=renderer.render().copy();f=240/(2*np.tan(np.deg2rad(55)/2));point,_=red_point(rgb,depth,[f,f,159.5,119.5]);cam=m.camera('reuse_rgbd').id;world=d.cam_xpos[cam]+d.cam_xmat[cam].reshape(3,3)@np.diag([1.,-1.,-1.])@point;np.testing.assert_allclose(world,[1.75,0.,.55],atol=.025)
-  finally:suite.close();temp.cleanup()
+   import time
+   q=d.qpos.copy();capture_wall=time.monotonic();suite.request_capture(q,2_000_000_000,capture_wall);q[0]=.2
+   rgb,depth,meta=suite.get_capture(2_000_000_000,3.);self.assertEqual(meta['capture_ns'],2_000_000_000);self.assertEqual(meta['capture_wall'],capture_wall);f=240/(2*np.tan(np.deg2rad(55)/2));point,_=red_point(rgb,depth,[f,f,159.5,119.5]);cam=m.camera('reuse_rgbd').id;world=d.cam_xpos[cam]+d.cam_xmat[cam].reshape(3,3)@np.diag([1.,-1.,-1.])@point;np.testing.assert_allclose(world,[1.75,0.,.55],atol=.025)
+  finally:joined=suite.close();temp.cleanup();self.assertTrue(joined)

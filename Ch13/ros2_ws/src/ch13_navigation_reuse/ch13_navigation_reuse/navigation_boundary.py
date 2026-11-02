@@ -14,7 +14,7 @@ from .wire import decode
 from .vision_lease import VisionLease
 class NavigationBoundary(Node):
  def __init__(self):
-  super().__init__('ch13_reuse_navigation_boundary');self.c=NavigationContract();self.relay_gid=None;self.pending=FutureInbox();self.vision=VisionLease()
+  super().__init__('ch13_reuse_navigation_boundary');self.c=NavigationContract();self.relay_gid=None;self.pending=FutureInbox();self.vision=VisionLease();self.vision_fault_record=None
   self.raw=self.create_publisher(TwistStamped,N+'/cmd_vel_raw',1);self.status=self.create_publisher(String,N+'/navigation/status',1)
   self.create_subscription(String,N+'/ingress/navigation',self.packet,16)
   self.create_service(Trigger,N+'/navigation/enable',self.enable);self.create_service(Trigger,N+'/navigation/require_vision',self.require_vision);self.create_service(Trigger,N+'/navigation/idle',self.idle);self.create_service(Trigger,N+'/navigation/reset',self.reset)
@@ -56,7 +56,7 @@ class NavigationBoundary(Node):
  def require_vision(self,request,response):response.success=self.c.phase=='IDLE' and self.vision.enable(self.c.g.clock_ns,time.monotonic());response.message='vision lease required' if response.success else 'fresh original capture required';return response
  def enable(self,request,response):response.success=self.c.enable(time.monotonic());response.message=self.c.phase;return response
  def idle(self,request,response):self.c.idle();response.success=self.c.phase=='IDLE';response.message=self.c.phase;return response
- def reset(self,request,response):self.c=NavigationContract();self.relay_gid=None;self.pending=FutureInbox();self.vision=VisionLease();response.success=True;response.message='IDLE; fresh inputs/explicit enable required';return response
+ def reset(self,request,response):self.c=NavigationContract();self.relay_gid=None;self.pending=FutureInbox();self.vision=VisionLease();self.vision_fault_record=None;response.success=True;response.message='IDLE; fresh inputs/explicit enable required';return response
  def tick(self):
   now=time.monotonic()
   try:
@@ -66,11 +66,13 @@ class NavigationBoundary(Node):
   if self.count_publishers(N+'/cmd_vel_raw')!=1:self.c.trip('RAW_BYPASS')
   if self.count_publishers(N+'/ingress/navigation')>1:self.c.trip('DUPLICATE_RELAY')
   if self.vision.active and self.c.phase in ('WAITING','ACTIVE'):
-   if not self.vision.check(self.c.g.clock_ns,now) or self.count_publishers(N+'/vision/health')!=1:self.c.trip(self.vision.fault or 'VISION_OWNER_COUNT')
+   if not self.vision.check(self.c.g.clock_ns,now) or self.count_publishers(N+'/vision/health')!=1:
+    if self.vision_fault_record is None:self.vision_fault_record={'decision_wall':now,'clock_ns':self.c.g.clock_ns,'sample':self.vision.sample,'fault':self.vision.fault or 'VISION_OWNER_COUNT'}
+    self.c.trip(self.vision.fault or 'VISION_OWNER_COUNT')
   stamp,vx,wz,phase,fault=self.c.output(now)
   if stamp>0:
    m=TwistStamped();set_stamp(m.header.stamp,stamp);m.header.frame_id='reuse/nav_base';m.twist.linear.x=vx;m.twist.angular.z=wz;self.raw.publish(m)
-  self.status.publish(String(data=json.dumps({'phase':phase,'fault':fault,'stamp_ns':stamp,'vx':vx,'wz':wz,'origin':'controller_source_via_smoother' if phase=='ACTIVE' else 'generated_zero','frames_ready':self.c.frames_ready(),'samples':{k:{'stamp_ns':v[0],'receipt_wall':v[1],'gid':v[2]} for k,v in self.c.g.samples.items()}})))
+  self.status.publish(String(data=json.dumps({'phase':phase,'fault':fault,'stamp_ns':stamp,'vx':vx,'wz':wz,'origin':'controller_source_via_smoother' if phase=='ACTIVE' else 'generated_zero','frames_ready':self.c.frames_ready(),'vision_capture_ns':0 if self.vision.sample is None else self.vision.sample[0],'vision_capture_age_wall_s':None if self.vision.sample is None else now-self.vision.sample[1],'vision_fault_record':self.vision_fault_record,'samples':{k:{'stamp_ns':v[0],'receipt_wall':v[1],'gid':v[2]} for k,v in self.c.g.samples.items()}})))
 def main():
  rclpy.init();node=NavigationBoundary()
  try:rclpy.spin(node)

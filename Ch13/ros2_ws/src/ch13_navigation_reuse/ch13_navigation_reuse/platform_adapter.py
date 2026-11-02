@@ -150,6 +150,10 @@ def main():
         assert hashlib.sha256(helper.read_bytes()).hexdigest()==lock['corrected_deployment_profile']['source_helper_sha256'],'installed correction hash mismatch'
         spec=importlib.util.spec_from_file_location('ch13_pinned_corrections',helper);correction=importlib.util.module_from_spec(spec);spec.loader.exec_module(correction)
         sys.path.insert(0,str(up/'deploy'));import play_mujoco as upstream
+        import locomotion_policy_wrapper as policy_module
+        from .cpu_policy import cpu_session
+        policy_module.ort=types.SimpleNamespace(InferenceSession=cpu_session)
+        import torch;torch.set_num_threads(1)
         if args.scene:
             import mujoco as real_mujoco
             from .scene import make_model
@@ -222,7 +226,9 @@ def main():
     except BaseException:S['error']=traceback.format_exc();S['result']='ERROR'
     finally:
         if scheduler is not None:S['scheduler']=scheduler.summary()
-        if sensors is not None:sensors.close()
+        if sensors is not None:
+            S['camera_worker_joined']=sensors.close()
+            if not S['camera_worker_joined']:S['result']='ERROR';S['camera_error']='renderer worker failed to join'
         if p is not None:p.viewer.close()
         if executor is not None:executor.shutdown(timeout_sec=2.)
         if rx is not None:rx.join(2.)
