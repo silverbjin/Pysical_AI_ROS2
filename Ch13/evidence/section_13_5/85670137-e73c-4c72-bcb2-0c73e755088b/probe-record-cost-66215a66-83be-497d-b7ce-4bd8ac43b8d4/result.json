@@ -1,0 +1,2473 @@
+{
+  "scope": "unprofiled_synthetic_DDS_observation_cost_not_engine_acceptance",
+  "domain": 228,
+  "sources": {
+    "baseline": {
+      "path": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/.superpowers/sdd/SECTION_13_5_IMPLEMENTATION_PLAN_KO/probe_before_immutable_records.py",
+      "sha256": "70987f1903acff5935457a3b77d66ea89c05929b6f349618bb77ae5cf7b353ad"
+    },
+    "immutable": {
+      "path": "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py",
+      "sha256": "3bffc96a191bd4d47c6a33c809a05b7f3c459df640026d8764b665378152c348"
+    }
+  },
+  "reports": [
+    {
+      "variant": "baseline",
+      "index": 0,
+      "wall_s": 5.000090886000066,
+      "process_cpu_s": 1.4136756,
+      "one_core_percent": 28.272998076058997,
+      "timing_before": {
+        "scope": "local_observer_cost_not_dds_queue_or_capture_latency",
+        "lock_wait_scope": "dispatch_wrapper_only_no_wrapper_lock_callback_internal_wait_is_in_wall_cost",
+        "callbacks": {
+          "_tf": {
+            "count": 106,
+            "wall_ns": 576156,
+            "cpu_ns": 570500,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 14200,
+            "max_cpu_ns": 13100
+          },
+          "_controls": {
+            "count": 54,
+            "wall_ns": 13208755,
+            "cpu_ns": 13867800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 434100,
+            "max_cpu_ns": 433600
+          },
+          "_sensor:imu": {
+            "count": 54,
+            "wall_ns": 3007107,
+            "cpu_ns": 3140800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 125200,
+            "max_cpu_ns": 123900
+          },
+          "_sensor:body": {
+            "count": 54,
+            "wall_ns": 5722849,
+            "cpu_ns": 6005000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 217300,
+            "max_cpu_ns": 216800
+          },
+          "_com": {
+            "count": 54,
+            "wall_ns": 482807,
+            "cpu_ns": 501600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 67700,
+            "max_cpu_ns": 64100
+          },
+          "_sensor:contacts": {
+            "count": 54,
+            "wall_ns": 6752505,
+            "cpu_ns": 7103800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 261067,
+            "max_cpu_ns": 284300
+          },
+          "_sensor:carry": {
+            "count": 54,
+            "wall_ns": 2317961,
+            "cpu_ns": 2435600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 83967,
+            "max_cpu_ns": 91200
+          },
+          "_sensor:joints": {
+            "count": 105,
+            "wall_ns": 17179364,
+            "cpu_ns": 18007700,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 876425,
+            "max_cpu_ns": 954400
+          },
+          "_sensor:scan": {
+            "count": 11,
+            "wall_ns": 3751462,
+            "cpu_ns": 3965000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 466200,
+            "max_cpu_ns": 494400
+          },
+          "_motion": {
+            "count": 215,
+            "wall_ns": 6298801,
+            "cpu_ns": 6557500,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 98300,
+            "max_cpu_ns": 103800
+          },
+          "_frame": {
+            "count": 51,
+            "wall_ns": 16321222,
+            "cpu_ns": 17187500,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 654701,
+            "max_cpu_ns": 654000
+          }
+        },
+        "journal": {
+          "native_controls": {
+            "count": 54,
+            "encoded_bytes": 412558,
+            "serialize_wall_ns": 4820598,
+            "serialize_cpu_ns": 5074400,
+            "write_wall_ns": 806896,
+            "write_cpu_ns": 844100,
+            "max_serialize_wall_ns": 149300,
+            "max_write_wall_ns": 48300
+          },
+          "native_controls_transport": {
+            "count": 54,
+            "encoded_bytes": 14524,
+            "serialize_wall_ns": 563326,
+            "serialize_cpu_ns": 591200,
+            "write_wall_ns": 207033,
+            "write_cpu_ns": 216000,
+            "max_serialize_wall_ns": 24292,
+            "max_write_wall_ns": 12800
+          },
+          "imu": {
+            "count": 54,
+            "encoded_bytes": 11988,
+            "serialize_wall_ns": 852322,
+            "serialize_cpu_ns": 887100,
+            "write_wall_ns": 445844,
+            "write_cpu_ns": 467000,
+            "max_serialize_wall_ns": 38300,
+            "max_write_wall_ns": 26600
+          },
+          "body": {
+            "count": 54,
+            "encoded_bytes": 17442,
+            "serialize_wall_ns": 1228995,
+            "serialize_cpu_ns": 1325300,
+            "write_wall_ns": 582591,
+            "write_cpu_ns": 582100,
+            "max_serialize_wall_ns": 51150,
+            "max_write_wall_ns": 40800
+          },
+          "body_transport": {
+            "count": 54,
+            "encoded_bytes": 11988,
+            "serialize_wall_ns": 503016,
+            "serialize_cpu_ns": 530200,
+            "write_wall_ns": 233291,
+            "write_cpu_ns": 246000,
+            "max_serialize_wall_ns": 25300,
+            "max_write_wall_ns": 13383
+          },
+          "contacts": {
+            "count": 54,
+            "encoded_bytes": 20844,
+            "serialize_wall_ns": 1059671,
+            "serialize_cpu_ns": 1108300,
+            "write_wall_ns": 319723,
+            "write_cpu_ns": 333100,
+            "max_serialize_wall_ns": 36208,
+            "max_write_wall_ns": 10500
+          },
+          "contacts_transport": {
+            "count": 54,
+            "encoded_bytes": 14146,
+            "serialize_wall_ns": 491158,
+            "serialize_cpu_ns": 518200,
+            "write_wall_ns": 179256,
+            "write_cpu_ns": 186800,
+            "max_serialize_wall_ns": 26400,
+            "max_write_wall_ns": 8000
+          },
+          "carry": {
+            "count": 54,
+            "encoded_bytes": 11772,
+            "serialize_wall_ns": 694702,
+            "serialize_cpu_ns": 732400,
+            "write_wall_ns": 332748,
+            "write_cpu_ns": 352500,
+            "max_serialize_wall_ns": 42600,
+            "max_write_wall_ns": 24658
+          },
+          "joints": {
+            "count": 105,
+            "encoded_bytes": 122010,
+            "serialize_wall_ns": 4127616,
+            "serialize_cpu_ns": 4340600,
+            "write_wall_ns": 3409798,
+            "write_cpu_ns": 3617600,
+            "max_serialize_wall_ns": 109100,
+            "max_write_wall_ns": 100900
+          },
+          "scan": {
+            "count": 11,
+            "encoded_bytes": 46882,
+            "serialize_wall_ns": 707350,
+            "serialize_cpu_ns": 745500,
+            "write_wall_ns": 71274,
+            "write_cpu_ns": 73900,
+            "max_serialize_wall_ns": 94600,
+            "max_write_wall_ns": 9400
+          },
+          "scan_transport": {
+            "count": 11,
+            "encoded_bytes": 2442,
+            "serialize_wall_ns": 83284,
+            "serialize_cpu_ns": 88400,
+            "write_wall_ns": 37100,
+            "write_cpu_ns": 38900,
+            "max_serialize_wall_ns": 11500,
+            "max_write_wall_ns": 5100
+          },
+          "crawl_state": {
+            "count": 54,
+            "encoded_bytes": 13392,
+            "serialize_wall_ns": 917456,
+            "serialize_cpu_ns": 965700,
+            "write_wall_ns": 640593,
+            "write_cpu_ns": 674600,
+            "max_serialize_wall_ns": 44300,
+            "max_write_wall_ns": 42350
+          },
+          "startup_state": {
+            "count": 53,
+            "encoded_bytes": 13250,
+            "serialize_wall_ns": 533484,
+            "serialize_cpu_ns": 561500,
+            "write_wall_ns": 293084,
+            "write_cpu_ns": 308100,
+            "max_serialize_wall_ns": 26492,
+            "max_write_wall_ns": 27317
+          },
+          "guard_state": {
+            "count": 54,
+            "encoded_bytes": 13392,
+            "serialize_wall_ns": 520993,
+            "serialize_cpu_ns": 548400,
+            "write_wall_ns": 249815,
+            "write_cpu_ns": 261900,
+            "max_serialize_wall_ns": 22100,
+            "max_write_wall_ns": 26216
+          },
+          "carry_state": {
+            "count": 54,
+            "encoded_bytes": 13392,
+            "serialize_wall_ns": 599529,
+            "serialize_cpu_ns": 634100,
+            "write_wall_ns": 267659,
+            "write_cpu_ns": 279700,
+            "max_serialize_wall_ns": 27867,
+            "max_write_wall_ns": 20717
+          },
+          "frame": {
+            "count": 51,
+            "encoded_bytes": 354450,
+            "serialize_wall_ns": 4521409,
+            "serialize_cpu_ns": 4753300,
+            "write_wall_ns": 762260,
+            "write_cpu_ns": 805600,
+            "max_serialize_wall_ns": 170900,
+            "max_write_wall_ns": 33550
+          }
+        },
+        "slow_threshold_ns": 5000000,
+        "slow_seen": 0,
+        "slow_retained": 0,
+        "slow_discarded": 0,
+        "slow_callbacks": [],
+        "file_writer": {
+          "scope": "actual_file_writer_not_ingress_enqueue",
+          "submitted": 825,
+          "written": 825,
+          "outstanding_records": 0,
+          "outstanding_bytes": 0,
+          "max_records": 256,
+          "max_bytes": 8388608,
+          "peak_records": 28,
+          "peak_bytes": 28759,
+          "error": null,
+          "accepting": true,
+          "joined": false,
+          "write_wall_ns": 31103408,
+          "write_cpu_ns": 7083900,
+          "max_write_wall_ns": 2063301
+        },
+        "journal_failure": null,
+        "journal_write_scope": "enqueue"
+      },
+      "timing_after": {
+        "scope": "local_observer_cost_not_dds_queue_or_capture_latency",
+        "lock_wait_scope": "dispatch_wrapper_only_no_wrapper_lock_callback_internal_wait_is_in_wall_cost",
+        "callbacks": {
+          "_tf": {
+            "count": 606,
+            "wall_ns": 3253498,
+            "cpu_ns": 3242300,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 23834,
+            "max_cpu_ns": 24700
+          },
+          "_controls": {
+            "count": 304,
+            "wall_ns": 66384694,
+            "cpu_ns": 70651800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 545783,
+            "max_cpu_ns": 593500
+          },
+          "_sensor:imu": {
+            "count": 304,
+            "wall_ns": 15682417,
+            "cpu_ns": 16589100,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 201117,
+            "max_cpu_ns": 213200
+          },
+          "_sensor:body": {
+            "count": 304,
+            "wall_ns": 27561780,
+            "cpu_ns": 29269500,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 360067,
+            "max_cpu_ns": 392600
+          },
+          "_com": {
+            "count": 304,
+            "wall_ns": 2173168,
+            "cpu_ns": 2255300,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 67700,
+            "max_cpu_ns": 64100
+          },
+          "_sensor:contacts": {
+            "count": 304,
+            "wall_ns": 34269638,
+            "cpu_ns": 36524400,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 1080475,
+            "max_cpu_ns": 1178600
+          },
+          "_sensor:carry": {
+            "count": 304,
+            "wall_ns": 11640864,
+            "cpu_ns": 12349200,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 139800,
+            "max_cpu_ns": 143700
+          },
+          "_sensor:joints": {
+            "count": 605,
+            "wall_ns": 83008958,
+            "cpu_ns": 87838600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 876425,
+            "max_cpu_ns": 954400
+          },
+          "_sensor:scan": {
+            "count": 61,
+            "wall_ns": 16897242,
+            "cpu_ns": 18027500,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 466200,
+            "max_cpu_ns": 507900
+          },
+          "_motion": {
+            "count": 1215,
+            "wall_ns": 34665911,
+            "cpu_ns": 36475600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 131800,
+            "max_cpu_ns": 130600
+          },
+          "_frame": {
+            "count": 301,
+            "wall_ns": 82715022,
+            "cpu_ns": 88125400,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 654701,
+            "max_cpu_ns": 654000
+          }
+        },
+        "journal": {
+          "native_controls": {
+            "count": 304,
+            "encoded_bytes": 2322770,
+            "serialize_wall_ns": 23375791,
+            "serialize_cpu_ns": 24962800,
+            "write_wall_ns": 3770665,
+            "write_cpu_ns": 4016900,
+            "max_serialize_wall_ns": 298559,
+            "max_write_wall_ns": 70700
+          },
+          "native_controls_transport": {
+            "count": 304,
+            "encoded_bytes": 81986,
+            "serialize_wall_ns": 2875096,
+            "serialize_cpu_ns": 3070000,
+            "write_wall_ns": 1055405,
+            "write_cpu_ns": 1118800,
+            "max_serialize_wall_ns": 33091,
+            "max_write_wall_ns": 12800
+          },
+          "imu": {
+            "count": 304,
+            "encoded_bytes": 67488,
+            "serialize_wall_ns": 4432917,
+            "serialize_cpu_ns": 4708700,
+            "write_wall_ns": 2509883,
+            "write_cpu_ns": 2672600,
+            "max_serialize_wall_ns": 38300,
+            "max_write_wall_ns": 36200
+          },
+          "body": {
+            "count": 304,
+            "encoded_bytes": 98192,
+            "serialize_wall_ns": 6087995,
+            "serialize_cpu_ns": 6521900,
+            "write_wall_ns": 2781586,
+            "write_cpu_ns": 2932100,
+            "max_serialize_wall_ns": 60592,
+            "max_write_wall_ns": 40800
+          },
+          "body_transport": {
+            "count": 304,
+            "encoded_bytes": 67488,
+            "serialize_wall_ns": 2369792,
+            "serialize_cpu_ns": 2530000,
+            "write_wall_ns": 1138739,
+            "write_cpu_ns": 1208900,
+            "max_serialize_wall_ns": 28416,
+            "max_write_wall_ns": 18884
+          },
+          "contacts": {
+            "count": 304,
+            "encoded_bytes": 117344,
+            "serialize_wall_ns": 5457328,
+            "serialize_cpu_ns": 5787400,
+            "write_wall_ns": 1694763,
+            "write_cpu_ns": 1793400,
+            "max_serialize_wall_ns": 54083,
+            "max_write_wall_ns": 27134
+          },
+          "contacts_transport": {
+            "count": 304,
+            "encoded_bytes": 79858,
+            "serialize_wall_ns": 2391048,
+            "serialize_cpu_ns": 2550000,
+            "write_wall_ns": 930063,
+            "write_cpu_ns": 983200,
+            "max_serialize_wall_ns": 31300,
+            "max_write_wall_ns": 15492
+          },
+          "carry": {
+            "count": 304,
+            "encoded_bytes": 66272,
+            "serialize_wall_ns": 3301595,
+            "serialize_cpu_ns": 3513500,
+            "write_wall_ns": 1885227,
+            "write_cpu_ns": 2018000,
+            "max_serialize_wall_ns": 42808,
+            "max_write_wall_ns": 49500
+          },
+          "joints": {
+            "count": 605,
+            "encoded_bytes": 703010,
+            "serialize_wall_ns": 20030250,
+            "serialize_cpu_ns": 21317500,
+            "write_wall_ns": 17446511,
+            "write_cpu_ns": 18761400,
+            "max_serialize_wall_ns": 125308,
+            "max_write_wall_ns": 100900
+          },
+          "scan": {
+            "count": 61,
+            "encoded_bytes": 259982,
+            "serialize_wall_ns": 3187219,
+            "serialize_cpu_ns": 3396000,
+            "write_wall_ns": 407918,
+            "write_cpu_ns": 430100,
+            "max_serialize_wall_ns": 94600,
+            "max_write_wall_ns": 25300
+          },
+          "scan_transport": {
+            "count": 61,
+            "encoded_bytes": 13542,
+            "serialize_wall_ns": 386785,
+            "serialize_cpu_ns": 413700,
+            "write_wall_ns": 174609,
+            "write_cpu_ns": 184300,
+            "max_serialize_wall_ns": 11500,
+            "max_write_wall_ns": 5100
+          },
+          "crawl_state": {
+            "count": 304,
+            "encoded_bytes": 75392,
+            "serialize_wall_ns": 4808496,
+            "serialize_cpu_ns": 5130700,
+            "write_wall_ns": 3525784,
+            "write_cpu_ns": 3761400,
+            "max_serialize_wall_ns": 59600,
+            "max_write_wall_ns": 92033
+          },
+          "startup_state": {
+            "count": 303,
+            "encoded_bytes": 75750,
+            "serialize_wall_ns": 2885813,
+            "serialize_cpu_ns": 3080800,
+            "write_wall_ns": 1599549,
+            "write_cpu_ns": 1694500,
+            "max_serialize_wall_ns": 47400,
+            "max_write_wall_ns": 40000
+          },
+          "guard_state": {
+            "count": 304,
+            "encoded_bytes": 75392,
+            "serialize_wall_ns": 2821631,
+            "serialize_cpu_ns": 3011600,
+            "write_wall_ns": 1438778,
+            "write_cpu_ns": 1527800,
+            "max_serialize_wall_ns": 24383,
+            "max_write_wall_ns": 26600
+          },
+          "carry_state": {
+            "count": 304,
+            "encoded_bytes": 75392,
+            "serialize_wall_ns": 3304302,
+            "serialize_cpu_ns": 3523600,
+            "write_wall_ns": 1559906,
+            "write_cpu_ns": 1652700,
+            "max_serialize_wall_ns": 36900,
+            "max_write_wall_ns": 39325
+          },
+          "frame": {
+            "count": 301,
+            "encoded_bytes": 2091950,
+            "serialize_wall_ns": 22488025,
+            "serialize_cpu_ns": 23944800,
+            "write_wall_ns": 4048354,
+            "write_cpu_ns": 4329900,
+            "max_serialize_wall_ns": 170900,
+            "max_write_wall_ns": 38134
+          }
+        },
+        "slow_threshold_ns": 5000000,
+        "slow_seen": 0,
+        "slow_retained": 0,
+        "slow_discarded": 0,
+        "slow_callbacks": [],
+        "file_writer": {
+          "scope": "actual_file_writer_not_ingress_enqueue",
+          "submitted": 4675,
+          "written": 4675,
+          "outstanding_records": 0,
+          "outstanding_bytes": 0,
+          "max_records": 256,
+          "max_bytes": 8388608,
+          "peak_records": 28,
+          "peak_bytes": 28759,
+          "error": null,
+          "accepting": true,
+          "joined": false,
+          "write_wall_ns": 135230473,
+          "write_cpu_ns": 35973600,
+          "max_write_wall_ns": 2209809
+        },
+        "journal_failure": null,
+        "journal_write_scope": "enqueue"
+      },
+      "errors": [],
+      "transport_errors": [],
+      "shutdown_ok": true,
+      "receivers": {
+        "node": "navigation_native_probe",
+        "thread_ident": 132364357322432,
+        "thread_alive": false,
+        "closed": true,
+        "error": null,
+        "recording": {
+          "node": "navigation_probe_recording",
+          "thread_ident": 132364382500544,
+          "thread_alive": false,
+          "closed": true,
+          "error": null,
+          "recording": null,
+          "ingress": null
+        },
+        "ingress": {
+          "node": "navigation_probe_ingress",
+          "thread_ident": 132364365715136,
+          "thread_alive": false,
+          "closed": true,
+          "error": null,
+          "recording": null,
+          "ingress": null
+        }
+      },
+      "thread_costs": {
+        "navigation_native_probe": {
+          "wall_s": 6.00444982700003,
+          "cpu_s": 0.464304
+        },
+        "navigation_probe_ingress": {
+          "wall_s": 6.011619828999983,
+          "cpu_s": 0.586141
+        },
+        "navigation_probe_recording": {
+          "wall_s": 6.014456429000006,
+          "cpu_s": 0.34362899999999996
+        }
+      }
+    },
+    {
+      "variant": "immutable",
+      "index": 1,
+      "wall_s": 5.000070970000024,
+      "process_cpu_s": 1.3906810999999997,
+      "one_core_percent": 27.81322721905271,
+      "timing_before": {
+        "scope": "local_observer_cost_not_dds_queue_or_capture_latency",
+        "lock_wait_scope": "dispatch_wrapper_only_no_wrapper_lock_callback_internal_wait_is_in_wall_cost",
+        "callbacks": {
+          "_frame": {
+            "count": 46,
+            "wall_ns": 7990902,
+            "cpu_ns": 7969000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 322000,
+            "max_cpu_ns": 321300
+          },
+          "_sensor:joints": {
+            "count": 91,
+            "wall_ns": 12956303,
+            "cpu_ns": 12812600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 322800,
+            "max_cpu_ns": 321100
+          },
+          "_tf": {
+            "count": 91,
+            "wall_ns": 548400,
+            "cpu_ns": 515700,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 24200,
+            "max_cpu_ns": 23300
+          },
+          "_sensor:body": {
+            "count": 45,
+            "wall_ns": 4623600,
+            "cpu_ns": 4598900,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 284800,
+            "max_cpu_ns": 283700
+          },
+          "_sensor:contacts": {
+            "count": 45,
+            "wall_ns": 5505701,
+            "cpu_ns": 5490800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 673600,
+            "max_cpu_ns": 673300
+          },
+          "_sensor:imu": {
+            "count": 45,
+            "wall_ns": 14351803,
+            "cpu_ns": 14138800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 12020103,
+            "max_cpu_ns": 11832600
+          },
+          "_com": {
+            "count": 45,
+            "wall_ns": 323500,
+            "cpu_ns": 316900,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 15300,
+            "max_cpu_ns": 15300
+          },
+          "_sensor:carry": {
+            "count": 45,
+            "wall_ns": 1621601,
+            "cpu_ns": 1609900,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 66900,
+            "max_cpu_ns": 66600
+          },
+          "_sensor:scan": {
+            "count": 9,
+            "wall_ns": 3703701,
+            "cpu_ns": 3701000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 554700,
+            "max_cpu_ns": 554300
+          },
+          "_motion": {
+            "count": 200,
+            "wall_ns": 6171302,
+            "cpu_ns": 6109000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 112100,
+            "max_cpu_ns": 111100
+          },
+          "_controls": {
+            "count": 50,
+            "wall_ns": 10585903,
+            "cpu_ns": 10541300,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 416200,
+            "max_cpu_ns": 415000
+          }
+        },
+        "journal": {
+          "joints": {
+            "count": 91,
+            "encoded_bytes": 105742,
+            "serialize_wall_ns": 3529601,
+            "serialize_cpu_ns": 3524500,
+            "write_wall_ns": 2865301,
+            "write_cpu_ns": 2877500,
+            "max_serialize_wall_ns": 112900,
+            "max_write_wall_ns": 89300
+          },
+          "body": {
+            "count": 45,
+            "encoded_bytes": 14535,
+            "serialize_wall_ns": 988500,
+            "serialize_cpu_ns": 985900,
+            "write_wall_ns": 533100,
+            "write_cpu_ns": 533300,
+            "max_serialize_wall_ns": 56600,
+            "max_write_wall_ns": 42600
+          },
+          "body_transport": {
+            "count": 45,
+            "encoded_bytes": 9990,
+            "serialize_wall_ns": 412200,
+            "serialize_cpu_ns": 411700,
+            "write_wall_ns": 175900,
+            "write_cpu_ns": 175000,
+            "max_serialize_wall_ns": 38000,
+            "max_write_wall_ns": 14700
+          },
+          "contacts": {
+            "count": 45,
+            "encoded_bytes": 17370,
+            "serialize_wall_ns": 795600,
+            "serialize_cpu_ns": 790400,
+            "write_wall_ns": 281300,
+            "write_cpu_ns": 279500,
+            "max_serialize_wall_ns": 38400,
+            "max_write_wall_ns": 24700
+          },
+          "contacts_transport": {
+            "count": 45,
+            "encoded_bytes": 11835,
+            "serialize_wall_ns": 364300,
+            "serialize_cpu_ns": 363200,
+            "write_wall_ns": 131600,
+            "write_cpu_ns": 131100,
+            "max_serialize_wall_ns": 24700,
+            "max_write_wall_ns": 4300
+          },
+          "imu": {
+            "count": 45,
+            "encoded_bytes": 9990,
+            "serialize_wall_ns": 653100,
+            "serialize_cpu_ns": 652500,
+            "write_wall_ns": 445400,
+            "write_cpu_ns": 445800,
+            "max_serialize_wall_ns": 26800,
+            "max_write_wall_ns": 27800
+          },
+          "carry": {
+            "count": 45,
+            "encoded_bytes": 9810,
+            "serialize_wall_ns": 478500,
+            "serialize_cpu_ns": 477100,
+            "write_wall_ns": 239000,
+            "write_cpu_ns": 238300,
+            "max_serialize_wall_ns": 29600,
+            "max_write_wall_ns": 27300
+          },
+          "scan": {
+            "count": 9,
+            "encoded_bytes": 38358,
+            "serialize_wall_ns": 490900,
+            "serialize_cpu_ns": 490100,
+            "write_wall_ns": 52600,
+            "write_cpu_ns": 50600,
+            "max_serialize_wall_ns": 73900,
+            "max_write_wall_ns": 10700
+          },
+          "scan_transport": {
+            "count": 9,
+            "encoded_bytes": 1998,
+            "serialize_wall_ns": 56000,
+            "serialize_cpu_ns": 56300,
+            "write_wall_ns": 27400,
+            "write_cpu_ns": 27300,
+            "max_serialize_wall_ns": 8400,
+            "max_write_wall_ns": 4800
+          },
+          "frame": {
+            "count": 44,
+            "encoded_bytes": 305167,
+            "serialize_wall_ns": 3967201,
+            "serialize_cpu_ns": 3964500,
+            "write_wall_ns": 675800,
+            "write_cpu_ns": 675500,
+            "max_serialize_wall_ns": 146700,
+            "max_write_wall_ns": 40400
+          },
+          "crawl_state": {
+            "count": 50,
+            "encoded_bytes": 12400,
+            "serialize_wall_ns": 778101,
+            "serialize_cpu_ns": 776800,
+            "write_wall_ns": 743000,
+            "write_cpu_ns": 746500,
+            "max_serialize_wall_ns": 37900,
+            "max_write_wall_ns": 48200
+          },
+          "guard_state": {
+            "count": 50,
+            "encoded_bytes": 12400,
+            "serialize_wall_ns": 492800,
+            "serialize_cpu_ns": 489200,
+            "write_wall_ns": 296400,
+            "write_cpu_ns": 295000,
+            "max_serialize_wall_ns": 35000,
+            "max_write_wall_ns": 29400
+          },
+          "carry_state": {
+            "count": 50,
+            "encoded_bytes": 12400,
+            "serialize_wall_ns": 575600,
+            "serialize_cpu_ns": 575600,
+            "write_wall_ns": 269801,
+            "write_cpu_ns": 268400,
+            "max_serialize_wall_ns": 43100,
+            "max_write_wall_ns": 25800
+          },
+          "startup_state": {
+            "count": 50,
+            "encoded_bytes": 12500,
+            "serialize_wall_ns": 484700,
+            "serialize_cpu_ns": 483800,
+            "write_wall_ns": 376200,
+            "write_cpu_ns": 376000,
+            "max_serialize_wall_ns": 21800,
+            "max_write_wall_ns": 74500
+          },
+          "native_controls": {
+            "count": 50,
+            "encoded_bytes": 382050,
+            "serialize_wall_ns": 3688100,
+            "serialize_cpu_ns": 3684300,
+            "write_wall_ns": 650400,
+            "write_cpu_ns": 650300,
+            "max_serialize_wall_ns": 148200,
+            "max_write_wall_ns": 46100
+          },
+          "native_controls_transport": {
+            "count": 50,
+            "encoded_bytes": 13500,
+            "serialize_wall_ns": 457600,
+            "serialize_cpu_ns": 457200,
+            "write_wall_ns": 186200,
+            "write_cpu_ns": 184600,
+            "max_serialize_wall_ns": 25400,
+            "max_write_wall_ns": 18200
+          }
+        },
+        "slow_threshold_ns": 5000000,
+        "slow_seen": 1,
+        "slow_retained": 1,
+        "slow_discarded": 0,
+        "slow_callbacks": [
+          {
+            "callback": "_sensor:imu",
+            "started_wall_ns": 780412945749,
+            "finished_wall_ns": 780424965852,
+            "wall_ns": 12020103,
+            "cpu_ns": 11832600,
+            "lock_wait_ns": 0
+          }
+        ],
+        "file_writer": {
+          "scope": "actual_file_writer_not_ingress_enqueue",
+          "submitted": 723,
+          "written": 723,
+          "outstanding_records": 0,
+          "outstanding_bytes": 0,
+          "max_records": 256,
+          "max_bytes": 8388608,
+          "peak_records": 26,
+          "peak_bytes": 73199,
+          "error": null,
+          "accepting": true,
+          "joined": false,
+          "write_wall_ns": 20645208,
+          "write_cpu_ns": 5401200,
+          "max_write_wall_ns": 3546501
+        },
+        "journal_failure": null,
+        "journal_write_scope": "enqueue"
+      },
+      "timing_after": {
+        "scope": "local_observer_cost_not_dds_queue_or_capture_latency",
+        "lock_wait_scope": "dispatch_wrapper_only_no_wrapper_lock_callback_internal_wait_is_in_wall_cost",
+        "callbacks": {
+          "_frame": {
+            "count": 296,
+            "wall_ns": 50415440,
+            "cpu_ns": 52661400,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 334304,
+            "max_cpu_ns": 358700
+          },
+          "_sensor:joints": {
+            "count": 591,
+            "wall_ns": 81844017,
+            "cpu_ns": 84770400,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 1282384,
+            "max_cpu_ns": 1376300
+          },
+          "_tf": {
+            "count": 591,
+            "wall_ns": 3127203,
+            "cpu_ns": 3072900,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 24300,
+            "max_cpu_ns": 24000
+          },
+          "_sensor:body": {
+            "count": 295,
+            "wall_ns": 28073318,
+            "cpu_ns": 29222100,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 664698,
+            "max_cpu_ns": 713500
+          },
+          "_sensor:contacts": {
+            "count": 295,
+            "wall_ns": 31108877,
+            "cpu_ns": 32398000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 673600,
+            "max_cpu_ns": 691900
+          },
+          "_sensor:imu": {
+            "count": 295,
+            "wall_ns": 27514453,
+            "cpu_ns": 27909800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 12020103,
+            "max_cpu_ns": 11832600
+          },
+          "_com": {
+            "count": 295,
+            "wall_ns": 2004884,
+            "cpu_ns": 2041700,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 22100,
+            "max_cpu_ns": 22000
+          },
+          "_sensor:carry": {
+            "count": 295,
+            "wall_ns": 10671818,
+            "cpu_ns": 11102200,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 145800,
+            "max_cpu_ns": 145600
+          },
+          "_sensor:scan": {
+            "count": 59,
+            "wall_ns": 22766619,
+            "cpu_ns": 23796200,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 749415,
+            "max_cpu_ns": 804700
+          },
+          "_motion": {
+            "count": 1200,
+            "wall_ns": 36833630,
+            "cpu_ns": 37963600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 212800,
+            "max_cpu_ns": 212500
+          },
+          "_controls": {
+            "count": 300,
+            "wall_ns": 63203452,
+            "cpu_ns": 65865500,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 531600,
+            "max_cpu_ns": 530200
+          }
+        },
+        "journal": {
+          "joints": {
+            "count": 591,
+            "encoded_bytes": 687396,
+            "serialize_wall_ns": 24252404,
+            "serialize_cpu_ns": 25360000,
+            "write_wall_ns": 16587393,
+            "write_cpu_ns": 17401600,
+            "max_serialize_wall_ns": 1167691,
+            "max_write_wall_ns": 89300
+          },
+          "body": {
+            "count": 295,
+            "encoded_bytes": 95611,
+            "serialize_wall_ns": 5729313,
+            "serialize_cpu_ns": 5976000,
+            "write_wall_ns": 2635841,
+            "write_cpu_ns": 2750600,
+            "max_serialize_wall_ns": 56600,
+            "max_write_wall_ns": 42600
+          },
+          "body_transport": {
+            "count": 295,
+            "encoded_bytes": 65653,
+            "serialize_wall_ns": 3528606,
+            "serialize_cpu_ns": 3718300,
+            "write_wall_ns": 1041056,
+            "write_cpu_ns": 1080500,
+            "max_serialize_wall_ns": 572162,
+            "max_write_wall_ns": 15174
+          },
+          "contacts": {
+            "count": 295,
+            "encoded_bytes": 114196,
+            "serialize_wall_ns": 4964731,
+            "serialize_cpu_ns": 5171200,
+            "write_wall_ns": 1662470,
+            "write_cpu_ns": 1711200,
+            "max_serialize_wall_ns": 66400,
+            "max_write_wall_ns": 25800
+          },
+          "contacts_transport": {
+            "count": 295,
+            "encoded_bytes": 77748,
+            "serialize_wall_ns": 2232258,
+            "serialize_cpu_ns": 2337800,
+            "write_wall_ns": 862762,
+            "write_cpu_ns": 893500,
+            "max_serialize_wall_ns": 33700,
+            "max_write_wall_ns": 19100
+          },
+          "imu": {
+            "count": 295,
+            "encoded_bytes": 65816,
+            "serialize_wall_ns": 4063316,
+            "serialize_cpu_ns": 4235300,
+            "write_wall_ns": 2387735,
+            "write_cpu_ns": 2490500,
+            "max_serialize_wall_ns": 48875,
+            "max_write_wall_ns": 29325
+          },
+          "carry": {
+            "count": 295,
+            "encoded_bytes": 64636,
+            "serialize_wall_ns": 3003109,
+            "serialize_cpu_ns": 3129000,
+            "write_wall_ns": 1619261,
+            "write_cpu_ns": 1690300,
+            "max_serialize_wall_ns": 29600,
+            "max_write_wall_ns": 35097
+          },
+          "scan": {
+            "count": 59,
+            "encoded_bytes": 251522,
+            "serialize_wall_ns": 2983566,
+            "serialize_cpu_ns": 3098500,
+            "write_wall_ns": 333953,
+            "write_cpu_ns": 342900,
+            "max_serialize_wall_ns": 95329,
+            "max_write_wall_ns": 29400
+          },
+          "scan_transport": {
+            "count": 59,
+            "encoded_bytes": 13130,
+            "serialize_wall_ns": 394612,
+            "serialize_cpu_ns": 414600,
+            "write_wall_ns": 170586,
+            "write_cpu_ns": 176000,
+            "max_serialize_wall_ns": 21500,
+            "max_write_wall_ns": 6424
+          },
+          "frame": {
+            "count": 294,
+            "encoded_bytes": 2045268,
+            "serialize_wall_ns": 25243664,
+            "serialize_cpu_ns": 26404500,
+            "write_wall_ns": 3968139,
+            "write_cpu_ns": 4158300,
+            "max_serialize_wall_ns": 175205,
+            "max_write_wall_ns": 40400
+          },
+          "crawl_state": {
+            "count": 300,
+            "encoded_bytes": 74563,
+            "serialize_wall_ns": 4988015,
+            "serialize_cpu_ns": 5205900,
+            "write_wall_ns": 4317877,
+            "write_cpu_ns": 4533200,
+            "max_serialize_wall_ns": 65600,
+            "max_write_wall_ns": 187900
+          },
+          "guard_state": {
+            "count": 300,
+            "encoded_bytes": 74563,
+            "serialize_wall_ns": 3006544,
+            "serialize_cpu_ns": 3140900,
+            "write_wall_ns": 1585501,
+            "write_cpu_ns": 1647400,
+            "max_serialize_wall_ns": 35000,
+            "max_write_wall_ns": 32025
+          },
+          "carry_state": {
+            "count": 300,
+            "encoded_bytes": 74563,
+            "serialize_wall_ns": 3387729,
+            "serialize_cpu_ns": 3544300,
+            "write_wall_ns": 1667784,
+            "write_cpu_ns": 1727100,
+            "max_serialize_wall_ns": 43383,
+            "max_write_wall_ns": 34724
+          },
+          "startup_state": {
+            "count": 300,
+            "encoded_bytes": 75163,
+            "serialize_wall_ns": 3022122,
+            "serialize_cpu_ns": 3161000,
+            "write_wall_ns": 1683759,
+            "write_cpu_ns": 1748200,
+            "max_serialize_wall_ns": 37331,
+            "max_write_wall_ns": 74500
+          },
+          "native_controls": {
+            "count": 300,
+            "encoded_bytes": 2292463,
+            "serialize_wall_ns": 21658592,
+            "serialize_cpu_ns": 22612500,
+            "write_wall_ns": 3856257,
+            "write_cpu_ns": 4017000,
+            "max_serialize_wall_ns": 215000,
+            "max_write_wall_ns": 98681
+          },
+          "native_controls_transport": {
+            "count": 300,
+            "encoded_bytes": 81163,
+            "serialize_wall_ns": 2843138,
+            "serialize_cpu_ns": 2971600,
+            "write_wall_ns": 1012256,
+            "write_cpu_ns": 1066400,
+            "max_serialize_wall_ns": 132288,
+            "max_write_wall_ns": 18200
+          }
+        },
+        "slow_threshold_ns": 5000000,
+        "slow_seen": 1,
+        "slow_retained": 1,
+        "slow_discarded": 0,
+        "slow_callbacks": [
+          {
+            "callback": "_sensor:imu",
+            "started_wall_ns": 780412945749,
+            "finished_wall_ns": 780424965852,
+            "wall_ns": 12020103,
+            "cpu_ns": 11832600,
+            "lock_wait_ns": 0
+          }
+        ],
+        "file_writer": {
+          "scope": "actual_file_writer_not_ingress_enqueue",
+          "submitted": 4573,
+          "written": 4573,
+          "outstanding_records": 0,
+          "outstanding_bytes": 0,
+          "max_records": 256,
+          "max_bytes": 8388608,
+          "peak_records": 26,
+          "peak_bytes": 73199,
+          "error": null,
+          "accepting": true,
+          "joined": false,
+          "write_wall_ns": 120920408,
+          "write_cpu_ns": 34821100,
+          "max_write_wall_ns": 3546501
+        },
+        "journal_failure": null,
+        "journal_write_scope": "enqueue"
+      },
+      "errors": [],
+      "transport_errors": [],
+      "shutdown_ok": true,
+      "receivers": {
+        "node": "navigation_native_probe",
+        "thread_ident": 132364357322432,
+        "thread_alive": false,
+        "closed": true,
+        "error": null,
+        "recording": {
+          "node": "navigation_probe_recording",
+          "thread_ident": 132364382500544,
+          "thread_alive": false,
+          "closed": true,
+          "error": null,
+          "recording": null,
+          "ingress": null
+        },
+        "ingress": {
+          "node": "navigation_probe_ingress",
+          "thread_ident": 132364365715136,
+          "thread_alive": false,
+          "closed": true,
+          "error": null,
+          "recording": null,
+          "ingress": null
+        }
+      },
+      "thread_costs": {
+        "navigation_native_probe": {
+          "wall_s": 6.003442609000103,
+          "cpu_s": 0.450785
+        },
+        "navigation_probe_ingress": {
+          "wall_s": 6.0080774479999945,
+          "cpu_s": 0.571353
+        },
+        "navigation_probe_recording": {
+          "wall_s": 6.0094199979999985,
+          "cpu_s": 0.29864599999999997
+        }
+      }
+    },
+    {
+      "variant": "immutable",
+      "index": 2,
+      "wall_s": 5.000076349999972,
+      "process_cpu_s": 1.4067217999999997,
+      "one_core_percent": 28.13400639372252,
+      "timing_before": {
+        "scope": "local_observer_cost_not_dds_queue_or_capture_latency",
+        "lock_wait_scope": "dispatch_wrapper_only_no_wrapper_lock_callback_internal_wait_is_in_wall_cost",
+        "callbacks": {
+          "_frame": {
+            "count": 46,
+            "wall_ns": 7130153,
+            "cpu_ns": 7641800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 272396,
+            "max_cpu_ns": 292000
+          },
+          "_sensor:joints": {
+            "count": 91,
+            "wall_ns": 14992947,
+            "cpu_ns": 15973100,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 422930,
+            "max_cpu_ns": 451200
+          },
+          "_tf": {
+            "count": 91,
+            "wall_ns": 527667,
+            "cpu_ns": 539700,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 20481,
+            "max_cpu_ns": 21600
+          },
+          "_sensor:body": {
+            "count": 45,
+            "wall_ns": 4591539,
+            "cpu_ns": 4908000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 321550,
+            "max_cpu_ns": 344200
+          },
+          "_sensor:contacts": {
+            "count": 45,
+            "wall_ns": 4597406,
+            "cpu_ns": 4918000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 174833,
+            "max_cpu_ns": 187200
+          },
+          "_sensor:imu": {
+            "count": 45,
+            "wall_ns": 2430528,
+            "cpu_ns": 2591500,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 100915,
+            "max_cpu_ns": 108000
+          },
+          "_com": {
+            "count": 45,
+            "wall_ns": 347899,
+            "cpu_ns": 365600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 20294,
+            "max_cpu_ns": 21500
+          },
+          "_sensor:carry": {
+            "count": 45,
+            "wall_ns": 1641360,
+            "cpu_ns": 1746000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 57533,
+            "max_cpu_ns": 61400
+          },
+          "_motion": {
+            "count": 200,
+            "wall_ns": 5873553,
+            "cpu_ns": 6247700,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 102963,
+            "max_cpu_ns": 109000
+          },
+          "_controls": {
+            "count": 50,
+            "wall_ns": 11037995,
+            "cpu_ns": 11809800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 417438,
+            "max_cpu_ns": 448100
+          },
+          "_sensor:scan": {
+            "count": 9,
+            "wall_ns": 3595980,
+            "cpu_ns": 3859400,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 653247,
+            "max_cpu_ns": 701600
+          }
+        },
+        "journal": {
+          "joints": {
+            "count": 91,
+            "encoded_bytes": 105924,
+            "serialize_wall_ns": 4311978,
+            "serialize_cpu_ns": 4621800,
+            "write_wall_ns": 3043461,
+            "write_cpu_ns": 3278600,
+            "max_serialize_wall_ns": 190379,
+            "max_write_wall_ns": 81737
+          },
+          "body": {
+            "count": 45,
+            "encoded_bytes": 14625,
+            "serialize_wall_ns": 921550,
+            "serialize_cpu_ns": 988000,
+            "write_wall_ns": 549350,
+            "write_cpu_ns": 589800,
+            "max_serialize_wall_ns": 51575,
+            "max_write_wall_ns": 106035
+          },
+          "body_transport": {
+            "count": 45,
+            "encoded_bytes": 10035,
+            "serialize_wall_ns": 384576,
+            "serialize_cpu_ns": 413600,
+            "write_wall_ns": 155282,
+            "write_cpu_ns": 165200,
+            "max_serialize_wall_ns": 24670,
+            "max_write_wall_ns": 8844
+          },
+          "contacts": {
+            "count": 45,
+            "encoded_bytes": 17460,
+            "serialize_wall_ns": 719621,
+            "serialize_cpu_ns": 769100,
+            "write_wall_ns": 273700,
+            "write_cpu_ns": 292200,
+            "max_serialize_wall_ns": 24298,
+            "max_write_wall_ns": 24577
+          },
+          "contacts_transport": {
+            "count": 45,
+            "encoded_bytes": 11880,
+            "serialize_wall_ns": 362977,
+            "serialize_cpu_ns": 388300,
+            "write_wall_ns": 131450,
+            "write_cpu_ns": 139800,
+            "max_serialize_wall_ns": 30163,
+            "max_write_wall_ns": 5400
+          },
+          "imu": {
+            "count": 45,
+            "encoded_bytes": 10080,
+            "serialize_wall_ns": 655296,
+            "serialize_cpu_ns": 701700,
+            "write_wall_ns": 470410,
+            "write_cpu_ns": 507400,
+            "max_serialize_wall_ns": 32676,
+            "max_write_wall_ns": 47665
+          },
+          "carry": {
+            "count": 45,
+            "encoded_bytes": 9900,
+            "serialize_wall_ns": 482419,
+            "serialize_cpu_ns": 517000,
+            "write_wall_ns": 244001,
+            "write_cpu_ns": 260500,
+            "max_serialize_wall_ns": 21971,
+            "max_write_wall_ns": 22622
+          },
+          "carry_state": {
+            "count": 50,
+            "encoded_bytes": 12450,
+            "serialize_wall_ns": 589105,
+            "serialize_cpu_ns": 633500,
+            "write_wall_ns": 274351,
+            "write_cpu_ns": 293200,
+            "max_serialize_wall_ns": 45803,
+            "max_write_wall_ns": 25787
+          },
+          "guard_state": {
+            "count": 50,
+            "encoded_bytes": 12450,
+            "serialize_wall_ns": 563131,
+            "serialize_cpu_ns": 605700,
+            "write_wall_ns": 281799,
+            "write_cpu_ns": 300700,
+            "max_serialize_wall_ns": 38448,
+            "max_write_wall_ns": 27742
+          },
+          "native_controls": {
+            "count": 50,
+            "encoded_bytes": 382100,
+            "serialize_wall_ns": 3850874,
+            "serialize_cpu_ns": 4135700,
+            "write_wall_ns": 625876,
+            "write_cpu_ns": 667800,
+            "max_serialize_wall_ns": 140760,
+            "max_write_wall_ns": 34724
+          },
+          "native_controls_transport": {
+            "count": 50,
+            "encoded_bytes": 13550,
+            "serialize_wall_ns": 442013,
+            "serialize_cpu_ns": 474500,
+            "write_wall_ns": 174554,
+            "write_cpu_ns": 185700,
+            "max_serialize_wall_ns": 18991,
+            "max_write_wall_ns": 18991
+          },
+          "startup_state": {
+            "count": 50,
+            "encoded_bytes": 12550,
+            "serialize_wall_ns": 487450,
+            "serialize_cpu_ns": 523900,
+            "write_wall_ns": 257869,
+            "write_cpu_ns": 275800,
+            "max_serialize_wall_ns": 36866,
+            "max_write_wall_ns": 18805
+          },
+          "crawl_state": {
+            "count": 50,
+            "encoded_bytes": 12450,
+            "serialize_wall_ns": 741034,
+            "serialize_cpu_ns": 795900,
+            "write_wall_ns": 494986,
+            "write_cpu_ns": 531100,
+            "max_serialize_wall_ns": 31839,
+            "max_write_wall_ns": 38728
+          },
+          "scan": {
+            "count": 9,
+            "encoded_bytes": 38376,
+            "serialize_wall_ns": 452720,
+            "serialize_cpu_ns": 484500,
+            "write_wall_ns": 41986,
+            "write_cpu_ns": 44700,
+            "max_serialize_wall_ns": 75779,
+            "max_write_wall_ns": 6610
+          },
+          "scan_transport": {
+            "count": 9,
+            "encoded_bytes": 2007,
+            "serialize_wall_ns": 62187,
+            "serialize_cpu_ns": 67200,
+            "write_wall_ns": 25603,
+            "write_cpu_ns": 27100,
+            "max_serialize_wall_ns": 12660,
+            "max_write_wall_ns": 3724
+          },
+          "frame": {
+            "count": 41,
+            "encoded_bytes": 285606,
+            "serialize_wall_ns": 3665056,
+            "serialize_cpu_ns": 3935100,
+            "write_wall_ns": 516768,
+            "write_cpu_ns": 553600,
+            "max_serialize_wall_ns": 197920,
+            "max_write_wall_ns": 33980
+          }
+        },
+        "slow_threshold_ns": 5000000,
+        "slow_seen": 0,
+        "slow_retained": 0,
+        "slow_discarded": 0,
+        "slow_callbacks": [],
+        "file_writer": {
+          "scope": "actual_file_writer_not_ingress_enqueue",
+          "submitted": 720,
+          "written": 720,
+          "outstanding_records": 0,
+          "outstanding_bytes": 0,
+          "max_records": 256,
+          "max_bytes": 8388608,
+          "peak_records": 49,
+          "peak_bytes": 78954,
+          "error": null,
+          "accepting": true,
+          "joined": false,
+          "write_wall_ns": 20861471,
+          "write_cpu_ns": 5767400,
+          "max_write_wall_ns": 1410018
+        },
+        "journal_failure": null,
+        "journal_write_scope": "enqueue"
+      },
+      "timing_after": {
+        "scope": "local_observer_cost_not_dds_queue_or_capture_latency",
+        "lock_wait_scope": "dispatch_wrapper_only_no_wrapper_lock_callback_internal_wait_is_in_wall_cost",
+        "callbacks": {
+          "_frame": {
+            "count": 296,
+            "wall_ns": 50561523,
+            "cpu_ns": 51875300,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 441900,
+            "max_cpu_ns": 440800
+          },
+          "_sensor:joints": {
+            "count": 591,
+            "wall_ns": 85435277,
+            "cpu_ns": 87419000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 1010360,
+            "max_cpu_ns": 1084600
+          },
+          "_tf": {
+            "count": 591,
+            "wall_ns": 3341503,
+            "cpu_ns": 3241800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 56300,
+            "max_cpu_ns": 56000
+          },
+          "_sensor:body": {
+            "count": 295,
+            "wall_ns": 28298815,
+            "cpu_ns": 28974900,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 321550,
+            "max_cpu_ns": 344200
+          },
+          "_sensor:contacts": {
+            "count": 295,
+            "wall_ns": 31082395,
+            "cpu_ns": 31829700,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 279500,
+            "max_cpu_ns": 279200
+          },
+          "_sensor:imu": {
+            "count": 295,
+            "wall_ns": 15336727,
+            "cpu_ns": 15672400,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 158634,
+            "max_cpu_ns": 170300
+          },
+          "_com": {
+            "count": 295,
+            "wall_ns": 2018358,
+            "cpu_ns": 2036700,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 24200,
+            "max_cpu_ns": 24000
+          },
+          "_sensor:carry": {
+            "count": 295,
+            "wall_ns": 11128885,
+            "cpu_ns": 11359600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 142919,
+            "max_cpu_ns": 150000
+          },
+          "_motion": {
+            "count": 1200,
+            "wall_ns": 36914395,
+            "cpu_ns": 37471100,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 153500,
+            "max_cpu_ns": 152900
+          },
+          "_controls": {
+            "count": 300,
+            "wall_ns": 66461040,
+            "cpu_ns": 68174300,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 506601,
+            "max_cpu_ns": 523600
+          },
+          "_sensor:scan": {
+            "count": 59,
+            "wall_ns": 22797740,
+            "cpu_ns": 23449000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 658685,
+            "max_cpu_ns": 701600
+          }
+        },
+        "journal": {
+          "joints": {
+            "count": 591,
+            "encoded_bytes": 687924,
+            "serialize_wall_ns": 25150205,
+            "serialize_cpu_ns": 25899600,
+            "write_wall_ns": 17083222,
+            "write_cpu_ns": 17674400,
+            "max_serialize_wall_ns": 937187,
+            "max_write_wall_ns": 97400
+          },
+          "body": {
+            "count": 295,
+            "encoded_bytes": 95875,
+            "serialize_wall_ns": 6158147,
+            "serialize_cpu_ns": 6349300,
+            "write_wall_ns": 2870243,
+            "write_cpu_ns": 2925800,
+            "max_serialize_wall_ns": 126900,
+            "max_write_wall_ns": 106035
+          },
+          "body_transport": {
+            "count": 295,
+            "encoded_bytes": 65785,
+            "serialize_wall_ns": 2479480,
+            "serialize_cpu_ns": 2555700,
+            "write_wall_ns": 1053388,
+            "write_cpu_ns": 1073700,
+            "max_serialize_wall_ns": 50100,
+            "max_write_wall_ns": 17877
+          },
+          "contacts": {
+            "count": 295,
+            "encoded_bytes": 114460,
+            "serialize_wall_ns": 5014158,
+            "serialize_cpu_ns": 5132700,
+            "write_wall_ns": 1629860,
+            "write_cpu_ns": 1666900,
+            "max_serialize_wall_ns": 48781,
+            "max_write_wall_ns": 29600
+          },
+          "contacts_transport": {
+            "count": 295,
+            "encoded_bytes": 77880,
+            "serialize_wall_ns": 2727875,
+            "serialize_cpu_ns": 2794800,
+            "write_wall_ns": 858517,
+            "write_cpu_ns": 873500,
+            "max_serialize_wall_ns": 189400,
+            "max_write_wall_ns": 7132
+          },
+          "imu": {
+            "count": 295,
+            "encoded_bytes": 66080,
+            "serialize_wall_ns": 4197913,
+            "serialize_cpu_ns": 4310600,
+            "write_wall_ns": 2489374,
+            "write_cpu_ns": 2561800,
+            "max_serialize_wall_ns": 94212,
+            "max_write_wall_ns": 47665
+          },
+          "carry": {
+            "count": 295,
+            "encoded_bytes": 64900,
+            "serialize_wall_ns": 3245665,
+            "serialize_cpu_ns": 3325500,
+            "write_wall_ns": 1632749,
+            "write_cpu_ns": 1672800,
+            "max_serialize_wall_ns": 92800,
+            "max_write_wall_ns": 24100
+          },
+          "carry_state": {
+            "count": 300,
+            "encoded_bytes": 74700,
+            "serialize_wall_ns": 3620161,
+            "serialize_cpu_ns": 3710600,
+            "write_wall_ns": 1639093,
+            "write_cpu_ns": 1681200,
+            "max_serialize_wall_ns": 113200,
+            "max_write_wall_ns": 35500
+          },
+          "guard_state": {
+            "count": 300,
+            "encoded_bytes": 74700,
+            "serialize_wall_ns": 3096496,
+            "serialize_cpu_ns": 3190400,
+            "write_wall_ns": 1577204,
+            "write_cpu_ns": 1615900,
+            "max_serialize_wall_ns": 38448,
+            "max_write_wall_ns": 27742
+          },
+          "native_controls": {
+            "count": 300,
+            "encoded_bytes": 2292600,
+            "serialize_wall_ns": 22692746,
+            "serialize_cpu_ns": 23365000,
+            "write_wall_ns": 3460958,
+            "write_cpu_ns": 3530800,
+            "max_serialize_wall_ns": 297200,
+            "max_write_wall_ns": 45600
+          },
+          "native_controls_transport": {
+            "count": 300,
+            "encoded_bytes": 81300,
+            "serialize_wall_ns": 2946757,
+            "serialize_cpu_ns": 3020500,
+            "write_wall_ns": 1063682,
+            "write_cpu_ns": 1085700,
+            "max_serialize_wall_ns": 96800,
+            "max_write_wall_ns": 18991
+          },
+          "startup_state": {
+            "count": 300,
+            "encoded_bytes": 75300,
+            "serialize_wall_ns": 2984840,
+            "serialize_cpu_ns": 3069800,
+            "write_wall_ns": 1530082,
+            "write_cpu_ns": 1564200,
+            "max_serialize_wall_ns": 36866,
+            "max_write_wall_ns": 26150
+          },
+          "crawl_state": {
+            "count": 300,
+            "encoded_bytes": 74700,
+            "serialize_wall_ns": 5046142,
+            "serialize_cpu_ns": 5187700,
+            "write_wall_ns": 4299846,
+            "write_cpu_ns": 4417800,
+            "max_serialize_wall_ns": 47500,
+            "max_write_wall_ns": 67300
+          },
+          "scan": {
+            "count": 59,
+            "encoded_bytes": 251576,
+            "serialize_wall_ns": 3370424,
+            "serialize_cpu_ns": 3450300,
+            "write_wall_ns": 332162,
+            "write_cpu_ns": 338500,
+            "max_serialize_wall_ns": 126300,
+            "max_write_wall_ns": 34400
+          },
+          "scan_transport": {
+            "count": 59,
+            "encoded_bytes": 13157,
+            "serialize_wall_ns": 441562,
+            "serialize_cpu_ns": 454100,
+            "write_wall_ns": 168358,
+            "write_cpu_ns": 170800,
+            "max_serialize_wall_ns": 23700,
+            "max_write_wall_ns": 5400
+          },
+          "frame": {
+            "count": 291,
+            "encoded_bytes": 2027106,
+            "serialize_wall_ns": 25225409,
+            "serialize_cpu_ns": 25866000,
+            "write_wall_ns": 3695791,
+            "write_cpu_ns": 3805000,
+            "max_serialize_wall_ns": 210701,
+            "max_write_wall_ns": 38511
+          }
+        },
+        "slow_threshold_ns": 5000000,
+        "slow_seen": 0,
+        "slow_retained": 0,
+        "slow_discarded": 0,
+        "slow_callbacks": [],
+        "file_writer": {
+          "scope": "actual_file_writer_not_ingress_enqueue",
+          "submitted": 4570,
+          "written": 4570,
+          "outstanding_records": 0,
+          "outstanding_bytes": 0,
+          "max_records": 256,
+          "max_bytes": 8388608,
+          "peak_records": 49,
+          "peak_bytes": 78954,
+          "error": null,
+          "accepting": true,
+          "joined": false,
+          "write_wall_ns": 126988910,
+          "write_cpu_ns": 34073100,
+          "max_write_wall_ns": 3034301
+        },
+        "journal_failure": null,
+        "journal_write_scope": "enqueue"
+      },
+      "errors": [],
+      "transport_errors": [],
+      "shutdown_ok": true,
+      "receivers": {
+        "node": "navigation_native_probe",
+        "thread_ident": 132364357322432,
+        "thread_alive": false,
+        "closed": true,
+        "error": null,
+        "recording": {
+          "node": "navigation_probe_recording",
+          "thread_ident": 132364382500544,
+          "thread_alive": false,
+          "closed": true,
+          "error": null,
+          "recording": null,
+          "ingress": null
+        },
+        "ingress": {
+          "node": "navigation_probe_ingress",
+          "thread_ident": 132364365715136,
+          "thread_alive": false,
+          "closed": true,
+          "error": null,
+          "recording": null,
+          "ingress": null
+        }
+      },
+      "thread_costs": {
+        "navigation_native_probe": {
+          "wall_s": 6.002994488000013,
+          "cpu_s": 0.46540699999999996
+        },
+        "navigation_probe_ingress": {
+          "wall_s": 6.007627765999928,
+          "cpu_s": 0.57013
+        },
+        "navigation_probe_recording": {
+          "wall_s": 6.0089041029999635,
+          "cpu_s": 0.301233
+        }
+      }
+    },
+    {
+      "variant": "baseline",
+      "index": 3,
+      "wall_s": 5.000126367000007,
+      "process_cpu_s": 1.3741941000000004,
+      "one_core_percent": 27.483187406411368,
+      "timing_before": {
+        "scope": "local_observer_cost_not_dds_queue_or_capture_latency",
+        "lock_wait_scope": "dispatch_wrapper_only_no_wrapper_lock_callback_internal_wait_is_in_wall_cost",
+        "callbacks": {
+          "_frame": {
+            "count": 46,
+            "wall_ns": 11831898,
+            "cpu_ns": 12425900,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 499030,
+            "max_cpu_ns": 524700
+          },
+          "_sensor:joints": {
+            "count": 91,
+            "wall_ns": 12470146,
+            "cpu_ns": 13030600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 483150,
+            "max_cpu_ns": 507200
+          },
+          "_tf": {
+            "count": 91,
+            "wall_ns": 450626,
+            "cpu_ns": 436400,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 12932,
+            "max_cpu_ns": 7700
+          },
+          "_sensor:body": {
+            "count": 45,
+            "wall_ns": 4499349,
+            "cpu_ns": 4696600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 558366,
+            "max_cpu_ns": 586800
+          },
+          "_sensor:contacts": {
+            "count": 45,
+            "wall_ns": 5022156,
+            "cpu_ns": 5267100,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 190179,
+            "max_cpu_ns": 199700
+          },
+          "_sensor:imu": {
+            "count": 45,
+            "wall_ns": 2096248,
+            "cpu_ns": 2189200,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 68560,
+            "max_cpu_ns": 71700
+          },
+          "_com": {
+            "count": 45,
+            "wall_ns": 282796,
+            "cpu_ns": 295600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 10175,
+            "max_cpu_ns": 12200
+          },
+          "_sensor:carry": {
+            "count": 45,
+            "wall_ns": 1521146,
+            "cpu_ns": 1588600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 55343,
+            "max_cpu_ns": 58000
+          },
+          "_sensor:scan": {
+            "count": 9,
+            "wall_ns": 2290516,
+            "cpu_ns": 2406800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 430756,
+            "max_cpu_ns": 452400
+          },
+          "_controls": {
+            "count": 50,
+            "wall_ns": 10190276,
+            "cpu_ns": 10698800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 376745,
+            "max_cpu_ns": 395300
+          },
+          "_motion": {
+            "count": 200,
+            "wall_ns": 5473446,
+            "cpu_ns": 5693400,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 109543,
+            "max_cpu_ns": 112700
+          }
+        },
+        "journal": {
+          "joints": {
+            "count": 91,
+            "encoded_bytes": 105924,
+            "serialize_wall_ns": 3025365,
+            "serialize_cpu_ns": 3174300,
+            "write_wall_ns": 2593474,
+            "write_cpu_ns": 2744600,
+            "max_serialize_wall_ns": 127420,
+            "max_write_wall_ns": 89289
+          },
+          "body": {
+            "count": 45,
+            "encoded_bytes": 14625,
+            "serialize_wall_ns": 887280,
+            "serialize_cpu_ns": 931200,
+            "write_wall_ns": 400707,
+            "write_cpu_ns": 420000,
+            "max_serialize_wall_ns": 36800,
+            "max_write_wall_ns": 30524
+          },
+          "body_transport": {
+            "count": 45,
+            "encoded_bytes": 10035,
+            "serialize_wall_ns": 360004,
+            "serialize_cpu_ns": 378800,
+            "write_wall_ns": 159754,
+            "write_cpu_ns": 165500,
+            "max_serialize_wall_ns": 21490,
+            "max_write_wall_ns": 6847
+          },
+          "contacts": {
+            "count": 45,
+            "encoded_bytes": 17460,
+            "serialize_wall_ns": 816439,
+            "serialize_cpu_ns": 850700,
+            "write_wall_ns": 311798,
+            "write_cpu_ns": 327800,
+            "max_serialize_wall_ns": 35658,
+            "max_write_wall_ns": 32235
+          },
+          "contacts_transport": {
+            "count": 45,
+            "encoded_bytes": 11880,
+            "serialize_wall_ns": 372370,
+            "serialize_cpu_ns": 391400,
+            "write_wall_ns": 133696,
+            "write_cpu_ns": 146800,
+            "max_serialize_wall_ns": 30999,
+            "max_write_wall_ns": 5325
+          },
+          "imu": {
+            "count": 45,
+            "encoded_bytes": 10080,
+            "serialize_wall_ns": 574718,
+            "serialize_cpu_ns": 591000,
+            "write_wall_ns": 342036,
+            "write_cpu_ns": 360300,
+            "max_serialize_wall_ns": 23297,
+            "max_write_wall_ns": 22917
+          },
+          "carry": {
+            "count": 45,
+            "encoded_bytes": 9900,
+            "serialize_wall_ns": 440741,
+            "serialize_cpu_ns": 462100,
+            "write_wall_ns": 233440,
+            "write_cpu_ns": 245000,
+            "max_serialize_wall_ns": 23867,
+            "max_write_wall_ns": 21205
+          },
+          "scan": {
+            "count": 9,
+            "encoded_bytes": 38376,
+            "serialize_wall_ns": 428947,
+            "serialize_cpu_ns": 449900,
+            "write_wall_ns": 40130,
+            "write_cpu_ns": 41700,
+            "max_serialize_wall_ns": 76547,
+            "max_write_wall_ns": 7132
+          },
+          "scan_transport": {
+            "count": 9,
+            "encoded_bytes": 2007,
+            "serialize_wall_ns": 54009,
+            "serialize_cpu_ns": 57000,
+            "write_wall_ns": 24917,
+            "write_cpu_ns": 25900,
+            "max_serialize_wall_ns": 9604,
+            "max_write_wall_ns": 3994
+          },
+          "frame": {
+            "count": 43,
+            "encoded_bytes": 299114,
+            "serialize_wall_ns": 3309685,
+            "serialize_cpu_ns": 3473600,
+            "write_wall_ns": 523662,
+            "write_cpu_ns": 550100,
+            "max_serialize_wall_ns": 129417,
+            "max_write_wall_ns": 32710
+          },
+          "native_controls": {
+            "count": 50,
+            "encoded_bytes": 382100,
+            "serialize_wall_ns": 3472573,
+            "serialize_cpu_ns": 3652900,
+            "write_wall_ns": 548860,
+            "write_cpu_ns": 574500,
+            "max_serialize_wall_ns": 118386,
+            "max_write_wall_ns": 63330
+          },
+          "native_controls_transport": {
+            "count": 50,
+            "encoded_bytes": 13550,
+            "serialize_wall_ns": 449869,
+            "serialize_cpu_ns": 473700,
+            "write_wall_ns": 176960,
+            "write_cpu_ns": 184300,
+            "max_serialize_wall_ns": 46023,
+            "max_write_wall_ns": 16736
+          },
+          "carry_state": {
+            "count": 50,
+            "encoded_bytes": 12450,
+            "serialize_wall_ns": 523560,
+            "serialize_cpu_ns": 552200,
+            "write_wall_ns": 298865,
+            "write_cpu_ns": 313100,
+            "max_serialize_wall_ns": 29478,
+            "max_write_wall_ns": 39843
+          },
+          "crawl_state": {
+            "count": 50,
+            "encoded_bytes": 12450,
+            "serialize_wall_ns": 743413,
+            "serialize_cpu_ns": 781800,
+            "write_wall_ns": 608855,
+            "write_cpu_ns": 642300,
+            "max_serialize_wall_ns": 34423,
+            "max_write_wall_ns": 48401
+          },
+          "startup_state": {
+            "count": 50,
+            "encoded_bytes": 12550,
+            "serialize_wall_ns": 435894,
+            "serialize_cpu_ns": 458200,
+            "write_wall_ns": 259404,
+            "write_cpu_ns": 271800,
+            "max_serialize_wall_ns": 18828,
+            "max_write_wall_ns": 27196
+          },
+          "guard_state": {
+            "count": 50,
+            "encoded_bytes": 12450,
+            "serialize_wall_ns": 471736,
+            "serialize_cpu_ns": 497300,
+            "write_wall_ns": 228880,
+            "write_cpu_ns": 238800,
+            "max_serialize_wall_ns": 43076,
+            "max_write_wall_ns": 20349
+          }
+        },
+        "slow_threshold_ns": 5000000,
+        "slow_seen": 0,
+        "slow_retained": 0,
+        "slow_discarded": 0,
+        "slow_callbacks": [],
+        "file_writer": {
+          "scope": "actual_file_writer_not_ingress_enqueue",
+          "submitted": 722,
+          "written": 722,
+          "outstanding_records": 0,
+          "outstanding_bytes": 0,
+          "max_records": 256,
+          "max_bytes": 8388608,
+          "peak_records": 23,
+          "peak_bytes": 64468,
+          "error": null,
+          "accepting": true,
+          "joined": false,
+          "write_wall_ns": 23060077,
+          "write_cpu_ns": 5382500,
+          "max_write_wall_ns": 1768856
+        },
+        "journal_failure": null,
+        "journal_write_scope": "enqueue"
+      },
+      "timing_after": {
+        "scope": "local_observer_cost_not_dds_queue_or_capture_latency",
+        "lock_wait_scope": "dispatch_wrapper_only_no_wrapper_lock_callback_internal_wait_is_in_wall_cost",
+        "callbacks": {
+          "_frame": {
+            "count": 296,
+            "wall_ns": 82002565,
+            "cpu_ns": 84697000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 1109125,
+            "max_cpu_ns": 1166200
+          },
+          "_sensor:joints": {
+            "count": 591,
+            "wall_ns": 78818956,
+            "cpu_ns": 80973000,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 483150,
+            "max_cpu_ns": 507200
+          },
+          "_tf": {
+            "count": 591,
+            "wall_ns": 3124074,
+            "cpu_ns": 3054200,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 43600,
+            "max_cpu_ns": 42500
+          },
+          "_sensor:body": {
+            "count": 295,
+            "wall_ns": 27178569,
+            "cpu_ns": 27946600,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 558366,
+            "max_cpu_ns": 586800
+          },
+          "_sensor:contacts": {
+            "count": 295,
+            "wall_ns": 31895566,
+            "cpu_ns": 32878900,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 640904,
+            "max_cpu_ns": 673700
+          },
+          "_sensor:imu": {
+            "count": 295,
+            "wall_ns": 14939598,
+            "cpu_ns": 15330800,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 165741,
+            "max_cpu_ns": 174200
+          },
+          "_com": {
+            "count": 295,
+            "wall_ns": 1970238,
+            "cpu_ns": 2014100,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 16831,
+            "max_cpu_ns": 24000
+          },
+          "_sensor:carry": {
+            "count": 295,
+            "wall_ns": 10438096,
+            "cpu_ns": 10722900,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 133791,
+            "max_cpu_ns": 140500
+          },
+          "_sensor:scan": {
+            "count": 59,
+            "wall_ns": 15129385,
+            "cpu_ns": 15610200,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 449001,
+            "max_cpu_ns": 452400
+          },
+          "_controls": {
+            "count": 300,
+            "wall_ns": 65055027,
+            "cpu_ns": 67139700,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 514149,
+            "max_cpu_ns": 539200
+          },
+          "_motion": {
+            "count": 1200,
+            "wall_ns": 35008602,
+            "cpu_ns": 35789700,
+            "lock_wait_ns": 0,
+            "max_wall_ns": 169400,
+            "max_cpu_ns": 167200
+          }
+        },
+        "journal": {
+          "joints": {
+            "count": 591,
+            "encoded_bytes": 687924,
+            "serialize_wall_ns": 19442467,
+            "serialize_cpu_ns": 20019700,
+            "write_wall_ns": 17062278,
+            "write_cpu_ns": 17790400,
+            "max_serialize_wall_ns": 186755,
+            "max_write_wall_ns": 145297
+          },
+          "body": {
+            "count": 295,
+            "encoded_bytes": 95875,
+            "serialize_wall_ns": 5981147,
+            "serialize_cpu_ns": 6159200,
+            "write_wall_ns": 2715452,
+            "write_cpu_ns": 2803700,
+            "max_serialize_wall_ns": 95400,
+            "max_write_wall_ns": 34993
+          },
+          "body_transport": {
+            "count": 295,
+            "encoded_bytes": 65785,
+            "serialize_wall_ns": 2450513,
+            "serialize_cpu_ns": 2528700,
+            "write_wall_ns": 1096183,
+            "write_cpu_ns": 1125300,
+            "max_serialize_wall_ns": 37100,
+            "max_write_wall_ns": 23487
+          },
+          "contacts": {
+            "count": 295,
+            "encoded_bytes": 114460,
+            "serialize_wall_ns": 5191631,
+            "serialize_cpu_ns": 5335900,
+            "write_wall_ns": 1662689,
+            "write_cpu_ns": 1709100,
+            "max_serialize_wall_ns": 52100,
+            "max_write_wall_ns": 32235
+          },
+          "contacts_transport": {
+            "count": 295,
+            "encoded_bytes": 78098,
+            "serialize_wall_ns": 2245734,
+            "serialize_cpu_ns": 2320700,
+            "write_wall_ns": 926177,
+            "write_cpu_ns": 956000,
+            "max_serialize_wall_ns": 30999,
+            "max_write_wall_ns": 28700
+          },
+          "imu": {
+            "count": 295,
+            "encoded_bytes": 66080,
+            "serialize_wall_ns": 3928322,
+            "serialize_cpu_ns": 4044200,
+            "write_wall_ns": 2683295,
+            "write_cpu_ns": 2782800,
+            "max_serialize_wall_ns": 42410,
+            "max_write_wall_ns": 53155
+          },
+          "carry": {
+            "count": 295,
+            "encoded_bytes": 64900,
+            "serialize_wall_ns": 2951547,
+            "serialize_cpu_ns": 3043000,
+            "write_wall_ns": 1600165,
+            "write_cpu_ns": 1653000,
+            "max_serialize_wall_ns": 45300,
+            "max_write_wall_ns": 38500
+          },
+          "scan": {
+            "count": 59,
+            "encoded_bytes": 251576,
+            "serialize_wall_ns": 2840686,
+            "serialize_cpu_ns": 2929700,
+            "write_wall_ns": 293233,
+            "write_cpu_ns": 300500,
+            "max_serialize_wall_ns": 76547,
+            "max_write_wall_ns": 17402
+          },
+          "scan_transport": {
+            "count": 59,
+            "encoded_bytes": 13157,
+            "serialize_wall_ns": 363782,
+            "serialize_cpu_ns": 376500,
+            "write_wall_ns": 178402,
+            "write_cpu_ns": 182800,
+            "max_serialize_wall_ns": 10700,
+            "max_write_wall_ns": 17401
+          },
+          "frame": {
+            "count": 293,
+            "encoded_bytes": 2040614,
+            "serialize_wall_ns": 22005129,
+            "serialize_cpu_ns": 22709100,
+            "write_wall_ns": 4098153,
+            "write_cpu_ns": 4244300,
+            "max_serialize_wall_ns": 136100,
+            "max_write_wall_ns": 46600
+          },
+          "native_controls": {
+            "count": 300,
+            "encoded_bytes": 2292818,
+            "serialize_wall_ns": 23107278,
+            "serialize_cpu_ns": 23930200,
+            "write_wall_ns": 3720935,
+            "write_cpu_ns": 3844100,
+            "max_serialize_wall_ns": 238009,
+            "max_write_wall_ns": 63330
+          },
+          "native_controls_transport": {
+            "count": 300,
+            "encoded_bytes": 81518,
+            "serialize_wall_ns": 2609381,
+            "serialize_cpu_ns": 2705500,
+            "write_wall_ns": 1069132,
+            "write_cpu_ns": 1093400,
+            "max_serialize_wall_ns": 46023,
+            "max_write_wall_ns": 33200
+          },
+          "carry_state": {
+            "count": 300,
+            "encoded_bytes": 74700,
+            "serialize_wall_ns": 3281719,
+            "serialize_cpu_ns": 3403900,
+            "write_wall_ns": 1799744,
+            "write_cpu_ns": 1858400,
+            "max_serialize_wall_ns": 41554,
+            "max_write_wall_ns": 83203
+          },
+          "crawl_state": {
+            "count": 300,
+            "encoded_bytes": 74700,
+            "serialize_wall_ns": 4897021,
+            "serialize_cpu_ns": 5064900,
+            "write_wall_ns": 3838983,
+            "write_cpu_ns": 3984500,
+            "max_serialize_wall_ns": 76737,
+            "max_write_wall_ns": 54106
+          },
+          "startup_state": {
+            "count": 300,
+            "encoded_bytes": 75300,
+            "serialize_wall_ns": 2848191,
+            "serialize_cpu_ns": 2948900,
+            "write_wall_ns": 1498435,
+            "write_cpu_ns": 1541200,
+            "max_serialize_wall_ns": 43266,
+            "max_write_wall_ns": 31200
+          },
+          "guard_state": {
+            "count": 300,
+            "encoded_bytes": 74700,
+            "serialize_wall_ns": 2872850,
+            "serialize_cpu_ns": 2980000,
+            "write_wall_ns": 1525626,
+            "write_cpu_ns": 1570000,
+            "max_serialize_wall_ns": 70746,
+            "max_write_wall_ns": 47640
+          }
+        },
+        "slow_threshold_ns": 5000000,
+        "slow_seen": 0,
+        "slow_retained": 0,
+        "slow_discarded": 0,
+        "slow_callbacks": [],
+        "file_writer": {
+          "scope": "actual_file_writer_not_ingress_enqueue",
+          "submitted": 4572,
+          "written": 4572,
+          "outstanding_records": 0,
+          "outstanding_bytes": 0,
+          "max_records": 256,
+          "max_bytes": 8388608,
+          "peak_records": 23,
+          "peak_bytes": 64468,
+          "error": null,
+          "accepting": true,
+          "joined": false,
+          "write_wall_ns": 133023925,
+          "write_cpu_ns": 33830900,
+          "max_write_wall_ns": 3259201
+        },
+        "journal_failure": null,
+        "journal_write_scope": "enqueue"
+      },
+      "errors": [],
+      "transport_errors": [],
+      "shutdown_ok": true,
+      "receivers": {
+        "node": "navigation_native_probe",
+        "thread_ident": 132364357322432,
+        "thread_alive": false,
+        "closed": true,
+        "error": null,
+        "recording": {
+          "node": "navigation_probe_recording",
+          "thread_ident": 132364382500544,
+          "thread_alive": false,
+          "closed": true,
+          "error": null,
+          "recording": null,
+          "ingress": null
+        },
+        "ingress": {
+          "node": "navigation_probe_ingress",
+          "thread_ident": 132364365715136,
+          "thread_alive": false,
+          "closed": true,
+          "error": null,
+          "recording": null,
+          "ingress": null
+        }
+      },
+      "thread_costs": {
+        "navigation_native_probe": {
+          "wall_s": 6.0046014849999665,
+          "cpu_s": 0.43648
+        },
+        "navigation_probe_ingress": {
+          "wall_s": 6.005351115000053,
+          "cpu_s": 0.540219
+        },
+        "navigation_probe_recording": {
+          "wall_s": 6.006664793999903,
+          "cpu_s": 0.326055
+        }
+      }
+    }
+  ],
+  "failure": null,
+  "publisher_reaped": true,
+  "publisher_exit": 0
+}

@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 765, in run
+    phase_measurements.update(run_sequence(args.scenario,snapshot=snapshot,source=source_node,
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/g2_sequence.py", line 61, in run_sequence
+    wait(lambda:_reached(start['pose'],snapshot()['pose'],name),900. if name=='forward' else 600.,name+' measured movement')
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 717, in wait
+    while not predicate():
+              ^^^^^^^^^^^
+  File "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/g2_sequence.py", line 61, in <lambda>
+    wait(lambda:_reached(start['pose'],snapshot()['pose'],name),900. if name=='forward' else 600.,name+' measured movement')
+                                       ^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/run_navigation_13_5.py", line 761, in snapshot
+    return probe.movement_decision(profile.limits)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/scripts/probe_navigation_13_5.py", line 580, in movement_decision
+    value=movement_snapshot(row,ros_ns,wall_ns,limits)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation/lib/python3.12/site-packages/integrated_robot_navigation/g2_sequence.py", line 12, in movement_snapshot
+    if not valid:raise ValueError('native movement '+name+':'+reason)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: native movement body:ros_age
