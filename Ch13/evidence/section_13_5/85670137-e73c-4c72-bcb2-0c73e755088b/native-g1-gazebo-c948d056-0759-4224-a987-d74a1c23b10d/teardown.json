@@ -1,0 +1,77 @@
+{
+  "gazebo_pause": {
+    "confirmed": true,
+    "started_ns": 1091414445218,
+    "commands": [
+      [
+        "gz",
+        "service",
+        "-s",
+        "/world/section_13_5/control",
+        "--reqtype",
+        "gz.msgs.WorldControl",
+        "--reptype",
+        "gz.msgs.Boolean",
+        "--timeout",
+        "2000",
+        "--req",
+        "pause: true"
+      ],
+      [
+        "gz",
+        "topic",
+        "-e",
+        "-t",
+        "/world/section_13_5/stats",
+        "-n",
+        "1",
+        "--json-output"
+      ]
+    ],
+    "pause": {
+      "returncode": 0,
+      "stdout": "data: true\n\n",
+      "stderr": ""
+    },
+    "stats": {
+      "returncode": 0,
+      "stdout": "{\"simTime\":{\"sec\":\"27\",\"nsec\":724000000},\"realTime\":{\"sec\":\"50\",\"nsec\":378351733},\"paused\":true,\"iterations\":\"13862\",\"stepSize\":{}}\n",
+      "stderr": ""
+    },
+    "finished_ns": 1092290077010
+  },
+  "gazebo_stop": {
+    "returncode": 0,
+    "stdout": "data: true\n\n"
+  },
+  "engine_exit": true,
+  "forced_cleanup": false,
+  "residual_live_pids": [],
+  "launch_returncode": 0,
+  "parent_reaped": true,
+  "engine_members": [
+    {
+      "pid": 1136,
+      "ppid": 1133,
+      "pgid": 1133,
+      "start_ticks": 103877,
+      "command": "/bin/sh -c ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim -r -s --headless-rendering /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2/Ch13/evidence/section_13_5/85670137-e73c-4c72-bcb2-0c73e755088b/native-g1-gazebo-c948d056-0759-4224-a987-d74a1c23b10d-prepared/scene/world.sdf --force-version 8 "
+    }
+  ],
+  "engine_returncodes": [
+    0
+  ],
+  "tf_observer_members": [
+    {
+      "pid": 1153,
+      "ppid": 1133,
+      "pgid": 1133,
+      "start_ticks": 103888,
+      "executable": "/home/jinho/ch13_5_completion_85670137-e73c-4c72-bcb2-0c73e755088b/install/integrated_robot_navigation_sensors/lib/integrated_robot_navigation_sensors/tf_provenance",
+      "sha256": "83999d83db5115183ab88138972822d66a5c251db95aad01013c5efa28b5ec39"
+    }
+  ],
+  "tf_observer_returncodes": [
+    0
+  ]
+}

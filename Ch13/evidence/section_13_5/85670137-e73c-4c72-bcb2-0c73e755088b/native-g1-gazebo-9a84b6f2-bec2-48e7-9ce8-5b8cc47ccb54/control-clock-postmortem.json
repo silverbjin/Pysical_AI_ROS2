@@ -1,0 +1,99 @@
+{
+  "scope": "postmortem_not_task_success",
+  "trace_sha256": "36779700b71dc3199089225833becb8153afd17289115c6ee453e2494a34bf3a",
+  "raw_sha256": "dd11fec99a9513b1867aa9b1be91e36c15f9d3920947192219e011469d893f1b",
+  "publications": 3224,
+  "unique_captures": 3224,
+  "wall_publication_interval_ns": {
+    "count": 3223,
+    "minimum": 10131890,
+    "maximum": 400371988,
+    "p50": 10390083,
+    "p95": 11764213
+  },
+  "average_wall_hz": 92.47586479384191,
+  "source_receipt_to_publish_ns": {
+    "count": 3224,
+    "minimum": 48202,
+    "maximum": 22252275,
+    "p50": 1309281,
+    "p95": 4760135
+  },
+  "last_event": {
+    "event": "closed",
+    "report": {
+      "armed": true,
+      "closing": true,
+      "destination_topic": "/navigation/control_clock",
+      "fault": "",
+      "gid": "010fb4059de5101c0000000000001403",
+      "inputs": 14554,
+      "last_source_capture_ns": 30204000000,
+      "last_source_receipt_ns": 40137496848478,
+      "mode": "relay100",
+      "outputs": 3224,
+      "source_topic": "/clock"
+    },
+    "wall_ns": 40137497567170
+  },
+  "actual_received_state_lineage": {
+    "guard_state": {
+      "total": 1765,
+      "zero_bootstrap": 123,
+      "positive": 1642,
+      "missing": 0,
+      "publish_to_state_receipt_ns": {
+        "count": 1642,
+        "minimum": 975285,
+        "maximum": 399193034,
+        "p50": 8466566,
+        "p95": 18186808
+      }
+    },
+    "crawl_state": {
+      "total": 1837,
+      "zero_bootstrap": 119,
+      "positive": 1718,
+      "missing": 0,
+      "publish_to_state_receipt_ns": {
+        "count": 1718,
+        "minimum": 2164264,
+        "maximum": 400034473,
+        "p50": 12043514,
+        "p95": 22913452
+      }
+    },
+    "startup_state": {
+      "total": 734,
+      "zero_bootstrap": 45,
+      "positive": 689,
+      "missing": 0,
+      "publish_to_state_receipt_ns": {
+        "count": 689,
+        "minimum": 1188187,
+        "maximum": 362695367,
+        "p50": 8236283,
+        "p95": 17119735
+      }
+    },
+    "carry_state": {
+      "total": 1792,
+      "zero_bootstrap": 71,
+      "positive": 1721,
+      "missing": 0,
+      "publish_to_state_receipt_ns": {
+        "count": 1721,
+        "minimum": 1039683,
+        "maximum": 390782250,
+        "p50": 9124401,
+        "p95": 18476357
+      }
+    }
+  },
+  "caveats": [
+    "State receipt latency includes middleware/node/probe scheduling, not only relay delay.",
+    "nav_projection has no MotionState publisher; its clock route is graph-audited.",
+    "Producer trace is not an independent observation of every clock wire message.",
+    "No bootstrap-zero or missing-positive value is counted as lineage success."
+  ]
+}
