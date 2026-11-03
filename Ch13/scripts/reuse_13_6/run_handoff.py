@@ -61,7 +61,10 @@ def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', w
                 assert until(lambda:status.get('phase')=='FAULT',2.),'duplicate publisher admitted'
                 assert 'DUPLICATE_OWNER:mission'==status['fault'],status
             elif work is not None:
-                work(node=node,until=until,snapshot=snapshot,status=lambda:status)
+                def disable():
+                    nonlocal enabled
+                    enabled=False
+                work(node=node,until=until,snapshot=snapshot,status=lambda:status,control={'disable_heartbeat':disable})
             if status.get('phase')!='FAULT':
                 revoked = True
                 assert until(lambda:status.get('phase')=='REVOKED',2.),'explicit handoff revoke failed'

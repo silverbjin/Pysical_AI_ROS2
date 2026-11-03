@@ -1,0 +1,14 @@
+{
+  "revision": "section_13_6_control_v2",
+  "inherits_numeric_limits": "section_13_6_control_v1.json",
+  "reason": "v1 20mrad goals could not overcome measured 2.94Nm/-6.27Nm shoulder/elbow bias; permissive goal tolerance alone was not six-axis motion proof",
+  "profile": "13_6_model_bias_v2",
+  "arm_control": "same native Kp50/Kd4 and original force caps; explicit model-bias feedforward encoded as internal servo_reference = planned_reference + ramp*qfrc_bias/Kp",
+  "feedforward_scope": "only13.6 after first arm execution, stays enabled for subsequent hold/cancel; disabled during original13.5 and navigation handoff",
+  "activation_ramp_sim_s": 0.5,
+  "feedforward_limit": "finite model bias within original per-axis torque cap; otherwise fault latch, no cap increase",
+  "settling_reference": "planned joint reference, never internally shifted servo reference",
+  "six_axis_probe_min_actual_excursion_rad": 0.005,
+  "historical_v1": "normal/cancel/loss process summaries preserved; v1 normal does not pass six-axis motion or final lease-state acceptance",
+  "limitation": "simulator model-assisted arm control profile, not unchanged upstream controller or real hardware gravity calibration"
+}

@@ -60,6 +60,7 @@ class Platform(Node):
     def on_shutdown(self,request,response):
         with self.lock:
             response.success=self.ready_now() and self.guard.last_values==(0.,0.)
+            if self.manipulation is not None and self.manipulation.actions.busy:response.success=False
             if response.success:self.stop_requested=True
             response.message='settled shutdown accepted' if response.success else 'actual stationary zero required'
         return response
@@ -99,7 +100,8 @@ class Platform(Node):
         with self.lock:
             if self.last_capture_wall is not None and wall-self.last_capture_wall>.30:self.stationary_start=None;self.stationary_ready=False
             self.last_capture_wall=wall
-            good=(decision.vx==0 and decision.wz==0 and np.linalg.norm(v[:2])<=.05 and abs(v[5])<=.20 and np.max(abs(v[18:24]))<=.20 and np.max(abs(q[19:25]-p.desired_joint_pos_arm))<=.10 and tilt<=.35)
+            arm_reference=p.desired_joint_pos_arm if self.manipulation is None else self.manipulation.actions.command
+            good=(decision.vx==0 and decision.wz==0 and np.linalg.norm(v[:2])<=.05 and abs(v[5])<=.20 and np.max(abs(v[18:24]))<=.20 and np.max(abs(q[19:25]-arm_reference))<=.10 and tilt<=.35)
             if good:
                 if self.stationary_start is None:self.stationary_start=(wall,sim_ns,q.copy(),s['yaw'])
                 anchor=self.stationary_start
@@ -207,7 +209,9 @@ def main():
             record('upstream_loop',previous_exit,previous_cpu)
             sim_ns=max(1,round(data.time*1e9));d,arm=node.engine_command(sim_ns);last_decision=d
             record('engine_command_lock',begin,cpu_begin);marker=time.monotonic();cpu_marker=time.thread_time()
-            p.ref_base_lin_vel_H[:]=[d.vx,0.,0.];p.ref_base_ang_yaw_dot=d.wz;p.desired_joint_pos_arm[0]=arm
+            p.ref_base_lin_vel_H[:]=[d.vx,0.,0.];p.ref_base_ang_yaw_dot=d.wz
+            if node.manipulation is not None:node.manipulation.before(p,d,sim_ns)
+            else:p.desired_joint_pos_arm[0]=arm
             data.ctrl[12:18]=p.desired_joint_pos_arm
             original_step(model,data,*a,**kw);record('physics',marker,cpu_marker);marker=time.monotonic();cpu_marker=time.thread_time();step_count+=1;wall=time.monotonic()
             ratio=float(np.max(abs(data.actuator_force)/caps[:,1]));max_ratio=max(max_ratio,ratio)
@@ -240,6 +244,7 @@ def main():
             S['camera_worker_joined']=sensors.close()
             if not S['camera_worker_joined']:S['result']='ERROR';S['camera_error']='renderer worker failed to join'
         if p is not None:p.viewer.close()
+        if node is not None and node.manipulation is not None:node.manipulation.actions.close()
         if executor is not None:executor.shutdown(timeout_sec=2.)
         if rx is not None:rx.join(2.)
         S['rx_joined']=rx is None or not rx.is_alive()

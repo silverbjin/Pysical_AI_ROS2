@@ -24,6 +24,8 @@ class EngineExtension:
         self.status = {'session': self.lease.session, 'phase':'WAITING', 'fault':''}
         node.create_subscription(String,N+'/ingress/manipulation',self.packet,32)
         self.publisher = node.create_publisher(String,N+'/manipulation/status',1)
+        from .action_bridge import ActionBridge
+        self.actions = ActionBridge(self)
 
     def packet(self, packet):
         with self.node.lock:
@@ -64,13 +66,18 @@ class EngineExtension:
                     self.lease.trip('DUPLICATE_OWNER:'+key)
             status = dict(self.status)
         self.publisher.publish(String(data=json.dumps(status)))
+        self.actions.monitor()
+
+    def before(self,p,decision,clock_ns):
+        with self.node.lock:
+            self.actions.before(p,clock_ns)
 
     def step(self, p, decision, q, v, state, tilt):
         now, clock = time.monotonic(),state['stamp_ns']
         with self.node.lock:
             supported = (decision.mode=='ARMED' and decision.vx==0 and decision.wz==0
                          and math.hypot(v[0],v[1])<=.05 and abs(v[5])<=.20 and tilt<=.35)
-            if self.lease.message is not None:
+            if self.lease.message is not None and self.lease.phase not in ('REVOKED','FAULT'):
                 if self.graph_wall is None or now-self.graph_wall>.30 or any(c!=1 for c in self.graph.values()):
                     self.lease.trip('MANIPULATION_GRAPH_LOST')
             nav_idle = (self.navigation is not None and self.navigation_receipt is not None
@@ -94,6 +101,8 @@ class EngineExtension:
             if phase != self.last_phase:
                 self.events.append(dict(self.status))
                 self.last_phase = phase
+            self.actions.after(p,state,q,v)
 
     def summary(self):
-        return dict(last_status=self.status,events=self.events)
+        return dict(control_profile='13_6_model_bias_v2',last_status=self.status,events=self.events,arm_events=self.actions.events,
+                    arm_observations=self.actions.rows)
