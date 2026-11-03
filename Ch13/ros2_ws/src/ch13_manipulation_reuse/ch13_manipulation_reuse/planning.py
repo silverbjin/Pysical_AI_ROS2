@@ -195,6 +195,27 @@ class Planner:
         if not cartesian_complete(response.fraction,response.error_code.val,residual):return None
         return dict(trajectory=trajectory,start=start,revision=revision,scene_hash=scene)
 
+    def prepare_execution(self,plan):
+        """Prove timing feasibility without mutating or executing the plan."""
+        trajectory=plan['trajectory'].joint_trajectory
+        points=[dict(time=p.time_from_start.sec+p.time_from_start.nanosec/1e9,positions=list(p.positions),
+                     velocities=list(p.velocities),accelerations=list(p.accelerations)) for p in trajectory.points]
+        limits=[[-2.618,2.618],[0.,3.14],[-2.697,0.],[-1.832,1.832],[-1.22,1.22],[-3.14,3.14]]
+        measured=self.joints()
+        return self.compute(lambda:normalize_points(tuple(trajectory.joint_names),points,measured,limits))
+
+    def choose_timed_plan(self,plans):
+        feasible=[]
+        for index,plan in enumerate(plans):
+            try:prepared,scale=self.prepare_execution(plan)
+            except ValueError as error:
+                self.records.append(dict(kind='execution_candidate_rejected',candidate=index,reason=str(error)))
+                continue
+            duration=prepared[-1]['time']
+            self.records.append(dict(kind='execution_candidate_timing',candidate=index,duration_sim_s=duration,scale=scale))
+            feasible.append((duration,index))
+        return min(feasible)[1] if feasible else None
+
     def execute(self,plan,cancel_after_sim_s=None):
         if plan is None:raise ValueError('complete valid plan required')
         current=self.snapshot();sample=current['observation']
@@ -204,11 +225,7 @@ class Planner:
         assert self.node.count_publishers('/planning_scene')==0,'unexpected planning scene writer'
         goal=FollowJointTrajectory.Goal();goal.trajectory=plan['trajectory'].joint_trajectory
         trajectory=goal.trajectory
-        points=[dict(time=p.time_from_start.sec+p.time_from_start.nanosec/1e9,positions=list(p.positions),
-                     velocities=list(p.velocities),accelerations=list(p.accelerations)) for p in trajectory.points]
-        limits=[[-2.618,2.618],[0.,3.14],[-2.697,0.],[-1.832,1.832],[-1.22,1.22],[-3.14,3.14]]
-        measured=self.joints()
-        prepared,scale=self.compute(lambda:normalize_points(tuple(trajectory.joint_names),points,measured,limits))
+        prepared,scale=self.prepare_execution(plan)
         for point,updated in zip(trajectory.points,prepared):
             total_ns=round(updated['time']*1e9);point.time_from_start.sec=total_ns//1_000_000_000
             point.time_from_start.nanosec=total_ns%1_000_000_000

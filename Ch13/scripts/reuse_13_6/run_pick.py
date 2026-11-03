@@ -51,8 +51,8 @@ def work(*,node,until,snapshot,status,control,out,case='pick'):
         request=PoseStamped();request.header.frame_id='reuse/odom'
         set_stamp(request.header.stamp,sample['capture_ns'])
         # An upright cylinder has two equivalent finger roll orientations.
-        # Plan both geometric symmetries and choose the shorter valid route;
-        # do not force a nearly pi wrist rotation from the current state.
+        # Plan both symmetries; rank only routes which satisfy the same timing
+        # contract used at execution, rather than comparing raw TOTG durations.
         candidates=[]
         for sign in (1.,-1.):
             rotation=Rotation.from_matrix(np.column_stack((sign*up,-sign*side,forward)))
@@ -61,9 +61,12 @@ def work(*,node,until,snapshot,status,control,out,case='pick'):
                 end=candidate['trajectory'].joint_trajectory.points[-1].time_from_start
                 candidates.append((end.sec+end.nanosec/1e9,candidate,rotation,sign))
         assert candidates,'pre-grasp 6D pose planning failed'
-        duration,plan,rotation,sign=min(candidates,key=lambda c:c[0])
+        selected=planner.choose_timed_plan([c[1] for c in candidates])
+        assert selected is not None,'no pre-grasp candidate satisfies audited execution timing'
+        duration,plan,rotation,sign=candidates[selected]
         records.append(dict(pre_grasp_roll_sign=sign,planned_duration_sim_s=duration,
-                            equivalent_roll_candidate_durations=[c[0] for c in candidates]))
+                            equivalent_roll_candidate_durations=[c[0] for c in candidates],
+                            selection='shortest_audited_normalized_duration'))
         planner.execute(plan)
         assert until(lambda:snapshot()['platform'].get('stationary_ready'),10.)
         sample,updated=observation();assert np.linalg.norm(updated-center)<.005,'target moved before approach'
