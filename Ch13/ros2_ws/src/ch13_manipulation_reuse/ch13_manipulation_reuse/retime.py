@@ -9,12 +9,9 @@ def normalize_points(names,points,current,limits):
     intervals=np.diff([p['time'] for p in points])
     if len(intervals)==0 or not np.isfinite(intervals).all() or np.any(intervals<=0):
         raise ValueError('nonadvancing MoveIt path time')
-    # TOTG can append a valid geometric endpoint less than one physics tick
-    # after the preceding waypoint. Stretch the entire path uniformly, with
-    # nanosecond rounding headroom, instead of dropping either endpoint.
-    tick_scale=max(1.,.002000002/float(intervals.min()))
-    for multiplier in (1.,1.25,1.5,2.,3.):
-        scale=tick_scale*multiplier
+    # Scale only to satisfy continuous position/velocity/acceleration bounds.
+    # Knot spacing is independent of the physics sampling period.
+    for scale in (1.,1.25,1.5,2.,3.):
         result=copy.deepcopy(points)
         for point in result:
             point['time']*=scale

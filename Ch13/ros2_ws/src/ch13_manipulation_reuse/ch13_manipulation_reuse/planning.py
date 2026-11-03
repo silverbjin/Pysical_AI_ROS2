@@ -191,7 +191,8 @@ class Planner:
             final=waypoints[-1].position
             residual=float(np.linalg.norm(self.tcp(end)[:3,3]-[final.x,final.y,final.z]))
         self.records.append(dict(kind='cartesian',fraction=response.fraction,error_code=response.error_code.val,
-                                 endpoint_error_m=residual,scene_hash=scene,revision=revision))
+                                 endpoint_error_m=residual,scene_hash=scene,revision=revision,
+                                 trajectory=message_to_ordereddict(trajectory)))
         if not cartesian_complete(response.fraction,response.error_code.val,residual):return None
         return dict(trajectory=trajectory,start=start,revision=revision,scene_hash=scene)
 

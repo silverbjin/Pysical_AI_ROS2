@@ -28,8 +28,8 @@ def test_actual_totg_subtick_endpoint_preserves_all_points_and_valid_hold():
     limits=[[-2.618,2.618],[0,3.14],[-2.697,0],[-1.832,1.832],[-1.22,1.22],[-3.14,3.14]]
     assert min(np.diff([p['time'] for p in points]))<.002/3
     normalized,scale=normalize_points(msg['joint_names'],points,points[0]['positions'],limits)
-    assert len(normalized)==len(points) and scale>3.
-    assert min(np.diff([p['time'] for p in normalized]))>=.002
+    assert len(normalized)==len(points) and 1.<=scale<=3.
+    assert min(np.diff([p['time'] for p in normalized]))<.002
     path=Trajectory.from_points(tuple(msg['joint_names']),normalized,points[0]['positions'],limits)
     assert path.duration<=120.
     for old,new in zip(points,normalized):np.testing.assert_array_equal(old['positions'],new['positions'])

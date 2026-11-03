@@ -48,22 +48,28 @@ class Trajectory:
         # Batch the common proof in NumPy. Hundreds of per-axis Python loops
         # otherwise compete with the physics/RX threads for the same GIL.
         T=np.diff(result.times)
-        if np.any(T<.002):raise ValueError('times must increase by at least one physics tick')
+        if np.any(T<=0):raise ValueError('times must strictly increase')
         first=np.asarray([p[1:] for p in values[:-1]])
         last=np.asarray([p[1:] for p in values[1:]])
         tau=T[:,None];coefficients=np.zeros((len(T),6,6))
-        coefficients[:,:3,:]=first;coefficients[:,2,:]/=2
-        delta=last[:,0]-coefficients[:,0]-coefficients[:,1]*tau-coefficients[:,2]*tau*tau
-        velocity=last[:,1]-coefficients[:,1]-2*coefficients[:,2]*tau
-        acceleration=last[:,2]-2*coefficients[:,2]
-        coefficients[:,3]=(10*delta-4*velocity*tau+.5*acceleration*tau*tau)/tau**3
-        coefficients[:,4]=(-15*delta+7*velocity*tau-acceleration*tau*tau)/tau**4
-        coefficients[:,5]=(6*delta-3*velocity*tau+.5*acceleration*tau*tau)/tau**5
+        # Use u=(t-t0)/T on [0,1]. A knot is not a controller update: the
+        # continuous bounded spline can be sampled at 2ms across shorter knots.
+        # Normalized coefficients avoid ill-conditioned T**-5 on short tails.
+        coefficients[:,0]=first[:,0]
+        coefficients[:,1]=first[:,1]*tau
+        coefficients[:,2]=first[:,2]*tau*tau/2
+        delta=last[:,0]-coefficients[:,0]-coefficients[:,1]-coefficients[:,2]
+        velocity=last[:,1]*tau-coefficients[:,1]-2*coefficients[:,2]
+        acceleration=last[:,2]*tau*tau-2*coefficients[:,2]
+        coefficients[:,3]=10*delta-4*velocity+.5*acceleration
+        coefficients[:,4]=-15*delta+7*velocity-acceleration
+        coefficients[:,5]=6*delta-3*velocity+.5*acceleration
         if not np.isfinite(coefficients).all():raise ValueError('nonfinite trajectory coefficients')
-        scaled=coefficients*T[:,None,None]**np.arange(6)[None,:,None]
-        hull=BERNSTEIN@scaled
+        hull=BERNSTEIN@coefficients
         velocity_hull=5*np.diff(hull,axis=1)/T[:,None,None]
         acceleration_hull=4*np.diff(velocity_hull,axis=1)/T[:,None,None]
+        if not all(np.isfinite(cloud).all() for cloud in (hull,velocity_hull,acceleration_hull)):
+            raise ValueError('nonfinite trajectory bounds')
         bounds=((result.limits[:,0],result.limits[:,1]),(-vmax,vmax),(-amax,amax))
         for derivative,cloud in enumerate((hull,velocity_hull,acceleration_hull)):
             lo,hi=bounds[derivative]
@@ -72,10 +78,12 @@ class Trajectory:
                 if validation_deadline is not None and time.monotonic()>validation_deadline:
                     raise ValueError('trajectory validation deadline')
                 duration=T[index];poly=Polynomial(coefficients[index,:,axis]).deriv(derivative)
-                candidates=[0.,duration]+[float(r.real) for r in poly.deriv().roots()
-                                         if abs(r.imag)<1e-8 and 0<r.real<duration]
-                extrema=poly(np.asarray(candidates));lower=np.broadcast_to(lo,(6,))[axis];upper=np.broadcast_to(hi,(6,))[axis]
-                if extrema.min()<lower-1e-8 or extrema.max()>upper+1e-8:
+                candidates=[0.,1.]+[float(r.real) for r in poly.deriv().roots()
+                                    if abs(r.imag)<1e-8 and 0<r.real<1.]
+                extrema=poly(np.asarray(candidates))
+                for _ in range(derivative):extrema=extrema/duration
+                lower=np.broadcast_to(lo,(6,))[axis];upper=np.broadcast_to(hi,(6,))[axis]
+                if not np.isfinite(extrema).all() or extrema.min()<lower-1e-8 or extrema.max()>upper+1e-8:
                     raise ValueError(('trajectory bound',JOINTS[axis],derivative,float(extrema.min()),float(extrema.max())))
         if validation_deadline is not None and time.monotonic()>validation_deadline:
             raise ValueError('trajectory validation deadline')
@@ -90,12 +98,13 @@ class Trajectory:
         if not math.isfinite(time_s):raise ValueError('nonfinite trajectory time')
         time_s=max(0.,min(self.duration,float(time_s)))
         index=min(len(self.segments)-1,max(0,bisect.bisect_right(self.times,time_s)-1))
-        local=time_s-self.times[index]
+        duration=self.times[index+1]-self.times[index]
+        local=(time_s-self.times[index])/duration
         c=self.segments[index]
         q=c[0]+local*(c[1]+local*(c[2]+local*(c[3]+local*(c[4]+local*c[5]))))
         v=c[1]+local*(2*c[2]+local*(3*c[3]+local*(4*c[4]+local*5*c[5])))
         a=2*c[2]+local*(6*c[3]+local*(12*c[4]+local*20*c[5]))
-        return q,v,a
+        return q,v/duration,a/duration/duration
 
     def brake(self,time_s):
         q,v,a=self.sample(time_s)
