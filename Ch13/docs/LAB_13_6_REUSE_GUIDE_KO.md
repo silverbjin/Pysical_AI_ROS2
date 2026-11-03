@@ -19,7 +19,7 @@ git clone --filter=blob:none --sparse --depth 1 --single-branch \
   --branch feat/ch13-section-13-6-manipulation \
   https://github.com/silverbjin/Pysical_AI_ROS2.git Pysical_AI_ROS2
 cd Pysical_AI_ROS2
-git sparse-checkout set Ch13/docs Ch13/dependencies Ch13/verification/reuse_13_6 \
+git sparse-checkout set Ch13/docs Ch13/dependencies Ch13/config Ch13/verification/reuse_13_6 \
   Ch13/scripts/reuse_13_5 Ch13/scripts/reuse_13_6 \
   Ch13/ros2_ws/src/ch13_navigation_reuse Ch13/ros2_ws/src/ch13_reuse_wire \
   Ch13/ros2_ws/src/integrated_robot_vision Ch13/ros2_ws/src/ch13_manipulation_reuse \
@@ -127,7 +127,7 @@ bash Ch13/scripts/reuse_13_6/run_case.sh pick Ch13/evidence/section_13_6_reuse/m
 bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_pick.py Ch13/evidence/section_13_6_reuse/my_pick_01
 ```
 
-동일 엔진에서 open→12cm pre-grasp→직선 접근→close→양 finger 실제 접촉→직선 10cm lift→2초 hold→작업 후 정착·회수를 수행한다. 대상은 20g 동적 원통이며 원본 gripper cap 0.5N을 유지한다. planning scene attach는 충돌 표현이며 물리 부착이 아니다. 판정은 실제 상승≥9cm, 2sim초 이상 유지, TCP에 대한 상대 변화≤2cm, HOLD 중 90% 이상 양 finger 접촉으로 한다. `pick_assessment.json`과 독립 verifier가 PASS여야 한다. 팔 action 성공이나 빈 그리퍼 close만으로 파지 성공이라고 해석하지 않는다.
+동일 엔진에서 open→12cm pre-grasp→직선 접근→close→양 finger 실제 접촉→직선 10cm lift→2초 hold→작업 후 정착·회수를 수행한다. 대표 v13 정상 pick의 engine 실행 구간은 약318wall초였다(각1회 측정, 시작/감사는 별도). 120sim초/240wall초 제한은 개별 팔 action에 적용하며 mission 전체의 제한이 아니다. 대상은 20g 동적 원통이며 원본 gripper cap 0.5N을 유지한다. planning scene attach는 충돌 표현이며 물리 부착이 아니다. 판정은 실제 상승≥9cm, 2sim초 이상 유지, TCP에 대한 상대 변화≤2cm, HOLD 중 90% 이상 양 finger 접촉으로 한다. `pick_assessment.json`과 독립 verifier가 PASS여야 한다. 팔 action 성공이나 빈 그리퍼 close만으로 파지 성공이라고 해석하지 않는다.
 
 양 finger normal force가 실제 확인된 뒤 native PD의 내부 reference로 0.5N 이내 닫기 힘을 유지한다. nominal close와 내부 reference를 별도 기록한다. 첫 lift 뒤 새 RGB-D로 상승 부족을 확인하면 한 번만, 최대3cm 추가 직선 보정한다. 보정량에는 실측 팔 끝의 목표 추종 지연을 포함한다. 관측 상승95mm·실제 팔 최대 속도0.003rad/s 이내와 기존 base 정착이0.5sim초 유지되어야 HOLD에 들어간다. 물체 정답 좌표를 제어 입력으로 쓰지 않는다. 물체 질량·마찰·접촉 차원·모터 cap은 보정 때문에 바꾸지 않는다. [계약v6](../dependencies/section_13_6_pick_contract_v6.json)에 수치와 변경 이유가 있다.
 

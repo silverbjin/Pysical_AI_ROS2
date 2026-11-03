@@ -78,5 +78,5 @@
 
 - [x] RED/GREEN: 판정기의 실패 evidence(불완전lift/실제 terminal 없음/잔여PID/가짜상태) 거절 시험.
 - [x] 최종 수치/source/install/model/policy 동결 후 필수 각1회 matrix: pick/불가·충돌/취소/입력·관측손실/중복/정상정착·종료. 공유변경 영향의13.5 실제 접근·취소·정지 회귀.
-- [ ] 다운로드→설치 의존성→build→환경→소절명령→성공/실패/종료 판독 가이드. 미검증/실패·교육profile 제한 명시.
-- [ ] 단일 작업자 별도 전체 diff 검토 및 필요한 수정 검증. 선택 commit/non-force push·remote SHA 대조. main/PR 불필요.
+- [x] 다운로드→설치 의존성→build→환경→소절명령→성공/실패/종료 판독 가이드. 미검증/실패·교육profile 제한 명시.
+- [x] 단일 작업자 별도 전체 diff 검토 및 필요한 수정 검증. 선택 commit/non-force push·remote SHA 대조. main/PR 불필요.

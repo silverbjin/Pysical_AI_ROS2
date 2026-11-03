@@ -62,3 +62,5 @@ v10 첫 배치는 MoveIt PASS 후 pick의 시작 future-clock 오류로 중단�
 원고의 MoveItPy 개념 API 대신 설치 API의 GetMotionPlan/GetCartesianPath와 실제 native FollowJointTrajectory 어댑터를 사용한다. TRAC-IK·OMPL·단일 planning scene·실제 base TF/joint_states·ground/받침/대상을 연결한다. 물리 대상은 반경2cm·높이8cm·20g·마찰0.8 동적 원통, 그리퍼 cap0.5N이다. 실제 양 finger 접촉 뒤 scene geometry만 attach하며 물리 weld/teleport는 없다. 원본 Kp/Kd와 힘 cap을 유지한 명시적 model-bias v2를 사용한다.
 
 한계: 알려진 upright 원통·실제320×240 RGB-D 표면 fit·ground-truth localization의 교육용 시뮬레이션이다. 일반6D 인식·SLAM/AMCL·실기 하중/드라이버·별도 Crawl/Stand 모드·CoM shift/WBC·새 보행 학습·placing·Gazebo 동등 구현은 검증하지 않았다. 단일 작업자 자체 검토는 독립 검토자보다 약하다. 과거 실패·사용자 문서·외부 원본을 보존하고 main merge/PR은 하지 않는다.
+
+게시본 다운로드·누락된 config 수정·별도 build/복원·판독 결과는 [게시 검증](SECTION_13_6_REUSE_PUBLICATION_KO.md), 전체 변경의 자체 검토 범위는 [검토 기록](SECTION_13_6_REUSE_FINAL_REVIEW_KO.md)을 참조한다.
