@@ -12,7 +12,7 @@ def layout(profile):
  if profile=='vision':walls.extend([('target',[1.8,0.,.55],[.05,.05,.05]),('pedestal',[1.8,0.,.25],[.035,.035,.25])])
  return walls
 
-def make_model(source,profile):
+def make_model(source,profile,spec_hook=None):
  if profile not in ('free','obstacle','blocked','vision'):raise ValueError('unknown educational scene')
  s=mujoco.MjSpec.from_file(str(source))
  for geom in list(s.worldbody.geoms):
@@ -21,6 +21,7 @@ def make_model(source,profile):
  # MuJoCo camera has right/up/back axes; ROS optical is right/down/forward.
  camera_r=OPTICAL_R@np.diag([1.,-1.,-1.]);quat=np.roll(Rotation.from_matrix(camera_r).as_quat(),1)
  s.body('base').add_camera(name='reuse_rgbd',pos=CAM_POS,quat=quat,fovy=55.)
+ if spec_hook is not None:spec_hook(s)
  return s.compile()
 
 def ray_scan(model,data,count=181):

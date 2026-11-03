@@ -22,7 +22,8 @@ from .image_artifact import write_rgb
 def matrix(t):
  q=t.transform.rotation;p=t.transform.translation;a=np.eye(4);a[:3,:3]=Rotation.from_quat([q.x,q.y,q.z,q.w]).as_matrix();a[:3,3]=[p.x,p.y,p.z];return a
 class VisionObserver(Node):
- def __init__(self,inference_hz=10.):
+ def __init__(self,inference_hz=10.,target_shape='fixture'):
+  self.target_shape=target_shape
   super().__init__('ch13_reuse_vision_observer');self.cache=FrameCache();self.camera_link=CameraLink();self.receipt_rows=[];self.clock_ns=0;self.clock_wall=None;self.fault='';self.relay={};self.tf_owners={};self.transforms={};self.map_odom=None;self.last_health=0;self.health_rows=[];self.last_processed=0;self.last_processed_wall=-1e9;self.inference_hz=inference_hz;self.rows=[];self.last_accepted=None;self.rejected=Counter()
   self.observation=self.create_publisher(String,N+'/vision/observation',1);self.point=self.create_publisher(PointStamped,N+'/observed_target',1);self.health=self.create_publisher(String,N+'/vision/health',1);self.status=self.create_publisher(String,N+'/vision/status',1)
   camera_qos=QoSProfile(depth=2,reliability=ReliabilityPolicy.RELIABLE)
@@ -92,15 +93,24 @@ class VisionObserver(Node):
       if rgbm.encoding!='rgb8' or rgbm.step!=960 or depthm.encoding!='32FC1' or depthm.step!=1280 or depthm.is_bigendian:raise ValueError('RGB-D encoding/stride')
       rgb_bytes=bytes(rgbm.data);digest=hashlib.sha256(rgb_bytes).hexdigest()
       if digest!=meta['rgb_sha256']:raise ValueError('capture content mismatch')
-      rgb=np.frombuffer(rgb_bytes,dtype=np.uint8).reshape(240,320,3);depth=np.frombuffer(bytes(depthm.data),dtype='<f4').reshape(240,320);calibration=[info.k[0],info.k[4],info.k[2],info.k[5]];optical,box=red_point(rgb,depth,calibration);transform=self.transforms[tf_stamp];world=transform[:3,:3]@optical+transform[:3,3]
+      rgb=np.frombuffer(rgb_bytes,dtype=np.uint8).reshape(240,320,3);depth=np.frombuffer(bytes(depthm.data),dtype='<f4').reshape(240,320);calibration=[info.k[0],info.k[4],info.k[2],info.k[5]];transform=self.transforms[tf_stamp]
+      fit=None
+      if self.target_shape=='cylinder':
+       from ch13_manipulation_reuse.cylinder_vision import fit_cylinder
+       from types import SimpleNamespace
+       fit=fit_cylinder(rgb,depth,calibration,transform,.02,.08)
+       optical=np.array(fit['optical_center']);world=np.array(fit['center']);box=SimpleNamespace(**fit['box'])
+      else:
+       optical,box=red_point(rgb,depth,calibration);world=transform[:3,:3]@optical+transform[:3,3]
       data={'inference_wall':now,'capture_ns':stamp,'capture_wall':capture_wall,'first_receipt_wall':first,'receipt_wall_by_source':{k:v[1] for k,v in frame.items()},'tf_stamp_ns':tf_stamp,'source_frame':'reuse/camera_optical','frame':'reuse/map','optical_point':optical.tolist(),'point':world.tolist(),'T_map_camera':transform.tolist(),'calibration':calibration,'box':{'cx':box.cx,'cy':box.cy,'width':box.width,'height':box.height},'rgb_sha256':digest,'source_gids':dict(self.cache.owners),'source':'actual_Renderer_RGBD_red_fixture'}
+      if fit is not None:data.update(source='actual_Renderer_RGBD_known_upright_cylinder_fit',cylinder_fit=fit)
       self.observation.publish(String(data=json.dumps(data)));p=PointStamped();set_stamp(p.header.stamp,stamp);p.header.frame_id='reuse/map';p.point.x,p.point.y,p.point.z=map(float,world);self.point.publish(p);self.rows.append(data);self.last_accepted=(rgb.copy(),depth.copy(),data)
      except (ValueError,IndexError) as exc:
       self.rejected[str(exc)]+=1
-      if str(exc)=='red fixture not observed':self.fault='TARGET_NOT_OBSERVED'
+      if str(exc) in ('red fixture not observed','cylinder not observed'):self.fault='TARGET_NOT_OBSERVED'
   self.status.publish(String(data=json.dumps({'fault':self.fault or self.cache.fault,'last_capture_ns':self.last_processed,'accepted':len(self.rows),'rejected':dict(self.rejected)})))
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--report',required=True);ap.add_argument('--inference-hz',type=float,choices=[10.,15.],default=10.);args=ap.parse_args();out=Path(args.report).parent;rclpy.init(args=[]);node=VisionObserver(args.inference_hz)
+ ap=argparse.ArgumentParser();ap.add_argument('--report',required=True);ap.add_argument('--inference-hz',type=float,choices=[10.,15.],default=10.);ap.add_argument('--target-shape',choices=['fixture','cylinder'],default='fixture');args=ap.parse_args();out=Path(args.report).parent;rclpy.init(args=[]);node=VisionObserver(args.inference_hz,args.target_shape)
  try:rclpy.spin(node)
  except (KeyboardInterrupt,ExternalShutdownException):pass
  finally:

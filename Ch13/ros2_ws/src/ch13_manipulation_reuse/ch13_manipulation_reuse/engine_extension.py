@@ -16,6 +16,7 @@ class EngineExtension:
         self.goals = {}
         self.navigation = None
         self.navigation_receipt = None
+        self.gateway=None;self.gateway_receipt=None
         self.graph = {}
         self.graph_wall = None
         self.events = []
@@ -44,6 +45,9 @@ class EngineExtension:
                         return
                     self.navigation = json.loads(msg.data)
                     self.navigation_receipt = receipt
+                elif key == 'manipulation_gateway':
+                    if self.lease.owner('gateway',owner):return
+                    self.gateway=json.loads(msg.data);self.gateway_receipt=receipt
                 elif key == 'manipulation_goals':
                     if self.lease.owner('nav_action_status',owner):
                         return
@@ -58,7 +62,7 @@ class EngineExtension:
         counts = {key:self.node.count_publishers(topic) for key,topic in (
             ('mission',N+'/manipulation/lease'),('observer',N+'/vision/observation'),
             ('relay',N+'/ingress/manipulation'),('navigation',N+'/navigation/status'),
-            ('nav_status','/navigate_to_pose/_action/status'))}
+            ('nav_status','/navigate_to_pose/_action/status'),('gateway',N+'/gateway/status'))}
         with self.node.lock:
             self.graph,self.graph_wall = counts,now
             for key,count in counts.items():
@@ -78,6 +82,9 @@ class EngineExtension:
             supported = (decision.mode=='ARMED' and decision.vx==0 and decision.wz==0
                          and math.hypot(v[0],v[1])<=.05 and abs(v[5])<=.20 and tilt<=.35)
             if self.lease.message is not None and self.lease.phase not in ('REVOKED','FAULT'):
+                if (self.gateway_receipt is None or not 0<=now-self.gateway_receipt<=.30
+                        or self.gateway.get('mode')!='ARMED' or self.gateway.get('fault')):
+                    self.lease.trip('GATEWAY_NOT_HEALTHY')
                 if self.graph_wall is None or now-self.graph_wall>.30 or any(c!=1 for c in self.graph.values()):
                     self.lease.trip('MANIPULATION_GRAPH_LOST')
             nav_idle = (self.navigation is not None and self.navigation_receipt is not None
@@ -97,7 +104,12 @@ class EngineExtension:
             self.status = dict(session=self.lease.session,phase=phase,fault=self.lease.fault,
                                goal_id=self.lease.goal_id,stamp_ns=clock,decision_wall=now,
                                sequence=self.lease.sequence,owners=dict(self.lease.owners),
-                               capture_ns=None if self.lease.observation is None else self.lease.observation['capture_ns'])
+                               capture_ns=None if self.lease.observation is None else self.lease.observation['capture_ns'],
+                               task_phase='WAITING' if self.lease.message is None else self.lease.message.get('task_phase','WAITING'))
+            self.status.update(mission_receipt_wall=self.lease.mission_receipt,
+                               observation_receipt_wall=self.lease.observation_receipt,gateway_receipt_wall=self.gateway_receipt)
+            if hasattr(self,'pick_monitor'):
+                self.status['gripper_target_contacts']=dict(self.pick_monitor.forces)
             if phase != self.last_phase:
                 self.events.append(dict(self.status))
                 self.last_phase = phase

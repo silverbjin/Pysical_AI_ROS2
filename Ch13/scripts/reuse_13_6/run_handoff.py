@@ -13,9 +13,11 @@ from ch13_navigation_reuse.command_gateway import N
 def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', work=None):
     status = {}
     rows = []
+    beats = []
     sequence = 0
     revoked = False
     enabled = True
+    task_phase = 'WAITING'
     def on_status(message):
         nonlocal status
         status = json.loads(message.data)
@@ -39,8 +41,10 @@ def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', w
             message = dict(session='past-session' if case=='old_session' else session,
                            goal_id=goal_id,terminal=4,target=target,sequence=sequence,
                            stamp_ns=current['clock_ns'],capture_ns=sample['capture_ns'],
-                           state='REVOKE' if revoked else 'OFFER')
-            publisher.publish(String(data=json.dumps(message)))
+                           state='REVOKE' if revoked else 'OFFER',task_phase=task_phase)
+            sent=time.monotonic();publisher.publish(String(data=json.dumps(message)))
+            beats.append(dict(sequence=sequence,stamp_ns=message['stamp_ns'],capture_ns=message['capture_ns'],
+                              send_wall=sent,publish_return_wall=time.monotonic()))
         timer = node.create_timer(.05,beat,clock=Clock(clock_type=ClockType.STEADY_TIME))
         if case=='old_session':
             assert until(lambda:status.get('phase')=='FAULT',2.),'old session admitted'
@@ -64,7 +68,12 @@ def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', w
                 def disable():
                     nonlocal enabled
                     enabled=False
-                work(node=node,until=until,snapshot=snapshot,status=lambda:status,control={'disable_heartbeat':disable})
+                def set_phase(value):
+                    nonlocal task_phase
+                    task_phase=value
+                    assert until(lambda:status.get('task_phase')==value or status.get('phase')=='FAULT',2.)
+                    assert status.get('phase')!='FAULT',status
+                work(node=node,until=until,snapshot=snapshot,status=lambda:status,control={'disable_heartbeat':disable,'set_phase':set_phase})
             if status.get('phase')!='FAULT':
                 revoked = True
                 assert until(lambda:status.get('phase')=='REVOKED',2.),'explicit handoff revoke failed'
@@ -78,6 +87,7 @@ def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', w
             node.destroy_publisher(extra)
         node.destroy_publisher(publisher)
         (out/'manipulation_status.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in rows))
+        (out/'mission_heartbeats.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in beats))
 
 
 def main():

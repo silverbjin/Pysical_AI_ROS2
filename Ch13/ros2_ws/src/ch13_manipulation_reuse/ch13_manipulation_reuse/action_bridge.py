@@ -1,6 +1,7 @@
 """Standard actions with engine-measured completion and a sole PD target slot."""
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from rclpy.action import ActionServer,GoalResponse,CancelResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
@@ -15,6 +16,12 @@ ARM=N+'/manipulation/arm_controller/follow_joint_trajectory'
 GRIPPER=N+'/manipulation/gripper_controller/gripper_cmd'
 
 
+def gripper_stalled(position,command,velocity,effort):
+    # A position PD can balance a contact below the actuator cap. This only
+    # reports mechanical blockage; dual contact/lift are separate pick checks.
+    return abs(position-command)>.002 and abs(velocity)<=.001 and abs(effort)>.01
+
+
 class ActionBridge:
     def __init__(self,extension):
         self.extension,self.node=extension,extension.node
@@ -22,6 +29,7 @@ class ActionBridge:
         self.command=None;self.gripper_command=None;self.gripper_effort=.5
         self.pending_path=None;self.feedback=None;self.rows=[];self.events=[]
         self.bias_start=None;self.servo_command=None
+        self.validation_worker=ThreadPoolExecutor(max_workers=1,thread_name_prefix='reuse_trajectory_validation')
         group=ReentrantCallbackGroup()
         self.arm_server=ActionServer(self.node,FollowJointTrajectory,ARM,self.arm_execute,
                                      goal_callback=self.arm_goal,cancel_callback=self.cancel,
@@ -37,24 +45,49 @@ class ActionBridge:
     def admissible(self):
         return self.extension.lease.phase=='READY' and self.measured is not None and not self.busy
 
-    def arm_goal(self,request):
+    async def arm_goal(self,request):
         with self.node.lock:
-            if not self.admissible() or self.limits is None:return GoalResponse.REJECT
-            try:
-                if request.trajectory.header.stamp.sec or request.trajectory.header.stamp.nanosec:
-                    raise ValueError('only immediate, engine-timed trajectories supported')
-                if request.trajectory.header.frame_id not in ('','reuse/base'):
-                    raise ValueError('joint trajectory frame')
-                if request.multi_dof_trajectory.points or request.path_tolerance or request.goal_tolerance:
-                    raise ValueError('only fixed audited tolerances and arm joints supported')
-                points=[dict(time=p.time_from_start.sec+p.time_from_start.nanosec/1e9,
-                             positions=p.positions,velocities=p.velocities,accelerations=p.accelerations)
-                        for p in request.trajectory.points]
-                self.pending_path=Trajectory.from_points(tuple(request.trajectory.joint_names),points,
-                                                         self.measured,self.limits)
-            except (ValueError,TypeError,KeyError):return GoalResponse.REJECT
+            if not self.admissible() or self.limits is None:
+                self.events.append(dict(event='goal_rejected',reason='admission',phase=self.extension.lease.phase,busy=self.busy))
+                return GoalResponse.REJECT
+            current=np.array(self.measured,copy=True);limits=np.array(self.limits,copy=True)
             self.reserved=True
+        completed=Future(executor=self.node.executor)
+        def validate():
+            try:return self.validate_request(request,current,limits)
+            except (ValueError,TypeError,KeyError) as error:return error
+        job=self.validation_worker.submit(validate)
+        job.add_done_callback(lambda done:completed.set_result(done.result()))
+        outcome=await completed
+        with self.node.lock:
+            if isinstance(outcome,Exception):
+                self.events.append(dict(event='goal_rejected',reason=str(outcome),
+                                        stamp_sec=request.trajectory.header.stamp.sec,
+                                        stamp_nanosec=request.trajectory.header.stamp.nanosec,
+                                        point_count=len(request.trajectory.points)))
+                self.reserved=False
+                return GoalResponse.REJECT
+            if self.extension.lease.phase!='READY' or np.max(abs(np.array(self.measured)-current))>.025:
+                self.reserved=False
+                self.events.append(dict(event='goal_rejected',reason='state_or_lease_changed_during_validation'))
+                return GoalResponse.REJECT
+            self.pending_path=outcome
             return GoalResponse.ACCEPT
+
+    @staticmethod
+    def validate_request(request,current,limits):
+        if request.trajectory.header.stamp.sec or request.trajectory.header.stamp.nanosec:
+            raise ValueError('only immediate, engine-timed trajectories supported')
+        if request.trajectory.header.frame_id not in ('','reuse/base','reuse/odom','reuse/map'):
+            raise ValueError('joint trajectory frame')
+        if request.multi_dof_trajectory.points or request.path_tolerance or request.goal_tolerance:
+            raise ValueError('only fixed audited tolerances and arm joints supported')
+        if len(request.trajectory.points)>2000:raise ValueError('trajectory admission point budget')
+        points=[dict(time=p.time_from_start.sec+p.time_from_start.nanosec/1e9,
+                     positions=p.positions,velocities=p.velocities,accelerations=p.accelerations)
+                for p in request.trajectory.points]
+        return Trajectory.from_points(tuple(request.trajectory.joint_names),points,current,limits,
+                                      validation_deadline=time.monotonic()+2.)
 
     def gripper_goal(self,request):
         with self.node.lock:
@@ -183,7 +216,7 @@ class ActionBridge:
         else:
             position,velocity,effort=float(q[25]),float(v[24]),float(p.mjData.actuator_force[18])
             reached=abs(position-self.gripper_command)<=.002
-            stalled=not reached and abs(velocity)<=.001 and abs(effort)>=.9*self.gripper_effort
+            stalled=gripper_stalled(position,self.gripper_command,velocity,effort)
             if reached and abs(velocity)<=.01 or stalled:
                 if active['settle_since'] is None:active['settle_since']=sim_s
                 if sim_s-active['settle_since']>=.5:
@@ -206,6 +239,7 @@ class ActionBridge:
             feedback['handle'].publish_feedback(value)
 
     def close(self):
+        self.validation_worker.shutdown(wait=True,cancel_futures=True)
         if self.active is not None and not self.active['done']:
             if self.active['kind']=='arm':self.finish('aborted','engine_closed')
             else:self.finish('aborted','engine_closed',position=0.,effort=0.,reached=False,stalled=False)

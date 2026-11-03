@@ -1,15 +1,17 @@
 """Bounded C2 joint trajectories, exact polynomial extrema and braking hold."""
 import bisect
 import math
+import time
 import numpy as np
 from numpy.polynomial import Polynomial
 
 JOINTS=tuple('joint'+str(i) for i in range(1,7))
+BERNSTEIN=np.array([[math.comb(i,k)/math.comb(5,k) if k<=i else 0. for k in range(6)] for i in range(6)])
 
 
 class Trajectory:
     @classmethod
-    def from_points(cls,names,points,current,limits,vmax=.05,amax=.10):
+    def from_points(cls,names,points,current,limits,vmax=.05,amax=.10,validation_deadline=None):
         if len(names)!=6 or set(names)!=set(JOINTS) or len(set(names))!=6:
             raise ValueError('exactly joint1..joint6 required')
         if not 2<=len(points)<=10000:
@@ -43,24 +45,42 @@ class Trajectory:
         result.vmax,result.amax=float(vmax),float(amax)
         result.times=tuple(p[0] for p in values)
         result.duration=result.times[-1]
+        # Batch the common proof in NumPy. Hundreds of per-axis Python loops
+        # otherwise compete with the physics/RX threads for the same GIL.
+        T=np.diff(result.times)
+        if np.any(T<.002):raise ValueError('times must increase by at least one physics tick')
+        first=np.asarray([p[1:] for p in values[:-1]])
+        last=np.asarray([p[1:] for p in values[1:]])
+        tau=T[:,None];coefficients=np.zeros((len(T),6,6))
+        coefficients[:,:3,:]=first;coefficients[:,2,:]/=2
+        delta=last[:,0]-coefficients[:,0]-coefficients[:,1]*tau-coefficients[:,2]*tau*tau
+        velocity=last[:,1]-coefficients[:,1]-2*coefficients[:,2]*tau
+        acceleration=last[:,2]-2*coefficients[:,2]
+        coefficients[:,3]=(10*delta-4*velocity*tau+.5*acceleration*tau*tau)/tau**3
+        coefficients[:,4]=(-15*delta+7*velocity*tau-acceleration*tau*tau)/tau**4
+        coefficients[:,5]=(6*delta-3*velocity*tau+.5*acceleration*tau*tau)/tau**5
+        if not np.isfinite(coefficients).all():raise ValueError('nonfinite trajectory coefficients')
+        scaled=coefficients*T[:,None,None]**np.arange(6)[None,:,None]
+        hull=BERNSTEIN@scaled
+        velocity_hull=5*np.diff(hull,axis=1)/T[:,None,None]
+        acceleration_hull=4*np.diff(velocity_hull,axis=1)/T[:,None,None]
+        bounds=((result.limits[:,0],result.limits[:,1]),(-vmax,vmax),(-amax,amax))
+        for derivative,cloud in enumerate((hull,velocity_hull,acceleration_hull)):
+            lo,hi=bounds[derivative]
+            uncertain=(cloud.min(axis=1)<lo-1e-8)|(cloud.max(axis=1)>hi+1e-8)
+            for index,axis in np.argwhere(uncertain):
+                if validation_deadline is not None and time.monotonic()>validation_deadline:
+                    raise ValueError('trajectory validation deadline')
+                duration=T[index];poly=Polynomial(coefficients[index,:,axis]).deriv(derivative)
+                candidates=[0.,duration]+[float(r.real) for r in poly.deriv().roots()
+                                         if abs(r.imag)<1e-8 and 0<r.real<duration]
+                extrema=poly(np.asarray(candidates));lower=np.broadcast_to(lo,(6,))[axis];upper=np.broadcast_to(hi,(6,))[axis]
+                if extrema.min()<lower-1e-8 or extrema.max()>upper+1e-8:
+                    raise ValueError(('trajectory bound',JOINTS[axis],derivative,float(extrema.min()),float(extrema.max())))
+        if validation_deadline is not None and time.monotonic()>validation_deadline:
+            raise ValueError('trajectory validation deadline')
         segments=[]
-        for first,last in zip(values,values[1:]):
-            T=last[0]-first[0]
-            if T<.002:raise ValueError('times must increase by at least one physics tick')
-            c=np.zeros((6,6));c[0:3]=[first[1],first[2],first[3]/2]
-            rhs=np.array([last[1]-c[0]-c[1]*T-c[2]*T*T,
-                          last[2]-c[1]-2*c[2]*T,last[3]-2*c[2]])
-            c[3:]=np.linalg.solve([[T**3,T**4,T**5],[3*T*T,4*T**3,5*T**4],
-                                   [6*T,12*T*T,20*T**3]],rhs)
-            for axis in range(6):
-                p=Polynomial(c[:,axis])
-                for derivative,lo,hi in ((0,*result.limits[axis]),(1,-vmax,vmax),(2,-amax,amax)):
-                    poly=p.deriv(derivative)
-                    candidates=[0.,T]+[float(r.real) for r in poly.deriv().roots()
-                                       if abs(r.imag)<1e-8 and 0<r.real<T]
-                    extrema=poly(np.asarray(candidates))
-                    if extrema.min()<lo-1e-8 or extrema.max()>hi+1e-8:
-                        raise ValueError(('trajectory bound',JOINTS[axis],derivative,float(extrema.min()),float(extrema.max())))
+        for c in coefficients:
             c.flags.writeable=False
             segments.append(c)
         result.segments=tuple(segments)
@@ -72,7 +92,10 @@ class Trajectory:
         index=min(len(self.segments)-1,max(0,bisect.bisect_right(self.times,time_s)-1))
         local=time_s-self.times[index]
         c=self.segments[index]
-        return tuple(np.array([Polynomial(c[:,axis]).deriv(d)(local) for axis in range(6)]) for d in (0,1,2))
+        q=c[0]+local*(c[1]+local*(c[2]+local*(c[3]+local*(c[4]+local*c[5]))))
+        v=c[1]+local*(2*c[2]+local*(3*c[3]+local*(4*c[4]+local*5*c[5])))
+        a=2*c[2]+local*(6*c[3]+local*(12*c[4]+local*20*c[5]))
+        return q,v,a
 
     def brake(self,time_s):
         q,v,a=self.sample(time_s)

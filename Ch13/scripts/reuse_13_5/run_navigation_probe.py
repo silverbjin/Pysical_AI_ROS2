@@ -16,14 +16,14 @@ from ch13_navigation_reuse.command_gateway import N,ns,set_stamp
 from run_r2_probe import service_call
 
 def yaw(q):return math.atan2(2*(q.w*q.z+q.x*q.y),1-2*(q.y*q.y+q.z*q.z))
-def main(argv=None,handoff=None):
+def main(argv=None,handoff=None,planning=False,pick_scene=False):
  ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True);ap.add_argument('--vision-hz',type=int,choices=[10,15],default=10);ap.add_argument('--case',choices=['free','obstacle','blocked','cancel','raw_loss','vision'],default='free');args=ap.parse_args(argv)
  if handoff is not None and args.case!='vision':raise ValueError('live manipulation requires vision mission')
  root=Path(args.repo_root);out=Path(args.evidence);out.mkdir(parents=True,exist_ok=True);scene=args.case if args.case in ['obstacle','blocked','vision'] else 'free'
  S={'result':'FAIL','case':args.case,'events':[]};node=None;launch=None;log=None;goal_handle=None;result_future=None;clock_ns=0;state=None;gateway={};platform={};boundary={};poses=[];plans=[];clients={};observation=None;joints=None;grid=None;vision_status={};arm_model=None;vision_record=None;paused_pid=None
  try:
   (out/'boot_id.txt').write_text(Path('/proc/sys/kernel/random/boot_id').read_text());log=(out/'launch.log').open('w')
-  launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch','ch13_navigation_reuse','navigation.launch.py','repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:='+scene,'vision_inference_hz:='+str(args.vision_hz),'manipulation:='+('true' if handoff is not None else 'false')],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+  launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch','ch13_navigation_reuse','navigation.launch.py','repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:='+scene,'vision_inference_hz:='+str(args.vision_hz),'manipulation:='+('true' if handoff is not None else 'false'),'planning:='+('true' if planning else 'false'),'pick_scene:='+('true' if pick_scene else 'false'),'max_sim_s:='+('360' if planning else '120')],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
   rclpy.init();node=Node('ch13_reuse_navigation_probe');action=ActionClient(node,NavigateToPose,'/navigate_to_pose')
   def on_clock(m):
    nonlocal clock_ns
@@ -61,6 +61,22 @@ def main(argv=None,handoff=None):
     if launch.poll() is not None:raise RuntimeError('owned launch exited: '+str(launch.returncode))
    return False
   def call(name,timeout=3):return service_call(node,N+'/'+name,Trigger.Request(),until,clients,timeout=timeout)
+  def stop_owned_planner():
+   if not planning or S.get('planner_stopped_before_engine'):return
+   text=(out/'launch.log').read_text();owned=[int(p) for p in re.findall(r'process started with pid \[(\d+)\]',text)]
+   planners=[]
+   for pid in owned:
+    proc=Path('/proc')/str(pid)
+    if not (proc/'cmdline').exists():continue
+    command=(proc/'cmdline').read_bytes().split(b'\0')
+    if command and command[0].endswith(b'/ch13_manipulation_planner/planner_runtime'):
+     assert int((proc/'stat').read_text().split(') ',1)[1].split()[1])==launch.pid,'planner parent ownership mismatch'
+     planners.append(pid)
+   assert len(planners)<=1,'duplicate owned planner'
+   if planners:
+    response=call('manipulation/planner/shutdown');assert response.success,response.message
+   assert until(lambda:all(not (Path('/proc')/str(p)/'cmdline').exists() for p in planners),8.),'planner did not exit while engine clock remained live'
+   S['planner_stopped_before_engine']=True;S['planner_stop_clock_ns']=clock_ns
   assert until(lambda:state is not None and clock_ns>2_000_000_000 and gateway.get('ready_for_arm') and boundary.get('frames_ready') and platform.get('counts',{}).get('safe')==1 and platform.get('stationary_ready') and action.server_is_ready(),35),'startup/Nav2 readiness deadline'
   for name in ['planner_server','controller_server','velocity_smoother','bt_navigator']:
    end=time.monotonic()+8.
@@ -132,8 +148,10 @@ def main(argv=None,handoff=None):
     S['manipulation_handoff']=handoff(node=node,until=until,call=call,out=out,
       goal_id=bytes(goal_handle.goal_id.uuid).hex(),target=list(target),
       snapshot=lambda:{'observation':observation,'state':state,'joints':joints,'clock_ns':clock_ns,'platform':platform,'boundary':boundary,'gateway':gateway})
+    assert not gateway.get('fault') and not boundary.get('fault') and not platform.get('fault'),('fault during manipulation',gateway,boundary,platform)
    else:until(lambda:False,.15)
    ready_pub.publish(String(data=json.dumps({'state':'NOT_READY','reason':'normal_shutdown','stamp_ns':clock_ns})))
+  stop_owned_planner()
   S['plan_count']=len(plans);S['max_abs_y_m']=max(abs(p['y']) for p in poses);response=call('platform/shutdown');assert response.success,response.message;launch.wait(timeout=12);assert launch.returncode==0;S['engine']=json.loads((out/'engine.json').read_text());assert S['engine']['normal_shutdown_requested'] and S['engine']['rx_joined'] and S['engine']['upstream_threads_joined'];S['result']='PASS'
  except BaseException:S['error']=traceback.format_exc()
  finally:
@@ -143,6 +161,8 @@ def main(argv=None,handoff=None):
   S['gateway_last']=gateway;S['platform_last']=platform;S['navigation_last']=boundary;S['vision_last']=vision_status
   if node is not None and launch is not None and launch.poll() is None:
    try:
+    try:stop_owned_planner()
+    except BaseException:S['planner_cleanup_error']=traceback.format_exc()
     if goal_handle is not None and result_future is not None and not result_future.done():goal_handle.cancel_goal_async()
     service_call(node,N+'/navigation/idle',Trigger.Request(),until,clients,timeout=1.)
     if until(lambda:platform.get('stationary_ready'),8):service_call(node,N+'/platform/shutdown',Trigger.Request(),until,clients,timeout=2.);launch.wait(timeout=12)

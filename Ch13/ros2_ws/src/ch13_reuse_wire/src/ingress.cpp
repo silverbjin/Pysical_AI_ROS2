@@ -86,6 +86,7 @@ public:
       connect<Packet>("mission_lease","/ch13/reuse/manipulation/lease",manipulation_);
       connect<Packet>("manipulation_observation","/ch13/reuse/vision/observation",manipulation_);
       connect<Packet>("manipulation_navigation","/ch13/reuse/navigation/status",manipulation_);
+      connect<Packet>("manipulation_gateway","/ch13/reuse/gateway/status",manipulation_);
       connect<action_msgs::msg::GoalStatusArray>("manipulation_goals","/navigate_to_pose/_action/status",manipulation_,rclcpp::QoS(1).transient_local().reliable());
     }
   }

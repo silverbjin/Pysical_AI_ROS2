@@ -76,7 +76,8 @@ class Lease:
                     or message['terminal'] != 4 or message['state'] not in ('OFFER','REVOKE')
                     or len(message['target']) != 3
                     or not all(math.isfinite(x) for x in message['target'])
-                    or type(message['capture_ns']) is not int):
+                    or type(message['capture_ns']) is not int
+                    or message.get('task_phase','WAITING') not in ('WAITING','PRE_GRASP','GRASP_APPROACH','CLOSE','LIFT','HOLD','POST_SETTLE')):
                 raise ValueError('invalid heartbeat')
             if self.goal_id is not None and message['goal_id'] != self.goal_id:
                 return self.trip('GOAL_REPLACED')

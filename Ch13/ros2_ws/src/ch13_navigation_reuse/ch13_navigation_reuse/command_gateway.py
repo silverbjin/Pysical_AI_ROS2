@@ -1,5 +1,5 @@
 """ROS2 command ownership and safety boundary; no policy or actuator control."""
-import json,math,time
+import argparse,json,math,time
 from dataclasses import replace
 import rclpy
 from rclpy.node import Node
@@ -28,11 +28,15 @@ def valid_command(msg):
 def valid_base(msg):
     p=msg.pose.pose.position;q=msg.pose.pose.orientation;v=msg.twist.twist.linear;w=msg.twist.twist.angular
     return msg.header.frame_id=='reuse/odom' and msg.child_frame_id=='reuse/base' and all(math.isfinite(x) for x in [p.x,p.y,p.z,q.x,q.y,q.z,q.w,v.x,v.y,v.z,w.x,w.y,w.z]) and abs(q.x*q.x+q.y*q.y+q.z*q.z+q.w*q.w-1)<1e-3 and p.z>=.12 and 1-2*(q.x*q.x+q.y*q.y)>=math.cos(math.pi/4)
-def valid_joints(msg):
-    return tuple(msg.name)==JOINT_NAMES and len(msg.position)==20 and len(msg.velocity)==20 and all(math.isfinite(x) for x in list(msg.position)+list(msg.velocity)) and max(abs(x) for x in msg.position[12:18])<=.10
+def valid_joints(msg,manipulation=False):
+    if not (tuple(msg.name)==JOINT_NAMES and len(msg.position)==20 and len(msg.velocity)==20 and all(math.isfinite(x) for x in list(msg.position)+list(msg.velocity))):return False
+    if not manipulation:return max(abs(x) for x in msg.position[12:18])<=.10
+    limits=((-2.618,2.618),(0.,3.14),(-2.697,0.),(-1.832,1.832),(-1.22,1.22),(-3.14,3.14),(0.,.05),(-.05,0.))
+    return all(lo-margin<=q<=hi+margin for q,(lo,hi),margin in zip(msg.position[12:],limits,[.02]*6+[.002]*2))
 
 class CommandGateway(Node):
-    def __init__(self):
+    def __init__(self,manipulation=False):
+        self.manipulation=manipulation
         super().__init__('ch13_reuse_gateway');self.guard=Guard();self.pending=FutureInbox();self.previous_mode=None;self.safe_watermark_ns=0
         self.safe=self.create_publisher(TwistStamped,N+'/cmd_vel_safe',1)
         self.status=self.create_publisher(String,N+'/gateway/status',1)
@@ -54,7 +58,7 @@ class CommandGateway(Node):
             if key=='clock':self.on_clock(msg,info);self.drain(time.monotonic());return
             if key not in ('raw','base','joints'):raise ValueError('unexpected gateway channel')
             if not self.guard._owner(key,gid(info)):return
-            if not {'raw':valid_command,'base':valid_base,'joints':valid_joints}[key](msg):self.guard.trip('INVALID_COMMAND' if key=='raw' else 'INVALID_STATE:'+key);return
+            if not {'raw':valid_command,'base':valid_base,'joints':lambda m:valid_joints(m,self.manipulation)}[key](msg):self.guard.trip('INVALID_COMMAND' if key=='raw' else 'INVALID_STATE:'+key);return
             if self.guard.clock_wall is None:return
             if ns(msg.header.stamp)-self.guard.clock_ns>100_000_000:self.guard.trip('FUTURE_SOURCE:'+key);return
             for job in self.pending.offer(key,ns(msg.header.stamp),info['receipt_wall'],(key,msg,info),self.guard.clock_ns,time.monotonic(),owner=gid(info)):self.dispatch(*job)
@@ -63,7 +67,7 @@ class CommandGateway(Node):
             else:self.guard.trip('INVALID_INGRESS:'+type(exc).__name__)
     def on_clock(self,msg,info):self.guard.clock(ns(msg.clock),info['receipt_wall'],gid(info))
     def on_base(self,msg,info):self.guard.observe('base',ns(msg.header.stamp),info['receipt_wall'],gid(info),valid_base(msg))
-    def on_joints(self,msg,info):self.guard.observe('joints',ns(msg.header.stamp),info['receipt_wall'],gid(info),valid_joints(msg))
+    def on_joints(self,msg,info):self.guard.observe('joints',ns(msg.header.stamp),info['receipt_wall'],gid(info),valid_joints(msg,self.manipulation))
     def on_raw(self,msg,info):
         v=msg.twist.linear;w=msg.twist.angular
         self.guard.command(ns(msg.header.stamp),info['receipt_wall'],gid(info),(v.x,v.y,v.z,w.x,w.y,w.z),msg.header.frame_id)
@@ -86,8 +90,9 @@ class CommandGateway(Node):
 
 def main(args=None):
     node=None
+    parser=argparse.ArgumentParser();parser.add_argument('--manipulation',choices=['true','false'],default='false');options,ros_args=parser.parse_known_args(args)
     try:
-        rclpy.init(args=args);node=CommandGateway();rclpy.spin(node)
+        rclpy.init(args=ros_args);node=CommandGateway(options.manipulation=='true');rclpy.spin(node)
     except (KeyboardInterrupt,ExternalShutdownException):pass
     except RCLError:
         # A signal can invalidate the context after a service becomes discoverable

@@ -95,7 +95,7 @@ class Platform(Node):
             self.guard.clock(sim_ns,time.monotonic(),'owned_engine')
             return self.guard.output(time.monotonic()),self.pending_arm
     def capture(self,p,sim_ns,wall,decision):
-        q=p.mjData.qpos.copy();v=p.mjData.qvel.copy();s=adapt(q,v,JOINT_NAMES,sim_ns)
+        q=p.mjData.qpos.copy();v=p.mjData.qvel.copy();s=adapt(q[:27],v[:26],JOINT_NAMES,sim_ns)
         tilt=math.acos(float(np.clip(1-2*(q[4]**2+q[5]**2),-1,1)))
         with self.lock:
             if self.last_capture_wall is not None and wall-self.last_capture_wall>.30:self.stationary_start=None;self.stationary_ready=False
@@ -137,11 +137,15 @@ class Platform(Node):
             rp=Rotation.from_quat(np.roll(p.mjData.xquat[parent],-1));rc=Rotation.from_quat(np.roll(p.mjData.xquat[body],-1))
             position=rp.inv().apply(p.mjData.xpos[body]-p.mjData.xpos[parent]);quat=(rp.inv()*rc).as_quat()
             transforms.append(tf('reuse/'+p.mjModel.body(parent).name,'reuse/'+p.mjModel.body(body).name,position,quat))
+        if self.manipulation is not None:
+            from ch13_manipulation_reuse.model import TCP_LINK6
+            transforms.append(tf('reuse/link6','reuse/tcp',TCP_LINK6,(0.,0.,0.,1.)))
         if hasattr(p,'_ch13_sensors'):transforms.extend(p._ch13_sensors.transforms(tf))
         self.tf_pub.publish(TFMessage(transforms=transforms))
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--repo-root',required=True);parser.add_argument('--max-sim-s',type=float,default=40.);parser.add_argument('--report',required=True);parser.add_argument('--scene',choices=['free','obstacle','blocked','vision']);parser.add_argument('--manipulation',choices=['true','false'],default='false');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--repo-root',required=True);parser.add_argument('--max-sim-s',type=float,default=40.);parser.add_argument('--report',required=True);parser.add_argument('--scene',choices=['free','obstacle','blocked','vision']);parser.add_argument('--manipulation',choices=['true','false'],default='false');parser.add_argument('--pick-scene',choices=['true','false'],default='false');args=parser.parse_args()
+    if args.pick_scene=='true' and (args.manipulation!='true' or args.scene!='vision'):raise ValueError('pick scene requires opt-in manipulation vision mission')
     root=Path(args.repo_root).resolve();report=Path(args.report);report.parent.mkdir(parents=True,exist_ok=True)
     S={'pid':os.getpid(),'ppid':os.getppid(),'result':'ERROR','normal_shutdown_requested':False};node=p=None;executor=None;rx=None;owned_threads=[];rows=[];last_window=[];sensors=None;scheduler=None
     import fcntl
@@ -163,9 +167,15 @@ def main():
             import mujoco as real_mujoco
             from .scene import make_model
             from .sensors import HeadlessViewer,SensorSuite
+            source_holder={}
             class ModelLoader:
                 @staticmethod
-                def from_xml_path(path):return make_model(path,args.scene)
+                def from_xml_path(path):
+                    source_holder['path']=path
+                    if args.pick_scene=='true':
+                        from ch13_manipulation_reuse.pick_scene import make_pick_model
+                        return make_pick_model(path)
+                    return make_model(path,args.scene)
             class MujocoProxy:
                 MjModel=ModelLoader
                 viewer=types.SimpleNamespace(launch_passive=lambda *a,**kw:HeadlessViewer())
@@ -177,17 +187,26 @@ def main():
         try:p=upstream.PlayMujoco();assert closed.wait(1.),'console did not close'
         finally:builtins.input=saved_input
         owned_threads=[t for t in threading.enumerate() if t not in threads_before]
-        correction.freeze_arm_reference(p);caps=p.mjModel.actuator_ctrlrange.copy();correction.configure_native_arm_pd(p.mjModel,p.Kp_arm,p.Kd_arm)
+        correction.freeze_arm_reference(p);caps=p.mjModel.actuator_ctrlrange.copy()
+        if args.pick_scene=='true':
+            from ch13_manipulation_reuse.pick_scene import configure_extended_pd
+            configure_extended_pd(p.mjModel,source_holder['path'],correction,p.Kp_arm,p.Kd_arm)
+        else:correction.configure_native_arm_pd(p.mjModel,p.Kp_arm,p.Kd_arm)
         source=textwrap.dedent(inspect.getsource(upstream.PlayMujoco.run));source=correction.consistent_walking_run_source(source)
         from .scheduler import SteadyScheduler
         scheduler=SteadyScheduler(p.simulation_dt);p.last_render_time=scheduler.time()
         namespace=dict(upstream.PlayMujoco.run.__globals__);namespace['time']=scheduler;exec(compile(source,'ch13_pinned_run','exec'),namespace);p.run=types.MethodType(namespace['run'],p);p._ch13_mujoco=upstream.mujoco
-        assert tuple(p.mjModel.joint(i).name for i in range(1,p.mjModel.njnt))==JOINT_NAMES
+        assert tuple(p.mjModel.joint(i).name for i in range(1,21))==JOINT_NAMES
+        assert p.mjModel.njnt==(22 if args.pick_scene=='true' else 21)
         if args.scene:sensors=SensorSuite(p.mjModel,p.mjData,args.scene,report.parent);p._ch13_sensors=sensors
         rclpy.init(args=[]);node=Platform();node.allow_tf_broadcasters=bool(args.scene)
         if args.manipulation=='true':
             from ch13_manipulation_reuse.engine_extension import EngineExtension
             node.manipulation=EngineExtension(node)
+            if args.pick_scene=='true':
+                from ch13_manipulation_reuse.pick_monitor import PickMonitor
+                p._ch13_pick=PickMonitor(p.mjModel)
+                node.manipulation.pick_monitor=p._ch13_pick
         if sensors is not None:sensors.attach(node)
         executor=SingleThreadedExecutor();executor.add_node(node);rx_error=[]
         def spin():
@@ -221,9 +240,11 @@ def main():
             values=q[joint_adr];max_joint_violation=max(max_joint_violation,float(np.max(joint_bounds[:,0]-values,initial=0.)),float(np.max(values-joint_bounds[:,1],initial=0.)))
             if q[2]<.12 or tilt>math.pi/4:raise RuntimeError('fall bound')
             if sensors is not None:
-                for contact in data.contact:
-                    a,b=map(int,contact.geom)
-                    if (model.geom_group[a]==5 and model.geom_bodyid[b]>0) or (model.geom_group[b]==5 and model.geom_bodyid[a]>0):raise RuntimeError('robot/environment obstacle collision')
+                if hasattr(p,'_ch13_pick'):p._ch13_pick.step(p,node.manipulation.lease,state['stamp_ns'])
+                else:
+                    for contact in data.contact:
+                        a,b=map(int,contact.geom)
+                        if (model.geom_group[a]==5 and model.geom_bodyid[b]>0) or (model.geom_group[b]==5 and model.geom_bodyid[a]>0):raise RuntimeError('robot/environment obstacle collision')
                 sensors.step(p,state)
             record('capture_sensor',marker,cpu_marker);marker=time.monotonic();cpu_marker=time.thread_time()
             row={'sim_s':float(data.time),'wall':wall,'qpos':q.tolist(),'qvel':v.tolist(),'vx':d.vx,'wz':d.wz,'mode':d.mode,'fault':d.fault,'arm_target':p.desired_joint_pos_arm.copy().tolist()}
@@ -239,6 +260,8 @@ def main():
         if not node.stop_requested or rx_error:raise RuntimeError('unrequested engine end or ROS receiver failure')
     except BaseException:S['error']=traceback.format_exc();S['result']='ERROR'
     finally:
+        if p is not None and hasattr(p,'_ch13_pick'):S['pick_physics']=p._ch13_pick.summary()
+        if node is not None and node.manipulation is not None:S['manipulation']=node.manipulation.summary()
         if scheduler is not None:S['scheduler']=scheduler.summary()
         if sensors is not None:
             S['camera_worker_joined']=sensors.close()
@@ -254,6 +277,8 @@ def main():
         lockfile.close()
         (report.parent/'engine_observations.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in rows))
         (report.parent/'last_stop_500hz.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in last_window))
-        report.write_text(json.dumps(S,indent=2)+'\n');print(json.dumps(S,indent=2),flush=True)
+        report.write_text(json.dumps(S,indent=2)+'\n')
+        printed=S if node is None or node.manipulation is None else {'result':S['result'],'report':str(report),'error':S.get('error'),'rx_joined':S['rx_joined'],'upstream_threads_joined':S['upstream_threads_joined']}
+        print(json.dumps(printed,indent=2),flush=True)
     if S['result']!='COMPLETED' or not S['rx_joined'] or not S['upstream_threads_joined']:sys.exit(1)
 if __name__=='__main__':main()
