@@ -6,7 +6,7 @@ reuse_case=${1:?hold/expire/old_session/duplicate}
 reuse_out=${2:?new evidence directory}
 if [[ -e "$reuse_out" ]]; then echo 'Use a new evidence directory' >&2; exit 2; fi
 mkdir -p "$reuse_out"
-reuse_freeze=${CH13_REUSE_FREEZE:-$reuse_repo/Ch13/dependencies/section_13_6_reuse_acceptance_v10.json}
+reuse_freeze=${CH13_REUSE_FREEZE:-$reuse_repo/Ch13/dependencies/section_13_6_reuse_acceptance_v11.json}
 if [[ ! -f "$reuse_freeze" ]]; then
   echo "Required source freeze not found: $reuse_freeze" >&2
   exit 2

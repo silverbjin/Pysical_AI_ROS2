@@ -18,15 +18,26 @@ def test_real_native_clock_caught_up_in_time_despite_late_startup_processing():
     assert not box.items
 
 
+def test_startup_timer_waits_for_native_clock_evidence_without_renewing_source_age():
+    box,payload=pending()
+    # Timer runs before the clock callback, although that clock was natively
+    # received23.1ms after the source and is waiting in the Python queue.
+    assert box.ready(68_000_000,56.899595188,clock_receipt=56.555098588,startup=True)==[]
+    assert box.ready(180_000_000,56.900,clock_receipt=56.748077088,startup=True)==[payload]
+    box,_=pending()
+    with pytest.raises(ValueError,match='300wallms'):
+        box.ready(68_000_000,57.026,clock_receipt=56.555098588,startup=True)
+
+
 @pytest.mark.parametrize('clock_receipt,now',[(56.790,56.900),(56.748077088,57.026),(float('nan'),56.900),(56.91,56.90)])
 def test_late_clock_old_source_and_invalid_receipt_still_fail(clock_receipt,now):
     box,_=pending()
     with pytest.raises(ValueError):box.ready(180_000_000,now,clock_receipt=clock_receipt,startup=True)
 
 
-def test_unknown_clock_and_active_mode_keep_original_fifty_ms_deadline():
+def test_active_mode_keeps_original_fifty_ms_deadline():
     box,_=pending()
-    with pytest.raises(ValueError):box.ready(68_000_000,56.899595188,clock_receipt=56.555098588,startup=True)
+    with pytest.raises(ValueError):box.ready(68_000_000,56.899595188,clock_receipt=56.555098588,startup=False)
     box,_=pending()
     with pytest.raises(ValueError):box.ready(180_000_000,56.899595188,clock_receipt=56.748077088,startup=False)
 

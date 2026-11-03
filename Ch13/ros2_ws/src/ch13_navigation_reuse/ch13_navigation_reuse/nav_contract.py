@@ -64,15 +64,19 @@ class FutureInbox:
   ready=[]
   for key,(stamp,receipt,payload) in list(self.items.items()):
    caught_up=stamp<=clock_ns+25_000_000
-   # Before admission, prove timely native clock catch-up independently of
-   # Python scheduling. Unknown clocks and active-mode waits stay fail-closed.
+   # Before admission, Python callback order cannot prove a native timeout.
+   # Keep the item pending (and admission closed) until clock evidence arrives,
+   # bounded by the unchanged original source lifetime. Active waits stay50ms.
+   if startup and now-receipt>.30:
+    self.note('expired',key,stamp,receipt,clock_ns,now)
+    raise ValueError('startup source exceeded original300wallms lifetime')
+   if startup and not caught_up:
+    self.note('awaiting_clock',key,stamp,receipt,clock_ns,now)
+    continue
    native_startup=startup and caught_up and clock_receipt is not None
    if native_startup and (not math.isfinite(clock_receipt) or clock_receipt>now or now-clock_receipt>.30):
     self.note('expired',key,stamp,receipt,clock_ns,now)
     raise ValueError('invalid or expired original startup clock receipt')
-   if native_startup and now-receipt>.30:
-    self.note('expired',key,stamp,receipt,clock_ns,now)
-    raise ValueError('startup source exceeded original300wallms lifetime')
    waited=(clock_receipt-receipt) if native_startup else (now-receipt)
    if waited>.05:
     self.note('expired',key,stamp,receipt,clock_ns,now)
