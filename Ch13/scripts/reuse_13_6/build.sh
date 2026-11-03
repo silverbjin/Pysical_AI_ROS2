@@ -4,7 +4,7 @@ source /opt/ros/jazzy/setup.bash
 reuse_repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 reuse_build=${CH13_REUSE_BUILD:-/home/jinho/ch13_reuse_13_6_build}
 case "$(realpath -m "$reuse_build")" in
-  /home/jinho/ch13_reuse_r2_build|/home/jinho/ch13_reuse_r5_build) echo '13.6 requires a separate build directory' >&2; exit 2;;
+  /home/jinho/ch13_reuse_r2_build|/home/jinho/ch13_reuse_r2_build/*|/home/jinho/ch13_reuse_r5_build|/home/jinho/ch13_reuse_r5_build/*) echo '13.6 requires a separate build directory' >&2; exit 2;;
 esac
 mkdir -p "$reuse_build"
 export CH13_REUSE_GENERATED="$reuse_build/model"

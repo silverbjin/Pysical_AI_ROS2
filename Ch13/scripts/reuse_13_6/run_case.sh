@@ -6,10 +6,12 @@ reuse_case=${1:?hold/expire/old_session/duplicate}
 reuse_out=${2:?new evidence directory}
 if [[ -e "$reuse_out" ]]; then echo 'Use a new evidence directory' >&2; exit 2; fi
 mkdir -p "$reuse_out"
-reuse_freeze=${CH13_REUSE_FREEZE:-$reuse_repo/Ch13/dependencies/section_13_6_reuse_acceptance_v4.json}
-if [[ -f "$reuse_freeze" ]]; then
-  bash "$reuse_scripts/env.sh" "$reuse_scripts/freeze_runtime.py" verify "$reuse_freeze" > "$reuse_out/freeze_audit.json" 2>&1
+reuse_freeze=${CH13_REUSE_FREEZE:-$reuse_repo/Ch13/dependencies/section_13_6_reuse_acceptance_v10.json}
+if [[ ! -f "$reuse_freeze" ]]; then
+  echo "Required source freeze not found: $reuse_freeze" >&2
+  exit 2
 fi
+bash "$reuse_scripts/env.sh" "$reuse_scripts/freeze_runtime.py" verify "$reuse_freeze" > "$reuse_out/freeze_audit.json" 2>&1
 bash "$reuse_scripts/env.sh" "$reuse_scripts/audit_install.py" "$reuse_out/install_audit.json" > "$reuse_out/audit.log" 2>&1
 bash "$reuse_scripts/env.sh" "$reuse_repo/Ch13/scripts/reuse_13_5/inspect_r2_residuals.py" "$reuse_out/pre_residual.json" > "$reuse_out/pre_residual.log" 2>&1
 reuse_rc=0
