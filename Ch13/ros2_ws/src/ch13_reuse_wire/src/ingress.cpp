@@ -11,6 +11,7 @@
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <tf2_msgs/msg/tf_message.hpp>
 #include <rosgraph_msgs/msg/clock.hpp>
+#include <action_msgs/msg/goal_status_array.hpp>
 #include <time.h>
 #include <openssl/sha.h>
 #include "camera_canonical.hpp"
@@ -25,7 +26,7 @@ static std::string hex(const uint8_t* data,size_t n) {
 class Ingress:public rclcpp::Node {
   using Packet=std_msgs::msg::String;
   std::vector<rclcpp::SubscriptionBase::SharedPtr> subscriptions_;
-  rclcpp::Publisher<Packet>::SharedPtr gateway_,platform_,navigation_,vision_;
+  rclcpp::Publisher<Packet>::SharedPtr gateway_,platform_,navigation_,vision_,manipulation_;
   template<class T> void connect(const std::string& key,const std::string& topic,
       rclcpp::Publisher<Packet>::SharedPtr destination, rclcpp::QoS qos=rclcpp::SensorDataQoS().keep_last(1)) {
     subscriptions_.push_back(create_subscription<T>(topic,qos,
@@ -59,7 +60,7 @@ class Ingress:public rclcpp::Node {
       }));
   }
 public:
-  Ingress():Node("ch13_reuse_ingress") {
+  explicit Ingress(bool manipulation=false):Node("ch13_reuse_ingress") {
     gateway_=create_publisher<Packet>("/ch13/reuse/ingress/gateway",16);
     platform_=create_publisher<Packet>("/ch13/reuse/ingress/platform",16);
     navigation_=create_publisher<Packet>("/ch13/reuse/ingress/navigation",16);
@@ -80,6 +81,13 @@ public:
     connect<sensor_msgs::msg::JointState>("joints","/ch13/reuse/joint_states",gateway_);
     connect<geometry_msgs::msg::TwistStamped>("raw","/ch13/reuse/cmd_vel_raw",gateway_);
     connect<geometry_msgs::msg::TwistStamped>("safe","/ch13/reuse/cmd_vel_safe",platform_);
+    if(manipulation){
+      manipulation_=create_publisher<Packet>("/ch13/reuse/ingress/manipulation",32);
+      connect<Packet>("mission_lease","/ch13/reuse/manipulation/lease",manipulation_);
+      connect<Packet>("manipulation_observation","/ch13/reuse/vision/observation",manipulation_);
+      connect<Packet>("manipulation_navigation","/ch13/reuse/navigation/status",manipulation_);
+      connect<action_msgs::msg::GoalStatusArray>("manipulation_goals","/navigate_to_pose/_action/status",manipulation_,rclcpp::QoS(1).transient_local().reliable());
+    }
   }
 };
-int main(int argc,char**argv){rclcpp::init(argc,argv);rclcpp::spin(std::make_shared<Ingress>());rclcpp::shutdown();return 0;}
+int main(int argc,char**argv){bool manipulation=false;for(int i=1;i<argc;++i)if(std::string(argv[i])=="--manipulation")manipulation=true;rclcpp::init(argc,argv);rclcpp::spin(std::make_shared<Ingress>(manipulation));rclcpp::shutdown();return 0;}

@@ -16,13 +16,14 @@ from ch13_navigation_reuse.command_gateway import N,ns,set_stamp
 from run_r2_probe import service_call
 
 def yaw(q):return math.atan2(2*(q.w*q.z+q.x*q.y),1-2*(q.y*q.y+q.z*q.z))
-def main():
- ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True);ap.add_argument('--vision-hz',type=int,choices=[10,15],default=10);ap.add_argument('--case',choices=['free','obstacle','blocked','cancel','raw_loss','vision'],default='free');args=ap.parse_args()
+def main(argv=None,handoff=None):
+ ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True);ap.add_argument('--vision-hz',type=int,choices=[10,15],default=10);ap.add_argument('--case',choices=['free','obstacle','blocked','cancel','raw_loss','vision'],default='free');args=ap.parse_args(argv)
+ if handoff is not None and args.case!='vision':raise ValueError('live manipulation requires vision mission')
  root=Path(args.repo_root);out=Path(args.evidence);out.mkdir(parents=True,exist_ok=True);scene=args.case if args.case in ['obstacle','blocked','vision'] else 'free'
  S={'result':'FAIL','case':args.case,'events':[]};node=None;launch=None;log=None;goal_handle=None;result_future=None;clock_ns=0;state=None;gateway={};platform={};boundary={};poses=[];plans=[];clients={};observation=None;joints=None;grid=None;vision_status={};arm_model=None;vision_record=None;paused_pid=None
  try:
   (out/'boot_id.txt').write_text(Path('/proc/sys/kernel/random/boot_id').read_text());log=(out/'launch.log').open('w')
-  launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch','ch13_navigation_reuse','navigation.launch.py','repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:='+scene,'vision_inference_hz:='+str(args.vision_hz)],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+  launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch','ch13_navigation_reuse','navigation.launch.py','repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:='+scene,'vision_inference_hz:='+str(args.vision_hz),'manipulation:='+('true' if handoff is not None else 'false')],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
   rclpy.init();node=Node('ch13_reuse_navigation_probe');action=ActionClient(node,NavigateToPose,'/navigate_to_pose')
   def on_clock(m):
    nonlocal clock_ns
@@ -126,7 +127,13 @@ def main():
    final_observation=observation;reach=position_ik(arm_model,current_q(state,joints),final_observation['point']);S['final_arm_workspace']=reach
    valid_observation=reach is not None and admissible(final_observation['capture_ns'],final_observation['capture_wall'],clock_ns,time.monotonic(),final_observation['tf_stamp_ns'])
    ready=manipulation_ready(terminal.status,S['actual_goal_error_m'],S['actual_goal_yaw_error_rad'],platform.get('stationary_ready'),valid_observation,bool(gateway.get('fault') or boundary.get('fault') or vision_status.get('fault')));assert ready,'terminal/pose/stop/observation/workspace not ready'
-   ready_pub=node.create_publisher(String,N+'/ready_for_manipulation',1);payload={'state':'READY_FOR_MANIPULATION','terminal':terminal.status,'actual_position_error_m':S['actual_goal_error_m'],'actual_yaw_error_rad':S['actual_goal_yaw_error_rad'],'capture_ns':final_observation['capture_ns'],'workspace':reach,'stamp_ns':clock_ns,'capture_wall':final_observation['capture_wall'],'decision_wall':time.monotonic(),'tf_stamp_ns':final_observation['tf_stamp_ns']};ready_pub.publish(String(data=json.dumps(payload)));S['ready_for_manipulation']=payload;until(lambda:False,.15);ready_pub.publish(String(data=json.dumps({'state':'NOT_READY','reason':'normal_shutdown','stamp_ns':clock_ns})))
+   ready_pub=node.create_publisher(String,N+'/ready_for_manipulation',1);payload={'state':'READY_FOR_MANIPULATION','terminal':terminal.status,'actual_position_error_m':S['actual_goal_error_m'],'actual_yaw_error_rad':S['actual_goal_yaw_error_rad'],'capture_ns':final_observation['capture_ns'],'workspace':reach,'stamp_ns':clock_ns,'capture_wall':final_observation['capture_wall'],'decision_wall':time.monotonic(),'tf_stamp_ns':final_observation['tf_stamp_ns']};ready_pub.publish(String(data=json.dumps(payload)));S['ready_for_manipulation']=payload
+   if handoff is not None:
+    S['manipulation_handoff']=handoff(node=node,until=until,call=call,out=out,
+      goal_id=bytes(goal_handle.goal_id.uuid).hex(),target=list(target),
+      snapshot=lambda:{'observation':observation,'state':state,'joints':joints,'clock_ns':clock_ns,'platform':platform,'boundary':boundary,'gateway':gateway})
+   else:until(lambda:False,.15)
+   ready_pub.publish(String(data=json.dumps({'state':'NOT_READY','reason':'normal_shutdown','stamp_ns':clock_ns})))
   S['plan_count']=len(plans);S['max_abs_y_m']=max(abs(p['y']) for p in poses);response=call('platform/shutdown');assert response.success,response.message;launch.wait(timeout=12);assert launch.returncode==0;S['engine']=json.loads((out/'engine.json').read_text());assert S['engine']['normal_shutdown_requested'] and S['engine']['rx_joined'] and S['engine']['upstream_threads_joined'];S['result']='PASS'
  except BaseException:S['error']=traceback.format_exc()
  finally:

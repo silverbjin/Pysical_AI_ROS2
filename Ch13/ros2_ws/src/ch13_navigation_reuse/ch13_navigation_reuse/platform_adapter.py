@@ -27,6 +27,7 @@ class Platform(Node):
         self.lock=threading.RLock();self.guard=Guard(required=('safe',),control='safe')
         self.stationary_ready=False;self.stationary_start=None;self.last_capture_wall=None;self.pending_arm=0.;self.last_arm_wall=-1e9
         self.allow_tf_broadcasters=False;self.stop_requested=False;self.last_state=None;self.previous_mode=None;self.events=[]
+        self.manipulation=None
         self.clock_pub=self.create_publisher(Clock,'/clock',1)
         self.base_pub=self.create_publisher(Odometry,N+'/engine_state',1)
         self.nav_pub=self.create_publisher(Odometry,N+'/odometry',1)
@@ -64,6 +65,7 @@ class Platform(Node):
         return response
     def on_parameters(self,parameters):
         with self.lock:
+            if self.manipulation is not None:return SetParametersResult(successful=False,reason='13.6 owns the arm command slot')
             for p in parameters:
                 if p.name!='arm_joint1_offset':return SetParametersResult(successful=False,reason='unsupported live parameter')
                 if not isinstance(p.value,float) or not math.isfinite(p.value) or abs(p.value)>.05:return SetParametersResult(successful=False,reason='finite joint1 offset within0.05rad required')
@@ -85,6 +87,7 @@ class Platform(Node):
             changed=self.previous_mode!=decision.mode;self.previous_mode=decision.mode
         # DDS graph/publish/log operations may block; never hold the physics-state lock.
         self.status_pub.publish(String(data=json.dumps(status)))
+        if self.manipulation is not None:self.manipulation.monitor()
         if changed:self.get_logger().info('mode='+decision.mode+' '+decision.fault)
     def engine_command(self,sim_ns):
         with self.lock:
@@ -136,7 +139,7 @@ class Platform(Node):
         self.tf_pub.publish(TFMessage(transforms=transforms))
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--repo-root',required=True);parser.add_argument('--max-sim-s',type=float,default=40.);parser.add_argument('--report',required=True);parser.add_argument('--scene',choices=['free','obstacle','blocked','vision']);args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--repo-root',required=True);parser.add_argument('--max-sim-s',type=float,default=40.);parser.add_argument('--report',required=True);parser.add_argument('--scene',choices=['free','obstacle','blocked','vision']);parser.add_argument('--manipulation',choices=['true','false'],default='false');args=parser.parse_args()
     root=Path(args.repo_root).resolve();report=Path(args.report);report.parent.mkdir(parents=True,exist_ok=True)
     S={'pid':os.getpid(),'ppid':os.getppid(),'result':'ERROR','normal_shutdown_requested':False};node=p=None;executor=None;rx=None;owned_threads=[];rows=[];last_window=[];sensors=None;scheduler=None
     import fcntl
@@ -180,6 +183,9 @@ def main():
         assert tuple(p.mjModel.joint(i).name for i in range(1,p.mjModel.njnt))==JOINT_NAMES
         if args.scene:sensors=SensorSuite(p.mjModel,p.mjData,args.scene,report.parent);p._ch13_sensors=sensors
         rclpy.init(args=[]);node=Platform();node.allow_tf_broadcasters=bool(args.scene)
+        if args.manipulation=='true':
+            from ch13_manipulation_reuse.engine_extension import EngineExtension
+            node.manipulation=EngineExtension(node)
         if sensors is not None:sensors.attach(node)
         executor=SingleThreadedExecutor();executor.add_node(node);rx_error=[]
         def spin():
@@ -207,6 +213,7 @@ def main():
             ratio=float(np.max(abs(data.actuator_force)/caps[:,1]));max_ratio=max(max_ratio,ratio)
             if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all() or not np.isfinite(ratio) or ratio>1+1e-8:raise RuntimeError('nonfinite state or original actuator cap violation')
             q,v,state,tilt=node.capture(p,round(data.time*1e9),wall,d)
+            if node.manipulation is not None:node.manipulation.step(p,d,q,v,state,tilt)
             values=q[joint_adr];max_joint_violation=max(max_joint_violation,float(np.max(joint_bounds[:,0]-values,initial=0.)),float(np.max(values-joint_bounds[:,1],initial=0.)))
             if q[2]<.12 or tilt>math.pi/4:raise RuntimeError('fall bound')
             if sensors is not None:
@@ -224,6 +231,7 @@ def main():
         try:p.run()
         finally:upstream.mujoco.mj_step=original_step
         S.update(step_outliers=timing,result='COMPLETED',normal_shutdown_requested=node.stop_requested,sim_s=float(p.mjData.time),wall_s=time.monotonic()-start,physics_steps=step_count,max_force_cap_ratio=max_ratio,max_native_joint_violation_rad=max_joint_violation,final_mode=node.guard.mode,final_fault=node.guard.fault,arm_events=node.events,rx_error=rx_error,actual_pose=p.mjData.qpos[:7].tolist())
+        if node.manipulation is not None:S['manipulation']=node.manipulation.summary()
         if not node.stop_requested or rx_error:raise RuntimeError('unrequested engine end or ROS receiver failure')
     except BaseException:S['error']=traceback.format_exc();S['result']='ERROR'
     finally:
