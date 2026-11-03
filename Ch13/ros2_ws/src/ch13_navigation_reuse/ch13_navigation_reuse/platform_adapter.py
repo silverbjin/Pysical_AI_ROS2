@@ -259,8 +259,14 @@ def main():
             if step_count%10==0:rows.append(row);node.publish_state(p,state)
             record('state_publish',marker,cpu_marker);previous_exit=time.monotonic();previous_cpu=time.thread_time()
         upstream.mujoco.mj_step=step
+        gc_probe=None
+        if node.manipulation is not None:
+            from ch13_manipulation_reuse.gc_timing import GCTiming
+            gc_probe=GCTiming();gc_probe.start()
         try:p.run()
-        finally:upstream.mujoco.mj_step=original_step
+        finally:
+            upstream.mujoco.mj_step=original_step
+            if gc_probe is not None:gc_probe.stop();S['gc_timing']=gc_probe.summary()
         S.update(step_outliers=timing,result='COMPLETED',normal_shutdown_requested=node.stop_requested,sim_s=float(p.mjData.time),wall_s=time.monotonic()-start,physics_steps=step_count,max_force_cap_ratio=max_ratio,max_native_joint_violation_rad=max_joint_violation,final_mode=node.guard.mode,final_fault=node.guard.fault,arm_events=node.events,rx_error=rx_error,actual_pose=p.mjData.qpos[:7].tolist())
         if node.manipulation is not None:S['manipulation']=node.manipulation.summary()
         if not node.stop_requested or rx_error:raise RuntimeError('unrequested engine end or ROS receiver failure')

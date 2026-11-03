@@ -32,9 +32,14 @@ def put_render_result(results,item,stop,latest=False):
     except queue.Empty:pass
  return dropped
 
-def render_process(model,initial_q,requests,results,ready,stop,latest=False,output_dropped=None):
- renderer=None
+def render_process(model,initial_q,requests,results,ready,stop,latest=False,output_dropped=None,capture_ledger=None):
+ renderer=None;node=None;publisher=None;captures=[];failure='';publisher_closed=False
  try:
+  if latest:
+   import rclpy
+   from rclpy.node import Node
+   from .camera_publisher import FramePublisher
+   rclpy.init(args=[]);node=Node('ch13_reuse_camera_renderer');publisher=FramePublisher(node,depth=1)
   model.vis.quality.offsamples=0
   data=mujoco.MjData(model);data.qpos[:]=initial_q;mujoco.mj_forward(model,data)
   option=mujoco.MjvOption();option.geomgroup[2]=0;option.geomgroup[3]=1;option.geomgroup[5]=1
@@ -50,22 +55,37 @@ def render_process(model,initial_q,requests,results,ready,stop,latest=False,outp
    data.qpos[:]=q;data.time=stamp/1e9;mujoco.mj_forward(model,data);rgb,depth=render()
    meta={'capture_ns':stamp,'capture_wall':capture_wall,'render_finished_wall':time.monotonic(),'rgb_sha256':hashlib.sha256(rgb.tobytes()).hexdigest()}
    if latest:meta.update(render_profile='paired_raw_RGB_depth_v1',skybox=False,mujoco_version=mujoco.__version__)
+   if publisher is not None:
+    meta['publisher_route']='renderer_process_DDS_v1'
+    started=time.monotonic();publisher.publish(rgb,depth,meta)
+    captures.append(dict(capture=dict(meta),publish_started_wall=started,publish_finished_wall=time.monotonic()))
    item=(rgb,depth,meta)
    dropped=put_render_result(results,item,stop,latest)
    if output_dropped is not None:
     with output_dropped.get_lock():output_dropped.value+=dropped
  except BaseException:
-  try:results.put(('error',traceback.format_exc()),timeout=.5)
+  failure=traceback.format_exc()
+  try:results.put(('error',failure),timeout=.5)
   except queue.Full:pass
  finally:
-  if renderer is not None:renderer.close()
-  ready.set()
+  try:
+   if node is not None:node.destroy_node();rclpy.try_shutdown();publisher_closed=True
+  finally:
+   try:
+    if renderer is not None:renderer.close()
+   finally:
+    if capture_ledger is not None:
+     import json
+     from pathlib import Path
+     Path(capture_ledger).write_text(json.dumps(dict(captures=captures,publisher_closed=publisher_closed,error=failure))+'\n')
+    ready.set()
 
 class CameraWorker:
- def __init__(self,model,initial_q,callback,latest=False):
+ def __init__(self,model,initial_q,callback,latest=False,capture_ledger=None):
   self.callback=callback;self.condition=threading.Condition();self.latest=None;self.stopping=False;self.error='';self.overwritten=0
+  self.capture_ledger=capture_ledger;self.source_captures=None
   ctx=mp.get_context('spawn');self.requests=ctx.Queue(maxsize=1);self.results=ctx.Queue(maxsize=1 if latest else 2);self.ready=ctx.Event();self.stop=ctx.Event();self.output_dropped=ctx.Value('i',0)
-  self.process=ctx.Process(target=render_process,args=(model,initial_q.copy(),self.requests,self.results,self.ready,self.stop,latest,self.output_dropped),name='reuse_rgbd_renderer')
+  self.process=ctx.Process(target=render_process,args=(model,initial_q.copy(),self.requests,self.results,self.ready,self.stop,latest,self.output_dropped,str(capture_ledger) if capture_ledger is not None else None),name='reuse_rgbd_renderer')
   self.process.start();self.worker_pid=self.process.pid
   from multiprocessing import resource_tracker
   self.tracker_pid=resource_tracker._resource_tracker._pid
@@ -104,6 +124,13 @@ class CameraWorker:
   if self.process.is_alive():
    self.error=self.error or 'camera process did not stop normally';self.process.terminate();self.process.join(2.)
   self.thread.join(2.)
+  if self.capture_ledger is not None:
+   import json
+   from pathlib import Path
+   try:
+    ledger=json.loads(Path(self.capture_ledger).read_text());self.source_captures=[r['capture'] for r in ledger['captures']]
+    if ledger['error'] or not ledger['publisher_closed']:self.error=self.error or ledger['error'] or 'renderer DDS owner failed shutdown'
+   except (OSError,ValueError,KeyError):self.error=self.error or 'renderer source capture ledger unavailable'
   # A failed forced cleanup is never reported as normal camera shutdown.
   joined=not self.process.is_alive() and not self.thread.is_alive() and self.process.exitcode==0 and not self.error
   self.requests.close();self.requests.join_thread();self.results.close();self.results.join_thread();return joined

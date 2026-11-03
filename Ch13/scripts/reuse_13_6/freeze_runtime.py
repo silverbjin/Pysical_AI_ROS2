@@ -19,7 +19,7 @@ def sources():
     for folder in [*(ROOT/'Ch13/ros2_ws/src'/p for p in PACKAGES),ROOT/'Ch13/scripts/reuse_13_5',ROOT/'Ch13/scripts/reuse_13_6']:
         paths.extend(p for p in folder.rglob('*') if p.is_file() and not any(s in p.parts for s in ('__pycache__','.pytest_cache')))
     paths.extend(ROOT/'Ch13/dependencies'/p for p in ('section_13_5_reuse.lock.json','section_13_5_edu_stop_v2.json',
-                 'section_13_6_control_v1.json','section_13_6_control_v2.json','section_13_6_pick_contract_v1.json','section_13_6_pick_contract_v2.json','section_13_6_pick_contract_v3.json','section_13_6_pick_contract_v4.json','section_13_6_pick_contract_v5.json','section_13_6_pick_contract_v6.json'))
+                 'section_13_6_control_v1.json','section_13_6_control_v2.json','section_13_6_pick_contract_v1.json','section_13_6_pick_contract_v2.json','section_13_6_pick_contract_v3.json','section_13_6_pick_contract_v4.json','section_13_6_pick_contract_v5.json','section_13_6_pick_contract_v6.json','section_13_6_pick_contract_v7.json'))
     return {p.relative_to(ROOT).as_posix():digest(p) for p in sorted(set(paths))}
 
 
