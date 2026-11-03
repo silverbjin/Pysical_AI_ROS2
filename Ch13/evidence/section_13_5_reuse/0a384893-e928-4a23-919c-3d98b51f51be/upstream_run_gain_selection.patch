@@ -1,0 +1,13 @@
+--- upstream/run
++++ ch13/run_consistent_gains
+@@ -75,8 +75,8 @@
+ 
+         else:
+             # Go up-and-down
+-            self.Kp_legs = self.locomotion_policy.Kp_stand_up_and_down
+-            self.Kd_legs = self.locomotion_policy.Kd_stand_up_and_down
++            self.Kp_legs = (self.locomotion_policy.Kp_walking if self.console.isRLActivated else self.locomotion_policy.Kp_stand_up_and_down)
++            self.Kd_legs = (self.locomotion_policy.Kd_walking if self.console.isRLActivated else self.locomotion_policy.Kd_stand_up_and_down)
+ 
+         # Torque saturation for the legs
+         max_torque = self.mjModel.actuator_ctrlrange[0:12, 1]

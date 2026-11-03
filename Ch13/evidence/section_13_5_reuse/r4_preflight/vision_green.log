@@ -1,0 +1,24 @@
+test_rendered_rgbd_deprojects_to_visible_target_surface (test_reuse_vision.ActualCameraTests.test_rendered_rgbd_deprojects_to_visible_target_surface) ... ERROR
+test_axial_depth_is_deprojected_with_13_4_geometry (test_reuse_vision.VisionGeometryTests.test_axial_depth_is_deprojected_with_13_4_geometry) ... ok
+test_camera_owner_replacement_latches (test_reuse_vision.VisionGeometryTests.test_camera_owner_replacement_latches) ... ok
+test_cancel_ack_or_unsettled_pose_never_ready (test_reuse_vision.VisionGeometryTests.test_cancel_ack_or_unsettled_pose_never_ready) ... ok
+test_capture_and_past_tf_limits (test_reuse_vision.VisionGeometryTests.test_capture_and_past_tf_limits) ... ok
+test_duplicate_capture_does_not_renew_first_receipt (test_reuse_vision.VisionGeometryTests.test_duplicate_capture_does_not_renew_first_receipt) ... ok
+test_no_color_target_is_not_scene_truth (test_reuse_vision.VisionGeometryTests.test_no_color_target_is_not_scene_truth) ... ok
+
+======================================================================
+ERROR: test_rendered_rgbd_deprojects_to_visible_target_surface (test_reuse_vision.ActualCameraTests.test_rendered_rgbd_deprojects_to_visible_target_surface)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_reuse_vision.py", line 34, in test_rendered_rgbd_deprojects_to_visible_target_surface
+    renderer.update_scene(d,camera='reuse_rgbd');rgb=renderer.render().copy();renderer.enable_depth_rendering();depth=renderer.render().copy();f=240/(2*np.tan(np.deg2rad(55)/2));point,_=red_point(rgb,depth,[f,f,159.5,119.5]);cam=m.camera('reuse_rgbd').id;world=d.cam_xpos[cam]+d.cam_xmat[cam].reshape(3,3)@np.diag([1.,-1.,-1.])@point;np.testing.assert_allclose(world,[1.75,0.,.55],atol=.025)
+                                                                                                                                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_geometry.py", line 26, in red_point
+    if len(xs)<20:raise ValueError('red fixture not observed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: red fixture not observed
+
+----------------------------------------------------------------------
+Ran 7 tests in 2.346s
+
+FAILED (errors=1)

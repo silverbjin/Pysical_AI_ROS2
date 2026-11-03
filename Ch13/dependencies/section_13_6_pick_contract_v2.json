@@ -1,0 +1,10 @@
+{
+  "revision": "13_6_contact_force_and_visual_lift_v2",
+  "inherits_geometry_mass_friction_and_acceptance": "section_13_6_pick_contract_v1.json",
+  "target_mass_kg": 0.02,
+  "target_contact_dim": 3,
+  "gripper": {"activation": "CLOSE with admitted goal and continuous actual dual finger normal >.005N for .25sim s", "force_hold_cap_N": 0.5, "ramp_sim_s": 0.5, "native_kp": 10, "native_kd": 0.8, "application": "single native PD via separate internal servo reference; nominal close remains0", "fault": "retain established force hold; only explicitly admitted open clears it"},
+  "lift": {"initial_tcp_command_m": 0.10, "object_height_goal_m": 0.10, "feedback_source": "new actual RGB-D known cylinder fit with original capture/TF", "maximum_extra_cartesian_corrections": 1, "maximum_extra_tcp_lift_m": 0.03, "correction_trigger_deficit_m": 0.005, "correction_margin_m": 0.003, "missing_contact_or_excess_correction": "fail without correction"},
+  "unchanged": "20g mass, original robot masses/equality/gains/caps, friction.8, contactdim3,300ms capture and100ms pastTF, physical rise>=.09m/hold>=2sim s/slip<=.02m/dual contact>=90%",
+  "bench_only_evidence": "native20g could not lift; force hold20g lifted81.6mm on rig; contactdim4 trial worsened and was not selected; rig is not Go2 integration acceptance"
+}

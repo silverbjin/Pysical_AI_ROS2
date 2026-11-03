@@ -1,0 +1,6 @@
+export BLOCKED_OUT="$LAB_EVIDENCE/blocked"
+bash Ch13/scripts/reuse_13_5/run_navigation.sh blocked "$BLOCKED_OUT"
+export CANCEL_OUT="$LAB_EVIDENCE/cancel"
+bash Ch13/scripts/reuse_13_5/run_navigation.sh cancel "$CANCEL_OUT"
+export LOSS_OUT="$LAB_EVIDENCE/raw_loss"
+bash Ch13/scripts/reuse_13_5/run_navigation.sh raw_loss "$LOSS_OUT"

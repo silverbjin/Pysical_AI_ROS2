@@ -321,6 +321,7 @@ class SpatialLoadProcess:
             command_space=self.command_space,optimization_backend=ready.get('optimization_backend'),
             kernel_backend=ready.get('kernel_backend'),complete_kernel_abi=ready.get('complete_kernel_abi'),
             force_objective=ready.get('force_objective'),
+            force_model=self.force_model,equilibrium_library_sha256=ready.get('equilibrium_library_sha256'),
             optimization_library_sha256=ready.get('optimization_library_sha256'),
             reference_library_sha256=ready.get('reference_library_sha256'),
             library_sha256=ready.get('library_sha256'),

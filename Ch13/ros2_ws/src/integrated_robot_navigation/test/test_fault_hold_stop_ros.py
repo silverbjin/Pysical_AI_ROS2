@@ -5,7 +5,7 @@ from test_crawl_lifecycle import crawl_rig
 
 
 @pytest.mark.parametrize('reason',['shift timeout; measured support/settle not gained',
-                                   'measured unload height bound reached'])
+                                   'measured unload height bound reached','contacts:wall_age'])
 def test_fault_status_can_confirm_measured_hold_stop_but_never_ready_or_new_commands(crawl_rig,monkeypatch,reason):
     rig=crawl_rig
     assert rig.transition(Transition.TRANSITION_CONFIGURE)
@@ -20,6 +20,7 @@ def test_fault_status_can_confirm_measured_hold_stop_but_never_ready_or_new_comm
         # Inject the observed failure at the owner boundary. The fixture is a
         # stationary feedback producer, not a simulated successful crawl.
         machine=rig.guard.machine
+        if reason=='contacts:wall_age':machine.load_result_timing='same_cycle'
         machine.phase='SHIFT';machine._unload_start=None
         if reason=='measured unload height bound reached':
             machine.swing_foot='fr_foot';machine._unload_start=machine._last_ros

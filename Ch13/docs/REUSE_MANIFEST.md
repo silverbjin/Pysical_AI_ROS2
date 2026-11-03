@@ -1,5 +1,16 @@
 # Ch13 13.2 재사용·출처 명세
 
+## 13.5 공개 플랫폼 개정의 출처와 구현 경계
+
+이 항목 아래의 자체 crawl 기록은 이전 연구 이력으로 보존한다. 현재 공개 플랫폼 경로는 [설계](SECTION_13_5_REUSE_DESIGN_KO.md), [R4 실제 접근](SECTION_13_5_REUSE_R4_REPORT_KO.md), [lock](../dependencies/section_13_5_reuse.lock.json)을 따른다.
+
+- 외부 로봇·보행은 IIT-DLSLab locomanipulation-teleop-isaaclab의 고정 d010212c3f5c9e6e5542ada61cfdacc19b00f775와 arm_moving_clock ONNX다. root BSD-3-Clause를 확인했으며 하위 모델·가중치 권리의 별도 확정은 남아 있다. 모델/가중치를 이 저장소에 재배포하지 않는다. upstream 원본 checkout은 수정하지 않는다.
+- 보행기는 upstream PlayMujoco.run과 actor를 재사용한다. 세 배포 보완, 단조시계 pacing, 프로세스 내부 CPU 추론 제한을 명시한다. 새 학습·crawl·WBC를 작성하지 않았다. MuJoCo3.13.0과 Nav2 1.3.13은 별도 설치 의존성이다.
+- 신규 ch13_navigation_reuse/ch13_reuse_wire, 명령·상태·소유권 경계, 원본 CDR/실제 DDS GID 수집, native 영상과 C++ canonical SHA256·최초 receipt 결합, opt-in 장면·ray/Renderer 센서, 접근 후보·인수 도구는 Ch13 구현이다. 외부 ROS/엔진 소스를 복사하거나 수정하지 않는다. 신규 패키지 라이선스는 BSD-3-Clause다.
+- 기존 integrated_robot_vision의 __init__/contracts/geometry를 그대로 선택 빌드·import한다. 원래 라이선스를 유지하고 새 카메라/TF에서 별도 회귀한다. 이전 카메라 실측 PASS를 새 로봇에 전이하지 않는다.
+- 지도는 알려진 정적 장면 prior, 위치는 engine ground truth, scan과 RGB-D는 실제 ray/render다. 카메라는 원본 충돌 형상 기반 시각화이고 붉은 고정 작업물 표면을 검출한다. 일반 인식·SLAM·파지·Gazebo/실기 성공으로 표현하지 않는다.
+
+
 ## 13.5 추가 — 구현 진행 중
 
 - 2026-11-02: gait의 `maintenance`는 Ch13 자체 same-cycle/기존 XYZ 커널을 재사용한다. 선택 발의 원래 envelope를 현재 한 점으로 좁히고 현재 측정 힘을 목표로 사용한다. 외부 코드·의존성·게인·실제 actuator는 변경하지 않는다. 실패264의 독립 Farkas 증명과 기존 실제 기록의 반사실 후보는 자체 evidence이며, 68,717B `native_ab85_maintenance_window.json`은 원본/진단 SHA를 기록한 회귀 fixture다. 반사실 관측은 실제 물리 성공으로 세지 않는다.

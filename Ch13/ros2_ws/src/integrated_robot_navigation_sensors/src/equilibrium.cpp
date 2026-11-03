@@ -31,7 +31,7 @@ struct Plan{
   for(int i:legs){if(i<0||i>=nq)throw std::invalid_argument("leg index");}
  }
  struct State{M mass,contact,mapped;V gravity;};
- State state(const V&q,const M4&body)const{
+ State state(const V&q,const M4&body,const M*points=nullptr)const{
   std::vector<M4>frames(nodes.size());std::vector<V3>axes(nodes.size()),origins(nodes.size());
   for(size_t i=0;i<nodes.size();++i){const auto&n=nodes[i];M4 f=n.parent<0?body:frames[n.parent]*n.origin;
    if(n.q>=0){axes[i]=f.block<3,3>(0,0)*n.axis;origins[i]=f.block<3,1>(0,3);M4 motion=M4::Identity();
@@ -42,7 +42,7 @@ struct Plan{
   State s{M::Zero(nd,nd),M::Zero(12,nd),M(),V::Zero(nd)};M v,w;
   for(size_t i=0;i<nodes.size();++i){const auto&n=nodes[i];if(n.mass==0&&n.tensor.isZero(0.))continue;M4 f=frames[i]*n.inertial;jac(i,f.block<3,1>(0,3),v,w);M3 rot=f.block<3,3>(0,0);M3 inertia=rot*n.tensor*rot.transpose();
    s.mass.noalias()+=n.mass*v.transpose()*v+w.transpose()*inertia*w;s.gravity.noalias()+=n.mass*9.81*v.row(2).transpose();}
-  for(int i=0;i<4;++i){V3 p=frames[feet[i]].block<3,1>(0,3)-radii(i)*V3::UnitZ();jac(feet[i],p,v,w);s.contact.middleRows<3>(3*i)=v;}
+  for(int i=0;i<4;++i){V3 p;if(points){p=points->row(i).transpose();}else{p=frames[feet[i]].block<3,1>(0,3)-radii(i)*V3::UnitZ();}jac(feet[i],p,v,w);s.contact.middleRows<3>(3*i)=v;}
   Eigen::LDLT<M> ldlt(s.mass);if(ldlt.info()!=Eigen::Success||!ldlt.isPositive())throw std::invalid_argument("nonpositive inertia");
   s.mapped=s.contact.transpose()+.002*d.asDiagonal()*ldlt.solve(s.contact.transpose());return s;
  }
@@ -69,3 +69,25 @@ extern "C" int ch13_equilibrium_evaluate(void*handle,const double*input,size_t c
  for(int i=0;i<p.nd;++i){for(int j=0;j<12;++j){output[144+12*i+j]=solution(i,j);}}
  output[size-4]=p.total;output[size-3]=residual;output[size-2]=wall;output[size-1]=now(CLOCK_THREAD_CPUTIME_ID)-cpu;return 0;
  }catch(const std::exception&e){if(error&&error_size)std::snprintf(error,error_size,"%s",e.what());return 1;}}
+
+// Same immutable energy model; exact current contact points for static planning.
+extern "C" int ch13_equilibrium_terms_abi_version(){return 1;}
+extern "C" int ch13_equilibrium_terms(void*handle,const double*input,size_t count,double*output,size_t size,char*error,size_t error_size){try{
+ if(!handle||!input||!output){throw std::invalid_argument("missing equilibrium terms buffers");}
+ const auto&p=*static_cast<Plan*>(handle);
+ if(count!=size_t(p.nq+28)||size!=size_t(14*p.nq)){throw std::invalid_argument("equilibrium terms dimensions");}
+ for(size_t i=0;i<count;++i){if(!std::isfinite(input[i])){throw std::invalid_argument("nonfinite equilibrium terms");}}
+ const double start=now(CLOCK_MONOTONIC);
+ const M4 body=Eigen::Map<const R4>(input+p.nq);
+ if((body.row(3)-Eigen::RowVector4d(0,0,0,1)).norm()>1e-10||(body.block<3,3>(0,0).transpose()*body.block<3,3>(0,0)-M3::Identity()).norm()>1e-7||body.block<3,3>(0,0).determinant()<0.){throw std::invalid_argument("rigid terms pose");}
+ using RowMatrix=Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor>;
+ const M points=Eigen::Map<const RowMatrix>(input+p.nq+16,4,3);
+ const auto state=p.state(Eigen::Map<const V>(input,p.nq),body,&points);
+ if(now(CLOCK_MONOTONIC)-start>10000000.){throw std::runtime_error("equilibrium terms time budget");}
+ for(int i=0;i<p.nq;++i){
+  output[i]=state.gravity(6+i);output[13*p.nq+i]=p.cap(i);
+  for(int k=0;k<12;++k){output[p.nq+12*i+k]=-state.mapped(6+i,k);}
+ }
+ for(size_t i=0;i<size;++i){if(!std::isfinite(output[i])){throw std::runtime_error("nonfinite equilibrium terms output");}}
+ return 0;
+ }catch(const std::exception&e){if(error&&error_size){std::snprintf(error,error_size,"%s",e.what());}return 1;}}

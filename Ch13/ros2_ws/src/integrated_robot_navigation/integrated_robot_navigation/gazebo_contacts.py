@@ -6,6 +6,7 @@ ONLY for the explicitly mapped foot against the known flat ground. This is not
 an arbitrary force norm, slope/contact planner, or a guessed foot collision name.
 """
 import copy
+from collections import deque
 import math
 
 from geometry_msgs.msg import Point, Vector3
@@ -38,15 +39,17 @@ class GazeboContactJoiner:
         self.last_input = dict(contacts=None,feet=None)
         self.maximum_receipt_gap = dict(contacts=None,feet=None)
         self.last_pair = None
+        self.delivery_trace=deque(maxlen=256)  # metadata only, existing receipt clocks
 
     def snapshot(self):
         return dict(scope='bounded_pair_delivery_diagnostic_not_motion_authority',
-            stopped=self.stopped,outputs=self.sequence,last_output=self.last_output,
+            stopped=self.stopped,outputs=self.sequence,last_output=self.last_output,observed_clock_ns=self.last_clock,
             **{key:dict(getattr(self,key)) for key in
                ('counts','duplicates','expired','overflow','ignored')},
             maximum_receipt_gap={key:None if value is None else dict(value)
                 for key,value in self.maximum_receipt_gap.items()},
             last_pair=None if self.last_pair is None else dict(self.last_pair),
+            delivery_trace=[dict(row) for row in self.delivery_trace],
             pending={key:[dict(stamp_ns=stamp,received_ns=cache[stamp][1]) for stamp in sorted(cache)]
                 for key,cache in (('contacts',self.contacts),('feet',self.feet))})
 
@@ -64,6 +67,7 @@ class GazeboContactJoiner:
         stamp = _stamp(message)
         key='contacts' if cache is self.contacts else 'feet'
         self.counts[key]+=1
+        self.delivery_trace.append(dict(event='input',stream=key,capture_ns=stamp,received_ns=received_ns))
         previous=self.last_input[key]
         if previous is not None:
             gap=received_ns-previous[1];maximum=self.maximum_receipt_gap[key]
@@ -94,11 +98,15 @@ class GazeboContactJoiner:
         for key,cache in (('contacts',self.contacts),('feet',self.feet)):
             for stamp, (_, receipt) in list(cache.items()):
                 if stamp <= self.last_output or not (
-                        0 <= now_ros_ns-stamp <= 200_000_000 and
+                        now_ros_ns-stamp <= 200_000_000 and
                         0 <= now_wall_ns-receipt <= 200_000_000):
                     del cache[stamp]
-                    if stamp>self.last_output:self.expired[key]+=1
-        common = self.contacts.keys() & self.feet.keys()
+                    if stamp>self.last_output:
+                        self.expired[key]+=1
+                        self.delivery_trace.append(dict(event='expired',stream=key,capture_ns=stamp,
+                            received_ns=receipt,selected_ros_ns=now_ros_ns,selected_wall_ns=now_wall_ns,
+                            ros_age_ns=now_ros_ns-stamp,wall_age_ns=now_wall_ns-receipt))
+        common = {stamp for stamp in self.contacts.keys() & self.feet.keys() if stamp <= now_ros_ns}
         if not common:
             return None
         stamp = max(common)
@@ -111,6 +119,7 @@ class GazeboContactJoiner:
         self.last_output = stamp
         self.last_pair=dict(capture_ns=stamp,contacts_received_ns=contact_receipt,
             feet_received_ns=feet_receipt,selected_wall_ns=now_wall_ns)
+        self.delivery_trace.append(dict(event='paired',**self.last_pair))
         return result
 
 
@@ -202,22 +211,43 @@ def main(args=None):
         join = GazeboContactJoiner(record['foot_collision_map'], record['ground_collision'])
         pub = node.create_publisher(FootContacts, '/navigation/foot_contacts', qos_profile_sensor_data)
 
-        def receive(message, method):
-            method(message, time.monotonic_ns())
+        def publish_ready(now_ros):
             try:
-                result = join.take(node.get_clock().now().nanoseconds, time.monotonic_ns())
+                result=join.take(now_ros,time.monotonic_ns())
                 if result is not None:
-                    pub.publish(result)
+                    started=time.monotonic_ns();pub.publish(result)
+                    join.delivery_trace.append(dict(event='published',capture_ns=_stamp(result),
+                        epoch=result.epoch,sequence=result.sequence,started_wall_ns=started,
+                        returned_wall_ns=time.monotonic_ns(),scope='ROS_publish_return_not_subscriber_delivery'))
             except ValueError as error:
                 join.stop()
                 node.get_logger().error(f'native contact data rejected; restart required: {error}')
 
+        def receive(message,info,method,stream):
+            from .command_order import metadata_field
+            entry=time.monotonic_ns();system=time.time_ns();now_ros=node.get_clock().now().nanoseconds
+            method(message,entry)
+            gid=metadata_field(info,'publisher_gid')
+            join.delivery_trace.append(dict(event='DDS_callback',stream=stream,capture_ns=_stamp(message),epoch=0,
+                callback_wall_ns=entry,callback_system_ns=system,selection_ros_ns=now_ros,
+                source_system_ns=metadata_field(info,'source_timestamp'),
+                rmw_received_system_ns=metadata_field(info,'received_timestamp'),
+                publication_sequence=metadata_field(info,'publication_sequence_number'),
+                publisher_gid=None if gid is None else bytes(gid).hex()))
+            publish_ready(now_ros)
+
+        def clock_received(message):
+            now_ros=message.clock.sec*1_000_000_000+message.clock.nanosec
+            join.observe_clock(now_ros)
+            # The original clock callback releases eligible pending pairs.
+            # No packet is restamped or used before its capture time.
+            publish_ready(now_ros)
+
         node.create_subscription(Contacts, '/navigation/native_contacts',
-            lambda msg: receive(msg, join.receive_contacts), qos_profile_sensor_data)
+            lambda msg,info: receive(msg,info,join.receive_contacts,'contacts'), qos_profile_sensor_data)
         node.create_subscription(PoseArray, '/navigation/native_feet',
-            lambda msg: receive(msg, join.receive_feet), qos_profile_sensor_data)
-        node.create_subscription(Clock, '/clock', lambda msg:
-            join.observe_clock(msg.clock.sec*1_000_000_000+msg.clock.nanosec), qos_profile_sensor_data)
+            lambda msg,info: receive(msg,info,join.receive_feet,'feet'), qos_profile_sensor_data)
+        node.create_subscription(Clock, '/clock', clock_received, qos_profile_sensor_data)
 
         def stop(_, response):
             join.stop()

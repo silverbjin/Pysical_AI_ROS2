@@ -1,0 +1,112 @@
+{
+  "result": "FAIL",
+  "case": "obstacle",
+  "events": [
+    {
+      "event": "goal_accepted",
+      "sim_ns": 2200000000,
+      "wall": 114.353194007
+    }
+  ],
+  "target": [
+    2.25,
+    0.0,
+    0.0
+  ],
+  "terminal_status": 6,
+  "terminal_sim_ns": 22280000000,
+  "error": "Traceback (most recent call last):\n  File \"/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/scripts/reuse_13_5/run_navigation_probe.py\", line 76, in main\n    expected=6 if args.case=='blocked' else (5 if args.case in ['cancel','raw_loss'] else 4);assert terminal.status==expected,('unexpected terminal',terminal.status,boundary,gateway)\n                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('unexpected terminal', 6, {'phase': 'ACTIVE', 'fault': '', 'stamp_ns': 22260000000, 'vx': 0.0, 'wz': 0.025, 'origin': 'controller_source_via_smoother', 'frames_ready': True, 'samples': {'tf': {'stamp_ns': 22280000000, 'receipt_wall': 141.689907441, 'gid': '010fb4059304d9530000000000001703'}, 'scan': {'stamp_ns': 22190000000, 'receipt_wall': 141.571869046, 'gid': '010fb4059304d9530000000000002003'}, 'nav': {'stamp_ns': 22260000000, 'receipt_wall': 141.675094388, 'gid': '010fb405950491a40000000000006303'}, 'smooth': {'stamp_ns': 22220000000, 'receipt_wall': 141.655315661, 'gid': '010fb40596048c3b0000000000002003'}}}, {'mode': 'FAULT', 'fault': 'SOURCE_REORDER:raw', 'stamp_ns': 22280000000, 'clock_ns': 22280000000, 'origin': 'generated_safety_zero', 'decision_wall': 141.689533533, 'source_receipts': {'base': {'stamp_ns': 2260000000, 'receipt_wall': 114.407150823, 'gid': '010fb4059304d9530000000000001403'}, 'joints': {'stamp_ns': 2260000000, 'receipt_wall': 114.407551773, 'gid': '010fb4059304d9530000000000001603'}, 'raw': {'stamp_ns': 2240000000, 'receipt_wall': 114.396618601, 'gid': '010fb405910427820000000000001303'}}, 'counts': {'clock': 1, 'raw': 1, 'base': 1, 'joints': 1, 'relay': 1}, 'ready_for_arm': False})\n",
+  "gateway_last": {
+    "mode": "FAULT",
+    "fault": "SOURCE_REORDER:raw",
+    "stamp_ns": 22280000000,
+    "clock_ns": 22280000000,
+    "origin": "generated_safety_zero",
+    "decision_wall": 141.689533533,
+    "source_receipts": {
+      "base": {
+        "stamp_ns": 2260000000,
+        "receipt_wall": 114.407150823,
+        "gid": "010fb4059304d9530000000000001403"
+      },
+      "joints": {
+        "stamp_ns": 2260000000,
+        "receipt_wall": 114.407551773,
+        "gid": "010fb4059304d9530000000000001603"
+      },
+      "raw": {
+        "stamp_ns": 2240000000,
+        "receipt_wall": 114.396618601,
+        "gid": "010fb405910427820000000000001303"
+      }
+    },
+    "counts": {
+      "clock": 1,
+      "raw": 1,
+      "base": 1,
+      "joints": 1,
+      "relay": 1
+    },
+    "ready_for_arm": false
+  },
+  "platform_last": {
+    "mode": "ARMED",
+    "fault": "",
+    "stationary_ready": true,
+    "clock_ns": 22276000000,
+    "vx": 0.0,
+    "wz": 0.0,
+    "arm_joint1_target": 0.0,
+    "counts": {
+      "clock": 1,
+      "safe": 1,
+      "relay": 1
+    }
+  },
+  "navigation_last": {
+    "phase": "ACTIVE",
+    "fault": "",
+    "stamp_ns": 22260000000,
+    "vx": 0.0,
+    "wz": 0.025,
+    "origin": "controller_source_via_smoother",
+    "frames_ready": true,
+    "samples": {
+      "tf": {
+        "stamp_ns": 22280000000,
+        "receipt_wall": 141.689907441,
+        "gid": "010fb4059304d9530000000000001703"
+      },
+      "scan": {
+        "stamp_ns": 22190000000,
+        "receipt_wall": 141.571869046,
+        "gid": "010fb4059304d9530000000000002003"
+      },
+      "nav": {
+        "stamp_ns": 22260000000,
+        "receipt_wall": 141.675094388,
+        "gid": "010fb405950491a40000000000006303"
+      },
+      "smooth": {
+        "stamp_ns": 22220000000,
+        "receipt_wall": 141.655315661,
+        "gid": "010fb40596048c3b0000000000002003"
+      }
+    }
+  },
+  "owned_launch_pids": [
+    1167,
+    1168,
+    1169,
+    1170,
+    1171,
+    1172,
+    1173,
+    1174,
+    1175,
+    1176
+  ],
+  "remaining_launch_pids": [],
+  "clean_launch_exits": 10,
+  "launch_exit_code": 0
+}

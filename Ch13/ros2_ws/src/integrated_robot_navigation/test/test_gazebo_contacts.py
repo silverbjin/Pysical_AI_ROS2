@@ -141,3 +141,22 @@ def test_pair_diagnostic_preserves_expiry_cause_and_largest_delivery_gap():
     assert gap==dict(previous_stamp_ns=4_000_000_000,stamp_ns=4_020_000_000,
                     previous_received_ns=8_000_000_000,received_ns=8_210_000_000,gap_ns=210_000_000)
     assert snapshot['pending']['contacts']==[dict(stamp_ns=4_020_000_000,received_ns=8_210_000_000)]
+
+
+def test_future_pair_waits_for_real_clock_without_renewing_first_receipts():
+    join=api().GazeboContactJoiner(MAP,GROUND);contacts,feet=pair()
+    join.receive_contacts(contacts,8_000_000_000)
+    assert join.take(3_990_000_000,8_001_000_000) is None
+    join.receive_feet(feet,8_002_000_000)
+    assert join.take(3_990_000_000,8_003_000_000) is None
+    result=join.take(4_010_000_000,8_020_000_000)
+    assert result is not None,'legitimate exact pair deleted while clock callback lagged10ms'
+    assert result.header.stamp==contacts.header.stamp
+    assert join.last_pair['contacts_received_ns']==8_000_000_000
+    assert join.last_pair['feet_received_ns']==8_002_000_000
+
+def test_future_pair_cannot_outlive_original_wall_lease():
+    join=api().GazeboContactJoiner(MAP,GROUND);contacts,feet=pair()
+    join.receive_contacts(contacts,8_000_000_000);join.receive_feet(feet,8_000_000_000)
+    assert join.take(3_990_000_000,8_100_000_000) is None
+    assert join.take(4_010_000_000,8_200_000_001) is None

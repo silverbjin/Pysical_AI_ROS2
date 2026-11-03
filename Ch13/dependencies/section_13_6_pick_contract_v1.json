@@ -1,0 +1,10 @@
+{
+  "revision": "13_6_physical_cylinder_v1",
+  "target": {"radius_m": 0.02, "height_m": 0.08, "mass_kg": 0.02, "sliding_friction": 0.8, "initial_center_m": [1.8, 0, 0.54], "freejoint": true, "weld": false},
+  "perception": {"source": "actual RGB-D and historical TF", "axis_prior": "upright", "yaw_observed": false, "fit_rms_max_m": 0.0015, "minimum_visible_height_fraction": 0.75, "capture_age_max_s": 0.3, "past_tf_max_s": 0.1},
+  "sequence": {"pre_grasp_m": 0.12, "open_joint7_m": 0.03, "close_joint7_m": 0, "gripper_force_cap_N": 0.5, "velocity_scaling": 0.08, "acceleration_scaling": 0.08, "cartesian_fraction": 1.0, "lift_command_m": 0.10},
+  "acceptance": {"minimum_physical_lift_m": 0.09, "minimum_hold_sim_s": 2, "maximum_relative_slip_m": 0.02, "minimum_dual_finger_normal_N": 0.005, "minimum_hold_dual_contact_fraction": 0.9},
+  "collision_permission": "only link7/link8 versus target in grasp phases; established contact retained while braking/holding after fault",
+  "oracle": "actual target freejoint used only for saved post-run evaluation; never published as vision or TF",
+  "gripper_stall": "position error >.002m, abs velocity <=.001m/s, abs measured effort >.01N for .5sim s; blockage alone is not grasp success"
+}

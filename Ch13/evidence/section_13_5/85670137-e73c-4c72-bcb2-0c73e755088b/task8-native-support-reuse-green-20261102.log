@@ -1,0 +1,26 @@
+............................F
+=================================== FAILURES ===================================
+_ test_fault_status_can_confirm_measured_hold_stop_but_never_ready_or_new_commands[shift timeout; measured support/settle not gained] _
+
+crawl_rig = <test_crawl_lifecycle.CrawlRig object at 0x7f837579e420>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f8347e2dc70>
+reason = 'shift timeout; measured support/settle not gained'
+
+    @pytest.mark.parametrize('reason',['shift timeout; measured support/settle not gained',
+                                       'measured unload height bound reached','contacts:wall_age'])
+    def test_fault_status_can_confirm_measured_hold_stop_but_never_ready_or_new_commands(crawl_rig,monkeypatch,reason):
+        rig=crawl_rig
+        assert rig.transition(Transition.TRANSITION_CONFIGURE)
+>       assert rig.transition(Transition.TRANSITION_ACTIVATE)
+E       assert False
+E        +  where False = transition(3)
+E        +    where transition = <test_crawl_lifecycle.CrawlRig object at 0x7f837579e420>.transition
+E        +    and   3 = Transition.TRANSITION_ACTIVATE
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_hold_stop_ros.py:12: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793589926.680345286] [crawl_controller]: activation rejected: command_clock_step_requires_restart
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_fault_hold_stop_ros.py::test_fault_status_can_confirm_measured_hold_stop_but_never_ready_or_new_commands[shift timeout; measured support/settle not gained]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 28 passed in 40.61s

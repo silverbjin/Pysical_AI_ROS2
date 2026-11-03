@@ -1,0 +1,113 @@
+[WARN] [1793632921.852972090] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793632921.855141190] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+{
+  "result": "FAIL",
+  "case": "free",
+  "events": [
+    {
+      "event": "goal_accepted",
+      "sim_ns": 2120000000,
+      "wall": 36.3570316
+    }
+  ],
+  "target": [
+    0.65,
+    0.0,
+    0.0
+  ],
+  "goal_header_stamp_ns": 2120000000,
+  "safety_fault_before_terminal": {
+    "boundary": "",
+    "gateway": "INPUT_OR_CLOCK_TIMEOUT"
+  },
+  "terminal_status": 5,
+  "terminal_sim_ns": 2140000000,
+  "error": "Traceback (most recent call last):\n  File \"/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/scripts/reuse_13_5/run_navigation_probe.py\", line 107, in main\n    expected=6 if args.case=='blocked' else (5 if args.case in ['cancel','raw_loss'] else 4);assert terminal.status==expected,('unexpected terminal',terminal.status,boundary,gateway)\n                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('unexpected terminal', 5, {'phase': 'WAITING', 'fault': '', 'stamp_ns': 2040000000, 'vx': 0.0, 'wz': 0.0, 'origin': 'generated_zero', 'frames_ready': True, 'vision_capture_ns': 0, 'vision_capture_age_wall_s': None, 'vision_fault_record': None, 'samples': {'tf': {'stamp_ns': 2040000000, 'receipt_wall': 36.2141357, 'gid': '010fb405b0047e410000000000001703'}, 'scan': {'stamp_ns': 1908000000, 'receipt_wall': 36.0179333, 'gid': '010fb405b0047e410000000000002003'}}}, {'mode': 'FAULT', 'fault': 'INPUT_OR_CLOCK_TIMEOUT', 'stamp_ns': 2120000000, 'clock_ns': 2120000000, 'origin': 'generated_safety_zero', 'decision_wall': 36.3590995, 'source_receipts': {'raw': {'stamp_ns': 1900000000, 'receipt_wall': 36.0020802, 'gid': '010fb405ae046d060000000000001303'}, 'joints': {'stamp_ns': 2100000000, 'receipt_wall': 36.2922426, 'gid': '010fb405b0047e410000000000001603'}, 'base': {'stamp_ns': 2100000000, 'receipt_wall': 36.2919191, 'gid': '010fb405b0047e410000000000001403'}}, 'counts': {'clock': 1, 'raw': 1, 'base': 1, 'joints': 1, 'relay': 1}, 'ready_for_arm': False})\n",
+  "gateway_last": {
+    "mode": "FAULT",
+    "fault": "INPUT_OR_CLOCK_TIMEOUT",
+    "stamp_ns": 2120000000,
+    "clock_ns": 2120000000,
+    "origin": "generated_safety_zero",
+    "decision_wall": 36.3590995,
+    "source_receipts": {
+      "raw": {
+        "stamp_ns": 1900000000,
+        "receipt_wall": 36.0020802,
+        "gid": "010fb405ae046d060000000000001303"
+      },
+      "joints": {
+        "stamp_ns": 2100000000,
+        "receipt_wall": 36.2922426,
+        "gid": "010fb405b0047e410000000000001603"
+      },
+      "base": {
+        "stamp_ns": 2100000000,
+        "receipt_wall": 36.2919191,
+        "gid": "010fb405b0047e410000000000001403"
+      }
+    },
+    "counts": {
+      "clock": 1,
+      "raw": 1,
+      "base": 1,
+      "joints": 1,
+      "relay": 1
+    },
+    "ready_for_arm": false
+  },
+  "platform_last": {
+    "mode": "FAULT",
+    "fault": "SOURCE_REORDER:safe",
+    "stationary_ready": true,
+    "clock_ns": 2136000000,
+    "vx": 0.0,
+    "wz": 0.0,
+    "arm_joint1_target": 0.0,
+    "counts": {
+      "clock": 1,
+      "safe": 1,
+      "relay": 1
+    }
+  },
+  "navigation_last": {
+    "phase": "WAITING",
+    "fault": "",
+    "stamp_ns": 2040000000,
+    "vx": 0.0,
+    "wz": 0.0,
+    "origin": "generated_zero",
+    "frames_ready": true,
+    "vision_capture_ns": 0,
+    "vision_capture_age_wall_s": null,
+    "vision_fault_record": null,
+    "samples": {
+      "tf": {
+        "stamp_ns": 2040000000,
+        "receipt_wall": 36.2141357,
+        "gid": "010fb405b0047e410000000000001703"
+      },
+      "scan": {
+        "stamp_ns": 1908000000,
+        "receipt_wall": 36.0179333,
+        "gid": "010fb405b0047e410000000000002003"
+      }
+    }
+  },
+  "vision_last": {},
+  "owned_launch_pids": [
+    1196,
+    1197,
+    1198,
+    1199,
+    1200,
+    1201,
+    1202,
+    1203,
+    1204,
+    1205
+  ],
+  "remaining_launch_pids": [],
+  "clean_launch_exits": 10,
+  "launch_exit_code": 0
+}

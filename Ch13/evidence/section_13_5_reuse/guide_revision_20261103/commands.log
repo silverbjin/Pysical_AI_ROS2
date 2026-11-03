@@ -1,0 +1,29 @@
+BASH_SYNTAX_PASS_28
+SOURCE_FREEZE_PASS 114
+ASSET_HASH_PASS 94 /mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/upstream-iit-locomanipulation-d010212
+Python 3.12.3
+MuJoCo 3.13.0
+Torch 2.9.0+cpu
+ONNX Runtime 1.31.1
+global_costmap footprint= [[-0.4634686765569823, -0.2885523206836057], [0.3944878597081477, -0.2885523206836057], [0.3944878597081477, 0.26606196787095665], [-0.4634686765569823, 0.26606196787095665]]
+inflation= {'plugin': 'nav2_costmap_2d::InflationLayer', 'inflation_radius': 0.65, 'cost_scaling_factor': 5.0}
+local_costmap footprint= [[-0.4634686765569823, -0.2885523206836057], [0.3944878597081477, -0.2885523206836057], [0.3944878597081477, 0.26606196787095665], [-0.4634686765569823, 0.26606196787095665]]
+inflation= {'plugin': 'nav2_costmap_2d::InflationLayer', 'inflation_radius': 0.65, 'cost_scaling_factor': 5.0}
+smoother= {'smoothing_frequency': 20.0, 'enable_stamped_cmd_vel': True, 'feedback': 'OPEN_LOOP', 'scale_velocities': False, 'max_velocity': [0.2, 0.0, 0.2], 'min_velocity': [0.0, 0.0, -0.2], 'max_accel': [0.3, 0.0, 0.5], 'max_decel': [-0.3, 0.0, -0.5], 'velocity_timeout': 0.3, 'odom_topic': '/ch13/reuse/odometry'}
+    def output(self, wall):
+        if self.mode=='ARMED':
+            if not self._fresh(wall):self.trip('INPUT_OR_CLOCK_TIMEOUT')
+            elif self.last_output_wall is not None and (wall<self.last_output_wall or wall-self.last_output_wall>self.timeout_s):self.trip('CONTROL_TIMER_GAP')
+        if self.mode!='ARMED':return Decision(0.,0.,self.clock_ns,self.mode,self.fault)
+        # Simulation seconds govern the command slew; wall time only governs liveness.
+        dt=min(.1,max(0.,(self.clock_ns-self.last_output_clock_ns)/1e9))
+        def slew(previous,target,rate):return previous+max(-rate*dt,min(rate*dt,target-previous))
+        vx=slew(self.last_values[0],self.values[0],.30);wz=slew(self.last_values[1],self.values[1],.50)
+        self.last_values=(vx,wz);self.last_output_wall=wall;self.last_output_clock_ns=self.clock_ns
+        return Decision(vx,wz,self.samples[self.control][0],self.mode,self.fault)
+
+chain length m: 0.8850102121321193
+distance candidates m: [0.7350102121321193, 0.6350102121321193, 0.5350102121321193]
+FK target IK: {'q_arm': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'residual_m': 0.0, 'joint_limits_ok': True, 'collision_free': True}
+INSTALL_AUDIT_PASS 32 installed artifacts; original94 hashes match
+GUIDE_PREFLIGHT_PASS

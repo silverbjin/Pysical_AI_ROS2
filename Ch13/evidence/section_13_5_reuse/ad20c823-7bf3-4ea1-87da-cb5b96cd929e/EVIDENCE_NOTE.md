@@ -1,0 +1,3 @@
+# Source test log provenance correction
+
+2026-11-02: source_tests.log was overwritten by the stage0 baseline rerun before the wrapper accepted a new output path. It now contains the 28-test rerun with SIGTERM failure, not the earlier 28-test PASS log. The earlier summary remains a historical recorded result, not fresh proof from this filename. The failed rerun is pinned at ../r2_stage0_20261102/baseline_tests.log. Original physical probe/engine/stop evidence is unchanged. Current 45-test GREEN evidence is ../r2_stage3_20261102/final_tests.log. Subsequent scripts preserve separate run paths.

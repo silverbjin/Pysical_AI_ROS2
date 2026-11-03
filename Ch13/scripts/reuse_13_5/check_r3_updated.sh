@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -e
+reuse_repo=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse
+bash "$reuse_repo/Ch13/scripts/reuse_13_5/build_r2.sh" > "$reuse_repo/Ch13/evidence/section_13_5_reuse/r3_preflight/build.log" 2>&1
+bash "$reuse_repo/Ch13/scripts/reuse_13_5/test_r2.sh" "${1:-$reuse_repo/Ch13/evidence/section_13_5_reuse/r3_preflight/tests_latest.log}"

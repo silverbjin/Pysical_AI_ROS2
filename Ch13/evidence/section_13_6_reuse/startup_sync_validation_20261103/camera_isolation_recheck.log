@@ -1,0 +1,40 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+___ test_renderer_delivery_does_not_depend_on_blocked_parent_retention[True] ___
+
+latest = True
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_renderer_delivery_does_no1')
+
+    @pytest.mark.parametrize('latest',[False,True])
+    def test_renderer_delivery_does_not_depend_on_blocked_parent_retention(latest,tmp_path):
+        model=mujoco.MjModel.from_xml_string('''<mujoco><visual><global offwidth="320" offheight="240"/></visual>
+          <worldbody><light pos="0 0 3"/><geom type="plane" size="2 2 .1"/>
+          <camera name="reuse_rgbd" pos="0 0 1"/><body pos="0 0 .1"><joint type="slide"/>
+          <geom type="sphere" size=".1" mass=".1"/></body></worldbody></mujoco>''')
+        data=mujoco.MjData(model);entered=threading.Event();release=threading.Event();worker=None
+        rclpy.init(args=[]);node=Node('renderer_delivery_fixture');seen=set()
+        subscription=node.create_subscription(Image,N+'/rgb',lambda m:seen.add((m.header.stamp.sec,m.header.stamp.nanosec)),8)
+        def blocked_retention(*args):entered.set();release.wait(3.)
+        try:
+            worker=CameraWorker(model,data.qpos,blocked_retention,latest=latest,
+                                capture_ledger=tmp_path/'captures.json' if latest else None)
+            worker.offer(data.qpos,1_000_000_000,time.monotonic())
+            assert entered.wait(2.),'parent retention never received real renderer output'
+            for index in range(3):
+                worker.offer(data.qpos,2_000_000_000+index*100_000_000,time.monotonic())
+                deadline=time.monotonic()+.15
+                while time.monotonic()<deadline:rclpy.spin_once(node,timeout_sec=.01)
+>           if latest:assert len(seen)>=2,'camera publication stalled behind parent retention'
+E           AssertionError: camera publication stalled behind parent retention
+E           assert 0 >= 2
+E            +  where 0 = len(set())
+
+Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_camera_isolation.py:31: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793702543.039326107] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793702543.039397107] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[WARN] [1793702550.603220060] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793702550.603283760] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_camera_isolation.py::test_renderer_delivery_does_not_depend_on_blocked_parent_retention[True]
+1 failed, 1 passed in 23.78s

@@ -110,8 +110,8 @@ class CrawlController(ControlClockLifecycleNode):
             ('joints', JointState, '/joint_states'), ('imu', Imu, '/navigation/imu'),
             ('contacts', FootContacts, '/navigation/foot_contacts'), ('body', Odometry, '/odom'),
             ('scan', LaserScan, '/scan'), ('carry', MotionState, '/navigation/carry_state')):
-            def receive(msg, stream=key):
-                self._sensor(stream, msg)
+            def receive(msg, info, stream=key):
+                self._sensor(stream, msg, info)
             subscribe(kind, topic, receive, qos_profile_sensor_data,
                                      callback_group=self.sensor_group)
         # This is a current-state lease, not a queue of commands/events. Keep
@@ -184,8 +184,9 @@ class CrawlController(ControlClockLifecycleNode):
                 super().destroy_node()
                 raise
 
-    def _sensor(self, key, msg):
+    def _sensor(self, key, msg, info=None):
         receipt = time.monotonic_ns()
+        system=time.time_ns() if key=='contacts' and info is not None else None
         with self.inbox_lock:
             if self.closing:
                 return
@@ -194,8 +195,14 @@ class CrawlController(ControlClockLifecycleNode):
                 if not self.closing:
                     self.inbox.receive(key, sample)
                     if key == 'contacts':
-                        self.contact_ingress.append(dict(stamp_ns=sample.stamp_ns,
-                            received_wall_ns=sample.received_ns, cache_admitted_wall_ns=time.monotonic_ns()))
+                        from .command_order import metadata_field
+                        gid=metadata_field(info,'publisher_gid')
+                        self.contact_ingress.append(dict(stamp_ns=sample.stamp_ns,epoch=sample.epoch,sequence=sample.sequence,
+                            received_wall_ns=sample.received_ns,cache_admitted_wall_ns=time.monotonic_ns(),
+                            callback_system_ns=system,source_system_ns=metadata_field(info,'source_timestamp'),
+                            rmw_received_system_ns=metadata_field(info,'received_timestamp'),
+                            publication_sequence=metadata_field(info,'publication_sequence_number'),
+                            publisher_gid=None if gid is None else bytes(gid).hex()))
             except (ValueError, TypeError) as error:
                 if self.active and self._ingress_fault is None:
                     self._ingress_fault = key+':'+str(error)

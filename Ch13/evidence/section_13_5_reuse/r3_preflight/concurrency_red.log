@@ -1,0 +1,18 @@
+test_graph_query_does_not_hold_engine_state_lock (test_platform_concurrency.PlatformConcurrencyTests.test_graph_query_does_not_hold_engine_state_lock) ... [WARN] [1793622905.420998048] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793622905.423359648] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[INFO] [1793622905.823432848] [ch13_reuse_platform]: mode=DISARMED 
+FAIL
+
+======================================================================
+FAIL: test_graph_query_does_not_hold_engine_state_lock (test_platform_concurrency.PlatformConcurrencyTests.test_graph_query_does_not_hold_engine_state_lock)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_concurrency.py", line 15, in test_graph_query_does_not_hold_engine_state_lock
+    first.start();self.assertTrue(entered.wait(1.));second.start();self.assertTrue(done.wait(.05),'external graph query held the physics command lock')
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : external graph query held the physics command lock
+
+----------------------------------------------------------------------
+Ran 1 test in 2.235s
+
+FAILED (failures=1)

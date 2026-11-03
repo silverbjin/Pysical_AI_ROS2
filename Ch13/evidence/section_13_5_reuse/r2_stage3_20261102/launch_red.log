@@ -1,0 +1,40 @@
+test_platform_exit_ends_owned_launch_group (test_launch_lifecycle.LaunchLifecycleTests.test_platform_exit_ends_owned_launch_group) ... FAIL
+
+======================================================================
+FAIL: test_platform_exit_ends_owned_launch_group (test_launch_lifecycle.LaunchLifecycleTests.test_platform_exit_ends_owned_launch_group)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_launch_lifecycle.py", line 20, in test_platform_exit_ends_owned_launch_group
+    self.assertTrue(spontaneous,'platform failure left launch group alive: '+output)
+AssertionError: False is not true : platform failure left launch group alive: [INFO] [launch]: All log files can be found below /home/jinho/.ros/log/2026-11-02-19-09-59-677999-DESKTOP-4B51LPI-850
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [ingress-1]: process started with pid [1075]
+[INFO] [python-2]: process started with pid [1076]
+[INFO] [python-3]: process started with pid [1077]
+[ingress-1] [WARN] [1793614199.777191427] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[ingress-1] [WARN] [1793614199.777222303] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[python-2] [WARN] [1793614200.353029700] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[python-2] [WARN] [1793614200.353055572] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[python-2] [INFO] [1793614200.454054934] [ch13_reuse_gateway]: mode=DISARMED 
+[python-3] {
+[python-3]   "pid": 1077,
+[python-3]   "ppid": 850,
+[python-3]   "result": "ERROR",
+[python-3]   "normal_shutdown_requested": false,
+[python-3]   "error": "Traceback (most recent call last):\n  File \"/home/jinho/ch13_reuse_r2_build/install/ch13_navigation_reuse/lib/python3.12/site-packages/ch13_navigation_reuse/platform_adapter.py\", line 141, in main\n    lock=json.loads((root/'Ch13/dependencies/section_13_5_reuse.lock.json').read_text());up=root.parent/'upstream-iit-locomanipulation-d010212'\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/pathlib.py\", line 1029, in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/pathlib.py\", line 1015, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/tmp/ch13_r2_launch_disc0wzn/missing_assets/Ch13/dependencies/section_13_5_reuse.lock.json'\n",
+[python-3]   "rx_joined": true,
+[python-3]   "upstream_threads_joined": true
+[python-3] }
+[ERROR] [python-3]: process has died [pid 1077, exit code 1, cmd '/home/jinho/ch13_reuse_iit_d010212_venv/bin/python -m ch13_navigation_reuse.platform_adapter --repo-root /tmp/ch13_r2_launch_disc0wzn/missing_assets --report /tmp/ch13_r2_launch_disc0wzn/engine.json'].
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [python-2]: sending signal 'SIGINT' to process[python-2]
+[INFO] [ingress-1]: sending signal 'SIGINT' to process[ingress-1]
+[ingress-1] [INFO] [1793614204.906686180] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [ingress-1]: process has finished cleanly [pid 1075]
+[INFO] [python-2]: process has finished cleanly [pid 1076]
+
+
+----------------------------------------------------------------------
+Ran 1 test in 6.202s
+
+FAILED (failures=1)

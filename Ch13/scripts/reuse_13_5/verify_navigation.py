@@ -1,0 +1,38 @@
+"""Independent navigation terminal, actual pose, and edu_stop_v2 checks."""
+from pathlib import Path
+import json,math,sys,hashlib,numpy as np,mujoco
+root=Path(__file__).resolve().parents[3];out=Path(sys.argv[1]);verification_path=Path(sys.argv[2]) if len(sys.argv)>2 else out/'navigation_verification.json';assert not verification_path.exists(),'use a new verification filename; preserve original results';s=json.loads((out/'navigation_summary.json').read_text());e=json.loads((out/'engine.json').read_text());g=json.loads((root/'Ch13/dependencies/section_13_5_edu_stop_v2.json').read_text())
+a=[json.loads(x) for x in (out/'last_stop_500hz.jsonl').read_text().splitlines()];last=a[-1];i=max(i for i,r in enumerate(a) if last['wall']-r['wall']>=g['window_wall_s'] and last['sim_s']-r['sim_s']>=g['minimum_window_sim_s']);w=a[i:];q=np.array([r['qpos'] for r in w]);v=np.array([r['qvel'] for r in w]);dt=np.diff([r['sim_s'] for r in w]);assert np.all(dt>0);rms=lambda z:np.sqrt(np.sum(z[1:]**2*dt[:,None],axis=0)/sum(dt));yaw=np.unwrap(np.arctan2(2*(q[:,3]*q[:,6]+q[:,4]*q[:,5]),1-2*(q[:,5]**2+q[:,6]**2)))
+m=mujoco.MjModel.from_xml_path(str(root.parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml'));limited=m.jnt_limited.astype(bool)&(m.jnt_type==mujoco.mjtJoint.mjJNT_HINGE);values=q[:,m.jnt_qposadr[limited]];bounds=m.jnt_range[limited]
+metrics={'planar_rms_speed_mps':float(np.linalg.norm(rms(v[:,:2]))),'yaw_rate_rms_radps':float(rms(v[:,5:6])[0]),'planar_excursion_m':float(np.max(np.linalg.norm(q[:,:2]-q[0,:2],axis=1))),'yaw_excursion_rad':float(max(abs(yaw-yaw[0]))),'arm_joint_rms_speed_radps':float(max(rms(v[:,18:24]))),'arm_joint_excursion_rad':float(max(np.ptp(q[:,19:25],axis=0))),'arm_joint_target_error_rad':float(np.max(abs(q[:,19:25]-np.array([r['arm_target'] for r in w])))),'max_stop_tilt_rad':float(max(np.arccos(np.clip(1-2*(q[:,4]**2+q[:,5]**2),-1,1)))),'joint_limit_soft_tolerance_rad':float(max(0,np.max(bounds[:,0]-values),np.max(values-bounds[:,1])))}
+checks={k:metrics[k]<=g[k]+1e-10 for k in metrics};checks.update(zero_command=all(r['vx']==0 and r['wz']==0 for r in w),unique_samples=len(w)>=g['minimum_unique_samples'],probe_pass=s['result']=='PASS',normal_engine=e['result']=='COMPLETED' and e['normal_shutdown_requested'],threads=e['rx_joined'] and e['upstream_threads_joined'],force_cap=e['max_force_cap_ratio']<=1+1e-8,processes=not s['remaining_launch_pids'] and s['clean_launch_exits']==len(s['owned_launch_pids']))
+checks['all_physics_native_joint_limits']=e.get('max_native_joint_violation_rad',float('inf'))<=g['joint_limit_soft_tolerance_rad']
+admission=s.get('motion_admission',{});checks['prepared_zero_before_motion']=(s.get('motion_not_released_terminal')==6 and s['case']=='blocked') or (admission.get('boundary_phase')=='ACTIVE' and admission.get('held') is True and admission.get('gateway_before')=='DISARMED' and admission.get('release_wall',0)>=admission.get('platform_arm_wall',float('inf'))>=admission.get('gateway_arm_wall',float('inf')))
+checks['platform_no_unexpected_fault']=e.get('final_fault','missing')==''
+trajectory=[json.loads(x) for x in (out/'engine_observations.jsonl').read_text().splitlines()];xy=np.asarray([x['qpos'][:2] for x in trajectory]);motion_witness=float(np.max(np.linalg.norm(xy-xy[0],axis=1)))
+if s['case'] in ['cancel','raw_loss']:checks['actual_motion_before_cancel_or_loss']=motion_witness>g['planar_excursion_m']
+checks['rx_no_exception']=not e.get('rx_error')
+if s['terminal_status']==4:
+ actual=e['actual_pose'];target=s['target'];heading=math.atan2(2*(actual[3]*actual[6]+actual[4]*actual[5]),1-2*(actual[5]**2+actual[6]**2));checks['actual_goal_position']=math.hypot(actual[0]-target[0],actual[1]-target[1])<=.1;checks['actual_goal_yaw']=abs(math.atan2(math.sin(heading-target[2]),math.cos(heading-target[2])))<=.1
+if s['case']=='vision':
+ vision=[json.loads(x) for x in (out/'vision_observations.jsonl').read_text().splitlines()];captures={x['capture_ns']:x for x in json.loads((out/'sensor_summary.json').read_text())['captures']};ready=s.get('ready_for_manipulation',{});admission=s['vision_admission']['source_observation']
+ sensor=json.loads((out/'sensor_summary.json').read_text());checks['camera_tracker_reaped']=sensor.get('camera_tracker_pid') is not None and not (Path('/proc')/str(sensor['camera_tracker_pid'])).exists();checks['camera_worker_join']=e.get('camera_worker_joined') and sensor.get('camera_worker_error','')=='' and sensor.get('camera_worker_exit_code')==0 and not (Path('/proc')/str(sensor.get('camera_worker_pid'))).exists()
+ from ch13_navigation_reuse.image_artifact import read_rgb
+ from ch13_navigation_reuse.vision_geometry import red_point
+ saved=json.loads((out/'last_accepted_observation.json').read_text());rgb=read_rgb(out/'last_accepted_rgb.png');depth=np.load(out/'last_accepted_depth.npy');optical,_=red_point(rgb,depth,saved['calibration']);transform=np.asarray(saved['T_map_camera']);recomputed=transform[:3,:3]@optical+transform[:3,3];checks['retained_rgbd_point_recomputed']=np.allclose(recomputed,saved['point'],atol=1e-6)
+ health=[json.loads(x) for x in (out/'camera_health.jsonl').read_text().splitlines()];checks['original_camera_health']=bool(health) and all(x['capture_ns'] in captures and x['capture_wall']==captures[x['capture_ns']]['capture_wall'] and 0<=x['validation_wall']-x['capture_wall']<=.3 and 0<=x['capture_ns']-x['tf_stamp_ns']<=100_000_000 for x in health)
+ receipts=[json.loads(x) for x in (out/'camera_receipts.jsonl').read_text().splitlines()];by_capture={(x['capture_ns'],x['kind']):x for x in receipts}
+ from sensor_msgs.msg import Image
+ from ch13_navigation_reuse.camera_native import canonical
+ from ch13_navigation_reuse.command_gateway import set_stamp
+ matched=[]
+ for kind,encoding,pixels,step in [('rgb','rgb8',rgb.tobytes(),960),('depth','32FC1',depth.astype('<f4').tobytes(),1280)]:
+  message=Image();set_stamp(message.header.stamp,saved['capture_ns']);message.header.frame_id='reuse/camera_optical';message.height=240;message.width=320;message.encoding=encoding;message.step=step;message.data=pixels;matched.append(hashlib.sha256(canonical(kind,message)).hexdigest()==by_capture[(saved['capture_ns'],kind)]['canonical_sha256'])
+ checks['retained_native_pixels_match_cpp_receipts']=all(matched)
+ checks['original_cpp_first_receipts']=all(all(by_capture[(x['capture_ns'],k)]['receipt_wall']==x['receipt_wall_by_source'][k] for k in ['rgb','depth','camera_info','camera_meta']) for x in vision)
+ checks['actual_rgbd_observation']=bool(vision) and all(x['capture_ns'] in captures and x['rgb_sha256']==captures[x['capture_ns']]['rgb_sha256'] for x in vision)
+ checks['original_goal_capture_stamp']=s['goal_header_stamp_ns']==admission['capture_ns']
+ checks['ready_after_actual_terminal']=bool(ready) and ready['terminal']==4 and ready['decision_wall']>=s['events'][0]['wall']
+ checks['ready_fresh_original_capture']=bool(ready) and 0<=ready['decision_wall']-ready['capture_wall']<=.3 and 0<=ready['capture_ns']-ready['tf_stamp_ns']<=100_000_000
+ checks['actual_arm_workspace']=s.get('final_arm_workspace') is not None and s['final_arm_workspace']['residual_m']<=.02 and s['final_arm_workspace']['collision_free']
+result={'result':'PASS' if all(checks.values()) else 'FAIL','gate':g['revision'],'motion_witness_m':motion_witness,'window_wall_s':last['wall']-w[0]['wall'],'window_sim_s':last['sim_s']-w[0]['sim_s'],'unique_samples':len(w),'metrics':metrics,'checks':checks};verification_path.write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2));assert result['result']=='PASS'

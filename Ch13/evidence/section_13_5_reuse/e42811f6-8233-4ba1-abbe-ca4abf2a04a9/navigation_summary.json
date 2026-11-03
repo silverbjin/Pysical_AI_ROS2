@@ -1,0 +1,127 @@
+{
+  "result": "FAIL",
+  "case": "free",
+  "events": [
+    {
+      "event": "goal_accepted",
+      "sim_ns": 2060000000,
+      "wall": 28.9004923
+    }
+  ],
+  "target": [
+    0.65,
+    0.0,
+    0.0
+  ],
+  "goal_header_stamp_ns": 2060000000,
+  "motion_admission": {
+    "boundary_phase": "ACTIVE",
+    "held": true,
+    "gateway_before": "DISARMED",
+    "controller_stamp_ns": 2060000000,
+    "gateway_arm_wall": 28.9433904,
+    "release_wall": 28.9446936
+  },
+  "motion_release_sim_ns": 2080000000,
+  "terminal_status": 6,
+  "terminal_sim_ns": 22120000000,
+  "error": "Traceback (most recent call last):\n  File \"/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/scripts/reuse_13_5/run_navigation_probe.py\", line 113, in main\n    expected=6 if args.case=='blocked' else (5 if args.case in ['cancel','raw_loss'] else 4);assert terminal.status==expected,('unexpected terminal',terminal.status,boundary,gateway)\n                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('unexpected terminal', 6, {'phase': 'ACTIVE', 'fault': '', 'stamp_ns': 22100000000, 'vx': 0.135, 'wz': 0.0, 'output_held': False, 'origin': 'controller_source_via_smoother', 'frames_ready': True, 'vision_capture_ns': 0, 'vision_capture_age_wall_s': None, 'vision_fault_record': None, 'samples': {'tf': {'stamp_ns': 22100000000, 'receipt_wall': 58.3073991, 'gid': '010fb405ab0462530000000000001703'}, 'scan': {'stamp_ns': 22110000000, 'receipt_wall': 58.3188585, 'gid': '010fb405ab0462530000000000002003'}, 'nav': {'stamp_ns': 22100000000, 'receipt_wall': 58.3231672, 'gid': '010fb405ad0431380000000000006303'}, 'smooth': {'stamp_ns': 22100000000, 'receipt_wall': 58.3280839, 'gid': '010fb405ae04eb830000000000002003'}}}, {'mode': 'ARMED', 'fault': '', 'stamp_ns': 22100000000, 'clock_ns': 22120000000, 'origin': 'source_command', 'decision_wall': 58.3458345, 'source_receipts': {'base': {'stamp_ns': 22120000000, 'receipt_wall': 58.3301623, 'gid': '010fb405ab0462530000000000001403'}, 'joints': {'stamp_ns': 22120000000, 'receipt_wall': 58.3302569, 'gid': '010fb405ab0462530000000000001603'}, 'raw': {'stamp_ns': 22100000000, 'receipt_wall': 58.3313428, 'gid': '010fb405a904abaf0000000000001303'}}, 'counts': {'clock': 1, 'raw': 1, 'base': 1, 'joints': 1, 'relay': 1}, 'ready_for_arm': False})\n",
+  "gateway_last": {
+    "mode": "ARMED",
+    "fault": "",
+    "stamp_ns": 22100000000,
+    "clock_ns": 22120000000,
+    "origin": "source_command",
+    "decision_wall": 58.3458345,
+    "source_receipts": {
+      "base": {
+        "stamp_ns": 22120000000,
+        "receipt_wall": 58.3301623,
+        "gid": "010fb405ab0462530000000000001403"
+      },
+      "joints": {
+        "stamp_ns": 22120000000,
+        "receipt_wall": 58.3302569,
+        "gid": "010fb405ab0462530000000000001603"
+      },
+      "raw": {
+        "stamp_ns": 22100000000,
+        "receipt_wall": 58.3313428,
+        "gid": "010fb405a904abaf0000000000001303"
+      }
+    },
+    "counts": {
+      "clock": 1,
+      "raw": 1,
+      "base": 1,
+      "joints": 1,
+      "relay": 1
+    },
+    "ready_for_arm": false
+  },
+  "platform_last": {
+    "mode": "FAULT",
+    "fault": "SOURCE_REORDER:safe",
+    "stationary_ready": true,
+    "clock_ns": 22120000000,
+    "vx": 0.0,
+    "wz": 0.0,
+    "arm_joint1_target": 0.0,
+    "counts": {
+      "clock": 1,
+      "safe": 1,
+      "relay": 1
+    }
+  },
+  "navigation_last": {
+    "phase": "ACTIVE",
+    "fault": "",
+    "stamp_ns": 22100000000,
+    "vx": 0.135,
+    "wz": 0.0,
+    "output_held": false,
+    "origin": "controller_source_via_smoother",
+    "frames_ready": true,
+    "vision_capture_ns": 0,
+    "vision_capture_age_wall_s": null,
+    "vision_fault_record": null,
+    "samples": {
+      "tf": {
+        "stamp_ns": 22100000000,
+        "receipt_wall": 58.3073991,
+        "gid": "010fb405ab0462530000000000001703"
+      },
+      "scan": {
+        "stamp_ns": 22110000000,
+        "receipt_wall": 58.3188585,
+        "gid": "010fb405ab0462530000000000002003"
+      },
+      "nav": {
+        "stamp_ns": 22100000000,
+        "receipt_wall": 58.3231672,
+        "gid": "010fb405ad0431380000000000006303"
+      },
+      "smooth": {
+        "stamp_ns": 22100000000,
+        "receipt_wall": 58.3280839,
+        "gid": "010fb405ae04eb830000000000002003"
+      }
+    }
+  },
+  "vision_last": {},
+  "owned_launch_pids": [
+    1191,
+    1192,
+    1193,
+    1194,
+    1195,
+    1196,
+    1197,
+    1198,
+    1199,
+    1200
+  ],
+  "remaining_launch_pids": [],
+  "clean_launch_exits": 10,
+  "launch_exit_code": 0
+}

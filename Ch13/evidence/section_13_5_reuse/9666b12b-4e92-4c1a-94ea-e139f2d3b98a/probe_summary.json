@@ -1,0 +1,42 @@
+{
+  "result": "FAIL",
+  "pid": 744,
+  "events": [
+    {
+      "event": "spawn",
+      "name": "ingress",
+      "pid": 1082
+    },
+    {
+      "event": "spawn",
+      "name": "gateway",
+      "pid": 1083
+    },
+    {
+      "event": "spawn",
+      "name": "platform",
+      "pid": 1084
+    }
+  ],
+  "error": "Traceback (most recent call last):\n  File \"/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/scripts/reuse_13_5/run_r2_probe.py\", line 57, in main\n    assert until(lambda:state is not None and clock_ns>2_000_000_000 and gateway.get('ready_for_arm'),a.startup_timeout),'no actual engine state/ready zero command before startup deadline'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: no actual engine state/ready zero command before startup deadline\n",
+  "children": [
+    {
+      "name": "ingress",
+      "pid": 1082,
+      "exit_code": 0,
+      "reaped": true
+    },
+    {
+      "name": "gateway",
+      "pid": 1083,
+      "exit_code": 1,
+      "reaped": true
+    },
+    {
+      "name": "platform",
+      "pid": 1084,
+      "exit_code": 0,
+      "reaped": true
+    }
+  ]
+}

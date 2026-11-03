@@ -1,0 +1,20 @@
+test_service_discovery_spins_command_timer (test_probe_service_wait.ProbeServiceWaitTests.test_service_discovery_spins_command_timer) ... [WARN] [1793614507.872565913] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793614507.874650613] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+FAIL
+
+======================================================================
+FAIL: test_service_discovery_spins_command_timer (test_probe_service_wait.ProbeServiceWaitTests.test_service_discovery_spins_command_timer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_probe_service_wait.py", line 26, in test_service_discovery_spins_command_timer
+    response=probe.service_call(node,'/ch13/reuse/probe_delayed_service',Trigger.Request(),until,{},timeout=1.)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_reuse/Ch13/scripts/reuse_13_5/run_r2_probe.py", line 19, in service_call
+    assert client.wait_for_service(timeout_sec=timeout),'missing service '+name
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: missing service /ch13/reuse/probe_delayed_service
+
+----------------------------------------------------------------------
+Ran 1 test in 2.040s
+
+FAILED (failures=1)

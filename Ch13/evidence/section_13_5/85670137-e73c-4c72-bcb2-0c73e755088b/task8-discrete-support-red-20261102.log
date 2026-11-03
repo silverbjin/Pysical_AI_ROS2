@@ -1,0 +1,16 @@
+F
+=================================== FAILURES ===================================
+__ test_native_affine_actuator_terms_match_independent_energy_and_DART_oracle __
+
+    def test_native_affine_actuator_terms_match_independent_energy_and_DART_oracle():
+        f,golden,model=inputs();a=f['args']
+        with NativeEquilibrium(model.urdf) as core:
+>           result=core.contact_command_terms(model,a['joints'],a['body_pose'],a['points'])
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'NativeEquilibrium' object has no attribute 'contact_command_terms'
+
+Ch13/ros2_ws/src/integrated_robot_navigation/test/test_discrete_support_actuation.py:20: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/integrated_robot_navigation/test/test_discrete_support_actuation.py::test_native_affine_actuator_terms_match_independent_energy_and_DART_oracle
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 20.86s

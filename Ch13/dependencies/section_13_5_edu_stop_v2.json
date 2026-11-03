@@ -1,0 +1,23 @@
+{
+  "revision": "section_13_5_edu_stop_v2",
+  "scope": "Textbook R1 platform reproduction stop/arm-hold screen; not Nav2/vision/manipulation acceptance",
+  "authorization": "2026-11-02 user request: adjust over-strict textbook gates and investigate A settling",
+  "freeze": "Written before native-PD whole-robot replay; historical probe1/probe2 stay FAIL",
+  "window_wall_s": 1.0,
+  "minimum_window_sim_s": 0.5,
+  "minimum_unique_samples": 25,
+  "zero_command_required": true,
+  "planar_rms_speed_mps": 0.05,
+  "yaw_rate_rms_radps": 0.20,
+  "planar_excursion_m": 0.03,
+  "yaw_excursion_rad": 0.10,
+  "arm_joint_rms_speed_radps": 0.20,
+  "arm_joint_excursion_rad": 0.05,
+  "arm_joint_target_error_rad": 0.10,
+  "max_stop_tilt_rad": 0.35,
+  "joint_limit_soft_tolerance_rad": 0.02,
+  "always_fail": {"nonfinite": true, "base_z_below_m": 0.12, "tilt_above_rad": 0.7853981633974483, "actual_force_exceeds_original_caps": true},
+  "diagnostics_only": ["instantaneous raw qvel peaks within otherwise bounded window", "R1 local derivative eigenvalues", "minor within-tolerance MuJoCo soft-limit penetration", "max requested unclipped motor torque"],
+  "unchanged_future_contracts": ["single command/TF owner", "original capture and first receipt", "source expiry/rollback fail-closed and latch", "real action terminal result vs cancel ACK", "actual 1wall-second settling before handoff", "Nav2 goal tolerance 0.10m/0.10rad", "source/install/weight audit", "owned worker cleanup and residual check"],
+  "not_authorized_as_pass": ["old R1 results", "safe physical robot deployment", "validated stow envelope/IK reach", "U3 Nav2", "U4 vision", "U5 DDS faults", "U6 complete lifecycle", "U7 release"]
+}
