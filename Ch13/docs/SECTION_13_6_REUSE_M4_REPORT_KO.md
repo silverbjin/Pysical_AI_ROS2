@@ -1,8 +1,23 @@
 # 13.6 M4 물리 픽킹 검증 기록
 
-2026-11-03 KST. **v2의 정상 물리 픽킹은 PASS. 별도 취소·손실·중복·13.5 회귀 matrix는 최종 보고서에서 구분한다.**
+2026-11-03 KST. **v4의 정상 물리 픽킹과 파지 중 취소는 PASS. 전체 손실·중복·13.5 회귀 matrix는 최종 보고서에서 구분한다.**
 
-## 최종 정상 픽킹 결과
+## 최종 v4 결과
+
+source235/asset94 동결v4, manifest `41be725d863fa7c4fc50c6f90f698a6d8822e25e8f5ef8ba51f881d5a0539f5a`를 사용했다. renderer 직접 DDS 발행으로 부모 영상 보존을 실시간 전달에서 분리하고 원본 촬영/발행 journal을 정상 회수했다. 물리/제어 수치는 v2와 같으며 GC 정책은 변경하지 않았다.
+
+| 실제 시나리오 | UUID | 독립 검사 |
+|---|---|---|
+| 정상 pick |`4068258b-eaa1-4286-9548-b203cfced440`|최소 상승100.2328mm·최대102.9414mm·HOLD2.20sim초·상대 변화0.02755mm·양 finger 접촉100%, PASS|
+| 파지 중 lift 취소 |`ea0e3998-27a2-4260-9c60-d90bd9fda094`|실제 CANCELED 뒤2.20sim초·낙하0·상대 변화0.02750mm·양 finger 접촉100%, PASS|
+
+두 경우 모두 저장 RGB-D의 중심을 재계산했고12개 자식·RX·renderer·upstream thread의 정상 회수와 잔여 없음까지 확인했다. 취소 사례는 물체9cm lift 인수로 세지 않는다. v2의 이전 정상 성공과 조기 관측 만료 실패는 아래 보존한다. 직접 발행 전 추가 취소 시도 `618613e2`, `f3064562`, 진단v3 `b432a881`은 접촉/취소 전에 만료되어 해당 안전 시나리오 성공으로 세지 않는다.
+
+![최종 v4 실제 Renderer의 파지 후 원통과 아래 받침](../evidence/section_13_6_reuse/pick_success_rgb_v4.png)
+
+최종 v4 정상 사례의 마지막 실제 RGB 원본이다. 같은 이름의 JSON에 capture/내용 hash를 기록했다. 그림 자체가 물리 성공 판정은 아니며 표의 수치는 실제 freejoint/contact로 계산했다.
+
+## 이전 v2 정상 픽킹 결과
 
 UUID `48209582-6b8f-4b44-8fba-6791e95695da`, source/asset 동결v2(`3620227a258b8c8fcdef914a7af61bc6d7ea5724b7d186f49bd669415ac7491c`). 실행 exit0, 독립 `verify_pick.py` PASS. 실제 MuJoCo freejoint/contact 측정에서 아래를 확인했다.
 
@@ -18,9 +33,7 @@ UUID `48209582-6b8f-4b44-8fba-6791e95695da`, source/asset 동결v2(`3620227a258b
 
 동일 session에서 접근·실제 정착·MoveIt pre-grasp·직선 진입·실제 close/접촉·직선 lift·한 번의 제한된 시각 보정·정착·HOLD·회수가 이어졌다. 이 한 번의 대표 성공을 반복 성공률이나 일반 하중 성능으로 확장하지 않는다. 이전 실패는 아래 그대로 보존한다.
 
-![실제 Renderer가 촬영한 파지 후 원통과 아래 받침](../evidence/section_13_6_reuse/pick_success_rgb_v2.png)
-
-정상 사례의 마지막 실제 RGB 원본을 그대로 복사한 예시다. capture/내용 hash는 같은 이름의 JSON에 있다. 이 그림 자체가 물리 성공 판정은 아니며 위 수치는 실제 freejoint/contact 증거로 계산했다.
+이전 v2 RGB 원본 복사본과 capture/hash도 `pick_success_rgb_v2.{png,json}`로 보존한다.
 
 ## 고정한 과제
 
@@ -55,3 +68,7 @@ v6의 보정은 새 관측 부족량에 실측 robot TCP endpoint 지연과3mm�
 ## 한계
 
 이 실습의 대상·배치·가상 카메라·힘 profile에 대한 교육용 검증이다. 새 WBC/재학습·실기·가반 하중·일반 비전·놓기·다양한 물체의 강건성은 별도 과제다. 간헐 시각 지연의 실패를 모두 보존하며 한 번의 대표 PASS가 반복 성공률을 뜻하지 않는다. [변경 이유와 비용](SECTION_13_6_REUSE_ENGINEERING_DECISIONS_KO.md), [실습 명령](LAB_13_6_REUSE_GUIDE_KO.md)을 함께 읽는다.
+
+## v13 최종 인수 추가 확인 (2026-11-04)
+
+정상 pick20662d06-ec82-4232-8a8a-6426d347557e: 최소100.399579mm 상승·2.18sim초 유지·상대변화0.027299mm·양 finger 접촉100%, 원본 RGB-D 중심 재계산·정상 자식12개 회수 PASS. held_cancel4448d833-3500-4108-8b00-2464f67aba00: 실제 취소 뒤2.22sim초·낙하0mm·상대변화0.034446mm·접촉100%·정상 회수 PASS. v13은 불필요한2ms knot 간격만 제거하며 힘/물체/관측/물리 인수 수치는 유지했다. 전체16개 중 raw_loss 원판정 FAIL과 별도 검토 결과를 최종 보고서에 명시한다.

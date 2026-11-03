@@ -38,3 +38,19 @@
 
 18. 4732687c (frozenv1): actual joint/pose/cart errors3.700/4.797/2.934mm; state validity actualTrue->fixtureFalse with named contacts->removedTrue. OverallFAIL beforecancel execution: TOTG final0.532510ms segment times3 still<2ms. Preserved immutablev1 lock. Actual raw TOTG fixture extracted to test/fixtures/totg_subtick.json (no model). Regression RED reproduced. Ruling: uniform time scaling starts at minimum2.000002ms/minsegment before prior audited multipliers — preserve every geometric waypoint/C2 shared derivatives and existing120sim deadline/velocity/acceleration/limits, refuse invalid nonadvancing times — cost if wrong is longer duration/rejection; no path decimation or new geometry. v2freeze after suite/build.
 
+## 2026-11-04 최종 인수와 교재 게이트 검토의 추가 판단
+
+19. 시작 관측 오탐은 native 최초 receipt와 covering clock receipt를 기준으로 판정한다. Python 처리 지연을 원본 수신 지연으로 바꾸지 않는다. 원본300ms와 활성50ms를 유지한다. 오판 비용은 잘못된 admission이므로 pending 동안 동작 허가를 닫고 native 증거·반례로 검증했다.
+20. 아직 callback이 처리하지 않은 clock 증거는 원래 수명 안에서 기다린다. clock을 now로 다시 찍지 않는다. 비용은 준비 지연이며 만료 시 계속 거절한다. trace가 없는 과거 실패를 같은 원인으로 확정하지 않는다.
+21. renderer 준비는 최초 실제 render 이후 typed 성공/오류/EOF로 전달하고 worker/RX 및 OS 자원을 정상 회수한다. 시작15초·GC·OS 설정을 늘리거나 바꾸지 않는다. 비용은 자원 누수나 준비 오인으로서 실제 자식 시험이 확인한다.
+22. 시험들이 누적한 NTFS sys.path 중복은 첫 항목 순서를 보존해 제거한다. source 우선순위는 바꾸지 않는다. 비용은 import 선택 오류이며 수집60→23과 전체 회귀로 확인했다.
+23. 동결 누락은 엔진 전에 거절하며 R2/R5 build의 하위 경로도 보호한다. 소스/모델 감사가 생략된 실행을 성공으로 세지 않는다. 비용은 실습 준비 실패지만 잘못된 설치 실행보다 판독하기 쉽다.
+24. 두 roll 후보는 같은 실행 한계로 preflight하고 정규화 시간이 짧은 유효 후보를 선택한다. 실제 실행 시 장면·시작 상태·관측을 다시 검사한다. 비용은 중복 검증 지연이나 거절이며 실제 fixture로 확인했다.
+25. **18번의 최소2ms 전구간 확대를 v13에서 대체한다.** 연속 C2 곡선의 매듭은 물리 주기보다 짧아도 유효하다. 정규화-u 계수와 연속 q/v/a 검사를 사용하고 모든 점을 보존한다. 비용은 수치 오류일 수 있어 독립 Hermite 보간·2ms 샘플 변화·과속 거절·기존 brake를 검증했다. 제안했던 국소 padding/새1e-7 형상 게이트는 구현하지 않았다.
+26. 학생 핵심 절차는 pick→verify_pick이며 분리 시험·전체 unit·16개 고장/회귀 matrix는 매회 학생 게이트가 아니다. 각 소절을 따로 배울 때만 hold/arm_normal/moveit를 선택한다. 비용은 첫 문제 진단 때 추가 분리 시험이 필요할 수 있다는 점이다.
+27. 의도한 raw_loss에서 항상 하위 engine fault가 없어야 한다는 판정은 과도했다. 원판정 FAIL을 남기고 기존350ms 예산·주입 전 운동·이후 zero latch·나머지 정지/회수 전부 통과에만 별도 판정을 적용했다. 비용은 동시 timeout 원인의 구별 한계이며 특정 platform freshness 항목을 확정하지 않고11개 반례로 허용 범위를 제한했다.
+28. 위 판정은 실행 코드와 분리한 오프라인 검토다. 별도 경로/해시로 공개하고 실행 동결v13·과거13.5 판정·원래 FAIL을 보존한다. 비용은 두 결과를 함께 읽어야 하므로 집계에 원판정15 PASS/1 FAIL과 별도1 PASS를 명시했다. 판정 보완 때문에 이미 통과한 engine14개를 반복하지 않았다.
+29. 사용자 단일 작업자 지시를 우선해 새 reviewer를 만들지 않았다. 전체 변경 범위와 핵심 제어/수명/모델/판정 코드를 별도 자체 검토한다. 비용은 독립 검토보다 약하다는 점이며 main merge/PR을 하지 않는다.
+30. 증거는 모델·가중치·생성 description/내장 planner.yaml을 제외한 무손실 archive와 파일 hash로 게시하고 로컬 원본을 보존한다. 비용은 다운로드/보관 용량이며 과거 실패를 삭제하지 않는다.
+31. 같은 v13 실행 소스에서16개를 각1회 확인한다. 반복 강건성이나 모든 환경의 시간 초과 해결로 확대하지 않는다. 비용은 낮은 반복 횟수의 불확실성이며 실제 검증 환경/수치/원래 FAIL을 보고한다.
+32. 기존 사용자 문서와 ignored 작업 기록을 보존한다. skill의 workspace 정리 안내보다 보존 지시를 우선한다. 비용은 로컬 디스크 사용이며 임의 reset/clean/stash/삭제는 하지 않는다.

@@ -2,6 +2,10 @@
 
 2026-11-03 KST. 단일 작업자. M3는 PASS이며 물리 픽킹 전체 인수와 구분한다.
 
+## 최종 카메라 경로 v4 회귀
+
+렌더 프로세스의 직접 DDS 발행을 적용한 source235/asset94 동결v4에서도 `09d9c4f4-1d69-4b07-adc8-9099622b9b24`가 실행·독립 검사 PASS였다. 관절/pose/Cartesian 실제 오차는3.3514/4.5581/2.8380mm, 방향은8.9480/17.6502mrad였다. 전체 Cartesian fraction1·도달 불가/충돌 거절·실제 CANCELED·12개 정상 종료를 다시 확인했다. v4 manifest SHA256은 `41be725d863fa7c4fc50c6f90f698a6d8822e25e8f5ef8ba51f881d5a0539f5a`다. 전체 부품/기본 회귀165개 PASS(65.80초). 아래 v2 결과는 이전 성공 기록으로 보존한다.
+
 ## 기준과 실행
 
 동결 `section_13_6_reuse_acceptance_v2.json`: 소스230개, 원본 외부94자산. manifest SHA256은 `3620227a258b8c8fcdef914a7af61bc6d7ea5724b7d186f49bd669415ac7491c`다. 실행마다 설치 Python·설정·생성 URDF/SRDF·C++ ELF와 외부 자산을 감사했다. 별도13.6 build를 사용했고 기존 R5와114파일 동결은 덮지 않았다.
@@ -37,3 +41,7 @@ bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_moveit.py Ch1
 ```
 
 게시 사례는 [실습 가이드](LAB_13_6_REUSE_GUIDE_KO.md)의 archive 복원 후 같은 verifier로 확인한다. 이 결과는 M4 물리 파지·하중 강건성·실기·새 WBC 성공을 뜻하지 않는다.
+
+## v13 최종 인수 추가 확인 (2026-11-04)
+
+UUID70837980-da92-49a0-b542-563a5f07f2c2: 실행·독립 판정 PASS. joint/pose/Cartesian 위치 오차4.389893/3.981888/2.989201mm, 회전10.400892/11.611407mrad, fraction1·실제 취소·정상 자식12개 회수. 실행 freeze248/94는 최종 보고서 참조. 이 결과는 과거 FAIL을 대체하지 않는다.
