@@ -1,5 +1,6 @@
 import threading
 import time
+import numpy as np
 from types import SimpleNamespace
 import pytest
 import rclpy
@@ -79,3 +80,19 @@ def test_validation_does_not_block_receipts_or_hold_physics_lock(bridge):
     assert admit(bridge,request)==GoalResponse.ACCEPT
     assert len(receipts)>=3
     bridge.node.destroy_timer(timer)
+
+
+def test_gripper_cancel_keeps_already_established_contact_force(bridge):
+    bridge.extension.lease.phase='FAULT';bridge.extension.lease.message={'task_phase':'CLOSE'}
+    bridge.extension.pick_monitor=SimpleNamespace(forces={})
+    bridge.gripper_hold.start=0.;bridge.gripper_hold.scale=1.
+    bridge.gripper_command=0.;bridge.command=np.zeros(6)
+    bridge.active=dict(kind='gripper',done=False,stop_request='cancel',stopping=False,settle_since=None,start=0.)
+    data=SimpleNamespace(qpos=np.zeros(27),qvel=np.zeros(26),ctrl=np.zeros(19));data.qpos[25]=.02
+    platform=SimpleNamespace(mjData=data,desired_joint_pos_arm=np.zeros(6),desired_joint_pos_gripper=0.,Kp_gripper=10.,Kd_gripper=.8)
+    try:
+        bridge.before(platform,2_000_000_000)
+        assert bridge.gripper_hold.start is not None,'cancel released existing grip force'
+        assert bridge.gripper_command==0.
+        assert platform.desired_joint_pos_gripper==pytest.approx(-.03)
+    finally:bridge.active=None

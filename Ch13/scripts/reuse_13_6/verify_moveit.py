@@ -20,6 +20,9 @@ def verify(path):
     plans=[r for r in records if r['kind']=='plan']
     assert [r['error_code']==1 for r in plans]==[True,True,False,False,True]
     cart=[r for r in records if r['kind']=='cartesian'];assert len(cart)==1 and cart[0]['fraction']==1.
+    validity=[r for r in records if r['kind']=='state_validity']
+    assert [r['valid'] for r in validity]==[True,False,True]
+    assert 'planning_collision_fixture' in json.dumps(validity[1]['contacts'])
     executions=[r for r in records if r['kind']=='execute']
     assert [(r['status'],r['error_code']) for r in executions[:3]]==[(4,0)]*3
     assert executions[3]['status']==5

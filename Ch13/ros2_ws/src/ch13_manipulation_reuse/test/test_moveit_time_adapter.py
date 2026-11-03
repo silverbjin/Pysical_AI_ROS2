@@ -19,3 +19,17 @@ def test_actual_totg_boundary_derivatives_can_end_in_bounded_hold():
     np.testing.assert_allclose(path.sample(path.duration)[1],[0.]*6,atol=1e-8)
     np.testing.assert_allclose(path.sample(path.duration)[2],[0.]*6,atol=1e-8)
     for old,new in zip(points,normalized):np.testing.assert_array_equal(old['positions'],new['positions'])
+
+
+def test_actual_totg_subtick_endpoint_preserves_all_points_and_valid_hold():
+    msg=json.loads((Path(__file__).parent/'fixtures/totg_subtick.json').read_text())
+    points=[dict(time=p['time_from_start']['sec']+p['time_from_start']['nanosec']/1e9,
+                 positions=p['positions'],velocities=p['velocities'],accelerations=p['accelerations']) for p in msg['points']]
+    limits=[[-2.618,2.618],[0,3.14],[-2.697,0],[-1.832,1.832],[-1.22,1.22],[-3.14,3.14]]
+    assert min(np.diff([p['time'] for p in points]))<.002/3
+    normalized,scale=normalize_points(msg['joint_names'],points,points[0]['positions'],limits)
+    assert len(normalized)==len(points) and scale>3.
+    assert min(np.diff([p['time'] for p in normalized]))>=.002
+    path=Trajectory.from_points(tuple(msg['joint_names']),normalized,points[0]['positions'],limits)
+    assert path.duration<=120.
+    for old,new in zip(points,normalized):np.testing.assert_array_equal(old['positions'],new['positions'])

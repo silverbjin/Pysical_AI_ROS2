@@ -19,17 +19,18 @@ def sources():
     for folder in [*(ROOT/'Ch13/ros2_ws/src'/p for p in PACKAGES),ROOT/'Ch13/scripts/reuse_13_5',ROOT/'Ch13/scripts/reuse_13_6']:
         paths.extend(p for p in folder.rglob('*') if p.is_file() and not any(s in p.parts for s in ('__pycache__','.pytest_cache')))
     paths.extend(ROOT/'Ch13/dependencies'/p for p in ('section_13_5_reuse.lock.json','section_13_5_edu_stop_v2.json',
-                 'section_13_6_control_v1.json','section_13_6_control_v2.json','section_13_6_pick_contract_v1.json'))
+                 'section_13_6_control_v1.json','section_13_6_control_v2.json','section_13_6_pick_contract_v1.json','section_13_6_pick_contract_v2.json','section_13_6_pick_contract_v3.json','section_13_6_pick_contract_v4.json','section_13_6_pick_contract_v5.json','section_13_6_pick_contract_v6.json'))
     return {p.relative_to(ROOT).as_posix():digest(p) for p in sorted(set(paths))}
 
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('mode',choices=['write','verify']);parser.add_argument('manifest',type=Path)
+    parser.add_argument('--revision',default='13_6_manipulation_acceptance_v1')
     args=parser.parse_args()
     if args.mode=='write':
         if args.manifest.exists():raise ValueError('freeze is immutable; use a new revision filename')
         legacy=ROOT/'Ch13/dependencies/section_13_5_reuse.lock.json'
-        data=dict(revision='13_6_manipulation_acceptance_v1',created_utc=datetime.now(timezone.utc).isoformat(),
+        data=dict(revision=args.revision,created_utc=datetime.now(timezone.utc).isoformat(),
                   source=sources(),asset_manifest_sha256=digest(legacy),
                   assets=json.loads(legacy.read_text())['files'],
                   meaning='source and original assets; installed code/model/ELF audited separately before each run')

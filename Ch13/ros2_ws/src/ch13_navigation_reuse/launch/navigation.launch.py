@@ -21,7 +21,7 @@ def generate_launch_description():
   return [Node(package='ch13_manipulation_planner',executable='planner_runtime',name='reuse_move_group',
                parameters=[parameters()],remappings=[('joint_states','/ch13/reuse/joint_states')],output='screen')]
  actions.append(OpaqueFunction(function=planner,condition=IfCondition(LaunchConfiguration('planning'))))
- actions.append(ExecuteProcess(cmd=[python,'-m','ch13_navigation_reuse.vision_approach','--report',report,'--inference-hz',LaunchConfiguration('vision_inference_hz'),'--target-shape',PythonExpression(["'cylinder' if '",LaunchConfiguration('pick_scene'),"' == 'true' else 'fixture'"])],condition=IfCondition(PythonExpression(["'",scene,"' == 'vision'"])),output='screen'))
+ actions.append(ExecuteProcess(cmd=[python,'-m','ch13_navigation_reuse.vision_approach','--report',report,'--inference-hz',LaunchConfiguration('vision_inference_hz'),'--latest-camera',manipulation,'--target-shape',PythonExpression(["'cylinder' if '",LaunchConfiguration('pick_scene'),"' == 'true' else 'fixture'"])],condition=IfCondition(PythonExpression(["'",scene,"' == 'vision'"])),output='screen'))
  actions.append(platform)
  for package,executable,name,remaps,extra in [
   ('nav2_planner','planner_server','planner_server',[],{}),

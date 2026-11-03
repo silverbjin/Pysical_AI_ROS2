@@ -12,6 +12,7 @@ def test_revoke_survives_publisher_teardown_before_engine_shutdown():
     extension.node=SimpleNamespace(lock=threading.RLock(),ready_now=lambda:True)
     extension.graph_wall=None;extension.graph={};extension.navigation=None;extension.navigation_receipt=None
     extension.gateway=None;extension.gateway_receipt=None
+    extension.rx_wall={}
     extension.goals={};extension.anchor=None;extension.last_phase=None;extension.events=[]
     extension.actions=SimpleNamespace(after=lambda *args:None)
     extension.step(None,SimpleNamespace(mode='ARMED',vx=0.,wz=0.),np.zeros(27),np.zeros(26),
@@ -26,6 +27,7 @@ def test_gateway_fault_revokes_engine_authority_even_when_platform_holds_zero():
     extension.node=SimpleNamespace(lock=threading.RLock(),ready_now=lambda:True)
     extension.graph_wall=time.monotonic();extension.graph={'gateway':1}
     extension.gateway_receipt=time.monotonic();extension.gateway={'mode':'FAULT','fault':'INVALID_STATE:joints'}
+    extension.rx_wall={}
     extension.navigation=None;extension.navigation_receipt=None
     extension.goals={};extension.anchor=None;extension.last_phase=None;extension.events=[]
     extension.actions=SimpleNamespace(after=lambda *args:None)
@@ -33,3 +35,30 @@ def test_gateway_fault_revokes_engine_authority_even_when_platform_holds_zero():
                    {'stamp_ns':1_000_000_000,'yaw':0.},0.)
     assert extension.lease.phase=='FAULT'
     assert extension.lease.fault=='GATEWAY_NOT_HEALTHY'
+
+
+def test_freshness_clock_is_sampled_after_receipt_lock(monkeypatch):
+    extension=EngineExtension.__new__(EngineExtension)
+    ticks=[10.]
+    class ReceiptLock:
+        def __enter__(self):
+            ticks[0]=10.001
+            extension.navigation_receipt=10.0005
+        def __exit__(self,*args):pass
+    monkeypatch.setattr(time,'monotonic',lambda:ticks[0])
+    extension.lease=Lease('engine');extension.lease.phase='REVOKED'
+    observed={}
+    def evaluate(clock,now,**kwargs):
+        observed.update(now=now,**kwargs)
+        return 'REVOKED'
+    extension.lease.evaluate=evaluate
+    extension.node=SimpleNamespace(lock=ReceiptLock(),ready_now=lambda:True)
+    extension.navigation={'phase':'IDLE','output_held':True,'fault':''}
+    extension.navigation_receipt=9.99
+    extension.gateway_receipt=None;extension.rx_wall={}
+    extension.goals={};extension.anchor=None;extension.last_phase=None;extension.events=[]
+    extension.actions=SimpleNamespace(after=lambda *args:None)
+    extension.step(None,SimpleNamespace(mode='ARMED',vx=0.,wz=0.),np.zeros(27),np.zeros(26),
+                   {'stamp_ns':1_000_000_000,'yaw':0.},0.)
+    assert observed['navigation_idle']
+    assert observed['now']==10.001

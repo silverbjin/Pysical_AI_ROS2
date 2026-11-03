@@ -1,0 +1,8 @@
+{
+  "revision": "13_6_paired_raw_rgbd_v5",
+  "inherits": "section_13_6_pick_contract_v4.json",
+  "renderer": {"version": "MuJoCo3.13.0", "resolution": [320, 240], "profile": "paired_raw_RGB_depth_v1", "geometry_passes_per_snapshot": 1, "depth": "actual RGB frame depth buffer via mjr_readPixels, same reversed-Z metric conversion as pinned Renderer", "skybox": false, "shadows": false, "unsupported_version_or_skybox_enabled": "fail", "raw_target_qpos_used_as_input": false},
+  "validation": "two fixed snapshots: RGB identical to native RGB under same flags, whole-image native metric depth difference0; median~10ms two-pass ->~6ms paired; this is render-only, not physical pick acceptance",
+  "13_5_default": "original two-pass rendering and skybox behavior remain default",
+  "unchanged": "camera mountv4,20g/.8 friction/contactdim3/.5N cap/300ms capture/100ms pastTF/physical rise9cm/hold2sim s/slip2cm/dual contact90%"
+}

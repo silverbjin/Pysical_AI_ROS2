@@ -9,6 +9,8 @@ from rclpy.action import ActionClient
 from control_msgs.action import GripperCommand
 from geometry_msgs.msg import PoseStamped
 from moveit_msgs.msg import CollisionObject
+from moveit_msgs.srv import GetStateValidity
+from rosidl_runtime_py.convert import message_to_ordereddict
 from ch13_manipulation_reuse.action_bridge import GRIPPER
 from ch13_manipulation_reuse.planning import Planner,pose,object_box
 from ch13_navigation_reuse.command_gateway import set_stamp
@@ -26,6 +28,14 @@ def work(*,node,until,snapshot,status,control,out):
     result=handle.get_result_async();assert until(result.done,15.);assert result.result().status==4
     gripper.destroy()
     planner=Planner(node,until,snapshot);measurements=[]
+    validity=node.create_client(GetStateValidity,'/check_state_validity')
+    def valid_state():
+        assert until(validity.service_is_ready,3.)
+        request=GetStateValidity.Request();request.robot_state=planner.start_state();request.group_name='manipulator_arm'
+        future=validity.call_async(request);assert until(future.done,3.)
+        response=future.result();contacts=[message_to_ordereddict(c) for c in response.contacts]
+        planner.records.append(dict(kind='state_validity',valid=response.valid,contacts=contacts))
+        return response.valid,contacts
     try:
         objects=[object_box('ground',[0.,0.,-.01],[20.,20.,.02])]
         objects += [object_box('reuse_'+name,center,2*np.array(size)) for name,center,size in layout('vision')]
@@ -55,9 +65,13 @@ def work(*,node,until,snapshot,status,control,out):
         set_stamp(unreachable.header.stamp,snapshot()['observation']['capture_ns']);unreachable.pose=pose([100.,0.,.5])
         assert planner.plan(pose_goal=unreachable) is None,'unreachable pose accepted'
         current=planner.tcp()
+        assert valid_state()[0],'actual start state already colliding'
         blocker=object_box('planning_collision_fixture',current[:3,3],[.15,.15,.15])
-        planner.apply_objects([blocker]);assert planner.plan(joint_goal=planner.joints()) is None,'collision fixture ignored'
+        planner.apply_objects([blocker]);valid,contacts=valid_state()
+        assert not valid and 'planning_collision_fixture' in json.dumps(contacts),'fixture collision not independently identified'
+        assert planner.plan(joint_goal=planner.joints()) is None,'collision fixture ignored'
         blocker.operation=CollisionObject.REMOVE;planner.apply_objects([blocker])
+        assert valid_state()[0],'collision fixture removal failed'
         current=planner.tcp();target=current[:3,3]+[.005,0.,0.]
         straight=planner.cartesian([pose(target,Rotation.from_matrix(current[:3,:3]))])
         assert straight is not None,'Cartesian path incomplete'
@@ -71,6 +85,7 @@ def work(*,node,until,snapshot,status,control,out):
         assert until(lambda:snapshot()['platform'].get('stationary_ready'),8.)
     finally:
         (out/'moveit_probe.json').write_text(json.dumps(dict(records=planner.records,measurements=measurements),indent=2)+'\n')
+        node.destroy_client(validity)
         planner.close()
 
 

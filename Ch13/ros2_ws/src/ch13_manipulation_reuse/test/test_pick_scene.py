@@ -20,6 +20,8 @@ def test_dynamic_body_appends_freejoint_without_altering_robot_or_caps():
     assert model.body_mass[target]==.02
     joint=model.body_jntadr[target];assert int(model.jnt_type[joint])==0
     assert model.jnt_qposadr[joint]==27
+    np.testing.assert_allclose(model.cam_pos[model.camera('reuse_rgbd').id],[.4,.25,.25])
+    np.testing.assert_allclose(original.cam_pos[original.camera('reuse_rgbd').id],[.4,0.,.25])
     data=mujoco.MjData(model);data.qpos[:]=model.key_qpos[model.key('home').id]
     np.testing.assert_allclose(data.qpos[27:30],[1.8,0.,.54])
 

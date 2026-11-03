@@ -8,6 +8,11 @@ def assess_pick(rows):
         if len(rows)<3:raise ValueError('insufficient physical evidence')
         times=np.array([r['sim_s'] for r in rows],dtype=float)
         if not np.isfinite(times).all() or np.any(np.diff(times)<=0):raise ValueError('nonadvancing physical time')
+        for row in rows:
+            if (np.asarray(row['target']).shape!=(3,) or np.asarray(row['relative_tcp']).shape!=(3,) or
+                    not all(np.isfinite(np.asarray(value,dtype=float)).all() for value in
+                            (row['target'],row['relative_tcp'],list(row['target_contact_N'].values())))):
+                raise ValueError('nonfinite or malformed physical state/contact')
         baseline=[r['target'][2] for r in rows if r['phase']=='PRE_GRASP']
         hold=[r for r in rows if r['phase']=='HOLD']
         grasp=[r for r in rows if r['phase']=='CLOSE' and all(r['target_contact_N'].get(j,0.)>.005 for j in ('link7','link8'))]
@@ -27,3 +32,22 @@ def assess_pick(rows):
                     relative_slip_m=slip,dual_contact_fraction=contact_fraction)
     except (ValueError,TypeError,KeyError) as error:
         return dict(result='FAIL',failures=['INVALID_OR_INCOMPLETE_PHYSICS_EVIDENCE'],reason=str(error))
+
+
+def assess_held_cancel(rows):
+    """Hold after actual cancellation; deliberately no successful lift claim."""
+    try:
+        hold=[r for r in rows if r['phase']=='HOLD']
+        if len(hold)<2:raise ValueError('measured post-cancel hold absent')
+        times=np.array([r['sim_s'] for r in hold]);points=np.array([r['target'] for r in hold])
+        relative=np.array([r['relative_tcp'] for r in hold])
+        forces=np.array([[r['target_contact_N'].get(f,0.) for f in ('link7','link8')] for r in hold])
+        if not all(np.isfinite(a).all() for a in (times,points,relative,forces)):raise ValueError('nonfinite hold evidence')
+        if np.any(np.diff(times)<=0):raise ValueError('nonadvancing hold time')
+        duration=float(times[-1]-times[0]);drop=float(points[0,2]-points[:,2].min())
+        slip=float(np.linalg.norm(relative-relative[0],axis=1).max());dual=float(np.mean(np.all(forces>.005,axis=1)))
+        good=duration>=2. and drop<=.005 and slip<=.02 and dual>=.9
+        return dict(result='PASS' if good else 'FAIL',scope='held-object cancellation safety, not physical pick completion',
+                    hold_sim_s=duration,maximum_drop_m=drop,relative_slip_m=slip,dual_contact_fraction=dual)
+    except (ValueError,TypeError,KeyError,IndexError) as error:
+        return dict(result='FAIL',reason=str(error))

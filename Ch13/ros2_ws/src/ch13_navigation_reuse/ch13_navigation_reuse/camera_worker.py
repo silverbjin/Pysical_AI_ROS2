@@ -1,8 +1,38 @@
 """Bounded immutable snapshots; GL and its GIL stalls stay in an owned process."""
 import hashlib,multiprocessing as mp,queue,threading,time,traceback
 import mujoco
+import numpy as np
 
-def render_process(model,initial_q,requests,results,ready,stop):
+
+def render_rgbd(renderer,model,single_pass=False):
+ rgb=renderer.render().copy()
+ if not single_pass:
+  renderer.enable_depth_rendering();depth=renderer.render().copy();renderer.disable_depth_rendering()
+  return rgb,depth
+ if mujoco.__version__!='3.13.0':raise RuntimeError('single-frame RGB-D validated only with MuJoCo3.13.0')
+ if renderer.scene.flags[mujoco.mjtRndFlag.mjRND_SKYBOX]:raise ValueError('single-frame raw depth requires skybox disabled')
+ # Read the real depth buffer left by the SAME RGB render, without another
+ # geometry pass. Pinned Renderer internals are guarded by version+pixel tests.
+ depth=np.empty((renderer.height,renderer.width),dtype=np.float32)
+ mujoco.mjr_readPixels(None,depth,renderer._rect,renderer._mjr_context)
+ near=np.float32(model.vis.map.znear*model.stat.extent);far=np.float32(model.vis.map.zfar*model.stat.extent)
+ c=-(far+near)/(far-near);d=-(np.float32(2)*far*near)/(far-near)
+ c=np.float32(-.5)*c-np.float32(.5);d=np.float32(-.5)*d
+ depth=(d/(depth.astype(np.float64)+c)).astype(np.float32)
+ if renderer._gl_context:depth=np.flipud(depth).copy()
+ return rgb,depth
+
+def put_render_result(results,item,stop,latest=False):
+ dropped=0
+ while not stop.is_set():
+  try:results.put(item,timeout=.001 if latest else .05);return dropped
+  except queue.Full:
+   if latest:
+    try:results.get_nowait();dropped+=1
+    except queue.Empty:pass
+ return dropped
+
+def render_process(model,initial_q,requests,results,ready,stop,latest=False,output_dropped=None):
  renderer=None
  try:
   model.vis.quality.offsamples=0
@@ -11,16 +41,19 @@ def render_process(model,initial_q,requests,results,ready,stop):
   renderer=mujoco.Renderer(model,height=240,width=320)
   def render():
    renderer.update_scene(data,camera='reuse_rgbd',scene_option=option);renderer.scene.flags[mujoco.mjtRndFlag.mjRND_SHADOW]=False
-   rgb=renderer.render().copy();renderer.enable_depth_rendering();depth=renderer.render().copy();renderer.disable_depth_rendering();return rgb,depth
+   if latest:renderer.scene.flags[mujoco.mjtRndFlag.mjRND_SKYBOX]=False
+   return render_rgbd(renderer,model,single_pass=latest)
   render();ready.set()
   while not stop.is_set():
    try:q,stamp,capture_wall=requests.get(timeout=.1)
    except queue.Empty:continue
    data.qpos[:]=q;data.time=stamp/1e9;mujoco.mj_forward(model,data);rgb,depth=render()
-   item=(rgb,depth,{'capture_ns':stamp,'capture_wall':capture_wall,'render_finished_wall':time.monotonic(),'rgb_sha256':hashlib.sha256(rgb.tobytes()).hexdigest()})
-   while not stop.is_set():
-    try:results.put(item,timeout=.05);break
-    except queue.Full:continue
+   meta={'capture_ns':stamp,'capture_wall':capture_wall,'render_finished_wall':time.monotonic(),'rgb_sha256':hashlib.sha256(rgb.tobytes()).hexdigest()}
+   if latest:meta.update(render_profile='paired_raw_RGB_depth_v1',skybox=False,mujoco_version=mujoco.__version__)
+   item=(rgb,depth,meta)
+   dropped=put_render_result(results,item,stop,latest)
+   if output_dropped is not None:
+    with output_dropped.get_lock():output_dropped.value+=dropped
  except BaseException:
   try:results.put(('error',traceback.format_exc()),timeout=.5)
   except queue.Full:pass
@@ -29,10 +62,10 @@ def render_process(model,initial_q,requests,results,ready,stop):
   ready.set()
 
 class CameraWorker:
- def __init__(self,model,initial_q,callback):
+ def __init__(self,model,initial_q,callback,latest=False):
   self.callback=callback;self.condition=threading.Condition();self.latest=None;self.stopping=False;self.error='';self.overwritten=0
-  ctx=mp.get_context('spawn');self.requests=ctx.Queue(maxsize=1);self.results=ctx.Queue(maxsize=2);self.ready=ctx.Event();self.stop=ctx.Event()
-  self.process=ctx.Process(target=render_process,args=(model,initial_q.copy(),self.requests,self.results,self.ready,self.stop),name='reuse_rgbd_renderer')
+  ctx=mp.get_context('spawn');self.requests=ctx.Queue(maxsize=1);self.results=ctx.Queue(maxsize=1 if latest else 2);self.ready=ctx.Event();self.stop=ctx.Event();self.output_dropped=ctx.Value('i',0)
+  self.process=ctx.Process(target=render_process,args=(model,initial_q.copy(),self.requests,self.results,self.ready,self.stop,latest,self.output_dropped),name='reuse_rgbd_renderer')
   self.process.start();self.worker_pid=self.process.pid
   from multiprocessing import resource_tracker
   self.tracker_pid=resource_tracker._resource_tracker._pid

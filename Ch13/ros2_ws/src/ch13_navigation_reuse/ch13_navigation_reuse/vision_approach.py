@@ -11,7 +11,7 @@ from rclpy.clock import Clock as TimerClock
 from rclpy.clock_type import ClockType
 from std_msgs.msg import String
 from sensor_msgs.msg import Image,CameraInfo
-from rclpy.qos import QoSProfile,ReliabilityPolicy
+from rclpy.qos import QoSProfile,ReliabilityPolicy,DurabilityPolicy
 from .camera_native import CameraLink
 from geometry_msgs.msg import PointStamped
 from .command_gateway import N,ns,set_stamp
@@ -22,13 +22,19 @@ from .image_artifact import write_rgb
 def matrix(t):
  q=t.transform.rotation;p=t.transform.translation;a=np.eye(4);a[:3,:3]=Rotation.from_quat([q.x,q.y,q.z,q.w]).as_matrix();a[:3,3]=[p.x,p.y,p.z];return a
 class VisionObserver(Node):
- def __init__(self,inference_hz=10.,target_shape='fixture'):
-  self.target_shape=target_shape
+ def __init__(self,inference_hz=10.,target_shape='fixture',latest_camera=False):
+  self.target_shape=target_shape;self.last_rejected=None;self.latest_camera=latest_camera
   super().__init__('ch13_reuse_vision_observer');self.cache=FrameCache();self.camera_link=CameraLink();self.receipt_rows=[];self.clock_ns=0;self.clock_wall=None;self.fault='';self.relay={};self.tf_owners={};self.transforms={};self.map_odom=None;self.last_health=0;self.health_rows=[];self.last_processed=0;self.last_processed_wall=-1e9;self.inference_hz=inference_hz;self.rows=[];self.last_accepted=None;self.rejected=Counter()
   self.observation=self.create_publisher(String,N+'/vision/observation',1);self.point=self.create_publisher(PointStamped,N+'/observed_target',1);self.health=self.create_publisher(String,N+'/vision/health',1);self.status=self.create_publisher(String,N+'/vision/status',1)
-  camera_qos=QoSProfile(depth=2,reliability=ReliabilityPolicy.RELIABLE)
+  camera_qos=QoSProfile(depth=1 if latest_camera else 2,reliability=ReliabilityPolicy.RELIABLE)
   for kind,typ,topic in [('rgb',Image,'rgb'),('depth',Image,'depth'),('camera_info',CameraInfo,'camera_info'),('camera_meta',String,'camera_capture')]:self.create_subscription(typ,N+'/'+topic,lambda m,k=kind:self.native(k,m),camera_qos)
-  self.create_subscription(String,N+'/ingress/vision',lambda m:self.packet(m,'camera'),16);self.create_subscription(String,N+'/ingress/navigation',lambda m:self.packet(m,'navigation'),16);self.create_timer(.02,self.tick,clock=TimerClock(clock_type=ClockType.STEADY_TIME))
+  self.create_subscription(String,N+'/ingress/vision',lambda m:self.packet(m,'camera'),16)
+  if latest_camera:
+   for channel in ('vision_clock','vision_tf','vision_tf_static'):
+    qos=QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL) if channel=='vision_tf_static' else 1
+    self.create_subscription(String,N+'/ingress/'+channel,lambda m,key=channel:self.packet(m,key),qos)
+  else:self.create_subscription(String,N+'/ingress/navigation',lambda m:self.packet(m,'navigation'),16)
+  self.create_timer(.02,self.tick,clock=TimerClock(clock_type=ClockType.STEADY_TIME))
  def native(self,kind,message):
   try:
    matched=self.camera_link.native(kind,message)
@@ -40,6 +46,10 @@ class VisionObserver(Node):
    if m.header.frame_id!='reuse/camera_optical' or m.width!=320 or m.height!=240:raise ValueError('camera calibration frame/dimensions')
    stamp=ns(m.header.stamp);payload=m
   if self.cache.insert(key,stamp,i['receipt_wall'],i['publisher_gid'].hex(),payload):self.receipt_rows.append({'kind':key,'capture_ns':stamp,'receipt_wall':i['receipt_wall'],'native_receipt_wall':i['native_receipt_wall'],'canonical_sha256':i['canonical_sha256'],'canonical_bytes':i['canonical_bytes'],'publisher_gid':i['publisher_gid'].hex(),'relay_gid':i['relay_gid'],'source_timestamp':i['source_timestamp']})
+  if self.latest_camera and all(k in self.cache.frames.get(stamp,{}) for k in ('rgb','depth','camera_info','camera_meta')):
+   # Single-threaded executor: process an eligible complete frame immediately.
+   # tick retains the original inference cap, capture/receipt and TF checks.
+   self.tick()
  def packet(self,packet,channel):
   try:
    if channel=='camera':
@@ -106,14 +116,19 @@ class VisionObserver(Node):
       if fit is not None:data.update(source='actual_Renderer_RGBD_known_upright_cylinder_fit',cylinder_fit=fit)
       self.observation.publish(String(data=json.dumps(data)));p=PointStamped();set_stamp(p.header.stamp,stamp);p.header.frame_id='reuse/map';p.point.x,p.point.y,p.point.z=map(float,world);self.point.publish(p);self.rows.append(data);self.last_accepted=(rgb.copy(),depth.copy(),data)
      except (ValueError,IndexError) as exc:
+      if str(exc).startswith('cylinder'):
+       self.last_rejected=(rgb.copy(),depth.copy(),dict(capture_ns=stamp,capture_wall=capture_wall,
+          tf_stamp_ns=tf_stamp,T_map_camera=transform.tolist(),calibration=calibration,reason=str(exc)))
       self.rejected[str(exc)]+=1
       if str(exc) in ('red fixture not observed','cylinder not observed'):self.fault='TARGET_NOT_OBSERVED'
   self.status.publish(String(data=json.dumps({'fault':self.fault or self.cache.fault,'last_capture_ns':self.last_processed,'accepted':len(self.rows),'rejected':dict(self.rejected)})))
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--report',required=True);ap.add_argument('--inference-hz',type=float,choices=[10.,15.],default=10.);ap.add_argument('--target-shape',choices=['fixture','cylinder'],default='fixture');args=ap.parse_args();out=Path(args.report).parent;rclpy.init(args=[]);node=VisionObserver(args.inference_hz,args.target_shape)
+ ap=argparse.ArgumentParser();ap.add_argument('--report',required=True);ap.add_argument('--inference-hz',type=float,choices=[10.,15.],default=10.);ap.add_argument('--target-shape',choices=['fixture','cylinder'],default='fixture');ap.add_argument('--latest-camera',choices=['true','false'],default='false');args=ap.parse_args();out=Path(args.report).parent;rclpy.init(args=[]);node=VisionObserver(args.inference_hz,args.target_shape,args.latest_camera=='true')
  try:rclpy.spin(node)
  except (KeyboardInterrupt,ExternalShutdownException):pass
  finally:
+  if node.last_rejected is not None:
+   rgb,depth,meta=node.last_rejected;write_rgb(out/'last_rejected_rgb.png',rgb);np.save(out/'last_rejected_depth.npy',depth);(out/'last_rejected_observation.json').write_text(json.dumps(meta,indent=2)+'\n')
   if node.last_accepted is not None:
    rgb,depth,meta=node.last_accepted;write_rgb(out/'last_accepted_rgb.png',rgb);np.save(out/'last_accepted_depth.npy',depth);(out/'last_accepted_observation.json').write_text(json.dumps(meta,indent=2)+'\n')
   (out/'camera_receipts.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.receipt_rows));(out/'camera_health.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.health_rows));(out/'vision_observations.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.rows));(out/'vision_summary.json').write_text(json.dumps({'inference_cap_wall_hz':node.inference_hz,'accepted':len(node.rows),'fault':node.fault or node.cache.fault,'rejected':dict(node.rejected)},indent=2)+'\n');node.destroy_node();rclpy.try_shutdown()

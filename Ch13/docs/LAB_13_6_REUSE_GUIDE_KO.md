@@ -12,14 +12,27 @@
 
 MoveIt 2.12.4, moveit_msgs 2.6.0, TRAC-IK 2.0.2가 검증 환경에 이미 설치돼 있었다. 새 환경에서는 ROS 공식 패키지 관리로 MoveIt·TRAC-IK·colcon 의존성을 준비한 뒤 실제 버전을 확인해야 한다. 이번 개발에서 apt/pip 설치·시스템 라이브러리 변경은 하지 않았다. 버전이 다른 경우 원고의 개념 코드를 그대로 실행하지 말고 설치 API와 이 패키지의 계약을 확인한다.
 
+ROS Jazzy 기본 설치·13.5 의존성/venv 준비가 끝난 새 Ubuntu24.04 환경에서는 다음 추가 패키지를 준비한다. 이 명령은 새 환경 설치 안내이며 검증 개발 환경에서 다시 실행하지 않았다. MoveIt 공식 Jazzy binary 설치는 [공식 안내](https://moveit.ai/install-moveit2/binary/)를 따른다. 검증된 기존 RMW를 유지한다.
+
+```bash
+sudo apt update
+sudo apt install ros-jazzy-moveit ros-jazzy-moveit-py ros-jazzy-moveit-msgs ros-jazzy-trac-ik-kinematics-plugin python3-colcon-common-extensions python3-pytest libssl-dev
+```
+
 ```bash
 source /opt/ros/jazzy/setup.bash
 dpkg-query -W ros-jazzy-moveit ros-jazzy-moveit-py ros-jazzy-trac-ik-kinematics-plugin ros-jazzy-moveit-msgs
 bash Ch13/scripts/reuse_13_6/build.sh
-bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/run_tests.py
+bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/run_tests.py Ch13/ros2_ws/src/ch13_navigation_reuse/test Ch13/ros2_ws/src/ch13_manipulation_reuse/test
 ```
 
 빌드는 6개 패키지를 선택하고 통합 MuJoCo 모델에서 URDF/SRDF를 로컬 생성한다. 외부 자산 hash가 다르면 중단한다. 시뮬레이션 실행 중 build나 pytest를 병행하지 않는다.
+
+현재 인수 입력은 `section_13_6_reuse_acceptance_v2.json`의 소스230개·외부94자산이다. 이전v1은 실패 이력으로 보존한다. 기존13.5의114파일 동결과 같다고 주장하지 않는다. 각 실행은 새 동결·설치 파일/생성 모델/ELF 감사를 거친다. 엔진 보고서에는 실제 compiled model과 정책 hash도 남는다.
+
+```bash
+bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/freeze_runtime.py verify Ch13/dependencies/section_13_6_reuse_acceptance_v2.json
+```
 
 ## 13.6.1~2: 같은 엔진의 인계와 계획 장면
 
@@ -39,6 +52,14 @@ bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_handoff.py Ch
 실제 카메라의 320×240 RGB-D와 촬영 시점 이전 100ms 이내 TF를 사용한다. `last_accepted_observation.json`에는 optical point, map point, T_map_camera, calibration, capture/receipt/GID와 내용 hash가 있다. 최신 TF로 과거 이미지를 변환하거나 header를 now로 바꾸지 않는다. map↔odom은 현재 교육 profile의 ground-truth localization이다. SLAM/AMCL 성공을 뜻하지 않는다.
 
 13.5의 붉은 상자는 보이는 표면점이다. 물리 파지 profile에서는 알려진 upright 원통 반경 2cm·높이 8cm와 RGB-D 표면 fit으로 중심을 추정한다. yaw나 일반 물체 6D pose를 관측한 것이 아니다. 실제 freejoint 위치는 실행 후 평가 파일에만 기록한다.
+
+13.6 물리 파지의 가상 카메라는 base 기준 `[0.4,0.25,0.25]m`, 안쪽 yaw `-20°`다. 팔이 원통 상단을 가리는 문제를 조사한 뒤 선택한 교육 profile이며 실물 설치 검증은 아니다. 13.5 기본 카메라는 유지한다. MuJoCo3.13.0에서 skybox를 끄고 같은 실제 렌더 버퍼의 RGB·원본 depth를 읽는다. 두 정적 장면에서 기존 depth와 전체 오차0을 확인했으며 다른 버전으로 자동 확장하지 않는다.
+
+저장한 관측의 optical→map→실제 trunk 변환을 확인한다. 이것은 오프라인 좌표 연습이며 저장 JSON은 새 명령 권한이 아니다.
+
+```bash
+bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/inspect_target_frames.py Ch13/evidence/section_13_6_reuse/my_pick_01
+```
 
 ## 13.6.4~5: 계획·실행과 픽킹
 
@@ -60,6 +81,8 @@ bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_pick.py Ch13/
 
 동일 엔진에서 open→12cm pre-grasp→직선 접근→close→양 finger 실제 접촉→직선 10cm lift→2초 hold→작업 후 정착·회수를 수행한다. 대상은 20g 동적 원통이며 원본 gripper cap 0.5N을 유지한다. planning scene attach는 충돌 표현이며 물리 부착이 아니다. 판정은 실제 상승≥9cm, 2sim초 이상 유지, TCP에 대한 상대 변화≤2cm, HOLD 중 90% 이상 양 finger 접촉으로 한다. `pick_assessment.json`과 독립 verifier가 PASS여야 한다. 팔 action 성공이나 빈 그리퍼 close만으로 파지 성공이라고 해석하지 않는다.
 
+양 finger normal force가 실제 확인된 뒤 native PD의 내부 reference로 0.5N 이내 닫기 힘을 유지한다. nominal close와 내부 reference를 별도 기록한다. 첫 lift 뒤 새 RGB-D로 상승 부족을 확인하면 한 번만, 최대3cm 추가 직선 보정한다. 보정량에는 실측 팔 끝의 목표 추종 지연을 포함한다. 관측 상승95mm·실제 팔 최대 속도0.003rad/s 이내와 기존 base 정착이0.5sim초 유지되어야 HOLD에 들어간다. 물체 정답 좌표를 제어 입력으로 쓰지 않는다. 물체 질량·마찰·접촉 차원·모터 cap은 보정 때문에 바꾸지 않는다. [계약v6](../dependencies/section_13_6_pick_contract_v6.json)에 수치와 변경 이유가 있다.
+
 ## 13.6.6~7: 안정성·실패·종료 판독
 
 속도·가속도 scaling은 0.08, native trajectory 한계는 0.05rad/s·0.1rad/s²다. 다리는 기존 정책으로 계속 지지한다. torso 고정/teleport나 새 WBC·재학습으로 대체하지 않는다. 팔에는 원본 Kp/Kd·힘 cap을 유지한 명시적 모델 bias 보정 v2가 사용된다. [설계 변경 기록](SECTION_13_6_REUSE_ENGINEERING_DECISIONS_KO.md)을 읽는다.
@@ -70,8 +93,26 @@ bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_pick.py Ch13/
 bash Ch13/scripts/reuse_13_6/run_case.sh arm_cancel Ch13/evidence/section_13_6_reuse/my_cancel_01
 bash Ch13/scripts/reuse_13_6/run_case.sh arm_loss Ch13/evidence/section_13_6_reuse/my_loss_01
 bash Ch13/scripts/reuse_13_6/run_case.sh duplicate Ch13/evidence/section_13_6_reuse/my_duplicate_01
+bash Ch13/scripts/reuse_13_6/run_case.sh observation_loss Ch13/evidence/section_13_6_reuse/my_observation_loss_01
+bash Ch13/scripts/reuse_13_6/run_case.sh duplicate_action Ch13/evidence/section_13_6_reuse/my_duplicate_action_01
+bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_safety.py Ch13/evidence/section_13_6_reuse/my_observation_loss_01 Ch13/evidence/section_13_6_reuse/my_duplicate_action_01
+bash Ch13/scripts/reuse_13_6/run_case.sh held_cancel Ch13/evidence/section_13_6_reuse/my_held_cancel_01
+bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_held_cancel.py Ch13/evidence/section_13_6_reuse/my_held_cancel_01
 ```
 
 취소 ACK와 실제 terminal을 구분한다. fault/cancel은 제한된 감속·hold로 이어지며 torque0/무조건 수납·파지 중 임의 개방하지 않는다. 관측 300ms 초과·시계 역행·중복 소유자는 fault latch다. 입력이 복구돼도 자동 재활성화하지 않는다. 실행 도구는 계획기를 살아 있는 엔진 시계에서 먼저 회수하고 엔진을 정상 종료한 뒤 자식·renderer·lock 잔여를 확인한다. 강제 종료가 발생한 실행은 정상 회수 PASS로 세지 않는다.
 
 새 실행을 만들기 전에 실패 폴더를 지우지 않는다. 다른 기존 engine이 검출되면 실행을 멈추고 그 소유 mission에서 회수한다. 오래된 PID 파일만 보고 프로세스를 죽이거나 lock 파일을 삭제하지 않는다.
+
+## 게시 증거 복원
+
+실행 로그·관측·물리 측정은 사례별 `raw.tar.gz`와 `raw_manifest.json`으로 게시한다. 원본 파일은 개발 환경에 그대로 남긴다. archive와 각 파일 hash를 확인한 뒤 복원하며 기존 파일이 다르면 덮어쓰지 않는다. 모델·가중치·생성 URDF/SRDF와 그것을 포함한 `planner.yaml`은 내용 재배포 대신 hash/로컬 경로만 기록한다. 실제 인수 UUID는 최종 보고서를 참조한다.
+
+```bash
+bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/restore_evidence.py Ch13/evidence/section_13_6_reuse/보고서의_UUID
+# 이후 같은 사례에 해당하는 verify_pick.py / verify_moveit.py / verify_safety.py 등을 실행한다.
+```
+
+13.6 궤적은 시작 시 검증한 전체 표준 action을2ms 물리 주기에서 평가한다. 기존13.5의 `arm_joint1_offset` 시험 parameter는13.6에서 비활성화하며, 그5Hz 입력 제한을500Hz 새 궤적 샘플링과 혼동하지 않는다. 비전15Hz 상한·원본 capture300ms/과거TF100ms는 별도 계약으로 유지한다.
+
+지원 범위는 원본 보행 정책의 zero 명령 지지와 명시한20g 교육용 시뮬레이션이다. 별도 Crawl/Stand 드라이버 모드, trunk shift 전신 제어, SLAM/AMCL, 실기 하중·드라이버와 일반6D 물체 인식을 검증한 것은 아니다. 원고의 CoM 보상은 설명 대상이며 이번 재사용 패키지에서 새 WBC를 구현하지 않는다.

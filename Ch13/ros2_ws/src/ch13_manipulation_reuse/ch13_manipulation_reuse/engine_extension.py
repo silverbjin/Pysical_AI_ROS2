@@ -8,6 +8,8 @@ from ch13_navigation_reuse.command_gateway import N
 from ch13_navigation_reuse.wire import decode
 from .lease import Lease
 
+CHANNELS=('mission_lease','manipulation_observation','manipulation_navigation','manipulation_gateway','manipulation_goals')
+
 
 class EngineExtension:
     def __init__(self, node):
@@ -22,18 +24,23 @@ class EngineExtension:
         self.events = []
         self.last_phase = None
         self.anchor = None
+        self.rx_wall={}
         self.status = {'session': self.lease.session, 'phase':'WAITING', 'fault':''}
-        node.create_subscription(String,N+'/ingress/manipulation',self.packet,32)
+        for channel in CHANNELS:
+            node.create_subscription(String,N+'/ingress/manipulation/'+channel,
+                                     lambda packet,key=channel:self.packet(packet,key),1)
         self.publisher = node.create_publisher(String,N+'/manipulation/status',1)
         from .action_bridge import ActionBridge
         self.actions = ActionBridge(self)
 
-    def packet(self, packet):
+    def packet(self, packet, channel):
         with self.node.lock:
             try:
                 key, msg, info = decode(packet.data)
-                if self.lease.owner('relay', info['relay_gid']):
+                if key!=channel:raise ValueError('manipulation relay channel mismatch')
+                if self.lease.owner('relay:'+channel, info['relay_gid']):
                     return
+                self.rx_wall[key]=time.monotonic()
                 owner = info['publisher_gid'].hex()
                 receipt = info['receipt_wall']
                 if key == 'mission_lease':
@@ -61,8 +68,9 @@ class EngineExtension:
         now = time.monotonic()
         counts = {key:self.node.count_publishers(topic) for key,topic in (
             ('mission',N+'/manipulation/lease'),('observer',N+'/vision/observation'),
-            ('relay',N+'/ingress/manipulation'),('navigation',N+'/navigation/status'),
+            ('navigation',N+'/navigation/status'),
             ('nav_status','/navigate_to_pose/_action/status'),('gateway',N+'/gateway/status'))}
+        counts.update({key:self.node.count_publishers(N+'/ingress/manipulation/'+key) for key in CHANNELS})
         with self.node.lock:
             self.graph,self.graph_wall = counts,now
             for key,count in counts.items():
@@ -77,8 +85,10 @@ class EngineExtension:
             self.actions.before(p,clock_ns)
 
     def step(self, p, decision, q, v, state, tilt):
-        now, clock = time.monotonic(),state['stamp_ns']
         with self.node.lock:
+            # Receipt callbacks share this lock. Sample after acquiring it so a
+            # newly delivered receipt cannot appear to come from the future.
+            now, clock = time.monotonic(),state['stamp_ns']
             supported = (decision.mode=='ARMED' and decision.vx==0 and decision.wz==0
                          and math.hypot(v[0],v[1])<=.05 and abs(v[5])<=.20 and tilt<=.35)
             if self.lease.message is not None and self.lease.phase not in ('REVOKED','FAULT'):
@@ -107,9 +117,11 @@ class EngineExtension:
                                capture_ns=None if self.lease.observation is None else self.lease.observation['capture_ns'],
                                task_phase='WAITING' if self.lease.message is None else self.lease.message.get('task_phase','WAITING'))
             self.status.update(mission_receipt_wall=self.lease.mission_receipt,
-                               observation_receipt_wall=self.lease.observation_receipt,gateway_receipt_wall=self.gateway_receipt)
+                               observation_receipt_wall=self.lease.observation_receipt,gateway_receipt_wall=self.gateway_receipt,
+                               channel_processed_wall=dict(self.rx_wall))
             if hasattr(self,'pick_monitor'):
                 self.status['gripper_target_contacts']=dict(self.pick_monitor.forces)
+                self.status['gripper_force_hold']=self.actions.gripper_hold.status()
             if phase != self.last_phase:
                 self.events.append(dict(self.status))
                 self.last_phase = phase
@@ -117,4 +129,5 @@ class EngineExtension:
 
     def summary(self):
         return dict(control_profile='13_6_model_bias_v2',last_status=self.status,events=self.events,arm_events=self.actions.events,
-                    arm_observations=self.actions.rows)
+                    arm_observations=self.actions.rows,gripper_force_profile='contact_force_hold_v1' if hasattr(self,'pick_monitor') else 'position_PD',
+                    gripper_force_events=self.actions.gripper_hold.events)

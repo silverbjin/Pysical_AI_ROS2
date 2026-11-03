@@ -47,6 +47,8 @@ class PickMonitor:
         tcp=p.mjData.xpos[self.link6]+rotation@np.array(TCP_LINK6)
         self.rows.append(dict(sim_s=sim,phase=phase,target=target.tolist(),tcp=tcp.tolist(),
                               relative_tcp=(rotation.T@(target-tcp)).tolist(),target_contact_N=forces,
+                              gripper_qpos=p.mjData.qpos[25:27].tolist(),gripper_effort_N=float(p.mjData.actuator_force[18]),
+                              internal_gripper_reference=float(p.desired_joint_pos_gripper),
                               source='actual_engine_freejoint_and_contact_for_evaluation_only'))
 
     def summary(self):

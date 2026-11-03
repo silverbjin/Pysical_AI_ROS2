@@ -2,13 +2,17 @@
 from pathlib import Path
 import numpy as np
 import mujoco
-from ch13_navigation_reuse.scene import make_model
+from scipy.spatial.transform import Rotation
+from ch13_navigation_reuse.scene import make_model,OPTICAL_R
 
 TARGET='reuse_pick_target'
 GRASP_PHASES={'GRASP_APPROACH','CLOSE','LIFT','HOLD','POST_SETTLE'}
 
 
 def add_target(spec):
+    camera=spec.camera('reuse_rgbd');camera.pos=[.4,.25,.25]
+    R=Rotation.from_euler('z',-20.,degrees=True).as_matrix()@OPTICAL_R@np.diag([1.,-1.,-1.])
+    camera.quat=np.roll(Rotation.from_matrix(R).as_quat(),1)
     spec.delete(spec.geom('reuse_target'))
     body=spec.worldbody.add_body(name=TARGET,pos=[1.8,0.,.54])
     body.add_freejoint(name='reuse_target_free')

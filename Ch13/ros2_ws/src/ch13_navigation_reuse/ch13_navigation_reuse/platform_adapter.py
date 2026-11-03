@@ -192,13 +192,19 @@ def main():
             from ch13_manipulation_reuse.pick_scene import configure_extended_pd
             configure_extended_pd(p.mjModel,source_holder['path'],correction,p.Kp_arm,p.Kd_arm)
         else:correction.configure_native_arm_pd(p.mjModel,p.Kp_arm,p.Kd_arm)
+        import mujoco as model_mujoco
+        compiled=np.empty(model_mujoco.mj_sizeModel(p.mjModel),dtype=np.uint8)
+        model_mujoco.mj_saveModel(p.mjModel,buffer=compiled)
+        S.update(compiled_model_sha256=hashlib.sha256(compiled.tobytes()).hexdigest(),compiled_model_bytes=len(compiled),
+                 assets_manifest_sha256=hashlib.sha256((root/'Ch13/dependencies/section_13_5_reuse.lock.json').read_bytes()).hexdigest(),
+                 policy_hashes={f['path']:f['sha256'] for f in lock['files'] if Path(f['path']).suffix in ('.onnx','.pt','.pth')})
         source=textwrap.dedent(inspect.getsource(upstream.PlayMujoco.run));source=correction.consistent_walking_run_source(source)
         from .scheduler import SteadyScheduler
         scheduler=SteadyScheduler(p.simulation_dt);p.last_render_time=scheduler.time()
         namespace=dict(upstream.PlayMujoco.run.__globals__);namespace['time']=scheduler;exec(compile(source,'ch13_pinned_run','exec'),namespace);p.run=types.MethodType(namespace['run'],p);p._ch13_mujoco=upstream.mujoco
         assert tuple(p.mjModel.joint(i).name for i in range(1,21))==JOINT_NAMES
         assert p.mjModel.njnt==(22 if args.pick_scene=='true' else 21)
-        if args.scene:sensors=SensorSuite(p.mjModel,p.mjData,args.scene,report.parent);p._ch13_sensors=sensors
+        if args.scene:sensors=SensorSuite(p.mjModel,p.mjData,args.scene,report.parent,latest_camera=args.manipulation=='true');p._ch13_sensors=sensors
         rclpy.init(args=[]);node=Platform();node.allow_tf_broadcasters=bool(args.scene)
         if args.manipulation=='true':
             from ch13_manipulation_reuse.engine_extension import EngineExtension

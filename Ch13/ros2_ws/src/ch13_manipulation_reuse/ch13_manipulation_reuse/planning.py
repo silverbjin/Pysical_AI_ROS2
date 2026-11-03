@@ -160,11 +160,18 @@ class Planner:
         cylinder.primitive_poses=[pose(relative,Rotation.from_matrix(T[:3,:3].T))]
         attached=AttachedCollisionObject(link_name='reuse/tcp',object=cylinder,
                                         touch_links=['reuse/link7','reuse/link8'])
-        remove=CollisionObject(id=name,operation=CollisionObject.REMOVE)
         request=ApplyPlanningScene.Request();request.scene.is_diff=True;request.scene.robot_state.is_diff=True
         request.scene.robot_state.attached_collision_objects=[attached]
-        request.scene.world.collision_objects=[remove]
+        # ADD attached geometry moves the same id out of the world itself.
+        # An extra world REMOVE is processed afterwards and falsely fails.
         assert self.call('/apply_planning_scene',request).success
+        check=GetPlanningScene.Request();check.components.components=(PlanningSceneComponents.WORLD_OBJECT_NAMES|PlanningSceneComponents.ROBOT_STATE_ATTACHED_OBJECTS)
+        scene=self.call('/get_planning_scene',check).scene
+        assert name not in [obj.id for obj in scene.world.collision_objects]
+        held=[obj for obj in scene.robot_state.attached_collision_objects if obj.object.id==name]
+        assert len(held)==1 and held[0].link_name=='reuse/tcp','attached scene postcondition failed'
+        self.records.append(dict(kind='attach_observed_geometry',id=name,relative_center=relative.tolist(),
+                                 physical_attachment=False,world_object_removed=True))
         self.revision+=1
 
     def cartesian(self,waypoints):

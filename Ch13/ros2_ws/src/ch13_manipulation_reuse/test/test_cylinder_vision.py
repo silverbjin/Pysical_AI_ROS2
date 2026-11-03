@@ -39,3 +39,20 @@ def test_occluded_height_or_invalid_depth_is_not_a_center_observation():
 def test_invalid_calibration_rejected():
     rgb,depth,k,transform,_=image();k[0]=0.
     with pytest.raises(ValueError):fit_cylinder(rgb,depth,k,transform,.02,.08)
+
+
+def test_disconnected_red_robot_fragment_does_not_expand_target_height():
+    rgb,depth,k,transform,center=image()
+    rgb[5:20,140:165]=[230,0,0];depth[5:20,140:165]=.25
+    result=fit_cylinder(rgb,depth,k,transform,.02,.08)
+    np.testing.assert_allclose(result['center'],center,atol=.002)
+    assert result['box']['height']<100
+
+
+def test_visible_top_and_bottom_can_share_one_geometric_cylinder():
+    rgb,depth,k,transform,center=image()
+    rgb[116:124]=0
+    rgb[5:20,140:165]=[230,0,0];depth[5:20,140:165]=.25
+    result=fit_cylinder(rgb,depth,k,transform,.02,.08)
+    np.testing.assert_allclose(result['center'],center,atol=.002)
+    assert result['components_used']==2

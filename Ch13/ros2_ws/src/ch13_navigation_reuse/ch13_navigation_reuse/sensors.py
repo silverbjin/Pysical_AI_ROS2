@@ -16,17 +16,22 @@ class HeadlessViewer:
  def sync(self):pass
  def close(self):self.closed=True
 class SensorSuite:
- def __init__(self,model,data,profile,out):
+ def __init__(self,model,data,profile,out,latest_camera=False):
+  self.latest_camera=latest_camera
   self.profile=profile;self.out=Path(out);self.next_scan=0.;self.last_scan_ns=None;self.next_rgb=0.;self.scans=0;self.frames=0;self.meta=[];self.first=None;self.last=None;self.node=None;self.camera=None;self.joined=True
-  if profile=='vision':self.camera=CameraWorker(model,data.qpos,self.accept_frame)
+  if profile=='vision':
+   camera=model.camera('reuse_rgbd').id;self.camera_pos=model.cam_pos[camera].copy()
+   optical=Rotation.from_quat(np.roll(model.cam_quat[camera],-1)).as_matrix()@np.diag([1.,-1.,-1.])
+   self.camera_quat=Rotation.from_matrix(optical).as_quat()
+   self.camera=CameraWorker(model,data.qpos,self.accept_frame,latest=latest_camera)
  def attach(self,node):
   self.node=node;self.scan_pub=node.create_publisher(LaserScan,N+'/scan',1)
-  camera_qos=QoSProfile(depth=2,reliability=ReliabilityPolicy.RELIABLE)
+  camera_qos=QoSProfile(depth=1 if self.latest_camera else 2,reliability=ReliabilityPolicy.RELIABLE)
   self.rgb_pub=node.create_publisher(Image,N+'/rgb',camera_qos);self.depth_pub=node.create_publisher(Image,N+'/depth',camera_qos);self.info_pub=node.create_publisher(CameraInfo,N+'/camera_info',camera_qos)
   if self.camera is not None:self.meta_pub=node.create_publisher(String,N+'/camera_capture',camera_qos)
  def transforms(self,tf):
   result=[tf('reuse/base','reuse/scan',SCAN_POS,(0.,0.,0.,1.))]
-  if self.camera is not None:result.append(tf('reuse/base','reuse/camera_optical',CAM_POS,Rotation.from_matrix(OPTICAL_R).as_quat()))
+  if self.camera is not None:result.append(tf('reuse/base','reuse/camera_optical',self.camera_pos,self.camera_quat))
   return result
  def request_capture(self,q,stamp,capture_wall):return self.camera.offer(q,stamp,capture_wall)
  def get_capture(self,stamp,timeout):return self.camera.get(stamp,timeout)
@@ -47,4 +52,4 @@ class SensorSuite:
  def close(self):
   if self.camera is not None:self.joined=self.camera.close()
   if self.first is not None:write_rgb(self.out/'first_rgb.png',self.first[0]);np.save(self.out/'first_depth.npy',self.first[1])
-  summary={'scan_origin':'mj_ray environment group5, body-fixed frame; explicit self/floor filter','camera_origin':'Renderer on immutable actual engine qpos snapshots; single worker/slot, source capture stamp/wall unchanged','scan_count':self.scans,'rgbd_count':self.frames,'camera_worker_joined':self.joined,'camera_worker_pid':None if self.camera is None else self.camera.worker_pid,'camera_tracker_pid':None if self.camera is None else self.camera.tracker_pid,'camera_worker_exit_code':None if self.camera is None else self.camera.process.exitcode,'camera_worker_error':'' if self.camera is None else self.camera.error,'overwritten_waiting_snapshots':0 if self.camera is None else self.camera.overwritten,'captures':self.meta};(self.out/'sensor_summary.json').write_text(json.dumps(summary,indent=2)+'\n');return self.joined
+  summary={'scan_origin':'mj_ray environment group5, body-fixed frame; explicit self/floor filter','camera_origin':'Renderer on immutable actual engine qpos snapshots; single worker/slot, source capture stamp/wall unchanged','scan_count':self.scans,'rgbd_count':self.frames,'camera_worker_joined':self.joined,'camera_worker_pid':None if self.camera is None else self.camera.worker_pid,'camera_tracker_pid':None if self.camera is None else self.camera.tracker_pid,'camera_worker_exit_code':None if self.camera is None else self.camera.process.exitcode,'camera_worker_error':'' if self.camera is None else self.camera.error,'overwritten_waiting_snapshots':0 if self.camera is None else self.camera.overwritten,'camera_pos_base_m':None if self.camera is None else self.camera_pos.tolist(),'camera_optical_quat_base_xyzw':None if self.camera is None else self.camera_quat.tolist(),'latest_camera':self.latest_camera,'overwritten_render_results':0 if self.camera is None else self.camera.output_dropped.value,'captures':self.meta};(self.out/'sensor_summary.json').write_text(json.dumps(summary,indent=2)+'\n');return self.joined

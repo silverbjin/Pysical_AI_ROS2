@@ -14,6 +14,41 @@ from ament_index_python.packages import get_package_prefix
 from ch13_piper_moveit_config.configuration import parameters
 
 
+def scene_probe(node,report):
+    import numpy as np
+    root=Path(__file__).resolve().parents[3]
+    sys.path.insert(0,str(root/'Ch13/ros2_ws/src/ch13_manipulation_reuse'))
+    from ch13_manipulation_reuse.planning import Planner,object_cylinder
+    from moveit_msgs.msg import PlanningSceneComponents
+    from moveit_msgs.srv import ApplyPlanningScene,GetPlanningScene
+    clients={name:node.create_client(typ,name) for typ,name in ((ApplyPlanningScene,'/apply_planning_scene'),(GetPlanningScene,'/get_planning_scene'))}
+    def call(name,request,timeout=5.):
+        client=clients[name];deadline=time.monotonic()+timeout
+        while not client.service_is_ready() and time.monotonic()<deadline:rclpy.spin_once(node,timeout_sec=.02)
+        assert client.service_is_ready()
+        future=client.call_async(request)
+        while not future.done() and time.monotonic()<deadline:rclpy.spin_once(node,timeout_sec=.01)
+        assert future.done();return future.result()
+    planner=Planner.__new__(Planner);planner.tcp=lambda:np.eye(4);planner.call=call;planner.revision=0;planner.records=[]
+    planner.apply_objects([object_cylinder('scene_api_fixture',[.5,0.,.5])])
+    def ids():
+        request=GetPlanningScene.Request();request.components.components=(PlanningSceneComponents.WORLD_OBJECT_NAMES|PlanningSceneComponents.ROBOT_STATE_ATTACHED_OBJECTS)
+        scene=call('/get_planning_scene',request).scene
+        return dict(world=[obj.id for obj in scene.world.collision_objects],attached=[obj.object.id for obj in scene.robot_state.attached_collision_objects],
+                    relative_z=[obj.object.pose.position.z+obj.object.primitive_poses[0].position.z for obj in scene.robot_state.attached_collision_objects])
+    try:
+        planner.attach_observed_cylinder('scene_api_fixture',[.5,0.,.5])
+        first=ids();assert 'scene_api_fixture' not in first['world'] and 'scene_api_fixture' in first['attached']
+        assert abs(first['relative_z'][0]-.5)<1e-6
+        planner.attach_observed_cylinder('scene_api_fixture',[.5,0.,.51])
+        second=ids();assert second['attached'].count('scene_api_fixture')==1
+        assert abs(second['relative_z'][0]-.51)<1e-6
+        report['scene_probe']=dict(scope='planning scene API only, NO physical grasp',first=first,updated=second,result='PASS')
+    finally:
+        report['scene_after_probe']=ids()
+        for client in clients.values():node.destroy_client(client)
+
+
 def main():
     out=Path(sys.argv[1]);out.mkdir(parents=True,exist_ok=False)
     parameter_file=out/'planner.yaml'
@@ -33,6 +68,7 @@ def main():
             rclpy.spin_once(node,timeout_sec=.05)
             assert process.poll() is None,'planner exited at startup'
             assert time.monotonic()<deadline,'planner startup deadline'
+        if '--scene-probe' in sys.argv[2:]:scene_probe(node,report)
         future=client.call_async(Trigger.Request());start=time.monotonic()
         while not future.done() and time.monotonic()-start<3.:rclpy.spin_once(node,timeout_sec=.02)
         assert future.done() and future.result().success,'shutdown ACK absent'

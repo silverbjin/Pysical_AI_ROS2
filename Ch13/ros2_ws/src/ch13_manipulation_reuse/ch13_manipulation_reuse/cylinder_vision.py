@@ -2,6 +2,7 @@
 import math
 import numpy as np
 from scipy.optimize import least_squares
+from scipy.ndimage import label
 
 
 def fit_cylinder(rgb,depth,calibration,transform,radius,height):
@@ -15,8 +16,44 @@ def fit_cylinder(rgb,depth,calibration,transform,radius,height):
         raise ValueError('cylinder invalid calibration/shape prior')
     color=rgb.astype(float)
     mask=(color[:,:,0]>80)&(color[:,:,0]>1.8*color[:,:,1])&(color[:,:,0]>1.8*color[:,:,2])
-    ys,xs=np.nonzero(mask&np.isfinite(depth)&(depth>.01))
-    if len(xs)<20:raise ValueError('cylinder not observed')
+    labels,count=label(mask&np.isfinite(depth)&(depth>.01))
+    sizes=np.bincount(labels.ravel());candidates=[];errors=[];components=[]
+    if count>256:raise ValueError('cylinder excessive red components')
+    for component in range(1,count+1):
+        if sizes[component]<20:continue
+        ys,xs=np.nonzero(labels==component)
+        z=depth[ys,xs].astype(float)
+        camera=np.column_stack(((xs-k[2])*z/k[0],(ys-k[3])*z/k[1],z))
+        world=camera@T[:3,:3].T+T[:3,3]
+        components.append((xs,ys,np.mean(world[:,:2],axis=0),float(world[:,2].min()),float(world[:,2].max())))
+        try:
+            candidate=_fit_component(depth,k,T,radius,height,xs,ys);candidate['components_used']=1;candidates.append(candidate)
+        except ValueError as error:errors.append(str(error))
+    if len(components)>16:raise ValueError('cylinder excessive significant components')
+    # A gray occluder can split the same red side into upper/lower patches.
+    # Merge only nearby axial patches, then require the same full height-span
+    # and circle residual bounds. Separate red robot geometry is not merged.
+    for index,first in enumerate(components):
+        for second in components[index+1:]:
+            if np.linalg.norm(first[2]-second[2])>radius:continue
+            span=max(first[4],second[4])-min(first[3],second[3])
+            if not .75*height<=span<=1.05*height:continue
+            xs=np.concatenate((first[0],second[0]));ys=np.concatenate((first[1],second[1]))
+            try:
+                candidate=_fit_component(depth,k,T,radius,height,xs,ys);candidate['components_used']=2;candidates.append(candidate)
+            except ValueError:pass
+    unique=[]
+    for candidate in sorted(candidates,key=lambda c:c['residual_m']):
+        if not any(np.linalg.norm(np.array(candidate['center'])-other['center'])<=.002 for other in unique):unique.append(candidate)
+    if len(unique)>1:raise ValueError('cylinder ambiguous matching components')
+    if not candidates:
+        if errors:raise ValueError('cylinder no matching component: '+errors[0])
+        raise ValueError('cylinder not observed')
+    result=unique[0];result.update(red_components=count,valid_cylinder_components=1)
+    return result
+
+
+def _fit_component(depth,k,T,radius,height,xs,ys):
     z=depth[ys,xs].astype(float)
     camera=np.column_stack(((xs-k[2])*z/k[0],(ys-k[3])*z/k[1],z))
     world=camera@T[:3,:3].T+T[:3,3]

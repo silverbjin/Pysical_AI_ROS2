@@ -11,6 +11,7 @@ from trajectory_msgs.msg import JointTrajectoryPoint
 from ch13_navigation_reuse.command_gateway import N
 from .trajectory import JOINTS,Trajectory
 from .bias_reference import bias_reference
+from .gripper_force import ForceHold
 
 ARM=N+'/manipulation/arm_controller/follow_joint_trajectory'
 GRIPPER=N+'/manipulation/gripper_controller/gripper_cmd'
@@ -29,6 +30,7 @@ class ActionBridge:
         self.command=None;self.gripper_command=None;self.gripper_effort=.5
         self.pending_path=None;self.feedback=None;self.rows=[];self.events=[]
         self.bias_start=None;self.servo_command=None
+        self.gripper_hold=ForceHold()
         self.validation_worker=ThreadPoolExecutor(max_workers=1,thread_name_prefix='reuse_trajectory_validation')
         group=ReentrantCallbackGroup()
         self.arm_server=ActionServer(self.node,FollowJointTrajectory,ARM,self.arm_execute,
@@ -166,7 +168,7 @@ class ActionBridge:
                         # Do not pretend an unachievable brake was a successful cancel.
                         self.extension.lease.trip('BRAKE_NOT_FEASIBLE')
                         active['path']=None
-                else:self.gripper_command=float(p.mjData.qpos[25])
+                elif self.gripper_hold.start is None:self.gripper_command=float(p.mjData.qpos[25])
             if active['kind']=='arm' and active['path'] is not None:
                 self.command=active['path'].sample(sim_s-active['start'])[0]
         if self.servo_command is None:self.servo_command=self.command.copy()
@@ -179,6 +181,15 @@ class ActionBridge:
         else:self.servo_command=self.command.copy()
         p.desired_joint_pos_arm[:]=self.servo_command
         p.desired_joint_pos_gripper=self.gripper_command
+        if hasattr(self.extension,'pick_monitor'):
+            message=self.extension.lease.message or {}
+            allowed=(self.extension.lease.phase in ('READY','EXECUTING') and active is not None
+                     and active['kind']=='gripper' and not active['stopping'])
+            try:
+                p.desired_joint_pos_gripper=self.gripper_hold.update(sim_s,message.get('task_phase','WAITING'),
+                    self.gripper_command,self.gripper_effort,self.extension.pick_monitor.forces,
+                    float(p.mjData.qpos[25]),float(p.mjData.qvel[24]),p.Kp_gripper,p.Kd_gripper,allowed)
+            except ValueError:self.extension.lease.trip('GRIPPER_FORCE_REFERENCE_INVALID')
         # The upstream loop computed this same PD force before the step hook.
         p.mjData.ctrl[18]=np.clip(p.mjData.ctrl[18],-self.gripper_effort,self.gripper_effort)
 
