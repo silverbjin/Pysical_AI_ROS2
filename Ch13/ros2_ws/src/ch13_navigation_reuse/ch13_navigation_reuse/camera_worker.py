@@ -32,23 +32,34 @@ def put_render_result(results,item,stop,latest=False):
     except queue.Empty:pass
  return dropped
 
-def render_process(model,initial_q,requests,results,ready,stop,latest=False,output_dropped=None,capture_ledger=None):
+def render_process(model,initial_q,requests,results,ready,stop,latest=False,output_dropped=None,capture_ledger=None,startup=None):
  renderer=None;node=None;publisher=None;captures=[];failure='';publisher_closed=False
+ stages=[]
+ def stage(event,error=None):
+  row=dict(event=event,wall=time.monotonic(),cpu=time.process_time())
+  if error is not None:row['error']=error
+  stages.append(row)
+  if startup is not None:startup.send(row)
  try:
+  stage('target_enter')
   if latest:
+   stage('ros_import_begin')
    import rclpy
    from rclpy.node import Node
    from .camera_publisher import FramePublisher
-   rclpy.init(args=[]);node=Node('ch13_reuse_camera_renderer');publisher=FramePublisher(node,depth=1)
+   stage('ros_import_end');stage('ros_init_begin');rclpy.init(args=[]);stage('ros_init_end')
+   stage('node_begin');node=Node('ch13_reuse_camera_renderer');stage('node_end')
+   stage('publishers_begin');publisher=FramePublisher(node,depth=1);stage('publishers_end')
   model.vis.quality.offsamples=0
   data=mujoco.MjData(model);data.qpos[:]=initial_q;mujoco.mj_forward(model,data)
   option=mujoco.MjvOption();option.geomgroup[2]=0;option.geomgroup[3]=1;option.geomgroup[5]=1
-  renderer=mujoco.Renderer(model,height=240,width=320)
+  stage('renderer_begin');renderer=mujoco.Renderer(model,height=240,width=320);stage('renderer_end')
   def render():
    renderer.update_scene(data,camera='reuse_rgbd',scene_option=option);renderer.scene.flags[mujoco.mjtRndFlag.mjRND_SHADOW]=False
    if latest:renderer.scene.flags[mujoco.mjtRndFlag.mjRND_SKYBOX]=False
    return render_rgbd(renderer,model,single_pass=latest)
-  render();ready.set()
+  stage('first_render_begin');render();stage('first_render_end');stage('ready');ready.set()
+  if startup is not None:startup.close();startup=None
   while not stop.is_set():
    try:q,stamp,capture_wall=requests.get(timeout=.1)
    except queue.Empty:continue
@@ -65,6 +76,9 @@ def render_process(model,initial_q,requests,results,ready,stop,latest=False,outp
     with output_dropped.get_lock():output_dropped.value+=dropped
  except BaseException:
   failure=traceback.format_exc()
+  if startup is not None:
+   try:stage('error',failure)
+   except (OSError,EOFError):pass
   try:results.put(('error',failure),timeout=.5)
   except queue.Full:pass
  finally:
@@ -77,21 +91,52 @@ def render_process(model,initial_q,requests,results,ready,stop,latest=False,outp
     if capture_ledger is not None:
      import json
      from pathlib import Path
-     Path(capture_ledger).write_text(json.dumps(dict(captures=captures,publisher_closed=publisher_closed,error=failure))+'\n')
-    ready.set()
+     Path(capture_ledger).write_text(json.dumps(dict(captures=captures,publisher_closed=publisher_closed,error=failure,startup=stages))+'\n')
+    if startup is not None:startup.close()
 
 class CameraWorker:
  def __init__(self,model,initial_q,callback,latest=False,capture_ledger=None):
   self.callback=callback;self.condition=threading.Condition();self.latest=None;self.stopping=False;self.error='';self.overwritten=0
   self.capture_ledger=capture_ledger;self.source_captures=None
   ctx=mp.get_context('spawn');self.requests=ctx.Queue(maxsize=1);self.results=ctx.Queue(maxsize=1 if latest else 2);self.ready=ctx.Event();self.stop=ctx.Event();self.output_dropped=ctx.Value('i',0)
-  self.process=ctx.Process(target=render_process,args=(model,initial_q.copy(),self.requests,self.results,self.ready,self.stop,latest,self.output_dropped,str(capture_ledger) if capture_ledger is not None else None),name='reuse_rgbd_renderer')
+  startup_rx,startup_tx=ctx.Pipe(duplex=False)
+  self.startup_profile=dict(parent_start_wall=time.monotonic(),events=[])
+  self.process=ctx.Process(target=render_process,args=(model,initial_q.copy(),self.requests,self.results,self.ready,self.stop,latest,self.output_dropped,str(capture_ledger) if capture_ledger is not None else None,startup_tx),name='reuse_rgbd_renderer')
   self.process.start();self.worker_pid=self.process.pid
+  startup_tx.close();self.startup_profile['parent_spawned_wall']=time.monotonic()
   from multiprocessing import resource_tracker
   self.tracker_pid=resource_tracker._resource_tracker._pid
   self.thread=threading.Thread(target=self.receive,name='reuse_rgbd_rx');self.thread.start()
-  if not self.ready.wait(15.):self.close();raise RuntimeError('camera process warmup deadline')
-  if not self.process.is_alive() or self.error:self.close();raise RuntimeError(self.error or 'camera process startup failure')
+  deadline=time.monotonic()+15.;failure=''
+  try:
+   while True:
+    if not startup_rx.poll(max(0.,deadline-time.monotonic())):
+     last=self.startup_profile['events'][-1]['event'] if self.startup_profile['events'] else 'bootstrap'
+     failure='camera process warmup deadline at '+last;break
+    try:row=startup_rx.recv()
+    except EOFError:
+     self.process.join(.1);failure='camera process exited before startup outcome: '+str(self.process.exitcode);break
+    self.startup_profile['events'].append(row)
+    if row['event']=='error':failure=row['error'];break
+    if row['event']=='ready':break
+  finally:startup_rx.close()
+  self.startup_profile['parent_outcome_wall']=time.monotonic()
+  if not failure and (not self.process.is_alive() or self.error):failure=self.error or 'camera process startup failure'
+  if capture_ledger is not None:
+   import json
+   from pathlib import Path
+   self.startup_profile['outcome']='ERROR' if failure else 'READY'
+   try:Path(capture_ledger).with_name('renderer_startup.json').write_text(json.dumps(self.startup_profile,indent=2)+'\n')
+   except OSError as exc:failure=failure or 'camera startup audit failed: '+str(exc)
+  if failure:
+   self.error=failure;self.close()
+   if not self.process.is_alive() and not self.thread.is_alive():
+    self.process.close()
+    # A retained exception traceback retains this failed constructor's self.
+    # Release owned semaphore references now, outside resource-tracker locks,
+    # rather than deferring their finalizers to a later cyclic collection.
+    self.requests=self.results=self.ready=self.stop=self.output_dropped=None
+   error=RuntimeError(failure);error.startup_profile=self.startup_profile;raise error
  def offer(self,q,stamp,capture_wall):
   if self.stopping or self.error:return False
   item=(q.copy(),stamp,capture_wall)

@@ -1,6 +1,6 @@
 """Actual safe-command DDS ingress to platform; scripted clock, no physics."""
 from pathlib import Path
-import importlib.util,subprocess,sys,time,threading,unittest
+import importlib.util,subprocess,sys,time,threading,unittest,json
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 ROS=importlib.util.find_spec('rclpy') is not None
 if ROS:
@@ -31,7 +31,11 @@ class PlatformWireTests(unittest.TestCase):
    time.sleep(.01)
   return False
  def arm(self):
-  self.assertTrue(self.until(lambda:self.p.guard._fresh(time.monotonic()),3.))
+  prepared=self.until(lambda:self.p.guard._fresh(time.monotonic()),3.)
+  self.assertTrue(prepared,json.dumps(dict(stage='fresh_input_preparation',decision_wall=time.monotonic(),
+   clock_ns=self.p.guard.clock_ns,clock_wall=self.p.guard.clock_wall,graph_wall=self.p.guard.graph_wall,
+   samples=self.p.guard.samples,counts=self.p.guard.counts,fault=self.p.guard.fault,
+   executor_alive=self.thread.is_alive(),relay_exit=self.relay.poll())))
   client=self.n.create_client(Trigger,N+'/platform/arm');self.assertTrue(client.wait_for_service(timeout_sec=2.));f=client.call_async(Trigger.Request());self.assertTrue(self.until(f.done));self.assertTrue(f.result().success,f.result().message)
  def fault(self,reason=None):
   self.assertTrue(self.until(lambda:self.p.guard.mode=='FAULT'));self.assertTrue(self.until(lambda:self.decision is not None and self.decision.vx==0.))

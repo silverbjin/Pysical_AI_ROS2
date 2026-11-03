@@ -1,0 +1,26 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_failed_startup_releases_named_resources_with_retained_error_traceback __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x710e8c1e4680>
+
+    def test_failed_startup_releases_named_resources_with_retained_error_traceback(monkeypatch):
+        before=set(Path('/dev/shm').glob('sem.mp-*'))
+        model=mujoco.MjModel.from_xml_string('<mujoco><worldbody/></mujoco>')
+        data=mujoco.MjData(model)
+        monkeypatch.setattr(camera_worker,'render_process',exit_before_startup_outcome)
+        with pytest.raises(RuntimeError) as retained_error:
+            CameraWorker(model,data.qpos,lambda *args:None)
+        assert retained_error.value.startup_profile
+>       assert not (set(Path('/dev/shm').glob('sem.mp-*'))-before),'failed constructor retained named semaphores'
+E       AssertionError: failed constructor retained named semaphores
+E       assert not ({PosixPath('/dev/shm/sem.mp-1y87w29k'), PosixPath('/dev/shm/sem.mp-3r4vb4n8'), PosixPath('/dev/shm/sem.mp-40f9d279'), PosixPath('/dev/shm/sem.mp-62bz5v03'), PosixPath('/dev/shm/sem.mp-8sdga9il'), PosixPath('/dev/shm/sem.mp-95l2969q'), ...} - set())
+E        +  where {PosixPath('/dev/shm/sem.mp-1y87w29k'), PosixPath('/dev/shm/sem.mp-3r4vb4n8'), PosixPath('/dev/shm/sem.mp-40f9d279'), PosixPath('/dev/shm/sem.mp-62bz5v03'), PosixPath('/dev/shm/sem.mp-8sdga9il'), PosixPath('/dev/shm/sem.mp-95l2969q'), ...} = set(<generator object Path.glob at 0x710e89705cf0>)
+E        +    where <generator object Path.glob at 0x710e89705cf0> = <bound method Path.glob of PosixPath('/dev/shm')>('sem.mp-*')
+E        +      where <bound method Path.glob of PosixPath('/dev/shm')> = PosixPath('/dev/shm').glob
+E        +        where PosixPath('/dev/shm') = Path('/dev/shm')
+
+Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_camera_startup.py:22: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_camera_startup.py::test_failed_startup_releases_named_resources_with_retained_error_traceback
+1 failed in 3.77s

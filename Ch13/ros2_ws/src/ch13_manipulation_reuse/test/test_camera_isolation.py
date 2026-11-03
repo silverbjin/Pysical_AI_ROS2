@@ -16,21 +16,29 @@ def test_renderer_delivery_does_not_depend_on_blocked_parent_retention(latest,tm
       <camera name="reuse_rgbd" pos="0 0 1"/><body pos="0 0 .1"><joint type="slide"/>
       <geom type="sphere" size=".1" mass=".1"/></body></worldbody></mujoco>''')
     data=mujoco.MjData(model);entered=threading.Event();release=threading.Event();worker=None
-    rclpy.init(args=[]);node=Node('renderer_delivery_fixture');seen=set()
-    subscription=node.create_subscription(Image,N+'/rgb',lambda m:seen.add((m.header.stamp.sec,m.header.stamp.nanosec)),8)
-    def blocked_retention(*args):entered.set();release.wait(3.)
+    rclpy.init(args=[]);node=Node('renderer_delivery_fixture');seen=set();connected=threading.Event()
+    def observe(message):
+        stamp=message.header.stamp.sec*1_000_000_000+message.header.stamp.nanosec
+        if stamp<1_000_000_000:connected.set()
+        else:seen.add(stamp)
+    subscription=node.create_subscription(Image,N+'/rgb',observe,8)
+    def blocked_retention(rgb,depth,meta):
+        if meta['capture_ns']>=1_000_000_000:entered.set();release.wait()
     try:
         worker=CameraWorker(model,data.qpos,blocked_retention,latest=latest,
                             capture_ledger=tmp_path/'captures.json' if latest else None)
-        # Measure retention isolation after discovery, rather than racing the
-        # volatile writer's first frames against DDS participant discovery.
+        # A discovered writer does not prove the actual image path is ready.
+        # Complete an end-to-end first-frame handshake before measurement.
         if latest:
-            deadline=time.monotonic()+5.
-            while node.count_publishers(N+'/rgb')==0 and time.monotonic()<deadline:
+            deadline=time.monotonic()+5.;stamp=500_000_000
+            while not connected.is_set() and time.monotonic()<deadline:
+                worker.offer(data.qpos,stamp,time.monotonic());stamp+=1_000_000
                 rclpy.spin_once(node,timeout_sec=.01)
-            assert node.count_publishers(N+'/rgb')==1,'renderer DDS publisher discovery deadline'
-        worker.offer(data.qpos,1_000_000_000,time.monotonic())
-        assert entered.wait(2.),'parent retention never received real renderer output'
+            assert connected.is_set(),'renderer DDS first-frame handshake deadline'
+        deadline=time.monotonic()+2.
+        while not entered.is_set() and time.monotonic()<deadline:
+            worker.offer(data.qpos,1_000_000_000,time.monotonic());entered.wait(.01)
+        assert entered.is_set(),'parent retention never received real renderer output'
         for index in range(3):
             worker.offer(data.qpos,2_000_000_000+index*100_000_000,time.monotonic())
             deadline=time.monotonic()+.15
