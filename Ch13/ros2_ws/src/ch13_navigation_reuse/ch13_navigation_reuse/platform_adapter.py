@@ -268,6 +268,7 @@ def main():
             upstream.mujoco.mj_step=original_step
             if gc_probe is not None:gc_probe.stop();S['gc_timing']=gc_probe.summary()
         S.update(step_outliers=timing,result='COMPLETED',normal_shutdown_requested=node.stop_requested,sim_s=float(p.mjData.time),wall_s=time.monotonic()-start,physics_steps=step_count,max_force_cap_ratio=max_ratio,max_native_joint_violation_rad=max_joint_violation,final_mode=node.guard.mode,final_fault=node.guard.fault,arm_events=node.events,rx_error=rx_error,actual_pose=p.mjData.qpos[:7].tolist())
+        S['fault_details']=node.guard.fault_details
         if node.manipulation is not None:S['manipulation']=node.manipulation.summary()
         if not node.stop_requested or rx_error:raise RuntimeError('unrequested engine end or ROS receiver failure')
     except BaseException:S['error']=traceback.format_exc();S['result']='ERROR'

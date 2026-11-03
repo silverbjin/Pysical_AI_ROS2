@@ -141,7 +141,12 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
      if b'ch13_navigation_reuse.navigation_boundary' in cmd:
       assert int((Path('/proc')/str(pid)/'stat').read_text().split(') ',1)[1].split()[1])==launch.pid,'boundary parent ownership mismatch'
       victims.append(pid)
-    assert len(victims)==1,'owned boundary identity';paused_pid=victims[0];os.kill(paused_pid,signal.SIGSTOP);S['injected_boundary_pid']=paused_pid;S['injection']='owned_publisher_pause_with_identity_preserved'
+    assert len(victims)==1,'owned boundary identity';paused_pid=victims[0]
+    S['raw_loss_injection']=dict(request_wall=time.monotonic(),sim_ns=clock_ns,
+        gateway_mode=gateway.get('mode'),gateway_fault=gateway.get('fault'),
+        platform_mode=platform.get('mode'),platform_fault=platform.get('fault'))
+    os.kill(paused_pid,signal.SIGSTOP);S['raw_loss_injection']['pause_sent_wall']=time.monotonic()
+    S['injected_boundary_pid']=paused_pid;S['injection']='owned_publisher_pause_with_identity_preserved'
     assert until(lambda:gateway.get('mode')=='FAULT',2),'raw loss did not latch';receipt=gateway['source_receipts']['raw']['receipt_wall'];S['raw_expiry_decision_latency_s']=gateway['decision_wall']-receipt;assert S['raw_expiry_decision_latency_s']<=.35
     os.kill(paused_pid,signal.SIGCONT);paused_pid=None;until(lambda:False,.2);assert gateway.get('mode')=='FAULT';S['no_auto_resume_after_raw_return']=True
    canceled=goal_handle.cancel_goal_async();assert until(canceled.done,3),'cancel ACK deadline';S['cancel_ack']=bool(canceled.result().goals_canceling);assert S['cancel_ack']

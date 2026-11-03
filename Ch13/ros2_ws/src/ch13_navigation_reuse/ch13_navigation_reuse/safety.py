@@ -18,7 +18,7 @@ class Guard:
         self.required=tuple(required);self.control=control
         self.reset()
     def reset(self):
-        self.samples={};self.owners={};self.mode='DISARMED';self.fault=''
+        self.samples={};self.owners={};self.mode='DISARMED';self.fault='';self.fault_details=None
         self.clock_ns=0;self.clock_wall=None;self.counts={};self.graph_wall=None
         self.values=(0.,0.);self.last_values=(0.,0.);self.last_output_wall=None;self.last_output_clock_ns=None
     def trip(self, reason):
@@ -74,9 +74,29 @@ class Guard:
     def arm(self, wall):
         if self.mode!='DISARMED' or not self._fresh(wall) or any(abs(x)>1e-12 for x in self.values):return False
         self.mode='ARMED';self.last_output_wall=wall;self.last_output_clock_ns=self.clock_ns;self.last_values=(0.,0.);return True
+    def freshness_details(self, wall):
+        """Snapshot the first failed predicate; never refresh source receipts."""
+        failed=[]
+        if self.clock_wall is None:failed.append('clock_missing')
+        elif wall-self.clock_wall>self.timeout_s:failed.append('clock_wall_expired')
+        if self.graph_wall is None:failed.append('graph_missing')
+        elif wall-self.graph_wall>self.timeout_s:failed.append('graph_wall_expired')
+        for topic in ('clock',)+self.required:
+            if self.counts.get(topic,0)!=1:failed.append('owner_count:'+topic)
+        for topic in self.required:
+            sample=self.samples.get(topic)
+            if sample is None:failed.append('sample_missing:'+topic);continue
+            if wall-sample[1]>self.timeout_s:failed.append('sample_wall_expired:'+topic)
+            if self.clock_ns-sample[0]>self.age_ns:failed.append('sample_stamp_expired:'+topic)
+        if 'base' in self.samples and 'joints' in self.samples and abs(self.samples['base'][0]-self.samples['joints'][0])>40_000_000:
+            failed.append('base_joint_skew')
+        return dict(failed=failed,decision_wall=wall,clock_ns=self.clock_ns,clock_receipt_wall=self.clock_wall,
+                    graph_wall=self.graph_wall,counts=dict(self.counts),control=self.control,required=list(self.required),
+                    samples={k:dict(stamp_ns=v[0],receipt_wall=v[1],gid=v[2]) for k,v in self.samples.items()})
     def output(self, wall):
         if self.mode=='ARMED':
-            if not self._fresh(wall):self.trip('INPUT_OR_CLOCK_TIMEOUT')
+            if not self._fresh(wall):
+                self.trip('INPUT_OR_CLOCK_TIMEOUT');self.fault_details=self.freshness_details(wall)
             elif self.last_output_wall is not None and (wall<self.last_output_wall or wall-self.last_output_wall>self.timeout_s):self.trip('CONTROL_TIMER_GAP')
         if self.mode!='ARMED':return Decision(0.,0.,self.clock_ns,self.mode,self.fault)
         # Simulation seconds govern the command slew; wall time only governs liveness.
