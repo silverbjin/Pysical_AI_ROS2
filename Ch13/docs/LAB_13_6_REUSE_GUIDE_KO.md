@@ -1,6 +1,6 @@
 # 13.6 Go2+Piper 정밀 조작 실습
 
-기능 인수 대상은 v13 교육용 시뮬레이션 profile이다. 입력 손실1개의 원판정 FAIL과 별도 검토 PASS를 함께 공개한다. 실제 인수 판정·대표 UUID·제한은 [최종 보고서](SECTION_13_6_REUSE_REPORT_KO.md)를 함께 확인한다.
+최신 실행 소스는 v14다. 입력 손실은 수정된 정식 판정기로 새 실행 PASS를 확인했다. 정상 pick과 다른15개 대표 인수는 v13 이력이며 v14 전체 matrix를 반복한 것으로 해석하지 않는다. [정식 수정 결과](SECTION_13_6_RAW_LOSS_FORMAL_FIX_REPORT_KO.md)를 함께 확인한다. 실제 인수 판정·대표 UUID·제한은 [최종 보고서](SECTION_13_6_REUSE_REPORT_KO.md)를 함께 확인한다.
 
 설치 후 핵심 재현은 **pick 실행→verify_pick 결과 확인**이다. 한 mission이 접근·정착·계획·파지·들기를 연결하며 앞선 시험의 PASS 파일을 요구하지 않는다. 소절별로 분리해서 배우려면 hold→arm_normal→moveit→pick을 수행한다. 각 명령의 검증 도구가 실제 결과와 종료를 자동 판독한다. 전체 부품 시험과 아래 실패 주입·13.5 회귀는 개발/선택 심화 과정이며 매 실습마다 전부 반복할 필요가 없다. [게이트·검증 비용 점검](SECTION_13_6_REUSE_GATE_REVIEW_KO.md)에 유지/제거 이유를 정리했다.
 
@@ -60,12 +60,12 @@ export ROS_LOCALHOST_ONLY=1 ROS_DOMAIN_ID=135
 ros2 topic echo /ch13/reuse/manipulation/status
 ```
 
-R2/R5 build 및 그 하위 경로는 거절한다. 기본 실행기는 v13 동결을 요구하며, 동결 파일 누락·해시 불일치 시 설치 감사나 엔진을 시작하지 않는다. 다른 revision을 재현할 때만 `CH13_REUSE_FREEZE`를 명시하며 그 revision과 실제 소스가 일치해야 한다.
+R2/R5 build 및 그 하위 경로는 거절한다. 기본 실행기는 v14 동결을 요구하며, 동결 파일 누락·해시 불일치 시 설치 감사나 엔진을 시작하지 않는다. 다른 revision을 재현할 때만 `CH13_REUSE_FREEZE`를 명시하며 그 revision과 실제 소스가 일치해야 한다.
 
-현재 인수 입력은 `section_13_6_reuse_acceptance_v13.json`의 소스248개·외부94자산이다. 이전v1~v12는 각 성공·실패·진단 이력으로 보존한다. 기존13.5의114파일 동결과 같다고 주장하지 않는다. 각 실행은 동결·설치 파일/생성 모델/ELF 감사를 거친다. 엔진 보고서에는 실제 compiled model과 정책 hash도 남는다.
+현재 인수 입력은 `section_13_6_reuse_acceptance_v14.json`의 소스251개·외부94자산이다. 이전v1~v13은 각 성공·실패·진단 이력으로 보존한다. 기존13.5의114파일 동결과 같다고 주장하지 않는다. 각 실행은 동결·설치 파일/생성 모델/ELF 감사를 거친다. 엔진 보고서에는 실제 compiled model과 정책 hash도 남는다.
 
 ```bash
-bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/freeze_runtime.py verify Ch13/dependencies/section_13_6_reuse_acceptance_v13.json
+bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/freeze_runtime.py verify Ch13/dependencies/section_13_6_reuse_acceptance_v14.json
 ```
 
 ## 13.6.1~2: 같은 엔진의 인계와 계획 장면
@@ -173,7 +173,7 @@ bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_held_cancel.p
 
 ```bash
 bash Ch13/scripts/reuse_13_6/run_case.sh nav_free Ch13/evidence/section_13_6_reuse/my_nav_free_01
-bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_5/verify_navigation.py Ch13/evidence/section_13_6_reuse/my_nav_free_01/run
+cat Ch13/evidence/section_13_6_reuse/my_nav_free_01/navigation_verification.json
 # 같은 방법으로 nav_cancel, nav_raw_loss, nav_vision을 서로 다른 새 폴더에서 순차 실행한다.
 ```
 
@@ -205,10 +205,18 @@ sparse 다운로드에서 아직 받지 않은 게시 사례는 먼저 `git spar
 
 지원 범위는 원본 보행 정책의 zero 명령 지지와 명시한20g 교육용 시뮬레이션이다. 별도 Crawl/Stand 드라이버 모드, trunk shift 전신 제어, SLAM/AMCL, 실기 하중·드라이버와 일반6D 물체 인식을 검증한 것은 아니다. 원고의 CoM 보상은 설명 대상이며 이번 재사용 패키지에서 새 WBC를 구현하지 않는다.
 
-입력 손실 개발 인수의 원래 판정과 별도 검토를 함께 재현하려면 보고서 UUID의 증거를 복원한 뒤 다음을 실행한다. 기존 FAIL 파일은 수정하지 않는다.
+아래는 과거 v13 입력 손실의 원래 판정과 별도 검토를 재현하는 역사 자료다. 현재 정식 인수에 사용하지 않는다. 이 이력을 재현하려면 보고서 UUID의 증거를 복원한 뒤 다음을 실행한다. 기존 FAIL 파일은 수정하지 않는다.
 
 ```bash
 bash Ch13/scripts/reuse_13_6/env.sh Ch13/verification/reuse_13_6/review_loss.py Ch13/evidence/section_13_6_reuse/a854efd7-67fc-4964-aced-0fd36b59f7bf injected_loss_review_new.json
 ```
 
 이는 정해진 주입·정지·회수 조건의 오프라인 재검토이며 새 실행 권한이나 일반 timeout 허용이 아니다. 원래 검증기의 FAIL과 두 판정기의 hash를 최종 보고서에서 함께 확인한다.
+최신 입력 손실 정식 시험은 새 폴더에서 다음 한 번으로 실행한다. 실행기가 실제 운동·입력 중단·정착·회수 뒤 새 정식 판정기까지 자동 호출한다. 판정 FAIL이면 종료코드가0이 아니다.
+
+```bash
+bash Ch13/scripts/reuse_13_6/run_case.sh nav_raw_loss Ch13/evidence/section_13_6_reuse/my_formal_raw_loss_01
+cat Ch13/evidence/section_13_6_reuse/my_formal_raw_loss_01/navigation_verification.json
+```
+
+기대 결과는 result=PASS, revision=13_6_navigation_formal_v1이며 모든 checks가 true다. fault_evidence에는 최초 만료 항목과 원본 receipt/clock/graph 시각이 있다. 정상 실행의 timeout, clock/graph/소유자 문제, 주입 전 fault·정지 후 재움직임은 허용하지 않는다. *_physical_metrics.json/log는 기존13.5 수치 계산 근거이며 그 공통 fault-empty 항목을 새 최종 판정으로 사용하지 않는다. 현재 navigation 사례의 정식 판정은 사례 루트의 navigation_verification.json이다.

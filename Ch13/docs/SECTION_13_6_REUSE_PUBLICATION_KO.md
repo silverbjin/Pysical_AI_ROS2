@@ -1,5 +1,7 @@
 # 13.6 v13 게시·다운로드 검증
 
+> 2026-11-04 후속 수정: 과거 v13 FAIL은 이력으로 보존했다. v14 새 입력 손실 실행은 수정된 정식 판정기에서 PASS다. 원본 입력 만료 항목도 확인했으며 [새 정식 인수 보고서](SECTION_13_6_RAW_LOSS_FORMAL_FIX_REPORT_KO.md)를 우선 확인한다. 아래 v13 집계와 별도 검토 설명은 당시 이력이다.
+
 2026-11-04 KST. 소스·보고서·모델 제외 증거의 게시 payload commit은157c1b28af60d3cef533e12a2fcc19b19800fd6c이며 로컬/실제 원격 SHA 일치를 확인했다. 이후 변경은 이 문서·가이드 다운로드 범위 수정·검증 증거·완료 표기뿐이다. runtime v13의248파일/외부94자산과 동결 SHA67da28691991d81152526919e5a4c65fec91ba3d75e1d84a5fc2681901d39101은 유지된다. 최종 문서 commit의 실제 원격 일치는 게시 직후 별도로 확인한다.
 
 - 원격: https://github.com/silverbjin/Pysical_AI_ROS2.git, branch feat/ch13-section-13-6-manipulation. non-force push만 사용했고 main merge/PR은 하지 않았다.
@@ -27,3 +29,6 @@
 새로 만든 이전/최종 증거 archive101개(합계367,064,848bytes)는 원본을 남긴 채 모든 게시 파일 hash를 대조했다. 기존15개 archive도 보존했다. 여기에 이번 다운로드 검증 증거를 별도 묶음으로 추가한다. 모델/가중치·생성 URDF/SRDF·그것을 내장한 planner.yaml은 게시하지 않는다. 각 archive의 raw_manifest.json에 제외 항목과 로컬 경로를 남겼다.
 
 [최종 인수 보고서](SECTION_13_6_REUSE_REPORT_KO.md), [게이트 검토](SECTION_13_6_REUSE_GATE_REVIEW_KO.md), [자체 검토](SECTION_13_6_REUSE_FINAL_REVIEW_KO.md), [실습 가이드](LAB_13_6_REUSE_GUIDE_KO.md), [다운로드 검증 증거](../evidence/section_13_6_reuse/download_validation_v13/raw_manifest.json)를 함께 제공한다. 작성자 자체 검토는 독립 검토보다 약하며, scenario 각1회·교육 profile 범위의 제한은 유지한다.
+## 정식 입력 손실 수정 후속 게시
+
+v14 source873ad8fe와 새 사례c8be6d60-e73d-4b55-ad16-fa7bea011977는13.6 정식 판정PASS다. runtime251파일/원본94자산, 동결 SHA9605c2c9d3b411b3f89f3c8b533f110042aa48d8cff5331983a3f58dcea6c000. 부품213PASS, 별도 build6개21.7초, 새입력손실1회·정상 자식10개·잔여 없음이다. 과거v13원본 FAIL·원래archive/index와13.5판정기는 유지한다. [정식 수정 보고서](SECTION_13_6_RAW_LOSS_FORMAL_FIX_REPORT_KO.md)와 새정식집계 ACCEPTANCE_FORMAL_RAW_LOSS_V14.json을 참조한다. 다른15개는이전검증 이력으로 남기며 전체matrix를 반복하지 않았다.

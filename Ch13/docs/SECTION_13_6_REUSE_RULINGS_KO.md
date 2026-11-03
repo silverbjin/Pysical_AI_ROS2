@@ -55,3 +55,4 @@
 31. 같은 v13 실행 소스에서16개를 각1회 확인한다. 반복 강건성이나 모든 환경의 시간 초과 해결로 확대하지 않는다. 비용은 낮은 반복 횟수의 불확실성이며 실제 검증 환경/수치/원래 FAIL을 보고한다.
 32. 기존 사용자 문서와 ignored 작업 기록을 보존한다. skill의 workspace 정리 안내보다 보존 지시를 우선한다. 비용은 로컬 디스크 사용이며 임의 reset/clean/stash/삭제는 하지 않는다.
 33. 새 다운로드에서 기존 비전 package data 누락으로 build가 실패했다. runtime/새 source freeze를 만들지 않고 sparse 가이드에 Ch13/config를 추가해 별도 build6개62초/설치감사/빈 복원141파일/판정기12개 PASS로 검증했다. 첫 실패 로그도 보존한다. 비용은 설치 준비 한 번의 실패이며 데이터 SHA를 게시 보고서에 명시했다.
+34. 사용자 요청에 따라 v13 사후 검토에 머물지 않고13.6 정식 시나리오 계약을 구현했다. 기존13.5 판정기/FAIL과213개 부품 검증을 보존하며 원본 수명/정지 한도는 유지한다. 입력 손실만 새 실행1회로 정식 PASS를 확인했다. 실제 최초 원인은 gateway raw wall 만료302.580ms/platform safe wall 만료300.015ms이며 clock/graph는 신선했다. 비용은 첫 snapshot과정식 판정의 추가 코드로, 무관한 timeout/원인 누락/주입 전 fault/이력 은폐 반례를 거절한다. 상세는 SECTION_13_6_RAW_LOSS_FORMAL_FIX_REPORT_KO.md.
