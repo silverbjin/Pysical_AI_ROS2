@@ -45,21 +45,37 @@ class NavigationContract:
 
 class FutureInbox:
  """Bounded cross-topic ordering wait; original receipts never change."""
- def __init__(self):self.items={};self.owners={}
- def offer(self,key,stamp,receipt,payload,clock_ns,now,owner=None):
+ def __init__(self,audit=None):self.items={};self.owners={};self.audit=audit
+ def note(self,event,key,stamp,receipt,clock_ns,now):
+  if self.audit is not None:self.audit(event,key,stamp,receipt,clock_ns,now)
+ def offer(self,key,stamp,receipt,payload,clock_ns,now,owner=None,clock_receipt=None,startup=False):
   if owner is not None:
    if key in self.owners and self.owners[key]!=owner:raise ValueError('pending owner replaced')
    if key not in self.owners and len(self.owners)>=64:raise ValueError('too many source keys')
    self.owners[key]=owner
-  ready=self.ready(clock_ns,now)
-  if stamp<=clock_ns+25_000_000:ready.append(payload)
+  ready=self.ready(clock_ns,now,clock_receipt=clock_receipt,startup=startup)
+  if stamp<=clock_ns+25_000_000:ready.append(payload);self.note('immediate',key,stamp,receipt,clock_ns,now)
   elif key not in self.items:
    if len(self.items)>=64:raise ValueError('future inbox overflow')
    self.items[key]=(stamp,receipt,payload)
+   self.note('pending',key,stamp,receipt,clock_ns,now)
   return ready
- def ready(self,clock_ns,now):
+ def ready(self,clock_ns,now,clock_receipt=None,startup=False):
   ready=[]
   for key,(stamp,receipt,payload) in list(self.items.items()):
-   if now-receipt>.05:raise ValueError('future source did not catch up within50wallms')
-   if stamp<=clock_ns+25_000_000:ready.append(payload);del self.items[key]
+   caught_up=stamp<=clock_ns+25_000_000
+   # Before admission, prove timely native clock catch-up independently of
+   # Python scheduling. Unknown clocks and active-mode waits stay fail-closed.
+   native_startup=startup and caught_up and clock_receipt is not None
+   if native_startup and (not math.isfinite(clock_receipt) or clock_receipt>now or now-clock_receipt>.30):
+    self.note('expired',key,stamp,receipt,clock_ns,now)
+    raise ValueError('invalid or expired original startup clock receipt')
+   if native_startup and now-receipt>.30:
+    self.note('expired',key,stamp,receipt,clock_ns,now)
+    raise ValueError('startup source exceeded original300wallms lifetime')
+   waited=(clock_receipt-receipt) if native_startup else (now-receipt)
+   if waited>.05:
+    self.note('expired',key,stamp,receipt,clock_ns,now)
+    raise ValueError('future source did not catch up within50wallms')
+   if caught_up:ready.append(payload);del self.items[key];self.note('released',key,stamp,receipt,clock_ns,now)
   return ready

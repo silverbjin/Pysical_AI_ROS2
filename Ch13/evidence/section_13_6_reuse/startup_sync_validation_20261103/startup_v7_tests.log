@@ -1,0 +1,24 @@
+................................F....................................... [ 40%]
+........................................................................ [ 80%]
+...................................                                      [100%]
+=================================== FAILURES ===================================
+______________ PlatformWireTests.test_engine_clock_pause_latches _______________
+
+self = <test_platform_wire.PlatformWireTests testMethod=test_engine_clock_pause_latches>
+
+    def test_engine_clock_pause_latches(self):
+>    self.arm();self.paused=True;self.fault();self.paused=False;time.sleep(.12);self.fault()
+
+Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_wire.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_wire.py:34: in arm
+    self.assertTrue(self.until(lambda:self.p.guard._fresh(time.monotonic()),3.))
+E   AssertionError: False is not true
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793702734.553085094] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793702734.553138783] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[INFO] [1793702737.925683327] [ch13_reuse_platform]: mode=DISARMED 
+[INFO] [1793702737.943127958] [ch13_reuse_platform]: mode=DISARMED 
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_wire.py::PlatformWireTests::test_engine_clock_pause_latches
+1 failed, 178 passed in 89.29s (0:01:29)

@@ -22,6 +22,13 @@ def test_renderer_delivery_does_not_depend_on_blocked_parent_retention(latest,tm
     try:
         worker=CameraWorker(model,data.qpos,blocked_retention,latest=latest,
                             capture_ledger=tmp_path/'captures.json' if latest else None)
+        # Measure retention isolation after discovery, rather than racing the
+        # volatile writer's first frames against DDS participant discovery.
+        if latest:
+            deadline=time.monotonic()+5.
+            while node.count_publishers(N+'/rgb')==0 and time.monotonic()<deadline:
+                rclpy.spin_once(node,timeout_sec=.01)
+            assert node.count_publishers(N+'/rgb')==1,'renderer DDS publisher discovery deadline'
         worker.offer(data.qpos,1_000_000_000,time.monotonic())
         assert entered.wait(2.),'parent retention never received real renderer output'
         for index in range(3):

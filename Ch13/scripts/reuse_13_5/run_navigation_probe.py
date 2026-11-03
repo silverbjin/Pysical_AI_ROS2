@@ -16,7 +16,9 @@ from ch13_navigation_reuse.command_gateway import N,ns,set_stamp
 from run_r2_probe import service_call
 
 def yaw(q):return math.atan2(2*(q.w*q.z+q.x*q.y),1-2*(q.y*q.y+q.z*q.z))
-def main(argv=None,handoff=None,planning=False,pick_scene=False):
+class _StartupComplete(Exception):pass
+
+def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=False):
  ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True);ap.add_argument('--vision-hz',type=int,choices=[10,15],default=10);ap.add_argument('--case',choices=['free','obstacle','blocked','cancel','raw_loss','vision'],default='free');args=ap.parse_args(argv)
  if handoff is not None and args.case!='vision':raise ValueError('live manipulation requires vision mission')
  root=Path(args.repo_root);out=Path(args.evidence);out.mkdir(parents=True,exist_ok=True);scene=args.case if args.case in ['obstacle','blocked','vision'] else 'free'
@@ -61,6 +63,13 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False):
     if launch.poll() is not None:raise RuntimeError('owned launch exited: '+str(launch.returncode))
    return False
   def call(name,timeout=3):return service_call(node,N+'/'+name,Trigger.Request(),until,clients,timeout=timeout)
+  original_call=call
+  if startup_only:
+   from ch13_navigation_reuse.startup_trace import require_startup_service
+   S.update(startup_only=True,startup_service_calls=[])
+   def call(name,timeout=3):
+    require_startup_service(name);S['startup_service_calls'].append(name)
+    return original_call(name,timeout)
   def stop_owned_planner():
    if not planning or S.get('planner_stopped_before_engine'):return
    text=(out/'launch.log').read_text();owned=[int(p) for p in re.findall(r'process started with pid \[(\d+)\]',text)]
@@ -77,7 +86,21 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False):
     response=call('manipulation/planner/shutdown');assert response.success,response.message
    assert until(lambda:all(not (Path('/proc')/str(p)/'cmdline').exists() for p in planners),8.),'planner did not exit while engine clock remained live'
    S['planner_stopped_before_engine']=True;S['planner_stop_clock_ns']=clock_ns
-  assert until(lambda:state is not None and clock_ns>2_000_000_000 and gateway.get('ready_for_arm') and boundary.get('frames_ready') and platform.get('counts',{}).get('safe')==1 and platform.get('stationary_ready') and action.server_is_ready(),35),'startup/Nav2 readiness deadline'
+  def startup_ready():return state is not None and clock_ns>2_000_000_000 and gateway.get('ready_for_arm') and boundary.get('frames_ready') and boundary.get('pending_future_count',0)==0 and platform.get('counts',{}).get('safe')==1 and platform.get('stationary_ready') and action.server_is_ready()
+  def startup_fault():return bool(gateway.get('fault') or boundary.get('fault') or platform.get('fault'))
+  if startup_only:
+   assert until(lambda:startup_ready() or startup_fault(),35),'startup readiness deadline'
+   assert not startup_fault(),'startup fault before admission'
+   assert startup_ready()
+   until(startup_fault,1.)
+   assert not startup_fault(),'startup fault during disarmed observation'
+   assert gateway.get('mode')==platform.get('mode')=='DISARMED'
+   assert goal_handle is None and result_future is None and not S['events']
+   response=call('platform/shutdown');assert response.success,response.message
+   launch.wait(timeout=12);assert launch.returncode==0
+   S['engine']=json.loads((out/'engine.json').read_text());S['result']='PASS'
+   raise _StartupComplete()
+  assert until(startup_ready,35),'startup/Nav2 readiness deadline'
   for name in ['planner_server','controller_server','velocity_smoother','bt_navigator']:
    end=time.monotonic()+8.
    while True:
@@ -153,6 +176,7 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False):
    ready_pub.publish(String(data=json.dumps({'state':'NOT_READY','reason':'normal_shutdown','stamp_ns':clock_ns})))
   stop_owned_planner()
   S['plan_count']=len(plans);S['max_abs_y_m']=max(abs(p['y']) for p in poses);response=call('platform/shutdown');assert response.success,response.message;launch.wait(timeout=12);assert launch.returncode==0;S['engine']=json.loads((out/'engine.json').read_text());assert S['engine']['normal_shutdown_requested'] and S['engine']['rx_joined'] and S['engine']['upstream_threads_joined'];S['result']='PASS'
+ except _StartupComplete:pass
  except BaseException:S['error']=traceback.format_exc()
  finally:
   if paused_pid is not None:
