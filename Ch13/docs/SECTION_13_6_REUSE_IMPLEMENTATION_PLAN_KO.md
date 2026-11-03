@@ -32,10 +32,10 @@
 
 **Interfaces:** Lease(session).observe(observation, owner, receipt); .heartbeat(payload, owner, receipt); .evaluate(clock_ns, wall, settled, supported, goal_status, actual_pose, navigation_idle)→phase/fault. extension의 status/session을 platform/status에 추가. 기존 main(argv=None,handoff=None) callback은 살아 있는 node/until/call/snapshot을 받는다. 기본 실행 행동 불변.
 
-- [ ] RED: test_lease.py에서 정착 전 거절, 과거 session, owner 교체, 반복 stamp/seq, capture300ms/TF100ms 만료, 정상 READY→회수, 새로운 goal의 회수를 검증. `pytest .../test_lease.py -q`가 import 실패해야 한다.
-- [ ] GREEN: lease와 opt-in extension/ingress·callback 구현. 새 build는 기존3개+새 패키지를 선택하고 R5 경로를 거절. pytest가 모두 통과해야 한다.
-- [ ] 실제 build/audit 뒤 vision 접근→같은 engine에서 2wall초 READY 유지→명시 회수→정상 종료. 이전 session/만료 injection 별도 사례. summary와 상태/lease 이벤트·join/잔여검사 저장.
-- [ ] M1 보고서와 선택 commit.
+- [x] RED: test_lease.py에서 정착 전 거절, 과거 session, owner 교체, 반복 stamp/seq, capture300ms/TF100ms 만료, 정상 READY→회수, 새로운 goal의 회수를 검증. `pytest .../test_lease.py -q`가 import 실패해야 한다.
+- [x] GREEN: lease와 opt-in extension/ingress·callback 구현. 새 build는 기존3개+새 패키지를 선택하고 R5 경로를 거절. pytest가 모두 통과해야 한다.
+- [x] 실제 build/audit 뒤 vision 접근→같은 engine에서 2wall초 READY 유지→명시 회수→정상 종료. 이전 session/만료 injection 별도 사례. summary와 상태/lease 이벤트·join/잔여검사 저장.
+- [x] M1 보고서와 선택 commit.
 
 ### Task 2: M2 actual arm/gripper boundary
 
@@ -43,10 +43,10 @@
 
 **Interfaces:** validate_trajectory(joint_names, points, measured_q, limits)→immutable trajectory; sample(sim_s)→q,qd,qdd; cancel(sim_s)→bounded brake/hold. FollowJointTrajectory joint1~6와 GripperCommand joint7만 제공. engine actual feedback.
 
-- [ ] RED: 순서/NaN/시간역행/중복관절/한계/초기불연속/속도·가속도 초과/종료속도 및 cancel 연속성/lease 만료 시험. 실패 원인 확인.
-- [ ] GREEN: 검증·보간·sim-time 실행·feedback·취소/hold, 실제 관절/힘/추종/지지 watchdog. joint1 parameter와 상호배타. gripper equality/cap 유지. 전체 suite PASS.
-- [ ] 실행 전 작은6축0.02rad·속도0.05rad/s·가속도0.1rad/s² 계약 동결. 실제 추종·취소·heartbeat 손실·중복 소유자·gripper 개폐를 순차 시험. engine 측정으로 성공 판정.
-- [ ] M2 보고서와 선택 commit. 단순 관절 시험을 파지 성공으로 세지 않는다.
+- [x] RED: 순서/NaN/시간역행/중복관절/한계/초기불연속/속도·가속도 초과/종료속도 및 cancel 연속성/lease 만료 시험. 실패 원인 확인.
+- [x] GREEN: 검증·보간·sim-time 실행·feedback·취소/hold, 실제 관절/힘/추종/지지 watchdog. joint1 parameter와 상호배타. gripper equality/cap 유지. 전체 suite PASS.
+- [x] 실행 전 작은6축0.02rad·속도0.05rad/s·가속도0.1rad/s² 계약 동결. 실제 추종·취소·heartbeat 손실·중복 소유자·gripper 개폐를 순차 시험. engine 측정으로 성공 판정.
+- [x] M2 보고서와 선택 commit. 단순 관절 시험을 파지 성공으로 세지 않는다.
 
 ### Task 3: M3 accurate planning and execution
 
@@ -54,10 +54,10 @@
 
 **Interfaces:** generate_model(compiled_mujoco)→URDF/SRDF+hash manifest; assert_plan_current(scene_revision,start_state,capture,clock)→admission. Python wrapper는 OMPL plan과 GetCartesianPath를 사용, 같은 action으로 실행.
 
-- [ ] RED: 통합 모델 한계/FK/TCP 및 conservative collision 포함, q8 mimic, TF/joint owner 중복 없음, stale scene/state/capture와 partial Cartesian 거절 시험.
-- [ ] GREEN: 모델/설정/장면 sync와 actual execution. FK 위치≤1mm/회전≤1mrad 대조, 팔6축 group+gripper mimic, actual base virtual joint. 설치 API만 사용.
-- [ ] MoveIt 실제 pose 도달/불가/충돌거절/Cartesian 전체 경로/취소 시험. scaling≤0.1, 시간·joint jump·실제 최종 pose 검증. 성공/실패 분리 저장.
-- [ ] M3 보고서와 선택 commit.
+- [x] RED: 통합 모델 한계/FK/TCP 및 conservative collision 포함, q8 mimic, TF/joint owner 중복 없음, stale scene/state/capture와 partial Cartesian 거절 시험.
+- [x] GREEN: 모델/설정/장면 sync와 actual execution. FK 위치≤1mm/회전≤1mrad 대조, 팔6축 group+gripper mimic, actual base virtual joint. 설치 API만 사용.
+- [x] MoveIt 실제 pose 도달/불가/충돌거절/Cartesian 전체 경로/취소 시험. scaling≤0.1, 시간·joint jump·실제 최종 pose 검증. 성공/실패 분리 저장.
+- [x] M3 보고서와 선택 commit.
 
 ### Task 4: M4 physical picking
 
@@ -65,10 +65,10 @@
 
 **Interfaces:** fit_cylinder(rgb,depth,K,T_capture,radius,height)→center/axis/residual/provenance; pick sequence는 M1 lease/M2 actions/M3 planner를 사용. oracle qpos는 evidence 평가 전용.
 
-- [ ] RED: upright 실제 depth 표면 fit·가림/점부족·만료·joint indexing·정상 target-support와 금지 robot-support 접촉 구분 시험.
-- [ ] GREEN: 별도0.02kg/radius0.02m/height0.08m/friction0.8 cylinder 장면. 공개 치수+RGB-D fit, 허용 finger-target contact만 단계 한정. 전체 tests PASS.
-- [ ] 시험 전 물체/받침 pose·TCP/fit/jump 한계 고정. open→pregrasp0.10~0.15m→직선접근→close/양finger접촉→직선lift0.10m→hold2sim초. 실제상승≥0.09m·상대변화≤0.02m·낙하없음 확인. 실패도 기록.
-- [ ] M4 보고서와 선택 commit. 힘/물체를 조용히 바꾸지 않는다.
+- [x] RED: upright 실제 depth 표면 fit·가림/점부족·만료·joint indexing·정상 target-support와 금지 robot-support 접촉 구분 시험.
+- [x] GREEN: 별도0.02kg/radius0.02m/height0.08m/friction0.8 cylinder 장면. 공개 치수+RGB-D fit, 허용 finger-target contact만 단계 한정. 전체 tests PASS.
+- [x] 시험 전 물체/받침 pose·TCP/fit/jump 한계 고정. open→pregrasp0.10~0.15m→직선접근→close/양finger접촉→직선lift0.10m→hold2sim초. 실제상승≥0.09m·상대변화≤0.02m·낙하없음 확인. 실패도 기록.
+- [x] M4 보고서와 선택 commit. 힘/물체를 조용히 바꾸지 않는다.
 
 ### Task 5: M5 freeze, acceptance, guide, publication
 

@@ -1,6 +1,26 @@
 # 13.6 M4 물리 픽킹 검증 기록
 
-2026-11-03 KST. **최종 v2 matrix 진행 중. 이 문서의 개발 기록만으로 물리 파지 전체 PASS를 선언하지 않는다.**
+2026-11-03 KST. **v2의 정상 물리 픽킹은 PASS. 별도 취소·손실·중복·13.5 회귀 matrix는 최종 보고서에서 구분한다.**
+
+## 최종 정상 픽킹 결과
+
+UUID `48209582-6b8f-4b44-8fba-6791e95695da`, source/asset 동결v2(`3620227a258b8c8fcdef914a7af61bc6d7ea5724b7d186f49bd669415ac7491c`). 실행 exit0, 독립 `verify_pick.py` PASS. 실제 MuJoCo freejoint/contact 측정에서 아래를 확인했다.
+
+| 항목 | 결과 | 사전 기준 |
+|---|---|---|
+| HOLD 최소 실제 상승 |100.346mm|≥90mm|
+| HOLD 최대 실제 상승 |103.056mm|진단|
+| HOLD 실제 시간 |2.20sim초|≥2sim초|
+| TCP 상대 변화 |0.02755mm|≤20mm|
+| HOLD 양 finger 접촉 비율 |100%|≥90%|
+| 실제 RGB-D 저장 중심 재계산 |일치|원본 저장 영상/depth와 과거TF로 fit|
+| 엔진·노드 회수 |12개 정상 종료, worker/RX/upstream join·잔여 없음|정상 수명|
+
+동일 session에서 접근·실제 정착·MoveIt pre-grasp·직선 진입·실제 close/접촉·직선 lift·한 번의 제한된 시각 보정·정착·HOLD·회수가 이어졌다. 이 한 번의 대표 성공을 반복 성공률이나 일반 하중 성능으로 확장하지 않는다. 이전 실패는 아래 그대로 보존한다.
+
+![실제 Renderer가 촬영한 파지 후 원통과 아래 받침](../evidence/section_13_6_reuse/pick_success_rgb_v2.png)
+
+정상 사례의 마지막 실제 RGB 원본을 그대로 복사한 예시다. capture/내용 hash는 같은 이름의 JSON에 있다. 이 그림 자체가 물리 성공 판정은 아니며 위 수치는 실제 freejoint/contact 증거로 계산했다.
 
 ## 고정한 과제
 

@@ -2,6 +2,8 @@
 
 > **13.5 공개 플랫폼 개정 실습:** [Go2+Piper·MuJoCo·Nav2 실습 가이드](docs/LAB_13_5_REUSE_GUIDE_KO.md), [설계](docs/SECTION_13_5_REUSE_DESIGN_KO.md), [최종 인수 보고서](docs/SECTION_13_5_REUSE_R5_REPORT_KO.md)를 따른다. 13.5부터 공개 통합 플랫폼으로 전환한다. 아래 기존 자체 crawl/Task8의 미완료·실패 기록은 연구 이력으로 보존한다.
 
+> **13.6 공개 플랫폼 정밀 조작:** [MoveIt·실제 물리 픽킹 실습](docs/LAB_13_6_REUSE_GUIDE_KO.md), [M3 실제 계획·실행](docs/SECTION_13_6_REUSE_M3_REPORT_KO.md), [M4 물리 픽킹과 실패 이력](docs/SECTION_13_6_REUSE_M4_REPORT_KO.md), [명시적 설계 변경](docs/SECTION_13_6_REUSE_ENGINEERING_DECISIONS_KO.md)을 따른다. 같은 Go2+Piper engine을 유지해 Nav2 접근에서 조작으로 인계한다. 20g upright cylinder의 교육 profile이며 아래 과거 로봇/fixture 결과와 구분한다.
+
 
 > 기존 자체 crawl 연구 기록 — 2026-11-02 §13.5 작업중: 책예제 인수정책은 [교정20초·엔진별전체/역순각1회](docs/SECTION_13_5_BOOK_ACCEPTANCE_POLICY_KO.md)를따릅니다. 안전·실측조건은유지하며C1/G2는아직미완료입니다.
 

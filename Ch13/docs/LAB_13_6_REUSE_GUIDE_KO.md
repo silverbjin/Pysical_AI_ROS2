@@ -57,6 +57,8 @@ bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_handoff.py Ch
 
 저장한 관측의 optical→map→실제 trunk 변환을 확인한다. 이것은 오프라인 좌표 연습이며 저장 JSON은 새 명령 권한이 아니다.
 
+원고의 `Time()` 최신 TF 예시 대신 원본 촬영 시각에 대응하는 과거 변환을 사용한다. 실습의 계획 장면과 pose 요청 기준은 `reuse/odom`, 팔 mount 기준은 실제 `reuse/base`다. 유효한 TF로 표현하면 두 좌표의 같은 점이다. 흔들리는 몸체를 고정 world TF로 대체하지 않는다. 아래 도구는 같은 촬영의 camera→map→trunk 계산과 camera→trunk 직접 계산이 일치하는지 확인하며 TF 시각과 capture 시각을 별도 출력한다.
+
 ```bash
 bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/inspect_target_frames.py Ch13/evidence/section_13_6_reuse/my_pick_01
 ```
@@ -74,6 +76,14 @@ bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_moveit.py Ch1
 
 원고의 `plan().execute()`/`compute_cartesian_path()`는 개념 코드다. 실제 [Python 래퍼](../ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/planning.py)는 단일 MoveIt 장면의 GetMotionPlan/GetCartesianPath와 기존 엔진의 FollowJointTrajectory를 사용한다. 이 버전의 ExecuteTrajectory 취소 문제 때문에 그것과 병렬로 실행하지 않는다. 장면 hash·실제 시작 관절·관측 age를 재확인하고 전체 Cartesian fraction=1만 허용한다. 0.9는 충분하지 않다.
 
+| 원고의 개념 동작 | 실행 패키지의 실제 경로 |
+|---|---|
+| IK·장애물 회피 pose 계획 | `Planner.plan(pose_goal=...)`→MoveIt GetMotionPlan·TRAC-IK·OMPL |
+| 직선 접근·lift | `Planner.cartesian(...)`→GetCartesianPath, fraction1·끝점 검사 |
+| 계획 실행 | `Planner.execute(...)`→C2/한계/시작 상태 검사→native FollowJointTrajectory→실측 terminal |
+| gripper open/close | 표준 GripperCommand→원본 joint7 actuator, joint8은 원래 equality 연동 |
+| 대상 부착 표현 | 실제 양 finger 접촉 확인 이후 planning scene geometry만 attach |
+
 ```bash
 bash Ch13/scripts/reuse_13_6/run_case.sh pick Ch13/evidence/section_13_6_reuse/my_pick_01
 bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_pick.py Ch13/evidence/section_13_6_reuse/my_pick_01
@@ -88,6 +98,15 @@ bash Ch13/scripts/reuse_13_6/env.sh Ch13/scripts/reuse_13_6/verify_pick.py Ch13/
 속도·가속도 scaling은 0.08, native trajectory 한계는 0.05rad/s·0.1rad/s²다. 다리는 기존 정책으로 계속 지지한다. torso 고정/teleport나 새 WBC·재학습으로 대체하지 않는다. 팔에는 원본 Kp/Kd·힘 cap을 유지한 명시적 모델 bias 보정 v2가 사용된다. [설계 변경 기록](SECTION_13_6_REUSE_ENGINEERING_DECISIONS_KO.md)을 읽는다.
 
 도달 불가·충돌 거절은 팔을 실행하지 않아야 한다. Cartesian fraction<1은 pre-grasp나 목표 자세를 재검토할 이유이며 부분 경로를 실행하지 않는다. 접촉 허용은 지정 finger-target 쌍만 단계에 따라 변경한다. 전체 padding/충돌 검사를 꺼서 성공시키지 않는다.
+
+| 증상 | 판독과 다음 조치 |
+|---|---|
+| No solution / 계획 거절 | 실제 좌표·팔 작업 영역·자기/환경 충돌을 확인한다. 재접근이 필요하면 기존 작업 권한을 회수하고 새 mission을 시작한다. |
+| Cartesian fraction<1 | 경로 전체를 거절한다. pre-grasp·도구 방향·joint jump·충돌을 확인한다. |
+| OBSERVATION_EXPIRED / VISION_EXPIRED | 원본 capture·렌더 종료·최초 receipt·추론·engine 처리 시각을 구분한다. 기존 실패를 보존하고 새 UUID로 실행한다. header나300ms 기준을 바꾸지 않는다. |
+| gripper stalled | 기계적 막힘이다. 실제 양 finger 접촉·높이·유지 검증 없이는 파지 성공이 아니다. |
+| LIFT_HEIGHT / lift settling absent | 실측 상승 또는 작업 정착 부족이다. 물리 판정 FAIL을 보존한다. mass/마찰/force cap을 조용히 바꾸지 않는다. |
+| 잔여 PID/lock | 새 engine을 실행하지 않는다. 같은 소유 mission의 정상 회수 결과부터 확인한다. |
 
 ```bash
 bash Ch13/scripts/reuse_13_6/run_case.sh arm_cancel Ch13/evidence/section_13_6_reuse/my_cancel_01
