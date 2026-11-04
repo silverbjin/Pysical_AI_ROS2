@@ -4,6 +4,13 @@ import math
 from ch13_manipulation_reuse.lease import Lease
 
 
+def fresh_return_capture(boundary,wall):
+    capture=boundary.get('vision_capture_wall')
+    return (boundary.get('phase')=='IDLE' and not boundary.get('fault')
+        and isinstance(capture,(int,float)) and math.isfinite(capture)
+        and math.isfinite(wall) and 0<=wall-capture<=.1)
+
+
 class TransportLease(Lease):
     def __init__(self,session):
         super().__init__(session)

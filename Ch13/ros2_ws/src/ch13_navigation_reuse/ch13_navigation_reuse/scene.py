@@ -11,7 +11,8 @@ def layout(profile):
  if profile=='blocked':walls.append(('barrier',[1.2,0.,.4],[.14,2.5,.4]))
  if profile=='vision':walls.extend([('target',[1.8,0.,.55],[.05,.05,.05]),('pedestal',[1.8,0.,.25],[.035,.035,.25])])
  if profile=='vision' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
-  walls.append(('receiving_support',[-.55,0.,.25],[.045,.045,.25]))
+  from ch13_system_validation.fixture import RECEIVING_XY
+  walls.append(('receiving_support',[*RECEIVING_XY,.25],[.045,.045,.25]))
  return walls
 
 def make_model(source,profile,spec_hook=None):

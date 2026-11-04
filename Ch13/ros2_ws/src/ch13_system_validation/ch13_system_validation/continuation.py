@@ -12,6 +12,8 @@ from ch13_manipulation_reuse.planning import pose,object_cylinder
 from moveit_msgs.msg import AttachedCollisionObject,CollisionObject
 from moveit_msgs.srv import ApplyPlanningScene
 from .scene_contact import receiving_contact
+from .transport import fresh_return_capture
+from .fixture import RECEIVING_XY
 
 
 def drain_owned_goals(session,until,extra=()):
@@ -34,6 +36,8 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
     client=action_client_factory(node,NavigateToPose,'/navigate_to_pose');handle=None;result=None
     try:
         assert until(client.server_is_ready,3.)
+        assert until(lambda:fresh_return_capture(snapshot()['boundary'],time.monotonic()),5.),'fresh original capture headroom before return missing'
+        response=call('navigation/require_vision');assert response.success,response.message
         control['set_phase']('CARRY')
         response=call('navigation/enable');assert response.success,response.message
         goal=NavigateToPose.Goal();goal.pose.header.frame_id='reuse/map'
@@ -65,7 +69,7 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         receiving_contact(planner,True)
         # Place above the receiving support using a fresh RGB-D center; oracle is never read.
         observed=np.array(snapshot()['observation']['point'])
-        receiving=np.array([-.55,0.,baseline_z])
+        receiving=np.array([*RECEIVING_XY,baseline_z])
         tcp=planner.tcp();goal=tcp[:3,3]+receiving-observed
         planner.apply_objects([])
         path=planner.cartesian([pose(goal,Rotation.from_matrix(tcp[:3,:3]))])

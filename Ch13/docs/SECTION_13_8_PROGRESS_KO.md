@@ -59,3 +59,26 @@ Ruling: 고정 팔 운반은 만료된3D point를 갱신하는 대신, 원본300
 공식 MuJoCo3.13.0 python/mujoco/specs_test.py를 읽어 MjSpec.add_body/add_geom·size·quat 패턴을 확인했다. Level2 경사 fixture의 후속 기하 구현 근거이며 아직 해당 월드 물리 성공이 아니다.
 
 정적 수명 검토 보완: 귀환도 기존 OwnedClient factory를 전달받아 send future부터 소유한다. fault/예외 시 직접 cancel future를 버리지 않고 GoalTracker가 늦은 수락·result와 ACK 완료까지 회수한다. result가 ACK보다 먼저 도착하는 실제 future 순서 시험 RED→GREEN. 전체289 PASS/35.34초, 전용5-package rebuild PASS, 설치54모듈/94자산/child 감사 PASS. v3는 실제 실행 전 preflight 동결이며 engine 실행하지 않았다. 두 번째 실제 사례는 v4 소스312/자산94, SHA256 a3fe04e32c0b033ac4de76262964e609b9fb428a8d31ab331ff7a5bcfaac66e9를 사용한다. UUID34f5ef1d-8fee-4d81-913b-fa76a3945a47, 이번에는 선별 rosbag 기록을 포함한다.
+
+## v4 두 번째 실제 사례: FAIL 및 기록/재생 검증
+
+UUID34f5ef1d-8fee-4d81-913b-fa76a3945a47. 물리 파지는 최소100.229mm·2.18sim초 hold·양 접촉100%·상대 slip0.02730mm PASS. 귀환 Nav2 terminal6 ABORTED, navigation fault VISION_EXPIRED. 실제 비전 node fault는 비어 있고 accepted5327, 거부1은 capture/clock/TF expired였다. v2의 원통 fit 가림 실패와 구분한다. worker joined/12 child clean exit/잔여0/정상 engine shutdown/rx/upstream join/사후 lock free. trial146.08sim초/414.07wall초·CPU43.89%(8cores)·최대 tilt0.03661rad. 미션 성공으로 집계하지 않는다.
+
+health_failure_analysis.json: 마지막 사용 capture는4491.01159245wall, navigation fault 결정은4491.313861819wall로 source 나이302.269ms. 그 사이 새 capture4491.081034455는4491.297060049에 실제 RGB-D/과거TF 검증을 마쳤지만 기존 혼합 FIFO 경로에서 만료 판단 전 반영되지 않았다. 기존 TTL을 늘리지 않고13.8 opt-in에서만 독립 latest-only native health lane으로 분리한다. native 최초 receipt와 Python 처리 시각을 상태에 추가하고 기존13.6/13.7 기본 경로는 유지한다. 귀환 재진입에는 source 나이≤100wallms의 추가 여유를 요구하며 source time을 바꾸지 않는다. 이 구조와 재진입 조건 RED→GREEN; 전체292 PASS/32.00초.
+
+실제 bag는 정상 close, MCAP131424메시지/필수12토픽/5327관측 payload/record time/metadata count 일치 PASS. 별도 domain136에서 /tf_static419·관측5327·capture health5882·BT log4148·player clock592개 수신,16.46wall초 PASS. 이것은 sensor/BT reception 재생이며 mission 성공이나 전체 비전/Nav2 알고리즘·실기 재생 검증이 아니다. actuator·live lease·start 명령은 재생하지 않았다. 영상 compressed topic은 없고 bag에 raw RGB-D 전체를 기록한 것도 아니다.
+
+v4 소스312바이트 집합은00fafb0a에서 hash 확인 사후 보존했고 source_v4/runtime_source.tar.gz SHA256 d230f0f10547313df113f5f5ee296fda143b69321d62f4c18af65e1469c3f5ce이다. 기존 v2 source/FAIL/verdict는 보존한다.
+
+Ruling: fresh health가 renderer→검증 단계에서 유효해도 혼합 navigation FIFO 지연으로 만료될 수 있어 native queue를 분리한다 — 기존300ms/원본 capture·receipt 유지 및 기본 경로 보존 — renderer 자체의 진짜300ms 손실은 계속 FAIL이며 분리만으로 모든 실시간 변동을 해결했다고 주장할 수 없음.
+
+공식 rosbag2 0.26.11 rosbag2csv.py(blob0a03ed86ca90d2d66ef6bf08d1fb9b744e297415)를 읽어 SequentialReader/StorageOptions/ConverterOptions/type map/deserialize_message 패턴을 적용했다. 실제 MCAP fixture의 기록 검사 및 필수 토픽 누락2개 시험 RED→GREEN. ROS node를 시작하지 않는 inspect_recording.py와 별도domain replay_recording.py를 제공한다.
+
+## 재개 및 세 번째 실제 사례 준비
+이전 v5 최종 시험/감사는 자동 승인 검토의 사용량 한도로 실행 전에 중단됐었다. 사용자 작업 재개 지시 후 소스와 잔여를 확인했다. 재개 suite294 PASS/44.00초·설치55모듈/94자산 PASS. WSL cold boot가 바뀌므로 실제 실행 전 boot ID/공유 lock을 다시 기록하며 시스템 설정은 변경하지 않는다.
+
+정적 receiving camera 검토에서 기존x=-0.55m 위치의 원통 경계가320px 화면의x312~384로 벗어나는 RED를 확인했다. 카메라/원본 모델/정책/PD를 바꾸지 않고 개발 fixture 수령점을x=-0.80m,y=0m,지지면z=0.50m로 옮겼다. static projection과 전체295 PASS/37.48초,5-package rebuild17.5초,설치56모듈/94자산/child audit PASS. 이는 정적 시야 검증이며 실제 place 성공 증거가 아니다. v2/v4의 원래-0.55m fixture와 결과는 보존한다.
+
+Ruling: fresh3D가 필요한 place 위치는 기존 카메라의 시야를 유지하도록 fixture를 배치한다 — 기존 팔 길이/카메라/원통을 유지하며x=-0.80m 채택 — 원고(0,0)는 robot return goal이며 실제 수령 받침대 좌표는 별도 공개; 이 정적 확인만으로 가림/도달/물리 성공을 보증하지 않음.
+
+v5 source320/assets94, SHA256 a8a3a1fa258b05633110ef3b280aa7cdff20fd2387b4f25db8a1ccd391d3b8c1. 세 번째 사례 UUID1499904c-2d19-4010-a499-03919ecdc832, 선별 bag 기록 포함, 실제 인수 대기.

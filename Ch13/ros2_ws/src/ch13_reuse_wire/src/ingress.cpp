@@ -16,6 +16,7 @@
 #include <openssl/sha.h>
 #include "camera_canonical.hpp"
 #include <string>
+#include <cstdlib>
 #include <vector>
 static std::string hex(const uint8_t* data,size_t n) {
   static const char* digits="0123456789abcdef";
@@ -63,6 +64,8 @@ class Ingress:public rclcpp::Node {
   }
 public:
   explicit Ingress(bool manipulation=false):Node("ch13_reuse_ingress") {
+    const auto* profile=std::getenv("CH13_VALIDATION_PROFILE");
+    const bool isolated_health=manipulation && profile && std::string(profile)=="carry_v1";
     camera_depth_=manipulation?1:2;
     gateway_=create_publisher<Packet>("/ch13/reuse/ingress/gateway",16);
     platform_=create_publisher<Packet>("/ch13/reuse/ingress/platform",16);
@@ -78,13 +81,18 @@ public:
     connect_camera<sensor_msgs::msg::Image>("depth","/ch13/reuse/depth");
     connect_camera<sensor_msgs::msg::CameraInfo>("camera_info","/ch13/reuse/camera_info");
     connect_camera<std_msgs::msg::String>("camera_meta","/ch13/reuse/camera_capture");
-    connect<std_msgs::msg::String>("vision_health","/ch13/reuse/vision/health",navigation_);
+    if(!isolated_health)connect<std_msgs::msg::String>("vision_health","/ch13/reuse/vision/health",navigation_);
     connect<rosgraph_msgs::msg::Clock>("clock","/clock",gateway_);
     connect<nav_msgs::msg::Odometry>("base","/ch13/reuse/engine_state",gateway_);
     connect<sensor_msgs::msg::JointState>("joints","/ch13/reuse/joint_states",gateway_);
     connect<geometry_msgs::msg::TwistStamped>("raw","/ch13/reuse/cmd_vel_raw",gateway_);
     connect<geometry_msgs::msg::TwistStamped>("safe","/ch13/reuse/cmd_vel_safe",platform_);
     if(manipulation){
+      if(isolated_health){
+        auto health=create_publisher<Packet>("/ch13/reuse/ingress/navigation_health",1);
+        manipulation_relays_.push_back(health);
+        connect<Packet>("vision_health","/ch13/reuse/vision/health",health);
+      }
       for(const auto& key:std::vector<std::string>{"clock","tf","tf_static"}){
         auto relay=create_publisher<Packet>("/ch13/reuse/ingress/vision_"+key,
           key=="tf_static"?rclcpp::QoS(1).transient_local().reliable():rclcpp::QoS(1));

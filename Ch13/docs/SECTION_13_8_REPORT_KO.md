@@ -22,8 +22,9 @@
 | 설치/child 감사 | 기존 navigation34·manipulation24·BT6 감사 및 현재4개 Python 패키지53모듈 소스 바이트 일치, 외부94자산 hash PASS, 실제 venv child NumPy 우선순위 PASS |
 | 부품 회귀 | 동일 hash WSL native source/fixture 사본에서278 PASS/34.47초 |
 | 최초 연속 engine | UUID a96cd6d7-9805-41ce-9dff-4c13916e4653, v2, FAIL. 파지 물리 PASS 후 귀환 회전 중 원통 부분 가림에 따른 OBSERVATION_EXPIRED. --no-bag 개발 사례. 실제 정상 shutdown·12 child clean exit·worker/rx/upstream join·잔여0·lock free |
+| 두 번째 연속 engine | UUID34f5ef1d-8fee-4d81-913b-fa76a3945a47, v4, FAIL. 파지 물리 PASS 후 귀환 navigation VISION_EXPIRED/Nav2 ABORTED. producer 비전 fault 없음·5327관측. 새 camera health 검증과 혼합 native FIFO 반영 사이의 경계를 분석해13.8용 경로 분리. 정상 회수 |
 | 원고 Level1/2/3 | 개발 fixture와 별개. 실제 인수 미완료 |
-| rosbag 실제 기록/재생 | 미완료 |
+| rosbag 실제 기록/재생 | v4 실패 사례의 MCAP131424메시지/필수12토픽 무결성 PASS. 별도domain136 sensor/BT replay reception PASS/16.46wall초. raw RGB-D 전체/비전·Nav2 알고리즘 전체 재생은 아님 |
 | 고정 설정10회/목표 성능 | 미완료 |
 
 ## 실패와 효율 개선

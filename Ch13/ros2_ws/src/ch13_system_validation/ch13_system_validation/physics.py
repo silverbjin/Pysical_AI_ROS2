@@ -1,5 +1,6 @@
 """Post-exit physical grading. Never import this as live mission authority."""
 import math
+from .fixture import RECEIVING_XY
 
 
 def assess_transport(rows):
@@ -20,7 +21,7 @@ def assess_transport(rows):
         released=all(max(r['target_contact_N'].values(),default=0.)<.005 for r in placed)
         checks=dict(carry_displacement=displacement>.10,carry_contact_fraction=dual>=.9,
             carry_height=min(r['target'][2] for r in carry)>=baseline-.02,
-            receiving_position=all(math.dist(r['target'][:2],[-.55,0.])<.03 for r in placed),
+            receiving_position=all(math.dist(r['target'][:2],RECEIVING_XY)<.03 for r in placed),
             receiving_height=all(abs(r['target'][2]-.54)<.005 for r in placed),
             supported=supported,released=released,placed_hold=placed[-1]['sim_s']-placed[0]['sim_s']>=2.)
         return dict(result='PASS' if all(checks.values()) else 'FAIL',checks=checks,

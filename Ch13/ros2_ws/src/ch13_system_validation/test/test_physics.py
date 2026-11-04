@@ -5,7 +5,7 @@ def rows():
     data=[]
     for i in range(101):
         phase='CARRY' if i<50 else 'RETREAT'
-        point=[1.-i*.02,0.,.64] if i<50 else [-.55,0.,.54]
+        point=[1.-i*.02,0.,.64] if i<50 else [-.8,0.,.54]
         data.append(dict(sim_s=i*.1,phase=phase,target=point,relative_tcp=[0.,0.,0.],
                          target_contact_N={'link7':.1,'link8':.1} if i<50 else {'link7':0.,'link8':0.},
                          target_support_N=0. if i<50 else .19))
