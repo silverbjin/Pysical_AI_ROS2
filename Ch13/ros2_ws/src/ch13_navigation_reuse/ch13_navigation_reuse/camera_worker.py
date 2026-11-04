@@ -4,6 +4,14 @@ import mujoco
 import numpy as np
 
 
+def camera_scene_option(sensor=False):
+ option=mujoco.MjvOption();option.geomgroup[2]=0;option.geomgroup[3]=1;option.geomgroup[5]=1
+ # Sites are visualization markers, not physical surfaces. Keep legacy views
+ # unchanged; the paired sensor stream must not see the red attachment site.
+ if sensor:option.sitegroup[:]=0
+ return option
+
+
 def render_rgbd(renderer,model,single_pass=False):
  rgb=renderer.render().copy()
  if not single_pass:
@@ -52,7 +60,7 @@ def render_process(model,initial_q,requests,results,ready,stop,latest=False,outp
    stage('publishers_begin');publisher=FramePublisher(node,depth=1);stage('publishers_end')
   model.vis.quality.offsamples=0
   data=mujoco.MjData(model);data.qpos[:]=initial_q;mujoco.mj_forward(model,data)
-  option=mujoco.MjvOption();option.geomgroup[2]=0;option.geomgroup[3]=1;option.geomgroup[5]=1
+  option=camera_scene_option(sensor=latest)
   stage('renderer_begin');renderer=mujoco.Renderer(model,height=240,width=320);stage('renderer_end')
   def render():
    renderer.update_scene(data,camera='reuse_rgbd',scene_option=option);renderer.scene.flags[mujoco.mjtRndFlag.mjRND_SHADOW]=False

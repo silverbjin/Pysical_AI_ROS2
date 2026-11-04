@@ -252,3 +252,21 @@ v15 사후보존: 실제닫힌bag12토픽/164399메시지무결성PASS. exact na
 새 API RED와geometry/support/force/판정 GREEN 후전체334 PASS/53.06초. 추가로실제초기/사전/파지3자세를한시험으로확인해1 PASS/2.88초(334 deselected). 이를335개전체를한번에실행했다고쓰지않는다. M0 nominal baseZ0.29에서도d0.60/pitch30/pre0.06은3자세시야와관통없음을확인했으나중간경로/물리인수는별도다.
 
 v16 build/설치/actual child 감사 PASS, source350/assets94 SHA256 061bb5a92b75de075c83b35227538c53e034d25735b7ba8a548b70aec56a5203. native staging/shared lock/잔여PASS. 다음 actual 원고Level1 UUID 8fb61073-d484-43d8-a2d3-3aa51c7c7572. v15 development SUCCESS와다른fixture·별도증거다.
+
+### v16 실제 FAIL과 v17 센서 보조 표시 원인 수정
+
+v16 UUID8fb61073-d484-43d8-a2d3-3aa51c7c7572는navigation/정착/find/사전파지를통과했지만GRASP_APPROACH의surface consensus 거부59회로OBSERVATION_EXPIRED FAIL. accepted3450,126.44sim초/274.480495wall초,CPU43.609%,tilt0.0363422rad. CLOSE/파지성공은없고floor contact fault도없다.12 child clean exit/worker join/lock free. 원본실패를보존한다.
+
+종료후rawRGB-D/실제qpos 재렌더링은99.9896% RGB동일·depth최대3.1µm차·TF오차8.88e-16, native depth 문제pixel차0이었다. side190점중41점은모두segmentation ID1/type6으로실제물리geom이아닌붉은attachment_site였다. 최초첫채널만geom으로읽은벽이름진단은오류이며두채널objectID/type으로정정했다. 이ID는사후진단전용이며제어입력에추가하지않는다. geom불투명강제는효과없고sitegroup만off한동일장면은합의100%·중심(2.0000523,-0.0000591,0.0403589)m·높이78.998mm로기존기준통과.
+
+Ruling: 공식MuJoCo3.13.0 mjvisualize.h/engine_vis_visualize.c의별도sitegroup패턴으로latest paired센서stream의site만제외한다 — 물리표면이아닌좌표표시가RGB-D검출에섞이는센서설정결함이다 — legacy카메라/외부모델/물리/검출95%·2mm/관측수명/권한을그대로유지하며새world전체성공을주장하지않는다. 자세한공식ref·분석·한계는SECTION_13_8_FLOOR_VISION_DIAGNOSIS_KO.md에기록했다.
+
+실제실패qpos고정fixture와기존옵션실패/새옵션성공쌍시험: API부재1 RED→1 PASS/2.59초(335 deselected). 실제sensor옵션으로기존카메라시험도연결한전체336 PASS/55.03초. v16 exact source350 hash보존archive SHAd87852468a494a093adeadf23f5f3e89b4f3b5f325335db0391dc9051eedc096. raw31,735,062byte SHAcedc0417234dd9a4d186cf2086394f2f107fc458e839a5526a96baf8c8fa25a3. 원본유지. 새build/설치/동결과새실제Level1은별도진행한다.
+v17 build12.7초·설치62모듈/기존navigation34/manipulation24/BT6·94자산/실제venv child감사PASS. source351/assets94 SHA256fadf346d87273f9efb59efcd27234cdbdc5f99bb93063097d1b86a4b540b2390. exact native source복사/동일실제공유lock/잔여없음PASS. 실제Level1 새UUID65199d33-38ee-4073-a561-bb8b22b5e79c를실행한다. 제어·물리·원본capture/TF·95%검출기준은v16과같고sensor site표시만수정했다.
+### v17 실제: 비전 수정 통과·바닥 지지 대기 FAIL
+
+UUID65199d33-38ee-4073-a561-bb8b22b5e79c, actualLevel1. vision6134 accepted/거부0/fault없음. 최소103.9716mm lift·2.2sim초hold·양접촉100%·slip0.027672mm로pickPASS. 귀환actual오차43.3379mm. LOWER의fullCartesian계획/실제actionSUCCEEDED뒤5wall초내지지가확인되지않아전체FAIL. RELEASE는없다. trial200.394sim초/478.197393wall초·CPU44.46431%·tilt0.045418rad,소유goal12개SUCCEEDED/pending0/errors없음·workerjoin·12childcleanexit·lockfree. 과거site관측실패는이번전체접근에서재발하지않았으나미션전체성공은아니다.
+
+종료후동일시간축비교: LOWER arm terminalwall17857.002467/sim199.44때물체centerZ0.041788626m·최대팔속도0.001856rad/s. 최초실측support0.01492N은sim201.882/wall17862.127034로terminal보다5.124567wall초/2.442sim초뒤다. 정리중늦게발생한접촉을정상놓기성공으로승격하지않는다. nativeaction은위치오차0.05rad/속도0.05rad/s·유지조건의관절목표도달이며지지접촉보증이아니다. Cartesian fraction1도지지보증이아니다. 마지막계획의FK잔차4.159mm는별도기록하며이숫자만을실측수직간격으로해석하지않는다.
+
+공식control_msgs FollowJointTrajectory.action의관절goal_tolerance 계약과기존run_pick의실측정착gate를참고한다. Ruling: floor LOWER뒤에는기존관측/lease와접촉경계를유지하면서팔실측속도<=0.003rad/s·base정착·support>0.01N을0.5sim초연속확인한다 — action완료후물체접촉상태를검증해야하며고정5wall초만기다려정착을가정할수없다 — 이floor정착단계의상한은기존pick정착과같은20wall초로명시적으로늘린다. 기본development의동작/기한은유지한다. action120sim/240wall·mission600sim·capture300ms/TF100ms는변경하지않고지지없는시간만으로개방하지않는다. 새실제검증은필요하다.

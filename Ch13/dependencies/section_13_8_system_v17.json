@@ -1,0 +1,828 @@
+{
+  "revision": "section_13_8_system_v17",
+  "source": {
+    "Ch13/config/joint_contract.yaml": "31c435dd46662ec769879137bd7b84c0dac56a14f2f1546e4338bf74ccabda95",
+    "Ch13/config/vision_assets.json": "9c82545c489718e1b96a6942d542802a18594bc3d56915ee30656f9fd21c7172",
+    "Ch13/dependencies/section_13_5_edu_stop_v2.json": "a42263a8822eef0348d62ae9194a62033457e72929c44d2afdd00ac970dba3a2",
+    "Ch13/dependencies/section_13_5_reuse.lock.json": "ed62c65d4e87ff90ca20ef5a5360c6bb60527088454a5fe986024f67e7c8fb8c",
+    "Ch13/dependencies/section_13_6_control_v1.json": "ca4d3f222fa2e12bbcdf3764214f5aa5097c8702070bdafd456cd7b5a33eb542",
+    "Ch13/dependencies/section_13_6_control_v2.json": "199d782abc8ced156c05d2e786b4d00ef1c99fc792a8588d3d906b704209ef87",
+    "Ch13/dependencies/section_13_6_pick_contract_v1.json": "9f5a670ff0350c56f94ba6b4b9a1146a050560bd69c91bbc57be5550a1b5aa07",
+    "Ch13/dependencies/section_13_6_pick_contract_v2.json": "4ed2a5a5247193e992bb1e698cff2993d7595116985dc3d22d41fdc865ee091c",
+    "Ch13/dependencies/section_13_6_pick_contract_v3.json": "e81ccd2fb1fc5fd9941d4aa0f0d5393b314e4d8d9307f4936aadf4195cf9004d",
+    "Ch13/dependencies/section_13_6_pick_contract_v4.json": "36f748c6791ceb699ea063025c6fd886284f36e8a82d09e0cef968487837ac1d",
+    "Ch13/dependencies/section_13_6_pick_contract_v5.json": "2ff7716606320dcd7b0d15b96392ccff09b1caec37d9f42afd5b2b96e02b50f0",
+    "Ch13/dependencies/section_13_6_pick_contract_v6.json": "fcd68b5a5906639cbf6d788a4c6d93c2de5858b3788c3b45dc189ad2934b99a3",
+    "Ch13/dependencies/section_13_6_pick_contract_v7.json": "5cb61994f3c047648d2ae314d0212a885609fc68cd5c97db68c0d91186370c08",
+    "Ch13/ros2_ws/src/ch13_manipulation_planner/CMakeLists.txt": "69425f7534cc5edd3a4bd1b83a42434b10c90cf47623dc1ee531ced45d4e5be8",
+    "Ch13/ros2_ws/src/ch13_manipulation_planner/package.xml": "6ff9a2d32bef200027e6e311012a8491d9d0734fe9a668030b19c9f3d9deaeba",
+    "Ch13/ros2_ws/src/ch13_manipulation_planner/src/planner_runtime.cpp": "d1dcf18aadabdff28fbe81146a616a1337c7d6669e637e1c5cec13507ad6db23",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/__init__.py": "f69cfa5b33fbbab2ec23503bd1159e9a5b03c0c5b1a4a6608a2b6c2a25f7d300",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/action_bridge.py": "666b77e2d8bc107577193506fd8bcc3cdbb34674dc693e85f72efa2d48a2545e",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/bias_reference.py": "6c2cbf19f0c9b746547e9dd89d1b9d3c878b508df48be97f787830aed62c06d5",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/cylinder_vision.py": "005840683af644ca5f326b1f261da55b46d96669835d903687b500f10623c402",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/engine_extension.py": "6b83416c63754988febef7201f17305b812fda2d01a6e9b207097188768b139f",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/gc_timing.py": "3923ff77d947ddd00ed338fd0995a86ca73754af59a6fe8885dd8bceaefbaa00",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/gripper_force.py": "84197e3f76269961d2406012e5eebabfba940bf7d24af310b0b914b196b2bc3d",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/lease.py": "3dff7ecb3782fc05f4a61b82297a4d80cebda81cf0099029220fbbc55a8ac954",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/model.py": "f19ec179792cff5e8835e26727c0824a91c21ad066df93d365f3d07d7242d0a8",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/navigation_acceptance.py": "cb652a7e943fc3d7dc74873ba6f49b84f939de1e62d70a6dea3a9d583a87e7fd",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/pick_acceptance.py": "6e64af6aa4d5819fec20eadf6f0e4f929348140c91e0ed8f5e68246a3b19be92",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/pick_feedback.py": "9fbe8c08573a016bccf883ab28e749d20f232acd223ddc950f7e0d3e6d8abfc8",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/pick_monitor.py": "6accdaf9d4db2651ee1bd8d827d3e8e77f034947c49fbe2b983e40e37f55e7e0",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/pick_scene.py": "d5b5b1b509382919fb068737b078de2e49301700c278412771c5388728759f73",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/planning.py": "8f68cbcfe04f43ca0650233fa3e6cea89b980457fc31e922322d533033d7c4cc",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/planning_contract.py": "6c9f91cb8a1054dc303b352fab300ad96d8e5c2f1423bb1eb576ee6994ddf631",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/retime.py": "15a15c5e8e6c52223ca744b579f4a8c2c447cceec2aaf2467c861ede47d93aae",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/trajectory.py": "c0e9bf5205c40cfdf8bec5e6b9767afb1357b9800e70649cbd39fb7bac24e1ea",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/package.xml": "84b466fee44ddb635ec1e9133f1e343216c9837d5a2d3c21a4cb9d86a4a3b1d1",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/resource/ch13_manipulation_reuse": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/setup.cfg": "e313fd6edcad6f471cf2e70d027d28bf70ff174c73fe4868d0fc2470822317fc",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/setup.py": "ae6a789019f440282910132fbb53d940fea714d2ffb02eccec2804a10b698683",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/conftest.py": "a4a714b954c905773aeb12c709e25f16af0c489e1a810c59f266fcfcfc224b80",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/fixtures/moveit_acceptance_v4.json": "6a74b3f8209db8ebae6e29dc0d3229b6aedd05e7ef6dfabe695065851cb5b173",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/fixtures/pregrasp_time_candidates_v11.json": "d87d164bb9987a0d60681d677171d9fc9bbad1a24c9762c591568e630ca224ce",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/fixtures/totg_subtick.json": "1a568197ad943b153f3a762edfd0d9330534663bb398f4a9750dbc6ef2aba29b",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_acceptance_evidence.py": "a18f76a1b62d1a8dd257f3587aef495b600933627fc4a1a0c8682dc63f577589",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_action_bridge.py": "1ac8e53b6f3c9761dad2b040390251093cd4c17191ce7fc6f835c609792ea31e",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_bias_reference.py": "b8dac97549e44c5a6d6bcbf7c41a7e5b38157b56612f26341cad165926da6215",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_camera_isolation.py": "cce393c833dead974014bece16d2037280d85c398337cc1e37fd6a3b92178672",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_camera_latest.py": "ec37fd9b3cb89db9bbaca0ba9d2901cc6c9b3dcaca9d34e37301f3a0183bb13c",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_camera_startup.py": "3faf016e5a7ffd12c81ca5439b02ab739cc17c401a5376b5169a961bba6f3826",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_candidate_timing.py": "fcd73185d1281bf51a41c2420eaef132296aad7cf6b4e075ace2d89cc1861e03",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_cylinder_vision.py": "ac0aa96996b6b0da670a927ee7cc56b8017ca64dd9a99ec58bbf6dc61a90acce",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_extension_lifecycle.py": "b2e9a3543f782384a5dc9270659aced6f98fe7c11fc738a35aeb627986f510d1",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_gateway_modes.py": "8bffe68f6ac1522ac9a6da3585697d5a216471eb7e37238546339945dd855954",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_gc_timing.py": "6ae7f4b3b46b51002e2d7773da23d8735c7e3ed2b113b5a4531afaa13b9d7b29",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_gripper_force.py": "69f9ffed84eda17ac2aea0a8e806bc6e2c6eaa0d6caa4692f647a4da1d6db024",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_gripper_stop.py": "df1e30bfa94b6a376ead33e64a66ed61d6f323d35818b0ee75e519af9cb291b6",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_lease.py": "221cdbe3ef154d64330bb1a6108173dccbf78dd5a9270ac625dbfd6d6b40903c",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_model.py": "c4975cd8d3d057b7f927dcf1f429b6b823298b1ec95df3d271830e05e4e82fa9",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_moveit_time_adapter.py": "bdb19c046424b0a6cf827c08eabf041e6c1990a3777f87525c91b4a90ccdcbbd",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_navigation_acceptance.py": "2cfcdf102fb4820a1fe0ae2f9f5028a7e21f2587c252b1c705255dbb6da2b239",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_paired_render.py": "734d8b40478d6cf0836e51163007e67df0e7008e58781c9eb6871b6d405deb42",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_pick_acceptance.py": "2c1cee706f3f1a31c310bf2c54943674085403f489c492e5a5b5e3b42a9f10f1",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_pick_feedback.py": "1fedd468cea7ddd44593a59305de0b32dc6fa2f9579f9a27dfae2e570bab42e3",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_pick_scene.py": "5cb2cf1c6dc3377697baf0d155c43c6724711418b6a6b4b5498540ebdfae25ee",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_planner_initialization.py": "5dfe3a26c96685dc4e4ccf707c54c35a000c24149e28da7410354be482e8a9b7",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_planning_contract.py": "86395f95a94f466ccb8848580926cc8a30a7751cc0b5bdefc6391e5dd01782b8",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_release_entrypoint.py": "216c71b9c95e7a29c5dbc212d278b2cfb279be125ecc68f2917dc176e96cf357",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_runner_import_paths.py": "1ebd365d05d0b44b07e33c5817b1a5fdb6a9e72f049e7819bc28bb1ed4fa1031",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_startup_clock_catchup.py": "d9aaa14a10d23c8ab84ebea503aa79eb614f42b9b73adffffca0e3d379e2a230",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_startup_trace.py": "a5bccaa835ec5ed528960671c340a408d6fa980d788aa3d4ff1b8f0980f20dad",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_subtick_interpolation.py": "c08a75d34b74bcd2a3a0aa6d8cccf9a102da4db8ed50614db0a98c6940872b44",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_trajectory.py": "a9c9d107bf64521c1806b027bdd51134945a7eb0c1be0ad07bf3b722a616df33",
+    "Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_vision_dispatch.py": "61145bf74ef983a5fbbeec9809438ef60f2d00014007e52f303e4effcd9a464b",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/ch13_mission_orchestration/__init__.py": "1855bd8799505e89b6f67177c2e1d3b14b57a374edf76cd330f42a9dfce6e65d",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/ch13_mission_orchestration/mock.py": "f205b7866197bf0be39cd4d68c9aa8d25ced5d5c247e7fa161c112a2543a02c0",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/ch13_mission_orchestration/session.py": "1d05a76b6c9a341f531b7fba609728ba39bc04ae4406ac906a6f4a2fc0d0dcfc",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/ch13_mission_orchestration/tasks.py": "5d5239c6131b9cefef4df812e26f2c17a7e5f319183abd3983b5b7afb2b74210",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/ch13_mission_orchestration/tools.py": "12311f3242741f0a4acb1b3779df66e42ebe6065942e4f53667fefd466f90b0d",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/ch13_mission_orchestration/tree.py": "aa6b9b7e7be6383aae435b902ced24a26974a872bfd8d6c7489aa111e429997e",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/package.xml": "aaa3ca70430ef07d72b037587d6df2a1ba965302be8b96b9948e7215c01a52e7",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/resource/ch13_mission_orchestration": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/setup.cfg": "7b25510c3bf071ea8529813db2cebdc9dae5763d9ff02a47f022abe04c997bed",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/setup.py": "e976b6e6aeedd4c656de057800272ca65e11e88b9542361e95f9c38cf6e538b6",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/test/test_bt.py": "d6e2169279619debff322c2da1ce33c96796f060858e301a1580783df6d98d49",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/test/test_dependencies.py": "a53ed898b8b6121b0eb53634288f6c33a914393a7bea7a4ad02fff6056667ad7",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/test/test_interrupt_evidence.py": "ccf18a5d69357b7fb4d12d5e56e03c9eccb6ed272ed26f06798ca25725f9519d",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/test/test_mock.py": "269457d3653bd76a53eba7b712dac807b81d972787db3683444aa36dada03e36",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/test/test_publication.py": "34891aeea587fdd22748bc62ea6004782b31915cf39b48b43accc4827bc577f4",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/test/test_retirement.py": "08d126f65d7acc7ab8ed36698d6ae63e60bc228159e505a464c605ced009170d",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/test/test_ros_tree.py": "0cb4645502616b44c24768da5c269bca8858087eb2f9986dd48620465c4364f2",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/test/test_session.py": "90ac8b0f2715afc9c70bc4022e09066e4632fd5cdec2de5fa8dbbf82981911b8",
+    "Ch13/ros2_ws/src/ch13_mission_orchestration/test/test_tools.py": "247f1d2e5210a8951c69463ca2e437515c1abeb211c95c9c028a323b5a3b16c9",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/__init__.py": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/approach_geometry.py": "c72396dedbf31a59407661353f5411e6eb516bc0a754ea8ea44c4954c15d4dbd",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/camera_native.py": "8c356d7c3fd6453034dd671a043599eba44c21a0fbe9c3aea1df97c1adb1e110",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/camera_publisher.py": "32c535f03b34f993ba1ab52afcd5c255880592af50813eee13eb10e09254e2a5",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/camera_worker.py": "99ac844e1083ba0cdf8f3af342cae4fefd532561b450ca35abdd095c0bcb24e9",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/command_gateway.py": "856f1c32b0b23640be630debf2b5415da290b05364f7900f3d948bf30fc5b1da",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/cpu_policy.py": "47a7f9b3ce8090f768d7b19d61b783d5eafe7f4d16fb9f0f60adaee5973e0375",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/image_artifact.py": "897d273aadca89790815762f373e002286b8c0a9fd7775dd3be16c7a29b172ed",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/nav_contract.py": "89970671be44ffe77fed60d0aa222374b9b5c5ba772c083f51e863e6a5b262ec",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/navigation_boundary.py": "2af61606b04c16c9a8cc490c33f84e3ec8b53c420f466b1f859ba7950f8c89a0",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/platform_adapter.py": "4a456d9801849afa61fd40e676b5005157c10826e6f468141008e8e2ae62ae31",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/safety.py": "64e77cf33cbf4a0c2d00b650521c9c3865a33f9f1298edb559553d8f38f7d3c7",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/scene.py": "fc1683815cf35c53a984864be2dcb80d4c1ac0f5276cbb1948aeda13fe7eb94e",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/scheduler.py": "9e88234f35a5f39e8a0dc055590abd5796332774e9971599857380fdf046f527",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/sensors.py": "c2a72098ee21841fbc17be141b2191542a191e0499e1c36993a1cd7e372cefe8",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/startup_trace.py": "a098840b32cb8c74f14f87b35797572df402a688c2055aac653143197d754d11",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/state_adapter.py": "7277c4976a01927139855a70857e7b3cfa45ce3707998d96729fa1dc4b186563",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_approach.py": "cfa278d20481b8620044c6c7e03323a39f071eefa3243167a18d28166ebfeb09",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_geometry.py": "76787857f72789828318878f61333c6dac7def3b56ece132204bc25d3691bf55",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/vision_lease.py": "b3f9a80877e838a0d5dd555801ddbc0a9fb1d7b10b2e1ba1ef33e1b01e58f9d0",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/wire.py": "03857ab7e4df52989e00793915c4693e8e2591fea40105eda734d832d3e36ab1",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/world_map.py": "bc9cad146190d4c05e2ce7ba095f70f8bb46f41494cbdfed4095df611e98a156",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/config/footprint.json": "5f41088511c75fed100ad3d6490f6067816fcaa3c9657b3f4fe4eef4310230af",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/config/nav2_params.yaml": "9d466980ce1c482ce227a93643108931c3750a21d10d1994683d94d1d48314b8",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/config/navigate_no_recovery.xml": "aa183c77503b353f517645585fa18a61190aed9474543590ad84fd0ec6e4a5b8",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/config/platform.yaml": "ef4dcd81d4c564b7f614d6a10b0fa6cc2d39e6a2d4e135686531f224f38c341f",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/launch/navigation.launch.py": "04386b1e460a113b20ae6e8c5f46d50f6b57a5df192490fedb9e7caa7b6a76a2",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/launch/platform.launch.py": "b0aab7193ef5e876e10fddf49c65301fd781b3b7735354391e1b4b6ede5de507",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/package.xml": "fcd6d6df4a6ff1cedd03348985c0c8cd23947b85c3afbebc57d0af834c435f3a",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/resource/ch13_navigation_reuse": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/setup.cfg": "954a16319317f2721c4785f80aac22befb7c56e2498c14b836dcb9f5a2668e48",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/setup.py": "f1d1b74315cd9c1ec9b52b7277acf2cb1aba913f4199437700300215225c1dae",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_approach_geometry.py": "ea17981eed98ce232ccd9ac6a26f75bead35c0e72ddf45dd3aed99c5c42c3307",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_blocked_free_goal.py": "1115f9b8c4300dd1b947ba37d1a35f02263324d94f23e545b1c83265f86a8d5e",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_camera_cadence.py": "75d54b414800fa6e6215cfed044da6bbc97a0065fc32d1c54b5da7977badb0f7",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_camera_receipts.py": "e2d802ea868e254c0e8c821df15cd9e6a04f61429787e3d9dd3ad0c740c84017",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_capture_health.py": "c995cfc42681b21525a9e8694c093b8ac0ad4d115ce37a3de0d2629536133430",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_cpu_policy.py": "d95434034a83087c9ff19a758a81b9283156975fda731fc675caf4f9c2322b23",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_gateway_validation.py": "15673b1b4a37fcc509a782c6a21747dd9ff4df380bfe314ad06305a40bb6cf62",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_launch_lifecycle.py": "13d16a9664ec14063d2fba51ac0ea0f47a262f56c8d2f498f38b479ecc3a1a83",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_nav_contract.py": "5dc513a19ae210fced061d1fcc25b4a0769c808a6bc29f8793295d6c66d59b40",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_navigation_wire.py": "afec0bdd2de8ea784eb684cbf18c8c13542d2d4e9262e9f6aa0d68daf09a6cad",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_concurrency.py": "5f8bcd5e920d155e41f33ab4a4505d82010b9ad89434f1e5b7af9dd6aeff9092",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_services.py": "33b9a7e6f415278605943cfe05c395cf0854a4cd93c3bb8a5037abd9e02810f3",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_platform_wire.py": "9b062eba31cb09405fb4ced261cd040023e7fe02ce788bc71586e53f1a44e75d",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_probe_service_wait.py": "0f19664702d4fbdf3bbc4030a2f24ef847d451af00a740930027faa8164dd7ce",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_process_cleanup.py": "39df824e2872f639f8b827e28fefb31402f3d344b3205699a776437a354c3def",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_reuse_vision.py": "d7cd28918636583fb6d7f9b677f3e0c6a197f87d9f45bcedbc618caa6e5f2a6d",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py": "a6be85a1bb0beff1e0217a91b5658b554be50cef9467146e9ff4134821eefccc",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_safe_handoff.py": "4de95671f1eb22069e5f14cd494acf6f6071840965ec3e82b0b51f989342673d",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_safety.py": "e8b6f9f9e85acddbc1907e77bddf7f6532de68e6947e6c94dd1599a972bb8eb9",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_scene_sensor.py": "91f6806f2dc2c106567ded82e2c0f16f499775ab80e9a0378fe9127f9b31f235",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_scheduler.py": "f0f7bea575f2290ef3d7b96def3ffa4298dc7f7a34b8559b6a594f416517bd76",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_slew_clock.py": "c5ae57e67675baeb4d0e28a45ea5b1fcd125ba8d4a7081e86fa2473cbadd8b0c",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_state.py": "c01e55aa02029b3a115a8d2cdb3a8b2b78adacb8c76d4ab58b008de3f6006318",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_tf_wire.py": "d89ced70d819027520833e03343f6384c5dbf18f68c71e6cf961e8a4cc6485e4",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_vision_admission.py": "611714217b542ea1f5df58b049516e9f7b28507928fee7b44b0c9dd9c4ccb282",
+    "Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_vision_lease.py": "a3d2accf3ab30f78d29fa8a0022bb2e25760f942185fe8844f07ac21bad3aacd",
+    "Ch13/ros2_ws/src/ch13_piper_moveit_config/ch13_piper_moveit_config/__init__.py": "9bd587766f105dd049aa59a233f976d365b44560ce58d6ef73bc7d319744767d",
+    "Ch13/ros2_ws/src/ch13_piper_moveit_config/ch13_piper_moveit_config/configuration.py": "fadac13a6ce8b5a47dd36470857f4f8165db8d0e24d18f27dbbf852f0011a8f4",
+    "Ch13/ros2_ws/src/ch13_piper_moveit_config/config/ompl_planning.yaml": "ec857a4131ff775eb28fa20d80f4df55330a85264742677f5b49bbabf8334c3d",
+    "Ch13/ros2_ws/src/ch13_piper_moveit_config/package.xml": "673c791947e2abda79ca954f05a75d31673f88a834c6b69d6eb667a6e43b62ca",
+    "Ch13/ros2_ws/src/ch13_piper_moveit_config/resource/ch13_piper_moveit_config": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "Ch13/ros2_ws/src/ch13_piper_moveit_config/setup.cfg": "10ea5db8112535f5b1fee885555bbd7920ff2dd626afaade216728398000d762",
+    "Ch13/ros2_ws/src/ch13_piper_moveit_config/setup.py": "5c92568811a105a5281bc59293b436ad5df489d43aab91fa20f7b9e0ca7b53a6",
+    "Ch13/ros2_ws/src/ch13_reuse_wire/CMakeLists.txt": "3e2e3c913627874278e1181fc9b104bec585734947d422c38a40471888ba31ec",
+    "Ch13/ros2_ws/src/ch13_reuse_wire/package.xml": "24ed4aaeded4782085f6ea8941e999b653f49d20ced8b0cca589012393fe1a4a",
+    "Ch13/ros2_ws/src/ch13_reuse_wire/src/camera_canonical.hpp": "986338631117da05356465ae14a81ffc8bf1c3a5af974cf4da6cf8825fc53f8e",
+    "Ch13/ros2_ws/src/ch13_reuse_wire/src/ingress.cpp": "06c8882ce2fb963bbdaad1918253f0456ddb0a4a65ecb07b9d48676010d676f0",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/__init__.py": "7ac48f2182dcffc67653b765ce696a9b021ab3bafe982338b30464a28dfa31aa",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/bag_inspection.py": "579b93562e2b654e0b534997849c8c7055c8f404047264bfc2deb9a24dfe44ad",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/continuation.py": "d9e30769f3db28875aaff70542fe9baa6747d65e7e234f66ef11db709f0e9bff",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/evidence_archive.py": "1ae0ab4900d61b6b9ff1fe6137fc27c21512c87e75a6136b89510428d8df70af",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/fixture.py": "faec730ed82694e792e1cb840df10941d7ed01f3c262dc49bd4b369c51020a8c",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/metrics.py": "576c0d48c5d13f0e505e1ed1ab195c857f094109deb1093deda017698894498d",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/monitor.py": "4f57343af4f44c7aa9def3823510e2835420010e595803e0926fffec814ba193",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/physics.py": "f646552ca79de58c95cdc7af9ca758328d1ea69d17f4ed36df5028d0ec3d8828",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/placed_scene.py": "712fa3b24901e8c12eee056cc8f75feb7d7204f781aa5d7913f206b47f511ef3",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/runtime_staging.py": "2dbc473d45be13c54c47a0364c9da490da09a2eddc018c7415b85db83270dd4d",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/scenarios.py": "df9cc648ccca43860dcdeba0ec9e60980f9b27f388f5c4355761143f78fc6a81",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/scene_contact.py": "8c04758af483cb437078552994e55caf2ad98740b04df416544b7170e78ce382",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/startup.py": "ef503b82cea59b637bf6c943d58fcad687c1bf7a532fbc05e84fb572577e0e2c",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/telemetry.py": "f9db4f63c1f8d663ae2c1f7c5bf511b42cca66aec593bb6ef54524a6ffc2c8e5",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/tools.py": "10b0937ed0170b8dcde08da9e08abff54cce41f5076caf3344ed54b99fd46283",
+    "Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/transport.py": "5120b1db86496096b27ad1974684736113ccdf08cdb9bd3fe9fdbfe9af9ee318",
+    "Ch13/ros2_ws/src/ch13_system_validation/package.xml": "288c9b8355dc0a75195d8361d8d86f52d65612464881d4b7cb442b31bf8ad976",
+    "Ch13/ros2_ws/src/ch13_system_validation/resource/ch13_system_validation": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "Ch13/ros2_ws/src/ch13_system_validation/setup.py": "9f33c3c0dbfcb1e0b7b1d74d1078bcbda1fdbbcf90cd6bda4995e5f337e62ce1",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/camera_trace_v5_v8.json": "039709fed8ebc2bb5232f5c4f6ceb1e516610e144f1838298749c166071955b1",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/camera_trace_v5_v8_dense.json": "b8cf9228595fce5ae305767be45ee76f694104bf486e0f3953cf21792487cacd",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/floor_pose_candidates.json": "2855a592f0eb3655e4572e7825c71ba6c54e711b5f8752637722922cc9f0df99",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/floor_site_occlusion_v16.json": "55d0189e01553aab1d7a552d49562a000956b75640544f898b8928512f87ac87",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/held_visibility_v5.json": "fc33bef0e055326d67232f548a206c5a9ffc9c3e6cb57722aed904ac8e9b9e52",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/v13_surface_outliers/capture.json": "98412cc2f38c37e5d324bebcebe3e119b940a118eb4515706e0e0d9c8d2db11f",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/v13_surface_outliers/depth.npy": "954be832fe9dad4cac0b150959b90131ca9a8b0c244b4fb19a50dd5caa683bb0",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/v13_surface_outliers/rgb.png": "aafd4e07a274032cf08f66750f0ed68f8cfd0c94f07dc0ce54fdc86bb0f9ed2f",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/v9_depth_boundary/capture.json": "fba33c4b25090046eef18a53927390713d96cc989f2b3f0d725d6f77331095e9",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/v9_depth_boundary/depth.npy": "2b571d95f902a4a18dd748fc8807a59a019ffb0ec9dc3b8fc9f178362348fb93",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/data/v9_depth_boundary/rgb.png": "41bf174547d73b13358fc28b1fb0972f1b7e850ccb91784244fd591aa0d64e0f",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_bag_inspection.py": "fbda77ddd8eac66ed368d83628445b707139a66a2e6e2f285b6fd6c96b754a79",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_capture_wire.py": "069bb067373abe7f4e26822de4c9319aeb65781cf8bb7942e8e912980010e59a",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_depth_boundary.py": "931966f448f5dbd22d5624a84b2b1da8d55c2c24adb8d41e56ee2ac51a09b349",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_evidence_archive.py": "17dd9bbbd7c8e70c624076436ce0ac1c0ceaca72e123ee53f14bb64d8082747b",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_floor_integration.py": "0094d15c0b14a3fa2e466ea018c5ec6a52dc6732becf9476ef33e7e43348ea0d",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_metrics.py": "256a1c320666329fc9622358edc8600036d1cf25401dfb176c4f718841569259",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_monitor.py": "da55e2547435793060dd5d47b2e14e17772914fe38aa1fbcf6ebf0a58ba59238",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_health_lane.py": "87a9f9d53d5fd2296db67899496a17c7a27cd767094ce8871abc79d60997f3f7",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_physics.py": "d40bb0a7adf418a9f55d39fb8f7c21e87b36a725ba6baead9c01417be3af17bb",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_placed_scene.py": "602b071c7f001d317335881c30dfe58dd61e1274fd11c9784a97582e8fdf659c",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_receiving_visibility.py": "2da2d1f169ed8e61f36d77b222e0091ffe1adbc533d93b9c29e3e95e9b6f0727",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_return_admission.py": "1319066b0153df796ecd88474d665bf1ea918f930ea43325e94f7b906f472d7d",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_return_ownership.py": "08d6635043bdcfdb12a6ee6290bb19e7e8a808a039a3dcc66e81207f4da98edd",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_return_pose.py": "aef6c4da41845b61b6bcaa2ff0f1863d64f164271401ec5e0ac009b10ab7f59f",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_runtime_staging.py": "551f64712966b694b293d76559739b04a815cf098bae0dbfd23861917ecfd8ed",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_scenarios.py": "922f428eddd5eba18d58b9b4dbf8e230f47bc6b05b563211c155bb4f83b11bee",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_scene_contact.py": "b7155c2424bf6e5f9b713650d942abb19ea824e75c69f2a12744a66a1a28d4a6",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_startup.py": "f46a8cfcf2f2081ccfaa93dd641c04c029175a20abef01f7f1dc14e9862dafe5",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py": "fdf27ec67ac25565b3f2e9f9b58a08832e39ad62b539bc91a5007d0a0682e4f1",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_telemetry.py": "8a8d29e9364fda290b64b56cf4545c569ca357167e0f50d541b60e82f9e04fa2",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_transport.py": "b7421b7fe08d9cfd057e9db1c1461b18305c0fa88670400833467dee754957f8",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_transport_camera.py": "73b1158969260958800f71d6ef1b1b444f6e38137a42d103b783d65369daa7ff",
+    "Ch13/ros2_ws/src/ch13_system_validation/test/test_validation_tools.py": "07c7d07a17d1ef0a84cc0fe5f87b2f69a07b093f8cb071c2e734eddc2690b88c",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/__init__.py": "71b1fdf1ada54b894a37fd568540e4845741e9c5ca2b509caba1d359427239b9",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/cache.py": "160e9a1e2184951760435461056189706d53f7707264d860e165547bc4882c88",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/camera_info_adapter.py": "015a847145a72bb67bb2f8885f4cb6921aba2b6c9995ac8e93c7f7e083a849ba",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/contracts.py": "fe6bd62b660bcd16c7b6031f36b7619ba102689378d5df0610b1352824988761",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/detectors.py": "4ba250788efdc41d36bb052dc2b82b5624698210f25f727c80aee9f04b5b19a5",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/execution.py": "468fbac68d36fd522095c6f7e2bf46bb3d67f3b7d8601676c8b14523a6ef7a87",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/freshness.py": "86c39732a4c05272c4dd166feade7deac17842e40b757a482ed22402e770b96a",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/geometry.py": "c0d2e8405d6bcda6e0d45733399220a79a3f3eba61477f189f2e395d73481724",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/kinematics.py": "c42a4d6166871ad4727097fc198470af95c94b7ea8f5feb37fd34e5629e5233a",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/native_pose.py": "bddca95c03b22b46953517d77ec6dcb10ca73a4fe813468f6e28860f9d392020",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/object_detector.py": "1573eb36d9b73910e2e23ee2b4905432fef4fe24a5400972129959af9771906b",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/servo.py": "a286355c128412ed4e2138280709006b37d536b1d85f902d375084a6663e2824",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/trace.py": "690357df7961c33e2b4c947cb7d519e5f2a9a219771c879953bc829d7bdd038e",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/tracker.py": "23efc538a9e7bbdf0289127b3ca2f3a8b756ec1445dc587293de09177c61ab78",
+    "Ch13/ros2_ws/src/integrated_robot_vision/integrated_robot_vision/vision_processor.py": "4c61e61300798f13d1c46f6973735c78f3297fab340d9c5462efc74056c67bfd",
+    "Ch13/ros2_ws/src/integrated_robot_vision/launch/vision.launch.py": "f0547b4bf0b40ba7e5acbfc73b782741e5bd585407a29e02944dd0c23630f7ea",
+    "Ch13/ros2_ws/src/integrated_robot_vision/package.xml": "fbb516718367ae3626655ed527810c5034b3b9097638b25e87def47986e37ac5",
+    "Ch13/ros2_ws/src/integrated_robot_vision/resource/integrated_robot_vision": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "Ch13/ros2_ws/src/integrated_robot_vision/setup.cfg": "cbd44d190102f24e0f115906ec34527ecf20caddc038b5ff3c8a8107a0d34c46",
+    "Ch13/ros2_ws/src/integrated_robot_vision/setup.py": "d6ae7df17745fe1d8bbfa1d7e2fa9323159d8da5b9f47b09591b0d35d12ed6ee",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/conftest.py": "5304ee5bfdb9cac1d7288cf7ecfc7534e844cea22a8d4f3e2e41c78029a5d860",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_candidate_diagnostics.py": "6a9e7545d59ece72bad2c22f448095186f6adb2eb0c33a70439d2f83b85270bb",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector.py": "6abe62a96a5a3b7a6eb99af8d254c86860f2ac3313d6312697af8cae0288c54d",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_detector_node.py": "4b4f49f11f0be08d839aa481edfffa439a4ae650c1f03a516bad71cf407fdcc2",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_fusion_reordering.py": "71efcef50e0cfdec3ccbd4f44f3252bcf261e7d021981a02d4d2a6870a7c5c7e",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_gazebo_bridge_config.py": "cab88152c303f57d1ebd87844e465886a6995863fca81dfea3e1f21e122d50d3",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_historical_tf.py": "7ff75060f9dbc7b370f5e9c7dddf9531b7773273c2f8d6861cb8b379e4cecb2a",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_live_worker_shutdown.py": "c5785733ff00a30da7aa8afb7acde30aecfa7ccd020a48fa937c30529c4c66ee",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_rgbd_cache.py": "11d6dc7635414de446ad1919bf05a7042fb27fc98af6cbca5b69b2a96af997ea",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_target_messages.py": "88e4dd977f0bdee96eb9828ada88ddfb58a9a9339fabce1ee854c0b9b24873c9",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_trace.py": "cc1036b946d94bdeaf54ab32d6d83b17c01563ea474018d99740c2de723ed822",
+    "Ch13/ros2_ws/src/integrated_robot_vision/test/test_vision_node.py": "8d101f2e97e21be6062a1d02ac755a48bbc02b151d5b10b082881d8db6f267be",
+    "Ch13/scripts/reuse_13_5/REUSE_MANIFEST.md": "e27e9efff53bd1d4d5d67a51a243314224ef6c4a84009bb16e1b28dc9eba6edb",
+    "Ch13/scripts/reuse_13_5/audit_r2_install.py": "0bd8c065c428a92415f9bc5007b48617d8931e58fed89da5673d8a505aa895c1",
+    "Ch13/scripts/reuse_13_5/audit_r4_candidates.py": "a2f295171f3bf04652e5e0d4a6496b388bc308b54cea3f532f3c9210eef842a7",
+    "Ch13/scripts/reuse_13_5/build_r2.sh": "09e8f6c35335cc777387b10a40ae0c0c2f1625dc227fdc22d3c8870f89fc5979",
+    "Ch13/scripts/reuse_13_5/build_r2_wire.sh": "51d5d78d1a2e7cc7eed3b35b88dad3c620b18df5bf7b13941a1076f23beba57a",
+    "Ch13/scripts/reuse_13_5/check_admission.sh": "8329cc87abbcdc728bad3845e28368b9603edd7f3dfcd8d8b0108049d8f5bc45",
+    "Ch13/scripts/reuse_13_5/check_camera_worker.sh": "5da2292e6a40c6685ad180e349390aad8620292e17bfe98e920ca5f3dfbfa59c",
+    "Ch13/scripts/reuse_13_5/check_concurrency.sh": "ccca761e42eaa587430fdf8008250de0d10dc12292287630731aca0996a77b8a",
+    "Ch13/scripts/reuse_13_5/check_gateway_validation.sh": "dd6fa45b3fb387eec098f554cfb5833a1397aae33cc3c1c5aedf03b170b71c3f",
+    "Ch13/scripts/reuse_13_5/check_r3_updated.sh": "aec95f92db6a1c783b87b419d560d5766a335e413de5577f207e57c2b43992a8",
+    "Ch13/scripts/reuse_13_5/check_r4.sh": "570e385f20ebf4a5b724559b330d6699ae0872ec83bb9d2a66847994c1c0ead5",
+    "Ch13/scripts/reuse_13_5/check_r4_geometry_all.sh": "07bcffae13499ac282053dca88bf893c2c49c80034d87ac56b0c4f7780c6b34c",
+    "Ch13/scripts/reuse_13_5/diagnose_r2_shutdown.py": "46d21b97560288333e145c566b16d7e8efdd8d3209e04b80cfcc71b11919b2d7",
+    "Ch13/scripts/reuse_13_5/diagnose_r2_shutdown.sh": "fe0514f7afea1b84f472f8e806d32992460bc78956084219e91b6165ef3ba682",
+    "Ch13/scripts/reuse_13_5/env_r2.sh": "0ef69a786fe101c7d285acadb3f0444e3ce6ab6816a4127b57cad773cd9b4604",
+    "Ch13/scripts/reuse_13_5/finish_r5_preflight.sh": "e8d0558f1a97fde958f9d55bb67ec82efe3913816b5b8b6eca47c27fffcad829",
+    "Ch13/scripts/reuse_13_5/freeze_acceptance.py": "09f2d981e5864d2444df24c78cd1d85749ad315bb7f669ae3c5140937bf82d9d",
+    "Ch13/scripts/reuse_13_5/inspect_r2_residuals.py": "6a1f21f88089666fa814642f7bd6bcac5d84a48721d51f73aaa6f373133a636f",
+    "Ch13/scripts/reuse_13_5/preflight_r3.py": "b57607babcd4ccc97be6aa1440e4f47503d837ca45c9842b7b29069a1cf27b01",
+    "Ch13/scripts/reuse_13_5/preflight_r3.sh": "bd4efbb11533a2e94b20736c25687508c70b62c3361cf56808f3991a0a553634",
+    "Ch13/scripts/reuse_13_5/prepare_r4.sh": "f3820309e159b6b9b8d26894d525f44aebe23b9a7bc2e615e92a3741a799756e",
+    "Ch13/scripts/reuse_13_5/probe_camera_worker.py": "76f4e6948c944277d0a3d9f752e36d5a7b56a9f7eab3d5136f1d20d78494f791",
+    "Ch13/scripts/reuse_13_5/probe_ros_message_info.py": "527497fb0c15ca057f8db1356a2f9420e15cefd13d66a296ae52c04d1b2c12fe",
+    "Ch13/scripts/reuse_13_5/r5_preflight.sh": "32d8a6be74fb535b109aa30b70bcde00eee0fc9809d006b3148f3b9a65328555",
+    "Ch13/scripts/reuse_13_5/refresh_r2_records.py": "07034322c6ca37ecea6e7d36161ced6bea9a74f2d3af903b1b6ec7b8bfb0a5af",
+    "Ch13/scripts/reuse_13_5/reproduce_upstream.py": "39c4848ae5b769611860bd7bde1dcfa125e8a5ba112baacb7cfca761effd7582",
+    "Ch13/scripts/reuse_13_5/run_acceptance.py": "36b400c6787f30fac38f5b6d53dc97b40a0472962f695b780043200c5161939a",
+    "Ch13/scripts/reuse_13_5/run_navigation.sh": "18e8ca89b0a54231c3d7c394ffebf53972aa39dbc8b646836c8a167f1fd29824",
+    "Ch13/scripts/reuse_13_5/run_navigation_probe.py": "c5bb8b2e0db6819a0bc01d28d9e74b02683b5cb52774947faab95b48535f8c65",
+    "Ch13/scripts/reuse_13_5/run_r2_installed.sh": "29682a8b229061b914bd612ccd7618625528880174be93f540aed27ebd5db1d1",
+    "Ch13/scripts/reuse_13_5/run_r2_probe.py": "02b991cb364ac05bbf74e08e107b3537136cd353a6f365efbff024e9d57c6416",
+    "Ch13/scripts/reuse_13_5/run_r3_cases.sh": "3dc01fd3d5d0b60b1d0c9cf35031a15525b21998e8a0d23014b34dbd956c1aa1",
+    "Ch13/scripts/reuse_13_5/stage2_checks.sh": "1696ef8b627298e3f2a121d810a0a4d39b7d0c89f019bcd5e9c99d98146d87f5",
+    "Ch13/scripts/reuse_13_5/stage3_checks.sh": "8edf3b2a928d36f2a024dcfabfdede411bea4754ce7dd858c47f7e4b87601e08",
+    "Ch13/scripts/reuse_13_5/test/test_native_arm_pd.py": "64100749f78cdc9b882f61cfe3e07d3ce387f8c5faeaf4cebd54957fec4209bd",
+    "Ch13/scripts/reuse_13_5/test/test_reproduce_upstream.py": "65059598c9fc90399017d157b46ebf7cb0eb5e5f903fe9713c0854d3b476c05a",
+    "Ch13/scripts/reuse_13_5/test/test_walking_gains.py": "7a8af49fff390346069b449cb8144dbf2daeed3950e95aa61494b51aab7ab8b5",
+    "Ch13/scripts/reuse_13_5/test_r2.sh": "2d323e616a480d0cb078dcf1701ac642603a919b6c19f12b89fcc9f04b6e7ed2",
+    "Ch13/scripts/reuse_13_5/test_r2_launch.sh": "7e44e271d29bc5ae73c3497d1cb78e4035880ac8d3d1708d5c99c18febfd21c9",
+    "Ch13/scripts/reuse_13_5/test_r2_lifecycle.sh": "84b49689fd70bdc8f81f50b70e1b9697a1cf103de64a2badb2d54ce8eeeb10d1",
+    "Ch13/scripts/reuse_13_5/test_r2_service.sh": "01f6835304f24f06062df369f71f9be56e1faa42d3df1cce4517406a04bb9c4a",
+    "Ch13/scripts/reuse_13_5/test_r4_geometry.sh": "734dc8a4c1be3ec300a3632a6abee5cb7c13907ad448344e10ef994eefd0fc0f",
+    "Ch13/scripts/reuse_13_5/test_ray_poststep.sh": "fff7ecca113ddcad4aab5120a3db2232421d08f637c56710b310da9b75afb9cd",
+    "Ch13/scripts/reuse_13_5/third_party/IIT_DLSLab_BSD-3-Clause.txt": "9fc6747a3f5658530f64428bfaa9a660efcb8b60a8f43154941a1682d02ecae9",
+    "Ch13/scripts/reuse_13_5/verify_acceptance.py": "344b8a9f161e42b5b4867c818f141997e9ef49ac6a3d97d8b7ae6cbfb72ed4aa",
+    "Ch13/scripts/reuse_13_5/verify_navigation.py": "668597e71c0dad4e15f6e76c4c539dfe95f269be424849a2d35db8a470b47f4a",
+    "Ch13/scripts/reuse_13_5/verify_r2_probe.py": "bd27c746c602b9aa35d28e291dbcd617b83c8de097e4a60e268589c565775be8",
+    "Ch13/scripts/reuse_13_5/vision_mission.py": "4397051f1bd1effb801fa377e3b383b388f8910919b671c0898898d797740502",
+    "Ch13/scripts/reuse_13_5/write_r2_completion_report.py": "5443c1d3faa3c0aecc78f0d45dc2bae9c767d69179175745bfe7dc06c6a1b092",
+    "Ch13/scripts/reuse_13_5/write_run_report.py": "6f4b00c4e510c1531425798aa4d52ef69a806d4eb79d5cff7e9ff4d671758d06",
+    "Ch13/scripts/reuse_13_6/analyze_camera_visibility.py": "036e2fc2c9b3ce8854a0bce1fb900712c880de97d945022ff87301d8b9b453cf",
+    "Ch13/scripts/reuse_13_6/analyze_lease_gaps.py": "48c25c28059402a97c21c7e96feedb83b86ea7c646fbae75914e9c79f37dfdb3",
+    "Ch13/scripts/reuse_13_6/archive_evidence.py": "cb962955d570dcbb8cc89a5f1cc5086ee863de436f578c89970bba72a784b737",
+    "Ch13/scripts/reuse_13_6/audit_install.py": "9ecec85276e13f33544b636f9636a4aec7995ad82fa8537def68a3747a15f824",
+    "Ch13/scripts/reuse_13_6/audit_saved_timing.py": "9464e2e4432973d7397ced1bfe8d2a4ab4df13ad4007ae49a7c6ec00614d40bd",
+    "Ch13/scripts/reuse_13_6/benchmark_admission.py": "6d2c90fa1a207673b0790adbc3dc7c3bf2749e03615910876f262f64087b3465",
+    "Ch13/scripts/reuse_13_6/benchmark_rgbd.py": "ae0d7f22cc0f2050d943af6574e2de19af551dc7ad498d846ebbf48ab97f4ab9",
+    "Ch13/scripts/reuse_13_6/build.sh": "16d745703c283f28251131a1796ac6e894ae26eaaac1ab8d5c5a312c6602367b",
+    "Ch13/scripts/reuse_13_6/check_planner_lifecycle.py": "553351d903113dfb7aa138d25bb4816d67e9968d75ea36e5d6ca8ae195890e7c",
+    "Ch13/scripts/reuse_13_6/env.sh": "6ca02fb9e8a73d17eefe6caa4bb0ee579464b51e2ccc3b998fed0c4feb0ca099",
+    "Ch13/scripts/reuse_13_6/freeze_runtime.py": "d314a19ed105ddb8177ec973ccc53b3182f378a4df1a25504abe088b6d898f93",
+    "Ch13/scripts/reuse_13_6/gripper_bench.py": "55e265f09abb98acee7e7f0b6541d9531aa990335623eb9119108de748e74a0a",
+    "Ch13/scripts/reuse_13_6/inspect_arm_bias.py": "82450e75a73559af503ec4ae62aa73a053e2c0715e1fcb2c8bd71d0d3f544076",
+    "Ch13/scripts/reuse_13_6/inspect_target_frames.py": "6e39f431c9388e204569a75a14e36890d3028c15ca8d8b072bb6a1b95e324a9c",
+    "Ch13/scripts/reuse_13_6/prepare_model.py": "1dee0c8a907781819955d7f1a0dda29515314bfbc6b5c292818f7f0eec34fc17",
+    "Ch13/scripts/reuse_13_6/restore_evidence.py": "4630d5e693125ca0cd6d5f2a05491cc9b0694f12cb86104068a4ad2e42194f33",
+    "Ch13/scripts/reuse_13_6/run_arm_probe.py": "094475f041965748d8443a396214330c182958aac656fa6548fd82bfe81e78fe",
+    "Ch13/scripts/reuse_13_6/run_case.sh": "6ee93052f14b4b55c29ffd22e2b60d82f827b89aa4f9bfc6be922f9ad9775b04",
+    "Ch13/scripts/reuse_13_6/run_handoff.py": "c4b64e47eb6a3ace79251d8be6bcddb272d1f13dbb284b67f57fd8e3df437a39",
+    "Ch13/scripts/reuse_13_6/run_moveit_probe.py": "d5b3dcb418c33caf300523849117818ae54f918112a3bc0210fef1871c9c2cb4",
+    "Ch13/scripts/reuse_13_6/run_pick.py": "cc225d9da9196fe3bc224f22abeb0c78fc4fc945383206e5ae7b371a3989f3b8",
+    "Ch13/scripts/reuse_13_6/run_safety_probe.py": "49ae8e3310818220b16486acab6c3d5f5aaa4f88dbe7bde7c357283647162ee2",
+    "Ch13/scripts/reuse_13_6/run_startup_probe.py": "e1144e2b7d9d9c63a3bdbec4ee890c3419a7cf26532243389d64a3cdf467b405",
+    "Ch13/scripts/reuse_13_6/run_tests.py": "84708f7ee0227b1be6e7a3c96f98c1b14d6febc64f9764222184cdd4c26aaf6c",
+    "Ch13/scripts/reuse_13_6/verify_arm.py": "485219fa497578a651fbb405cb1a9f006909d76ab9e9faecba562870181e2ee1",
+    "Ch13/scripts/reuse_13_6/verify_handoff.py": "5b3a9082181f6609630deeec98aa694f633271e0e7dce69e3086d7b395ed2a36",
+    "Ch13/scripts/reuse_13_6/verify_held_cancel.py": "04df73af8751aef663f07f87d7fb301c8aef5809b7434bd7502612262dca843c",
+    "Ch13/scripts/reuse_13_6/verify_moveit.py": "777c1b644e538ea98e2f5d5e15033ce47d06765a60c9128c34d7cb5ab362d694",
+    "Ch13/scripts/reuse_13_6/verify_navigation.py": "d3bd42ebacf53d42590cb34d61f72b376233d49a9dfa69532fe28f4a042a9e18",
+    "Ch13/scripts/reuse_13_6/verify_pick.py": "e16d70d60733466a8ba21afb128d6d1049f7f66de25fbd9482dec359e67412fd",
+    "Ch13/scripts/reuse_13_6/verify_safety.py": "240b691cb371ba839664f9677b726b86657e7c9f77ef10ee571399bb709a8e25",
+    "Ch13/scripts/reuse_13_7/archive_evidence.py": "20229dafd25a1f00f540daa2caf2cdecf37b8c679e31727b2eede65b704379c7",
+    "Ch13/scripts/reuse_13_7/audit_install.py": "9bc0402886b1dd8bb3124608c3015bd6c68da6a143230468454a77e5cc676033",
+    "Ch13/scripts/reuse_13_7/build.sh": "f0a354aa9ea4597bcaf63f30f16e8a5adcf78ea982323d8a4990605c600b2783",
+    "Ch13/scripts/reuse_13_7/env.sh": "0bada55258c0ad6a09490a6bd994c2ef033788e4ab1b29714c15d9a921f85cd2",
+    "Ch13/scripts/reuse_13_7/freeze_runtime.py": "a9010d57e494181c4c13878165da870b6970fc31200ea2dd684fd690727bfa41",
+    "Ch13/scripts/reuse_13_7/prepare_bt_deps.sh": "b0c3505eb48615273a3afdc9045ffee2808fb8e0f1a81a93dedcdc40c55c30f4",
+    "Ch13/scripts/reuse_13_7/python_bootstrap/sitecustomize.py": "8c3ee90eec3ea693634647147ec0446540cd869b10f9556b45ad7db24c3a0478",
+    "Ch13/scripts/reuse_13_7/run_case.sh": "f21c6f1c5dca00d79a1799f4093abf661c944769f00a34d5b4dc50a9d5f53dec",
+    "Ch13/scripts/reuse_13_7/run_mission.py": "423a1c8f803418fa438521234e42ee87e2708297af8932fd635c2676f7a44700",
+    "Ch13/scripts/reuse_13_7/run_mock.py": "119a4a1e5be6bd2e1196109a40266b3281d12e1af6227f5593c1a8fa571133a7",
+    "Ch13/scripts/reuse_13_7/run_regression.sh": "c6d068d6c77d79bedd39a06e1d238cc0007d53e96424fa242b2eb4df4a141be9",
+    "Ch13/scripts/reuse_13_7/test_env.sh": "78adf96c8c3ab62014636dcea6d73b3c8812a853d9195c3e47e62108eff5ee56",
+    "Ch13/scripts/reuse_13_7/verify_mission.py": "b0c515ee30425e0c07844060641580d94716c62355ef7989e0fcc0a85b2f4dd4",
+    "Ch13/scripts/reuse_13_8/archive_evidence.py": "6e33195237249cbb76f6aa176a5a27307f1127e0d25d8b22f331aa9d98df2615",
+    "Ch13/scripts/reuse_13_8/audit_install.py": "2040a26e9381f947ad5a689cb259564b957387707c6889563d541645b89cf903",
+    "Ch13/scripts/reuse_13_8/build.sh": "305f946e3429db16b462e2e17165bae62706170710c87f458a401a3f4a501e5b",
+    "Ch13/scripts/reuse_13_8/env.sh": "bb0c474b7c1197e2ff7120f9b934f03d1e207c9ea8f26cffe9a049c148d26a6b",
+    "Ch13/scripts/reuse_13_8/freeze_runtime.py": "82f8f6ee9657f95895a142cc32f3f4e1d415aa9510ee82dd50271de1e34302b5",
+    "Ch13/scripts/reuse_13_8/inspect_recording.py": "73f655d07fac01dba31078bb6ebf8eccdc724a3fc1bc297f237a57cb71a1438b",
+    "Ch13/scripts/reuse_13_8/rebuild.sh": "3d32cad5fef47f4cb8938e241d0b3160387eb0a17fae1233723e1057370fd10d",
+    "Ch13/scripts/reuse_13_8/replay_recording.py": "da67bf7b9c2eb05bf8f981df79a551174cd2b8c6e86413aebfcfb513f9bbca0c",
+    "Ch13/scripts/reuse_13_8/run_components.py": "181658f9b874fc8a8e982f6895f3fddce7cb0ecdde96282d449be0d38f648f30",
+    "Ch13/scripts/reuse_13_8/run_mission.py": "8d2d86b31d08e5fbaa75db4dd70a404470329ff6872e04c4cd5a5e290b044165",
+    "Ch13/scripts/reuse_13_8/stage_component_sources.py": "14981cdd939513d2fb1c6d76d2c473b3e8e71259eca0a2db7ea8565313589af1",
+    "Ch13/scripts/reuse_13_8/stage_runtime.py": "6dd267f95ca06af4066a4c98f334210d1f45c2ed02641cc726c033ddaa249763"
+  },
+  "assets": [
+    {
+      "path": "deploy/config.py",
+      "bytes": 886,
+      "sha256": "09397c5ecd21225ddc95aefc5e50eb383c9b60ebc2c7bb005399c82b6de7adf5"
+    },
+    {
+      "path": "deploy/console.py",
+      "bytes": 13013,
+      "sha256": "ee8c7fbb05b590d5a49332007ffc817304f3acb080d7cf39b6f9413f3b5c7fc5"
+    },
+    {
+      "path": "deploy/ik_mink.py",
+      "bytes": 8041,
+      "sha256": "856aa20272570be5ec1beac3a16160adb459e7dc7c5b121295dde09f66bb0ec4"
+    },
+    {
+      "path": "deploy/installation/mamba_environment.yaml",
+      "bytes": 798,
+      "sha256": "4d5258019119fe332adc7be578cd29fface7df985d3cb0136c4dde0327f02c10"
+    },
+    {
+      "path": "deploy/joystick.py",
+      "bytes": 5105,
+      "sha256": "626e84efd8c790977a32381eb00f6a307205c1d3830a2d99a944667cf1378b41"
+    },
+    {
+      "path": "deploy/locomotion_policy_wrapper.py",
+      "bytes": 12448,
+      "sha256": "a60fba1e6e004d967c68778fdccdc1ede8deca6133dd48c5e2fb1361ec12c349"
+    },
+    {
+      "path": "deploy/mujoco_utils/heightmap.py",
+      "bytes": 8753,
+      "sha256": "e494210751e218cb9cf46499c88c15a72ebf9c9ece479bbce91ea42a0b13f209"
+    },
+    {
+      "path": "deploy/mujoco_utils/mujoco_utils.py",
+      "bytes": 2865,
+      "sha256": "7a9dd52161bedb7b3d2104e2584e62fa5eea1adff2dba7ab655e56237e94e411"
+    },
+    {
+      "path": "deploy/mujoco_utils/rgbd_camera.py",
+      "bytes": 12550,
+      "sha256": "a867f32b9d7ca7e0ac41d8d01241fef3182f07398b041dce3bc4c775805689b8"
+    },
+    {
+      "path": "deploy/play_mujoco.py",
+      "bytes": 11077,
+      "sha256": "9490e19e1bfcf0645ad87dfb4dc0745f0efdebfd5e42f774abcadcbb9de11292"
+    },
+    {
+      "path": "deploy/ros2_localhost_connect.sh",
+      "bytes": 339,
+      "sha256": "e9fa13be0c79c9648962f99a340b209ba8e56b7c536cf1e4f4d83e02a00f1eed"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/CMakeLists.txt",
+      "bytes": 842,
+      "sha256": "1a2aff4e4cdca86edb77c78adc1db5f1c0b7c5b6d2aa269ffea06f4932c6f8ad"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/LICENSE",
+      "bytes": 11560,
+      "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/msg/ArmControlSignal.msg",
+      "bytes": 141,
+      "sha256": "2412f1871921a49768f4e3c1e2cdf6c2e2861cb7634603d2b68b0c006e4f7a76"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/msg/ArmState.msg",
+      "bytes": 329,
+      "sha256": "ab4dc619882ec66a26d03547799d434e0270e56f71d1306c7a3c88fe7a54583e"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/msg/ArmTrajectoryGenerator.msg",
+      "bytes": 308,
+      "sha256": "2bec0c2663a2965af93976df1142290b46d3e3bc09ebd6dd14b9e2e474a95e94"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/msg/BaseState.msg",
+      "bytes": 232,
+      "sha256": "280e35b957ee9cddea1c9cd452d5f7cfd55577b4b29fbf855863630fcb0cf25e"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/msg/BlindState.msg",
+      "bytes": 306,
+      "sha256": "c0398694a018df890c3367861c8cff34b3ddf5290b3af0267fd57919b4bfacdc"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/msg/Imu.msg",
+      "bytes": 307,
+      "sha256": "224c983574476a1b413a50626dd25ae4f11b2fdaff441c6ed211d33bc513808c"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/msg/Pose.msg",
+      "bytes": 47,
+      "sha256": "0bc7b58dbb56f18615e6267f64959b3bfe780adf790c09f9f530fc4279affdf7"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/msg/Screw.msg",
+      "bytes": 41,
+      "sha256": "9bfda992107accc619e3e1008979a63c3f0d814c42e23f84b4ffce61eff55534"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/msg/TrajectoryGenerator.msg",
+      "bytes": 440,
+      "sha256": "78a0ca3f8d3a04e91f5fed9531524701a1e85da1f5d1ce982d593485bfcbfbb3"
+    },
+    {
+      "path": "deploy/ros2_ws/src/dls2_interface/package.xml",
+      "bytes": 833,
+      "sha256": "87a33d55905e9ff9cd0bbddd81a15f8d5a95501bc41e0bb4d0e752a020847d4c"
+    },
+    {
+      "path": "deploy/run_controller_ros2.py",
+      "bytes": 18106,
+      "sha256": "0c19eb6bedd919f39c7af70bb36218f542debebc8deb7f22ba17c8231d01ad4e"
+    },
+    {
+      "path": "deploy/run_simulator_ros2.py",
+      "bytes": 8230,
+      "sha256": "039c01951d54538c9e815ff6798a42ec59c604052584ccf77b0b3955dbfa7f4c"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1564,
+      "sha256": "9fc6747a3f5658530f64428bfaa9a660efcb8b60a8f43154941a1682d02ecae9"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3184,
+      "sha256": "d10c871107fb908a64759cdda01548cfb29560788bc097ec5ca03179d93adae6"
+    },
+    {
+      "path": "README_DEPLOY.md",
+      "bytes": 1534,
+      "sha256": "3a130625da490465eadc0368635785de1110267426a8c2d0e95e17e11d602119"
+    },
+    {
+      "path": "robot_model/go2/assets/base_0.obj",
+      "bytes": 1366811,
+      "sha256": "25134a5dc51ae6ad50a4c452c219cff5c10add573dae56b2098c4b0eaee4cc61"
+    },
+    {
+      "path": "robot_model/go2/assets/base_1.obj",
+      "bytes": 834922,
+      "sha256": "119384942f6fe896473da8442fa1f0b91bcdbe3ef18754cc85217b481fb1b670"
+    },
+    {
+      "path": "robot_model/go2/assets/base_2.obj",
+      "bytes": 302457,
+      "sha256": "08c84b27583be4589be8e83c3fb38ebc654154a4118a879661c25ac37a6f4a04"
+    },
+    {
+      "path": "robot_model/go2/assets/base_3.obj",
+      "bytes": 390025,
+      "sha256": "c485dee967b8d37f422ce51b35886b504c2754f8794b2b1c2c5828a80e6a88b9"
+    },
+    {
+      "path": "robot_model/go2/assets/base_4.obj",
+      "bytes": 7975439,
+      "sha256": "7930e5f6614097cdccc36734f62f8f861642a37b844b8474976bdc2940a2d842"
+    },
+    {
+      "path": "robot_model/go2/assets/calf_0.obj",
+      "bytes": 901322,
+      "sha256": "cf31a09f97204d62e9a448ef0ce45e150ae8294989351989fb968b4ff3560b0b"
+    },
+    {
+      "path": "robot_model/go2/assets/calf_1.obj",
+      "bytes": 336108,
+      "sha256": "8c586d68205926f5b4e7e121ef37e47b663a45cfcf6e2869873cff2a99e80f2d"
+    },
+    {
+      "path": "robot_model/go2/assets/calf_mirror_0.obj",
+      "bytes": 900683,
+      "sha256": "5ed525542abd3b1897b3f1f55feac97e8b49ff8f9284e0f8afddeb085450403b"
+    },
+    {
+      "path": "robot_model/go2/assets/calf_mirror_1.obj",
+      "bytes": 336513,
+      "sha256": "28bbdc6311f06e5efce183a78ebb2b422e18b35f02356006266b5b97a1b45aee"
+    },
+    {
+      "path": "robot_model/go2/assets/foot.obj",
+      "bytes": 1175515,
+      "sha256": "228f80ff74ca93033976ca05d908513e1dba6b2372c6cc72f8c5de944481ef46"
+    },
+    {
+      "path": "robot_model/go2/assets/hip_0.obj",
+      "bytes": 2940824,
+      "sha256": "2df3b24a0012826021356d8861f2bb354f2f2feef2f4f0b4539d33dd6540ed54"
+    },
+    {
+      "path": "robot_model/go2/assets/hip_1.obj",
+      "bytes": 2841879,
+      "sha256": "c456392ad509f3c78d8a7084296be10a306576b8aad014dfd9be28f738578584"
+    },
+    {
+      "path": "robot_model/go2/assets/terrain_rough.png",
+      "bytes": 5818,
+      "sha256": "4eaa5fce447a6858ef8b8921a3103c14c8f134b41dd3d9b49595d4a76d48b5ad"
+    },
+    {
+      "path": "robot_model/go2/assets/thigh_0.obj",
+      "bytes": 2917574,
+      "sha256": "201b41523863d8d8e9e8bfdc936ee2d1c5ee794467a41d959bc4cc4493a6551b"
+    },
+    {
+      "path": "robot_model/go2/assets/thigh_1.obj",
+      "bytes": 1531803,
+      "sha256": "a363dd76e33e73ca8593c606c4d581f5d493080f41b92038bb21a001b95ef60e"
+    },
+    {
+      "path": "robot_model/go2/assets/thigh_mirror_0.obj",
+      "bytes": 2893246,
+      "sha256": "80b96e40faf2ebc769fc180225ef26278dfef73e14408eb95b3e76936b58ce23"
+    },
+    {
+      "path": "robot_model/go2/assets/thigh_mirror_1.obj",
+      "bytes": 1522711,
+      "sha256": "3d2cf7d14ee1ebe100ccf57a5a6152b67d85dff7e8abaecbe71f1abe066ccc88"
+    },
+    {
+      "path": "robot_model/go2/generated_usd/go2.usda",
+      "bytes": 886,
+      "sha256": "de0ec190ed47e5dc6ef154d12e962436dffc605f931caf213adef96e5bc771bf"
+    },
+    {
+      "path": "robot_model/go2/generated_usd/Payload/Contents.usda",
+      "bytes": 357,
+      "sha256": "dbe9c4ab1087e14a857f9c3eefb6d67d4ad7b76527fb0b2761d63ccba36727d0"
+    },
+    {
+      "path": "robot_model/go2/generated_usd/Payload/Geometry.usda",
+      "bytes": 72998,
+      "sha256": "ffc79c007cee3f2b2b76879b8937f950ed9ab12abf7a603ccae1e0f1969808c5"
+    },
+    {
+      "path": "robot_model/go2/generated_usd/Payload/GeometryLibrary.usdc",
+      "bytes": 6524034,
+      "sha256": "eb81fc43682eb9e5e7767344cf1b71c5bb3df40b5eb61c9030156733a6e4c527"
+    },
+    {
+      "path": "robot_model/go2/generated_usd/Payload/Materials.usda",
+      "bytes": 10462,
+      "sha256": "6afe116d49fbf1269c16d9ba6b1220b0ce4091ce95ad783c559a95653b834128"
+    },
+    {
+      "path": "robot_model/go2/generated_usd/Payload/MaterialsLibrary.usdc",
+      "bytes": 2045,
+      "sha256": "892dd9cca9f7942303db475028a7eeada342a4de2362ed0b0c1413f9b1988d7b"
+    },
+    {
+      "path": "robot_model/go2/generated_usd/Payload/Physics.usda",
+      "bytes": 74889,
+      "sha256": "9ac993148d9c4059057655be4fb5f822587b3343b01eb6c8c3772e9ec7019e0f"
+    },
+    {
+      "path": "robot_model/go2/go2.usd",
+      "bytes": 6551353,
+      "sha256": "d8dddc322639dfbb37382d51856af6737660da1c5f487d219e363c57dd9696d5"
+    },
+    {
+      "path": "robot_model/go2/go2.xml",
+      "bytes": 18842,
+      "sha256": "a73e14b1dc4021bad215724dc5e8846aa1ed98859fec1145b11f8f6dbeac012a"
+    },
+    {
+      "path": "robot_model/go2/isaaclab_identified_parameters.py",
+      "bytes": 1241,
+      "sha256": "4efe1fc6bfff5f02c6ab022ab187966f80647324e2d6617c0689e0b2bbd3e72f"
+    },
+    {
+      "path": "robot_model/go2/scene_flat.xml",
+      "bytes": 1346,
+      "sha256": "d880a08aeba09b1658b22700982ba52fdd8e27adedd35dee092904fc31c5536a"
+    },
+    {
+      "path": "robot_model/go2/scene_random_boxes.xml",
+      "bytes": 15026,
+      "sha256": "a9b19e4dd0d0e60e5035fd05df450f0aede04950409a108fcc1573af4b6cb222"
+    },
+    {
+      "path": "robot_model/go2_piper_l.usd",
+      "bytes": 11172092,
+      "sha256": "ded93ce0920d6390f735fe08a8f9c4d3f322bfa49a9316641ad8f38c5cb1c715"
+    },
+    {
+      "path": "robot_model/go2_piper_l.xml",
+      "bytes": 26965,
+      "sha256": "42befed63bd46a26ea21b32b63201dcdcc5efb5448f5610adf92a23b9e718f5a"
+    },
+    {
+      "path": "robot_model/piper_l/assets/base_link.STL",
+      "bytes": 1821884,
+      "sha256": "fd4c7563638901bd4167246a3b6eae33cfceff8c7fc59e585f297a88a5752bac"
+    },
+    {
+      "path": "robot_model/piper_l/assets/gripper_base_100_v3.STL",
+      "bytes": 2540384,
+      "sha256": "cdc58c74a7795fb47c9450019ff0b6bf43563f5c4c6e2bdefa3d8c26abaa1835"
+    },
+    {
+      "path": "robot_model/piper_l/assets/link1.STL",
+      "bytes": 1156284,
+      "sha256": "84d753cd2a9dceac19c6870b0d3078a6abf44ea7ca7360fc5a2e8b1fd0b427cf"
+    },
+    {
+      "path": "robot_model/piper_l/assets/link2.STL",
+      "bytes": 2639184,
+      "sha256": "4d15e9870d8a3e9223fba8b304a508842acfc7cf69c4fc74bb3e9c1bf07260c0"
+    },
+    {
+      "path": "robot_model/piper_l/assets/link3.STL",
+      "bytes": 1786784,
+      "sha256": "f646b44895bceb1d26d8f1dd383d0fed26192e13d6f76a4d91b107703e5309b4"
+    },
+    {
+      "path": "robot_model/piper_l/assets/link4.STL",
+      "bytes": 1263184,
+      "sha256": "b694f92c0a86a805d2952c7943b50f50ec186e0678ad284380f2475932b003f4"
+    },
+    {
+      "path": "robot_model/piper_l/assets/link5.STL",
+      "bytes": 1235184,
+      "sha256": "de4e3c27a806fd4a60232760dfcf584dd20942ac941e0e0705ef23ecef923d2b"
+    },
+    {
+      "path": "robot_model/piper_l/assets/link6.STL",
+      "bytes": 121584,
+      "sha256": "91c70e84f44eb685c65d96ff13d66dc9a894eb14460f0dfaa02be45bdb100f6d"
+    },
+    {
+      "path": "robot_model/piper_l/assets/link7.STL",
+      "bytes": 91984,
+      "sha256": "3db981ca51b3ac239435864bcbd43cca48e67b6069c283e8dc3bd10cd8d011f6"
+    },
+    {
+      "path": "robot_model/piper_l/assets/link8.STL",
+      "bytes": 91984,
+      "sha256": "0e2d719005ea47983041496bae6faf97418c6026f18217409a8b92ed2f723760"
+    },
+    {
+      "path": "robot_model/piper_l/assets/realsense_mid_stand_v2.STL",
+      "bytes": 236984,
+      "sha256": "c65d7e4a5e60a50a934949c3e08d8c0abcbb866d9ca586ec7b5580a7108b9b3b"
+    },
+    {
+      "path": "robot_model/piper_l/generated_usd/Payload/Contents.usda",
+      "bytes": 365,
+      "sha256": "9b64d2d06e93328a484a344cd500e4a9ddcbe726d38395e8603751b3b7154731"
+    },
+    {
+      "path": "robot_model/piper_l/generated_usd/Payload/Geometry.usda",
+      "bytes": 25593,
+      "sha256": "8f27f99676c9370f3750a409990aa2f8e164c8699e964e03ba62f767b6fbb172"
+    },
+    {
+      "path": "robot_model/piper_l/generated_usd/Payload/GeometryLibrary.usdc",
+      "bytes": 4529217,
+      "sha256": "de9273ed38f7fe02d05921b357ff5f8f3fcacbfd52b25a7a2132554d18b079da"
+    },
+    {
+      "path": "robot_model/piper_l/generated_usd/Payload/Materials.usda",
+      "bytes": 4073,
+      "sha256": "95a2d069245d4fd99ce854639d7be2c663bc2e7f89bc925cf8c7ba87b3f9cff0"
+    },
+    {
+      "path": "robot_model/piper_l/generated_usd/Payload/MaterialsLibrary.usdc",
+      "bytes": 1461,
+      "sha256": "f6c029233e82bdc45541a12333159661e8f1b178b7b0995c2da81546f4fcb4b5"
+    },
+    {
+      "path": "robot_model/piper_l/generated_usd/Payload/Physics.usda",
+      "bytes": 30402,
+      "sha256": "ab8f5645e6659dcf7d3f36ebab3e21d7fbe7b4dbe630f24718281c5288257b35"
+    },
+    {
+      "path": "robot_model/piper_l/generated_usd/piper_l.usda",
+      "bytes": 925,
+      "sha256": "a78552bcefbd06dd5b9d8184c981e00b7cb43f978d5fc12c2634606976254ee3"
+    },
+    {
+      "path": "robot_model/piper_l/isaaclab_identified_parameters.py",
+      "bytes": 981,
+      "sha256": "3538dc02fe92087f0343da7b67b3218be18ab8082f21effd2b4d10ff41461c27"
+    },
+    {
+      "path": "robot_model/piper_l/piper_l.xml",
+      "bytes": 7402,
+      "sha256": "d2aec9e41555be4cdacd8f0921247781e154466d686e6278226ff239baf196dd"
+    },
+    {
+      "path": "robot_model/piper_l/piper_l_original.xml",
+      "bytes": 8641,
+      "sha256": "f9ed22e772043c6f78b68eaff60be7aa4cd9cf1f4a2b957995f70b641f00ad61"
+    },
+    {
+      "path": "robot_model/piper_l/scene_flat.xml",
+      "bytes": 1354,
+      "sha256": "2d4df5db996b08500af212a4a42ad2fb23842b22afdec4bad6fd945962349994"
+    },
+    {
+      "path": "robot_model/piper_l_floating.xml",
+      "bytes": 10158,
+      "sha256": "5ef4142a72fb9498430ad548a993216a2040eea8f886e4633b94179f31c3a417"
+    },
+    {
+      "path": "robot_model/scene_flat.xml",
+      "bytes": 1355,
+      "sha256": "731f079d71e4d8aadb5d47c1e169d4d424d44da2ed89a1c81a5e791dc37f1901"
+    },
+    {
+      "path": "robot_model/scene_floating.xml",
+      "bytes": 1089,
+      "sha256": "339aa1e91c97b851fc90932bb07969edc6e93643e89e0c9ef2e1ebc91abd2651"
+    },
+    {
+      "path": "robot_model/scene_rough.xml",
+      "bytes": 15029,
+      "sha256": "3e72ac1f33fa68c2733e5de8b85f98bc3f7b98884d1c25c475e2417431065ee2"
+    },
+    {
+      "path": "source/locomanipulation_teleop_isaaclab/locomanipulation_teleop_isaaclab/tasks/supervised_learning_networks.py",
+      "bytes": 17056,
+      "sha256": "176d8e7a9c47590caedf3fe3a2f8600f9471611bc87549ccd88492af7d5f8b78"
+    },
+    {
+      "path": "tested_policies/arm_moving_clock/events.out.tfevents.1783969751.gturrisi.500127.0",
+      "bytes": 21779018,
+      "sha256": "d1f956547aa36212dd55b8f86e7f8779bdecbd01620eb97a20f24647c460142c"
+    },
+    {
+      "path": "tested_policies/arm_moving_clock/exported/policy.onnx",
+      "bytes": 293655,
+      "sha256": "4ad160d24357827db896d1106f643cd89b9657e1ab97c013504e3e3e5af71a48"
+    },
+    {
+      "path": "tested_policies/arm_moving_clock/exported/policy.pt",
+      "bytes": 303336,
+      "sha256": "283d8d5c9424ee5893c2ce5b7dc2e196c3eef23752fee67b06b6154d9c8b7517"
+    },
+    {
+      "path": "tested_policies/arm_moving_clock/git/locomanipulation-teleop-isaaclab.diff",
+      "bytes": 147,
+      "sha256": "d338c53950fe078198167d571ae41fb9cad88cace2427a900d645265581e9034"
+    },
+    {
+      "path": "tested_policies/arm_moving_clock/model_7950.pt",
+      "bytes": 1808757,
+      "sha256": "72459b567ab42ebfa873ac9257ca3fe560da078308563686a80b42e1a71b31cd"
+    },
+    {
+      "path": "tested_policies/arm_moving_clock/model_7999.pt",
+      "bytes": 1808757,
+      "sha256": "408f96e58a3ea544cdf9a2a27ba0e913c7d02c6a4346cc6202e5c1f3351b0556"
+    },
+    {
+      "path": "tested_policies/arm_moving_clock/params/agent.yaml",
+      "bytes": 1061,
+      "sha256": "c2cbd327bd89dcaf1d6a603b1d1bc078a8e602249bcad8ecb06f7e20006066f7"
+    },
+    {
+      "path": "tested_policies/arm_moving_clock/params/env.yaml",
+      "bytes": 33706,
+      "sha256": "1abb27153d4e584427c21be6275412cb155f135781b304e2c3e6db4f5b26ec91"
+    }
+  ]
+}

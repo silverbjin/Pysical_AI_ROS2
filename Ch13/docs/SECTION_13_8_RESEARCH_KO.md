@@ -69,3 +69,9 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 [Microsoft CreateFileW 공식 문서](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew)의FILE_SHARE_DELETE는rename에도적용된다. [WSL #3395](https://github.com/microsoft/WSL/issues/3395)는Windows watcher와rename EACCES의과거비교사례이며동일버전의확정원인으로대신하지않는다. 직접새파일을Windows FileShare.ReadWrite로열고WSL replace를시도해실제PermissionError를재현했다. 이전JSON보존/오류1회기록/owned writer join PASS였다. 기존live실행자료는수정하지않았다.
 
 [Python3.12 queue 공식 문서](https://docs.python.org/3.12/library/queue.html)의bounded producer/consumer 패턴과 [threading.Condition/Thread.join](https://docs.python.org/3.12/library/threading.html)을참고했다. 구현은Condition으로보호한단일pending slot과한개의비daemon writer다. ROS timer는작은snapshot만넘기며파일I/O는writer에서수행한다. 새상태가대기중상태를대체해도한도가늘지않는다. I/O/직렬화오류는advisory delivery기록으로남고기존정상snapshot을유지한다. 끝에서는pending을소진하고join결과를기록한다. join미확인은정상미션성공으로바꾸지않는다. 실제controller/lease/goal/cancel의owner나주기는바꾸지않는다.
+
+## v17: RGB-D에 섞인 MuJoCo site 보조 형상
+
+설치와같은공식3.13.0의 [mjvisualize.h](https://github.com/google-deepmind/mujoco/blob/3.13.0/include/mujoco/mjvisualize.h), [engine_vis_visualize.c](https://github.com/google-deepmind/mujoco/blob/3.13.0/src/engine/engine_vis_visualize.c), [visualization.rst](https://github.com/google-deepmind/mujoco/blob/3.13.0/doc/programming/visualization.rst)를읽었다. geomgroup과sitegroup은별도이며site도시각장면의형상으로추가된다. 기존코드는geomgroup만설정해서붉은attachment_site가센서에보였다. 종료후segmentation41pixel모두동일site임을확인했고sitegroup만off한같은실패자세에서표면합의78.42→100%를확인했다.
+
+채택: latest paired센서stream의MjvOption.sitegroup[:]=0. 외부XML/site좌표·기존geom그룹·물리·추정기95%기준·관측수명은유지한다. segmentation/target truth를live검출에사용하지않는다. legacy옵션은유지한다. 전체336부품PASS는수정된실패장면의회귀를포함하며실제Level1전체성공과구분한다. 자세한원인·반증·버전·한계는SECTION_13_8_FLOOR_VISION_DIAGNOSIS_KO.md에기록했다.
