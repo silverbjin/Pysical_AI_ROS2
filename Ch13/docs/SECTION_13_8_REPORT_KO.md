@@ -47,3 +47,5 @@ MoveIt2.12.4 planning scene 서비스·attached/world 객체 처리, Jazzy rclpy
 귀환 quaternion 전체 성분을 설정하고, fresh3D 대기 중에도 잘못된 실제 귀환 자세를 별도 거부한다. 부분 원통 추정기의 평면 근거는 부족해 채택하지 않았다.13.8 opt-in 고정 camera를10cm 높이고 아래5도로 기울여 기존 검출 조건을 유지했다. 저장된 실제8개 자세의 렌더링 회귀와 기존 기본 mount 보존을 포함해299 PASS/49.03초.5-package rebuild18.8초, 설치56모듈·외부94자산·실제 venv child 감사 PASS. 정지 렌더링은 새 물리 실행 성공 증거가 아니다.
 
 네 번째 실제 사례13ef4150-a1fc-4a55-8a47-f697f5507449는 시작8wall초 안에 새 관측을 확보하지 못해 이동·파지 전에 FAIL. 비전 accepted/rejected가 모두0, matched camera receipt/health도0이며 renderer192캡처·정상 종료였으므로 fit 가림 실패와 구분한다. trial4.76sim초/11.460wall초, bag close·worker/12 child 회수·잔여0. 추가 전달 경계 진단 중이다.
+
+다섯 번째v7 사례b91a740e-a75f-4acb-b4fe-3cd5f68ad8b6는 실제 관측545개로 시작·이동·준비 action3개를 통과했지만, 다음 개방 요청 전에 heartbeat399.695ms 공백과 MISSION_EXPIRED로 FAIL. trial17.70sim초/41.652wall초·CPU43.734%·tilt0.034776rad·bag close/정상 회수. 동기 Planner 초기화 파일 조회의400ms 지연 시험을 RED로 재현하고 기존 compute worker와 owner polling을 적용했다. 실제 초기화 하위 단계별 소요 시간도 추가 기록한다. 전체300 PASS/43.98초이며 실제 파지/귀환/내려놓기의 인수는 아직 미완료다.

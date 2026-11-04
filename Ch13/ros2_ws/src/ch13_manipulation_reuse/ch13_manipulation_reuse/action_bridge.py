@@ -95,8 +95,17 @@ class ActionBridge:
         with self.node.lock:
             position,effort=request.command.position,request.command.max_effort
             if (not self.admissible() or not all(math.isfinite(x) for x in (position,effort))
-                    or not 0<=position<=.05 or not 0<=effort<=.5):return GoalResponse.REJECT
+                    or not 0<=position<=.05 or not 0<=effort<=.5):
+                self.events.append(dict(event='goal_rejected',kind='gripper',reason='admission_or_command',
+                    phase=self.extension.lease.phase,fault=self.extension.lease.fault,
+                    busy=self.busy,reserved=self.reserved,measured=self.measured is not None,
+                    active_kind=None if self.active is None else self.active['kind'],
+                    active_done=None if self.active is None else self.active['done'],
+                    position=position,max_effort=effort,wall=time.monotonic()))
+                return GoalResponse.REJECT
             self.reserved=True
+            self.events.append(dict(event='goal_admitted',kind='gripper',position=position,
+                                    max_effort=effort,wall=time.monotonic()))
             return GoalResponse.ACCEPT
 
     def cancel(self,handle):

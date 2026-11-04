@@ -2,6 +2,7 @@
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -19,7 +20,9 @@ from ch13_manipulation_reuse.pick_feedback import lift_correction
 def work(*,node,until,snapshot,status,control,out,case='pick',action_client_factory=ActionClient,continuation=None):
     from run_arm_probe import work as warmup
     warmup(node=node,until=until,snapshot=snapshot,status=status,control=control,case='normal',out=out,action_client_factory=action_client_factory)
-    planner=Planner(node,until,snapshot,action_client_factory=action_client_factory);gripper=action_client_factory(node,GripperCommand,GRIPPER)
+    planner=Planner(node,until,snapshot,action_client_factory=action_client_factory)
+    creation_start=time.monotonic();gripper=action_client_factory(node,GripperCommand,GRIPPER)
+    planner.records.append(dict(kind='initialization',step='pick_gripper_client_creation',start_wall=creation_start,end_wall=time.monotonic()))
     records=[]
     def phase(value):
         control['set_phase'](value)

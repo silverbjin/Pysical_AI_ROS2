@@ -110,3 +110,17 @@ v6 전체 부품299 PASS/49.03초·5-package build18.8초·설치56모듈/외부
 trial은4.76sim초/11.460wall초·CPU33.856%·tilt0.015058rad·bag close true. worker join/12 child clean exit/잔여0/공유 lock free. 실행 boot98db521c-8b39-496a-a45c-437550a9e03e로 preflight 이후 WSL cold boot가 바뀌었다. stale PID를 회수하거나 lock을 삭제하지 않았다. v6의323파일은ba17d27d에서 hash 확인 사후 보존했고 source_v6/runtime_source.tar.gz SHA256 b171287b9ba37b1a6c3d07a03511a178a4daa553e61f74dad4a8612e1d1f6f61이다. 물리 성공으로 집계하지 않는다.
 
 관측 전달 진단만 추가한 관련46개 시험 PASS/14.58초,5-package rebuild13.0초·설치56모듈/94자산/child PASS. v7 source323/assets94 SHA256 a3a5c7c09e8379762b2bea7eee98cd5d6402fb050b5383c3d9c08de914ecc1ac. 실행 전 boot3e437ed6-8cf7-4c43-a790-330e49bda312·소유 stack0·공유 lock free. 다음 실제 사례b91a740e-a75f-4acb-b4fe-3cd5f68ad8b6는 새 진단을 포함하며 제어/카메라/시간 한도는v6와 같다.
+
+### v7 준비 action 뒤 heartbeat 공백
+
+v7은 새로운 관측545개, 각 raw camera callback615개·matched2388샘플·TF120샘플로 시작과 이동을 통과했다. 비전 fault/rejected는 비어 있고 실제 파지 전에 준비 arm/그리퍼3개가 각각SUCCEEDED했다. 이후 run_pick의 첫 개방 요청이 거절되어 FAIL. 별개 시작 실패v6를 수정 완료했다고 쓰지 않는다.
+
+마지막 정상 heartbeat sequence296 send267.577104420wall→297 send267.976799706wall 사이399.695ms 공백이 있다. engine은267.879890042wall에 MISSION_EXPIRED를 latch했다. 관측은 계속 새로 처리됐으므로 카메라 만료와 구분한다. 준비 action 마지막 terminal267.587729821 이후 Planner·새 gripper client 초기화 경로에서 ROS owner가 heartbeat를 충분히 돌리지 못했다. 실제 어느 초기화 하위 호출이 시간을 소비했는지는 기존 로그에 없으므로 특정 파일 I/O가 유일한 원인이라고 단정하지 않는다.
+
+동기 Planner description lookup/read에400ms 지연을 주는 부품 시험에서 실제 owner polling 공백400.55ms로 RED를 재현했다. 기존 Planner.compute의 작업 스레드+owner until 패턴을 초기화 description 읽기에도 적용한다. ROS entity 생성은 계속 원래 owner에서 수행한다. 초기화 하위 단계와 gripper 승인/거절 시각·phase/busy/reserved/fault를 다음 자료에 추가해 남은 원인을 구분한다. 300ms 수명·한도·물리 제어를 늘리지 않는다. 변경 후 전체300 PASS/43.98초(세부 시각 기록 추가 전); 추가 기록은 개별 재확인한다.
+
+trial17.70sim초/41.652wall초·CPU43.734%·tilt0.034776rad, bag close·worker join·12 child clean exit. 실제 파지·운반·내려놓기 성공이 아니다. v7의323파일은0f0416b1에서 hash 확인 사후 보존했고 archive SHA256 24962e57095ac72ff02586fd59034161d8fc8e8c3f65a75804f6d0ca42a377ba이다.
+
+v8은 관련 action/그리퍼/회수17 PASS/3.66초, 전체300 PASS/43.98초, 초기화 세부 시각 기록 후 지연 시험1 PASS/4.91초.5-package rebuild19.3초·설치56모듈/94자산/child PASS. source324/assets94 SHA256 11762c18c95f7fc5e4d41240a5538342b449a469d402476e7e6721ae49a05260. 소유 stack0·공유 lock free를 다시 확인했다.
+
+Ruling: 실제 runtime도 전수 hash가 같은 WSL native source snapshot을 사용한다 — Windows mount의 source 접근을 hot path에서 줄이고 기존 단일 owner/파일 바이트/정책/설치본을 유지 — 복사본의 상대경로·자산·잠금 연결이 달라질 위험이 있으므로324파일 hash 및94자산 freeze를 재검증하고 두 symlink의 realpath가 원래 sibling 자산·공유 lock과 같은지 확인한다. 증거 출력은 원래 worktree의 새 UUID로 지정하며 이 복사는 물리 실행 증거가 아니다. 준비 도구·경로는 section_13_8_preparation_20261104/runtime_stage_v8.json에 보존한다.

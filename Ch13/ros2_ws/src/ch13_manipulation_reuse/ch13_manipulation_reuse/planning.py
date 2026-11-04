@@ -6,6 +6,7 @@ methods. This is a MoveIt service wrapper, not moveit_commander or fake hardware
 import hashlib
 import json
 import math
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import numpy as np
@@ -52,11 +53,23 @@ class Planner:
         self.node,self.until,self.snapshot=node,until,snapshot
         self.clients={};self.revision=0;self.records=[]
         self.compute_worker=ThreadPoolExecutor(max_workers=1,thread_name_prefix='reuse_planning_validation')
-        self.description=(Path(get_package_share_directory('ch13_piper_moveit_config'))/'config/robot.urdf').read_text()
-        self.execution=action_client_factory(node,FollowJointTrajectory,ARM)
+        def initialized(step,start):
+            self.records.append(dict(kind='initialization',step=step,start_wall=start,end_wall=time.monotonic()))
+        # A cold filesystem lookup/read can exceed the live lease's 300ms.
+        # Reuse the bounded compute worker while the sole ROS owner polls.
+        try:
+            start=time.monotonic()
+            self.description=self.compute(lambda:(Path(get_package_share_directory('ch13_piper_moveit_config'))/'config/robot.urdf').read_text())
+            initialized('description_read_with_owner_poll',start)
+        except BaseException:
+            self.compute_worker.shutdown(wait=True,cancel_futures=True)
+            raise
+        start=time.monotonic();self.execution=action_client_factory(node,FollowJointTrajectory,ARM)
+        initialized('arm_client_creation',start)
         for typ,name in [(GetMotionPlan,'/plan_kinematic_path'),(GetCartesianPath,'/compute_cartesian_path'),
                          (ApplyPlanningScene,'/apply_planning_scene'),(GetPlanningScene,'/get_planning_scene')]:
-            client=node.create_client(typ,name);self.clients[name]=client
+            start=time.monotonic();client=node.create_client(typ,name);self.clients[name]=client
+            initialized('service_client_creation:'+name,start)
             assert until(client.service_is_ready,10.),'MoveIt service unavailable: '+name
         assert until(self.execution.server_is_ready,3.),'MoveIt trajectory execution unavailable'
 
