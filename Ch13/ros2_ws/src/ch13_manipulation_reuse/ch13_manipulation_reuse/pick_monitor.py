@@ -1,5 +1,6 @@
 """Physics contact guard and write-only oracle evidence for the pick profile."""
 import numpy as np
+import os
 import mujoco
 from .model import TCP_LINK6
 from .pick_scene import TARGET,contact_allowed
@@ -9,6 +10,11 @@ from .pick_acceptance import assess_pick
 class PickMonitor:
     def __init__(self,model):
         self.model=model;self.rows=[];self.established=set();self.next_sample=0.;self.forces={'link7':0.,'link8':0.}
+        self.scenario=None;self.contact_fault=None
+        if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+            from ch13_system_validation.scenarios import active_scenario
+            self.scenario=active_scenario()
+        self.support_geom='reuse_receiving_support' if self.scenario is None else self.scenario.support_geom
         base=model.body('base').id;self.robot_bodies=set()
         for body in range(1,model.nbody):
             ancestor=body
@@ -24,10 +30,20 @@ class PickMonitor:
         self.support_N=0.
         for index,contact in enumerate(p.mjData.contact):
             a,b=map(int,contact.geom);ba,bb=int(self.model.geom_bodyid[a]),int(self.model.geom_bodyid[b])
-            if ((ba==self.target and self.model.geom(b).name=='reuse_receiving_support')
-                or (bb==self.target and self.model.geom(a).name=='reuse_receiving_support')):
+            if ((ba==self.target and self.model.geom(b).name==self.support_geom)
+                or (bb==self.target and self.model.geom(a).name==self.support_geom)):
                 force=np.zeros(6);mujoco.mj_contactForce(self.model,p.mjData,index,force)
                 self.support_N+=max(0.,float(force[0]))
+            if self.scenario is not None and self.scenario.support_height_m==0. and live and contact.dist<0:
+                an=self.model.body(ba).name;bn=self.model.body(bb).name
+                arm_a=an.startswith('link');arm_b=bn.startswith('link')
+                forbidden=(arm_a and ((bb in self.robot_bodies and not arm_b) or self.model.geom(b).name=='floor')
+                    or arm_b and ((ba in self.robot_bodies and not arm_a) or self.model.geom(a).name=='floor'))
+                if forbidden:
+                    force=np.zeros(6);mujoco.mj_contactForce(self.model,p.mjData,index,force)
+                    if float(force[0])>.005:
+                        if self.contact_fault is None:self.contact_fault=dict(first=an,second=bn,force_N=float(force[0]),distance_m=float(contact.dist),stamp_ns=stamp_ns)
+                        lease.trip('FLOOR_ARM_CONTACT')
             if self.model.geom_group[a]!=5 and self.model.geom_group[b]!=5:continue
             if ba in self.robot_bodies:robot,other=ba,bb
             elif bb in self.robot_bodies:robot,other=bb,ba
@@ -58,6 +74,6 @@ class PickMonitor:
                               source='actual_engine_freejoint_and_contact_for_evaluation_only'))
 
     def summary(self):
-        return dict(assessment=assess_pick(self.rows),rows=self.rows,
+        return dict(assessment=assess_pick(self.rows),rows=self.rows,floor_contact_fault=self.contact_fault,
                     profile=dict(radius_m=.02,height_m=.08,mass_kg=.02,sliding_friction=.8,
                                  target_freejoint='reuse_target_free',no_weld=True))

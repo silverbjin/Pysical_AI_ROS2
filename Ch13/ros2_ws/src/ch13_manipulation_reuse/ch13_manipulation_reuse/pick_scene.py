@@ -11,20 +11,21 @@ GRASP_PHASES={'GRASP_APPROACH','CLOSE','LIFT','HOLD','POST_SETTLE','CARRY_ARMED'
 
 
 def add_target(spec):
+    target=[1.8,0.,.54]
     camera=spec.camera('reuse_rgbd');camera.pos=[.4,.25,.25]
     R=Rotation.from_euler('z',-20.,degrees=True).as_matrix()@OPTICAL_R@np.diag([1.,-1.,-1.])
     if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
-        from ch13_system_validation.fixture import TRANSPORT_CAMERA_POS,TRANSPORT_CAMERA_YAW_DEG,TRANSPORT_CAMERA_PITCH_UP_DEG
-        camera.pos=TRANSPORT_CAMERA_POS
-        R=Rotation.from_euler('ZYX',[TRANSPORT_CAMERA_YAW_DEG,-TRANSPORT_CAMERA_PITCH_UP_DEG,0.],degrees=True).as_matrix()@OPTICAL_R@np.diag([1.,-1.,-1.])
+        from ch13_system_validation.scenarios import active_scenario
+        scenario=active_scenario();target=list(scenario.target_xyz);camera.pos=scenario.camera_pos
+        R=Rotation.from_euler('ZYX',[scenario.camera_yaw_deg,-scenario.camera_pitch_up_deg,0.],degrees=True).as_matrix()@OPTICAL_R@np.diag([1.,-1.,-1.])
     camera.quat=np.roll(Rotation.from_matrix(R).as_quat(),1)
     spec.delete(spec.geom('reuse_target'))
-    body=spec.worldbody.add_body(name=TARGET,pos=[1.8,0.,.54])
+    body=spec.worldbody.add_body(name=TARGET,pos=target)
     body.add_freejoint(name='reuse_target_free')
     body.add_geom(name='reuse_target',type=mujoco.mjtGeom.mjGEOM_CYLINDER,size=[.02,.04,0.],
                   mass=.02,friction=[.8,.005,.0001],group=5,rgba=[.9,.02,.02,1.])
     for key in spec.keys:
-        key.qpos=np.concatenate((key.qpos,[1.8,0.,.54,1.,0.,0.,0.]))
+        key.qpos=np.concatenate((key.qpos,[*target,1.,0.,0.,0.]))
         if len(key.qvel):key.qvel=np.concatenate((key.qvel,np.zeros(6)))
 
 

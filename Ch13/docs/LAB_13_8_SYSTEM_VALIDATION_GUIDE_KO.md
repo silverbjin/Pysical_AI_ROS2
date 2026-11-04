@@ -47,20 +47,20 @@ v6의13.8 전용 carry_v1 camera는 base 좌표(0.4,0.25,0.35)m, yaw -20도·pit
 python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py /tmp/ch13_13_8_before.json
 ```
 
-터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v15는 현재 개발 실행용 동결이며 실제 연속 인수는 진행 중이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
+터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v16은 현재 개발 실행용 동결이며 실제 연속 인수는 진행 중이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
 
 ```bash
 CASE=$(python3 -c 'import uuid; print(uuid.uuid4())')
 STAGE_REPORT=/tmp/ch13_13_8_stage_$CASE.json
 bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/stage_runtime.py \
-  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v15.json" --output "$STAGE_REPORT"
+  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v16.json" --output "$STAGE_REPORT"
 RUN_ROOT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["runtime_root"])' "$STAGE_REPORT")
 bash "$RUN_ROOT/Ch13/scripts/reuse_13_8/env.sh" -u "$RUN_ROOT/Ch13/scripts/reuse_13_8/run_mission.py" \
   --repo-root "$RUN_ROOT" --evidence "$ROOT/Ch13/evidence/section_13_8_system/$CASE" \
-  --manifest "$RUN_ROOT/Ch13/dependencies/section_13_8_system_v15.json"
+  --manifest "$RUN_ROOT/Ch13/dependencies/section_13_8_system_v16.json"
 ```
 
-staging은 engine이 꺼진 상태에서 소스 동결별로 한 번 준비한다. Windows mount의 source 접근 지연을 피하기 위해 새13.8 build 아래 같은 hash의 소스 사본을 만들고, 외부 자산과 engine lock은 기존 sibling 파일로 연결한다. 이 단계는 로봇 실행이나 새 권한을 만들지 않는다. 같은 동결로 반복 실행할 때는 RUN_ROOT를 재사용하고 CASE만 새 UUID로 바꾼다. source가 바뀌면 기존 동결을 수정하지 말고 새 동결/사본을 준비한다. runner가 runtime_stage.json으로 실행 사본의 근거를 보존한다. 현재 v15 명령은 개발 검증 대상이며 물리 인수 상태는 보고서를 확인한다.
+staging은 engine이 꺼진 상태에서 소스 동결별로 한 번 준비한다. Windows mount의 source 접근 지연을 피하기 위해 새13.8 build 아래 같은 hash의 소스 사본을 만들고, 외부 자산과 engine lock은 기존 sibling 파일로 연결한다. 이 단계는 로봇 실행이나 새 권한을 만들지 않는다. 같은 동결로 반복 실행할 때는 RUN_ROOT를 재사용하고 CASE만 새 UUID로 바꾼다. source가 바뀌면 기존 동결을 수정하지 말고 새 동결/사본을 준비한다. runner가 runtime_stage.json으로 실행 사본의 근거를 보존한다. 현재 v16 명령은 개발 검증 대상이며 물리 인수 상태는 보고서를 확인한다.
 
 터미널 B는 시스템 ROS CLI 환경이다. engine/센서가 준비된 뒤 /start_mission을 보내야 하며 현재 시작 대기 예산은 준비 후30wall초다. 개발 자동 시작은 runner에 --auto-start를 지정하며 같은 토픽 수신을 통과한다.
 
@@ -178,3 +178,9 @@ v14의13.8 opt-in 원통 fit은 기존 이웃 경계 필터를 끄고 고정 축
 팔 준비의 최초 타입 로딩은13.8 ready에서 수행한다. 긴 초기화를 heartbeat 주기 안에서 실행하지 않기 위한 것으로, 타입 준비가 새 동작 권한을 주지는 않는다. startup_preparation 이벤트와 arm_probe.json의 초기화 구간, renderer_captures.json의 render_started_wall/render_finished_wall/render_elapsed_cpu_s, health.json의 프로세스별 CPU를 판독한다. 공식 자료·실제 실패별 구분·수정/남은 검증은 SECTION_13_8_LATENCY_DIAGNOSIS_KO.md를 참조한다. 새 동결의 실제 인수 상태는 결과 보고서를 확인한다.
 
 v15에서는 live_status.json 파일 기록을ROS timer 밖의단일owned writer로분리한다. 읽기잠금으로표시갱신이실패하면이전표시가남을수있다. telemetry_delivery.json의write_errors/last_error/overwritten_waiting/joined를확인하고최종trial/BT/engine 판정과구분한다.
+
+## 10. 원고 Level1 연결 상태
+
+v16의명시적`--scenario level1_floor`는바닥2m 원통·받침대없음·귀환측바닥수령점을사용한다. 기본값`--scenario development`는이전개발fixture다. 기능PASS실측은v15 development 1회이며v16 Level1은실제검증중이다. 원고Level2/3·10회평가완료로해석하지않는다.
+
+Level1은카메라를아래35도·yaw-40도로고정하고팔은아래30도/사전6cm 접근을사용한다. 실제floor지지와새관측수령영역확인전에는개방하지않고팔이몸통/다리/바닥에힘을주며관통하면latch fault다. 명령의다른인자는같으며새CASE로runner에`--scenario level1_floor`를추가한다. source/설정이달라진사례를v15정상실측이나고정10회에섞지않는다. 상세M0·구현계획은SECTION_13_8_WORLD_PLAN_KO.md를참조한다.

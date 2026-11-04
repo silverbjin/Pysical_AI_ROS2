@@ -113,10 +113,13 @@ class EngineExtension:
             if hasattr(self.lease,'motion_inputs'):
                 contacts=(all(self.pick_monitor.forces.get(f,0.)>.005 for f in ('link7','link8'))
                     and self.actions.gripper_hold.status()['ready'])
+                support_force=getattr(self.pick_monitor,'support_N',0.)
+                scenario=getattr(self.pick_monitor,'scenario',None)
+                receiving_support=(support_force>.01 if scenario is None else scenario.receiving_support_ready(support_force,self.lease.observation))
                 self.lease.motion_inputs(armed=decision.mode=='ARMED',
                     moving_supported=tilt<=.20 and math.hypot(v[0],v[1])<=.30 and abs(v[5])<=.35,
                     contacts=contacts,busy=self.actions.busy,
-                    support=getattr(self.pick_monitor,'support_N',0.)>.01)
+                    support=receiving_support)
             phase = self.lease.evaluate(clock,now,settled=self.node.ready_now(),supported=supported,
                                         goal_status=self.goals,actual_pose=pose,navigation_idle=nav_idle)
             if phase=='READY' and self.anchor is None:

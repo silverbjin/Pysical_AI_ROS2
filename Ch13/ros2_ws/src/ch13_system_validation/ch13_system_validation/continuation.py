@@ -12,7 +12,7 @@ from ch13_manipulation_reuse.planning import pose
 from ch13_mission_orchestration.session import admit_observation
 from .scene_contact import receiving_contact
 from .transport import fresh_return_capture
-from .fixture import RECEIVING_XY
+from .scenarios import active_scenario,retreat_point
 from .placed_scene import detach_released_cylinder
 
 
@@ -37,6 +37,7 @@ def drain_owned_goals(session,until,extra=()):
 
 
 def continue_mission(*,session,call,node,until,snapshot,status,control,planner,grip,baseline_z,records,action_client_factory=ActionClient):
+    scenario=active_scenario()
     session.port.complete('pick',dict(session=session.session))
     session.await_step('return',until)
     identity=uuid.uuid4();home=[0.,0.,math.pi]
@@ -74,10 +75,10 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         session.port.complete('return',dict(session=session.session,position_error_m=math.hypot(actual.x,actual.y)))
         session.await_step('place',until)
         control['set_phase']('LOWER')
-        receiving_contact(planner,True)
+        receiving_contact(planner,True,support_name=scenario.planning_support)
         # Place above the receiving support using a fresh RGB-D center; oracle is never read.
         observed=np.array(snapshot()['observation']['point'])
-        receiving=np.array([*RECEIVING_XY,baseline_z])
+        receiving=np.array([*scenario.receiving_xyz[:2],baseline_z+scenario.receiving_xyz[2]-scenario.target_xyz[2]])
         tcp=planner.tcp();goal=tcp[:3,3]+receiving-observed
         planner.apply_objects([])
         path=planner.cartesian([pose(goal,Rotation.from_matrix(tcp[:3,:3]))])
@@ -104,9 +105,9 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         current=snapshot()
         detach_released_cylinder(planner,current['observation'],clock_ns=current['clock_ns'],
             wall=time.monotonic(),released_ns=released_ns)
-        receiving_contact(planner,False)
+        receiving_contact(planner,False,support_name=scenario.planning_support)
         control['set_phase']('RETREAT')
-        tcp=planner.tcp();back=tcp[:3,3]+[.08,0.,0.]
+        tcp=planner.tcp();back=retreat_point(tcp,scenario)
         path=planner.cartesian([pose(back,Rotation.from_matrix(tcp[:3,:3]))]);assert path is not None
         planner.execute(path)
         assert until(lambda:snapshot()['platform'].get('stationary_ready'),10.)

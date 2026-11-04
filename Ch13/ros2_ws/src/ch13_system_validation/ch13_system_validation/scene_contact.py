@@ -16,11 +16,11 @@ def permit_pair(matrix,first,second,enabled):
     return result
 
 
-def receiving_contact(planner,enabled):
+def receiving_contact(planner,enabled,*,support_name='reuse_receiving_support'):
     request=GetPlanningScene.Request();request.components.components=PlanningSceneComponents.ALLOWED_COLLISION_MATRIX
     matrix=planner.call('/get_planning_scene',request).scene.allowed_collision_matrix
     change=ApplyPlanningScene.Request();change.scene.is_diff=True;change.scene.robot_state.is_diff=True
-    change.scene.allowed_collision_matrix=permit_pair(matrix,'pick_target','reuse_receiving_support',enabled)
+    change.scene.allowed_collision_matrix=permit_pair(matrix,'pick_target',support_name,enabled)
     assert planner.call('/apply_planning_scene',change).success,'support collision diff rejected'
     planner.revision+=1
-    planner.records.append(dict(kind='receiving_support_contact',enabled=enabled,physical_attachment=False))
+    planner.records.append(dict(kind='receiving_support_contact',support_name=support_name,enabled=enabled,physical_attachment=False))

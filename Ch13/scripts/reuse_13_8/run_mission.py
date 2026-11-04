@@ -15,13 +15,17 @@ from statistics import mean
 
 
 def main():
+    from ch13_system_validation.scenarios import SCENARIOS,get_scenario
     ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True)
     ap.add_argument('--manifest',required=True)
     ap.add_argument('--auto-start',action='store_true');ap.add_argument('--no-bag',action='store_true')
+    ap.add_argument('--scenario',choices=tuple(SCENARIOS),default='development')
     args=ap.parse_args();root=Path(args.repo_root).resolve();out=Path(args.evidence).resolve()
     manifest=Path(args.manifest).resolve()
     subprocess.run([sys.executable,str(root/'Ch13/scripts/reuse_13_8/freeze_runtime.py'),'verify',str(manifest)],check=True)
     os.environ['CH13_VALIDATION_PROFILE']='carry_v1'
+    scenario=get_scenario(args.scenario);os.environ['CH13_VALIDATION_SCENARIO']=scenario.name
+    scenario_bytes=(json.dumps(scenario.record(),sort_keys=True,indent=2)+'\n').encode()
     from std_msgs.msg import Empty,String
     from sensor_msgs.msg import LaserScan,JointState
     from nav_msgs.msg import Odometry
@@ -65,6 +69,7 @@ def main():
     health={};clock=[None];tilts=[];cpu=ProcessCPU();bag=[None];mission_ref=[None];start=[None];status_writer=[None]
     def configure(node,mission):
         (out/'source_manifest.json').write_bytes(manifest.read_bytes())
+        (out/'scenario.json').write_bytes(scenario_bytes)
         stage=root.parent/'source_stage.json'
         if stage.exists():
             staged=json.loads(stage.read_text())
@@ -130,7 +135,7 @@ def main():
             place=completed.get('place',{});began=start[0]
             engine=json.loads((out/'engine.json').read_text()) if (out/'engine.json').exists() else {}
             physical_rows=engine.get('pick_physics',{}).get('rows',[])
-            physics=dict(pick=assess_pick(physical_rows),transport=assess_transport(physical_rows))
+            physics=dict(pick=assess_pick(physical_rows),transport=assess_transport(physical_rows,scenario=scenario))
             physical_ok=all(v['result']=='PASS' for v in physics.values())
             finished=place.get('wall',time.monotonic())
             mission_cpu=[r['percent'] for r in cpu.rows if began and began[1]<=r['wall']<=finished]
@@ -140,7 +145,8 @@ def main():
                 sim_s=sim_s,wall_s=None if not began else finished-began[1],
                 position_error_m=completed.get('return',{}).get('position_error_m'),
                 max_tilt_rad=max(tilts) if tilts else None,cpu_percent=mean(mission_cpu) if mission_cpu else None,
-                bag_closed=bag_closed,profile='actual',level='continuous_development_fixture',
+                bag_closed=bag_closed,profile='actual',level=scenario.level,
+                scenario=scenario.name,scenario_sha256=hashlib.sha256(scenario_bytes).hexdigest(),
                 cpu_basis='owned process tree / sched_getaffinity cores',allowed_cores=cpu.cores)
             row.update(source_manifest_sha256=hashlib.sha256(manifest.read_bytes()).hexdigest(),physical=physics)
             (out/'trial.json').write_text(json.dumps(row,indent=2,allow_nan=False)+'\n')

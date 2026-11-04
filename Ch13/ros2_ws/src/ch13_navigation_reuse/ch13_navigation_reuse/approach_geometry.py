@@ -45,9 +45,10 @@ def footprint_clear(pose,grid,footprint):
    if all(not (max(poly@axis)<min(cell@axis) or max(cell@axis)<min(poly@axis)) for axis in axes):return False
  return True
 
-def candidates(model,q,point,grid,footprint):
+def candidates(model,q,point,grid,footprint,*,distances=None):
  reach=arm_reach(model,q);result=[];point=np.asarray(point);initial=np.asarray(q);base=initial[:2]
- for distance in [reach-.15,reach-.25,reach-.35]:
+ for distance in ([reach-.15,reach-.25,reach-.35] if distances is None else distances):
+  if not math.isfinite(distance) or distance<=0:raise ValueError('finite positive approach distance required')
   if distance<=max(p[0] for p in footprint)+.08:continue
   for angle in [0.,-.15,.15]:
    bearing=math.atan2(point[1]-base[1],point[0]-base[0])+angle;xy=point[:2]-distance*np.array([math.cos(bearing),math.sin(bearing)]);heading=math.atan2(point[1]-xy[1],point[0]-xy[0]);pose=[float(xy[0]),float(xy[1]),heading]

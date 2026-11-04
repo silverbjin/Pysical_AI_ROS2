@@ -9,10 +9,18 @@ def layout(profile):
  walls=[('wall_left',[-2.,0.,.4],[.05,2.5,.4]),('wall_right',[4.,0.,.4],[.05,2.5,.4]),('wall_bottom',[1.,-2.5,.4],[3.,.05,.4]),('wall_top',[1.,2.5,.4],[3.,.05,.4])]
  if profile=='obstacle':walls.append(('obstacle',[1.2,0.,.4],[.14,.23,.4]))
  if profile=='blocked':walls.append(('barrier',[1.2,0.,.4],[.14,2.5,.4]))
- if profile=='vision':walls.extend([('target',[1.8,0.,.55],[.05,.05,.05]),('pedestal',[1.8,0.,.25],[.035,.035,.25])])
  if profile=='vision' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
-  from ch13_system_validation.fixture import RECEIVING_XY
-  walls.append(('receiving_support',[*RECEIVING_XY,.25],[.045,.045,.25]))
+  from ch13_system_validation.scenarios import active_scenario
+  scenario=active_scenario();point=scenario.target_xyz
+  walls.append(('target',[point[0],point[1],point[2]+.01],[.05,.05,.05]))
+  if scenario.support_height_m>0:
+   height=scenario.support_height_m
+   walls.append(('pedestal',[point[0],point[1],height/2],[.035,.035,height/2]))
+ elif profile=='vision':walls.extend([('target',[1.8,0.,.55],[.05,.05,.05]),('pedestal',[1.8,0.,.25],[.035,.035,.25])])
+ if profile=='vision' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+  if scenario.support_height_m>0:
+   height=scenario.support_height_m
+   walls.append(('receiving_support',[*scenario.receiving_xyz[:2],height/2],[.045,.045,height/2]))
  return walls
 
 def make_model(source,profile,spec_hook=None):

@@ -3,7 +3,7 @@ import math
 from .fixture import RECEIVING_XY
 
 
-def assess_transport(rows):
+def assess_transport(rows,*,scenario=None):
     try:
         carry=[r for r in rows if r['phase']=='CARRY']
         placed=[r for r in rows if r['phase']=='RETREAT']
@@ -19,10 +19,11 @@ def assess_transport(rows):
         displacement=math.dist(carry[0]['target'][:2],carry[-1]['target'][:2])
         supported=all(r.get('target_support_N',0.)>.01 for r in placed)
         released=all(max(r['target_contact_N'].values(),default=0.)<.005 for r in placed)
+        receiving=(*RECEIVING_XY,.54) if scenario is None else scenario.receiving_xyz
         checks=dict(carry_displacement=displacement>.10,carry_contact_fraction=dual>=.9,
             carry_height=min(r['target'][2] for r in carry)>=baseline-.02,
-            receiving_position=all(math.dist(r['target'][:2],RECEIVING_XY)<.03 for r in placed),
-            receiving_height=all(abs(r['target'][2]-.54)<.005 for r in placed),
+            receiving_position=all(math.dist(r['target'][:2],receiving[:2])<.03 for r in placed),
+            receiving_height=all(abs(r['target'][2]-receiving[2])<.005 for r in placed),
             supported=supported,released=released,placed_hold=placed[-1]['sim_s']-placed[0]['sim_s']>=2.)
         return dict(result='PASS' if all(checks.values()) else 'FAIL',checks=checks,
                     carry_displacement_m=displacement,dual_contact_fraction=dual,

@@ -1,6 +1,7 @@
 """Same-engine vision-guided physical picking; oracle is read only after exit."""
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -57,8 +58,14 @@ def work(*,node,until,snapshot,status,control,out,case='pick',action_client_fact
         # Plan both symmetries; rank only routes which satisfy the same timing
         # contract used at execution, rather than comparing raw TOTG durations.
         candidates=[]
+        scenario=None
+        if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+            from ch13_system_validation.scenarios import active_scenario,grasp_pose
+            scenario=active_scenario()
         for sign in (1.,-1.):
             rotation=Rotation.from_matrix(np.column_stack((sign*up,-sign*side,forward)))
+            if scenario is not None and scenario.grasp_pitch_down_deg:
+                pre,rotation=grasp_pose(center,forward,sign,scenario)
             request.pose=pose(pre,rotation);candidate=planner.plan(pose_goal=request)
             if candidate is not None:
                 end=candidate['trajectory'].joint_trajectory.points[-1].time_from_start
@@ -69,6 +76,8 @@ def work(*,node,until,snapshot,status,control,out,case='pick',action_client_fact
         duration,plan,rotation,sign=candidates[selected]
         records.append(dict(pre_grasp_roll_sign=sign,planned_duration_sim_s=duration,
                             equivalent_roll_candidate_durations=[c[0] for c in candidates],
+                            grasp_pitch_down_deg=0. if scenario is None else scenario.grasp_pitch_down_deg,
+                            pre_distance_m=.12 if scenario is None else scenario.pre_distance_m,
                             selection='shortest_audited_normalized_duration'))
         planner.execute(plan)
         assert until(lambda:snapshot()['platform'].get('stationary_ready'),10.)

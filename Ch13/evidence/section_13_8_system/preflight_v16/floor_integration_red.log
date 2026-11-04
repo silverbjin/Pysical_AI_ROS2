@@ -1,0 +1,68 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_6ac47ec7068644da977896080f153fb9/repo
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_floor_approach_can_select_the_verified_standoff_without_changing_default _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x782265f39fd0>
+
+    def test_floor_approach_can_select_the_verified_standoff_without_changing_default(monkeypatch):
+        monkeypatch.setattr(approach_geometry,'arm_reach',lambda *args:.9)
+        monkeypatch.setattr(approach_geometry,'position_ik',lambda *args:{'collision_free':True})
+        monkeypatch.setattr(approach_geometry,'footprint_clear',lambda *args:True)
+        q=np.zeros(27);q[3]=1.;fp=[[-.3,-.3],[.3,-.3],[.3,.3],[-.3,.3]]
+>       selected=approach_geometry.candidates(None,q,[2.,0.,.04],{},fp,distances=(.6,))
+E       TypeError: candidates() got an unexpected keyword argument 'distances'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_floor_integration.py:19: TypeError
+______ test_floor_contact_is_measured_without_a_duplicate_receiving_body _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7822650f2a20>
+
+    def test_floor_contact_is_measured_without_a_duplicate_receiving_body(monkeypatch):
+        m=model(monkeypatch);d=mujoco.MjData(m);d.qpos[:]=m.key_qpos[m.key('home').id]
+        d.qpos[29]=.0395;mujoco.mj_forward(m,d)
+        monitor=PickMonitor(m);lease=TransportLease('test')
+        monitor.step(SimpleNamespace(mjData=d,desired_joint_pos_gripper=.03),lease,1_000_000_000)
+>       assert monitor.support_N>.01
+E       assert 0.0 > 0.01
+E        +  where 0.0 = <ch13_manipulation_reuse.pick_monitor.PickMonitor object at 0x7822650f0f20>.support_N
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_floor_integration.py:35: AssertionError
+_ test_real_arm_body_penetration_latches_floor_fault_instead_of_becoming_carry_authority _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7822650f1520>
+
+    def test_real_arm_body_penetration_latches_floor_fault_instead_of_becoming_carry_authority(monkeypatch):
+        m=model(monkeypatch);d=mujoco.MjData(m);d.qpos[:]=m.key_qpos[m.key('home').id]
+        fixture=json.loads((Path(__file__).parent/'data/floor_pose_candidates.json').read_text())
+        d.qpos[0]=fixture['base_x'];d.qpos[2]=fixture['unsafe_base_z']
+        d.qpos[19:25]=fixture['unsafe_pre'];d.qpos[25:27]=[.03,-.03];mujoco.mj_forward(m,d)
+        lease=TransportLease('test');lease.phase='READY';lease.message={'task_phase':'PRE_GRASP'}
+        monitor=PickMonitor(m);monitor.step(SimpleNamespace(mjData=d,desired_joint_pos_gripper=.03),lease,1_000_000_000)
+>       assert lease.phase=='FAULT' and lease.fault=='FLOOR_ARM_CONTACT'
+E       AssertionError: assert ('READY' == 'FAULT'
+E         - FAULT
+E         + READY)
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_floor_integration.py:46: AssertionError
+_______ test_floor_physical_grading_requires_the_explicit_floor_receiver _______
+
+    def test_floor_physical_grading_requires_the_explicit_floor_receiver():
+        rows=[]
+        for index in range(101):
+            carry=index<50
+            rows.append(dict(sim_s=index*.1,phase='CARRY' if carry else 'RETREAT',
+                target=[1.-index*.02,0.,.14] if carry else [-.6,0.,.04],relative_tcp=[0.,0.,0.],
+                target_contact_N={'link7':.1,'link8':.1} if carry else {'link7':0.,'link8':0.},
+                target_support_N=0. if carry else .19))
+>       assert assess_transport(rows,scenario=get_scenario('level1_floor'))['result']=='PASS'
+E       TypeError: assess_transport() got an unexpected keyword argument 'scenario'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_floor_integration.py:57: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_floor_integration.py::test_floor_approach_can_select_the_verified_standoff_without_changing_default
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_floor_integration.py::test_floor_contact_is_measured_without_a_duplicate_receiving_body
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_floor_integration.py::test_real_arm_body_penetration_latches_floor_fault_instead_of_becoming_carry_authority
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_floor_integration.py::test_floor_physical_grading_requires_the_explicit_floor_receiver
+4 failed, 329 deselected in 7.05s
+

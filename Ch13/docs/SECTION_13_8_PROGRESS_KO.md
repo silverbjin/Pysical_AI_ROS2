@@ -240,3 +240,15 @@ UUIDfcf0dbe0-de70-4ca1-a86e-66133a62d2f8, source v15/346·assets94, SHA25605e33c
 v15 사후보존: 실제닫힌bag12토픽/164399메시지무결성PASS. exact native source346개 전수hash보존archive SHA9318dca2a8a37add3d485ae05e20cc27e7db175379642eb466dad67fbbb6292d. 모델제외raw58,135,258byte SHAd42dd09a8dc57adf95b7529f58699fb0f81895778a358c1dca4e2fea34cf752b. 새빈native폴더에41파일hash복원PASS, 원래trial/BT/nav/source hash동일·success=true보존. 실제재실행이나원격다운로드검증은아니다. Task2의최소연속기능인수/증거보존을완료하고원고월드와10회는Task4에남긴다.
 
 바닥월드full-pose M0에서v1의TF누락과v3의양성대조군선정실패를분리했다. v3는floor경사접근후보의실제IK해가있어도table sign+ 대조군이안풀려API_SETUP_FAILURE로보수판정했다. 공식MoveIt2.12.4 kinematics_service_capability.cpp는timeout.sec만setFromIK에전달한다. v4는정수1초·양쪽roll대조군·선택floor후보와독립URDF FK잔차검사를사용했다. table sign- 대조군PASS 및floor stand-off0.55m/pitch45°·0.60/0.65m pitch30°/sign-의pre-grasp/grasp 모두실제TRAC-IK 해를얻었다. position<2mm/orientation<0.02rad FK확인·shutdownACK/exit0. avoid_collisions=false의정적workspace검사이며물리·충돌경로·시야성공은아니다. 새body고정/WBC나학습은추가하지않았다.
+
+### Task4A: 원고 Level1의명시적연결
+
+원고floor2m를development와구분하는불변scenario를추가했다. level1_floor는target(2,0,0.04), 수령(-0.6,0,0.04), 고정camera(0.4,0.4,0.29)/yaw-40/pitch down35도, stand-off0.60m/pitch down30도/pre0.06m다. scenario.json과trial의scenario/name/hash/level로출처를남긴다. 기존development 기본값·기존프로필은유지하며알수없는ID는시작전에거부한다.
+
+원래floor그대로target실제접촉힘을측정한다. 가짜중복receiving patch를추가하지않았다. 개방권한에는측정지지힘과lease의새관측수령영역을같이요구하며관측의기존수명/소유권검사를유지한다. 정적M0에서팔이몸통을관통하는IK해를발견했으므로floor모드의실측arm-vs-body/leg/floor 관통접촉힘이0.005N를넘으면FLOOR_ARM_CONTACT로latch한다. target freejoint를제어입력으로쓰지않는다. 양성실제MuJoCo관통fixture가fault를내는시험과바닥지지측정/잘못된수령점거부를확인했다.
+
+내려놓기는원본관측baseline과scenario 높이차를쓰며floor후퇴는접근축반대방향으로8cm 올라온다. 기존개발fixture의world+x 수평후퇴는유지한다. 기존Planner와ownedNativeAction/lease/취소회수를재사용하고보행루프를복제하지않는다. source중2개기존파일의 -text/CRLF 형식을유지하며일회git whitespace검사에cr-at-eol을명시했다. 전역설정변경은없다.
+
+새 API RED와geometry/support/force/판정 GREEN 후전체334 PASS/53.06초. 추가로실제초기/사전/파지3자세를한시험으로확인해1 PASS/2.88초(334 deselected). 이를335개전체를한번에실행했다고쓰지않는다. M0 nominal baseZ0.29에서도d0.60/pitch30/pre0.06은3자세시야와관통없음을확인했으나중간경로/물리인수는별도다.
+
+v16 build/설치/actual child 감사 PASS, source350/assets94 SHA256 061bb5a92b75de075c83b35227538c53e034d25735b7ba8a548b70aec56a5203. native staging/shared lock/잔여PASS. 다음 actual 원고Level1 UUID 8fb61073-d484-43d8-a2d3-3aa51c7c7572. v15 development SUCCESS와다른fixture·별도증거다.
