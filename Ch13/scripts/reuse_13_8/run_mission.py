@@ -38,6 +38,11 @@ def main():
 
     class ValidationSession(Session):
         engine_budget_sim_s=600.
+        def ready(self,**context):
+            from ch13_system_validation.startup import prepare_manipulation_types
+            # All of this stays on the ROS owner before a manipulation OFFER.
+            for record in prepare_manipulation_types():self.port.event('startup_preparation',**record)
+            super().ready(**context)
 
     class WaitStart(py_trees.behaviour.Behaviour):
         def __init__(self,mission):super().__init__('Wait /start_mission');self.m=mission

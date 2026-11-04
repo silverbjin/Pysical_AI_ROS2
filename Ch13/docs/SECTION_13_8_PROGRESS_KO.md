@@ -190,3 +190,13 @@ fault decision284.319901497wall에서 마지막 health의 capture284.016571911wa
 Ruling: 다음 실행은 제어/기하/임계값을 바꾸지 않고 render 시작·완료·process CPU와 소유 프로세스별 CPU를 계측한다 — queue 대기와 실제 계산/스케줄 지연을 분리하지 않고 렌더 옵션이나 스레드 수를 바꾸면 추측성 수정이 된다 — 한 번의 diagnostic 실행 비용을 허용하고 원인을 특정한다. source capture 시각은 유지한다. renderer 계측 RED1/PASS1 후 GREEN3(PASS5.22초,314 deselected). 전체317개 중 변경 영향의 작은 실제 renderer/CPU 시험만 재확인했으며 전체 재실행으로 표현하지 않는다.
 
 v12 계측 후보: build15.6초·설치59모듈/94자산/actual child PASS. source338/assets94 SHA256 a4aa2be7819fd36fc12abd4f4c7e793ad11c80c1dc0cc79fbfda514f045abfda. 새 native staging·공유 lock/잔여 확인 PASS. 다음 actual diagnostic UUID b0ccbf5f-0c95-4325-bf7f-a71338dc5cd0. 제어/물리/한도 변경 없음.
+
+v12 actual UUIDb0ccbf5f-0c95-4325-bf7f-a71338dc5cd0는 초기 navigation/정착/find를 통과했으나 첫 arm warmup goal이 거부돼 전체 FAIL. engine fault는MISSION_EXPIRED. 원본 heartbeat sequence1 send10850.281082→sequence2 send10850.736212로455ms 간격이며 수신/relay가 아니라 producer 갱신 자체가 끊겼다. 첫 action 전이므로 팔 궤적 실패로 분류하지 않는다. trial10.842sim초/34.862797wall초·CPU47.583%·tilt0.035406rad·bag close/12 child clean exit/worker join/lock free.
+
+첫 action 준비는 live lease READY 후run_arm_probe lazy import·ActionClient 생성·타입 지원 최초 로딩을 동기 수행한다. 설치rclpy7.1.12의 action/client.py와type_support.py는ActionClient 생성 시 아직 없는 타입 지원을 동기로 import하는 경계를 확인했다. 별도domain136 실제 콜드 probe(명령0)는warmup import16.635ms/첫arm client98.471ms/gripper1.519ms/goal구성0.195ms. 이 idle값이 live455ms 전부를 증명하지는 않지만, owner가 갱신할 수 없는 초기화 구간이 live 권한 안에 있다는 구조적 결함은 확인된다.
+
+Ruling: 13.8 ValidationSession.ready에서 warmup 모듈과 실제 action3종/MoveIt service4종 타입 지원을 미리 준비한다 — 공식 ROS lifecycle의 configure 단계에서 일회 준비를 끝내고 active 단계의 긴 초기화를 피하는 패턴을 참고한다 — 실제 ROS client 생성/goal·result·cancel 소유권은 기존 한 owner와DeferredClients에 그대로 둔다. base13.7 실행 경로에는 적용하지 않는다. preload는새 권한/heartbeat가 아니며 live lease 시작을 늦춰서 오래된 관측을 허용하지 않는다.
+
+독립 prepared probe는동작 전 준비340.085ms 후warmup import0.002ms/arm client5.420ms/gripper1.380ms였다. 준비비용이 사라진 것이 아니라 live 권한 이전으로 이동한 결과다. 실제 warmup client 구간도 별도 timing으로 기록하여 가설을 다시 확인한다. 신규API 부재 RED 후 시험 driver의script 검색 경로 누락1 FAIL을 명시적으로 수정했다. 새 전체 회귀와 실제 연속 재검증은 대기다.
+
+v13 전체318 PASS/51.06초. build·설치60모듈/94자산/child PASS, source340/assets94 SHA256 6bb216f5f04859218d03e59fd84414cf1e976383dc204f33cddaf82afc81a732. native 사본·동일 공유 lock/잔여 확인 PASS. 다음 actual UUID 22d69f96-a916-4652-98e5-8f0fd461e2d1. rclpy 공식7.1.12 tag의action/client.py와type_support.py도 GitHub connector로 읽어 설치 버전과 맞췄다.

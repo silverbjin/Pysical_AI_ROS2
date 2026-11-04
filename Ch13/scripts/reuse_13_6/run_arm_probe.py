@@ -1,6 +1,7 @@
 """Actual six-axis/gripper/cancel tests on the same post-navigation engine."""
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -27,9 +28,14 @@ def arm_goal(q,offset=.02):
 
 
 def work(*,node,until,snapshot,status,control,case,out,action_client_factory=ActionClient):
+    records=[];started=time.monotonic()
     arm=action_client_factory(node,FollowJointTrajectory,ARM)
+    if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+        records.append(dict(kind='initialization',step='warmup_arm_client',start_wall=started,end_wall=time.monotonic()))
+    started=time.monotonic()
     gripper=action_client_factory(node,GripperCommand,GRIPPER)
-    records=[]
+    if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+        records.append(dict(kind='initialization',step='warmup_gripper_client',start_wall=started,end_wall=time.monotonic()))
     def measured():
         joints=snapshot()['joints'];values=dict(zip(joints.name,joints.position))
         return np.array([values[j] for j in JOINTS]),values
