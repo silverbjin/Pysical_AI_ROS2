@@ -212,3 +212,15 @@ Ruling: PCL공식cylinder segmentation의모델/합의점선별/계수재계산�
 13.8 carry opt-in은robust_consensus=True·filter_boundary=False로전환한다. 이전이웃pixel처리를누적하지않는다. 기본13.6/13.7은둘다False로유지한다. 원본capture/TF/GID/hash와물리/권한/안전기준은유지한다. 새v13 rawRGB-D를고정fixture로보존했다. API부재3 RED 후최초후보7 PASS/1 FAIL은고정120행crop이실제캔의상반부를지우지못한시험데이터오류였다. 실제red bounding box의중간행기준으로고쳤고v9원본도새mode회귀에추가했다. 전체회귀와새물리실행은대기다.
 
 v14 후보322 PASS/54.67초, 설치60모듈/94자산/child PASS. source344/assets94 SHA256 e03942989bd3ab60d160f29ea4e6b665046dec00ca1f8fb45e9f20ec86ade5be. native staging/공유 lock/잔여 PASS. v13 exact source340 보존 SHA b2b97ee3c94a723abf7cb0c05bbd3276bc0317bbe0fcd2b14a50529379efae7b. v11/v12/v13 FAIL을3.895/5.120/27.911MB raw archive로 보존하고 원본도 유지했다. 다음 actual UUID 60ecc5f5-8385-44d5-83ec-ecd829af8b3b.
+
+### v14: 실제 파지/검출 통과 뒤 advisory 파일 오류로 취소
+
+v14 UUID60ecc5f5-8385-44d5-83ec-ecd829af8b3b는파지PASS(최소100.460mm/2.18sim초/접촉100%/slip0.02731mm) 후귀환중전체FAIL했다. trial160.6sim초/349.706125wall초·CPU45.622%. 시작 시점부터의 live_status는참고치이며실제최종상태는trial/BT/engine으로판독했다.12 child clean exit/worker join/공유 lock free. 이전표면검출실패구간을통과했으나전체미션성공은아니다.
+
+최초원인은로봇/비전fault가아니라BT timer의live_status.tmp→live_status.json replace PermissionError(Errno13)다. Windows측상태조회와WSL측파일교체가충돌했고, advisory파일예외가BT executor로전파되어mission_exception 취소를발생시켰다. RETURN_GOAL_FAILED는그취소의후속현상이다. Microsoft CreateFileW의FILE_SHARE_DELETE 설명은rename에도delete공유가필요함을명시하며WSL #3395도Windows watcher/rename EACCES의비교사례다.
+
+새빈시험폴더에서Windows FileStream을FileShare.ReadWrite(DELETE 공유없음)로열어WSL replace를실제로재현했다. 새writer의동작은PermissionError1회기록·기존JSON보존·정상join PASS였다. 단순추정으로Windows 권한설정/프로세스를변경하지않는다. 관련Python3.12 queue/Thread와공식ROS의blocking I/O 분리원칙을참고했다.
+
+Ruling: live_status의파일I/O를ROS timer에서owned latest-only writer thread로분리한다 — 상태표시는새권한이나최종판정이아니므로OS reader lock을로봇취소로전파하면안된다 — pending은한개로제한하고느린기록은다음상태로대체하며오류/대체수/마지막오류/실제join을telemetry_delivery.json에남긴다. shutdown후join미확인은정상성공으로바꾸지않는다. 실제제어/BT goal·관측/접촉/취소계약은변경하지않는다. API부재RED 후잠금복구·blocked writer 누적제한·join실패표시·정상atomic최종전달3 PASS/1.85초. 실제Windows deny-delete/WSL probe도PASS. 전체회귀/새실제실행은대기다.
+
+v15 후보325 PASS/48.99초. 설치61모듈/94자산/actual child PASS. source346/assets94 SHA256 05e33c7a6703f2d105d577be240a0dca60d2924cd3e464d940a5f9ea90a4aa74. native staging·공유 lock/잔여 PASS. v14 exact source344 보존 SHA2f1e401ac266e3604b1b9655be5112c56526b88381898088b3cd6689ac675827, raw40,779,702byte SHA4af8b4183642dfa90d1c30ff3133a635804a96595c83c5e9b94aa24ff2f91c39. 다음 actual UUID fcf0dbe0-de70-4ca1-a86e-66133a62d2f8. 동작과 무관한Windows advisory reader lock을3초간주입해예외전파차단도확인할예정이며고정설정10회평가와구분한다.

@@ -63,3 +63,9 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 채택 패턴은 기존 robust 중심에 대해2mm 이내의side점이95% 이상일 때 합의점을 선별하고 중심을 다시 계산하는 것이다. 재계산 뒤에도95% 비율을 다시 확인하며 RMS1.5mm·q90 2mm·side 폭/최소20점·실제 inlier 표면의75~105% 높이를 모두 요구한다. PCL의RANSAC 구현을 복사하거나 호출한 것은 아니다. 새 패키지 설치 없이 기존 고정축/반경 문제에 모델 합의점 검사를 적용한다.
 
 **변경되는 계약:** residual_m의 모집단은13.8 새mode에서 합의점이다. raw_residual_m/raw_points/outlier_points/surface_inlier_fraction과선별기준을 함께 기록한다. 모든 점의RMS 검사를 유지했다고 표현하지 않는다. 심한 손상이나 부족한 높이를 정상으로 바꾸지 않으며 기본13.6/13.7은 기존 전체점 fit을 유지한다. 이전 boundary 이웃 필터는13.8 live에서 끄고 새mode와 누적하지 않는다. 촬영 시각/TF/GID/hash·물리 모델·실행 속도·수명/접촉 경계는 유지한다. v9/v13 실제 거부 영상과 저장 시야 궤적, 25% 깊이 손상/가림 시험을 검증 근거로 사용하며 최종 actual은 별도다.
+
+## v15: Windows reader lock과 advisory 기록의 실행 경계
+
+[Microsoft CreateFileW 공식 문서](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew)의FILE_SHARE_DELETE는rename에도적용된다. [WSL #3395](https://github.com/microsoft/WSL/issues/3395)는Windows watcher와rename EACCES의과거비교사례이며동일버전의확정원인으로대신하지않는다. 직접새파일을Windows FileShare.ReadWrite로열고WSL replace를시도해실제PermissionError를재현했다. 이전JSON보존/오류1회기록/owned writer join PASS였다. 기존live실행자료는수정하지않았다.
+
+[Python3.12 queue 공식 문서](https://docs.python.org/3.12/library/queue.html)의bounded producer/consumer 패턴과 [threading.Condition/Thread.join](https://docs.python.org/3.12/library/threading.html)을참고했다. 구현은Condition으로보호한단일pending slot과한개의비daemon writer다. ROS timer는작은snapshot만넘기며파일I/O는writer에서수행한다. 새상태가대기중상태를대체해도한도가늘지않는다. I/O/직렬화오류는advisory delivery기록으로남고기존정상snapshot을유지한다. 끝에서는pending을소진하고join결과를기록한다. join미확인은정상미션성공으로바꾸지않는다. 실제controller/lease/goal/cancel의owner나주기는바꾸지않는다.

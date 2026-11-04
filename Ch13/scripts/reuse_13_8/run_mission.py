@@ -32,6 +32,7 @@ def main():
     from ch13_mission_orchestration.session import Session
     from ch13_system_validation.continuation import continue_mission
     from ch13_system_validation.monitor import TopicStats,ProcessCPU
+    from ch13_system_validation.telemetry import LiveStatusWriter
     from ch13_navigation_reuse.command_gateway import N,ns
     from ch13_system_validation.physics import assess_transport
     from ch13_manipulation_reuse.pick_acceptance import assess_pick
@@ -61,7 +62,7 @@ def main():
                 latest=self.ticks[-1]
                 self.log.publish(String(data=json.dumps({k:latest[k] for k in ('tick','root','nodes','terminal')})))
 
-    health={};clock=[None];tilts=[];cpu=ProcessCPU();bag=[None];mission_ref=[None];start=[None]
+    health={};clock=[None];tilts=[];cpu=ProcessCPU();bag=[None];mission_ref=[None];start=[None];status_writer=[None]
     def configure(node,mission):
         (out/'source_manifest.json').write_bytes(manifest.read_bytes())
         stage=root.parent/'source_stage.json'
@@ -71,6 +72,7 @@ def main():
             (out/'runtime_stage.json').write_bytes(stage.read_bytes())
         mission.log=node.create_publisher(String,N+'/validation/bt_log',1)
         mission_ref[0]=mission
+        status_writer[0]=LiveStatusWriter(out/'live_status.json')
         def trigger(_):
             if not mission.started:
                 mission.started=True;start[0]=(clock[0],time.monotonic())
@@ -93,10 +95,8 @@ def main():
         node.create_timer(1.,cpu.sample)
         def live_status():
             data=mission.port.snapshot()
-            temporary=out/'live_status.tmp'
-            temporary.write_text(json.dumps(dict(terminal=mission.terminal,requested=data['requested'],
-                completed=list(data['completed']),progress=data['progress'],error=data['error'],wall=time.monotonic()),indent=2)+'\n')
-            temporary.replace(out/'live_status.json')
+            status_writer[0].offer(dict(terminal=mission.terminal,requested=data['requested'],
+                completed=list(data['completed']),progress=data['progress'],error=data['error'],wall=time.monotonic()))
         node.create_timer(1.,live_status)
         if not args.no_bag:
             bag[0]=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','bag','record','--use-sim-time',
@@ -117,6 +117,7 @@ def main():
         code=runner.main(['--repo-root',str(root),'--evidence',str(out)],mission_factory=ValidationMission,
                          session_factory=ValidationSession,port_factory=lambda:TaskPort(STEPS+('place',)),pick_continuation=continue_mission,configure=configure)
     finally:
+        telemetry=None if status_writer[0] is None else status_writer[0].close()
         bag_closed=None
         if bag[0] is not None:
             if bag[0].poll() is None:bag[0].send_signal(signal.SIGINT)
@@ -135,7 +136,7 @@ def main():
             mission_cpu=[r['percent'] for r in cpu.rows if began and began[1]<=r['wall']<=finished]
             sim_s=None if not began or began[0] is None else (place.get('clock_ns',clock[0] or began[0])-began[0])/1e9
             row=dict(uuid=out.name,complete=summary.get('worker_joined') is True and summary.get('port',{}).get('closed') is True,
-                success=code==0 and summary.get('terminal')=='SUCCESS' and 'place' in completed and physical_ok and (args.no_bag or bag_closed is True),
+                success=code==0 and summary.get('terminal')=='SUCCESS' and 'place' in completed and physical_ok and (args.no_bag or bag_closed is True) and (telemetry is None or telemetry['joined']),
                 sim_s=sim_s,wall_s=None if not began else finished-began[1],
                 position_error_m=completed.get('return',{}).get('position_error_m'),
                 max_tilt_rad=max(tilts) if tilts else None,cpu_percent=mean(mission_cpu) if mission_cpu else None,
@@ -143,6 +144,7 @@ def main():
                 cpu_basis='owned process tree / sched_getaffinity cores',allowed_cores=cpu.cores)
             row.update(source_manifest_sha256=hashlib.sha256(manifest.read_bytes()).hexdigest(),physical=physics)
             (out/'trial.json').write_text(json.dumps(row,indent=2,allow_nan=False)+'\n')
+            if telemetry is not None:(out/'telemetry_delivery.json').write_text(json.dumps(telemetry,indent=2)+'\n')
             (out/'health.json').write_text(json.dumps(dict(topics={k:v.report() for k,v in health.items()},cpu=cpu.rows,
                 battery_voltage='unavailable: no physical voltage model'),indent=2)+'\n')
     return 0 if code==0 and row['success'] else 1

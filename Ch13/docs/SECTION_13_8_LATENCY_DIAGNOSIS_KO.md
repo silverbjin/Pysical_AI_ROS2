@@ -60,3 +60,11 @@ v13은 최초 팔 준비를 통과했지만 접근 중 표면 검사6회 거부�
 같은 계열이 남아 이웃 임계값을 더 조정하지 않았다. [PCL1.15.1 공식 원통 분할](https://github.com/PointCloudLibrary/pcl/blob/pcl-1.15.1/doc/tutorials/content/cylinder_segmentation.rst)의 모델→합의점→재계산 패턴과 기존 SciPy robust 추정을 결합했다. 13.8 새mode는2mm 이내side점95% 이상을 요구하고, 그 집합으로 중심을 재계산한다. 이후에도95% 비율·RMS1.5mm·높이75~105%·side 폭/최소20점을 검사한다. 과거 이웃 필터는 live에서 끈다.
 
 residual_m의 모집단이 전체 점에서 합의점으로 바뀌므로 명시적 검출 계약 변경이다. rawRMS·전체/제외 점수·합의점 비율을 함께 남긴다. v9/v13 실제 거부 영상,25% 깊이 손상,가림,747자세 시야와 기존 소유권/수명 회귀를 포함해322 PASS/54.67초. source 동결과 실제 연속 동작 확인은 별도다. 기본13.6/13.7은 기존 전체점 fit을 유지한다.
+
+## v14의 표시 파일 오류와 v15 수정
+
+v14는 실제 파지 물리 PASS(최소100.460mm/2.18sim초/양 finger 접촉100%) 후 귀환 중 전체 FAIL했다. 원인은 BT timer에서 live_status.json을 교체하던 PermissionError가executor로전파된 것이다. 이로써mission_exception 취소가 발생했고RETURN_GOAL_FAILED가 뒤따랐다. 상태 파일의 마지막CARRY 표시는 최종 판정이 아니며 trial/BT/engine 자료를 함께 확인했다.12 child 정상 종료·worker join·lock free는 확인했다.
+
+[Windows 공식 파일 공유 규칙](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew)에 따르면rename도delete공유가필요하다. 새시험파일을Windows reader가DELETE공유없이연상태에서WSL replace를시도해같은PermissionError를실제재현했다. OS권한이나다른프로세스를변경하지않는다.
+
+v15는상태표시파일I/O를한개의owned writer thread로분리한다. pending은하나뿐이고오래대기한표시상태는다음상태로대체한다. 오류·대체수·실제join은telemetry_delivery.json에남긴다. 원래제어·관측·접촉·취소계약은유지한다. 잠금복구/느린writer/한도/join실패·정상종료시험과실제Windows/WSL재현PASS, 전체325 PASS/48.99초. 원고바닥캔의정적위치IK조사에서는0.5~0.7m stand-off 후보를얻었으나6D계획/물리성공증거는아니다. 그확장은연속미션인수후진행한다.
