@@ -8,7 +8,8 @@ source /opt/ros/jazzy/setup.bash
 source "$CH13_REUSE_BUILD/install/setup.bash"
 cd "$CH13_REUSE_BUILD"
 colcon --log-base log build --base-paths "$validation_repo/Ch13/ros2_ws/src/ch13_navigation_reuse" \
+ "$validation_repo/Ch13/ros2_ws/src/ch13_reuse_wire" \
  "$validation_repo/Ch13/ros2_ws/src/ch13_manipulation_reuse" "$validation_repo/Ch13/ros2_ws/src/ch13_mission_orchestration" \
  "$validation_repo/Ch13/ros2_ws/src/ch13_system_validation" --build-base build --install-base install \
- --packages-select ch13_navigation_reuse ch13_manipulation_reuse ch13_mission_orchestration ch13_system_validation \
+ --packages-select ch13_reuse_wire ch13_navigation_reuse ch13_manipulation_reuse ch13_mission_orchestration ch13_system_validation \
  --event-handlers console_direct+

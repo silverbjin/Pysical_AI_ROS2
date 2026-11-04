@@ -31,3 +31,11 @@ M0 원고·소스·공식 패턴·환경 조사 → M1 계측/판정/격리 도�
 ## 검증과 보존
 
 저장 자료→부품 RED/GREEN→필수 실제 사례 순으로 검증한다. 같은 실패 계열 두 최소 수정 후에도 남으면 실행 경계/구조를 재검토한다. 장시간 과거 matrix를 반복하지 않는다. 새 build는 기존 13.6/13.7 및 상하위 경로를 보호하고 sibling 공유 lock을 유지한다. 모든 신규 실행은 새 UUID/evidence이며 기존 freeze/FAIL/verdict는 보존한다. 게시·main 병합은 범위에 없다.
+
+## v2 실제 실패 후 운반 관측 계약 보완
+
+v2에서 파지 후 회전14.60sim초 동안 양 finger 접촉100%·상대 slip4.27mm였다. gripper 부분 가림으로 원래 upright fit의75% 높이 가시성 조건을 만족하지 못해 원본3D 관측이 만료되어 중단했다. 원래3D 관측을 재발행하거나300ms를 늘리지 않는다.
+
+운반 권한은 새 카메라 capture health의 원본 stamp/촬영 monotonic 시각/최초 native DDS receipt와 소유자를300ms 이내로 검사하고, 매 physics step의 지정 finger-target 양 접촉 및 force-hold ready, 팔 action 미실행, 허용 자세/속도, 예약된 Nav goal을 모두 요구한다. 과거3D point는 운반 명령·새 팔 계획의 권한이 아니며 만료 상태 그대로 보존한다. fresh camera health는 기존 vision 노드가 실제 RGB-D bytes/hash·과거TF를 검사한 별도 스트림이다. 독립 C++ latest-only relay로 engine에 전달한다.
+
+귀환 terminal/실측 정착 뒤에는 fresh3D 재획득 전까지 PLACE_WAIT에 머무르며 팔 action을 허용하지 않는다. PLACE에 들어간 뒤에는 기존3D 관측300ms·TF100ms·zero-base·3cm/0.1rad drift 경계를 다시 적용한다. LOWER→RELEASE→RETREAT 순서를 강제하고 지정 receiving support의 실제 접촉 전에는 개방을 금지한다. health/접촉/소유권 상실은 latch fault다. 이는 고정 팔 운반을 위한 별도 권한이며 기존 정지 lease를 완화하지 않는다.

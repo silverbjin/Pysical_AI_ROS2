@@ -127,7 +127,8 @@ def work(*,node,until,snapshot,status,control,out,case='pick',action_client_fact
         phase('POST_SETTLE');assert until(lambda:snapshot()['platform'].get('stationary_ready'),10.)
         if continuation is not None:
             continuation(node=node,until=until,snapshot=snapshot,status=status,control=control,
-                         planner=planner,grip=grip,baseline_z=baseline_z,records=records)
+                         planner=planner,grip=grip,baseline_z=baseline_z,records=records,
+                         action_client_factory=action_client_factory)
     finally:
         (out/'pick_mission.json').write_text(json.dumps(dict(stages=records,planning=planner.records),indent=2)+'\n')
         gripper.destroy();planner.close()

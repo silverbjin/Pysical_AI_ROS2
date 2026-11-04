@@ -1,0 +1,131 @@
+# 13.8 복합 시뮬레이션 실습 가이드
+
+개발 중인 가이드. 연속 운반·내려놓기의 실제 인수와 Level 1/2/3·10회 평가는 SECTION_13_8_REPORT_KO.md의 실제 결과를 확인한다. 명령의 존재나 BT SUCCESS만으로 물리 성공을 판단하지 않는다.
+
+## 1. 소스 확보와 환경
+
+현재 기준은 공개13.6이 아니라 로컬13.7의13ecb58d에서 확장한 feat/ch13-section-13-8이다. 원격13.7/13.8 게시·새 환경 다운로드 검증은 아직 하지 않았다. 기존 로컬 work/Pysical_AI_ROS2_13_8를 사용한다. sources/와 과거 worktree·증거를 수정하지 않는다.
+
+WSL Ubuntu24.04, ROS2 Jazzy, /home/jinho/ch13_reuse_iit_d010212_venv와 sibling upstream-iit-locomanipulation-d010212 자산을 재사용한다. MuJoCo3.13.0, MoveIt2.12.4, moveit_msgs2.6.0, rosbag2/rosbag2_py0.26.11이며 원본 정책·native arm PD·gripper0.5N을 유지한다. 전역 venv 활성화나 시스템 dist-packages 선삽입을 하지 않는다.
+
+아래 ROOT는 모든 터미널에서 실제 경로로 지정한다.
+
+```bash
+ROOT=/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_13_8
+cd "$ROOT"
+export CH13_REUSE_BUILD=/home/jinho/ch13_reuse_13_8_build
+```
+
+처음 한 번 의존성 추출과 분리 build를 수행한다. script는13.6/13.7 build와 그 상하위 경로를 거부한다. 실행 중인 engine이 없어야 한다. BT deb는 새 build 아래에 버전·hash를 고정해 추출하고 기존 overlay를 덮어쓰지 않는다.
+
+```bash
+bash Ch13/scripts/reuse_13_8/build.sh
+bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/audit_install.py /tmp/ch13_13_8_install_audit.json
+```
+
+감사는 실제 venv child의 NumPy 우선순위·BT/ROS import와 설치 파일 바이트·외부94자산을 검사한다. 모델/실행 의존성이 없으면 engine 시작 전에 해결한다. 학생 기본 실습마다 과거243개 시험이나 전체 matrix를 실행할 필요는 없다.
+
+## 2. 13.8.2 테스트 베드와 성공 정의
+
+현재 연속 수명 경계 개발 fixture는 알려진 upright20g 원통과 기존 파지 받침대, 귀환 측 수령 받침대다. 이는 원고 Level 1의2m fixture나 공통 (3,1) 테이블·장애물·5도 경사·좁은 문·식탁 아래 목표 전체를 구현했다는 뜻이 아니다. 실제 지원 fixture와 source freeze를 결과 보고서에 명시한다.
+
+최종 성공은 동일 engine의 실제 파지, 운반 중 접촉/높이 유지, 귀환 terminal와 실측 정착, 수령 받침대 지지 후 개방, 물체 분리와2sim초 안정 유지, 정상 회수까지 모두 필요하다. 제어는 원본 RGB-D fit과 live 접촉을 사용하고, target freejoint는 engine 종료 뒤 판정에만 사용한다. 논리적 planning attach는 물리 weld가 아니다.
+
+## 3. 13.8.3 순차 기동과 미션
+
+이 재사용 profile은 원고의 integrated_robot_description/system_bringup.launch.py 대신 기존 ch13_navigation_reuse/navigation.launch.py를 소유 runner가 단계적으로 기동한다. 하나의 소유 runner가 Nav2와 MoveIt·engine의 종료까지 회수하므로 별도 engine을 중복 실행하지 않는다.
+
+실행 전 잔여 검사 출력은 새 파일로 지정한다. 도구가 보여 주는 PID/lock만으로 다른 작업을 종료하거나 lock 파일을 삭제하지 않는다.
+
+```bash
+python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py /tmp/ch13_13_8_before.json
+```
+
+터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v2는 최초 개발 실행용 동결이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
+
+```bash
+CASE=$(python3 -c 'import uuid; print(uuid.uuid4())')
+bash Ch13/scripts/reuse_13_8/env.sh -u Ch13/scripts/reuse_13_8/run_mission.py \
+  --repo-root "$ROOT" --evidence "$ROOT/Ch13/evidence/section_13_8_system/$CASE" \
+  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v2.json"
+```
+
+터미널 B는 시스템 ROS CLI 환경이다. engine/센서가 준비된 뒤 /start_mission을 보내야 하며 현재 시작 대기 예산은 준비 후30wall초다. 개발 자동 시작은 runner에 --auto-start를 지정하며 같은 토픽 수신을 통과한다.
+
+```bash
+source /opt/ros/jazzy/setup.bash
+export ROS_LOCALHOST_ONLY=1 ROS_DOMAIN_ID=135
+ros2 topic pub --once /start_mission std_msgs/msg/Empty '{}'
+```
+
+기본적으로 선별 bag를 기록한다. 최초 불확실한 물리 개발 사례는 --no-bag로 계측 영향과 운반 경계를 분리할 수 있으며, bag 실습 완료로 집계하지 않는다. live_status.json은 진행 참고이며 새 권한이나 최종 판정이 아니다.
+
+## 4. 건강 상태와 데이터 흐름
+
+```mermaid
+flowchart LR
+  Engine[MuJoCo + 원본 RL 정책] --> Scan[실제 ray scan]
+  Engine --> RGBD[원본 RGB-D capture]
+  Engine --> TF[TF + joint state + odometry]
+  Scan --> Nav2[Nav2]
+  TF --> Nav2
+  RGBD --> Vision[알려진 원통 fit]
+  Vision --> Lease[원본 수명 및 소유권 검사]
+  BT[13.8 BT] --> Nav2
+  BT --> MoveIt[MoveIt 계획]
+  Nav2 --> Gateway[경계 + gateway]
+  Gateway --> Engine
+  MoveIt --> Actions[native arm/gripper action]
+  Lease --> Actions
+  Actions --> Engine
+  TF --> Monitor[건강/성능 계측 + bag]
+```
+
+실제 토픽은 /ch13/reuse/scan, /ch13/reuse/rgb, /ch13/reuse/joint_states, /ch13/reuse/odometry, /ch13/reuse/vision/observation, /ch13/reuse/observed_target다. Nav2 action /navigate_to_pose 및 MoveIt 서비스는 전역 이름이다. 원고의 /camera/rgb, /vision/target_pose 등 이름이 모두 존재한다고 가정하지 않는다.
+
+```bash
+ros2 run tf2_tools view_frames
+ros2 topic hz /ch13/reuse/scan
+ros2 topic hz /ch13/reuse/rgb
+ros2 topic hz /ch13/reuse/joint_states
+```
+
+TF는 reuse/map→reuse/odom→reuse/nav_base→reuse/base 및 각 관절·scan·camera_optical·tcp를 확인한다. health.json은 receipt 주파수와 sim delay·원본 capture wall 나이를 구분한다. camera15Hz 교육 profile은 원고30Hz 목표를 충족했다고 표현하지 않는다. 느린 simulation에서 wall 수신 주파수와 sim 제어50Hz도 구분한다. CPU100% 한 코어만으로 MoveIt thread 폭주라고 단정하지 않는다.
+
+## 5. 13.8.4~6 프로파일링과 고장 판독
+
+trial.json의 sim_s/wall_s는 /start_mission 수신부터 실제 place 완료까지다. mean CPU는 소유 프로세스 tree의 CPU초를 해당 프로세스의 sched_getaffinity 코어수와 wall초로 나눈 값이다. 다른 ROS domain의 daemon은 소유 tree에 포함하지 않는다. health.json의 capture 나이는 최초 촬영 monotonic 시각을 보존한다. 전압 모델이 없어 battery_voltage는 unavailable이다.
+
+원고 목표는10회 성공률≥90%, 평균120sim초 이하, 성공 위치 오차<3cm, 최대 roll/pitch<0.1rad, 평균 CPU<70%다. sim 시간 목표와 별도로 wall 시간을 항상 공개한다. 한 번의 성공으로 강건성이나99% 성공을 주장하지 않는다. 과거13.7의 파지만 포함한 정상 사례도161.90sim초였으므로120초 달성을 전제하지 않는다.
+
+문제별 기본 대응:
+
+- 넘어짐/충돌: 실패 위치와 접촉·자세·phase를 보존한다. torso teleport, 원본 정책 kill, 몸통 shift나 새 WBC로 통과시키지 않는다.
+- 통신 지연: 원본 stamp·receipt·source GID와 CPU 구간을 확인한다. QoS를 일괄 Best Effort로 바꾸거나 nice -10을 기본 적용하지 않는다.
+- 물체 이탈: finger 접촉·force-hold·상대 slip을 확인한다. effort cap, 마찰, 질량, 가상 부착으로 성공을 만들지 않는다.
+- BT 중단: cancel ACK, 실제 CANCELED, 물리 정착, worker join, 자식 종료를 따로 확인한다. 파지 중 임의 개방/수납은 회수가 아니다.
+
+## 6. 13.8.7 기록과 재생
+
+기본 bag에는 /clock, /tf, /tf_static, joint_states, odometry, cmd_vel_safe, vision/observation, manipulation/status, /start_mission을 선별 기록한다. 현재 compressed image publisher가 없으므로 원고의 compressed 토픽을 기록했다고 표시하지 않는다. 원본 RGB-D 증거는 기존 renderer capture 자료에 별도 보존한다. bag는 SIGINT로 닫힌 뒤 metadata와 메시지 수를 확인해야 한다.
+
+재생은 engine을 끄고 별도 domain136에서 수행한다. 기록된 /clock과 새 player clock을 동시에 발행하지 않도록 재생 토픽을 선택한다. live lease 토픽과 actuator command를 재생하지 않는다.
+
+```bash
+export ROS_DOMAIN_ID=136
+ros2 bag info /absolute/path/to/bag
+ros2 bag play /absolute/path/to/bag --clock --topics \
+  /tf /tf_static /ch13/reuse/joint_states /ch13/reuse/odometry /ch13/reuse/vision/observation
+```
+
+재생은 분석 입력이다. 과거 capture·session·GID를 새 live 권한으로 바꾸지 않는다. PlotJuggler는 선택 도구이며 미설치 상태를 실습 성공으로 표시하지 않는다.
+
+## 7. 개발자 부품 회귀
+
+Windows mount에서 spawn 자식의 source import 비용이15초 카메라 시작 예산을 소진한 기록이 있다. 아래 도구는 동일 source/fixture hash를 확인한 WSL native 사본에서 부품을 실행한다. 새 build 아래 snapshot.json과 tests.log를 보존한다. 공유 lock과 원본 모델은 같은 파일을 참조한다.
+
+```bash
+python3 Ch13/scripts/reuse_13_8/stage_component_sources.py
+```
+
+학생 기본 mission마다 이 전체 회귀를 반복하지 않는다. engine 중 build/pytest/대용량 사후 분석을 병행하지 않는다.

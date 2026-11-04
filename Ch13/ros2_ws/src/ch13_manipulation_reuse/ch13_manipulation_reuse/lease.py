@@ -122,7 +122,13 @@ class Lease:
             self.phase = 'READY'
         return self.phase
 
-    def fresh(self, clock_ns, wall):
+    def observation_fresh(self,clock_ns,wall):
+        sample=self.observation
+        return (sample is not None and 0<=wall-sample['capture_wall']<=self.timeout
+            and 0<=wall-self.observation_receipt<=self.timeout
+            and -25_000_000<=clock_ns-sample['capture_ns']<=300_000_000)
+
+    def fresh(self, clock_ns, wall, *, require_observation=True):
         """Shared original receipt/capture watchdog; never changes authority."""
         if self.fault or self.phase == 'REVOKED':
             return False
@@ -135,9 +141,6 @@ class Lease:
             self.trip('MISSION_EXPIRED');return False
         if not -25_000_000 <= clock_ns-self.message['stamp_ns'] <= 300_000_000:
             self.trip('MISSION_STAMP_EXPIRED');return False
-        sample = self.observation
-        if (sample is None or not 0 <= wall-sample['capture_wall'] <= self.timeout
-                or not 0 <= wall-self.observation_receipt <= self.timeout
-                or not -25_000_000 <= clock_ns-sample['capture_ns'] <= 300_000_000):
+        if require_observation and not self.observation_fresh(clock_ns,wall):
             self.trip('OBSERVATION_EXPIRED');return False
         return True

@@ -98,6 +98,7 @@ public:
       for(const auto& source:std::vector<std::pair<std::string,std::string>>{
           {"mission_lease","/ch13/reuse/manipulation/lease"},
           {"manipulation_observation","/ch13/reuse/vision/observation"},
+          {"manipulation_capture_health","/ch13/reuse/vision/health"},
           {"manipulation_navigation","/ch13/reuse/navigation/status"},
           {"manipulation_gateway","/ch13/reuse/gateway/status"}}){
         auto relay=create_publisher<Packet>("/ch13/reuse/ingress/manipulation/"+source.first,1);

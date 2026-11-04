@@ -30,7 +30,8 @@ class EngineExtension:
         self.anchor = None
         self.rx_wall={}
         self.status = {'session': self.lease.session, 'phase':'WAITING', 'fault':''}
-        for channel in CHANNELS:
+        self.channels=CHANNELS+(('manipulation_capture_health',) if hasattr(self.lease,'observe_capture') else ())
+        for channel in self.channels:
             node.create_subscription(String,N+'/ingress/manipulation/'+channel,
                                      lambda packet,key=channel:self.packet(packet,key),1)
         self.publisher = node.create_publisher(String,N+'/manipulation/status',1)
@@ -51,6 +52,8 @@ class EngineExtension:
                     self.lease.heartbeat(json.loads(msg.data),owner,receipt)
                 elif key == 'manipulation_observation':
                     self.lease.observe(json.loads(msg.data),owner,receipt)
+                elif key == 'manipulation_capture_health':
+                    self.lease.observe_capture(json.loads(msg.data),owner,receipt)
                 elif key == 'manipulation_navigation':
                     if self.lease.owner('navigation',owner):
                         return
@@ -74,7 +77,8 @@ class EngineExtension:
             ('mission',N+'/manipulation/lease'),('observer',N+'/vision/observation'),
             ('navigation',N+'/navigation/status'),
             ('nav_status','/navigate_to_pose/_action/status'),('gateway',N+'/gateway/status'))}
-        counts.update({key:self.node.count_publishers(N+'/ingress/manipulation/'+key) for key in CHANNELS})
+        if hasattr(self.lease,'observe_capture'):counts['capture_health']=self.node.count_publishers(N+'/vision/health')
+        counts.update({key:self.node.count_publishers(N+'/ingress/manipulation/'+key) for key in self.channels})
         with self.node.lock:
             self.graph,self.graph_wall = counts,now
             for key,count in counts.items():
@@ -107,7 +111,8 @@ class EngineExtension:
                         and self.navigation.get('output_held') and not self.navigation.get('fault'))
             pose = [float(q[0]),float(q[1]),state['yaw']]
             if hasattr(self.lease,'motion_inputs'):
-                contacts=all(self.pick_monitor.forces.get(f,0.)>.005 for f in ('link7','link8'))
+                contacts=(all(self.pick_monitor.forces.get(f,0.)>.005 for f in ('link7','link8'))
+                    and self.actions.gripper_hold.status()['ready'])
                 self.lease.motion_inputs(armed=decision.mode=='ARMED',
                     moving_supported=tilt<=.20 and math.hypot(v[0],v[1])<=.30 and abs(v[5])<=.35,
                     contacts=contacts,busy=self.actions.busy,
@@ -138,6 +143,8 @@ class EngineExtension:
             if hasattr(self.lease,'stage'):
                 self.status['transport_stage']=self.lease.stage
                 self.status['transport_goal_id']=self.lease.transport_goal
+                self.status['transport_observation_contract']='continuous_tactile_hold_and_fresh_capture_v1; fresh_3D_required_for_place'
+                self.status['capture_health_ns']=None if self.lease.capture_health is None else self.lease.capture_health['capture_ns']
             if phase != self.last_phase:
                 self.events.append(dict(self.status))
                 self.last_phase = phase

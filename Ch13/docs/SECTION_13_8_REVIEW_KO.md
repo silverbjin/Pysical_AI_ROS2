@@ -1,0 +1,17 @@
+# 13.8 자체 검토 기록
+
+단일 작업자 자체 검토이며 독립 검토보다 결함 탐지력이 약하다. 아래는 개발 중 발견 목록으로 완료 판정이 아니다. 사용자의 단일 작업자 지시에 따라 subagent를 사용하지 않는다.
+
+## 실행 전 확인
+
+기존 lease의 fresh watchdog을 추출하고 원본 zero-base/goal/pose 로직을 유지했다. 기존 lease 회귀 PASS. 새 운반은 별도 phase이며 예약하지 않은 goal·contact 상실·원본 관측 만료·busy arm·REVOKED를 거부한다. 원본 정책/물리 파라미터·effort/속도·가속도는 바꾸지 않았다.
+
+## v2 첫 실행 중 정적 재검토: 후속 보완 대상
+
+현재 engine 소스 v2는 변경하지 않는다. 실행 종료 후 아래를 시험으로 확인하고 필요한 수정은 새 동결로 분리한다.
+
+- PLACE의 yaw drift 한도와 LOWER→RELEASE→RETREAT 순서가 단순 allowed-name 검사보다 강하게 제한되는지 확인할 것. 정상 runner는 이 순서로 요청하지만 권한기는 잘못된 요청 순서도 거부해야 한다.
+- 사후 운반 판정의 contact force와 support force도 비유한 값을 명시적으로 거부할 것. engine state/actuator cap 검사만으로 모든 사후 로그의 무결성을 대신하지 않는다.
+- bag 기록 자식의 정상 close·metadata/message 수와 실제 별도 domain replay를 검증할 것. 코드만으로 bag 실습 완료를 주장하지 않는다.
+- 원고의 Level1 floor2m, 공통(3,1)테이블과 개발 fixture를 혼용하지 말 것. 추가 월드의 높이·기하와 기존 정책/팔 도달 가능성부터 검증할 것.
+- 고정 source/config·실제 evidence UUID와10회 분모를 연계할 것. 허위 JSON fixture나 모의 CLI를 실제 성공 집계에 섞지 말 것.

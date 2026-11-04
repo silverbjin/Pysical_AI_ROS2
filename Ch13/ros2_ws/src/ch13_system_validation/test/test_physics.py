@@ -23,3 +23,8 @@ def test_transport_drop_and_short_or_missing_release_fail():
     assert assess_transport(data)['result']=='FAIL'
     assert assess_transport(rows()[:51])['result']=='FAIL'
     assert assess_transport([])['result']=='FAIL'
+
+
+def test_nonfinite_contact_force_is_not_physical_success():
+    data=rows();data[10]['target_contact_N']['link7']=float('inf')
+    assert assess_transport(data)['result']=='FAIL'

@@ -13,6 +13,8 @@ def live():
     sample=dict(capture_ns=1_000_000_000,capture_wall=10.,first_receipt_wall=10.01,
                 tf_stamp_ns=980_000_000,source_gids={'rgb':'a'},rgb_sha256='a'*64,point=[1.5,0.,.6])
     lease.observe(sample,'observer',10.02)
+    lease.observe_capture(dict(capture_ns=1_000_000_000,capture_wall=10.,
+        scope='validated_RGBD_capture_and_past_TF'),'camera_health',10.03)
     lease.motion_inputs(armed=True,moving_supported=True,contacts=True,busy=False,support=False)
     lease.heartbeat(message(),'owner',10.03)
     assert evaluate(lease)=='READY'
@@ -88,3 +90,68 @@ def test_release_rejected_before_return_stationary_authority():
     lease=live();arm(lease)
     lease.heartbeat(message('RELEASE',3,transport_goal_id='home',transport_target=[0.,0.,3.14]),'owner',10.05)
     assert lease.phase=='FAULT'
+
+
+def test_occluded_carry_uses_new_capture_and_contact_without_renewing_old_point():
+    lease=live();arm(lease)
+    lease.observe_capture(dict(capture_ns=1_500_000_000,capture_wall=10.5,
+        scope='validated_RGBD_capture_and_past_TF'),'camera_health',10.51)
+    request=message('CARRY',3,transport_goal_id='home',transport_target=[0.,0.,3.14])
+    request['stamp_ns']=1_500_000_000
+    lease.heartbeat(request,'owner',10.51)
+    assert lease.evaluate(1_500_000_000,10.52,settled=False,supported=False,
+        goal_status={'outbound':4,'home':2},actual_pose=[.8,0.,0.],navigation_idle=False)=='CARRY'
+    assert lease.observation['capture_ns']==1_000_000_000
+    assert lease.observation['capture_wall']==10.
+
+
+def test_repeated_capture_does_not_refresh_first_native_receipt():
+    lease=live();arm(lease)
+    health=dict(capture_ns=1_000_000_000,capture_wall=10.,scope='validated_RGBD_capture_and_past_TF')
+    lease.observe_capture(health,'camera_health',10.03)
+    lease.observe_capture(health,'camera_health',10.29)
+    assert lease.capture_receipt==10.03
+
+
+def test_place_reacquisition_cannot_use_expired_object_point():
+    lease=live();arm(lease)
+    lease.observe_capture(dict(capture_ns=1_500_000_000,capture_wall=10.5,
+        scope='validated_RGBD_capture_and_past_TF'),'camera_health',10.51)
+    for seq,phase in ((3,'CARRY'),(4,'PLACE_WAIT')):
+        request=message(phase,seq,transport_goal_id='home',transport_target=[0.,0.,3.14]);request['stamp_ns']=1_500_000_000
+        lease.heartbeat(request,'owner',10.51)
+    assert lease.evaluate(1_500_000_000,10.52,settled=True,supported=True,
+        goal_status={'outbound':4,'home':4},actual_pose=[0.,0.,3.14],navigation_idle=True)!='READY'
+
+
+def test_place_cannot_skip_lower_and_release_steps():
+    lease=live();arm(lease)
+    for seq,phase in ((3,'CARRY'),(4,'PLACE_WAIT')):
+        lease.heartbeat(message(phase,seq,transport_goal_id='home',transport_target=[0.,0.,3.14]),'owner',10.05)
+    evaluate(lease,{'outbound':4,'home':4},pose=[0.,0.,3.14])
+    lease.heartbeat(message('RETREAT',5,transport_goal_id='home',transport_target=[0.,0.,3.14]),'owner',10.06)
+    assert lease.phase=='FAULT'
+
+
+def test_capture_loss_stops_even_with_fresh_mission_and_held_contact():
+    lease=live();arm(lease)
+    request=message('CARRY',3,transport_goal_id='home',transport_target=[0.,0.,3.14]);request['stamp_ns']=1_500_000_000
+    lease.heartbeat(request,'owner',10.51)
+    assert lease.evaluate(1_500_000_000,10.52,settled=False,supported=False,
+        goal_status={'outbound':4,'home':2},actual_pose=[.8,0.,0.],navigation_idle=False)=='FAULT'
+    assert lease.fault=='CAPTURE_HEALTH_EXPIRED'
+
+
+def test_capture_health_replacement_latches():
+    lease=live();arm(lease)
+    lease.observe_capture(dict(capture_ns=1_100_000_000,capture_wall=10.1,
+        scope='validated_RGBD_capture_and_past_TF'),'replacement',10.11)
+    assert lease.phase=='FAULT'
+
+
+def test_place_yaw_drift_still_latches():
+    lease=live();arm(lease)
+    for seq,phase in ((3,'CARRY'),(4,'PLACE_WAIT')):
+        lease.heartbeat(message(phase,seq,transport_goal_id='home',transport_target=[0.,0.,3.14]),'owner',10.05)
+    assert evaluate(lease,{'outbound':4,'home':4},pose=[0.,0.,3.14])=='READY'
+    assert evaluate(lease,{'outbound':4,'home':4},pose=[0.,0.,3.35])=='FAULT'

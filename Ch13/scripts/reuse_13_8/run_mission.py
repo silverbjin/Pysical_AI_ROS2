@@ -49,10 +49,17 @@ def main():
             main=self.root.children[-1];finish=main.children[-1];main.remove_child(finish)
             main.insert_child(WaitStart(self),0)
             main.add_children([Task('return',self),Task('place',self),finish])
+            self.log=None
+        def tick(self,tree=None):
+            super().tick(tree)
+            if self.log is not None and self.ticks:
+                latest=self.ticks[-1]
+                self.log.publish(String(data=json.dumps({k:latest[k] for k in ('tick','root','nodes','terminal')})))
 
     health={};clock=[None];tilts=[];cpu=ProcessCPU();bag=[None];mission_ref=[None];start=[None]
     def configure(node,mission):
         (out/'source_manifest.json').write_bytes(manifest.read_bytes())
+        mission.log=node.create_publisher(String,N+'/validation/bt_log',1)
         mission_ref[0]=mission
         def trigger(_):
             if not mission.started:
@@ -84,7 +91,8 @@ def main():
         if not args.no_bag:
             bag[0]=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','bag','record','--use-sim-time',
                 '-o',str(out/'bag'),'/clock','/tf','/tf_static',N+'/joint_states',N+'/odometry',N+'/cmd_vel_safe',
-                N+'/vision/observation',N+'/manipulation/status','/start_mission'],
+                N+'/vision/observation',N+'/vision/health',N+'/manipulation/status',N+'/navigation/status',
+                N+'/validation/bt_log','/start_mission'],
                 stdout=(out/'bag.log').open('w'),stderr=subprocess.STDOUT,start_new_session=True)
         if args.auto_start:
             publisher=node.create_publisher(Empty,'/start_mission',1)

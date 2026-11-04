@@ -78,6 +78,7 @@ class Session:
         from rclpy.action import ActionClient
         tracker=self.goals;clients=DeferredClients(tracker)
         class OwnedClient(ActionClient):
+            tracked_by_session=True
             def __init__(inner,*args,**kwargs):
                 super().__init__(*args,**kwargs)
                 clients.defer(lambda:super(OwnedClient,inner).destroy())

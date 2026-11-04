@@ -11,6 +11,8 @@ def assess_transport(rows):
             raise ValueError('nonadvancing physical time')
         if any(len(r['target'])!=3 or not all(math.isfinite(v) for v in r['target']+r['relative_tcp']) for r in rows):
             raise ValueError('invalid physical coordinates')
+        if any(not all(math.isfinite(v) for v in list(r['target_contact_N'].values())+[r.get('target_support_N',0.)]) for r in rows):
+            raise ValueError('nonfinite physical contact force')
         baseline=carry[0]['target'][2]
         dual=sum(all(r['target_contact_N'].get(f,0.)>.005 for f in ('link7','link8')) for r in carry)/len(carry)
         displacement=math.dist(carry[0]['target'][:2],carry[-1]['target'][:2])

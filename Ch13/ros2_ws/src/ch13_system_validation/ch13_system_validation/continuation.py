@@ -11,16 +11,27 @@ from ch13_navigation_reuse.command_gateway import set_stamp
 from ch13_manipulation_reuse.planning import pose,object_cylinder
 from moveit_msgs.msg import AttachedCollisionObject,CollisionObject
 from moveit_msgs.srv import ApplyPlanningScene
+from .scene_contact import receiving_contact
 
 
-def continue_mission(*,session,call,node,until,snapshot,status,control,planner,grip,baseline_z,records):
+def drain_owned_goals(session,until,extra=()):
+    tracker=session.goals;tracker.cancel()
+    def drained():
+        tracker.poll()
+        return (tracker.drained and all(f.done() for f in extra)
+            and all(r.get('cancel') is None or r['cancel'].done() for r in tracker.rows))
+    assert until(drained,5.),'owned action send/result/cancel ACK drain deadline'
+    assert not tracker.errors,tracker.errors
+
+
+def continue_mission(*,session,call,node,until,snapshot,status,control,planner,grip,baseline_z,records,action_client_factory=ActionClient):
     session.port.complete('pick',dict(session=session.session))
     session.await_step('return',until)
     identity=uuid.uuid4();home=[0.,0.,math.pi]
     control['reserve_transport'](identity.hex,home);control['set_phase']('CARRY_ARMED')
     assert until(lambda:status().get('phase') in ('CARRY_ARMED','FAULT'),3.)
     assert status()['phase']=='CARRY_ARMED',status()
-    client=ActionClient(node,NavigateToPose,'/navigate_to_pose');handle=None;result=None
+    client=action_client_factory(node,NavigateToPose,'/navigate_to_pose');handle=None;result=None
     try:
         assert until(client.server_is_ready,3.)
         control['set_phase']('CARRY')
@@ -28,7 +39,8 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         goal=NavigateToPose.Goal();goal.pose.header.frame_id='reuse/map'
         set_stamp(goal.pose.header.stamp,snapshot()['clock_ns'])
         goal.pose.pose.orientation.z=1.
-        sent=client.send_goal_async(goal,goal_uuid=UUID(uuid=list(identity.bytes)));session.track_goal(sent)
+        sent=client.send_goal_async(goal,goal_uuid=UUID(uuid=list(identity.bytes)))
+        if not getattr(client,'tracked_by_session',False):session.track_goal(sent)
         assert until(sent.done,5.);handle=sent.result();assert handle.accepted,'return Nav2 rejected'
         result=handle.get_result_async()
         assert until(lambda:result.done() or snapshot()['boundary'].get('phase') in ('ACTIVE','FAULT'),5.)
@@ -37,7 +49,7 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
             response=call('navigation/release');assert response.success,response.message
         assert until(lambda:result.done() or status().get('phase')=='FAULT' or session.cancel_requested(),180.),'return deadline'
         if session.cancel_requested() or status().get('phase')=='FAULT':
-            handle.cancel_goal_async();assert until(result.done,5.)
+            drain_owned_goals(session,until,extra=(result,))
             raise RuntimeError('return interrupted: '+str(status()))
         assert result.result().status==4,result.result()
         response=call('navigation/idle');assert response.success,response.message
@@ -50,6 +62,7 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         session.port.complete('return',dict(session=session.session,position_error_m=math.hypot(actual.x,actual.y)))
         session.await_step('place',until)
         control['set_phase']('LOWER')
+        receiving_contact(planner,True)
         # Place above the receiving support using a fresh RGB-D center; oracle is never read.
         observed=np.array(snapshot()['observation']['point'])
         receiving=np.array([-.55,0.,baseline_z])
@@ -70,6 +83,7 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         change.scene.world.collision_objects=[object_cylinder('pick_target',receiving)]
         assert planner.call('/apply_planning_scene',change).success
         planner.revision+=1
+        receiving_contact(planner,False)
         control['set_phase']('RETREAT')
         tcp=planner.tcp();back=tcp[:3,3]+[.08,0.,0.]
         path=planner.cartesian([pose(back,Rotation.from_matrix(tcp[:3,:3]))]);assert path is not None
@@ -79,6 +93,7 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         assert until(lambda:snapshot()['clock_ns']-start>=2.2e9,8.)
         session.port.complete('place',dict(session=session.session,clock_ns=snapshot()['clock_ns'],wall=time.monotonic()))
     finally:
-        if handle is not None and result is not None and not result.done():
-            handle.cancel_goal_async();assert until(result.done,5.),'return terminal not drained'
+        if (not session.goals.drained or result is not None and not result.done()
+            or any(r.get('cancel') is not None and not r['cancel'].done() for r in session.goals.rows)):
+            drain_owned_goals(session,until,extra=() if result is None else (result,))
         client.destroy()
