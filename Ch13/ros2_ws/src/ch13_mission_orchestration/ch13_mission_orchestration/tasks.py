@@ -81,3 +81,24 @@ class GoalTracker:
         return dict(terminals=list(self.terminals),errors=list(self.errors),
             cancel_requests=sum(r['cancel'] is not None for r in self.rows),cancel_acks=list(self.cancel_acks),
             pending=sum(not r['done'] for r in self.rows))
+
+
+class DeferredClients:
+    """Clients stay alive until owned send/result futures have been drained."""
+    def __init__(self,goals):self.goals=goals;self.finalizers=[]
+    def defer(self,finalizer):self.finalizers.append(finalizer)
+    def close(self,until):
+        if not self.goals.drained:
+            self.goals.cancel()
+            if not until(lambda:self.goals.drained,5.):
+                raise RuntimeError('owned action futures unresolved; clients retained')
+        for finalizer in self.finalizers:finalizer()
+        self.finalizers.clear()
+
+
+def stop_worker(thread,port,timeout=30.):
+    if not thread.is_alive():return True
+    port.cancel('mission_exception')
+    deadline=time.monotonic()+timeout
+    while thread.is_alive() and time.monotonic()<deadline:thread.join(timeout=.05)
+    return not thread.is_alive()

@@ -171,7 +171,7 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
   if expected==4:assert S['actual_goal_error_m']<=.10 and S['actual_goal_yaw_error_rad']<=.10
   if args.case=='obstacle':assert max(abs(p['y']) for p in poses)>.45,'no measured obstacle bypass'
   if args.case=='raw_loss':assert gateway['mode']=='FAULT'
-  if orchestration is not None:orchestration.navigation_complete(dict(terminal=terminal.status,stationary_ready=True,position_error_m=S['actual_goal_error_m'],displacement_m=S['displacement_m']))
+  if orchestration is not None:orchestration.navigation_complete(dict(terminal=terminal.status,stationary_ready=True,position_error_m=S['actual_goal_error_m'],displacement_m=S['displacement_m'],goal_id=bytes(goal_handle.goal_id.uuid).hex()))
   if args.case=='vision' and not bt_canceled:
    from vision_mission import current_q
    from ch13_navigation_reuse.approach_geometry import position_ik

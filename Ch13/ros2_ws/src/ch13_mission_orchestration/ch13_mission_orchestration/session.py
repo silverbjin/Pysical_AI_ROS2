@@ -3,7 +3,7 @@ import copy
 import json
 import math
 import time
-from .tasks import GoalTracker
+from .tasks import GoalTracker,DeferredClients
 
 
 def admit_observation(sample,clock_ns,wall):
@@ -23,7 +23,7 @@ def admit_observation(sample,clock_ns,wall):
 class Session:
     def __init__(self,port):
         self.port=port;self.goals=GoalTracker();self.session=None;self.observed_session=None
-        self.snapshot=None;self.origin=None;self.stopped=False
+        self.snapshot=None;self.origin=None;self.stopped=False;self.goal_id=None
 
     def ready(self,*,node,until,snapshot):
         from std_msgs.msg import String
@@ -63,23 +63,28 @@ class Session:
                     stationary_ready=current['platform'].get('stationary_ready',False))
 
     def navigation_complete(self,payload):
-        self.validate_session();payload=dict(payload,session=self.session)
+        self.validate_session();self.goal_id=payload.get('goal_id');payload=dict(payload,session=self.session)
         self.port.event('navigation_terminal_and_settled',**payload)
         if not self.cancel_requested():self.port.complete('navigate',payload)
 
     def found(self,sample,clock_ns):
         self.validate_session();data=admit_observation(sample,clock_ns,time.monotonic())
-        self.port.complete('find',dict(observation=data,session=self.session))
+        self.port.complete('find',dict(observation=data,session=self.session,goal_id=self.goal_id))
 
-    def pick_work(self,callback,**context):
+    def pick_work(self,callback,evidence=None,**context):
         """Keep force-hold on interruption; await terminal before lease revocation."""
         self.validate_session()
         # Every action future remains owned even if its calling behaviour exits.
         from rclpy.action import ActionClient
-        tracker=self.goals
+        tracker=self.goals;clients=DeferredClients(tracker)
         class OwnedClient(ActionClient):
+            def __init__(inner,*args,**kwargs):
+                super().__init__(*args,**kwargs)
+                clients.defer(lambda:super(OwnedClient,inner).destroy())
             def send_goal_async(inner,*args,**kwargs):
+                if self.cancel_requested():raise RuntimeError('BT canceled before next action send')
                 sent=super().send_goal_async(*args,**kwargs);tracker.add(sent);return sent
+            def destroy(inner):pass  # actual destruction follows result/cancel drain
         try:
             callback(action_client_factory=OwnedClient,**context)
             if not self.cancel_requested():self.port.complete('pick',dict(session=self.session))
@@ -88,10 +93,21 @@ class Session:
             until=context['until'];status=context['status'];snapshot=context['snapshot']
             assert until(lambda:tracker.drained,5.),'pending action terminal after BT cancel'
             assert not tracker.errors,tracker.errors
+            saved=None
+            if evidence is not None:
+                from pathlib import Path
+                path=Path(evidence)/'pick_mission.json'
+                saved=json.loads(path.read_text()) if path.exists() else dict(stages=[],planning=[])
+                saved['stages'].append(dict(held_cancel=5 in tracker.terminals,
+                    actual_terminal='canceled' if 5 in tracker.terminals else 'between_actions_stop',source='BT_preemption'))
             context['control']['set_phase']('HOLD')
             start=snapshot()['clock_ns']
+            if saved is not None:saved['stages'].append(dict(phase='HOLD',clock_ns=start))
             assert until(lambda:snapshot()['clock_ns']-start>=2.2e9 or status()['phase']=='FAULT',15.)
             assert status()['phase']!='FAULT',status()
             context['control']['set_phase']('POST_SETTLE')
+            if saved is not None:saved['stages'].append(dict(phase='POST_SETTLE',clock_ns=snapshot()['clock_ns']))
             assert until(lambda:snapshot()['platform'].get('stationary_ready'),10.)
+            if saved is not None:path.write_text(json.dumps(saved,indent=2)+'\n')
             self.port.event('pick_canceled_and_settled',session=self.session)
+        finally:clients.close(context['until'])

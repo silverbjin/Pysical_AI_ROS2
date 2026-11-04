@@ -8,7 +8,7 @@ bt_build=${CH13_REUSE_BUILD:-/home/jinho/ch13_reuse_13_7_build}
 bt_deps="$bt_build/bt_deps/root/opt/ros/jazzy"
 if [[ -d "$bt_deps" ]]; then
   export AMENT_PREFIX_PATH="$bt_deps:$AMENT_PREFIX_PATH"
-  export PYTHONPATH="$bt_deps/lib/python3.12/site-packages:$PYTHONPATH"
+  export PYTHONPATH="$bt_deps/lib/python3.12/site-packages:$bt_build/bt_deps/root/usr/lib/python3/dist-packages:$PYTHONPATH"
   export LD_LIBRARY_PATH="$bt_deps/lib:$LD_LIBRARY_PATH"
 fi
 /usr/bin/python3 -c 'import py_trees,py_trees_ros'

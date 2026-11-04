@@ -14,6 +14,13 @@ def validate_build(value):
     return path
 
 
+def lift_interrupt(progress,started_ns):
+    if progress.get('task_phase')!='LIFT' or progress.get('manipulation_phase')!='EXECUTING':return None,False
+    clock=progress.get('clock_ns',0)
+    if started_ns is None:started_ns=clock
+    return started_ns,clock-started_ns>=1_000_000_000
+
+
 def verify_bt(data):
     p=data.get('port',{});events=p.get('events',[]);requested=p.get('requested',[])
     started=[e for e in events if e.get('event')=='started']

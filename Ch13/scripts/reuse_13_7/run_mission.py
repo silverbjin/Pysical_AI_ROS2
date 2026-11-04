@@ -14,9 +14,10 @@ from rclpy.node import Node
 from rclpy.parameter import Parameter
 import py_trees
 import py_trees_ros
-from ch13_mission_orchestration.tasks import TaskPort
+from ch13_mission_orchestration.tasks import TaskPort,stop_worker
 from ch13_mission_orchestration.tree import Mission
 from ch13_mission_orchestration.session import Session
+from ch13_mission_orchestration.tools import lift_interrupt
 
 
 def main():
@@ -33,7 +34,7 @@ def main():
             from run_handoff import handoff
             from run_pick import work
             def manipulate(**context):
-                def pick(**kw):session.pick_work(lambda **items:work(**items,out=out),**kw)
+                def pick(**kw):session.pick_work(lambda **items:work(**items,out=out),evidence=out,**kw)
                 return handoff(**context,case='bt',work=pick)
             code=navigate(['--repo-root',str(root),'--evidence',str(out),'--case','vision','--vision-hz','15'],
                 planning=True,pick_scene=True,handoff=manipulate,orchestration=session)
@@ -50,14 +51,17 @@ def main():
     tree=py_trees_ros.trees.BehaviourTree(mission.root,unicode_tree_debug=False)
     tree.setup(node=node,timeout=5.)
     # tick() is driven here so terminal latching cannot silently restart the root.
+    held_execution_start=None
     def tick():
+        nonlocal held_execution_start
         progress=port.snapshot()['progress']
         if args.case in ('cancel','low_battery') and not session.cancel_requested() and progress.get('displacement_m',0)>.03 and progress.get('navigation_phase')=='ACTIVE':
             port.event('injection',case=args.case,progress=progress)
             if args.case=='low_battery':mission.battery=10.
             else:mission.stop_reason='user_cancel'
-        if args.case=='held_cancel' and progress.get('task_phase')=='LIFT' and not session.cancel_requested():
-            port.event('injection',case=args.case,progress=progress);mission.stop_reason='user_cancel'
+        if args.case=='held_cancel' and not session.cancel_requested():
+            held_execution_start,inject=lift_interrupt(progress,held_execution_start)
+            if inject:port.event('injection',case=args.case,progress=progress);mission.stop_reason='user_cancel'
         mission.tick(tree)
     timer=node.create_timer(.1,tick)
     def interrupt(*_):mission.stop_reason='user_cancel'
@@ -69,7 +73,10 @@ def main():
             if time.monotonic()-started>1200:
                 port.fail('mission wall budget');port.cancel('mission_wall_budget')
         thread.join()
+    except BaseException:
+        worker_result['mission_exception']=traceback.format_exc();port.fail(worker_result['mission_exception'])
     finally:
+        if not stop_worker(thread,port):port.fail('worker join deadline after mission exception')
         signal.signal(signal.SIGINT,previous);node.destroy_timer(timer)
         tree.shutdown(destroy_node=False);executor.remove_node(node);node.destroy_node();executor.shutdown();context.try_shutdown()
         data=port.snapshot()

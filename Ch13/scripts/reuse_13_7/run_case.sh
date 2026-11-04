@@ -7,7 +7,7 @@ bt_out=${2:?new evidence directory}
 case "$bt_case" in normal|cancel|low_battery|held_cancel) ;; *) exit 2;; esac
 if [[ -e "$bt_out" ]]; then echo 'new evidence directory required' >&2; exit 2; fi
 mkdir -p "$bt_out"
-bt_freeze=${CH13_REUSE_FREEZE:-$bt_repo/Ch13/dependencies/section_13_7_bt_v1.json}
+bt_freeze=${CH13_REUSE_FREEZE:-$bt_repo/Ch13/dependencies/section_13_7_bt_v5.json}
 bash "$bt_scripts/env.sh" "$bt_scripts/freeze_runtime.py" verify "$bt_freeze" > "$bt_out/freeze_audit.json" 2>&1
 bash "$bt_scripts/env.sh" "$bt_scripts/audit_install.py" "$bt_out/install_audit.json" > "$bt_out/audit.log" 2>&1
 bash "$bt_scripts/env.sh" "$bt_repo/Ch13/scripts/reuse_13_5/inspect_r2_residuals.py" "$bt_out/pre_residual.json" > "$bt_out/pre_residual.log" 2>&1

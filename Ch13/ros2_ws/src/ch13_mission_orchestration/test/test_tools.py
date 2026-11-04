@@ -22,3 +22,12 @@ def test_verifier_rejects_pick_after_cancel_and_unjoined_worker():
         worker={'exit_code':0},port={'error':'','closed':True,'requested':['navigate','pick'],
         'events':[{'event':'injection'}],'completed':{}})
     assert verify_bt(data)['result']=='FAIL'
+
+
+def test_lift_cancel_waits_for_actual_execution_not_planning_phase():
+    from ch13_mission_orchestration.tools import lift_interrupt
+    assert lift_interrupt({'task_phase':'LIFT','manipulation_phase':'READY','clock_ns':100},None)==(None,False)
+    progress={'task_phase':'LIFT','manipulation_phase':'EXECUTING','clock_ns':2_000_000_000}
+    assert lift_interrupt(progress,None)==(2_000_000_000,False)
+    progress['clock_ns']=3_000_000_000
+    assert lift_interrupt(progress,2_000_000_000)==(2_000_000_000,True)
