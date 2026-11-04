@@ -1,0 +1,36 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_93e3817833a4468ebcef4a7f5c840200/repo
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__ test_actual_sparse_surface_outliers_are_segmented_before_strict_inlier_fit __
+
+    def test_actual_sparse_surface_outliers_are_segmented_before_strict_inlier_fit():
+        args=frame()
+        with pytest.raises(ValueError):fit_cylinder(*args,.02,.08,filter_boundary=True)
+>       result=fit_cylinder(*args,.02,.08,robust_consensus=True)
+E       TypeError: fit_cylinder() got an unexpected keyword argument 'robust_consensus'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py:19: TypeError
+_______ test_widespread_corruption_cannot_be_hidden_by_inlier_refinement _______
+
+    def test_widespread_corruption_cannot_be_hidden_by_inlier_refinement():
+        rgb,depth,k,T=frame()
+        ys,xs=np.nonzero((rgb[:,:,0]>80)&np.isfinite(depth))
+        depth[ys[::4],xs[::4]]-=.04
+>       with pytest.raises(ValueError):fit_cylinder(rgb,depth,k,T,.02,.08,robust_consensus=True)
+E       TypeError: fit_cylinder() got an unexpected keyword argument 'robust_consensus'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py:31: TypeError
+_____ test_consensus_preserves_historical_transform_and_height_requirement _____
+
+    def test_consensus_preserves_historical_transform_and_height_requirement():
+        rgb,depth,k,T=frame();T[:3,3]+=[1.,-.2,.3]
+>       result=fit_cylinder(rgb,depth,k,T,.02,.08,robust_consensus=True)
+E       TypeError: fit_cylinder() got an unexpected keyword argument 'robust_consensus'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py:36: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py::test_actual_sparse_surface_outliers_are_segmented_before_strict_inlier_fit
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py::test_widespread_corruption_cannot_be_hidden_by_inlier_refinement
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py::test_consensus_preserves_historical_transform_and_height_requirement
+3 failed, 318 deselected in 2.90s
+

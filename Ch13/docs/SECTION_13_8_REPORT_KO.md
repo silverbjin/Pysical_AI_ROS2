@@ -63,3 +63,9 @@ v10 소스336/외부94자산, manifest SHA256 3e697f62ef429ae82cd4f82d54636898fe
 v10 첫 UUID8478db34는 startup FUTURE_SOURCE:joints로 실패했다. 동일 소스 재시도614e67e5는 파지 물리 PASS(최소100.418mm/2.18sim초/접촉100%) 후2.54233m 운반·정착·LOWER·지지·실측 개방까지 도달했다. 팔 후퇴의 Cartesian fraction0으로 전체 FAIL이며 post-release hold는 부족했다. 귀환 오차0.052002m·190.64sim초/397.698wall초로 원고 위치/시간 목표도 미달이다. CPU43.101%·최대 tilt0.039292rad, bag close/12자식 정상 종료/worker join/lock free. 이 개발 fixture는 원고 Level1/2/3 인수가 아니다.
 
 팔에 붙인 장면 모델의 parent는reuse/tcp인데 분리 요청은reuse/link6이었다. 공식 MoveIt2.12.4 source 및 설치 API에서 outer success=true여도 attached가 남는 현상을 재현했다. ID-only 분리·GetPlanningScene 사후 검사·물리 release 후 새 RGB-D 중심 적용을 추가했다. 관련3개와 전체317개 회귀 PASS/48.11초. 별도domain136 설치 API probe PASS/정상 shutdown이지만 새 물리 성공은 아직 확인 전이다. 상세 판단과 자료 경로는 PROGRESS/RESEARCH에 남긴다.
+
+## 2026-11-05 반복 실패 조사
+
+v11은source 나이303ms의초기이동중단, v12는최초arm 준비중455ms heartbeat 공백, v13은접근중소수surface outlier에따른관측거부로모두FAIL했다. 카메라·relay·owner 초기화를같은원인으로묶지않고원본시각별로구분했다. 공식Jazzy/rclpy7.1.12·Mesa·PCL1.15.1·SciPy1.18.1을조사했다. 초기타입준비를동작전으로옮긴뒤v13의실제arm client15.922ms/gripper11.856ms로첫준비실패구간을통과했다. 전체강건성통과는아니다.
+
+v14 후보는원통모델의95%/2mm 합의점선별후재계산을적용한다. RMS1.5mm의모집단이합의점으로바뀌므로검출계약변경으로명시하고rawRMS/제외점수/합의점비율도기록한다. 두실제거부영상·오염/가림·747자세·기존수명포함322 PASS/54.67초. 새로운실제인수는대기다. 별도상세보고서SECTION_13_8_LATENCY_DIAGNOSIS_KO.md에근거·참고링크·남은검증을정리했다.

@@ -53,3 +53,13 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 [Mesa 공식 LLVMpipe 설명](https://docs.mesa3d.org/drivers/llvmpipe.html)과 [환경 변수 문서](https://docs.mesa3d.org/envvars.html#lp-num-threads)를 확인했다. LLVMpipe는 CPU software rasterizer이고 LP_NUM_THREADS는 렌더 worker 수다. 실제GL query는Mesa25.2.8/LLVM20.1.2·llvmpipe를 반환했다. 기존2를 임의로 늘리거나 driver/GPU 설치를 추가하지 않는다. 현재 문서의 기능 설명과 실제 설치 query를 구분한다. render 시작/끝·process CPU를 기록해 queue 지연과 계산/스케줄 지연을 구분한 후 필요한 작은 변경만 적용한다. 원본 capture/TF와300ms 기준은 유지한다.
 
 실제 설치rclpy7.1.12를 package.xml에서 확인한 뒤 공식 [action/client.py 7.1.12](https://github.com/ros2/rclpy/blob/7.1.12/rclpy/rclpy/action/client.py)와 [type_support.py 7.1.12](https://github.com/ros2/rclpy/blob/7.1.12/rclpy/rclpy/type_support.py)를 GitHub connector로 읽었다. ActionClient 생성자는아직 없는 타입 지원을 동기로 import한다. [공식 ROS2 lifecycle 설계](https://design.ros2.org/articles/node_lifecycle.html)의 configure에서 일회 자원을 준비하고 active의 긴 초기화를 피하는 패턴을 참고해13.8의ready에서타입과warmup 모듈을 사전 준비한다. LifecycleNode로 전체를 재작성한 것은 아니다. 기존 client/goal 수명과 단일 ROS owner는 유지한다. 독립 probe에서 arm client98.471→5.420ms였고 준비340.085ms는동작 전으로 이동했다. 실제 live455ms gap의 세부 기여는 새 실제 구간 timing으로 확인하며 idle결과만으로 해결 완료라고 쓰지 않는다.
+
+[Jazzy 실시간 프로그래밍 공식 원본](https://github.com/ros2/ros2_documentation/blob/jazzy/source/Tutorials/Demos/Real-Time-Programming.rst)의 실행 경로에서 비결정적 초기화·page fault·동적 할당과 무한 blocking을 피하는 원칙도 확인했다. 적용은타입 준비의 시점 분리뿐이다. 문서 예제의mlockall/스케줄 우선순위/커널 설정을 이 Windows/WSL 환경에 추가하지 않았고 hard real-time 보장이라고 표현하지 않는다.
+
+## v14 표면 합의점 모델: 검출 계약의 명시적 변경
+
+[PCL1.15.1 공식 cylinder segmentation](https://github.com/PointCloudLibrary/pcl/blob/pcl-1.15.1/doc/tutorials/content/cylinder_segmentation.rst)과 포함된 C++ 구현의 모델 추정→inlier 선별→계수 보정 패턴을 확인했다. 예제의 자유축/normal 추정이나5cm 기준을 이20mm 반경 대상에 적용하지 않는다. 기존 프로젝트는 알려진 upright축과 반경으로 SciPy의soft_l1 두 좌표 중심을 추정한다. 실제 설치 [SciPy1.18.1 least_squares.py](https://github.com/scipy/scipy/blob/v1.18.1/scipy/optimize/_lsq/least_squares.py)의 robust loss 설명도 확인했다.
+
+채택 패턴은 기존 robust 중심에 대해2mm 이내의side점이95% 이상일 때 합의점을 선별하고 중심을 다시 계산하는 것이다. 재계산 뒤에도95% 비율을 다시 확인하며 RMS1.5mm·q90 2mm·side 폭/최소20점·실제 inlier 표면의75~105% 높이를 모두 요구한다. PCL의RANSAC 구현을 복사하거나 호출한 것은 아니다. 새 패키지 설치 없이 기존 고정축/반경 문제에 모델 합의점 검사를 적용한다.
+
+**변경되는 계약:** residual_m의 모집단은13.8 새mode에서 합의점이다. raw_residual_m/raw_points/outlier_points/surface_inlier_fraction과선별기준을 함께 기록한다. 모든 점의RMS 검사를 유지했다고 표현하지 않는다. 심한 손상이나 부족한 높이를 정상으로 바꾸지 않으며 기본13.6/13.7은 기존 전체점 fit을 유지한다. 이전 boundary 이웃 필터는13.8 live에서 끄고 새mode와 누적하지 않는다. 촬영 시각/TF/GID/hash·물리 모델·실행 속도·수명/접촉 경계는 유지한다. v9/v13 실제 거부 영상과 저장 시야 궤적, 25% 깊이 손상/가림 시험을 검증 근거로 사용하며 최종 actual은 별도다.

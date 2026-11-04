@@ -200,3 +200,15 @@ Ruling: 13.8 ValidationSession.ready에서 warmup 모듈과 실제 action3종/Mo
 독립 prepared probe는동작 전 준비340.085ms 후warmup import0.002ms/arm client5.420ms/gripper1.380ms였다. 준비비용이 사라진 것이 아니라 live 권한 이전으로 이동한 결과다. 실제 warmup client 구간도 별도 timing으로 기록하여 가설을 다시 확인한다. 신규API 부재 RED 후 시험 driver의script 검색 경로 누락1 FAIL을 명시적으로 수정했다. 새 전체 회귀와 실제 연속 재검증은 대기다.
 
 v13 전체318 PASS/51.06초. build·설치60모듈/94자산/child PASS, source340/assets94 SHA256 6bb216f5f04859218d03e59fd84414cf1e976383dc204f33cddaf82afc81a732. native 사본·동일 공유 lock/잔여 확인 PASS. 다음 actual UUID 22d69f96-a916-4652-98e5-8f0fd461e2d1. rclpy 공식7.1.12 tag의action/client.py와type_support.py도 GitHub connector로 읽어 설치 버전과 맞췄다.
+
+### v13 실제 결과와 검출 구조 재검토
+
+v13 UUID22d69f96-a916-4652-98e5-8f0fd461e2d1는최초arm 준비/여러 실제warmup action을통과했지만GRASP_APPROACH 중 OBSERVATION_EXPIRED로 전체 FAIL. accepted3155/rejected6(모두surface fit). trial105.88sim초/247.167572wall초·CPU44.764%·tilt0.034285rad·bag close/12 child clean exit/worker join/잔여0/lock free. 초기화 수정은 실제 첫 client15.922ms/11.856ms로 이전 실패 지점을 통과했지만 전체 강건성 증거는 아니다.
+
+종료 후 마지막 raw frame을 분해했다. 기존3x3 foreground boundary 처리에서는제거0pixel. 상하component223/194pixel·centroid차1.259mm·높이79.393mm로 결합 가능. robust중심(1.800023,-0.000111)m인데전체sideRMS1.578mm/q90 0.0998mm였다. 실제표면대부분의반경은19.85~19.94mm이나 소수점은33.590mm다. v9와같은소수깊이outlier계열이남았으므로카메라마운트나이웃threshold를더조정하지않고표면합의점모델을재검토했다.
+
+Ruling: PCL공식cylinder segmentation의모델/합의점선별/계수재계산패턴을채택한다 — 기존SciPy soft_l1중심추정은소수outlier의영향을줄이지만그뒤모든점을한평균RMS로거부하여robust추정효과를상쇄했다 — 알려진upright축/반경의작은문제로제한하며PCL의자유축RANSAC/normal추정/일반객체인식으로확대하지않는다. 새mode만95%이상side점이기존q90경계와같은2mm이내일때inlier를재계산하고RMS1.5mm/높이75~105%/최소20점/side폭을검사한다. rawRMS/전체점/inlier비율/제거수/새측정정의를metadata로명시한다. 이는RMS의모집단을바꾸는명시적검출계약변경이며단순문서보완이라고부르지않는다.
+
+13.8 carry opt-in은robust_consensus=True·filter_boundary=False로전환한다. 이전이웃pixel처리를누적하지않는다. 기본13.6/13.7은둘다False로유지한다. 원본capture/TF/GID/hash와물리/권한/안전기준은유지한다. 새v13 rawRGB-D를고정fixture로보존했다. API부재3 RED 후최초후보7 PASS/1 FAIL은고정120행crop이실제캔의상반부를지우지못한시험데이터오류였다. 실제red bounding box의중간행기준으로고쳤고v9원본도새mode회귀에추가했다. 전체회귀와새물리실행은대기다.
+
+v14 후보322 PASS/54.67초, 설치60모듈/94자산/child PASS. source344/assets94 SHA256 e03942989bd3ab60d160f29ea4e6b665046dec00ca1f8fb45e9f20ec86ade5be. native staging/공유 lock/잔여 PASS. v13 exact source340 보존 SHA b2b97ee3c94a723abf7cb0c05bbd3276bc0317bbe0fcd2b14a50529379efae7b. v11/v12/v13 FAIL을3.895/5.120/27.911MB raw archive로 보존하고 원본도 유지했다. 다음 actual UUID 60ecc5f5-8385-44d5-83ec-ecd829af8b3b.

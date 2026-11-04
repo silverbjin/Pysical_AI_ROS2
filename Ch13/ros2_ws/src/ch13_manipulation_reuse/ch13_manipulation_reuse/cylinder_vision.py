@@ -19,7 +19,7 @@ def _foreground_boundary(valid,depth):
     return result,int(bad.sum())
 
 
-def fit_cylinder(rgb,depth,calibration,transform,radius,height,*,filter_boundary=False):
+def fit_cylinder(rgb,depth,calibration,transform,radius,height,*,filter_boundary=False,robust_consensus=False):
     if np.shape(rgb)!=(240,320,3) or np.shape(depth)!=(240,320):
         raise ValueError('cylinder calibrated320x240 RGB-D required')
     k=np.asarray(calibration,dtype=float);T=np.asarray(transform,dtype=float)
@@ -43,7 +43,7 @@ def fit_cylinder(rgb,depth,calibration,transform,radius,height,*,filter_boundary
         world=camera@T[:3,:3].T+T[:3,3]
         components.append((xs,ys,np.mean(world[:,:2],axis=0),float(world[:,2].min()),float(world[:,2].max())))
         try:
-            candidate=_fit_component(depth,k,T,radius,height,xs,ys);candidate['components_used']=1;candidates.append(candidate)
+            candidate=_fit_component(depth,k,T,radius,height,xs,ys,robust_consensus=robust_consensus);candidate['components_used']=1;candidates.append(candidate)
         except ValueError as error:errors.append(str(error))
     if len(components)>16:raise ValueError('cylinder excessive significant components')
     # A gray occluder can split the same red side into upper/lower patches.
@@ -56,21 +56,21 @@ def fit_cylinder(rgb,depth,calibration,transform,radius,height,*,filter_boundary
             if not .75*height<=span<=1.05*height:continue
             xs=np.concatenate((first[0],second[0]));ys=np.concatenate((first[1],second[1]))
             try:
-                candidate=_fit_component(depth,k,T,radius,height,xs,ys);candidate['components_used']=2;candidates.append(candidate)
+                candidate=_fit_component(depth,k,T,radius,height,xs,ys,robust_consensus=robust_consensus);candidate['components_used']=2;candidates.append(candidate)
             except ValueError as error:merged_errors.append(str(error))
     unique=[]
     for candidate in sorted(candidates,key=lambda c:c['residual_m']):
         if not any(np.linalg.norm(np.array(candidate['center'])-other['center'])<=.002 for other in unique):unique.append(candidate)
     if len(unique)>1:raise ValueError('cylinder ambiguous matching components')
     if not candidates:
-        if errors:raise ValueError('cylinder no matching component: '+(merged_errors[0] if filter_boundary and merged_errors else errors[0]))
+        if errors:raise ValueError('cylinder no matching component: '+(merged_errors[0] if (filter_boundary or robust_consensus) and merged_errors else errors[0]))
         raise ValueError('cylinder not observed')
     result=unique[0];result.update(red_components=count,valid_cylinder_components=1)
     if filter_boundary:result.update(boundary_filter='foreground_depth_consistency_3x3_5mm',boundary_removed_pixels=boundary_removed)
     return result
 
 
-def _fit_component(depth,k,T,radius,height,xs,ys):
+def _fit_component(depth,k,T,radius,height,xs,ys,*,robust_consensus=False):
     z=depth[ys,xs].astype(float)
     camera=np.column_stack(((xs-k[2])*z/k[0],(ys-k[3])*z/k[1],z))
     world=camera@T[:3,:3].T+T[:3,3]
@@ -86,13 +86,36 @@ def _fit_component(depth,k,T,radius,height,xs,ys):
     view/=np.linalg.norm(view)
     def residual(center):return np.linalg.norm(side[:,:2]-center,axis=1)-radius
     result=least_squares(residual,mean+view*radius,loss='soft_l1',f_scale=.001,max_nfev=40)
+    consensus={}
+    if robust_consensus:
+        # Constrained robust model -> geometric consensus -> coefficient refit.
+        # Unlike the PCL example, axis/radius are known task priors; no free
+        # 6D cylinder or normal estimation is claimed. All thresholds are SI.
+        raw_error=float(np.sqrt(np.mean(residual(result.x)**2)));raw_count=len(side)
+        inliers=abs(residual(result.x))<=.002
+        if not result.success or np.mean(inliers)<.95 or inliers.sum()<20:
+            raise ValueError('cylinder insufficient surface consensus')
+        original_side=side;side=side[inliers]
+        result=least_squares(residual,result.x,loss='soft_l1',f_scale=.001,max_nfev=40)
+        original_error=np.linalg.norm(original_side[:,:2]-result.x,axis=1)-radius
+        inliers=abs(original_error)<=.002
+        if np.mean(inliers)<.95 or inliers.sum()<20:
+            raise ValueError('cylinder insufficient refined consensus')
+        side=original_side[inliers]
+        if max(np.ptp(side[:,:2],axis=0))<radius:raise ValueError('cylinder insufficient consensus side visibility')
+        surface=world[abs(np.linalg.norm(world[:,:2]-result.x,axis=1)-radius)<=.002]
+        low,high=np.quantile(surface[:,2],[.01,.99]);span=high-low
+        if not .75*height<=span<=1.05*height:raise ValueError('cylinder insufficient consensus height visibility')
+        consensus=dict(fit_pattern='fixed_upright_radius_robust_consensus_v1',raw_residual_m=raw_error,
+            raw_points=raw_count,outlier_points=int(raw_count-inliers.sum()),surface_inlier_fraction=float(np.mean(inliers)),
+            consensus_distance_m=.002,minimum_consensus_fraction=.95)
     error=float(np.sqrt(np.mean(residual(result.x)**2)))
     if (not result.success or error>.0015 or np.quantile(abs(residual(result.x)),.9)>.002
             or np.dot(result.x-mean,view)<=0):
         raise ValueError('cylinder surface fit rejected')
     center=np.array([*result.x,(low+high)/2])
     optical=T[:3,:3].T@(center-T[:3,3])
-    return dict(center=center.tolist(),optical_center=optical.tolist(),residual_m=error,points=len(side),
+    return dict(center=center.tolist(),optical_center=optical.tolist(),residual_m=error,points=len(side),**consensus,
                 visible_height_m=float(span),radius_prior_m=radius,height_prior_m=height,
                 axis=[0.,0.,1.],axis_source='upright task prior',yaw_observed=False,
                 box=dict(cx=float((xs.min()+xs.max())/2),cy=float((ys.min()+ys.max())/2),

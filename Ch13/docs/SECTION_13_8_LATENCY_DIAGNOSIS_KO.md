@@ -42,3 +42,21 @@ UUID408dabfc-fca3-44e9-8087-fafb3984dd14, source v11/db5586b32b1e4947d0dc3026cc2
 ## 다음 검증
 
 v12의 계측 결과로 대기·렌더 CPU·DDS 수신·검증 중 지연이 집중되는 경계를 특정한다. 같은 실패가 없더라도 한 번의 통과로 반복 강건성을 주장하지 않는다. 연속 파지→운반→내려놓기→팔 후퇴→유지→정상 종료와 원고의3cm/120초 목표를 별도로 판정한다. Level1/2/3 및 고정 설정10회 평가는 아직 미완료다.
+
+## v12의 다른 경계: 최초 action 준비
+
+v12는 navigation/정착/find를 통과했지만 첫 warmup arm action 전에MISSION_EXPIRED로 FAIL했다. heartbeat producer의sequence1→2 자체가 약455ms 끊겼다. 새 render 계측은 이때 source 대기 약13~43ms/render wall 약10~40ms였으므로 이를 v11과 같은 카메라 지연이라고 부르지 않는다.
+
+설치rclpy7.1.12 공식 [ActionClient](https://github.com/ros2/rclpy/blob/7.1.12/rclpy/rclpy/action/client.py)와 [type_support](https://github.com/ros2/rclpy/blob/7.1.12/rclpy/rclpy/type_support.py)에서 최초 타입 로딩의 동기 실행을 확인했다. 실제 별도domain136 probe의warmup import16.635ms/arm client98.471ms였다. live455ms의 모든 세부 기여를 이 idle시험만으로 확정하지는 않는다.
+
+[공식 lifecycle 설계](https://design.ros2.org/articles/node_lifecycle.html)와 [Jazzy 실시간 프로그래밍 문서](https://github.com/ros2/ros2_documentation/blob/jazzy/source/Tutorials/Demos/Real-Time-Programming.rst)의 일회 준비와 실행 경로 분리 패턴을 적용했다. 13.8 ready에서warmup 모듈·action3종·MoveIt service4종 타입 지원을 준비하고, 실제 client·goal·cancel 수명은 기존 단일 owner에 둔다. kernel/priority/memory locking/QoS/관측 나이 기준은 변경하지 않는다.
+
+준비 probe는340.085ms를 live권한 이전에 사용했고 이후arm client5.420ms였다. 전체318 PASS/51.06초 후v13 source340/assets94로 동결했다. 실제v13의warmup client 구간은arm15.922ms/gripper11.856ms였고, 기존 실패 지점을 통과해PRE_GRASP를 실행 중이다. 아직 전체 임무 성공으로 판정하지 않는다.
+
+## v13의 검출 거부와 v14의 계약 변경
+
+v13은 최초 팔 준비를 통과했지만 접근 중 표면 검사6회 거부로 전체 FAIL했다. 마지막 frame은 높이79.393mm와 상하 조각의 위치 일관성을 만족했으며, robust 중심은(1.800023,-0.000111)m였다. side 오차q90는0.0998mm이나 소수점이 반경33.590mm로 튀어 전체 RMS1.578mm였다. 기존 이웃 기반 boundary 필터는 이 frame에서0pixel을 제거했다.
+
+같은 계열이 남아 이웃 임계값을 더 조정하지 않았다. [PCL1.15.1 공식 원통 분할](https://github.com/PointCloudLibrary/pcl/blob/pcl-1.15.1/doc/tutorials/content/cylinder_segmentation.rst)의 모델→합의점→재계산 패턴과 기존 SciPy robust 추정을 결합했다. 13.8 새mode는2mm 이내side점95% 이상을 요구하고, 그 집합으로 중심을 재계산한다. 이후에도95% 비율·RMS1.5mm·높이75~105%·side 폭/최소20점을 검사한다. 과거 이웃 필터는 live에서 끈다.
+
+residual_m의 모집단이 전체 점에서 합의점으로 바뀌므로 명시적 검출 계약 변경이다. rawRMS·전체/제외 점수·합의점 비율을 함께 남긴다. v9/v13 실제 거부 영상,25% 깊이 손상,가림,747자세 시야와 기존 소유권/수명 회귀를 포함해322 PASS/54.67초. source 동결과 실제 연속 동작 확인은 별도다. 기본13.6/13.7은 기존 전체점 fit을 유지한다.

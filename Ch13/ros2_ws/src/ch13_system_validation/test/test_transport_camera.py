@@ -26,7 +26,7 @@ def test_transport_camera_keeps_original_fit_visible_in_saved_pick_and_carry_sta
             renderer.scene.flags[mujoco.mjtRndFlag.mjRND_SKYBOX]=False
             rgb,depth=render_rgbd(renderer,model,single_pass=True)
             transform=np.eye(4);transform[:3,:3]=data.cam_xmat[camera].reshape(3,3)@np.diag([1.,-1.,-1.]);transform[:3,3]=data.cam_xpos[camera]
-            fit=fit_cylinder(rgb,depth,[focal,focal,159.5,119.5],transform,.02,.08,filter_boundary=True)
+            fit=fit_cylinder(rgb,depth,[focal,focal,159.5,119.5],transform,.02,.08,robust_consensus=True)
             # Ground truth is an assertion after fitting, never an estimator input.
             np.testing.assert_allclose(fit['center'],state['qpos'][27:30],atol=.004,err_msg=str(state['sim_s']))
     finally:renderer.close()
