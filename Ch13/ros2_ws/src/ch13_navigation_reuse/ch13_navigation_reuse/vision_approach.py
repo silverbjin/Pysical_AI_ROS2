@@ -1,5 +1,5 @@
 """Actual RGB-D observation with original capture and historical TF provenance."""
-import argparse,hashlib,json,math,time
+import argparse,hashlib,json,math,time,os
 from pathlib import Path
 from collections import Counter
 import numpy as np
@@ -24,6 +24,7 @@ def matrix(t):
 class VisionObserver(Node):
  def __init__(self,inference_hz=10.,target_shape='fixture',latest_camera=False):
   self.target_shape=target_shape;self.last_rejected=None;self.latest_camera=latest_camera
+  self.filter_boundary=os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
   self.native_counts=Counter();self.packet_counts=Counter()
   super().__init__('ch13_reuse_vision_observer');self.cache=FrameCache();self.camera_link=CameraLink();self.receipt_rows=[];self.clock_ns=0;self.clock_wall=None;self.fault='';self.relay={};self.tf_owners={};self.transforms={};self.map_odom=None;self.last_health=0;self.health_rows=[];self.last_processed=0;self.last_processed_wall=-1e9;self.inference_hz=inference_hz;self.rows=[];self.last_accepted=None;self.rejected=Counter()
   self.observation=self.create_publisher(String,N+'/vision/observation',1);self.point=self.create_publisher(PointStamped,N+'/observed_target',1);self.health=self.create_publisher(String,N+'/vision/health',1);self.status=self.create_publisher(String,N+'/vision/status',1)
@@ -111,7 +112,7 @@ class VisionObserver(Node):
       if self.target_shape=='cylinder':
        from ch13_manipulation_reuse.cylinder_vision import fit_cylinder
        from types import SimpleNamespace
-       fit=fit_cylinder(rgb,depth,calibration,transform,.02,.08)
+       fit=fit_cylinder(rgb,depth,calibration,transform,.02,.08,filter_boundary=self.filter_boundary)
        optical=np.array(fit['optical_center']);world=np.array(fit['center']);box=SimpleNamespace(**fit['box'])
       else:
        optical,box=red_point(rgb,depth,calibration);world=transform[:3,:3]@optical+transform[:3,3]

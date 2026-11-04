@@ -19,8 +19,8 @@
 |---|---|
 | 원고 확보 | 제목/13.8.1~8 확보, 원본 사본 hash 기록 |
 | 분리 build | 기존6+BT1+새1 패키지 성공 |
-| 설치/child 감사 | v8 기준 navigation34·manipulation24·BT6 감사 및4개 Python 패키지56모듈 소스 바이트 일치, 외부94자산 hash PASS, 실제 venv child NumPy 우선순위 PASS |
-| 부품 회귀 | v8 초기화 수정까지 동일 hash WSL native source/fixture 사본에서300 PASS/43.98초. 후속 시야 표본 확대는 진행 중 |
+| 설치/child 감사 | v10 기준 navigation34·manipulation24·BT6 감사 및4개 Python 패키지58모듈 소스 바이트 일치, 외부94자산 hash PASS, 실제 venv child NumPy 우선순위 PASS |
+| 부품 회귀 | v10 경계 깊이 검사·747자세 시야·보존/복원까지314 PASS/48.87초. 새 물리 인수와 구분 |
 | 최초 연속 engine | UUID a96cd6d7-9805-41ce-9dff-4c13916e4653, v2, FAIL. 파지 물리 PASS 후 귀환 회전 중 원통 부분 가림에 따른 OBSERVATION_EXPIRED. --no-bag 개발 사례. 실제 정상 shutdown·12 child clean exit·worker/rx/upstream join·잔여0·lock free |
 | 두 번째 연속 engine | UUID34f5ef1d-8fee-4d81-913b-fa76a3945a47, v4, FAIL. 파지 물리 PASS 후 귀환 navigation VISION_EXPIRED/Nav2 ABORTED. producer 비전 fault 없음·5327관측. 새 camera health 검증과 혼합 native FIFO 반영 사이의 경계를 분석해13.8용 경로 분리. 정상 회수 |
 | 세 번째 연속 engine | UUID1499904c-2d19-4010-a499-03919ecdc832, v5, FAIL. pick100.493mm/2.22sim초/접촉100% PASS. Nav2 SUCCEEDED 뒤 base위치(0.01362,-0.01847)m, yaw2.24356rad로 잘못된 자세. PLACE_WAIT fresh3D 가림 만료. quaternion 일부 설정 오류를 수정 중이며 아직 재실행하지 않음.160.496sim초/415.889wall초, CPU46.05%, tilt0.04458rad, bag close/정상 회수 |
@@ -51,3 +51,9 @@ MoveIt2.12.4 planning scene 서비스·attached/world 객체 처리, Jazzy rclpy
 다섯 번째v7 사례b91a740e-a75f-4acb-b4fe-3cd5f68ad8b6는 실제 관측545개로 시작·이동·준비 action3개를 통과했지만, 다음 개방 요청 전에 heartbeat399.695ms 공백과 MISSION_EXPIRED로 FAIL. trial17.70sim초/41.652wall초·CPU43.734%·tilt0.034776rad·bag close/정상 회수. 동기 Planner 초기화 파일 조회의400ms 지연 시험을 RED로 재현하고 기존 compute worker와 owner polling을 적용했다. 실제 초기화 하위 단계별 소요 시간도 추가 기록한다. 전체300 PASS/43.98초이며 실제 파지/귀환/내려놓기의 인수는 아직 미완료다.
 
 여섯 번째v8 사례e1c738a7-42a2-417b-9e66-4aa445bd9875는 같은 hash의 WSL native 사본/공유 lock으로 실행했다. 초기화·준비 구간을 통과했지만 접근 중간의 가림으로 OBSERVATION_EXPIRED, 전체FAIL.100.56sim초/240.879wall초·CPU44.443%·tilt0.034256rad·bag close/정상 회수.8개 정지 자세 회귀가 전체 접근을 대표하지 못했으므로 저장된 두 궤적의532자세로 회귀를 확대하고 있다. 실제 물체 파지는 시작하지 않았다.
+
+일곱 번째v9 사례f50ddb77-4c68-4e37-8e0c-df8c9fae07a9도 접근 중 OBSERVATION_EXPIRED로FAIL.104.84sim초/239.398wall초·CPU43.223%·tilt0.035119rad·bag close/정상 회수. 실제 raw frame은 위/아래가 모두 보였지만 결합 surface RMS1.50279mm가1.5mm 한도를 넘었다. 예외 표시가 첫 조각의 높이 부족만 남겨 진단을 흐렸다. 분해한 실제 픽셀과 점군을 근거로13.8에만 앞쪽 물체 깊이가 섞인 경계 픽셀을 선별하고, 표면 한도·원본 capture/TF를 유지했다. 단순 mask 전체 erosion은 회귀2개 실패로 제외했다.
+
+## v10 보존과 다음 실제 검증
+
+v10 소스336/외부94자산, manifest SHA256 3e697f62ef429ae82cd4f82d54636898fea055a33f67576eb03d115ed21db832. build14.0초·설치58모듈/child 감사·native 사본 전수 hash/공유 lock realpath 확인 PASS. 기존7개 실제 개발 FAIL을 모델 제외raw.tar.gz/raw_manifest.json으로 압축했고 원본은 남겼다. v9 실제 archive를 새 빈 폴더에41파일 hash 복원해 원래trial/BT/nav/source verdict 바이트와FAIL을 보존했다. 복원은 새 engine 실행이나 성공 증거가 아니다. 현재7개 개발 사례는 고정 설정10회 평가가 아니며 전체 연속 미션 인수는 아직 미완료다.

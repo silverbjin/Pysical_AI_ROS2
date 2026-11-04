@@ -27,3 +27,13 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 ## 장애물 월드 확장 전 조사: 운반 외형
 
 [공식 Nav2 Jazzy costmap 문서](https://docs.nav2.org/jazzy/configuration_and_development/configuration_guide/core_servers/costmap_2d/)와 [Jazzy footprint 가이드](https://ros-navigation.github.io/mkdocs.nav2.org/jazzy/configuration_and_development/first_time_robot_setup_guide/footprint/setup_footprint/)에서 조작 팔/적재물로 외형이 달라질 때 costmap의~/footprint 토픽으로 polygon을 갱신하는 패턴을 확인했다. 기존 footprint.json은13.5의 제한된 관측70샘플과4cm margin에서 생성됐으므로, 팔을 뻗은 운반 상태까지 포괄한다고 가정하지 않는다. 장애물/문 월드 전 실제 joint/TF와 알려진 부착 형상의 외형을 검사하고 설치 Nav2 source/API와 실제 수신을 확인할 후속 항목이다. 현재 빈 개발 fixture의 v8 실행에는 아직 동적 footprint를 추가하지 않았다. 공식 기능의 존재는 이 로봇의 좁은 문 통과 증거가 아니다.
+
+## 증거 보존 도구
+
+[Python3.12 gzip 공식 문서](https://docs.python.org/3.12/library/gzip.html)의 GzipFile(fileobj,mode,mtime)와 [tarfile 공식 문서](https://docs.python.org/3.12/library/tarfile.html)의 exclusive 생성·fileobj 스트림·regular member 처리를 확인했다. 설치 Python은3.12.3이며 문서는3.12 계열의 동일 API를 설명한다. 기존13.7 archive_evidence.py의 mtime0·원본 보존·모델 제외·SHA256 manifest 패턴과13.6 restore_evidence.py의 경로/타입/hash/기존 파일 불일치 거부를 재사용한다.13.8의 부모 경로만 명시적으로 제한하고 현재 frozen FAIL을 덮어쓰지 않는 도구가 후속 작업이다. 빈 폴더 복원 시험은 기존 실제13.6/13.7 계약과의 호환을 확인하며 물리 재실행으로 해석하지 않는다.
+
+## RGB-D 경계 픽셀 처리
+
+실제 venv SciPy1.18.1을 확인하고 [공식 v1.18.1 scipy/ndimage/_morphology.py의 binary_erosion](https://github.com/scipy/scipy/blob/v1.18.1/scipy/ndimage/_morphology.py)을 읽었다. bool 입력·명시적 structuring element·iterations=1로 경계를 식별한다. 경계 전체를 지우는 실험은 원거리 표면 폭 부족으로 회귀2개가 실패해 채택하지 않았다. 최종 후보는 경계의3x3 red/valid-depth 이웃 중간값보다5mm 이상 앞서는 픽셀만 제외하고 정상 silhouette는 보존한다.
+
+[공식 PCL StatisticalOutlierRemoval 설명](https://pointclouds.org/documentation/tutorials/statistical_outlier.html)의 모델 추정 전 이웃 기반 sparse outlier 선별 패턴을 추가로 참고했다. PCL의k-NN/평균·표준편차 알고리즘을 그대로 포팅한 것은 아니다. 정렬된 RGB-D의 경계에서만 같은 frame 이웃 depth를 비교하는 프로젝트 전용 전처리이며 새 PCL 의존성을 추가하지 않는다. 원통 높이75%·RMS1.5mm·q90 2mm 기준은 유지한다. raw RGB-D/hash/촬영 시각/TF를 보존하며 기본13.6/13.7은 filter_boundary=False다. 실제 v9 거부 frame에서 경계1pixel 제외 후 기존 component 최소 크기와 strict fit을 적용해349 surface points·RMS0.0497mm·높이78.996mm를 확인했다. 전체 회귀와 실제 동작 검증은 별도다.

@@ -142,3 +142,23 @@ v8은 초기화/준비 action을 통과했지만 실제 파지 전 GRASP_APPROAC
 새 mount/747자세 회귀·원래 default camera 유지·기존 수명/취소/수치 판정 포함301 PASS/49.60초. 다음 실제 사례는 새 v9 동결과 native source 사본으로 격리한다. 원래 v8 FAIL·초기8자세 표본 한계·중간2652/2653 결과는 그대로 보존한다.
 
 v9 준비 첫 시도는 일회성 Bash 스크립트의 Windows CRLF 때문에line2에서 시작 전 중단됐다. LF로 정규화한 별도 retry 로그를 보존했고 engine은 그 실패 시도에서 시작하지 않았다. 이후 build·설치56모듈/94자산/child 감사 PASS. v9 source326/assets94 SHA256 7a08ea204ffc5d4b682712cd6f1213e63dc783af4313a65cff3e54e06cd586a9, native 사본/home/jinho/ch13_reuse_13_8_build/live_source_5c1a8ce1dde440e0b622259f216947b6/repo에서 전수 재검증 PASS. 자산/공유 lock realpath 동일. 다음 실제 사례f50ddb77-4c68-4e37-8e0c-df8c9fae07a9, 원래 worktree에 새 증거를 기록한다.
+
+v9 실행 대기 중에는 고정 native 사본/설치본/자산을 수정하지 않는다. 후속 배포용 runtime staging·model 제외 raw archive의 시험 명세만 원래 개발 worktree에 신규 작성한다. 아직 구현/RED 실행 전이며 v9 source326에 포함되지 않는다. engine 종료 전 pytest/build/대용량 분석을 실행하지 않는다. 이후에는 새 소스 동결로 구분한다.
+
+### v9 실제 결과와 검출 실패 원인의 재분류
+
+v9도 GRASP_APPROACH 중259.704448950wall에 OBSERVATION_EXPIRED로 FAIL. trial104.84sim초/239.398wall초·CPU43.223%·tilt0.035119rad·bag close, worker join/12 child clean exit/잔여0/공유 lock free. 원통 파지 전에 중단됐다. 실제 관측3080·높이 부족으로 표시된 거부11·capture/clock/TF expired1. 원래326파일은1aafc599에서 전수 hash 보존했고 source_v9/runtime_source.tar.gz SHA256 3154c6c59211caa5a8fea833b0c98e250a633e28381f3e336735a09714405fb8이다.
+
+같은 실패가 남아 camera 위치를 더 바꾸지 않고 원래 검출기의 조건을 분해했다. 마지막 frame은 빨간 위/아래 조각199/191pixel, 합친 높이79.695mm·xy centroid 거리1.623mm로 기존 결합 gate를 통과한다. 그러나 결합 후 실제 거부 원인은 높이가 아닌 surface RMS였다. robust center의q90 오차0.0829mm인데 소수 경계 점의 반경이34.701mm까지 튀어 전체RMS1.50279mm로 기존1.5mm를 넘었다. 기존 예외 처리가 결합 후 원인을 버리고 첫 단일 조각의 높이 부족만 보고해 진단을 흐렸다. 대상은 같은 시각 tilt0.00077rad·finger 접촉0이어서 실제 기울어짐/접촉에 따른 모양 변화가 아니었다.
+
+원본 frame의 bool mask를3x3 한 번 erosion한 부품 분석은 위/아래140/133pixel·관측 높이74.388mm·기존 strict circle RMS0.0460mm·사후 중심 오차약0.38mm였다. 원래 RGB-D·capture/TF·표면 임계값을 유지하며13.8 opt-in에만 내부 pixel 선택을 적용한다. 결합 실패 이유도13.8에서는 실제 결합 fit 오류를 보고한다. 원본 actual frame의 기본 fit 거부와 새 API 부재2개 RED를 확인했다. 기본13.6/13.7 detector는 변경하지 않는다.
+
+후속 배포 도구는 구현 전 collection RED2개를 확인했다. 새 staging/archive 구현 후 실제 기존13.6 restorer를 통한 빈 폴더 복원을 포함해 관련12 PASS였고, 같은 실행의 새 boundary 시험2개는 예상대로 RED였다. 아직 새 boundary 구현의 최종 GREEN/전체 회귀는 진행 중이다.
+
+단순 mask erosion은 actual frame 부품14 PASS 후 전체 회귀에서312 PASS/2 FAIL(원거리 원통의 정상 side 폭까지 감소,40.40초)이었다. 이를 임계값 조정으로 통과시키지 않고 boundary를 식별한 뒤3x3 red/valid-depth 이웃 중간값보다5mm 이상 앞서는 측정만 제외하도록 좁혔다. v9 실제 frame은117개 경계 중1pixel 제외 후 작은 조각4pixel도 기존 최소20pixel gate로 제외됐고,349개 side점·높이78.996mm·strict RMS0.0497mm가 됐다. 기존 기준/정상 silhouette와 raw capture는 유지한다. 새 경계 처리 및 기존 원통/전체 저장 자세 관련12 PASS/12.96초. 전체 재확인은 아직 대기다. 자세한 출처·자체 적용 차이는 RESEARCH의 경계 처리 항목에 있다.
+
+v10 후보 전체314 PASS/48.87초. 공개 스크립트 stage_runtime.py와 archive_evidence.py를 추가했다. staging은 새 build 아래 전수 source/asset hash와 같은 shared-lock realpath를 확인하며 별도 native freeze 검증을 거친다. archive는 명시된13.8 UUID 폴더만 받고 engine lock이 사용 중이면 거부하며 원본을 삭제하지 않는다. 기존13.6 restorer로 빈 폴더의 실제 바이트를 복원하는 시험도 PASS. 실제 기존7개 개발 FAIL의 archive와 새 설치 감사/동결/native staging을 준비 중이며 아직 새 물리 결과가 아니다.
+
+v10 preflight:5-package build14.0초·설치58모듈/94자산/actual child PASS. 기존7개 실제 FAIL 원본을 유지하면서 각각15.1/40.0/42.2/2.3/5.8/26.4/27.3MB 모델 제외archive를 만들었다. v9 실제27,333,891byte archive SHA256 f87567eb886c519858b519ebdd845aae0356b69807552392deaf4bec52e717eb를 새 빈 폴더에41파일 hash 복원 PASS. trial/BT/nav/source 원본hash와FAIL 보존. raw archives는 로컬에 남기고 선택 commit에는 source·요약·manifest·감사 근거를 남긴다. 원격 게시 검증이 아니다.
+
+v10 source336/assets94 SHA256 3e697f62ef429ae82cd4f82d54636898fea055a33f67576eb03d115ed21db832. 공개 stage_runtime.py로/home/jinho/ch13_reuse_13_8_build/live_source_cfbc43c12f9e4b6eaf74d0a043f021dd/repo를 만들고 native source/94자산·shared lock 동일 realpath를 검증했다. 다음 실제 개발 사례UUID8478db34-ae8b-465f-9337-96bcb615defe. source 변경과 archive/오프라인 복원만으로 성공을 주장하지 않는다.

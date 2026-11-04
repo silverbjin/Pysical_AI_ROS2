@@ -33,6 +33,8 @@ v5 개발 fixture의 robot 귀환 goal은(0,0,π)이고 수령 받침대는(-0.8
 
 v6의13.8 전용 carry_v1 camera는 base 좌표(0.4,0.25,0.35)m, yaw -20도·pitch down5도다. 기존 파지 카메라보다10cm 높은 고정 mount로, 손가락 가림을 줄이기 위한 설정이다. 기존13.6/13.7 기본 mount와 원통 fit의 엄격한 조건·capture300ms/TF100ms를 유지한다. 실제 extrinsics는 sensor_summary.json과 해당 capture의T_map_camera로 확인한다. 정지 영상8개 회귀와 실제 연속 미션 판정은 구분한다.
 
+위v6/v8 mount는 실제 접근 중간 자세를 포괄하지 못했다. v9 이후 camera는(0.4,0.4,0.29)m·yaw -31.607502도·pitch0으로 갱신했다. v10 후보는 RGB-D 경계의 이상 foreground 깊이만 선별하는 전처리를 추가한다. camera나 표면 임계값을 실행 중 바꾸지 않으며 원본 이미지/hash/capture·TF는 보존한다. 단순 전체 mask erosion은 채택하지 않았다. 세부 근거·실제 인수 상태는 PROGRESS/REPORT에 있다.
+
 최종 성공은 동일 engine의 실제 파지, 운반 중 접촉/높이 유지, 귀환 terminal와 실측 정착, 수령 받침대 지지 후 개방, 물체 분리와2sim초 안정 유지, 정상 회수까지 모두 필요하다. 제어는 원본 RGB-D fit과 live 접촉을 사용하고, target freejoint는 engine 종료 뒤 판정에만 사용한다. 논리적 planning attach는 물리 weld가 아니다.
 
 ## 3. 13.8.3 순차 기동과 미션
@@ -45,14 +47,20 @@ v6의13.8 전용 carry_v1 camera는 base 좌표(0.4,0.25,0.35)m, yaw -20도·pit
 python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py /tmp/ch13_13_8_before.json
 ```
 
-터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v5는 현재 개발 실행용 동결이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
+터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v10은 현재 개발 실행용 동결이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
 
 ```bash
 CASE=$(python3 -c 'import uuid; print(uuid.uuid4())')
-bash Ch13/scripts/reuse_13_8/env.sh -u Ch13/scripts/reuse_13_8/run_mission.py \
-  --repo-root "$ROOT" --evidence "$ROOT/Ch13/evidence/section_13_8_system/$CASE" \
-  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v6.json"
+STAGE_REPORT=/tmp/ch13_13_8_stage_$CASE.json
+bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/stage_runtime.py \
+  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v10.json" --output "$STAGE_REPORT"
+RUN_ROOT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["runtime_root"])' "$STAGE_REPORT")
+bash "$RUN_ROOT/Ch13/scripts/reuse_13_8/env.sh" -u "$RUN_ROOT/Ch13/scripts/reuse_13_8/run_mission.py" \
+  --repo-root "$RUN_ROOT" --evidence "$ROOT/Ch13/evidence/section_13_8_system/$CASE" \
+  --manifest "$RUN_ROOT/Ch13/dependencies/section_13_8_system_v10.json"
 ```
+
+staging은 engine이 꺼진 상태에서 소스 동결별로 한 번 준비한다. Windows mount의 source 접근 지연을 피하기 위해 새13.8 build 아래 같은 hash의 소스 사본을 만들고, 외부 자산과 engine lock은 기존 sibling 파일로 연결한다. 이 단계는 로봇 실행이나 새 권한을 만들지 않는다. 같은 동결로 반복 실행할 때는 RUN_ROOT를 재사용하고 CASE만 새 UUID로 바꾼다. source가 바뀌면 기존 동결을 수정하지 말고 새 동결/사본을 준비한다. runner가 runtime_stage.json으로 실행 사본의 근거를 보존한다. 현재 v10 명령은 개발 검증 대상이며 물리 인수 상태는 보고서를 확인한다.
 
 터미널 B는 시스템 ROS CLI 환경이다. engine/센서가 준비된 뒤 /start_mission을 보내야 하며 현재 시작 대기 예산은 준비 후30wall초다. 개발 자동 시작은 runner에 --auto-start를 지정하며 같은 토픽 수신을 통과한다.
 
@@ -146,3 +154,19 @@ python3 Ch13/scripts/reuse_13_8/stage_component_sources.py
 ```
 
 학생 기본 mission마다 이 전체 회귀를 반복하지 않는다. engine 중 build/pytest/대용량 사후 분석을 병행하지 않는다.
+
+## 8. 원본 보존·압축·복원
+
+engine이 정상 회수되고 공유 lock이 free일 때 명시한13.8 UUID 사례만 압축한다. 모델/정책 가중치·생성 URDF/SRDF·embedded description을 제외하고 raw 원본은 그대로 둔다. 같은 raw.tar.gz/raw_manifest.json이 있으면 덮어쓰지 않는다. 과거 FAIL을 압축/복원했다고 PASS로 바꾸지 않는다.
+
+```bash
+bash "$ROOT/Ch13/scripts/reuse_13_8/env.sh" "$ROOT/Ch13/scripts/reuse_13_8/archive_evidence.py" \
+  --repo-root "$ROOT" "$ROOT/Ch13/evidence/section_13_8_system/$CASE"
+RESTORE=/tmp/ch13_13_8_restore_$CASE
+mkdir -p "$RESTORE"
+cp --update=none "$ROOT/Ch13/evidence/section_13_8_system/$CASE/raw.tar.gz" "$RESTORE/"
+cp --update=none "$ROOT/Ch13/evidence/section_13_8_system/$CASE/raw_manifest.json" "$RESTORE/"
+bash "$ROOT/Ch13/scripts/reuse_13_8/env.sh" "$ROOT/Ch13/scripts/reuse_13_6/restore_evidence.py" "$RESTORE"
+```
+
+복원은 archive와 개별 파일hash를 확인하며 기존 파일의 내용이 다르면 거부한다. 모델·실행 의존성 설치나 원격 다운로드 검증을 대신하지 않는다. 과거 원본 verdict를 보존하고 재판정이 필요하면 해당 사례의 source/config를 사용해 새 출력 파일로 남긴다. 복원한 과거 capture·session은 live 명령의 근거가 아니다.

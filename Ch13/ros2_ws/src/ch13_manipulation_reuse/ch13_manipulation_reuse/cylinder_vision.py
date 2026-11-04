@@ -2,10 +2,24 @@
 import math
 import numpy as np
 from scipy.optimize import least_squares
-from scipy.ndimage import label
+from scipy.ndimage import label,binary_erosion
 
 
-def fit_cylinder(rgb,depth,calibration,transform,radius,height):
+def _foreground_boundary(valid,depth):
+    # Preserve true silhouette pixels: only reject foreground depth bleeding
+    # into a red boundary, compared with the same frame's red neighbours.
+    interior=binary_erosion(valid,structure=np.ones((3,3),dtype=bool),iterations=1)
+    ys,xs=np.nonzero(valid&~interior)
+    padded=np.pad(np.where(valid,depth,np.inf),1,constant_values=np.inf)
+    windows=np.stack([padded[ys+dy+1,xs+dx+1] for dy in (-1,0,1) for dx in (-1,0,1)],axis=1)
+    counts=np.isfinite(windows).sum(axis=1);windows.sort(axis=1);rows=np.arange(len(ys))
+    median=(windows[rows,(counts-1)//2]+windows[rows,counts//2])/2
+    bad=depth[ys,xs]<median-.005
+    result=valid.copy();result[ys[bad],xs[bad]]=False
+    return result,int(bad.sum())
+
+
+def fit_cylinder(rgb,depth,calibration,transform,radius,height,*,filter_boundary=False):
     if np.shape(rgb)!=(240,320,3) or np.shape(depth)!=(240,320):
         raise ValueError('cylinder calibrated320x240 RGB-D required')
     k=np.asarray(calibration,dtype=float);T=np.asarray(transform,dtype=float)
@@ -16,8 +30,10 @@ def fit_cylinder(rgb,depth,calibration,transform,radius,height):
         raise ValueError('cylinder invalid calibration/shape prior')
     color=rgb.astype(float)
     mask=(color[:,:,0]>80)&(color[:,:,0]>1.8*color[:,:,1])&(color[:,:,0]>1.8*color[:,:,2])
-    labels,count=label(mask&np.isfinite(depth)&(depth>.01))
-    sizes=np.bincount(labels.ravel());candidates=[];errors=[];components=[]
+    valid=mask&np.isfinite(depth)&(depth>.01)
+    if filter_boundary:valid,boundary_removed=_foreground_boundary(valid,depth)
+    labels,count=label(valid)
+    sizes=np.bincount(labels.ravel());candidates=[];errors=[];merged_errors=[];components=[]
     if count>256:raise ValueError('cylinder excessive red components')
     for component in range(1,count+1):
         if sizes[component]<20:continue
@@ -41,15 +57,16 @@ def fit_cylinder(rgb,depth,calibration,transform,radius,height):
             xs=np.concatenate((first[0],second[0]));ys=np.concatenate((first[1],second[1]))
             try:
                 candidate=_fit_component(depth,k,T,radius,height,xs,ys);candidate['components_used']=2;candidates.append(candidate)
-            except ValueError:pass
+            except ValueError as error:merged_errors.append(str(error))
     unique=[]
     for candidate in sorted(candidates,key=lambda c:c['residual_m']):
         if not any(np.linalg.norm(np.array(candidate['center'])-other['center'])<=.002 for other in unique):unique.append(candidate)
     if len(unique)>1:raise ValueError('cylinder ambiguous matching components')
     if not candidates:
-        if errors:raise ValueError('cylinder no matching component: '+errors[0])
+        if errors:raise ValueError('cylinder no matching component: '+(merged_errors[0] if filter_boundary and merged_errors else errors[0]))
         raise ValueError('cylinder not observed')
     result=unique[0];result.update(red_components=count,valid_cylinder_components=1)
+    if filter_boundary:result.update(boundary_filter='foreground_depth_consistency_3x3_5mm',boundary_removed_pixels=boundary_removed)
     return result
 
 

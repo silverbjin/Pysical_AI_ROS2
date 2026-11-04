@@ -59,6 +59,11 @@ def main():
     health={};clock=[None];tilts=[];cpu=ProcessCPU();bag=[None];mission_ref=[None];start=[None]
     def configure(node,mission):
         (out/'source_manifest.json').write_bytes(manifest.read_bytes())
+        stage=root.parent/'source_stage.json'
+        if stage.exists():
+            staged=json.loads(stage.read_text())
+            assert staged['runtime_root']==str(root) and staged['source_manifest_sha256']==hashlib.sha256(manifest.read_bytes()).hexdigest(),'runtime staging provenance mismatch'
+            (out/'runtime_stage.json').write_bytes(stage.read_bytes())
         mission.log=node.create_publisher(String,N+'/validation/bt_log',1)
         mission_ref[0]=mission
         def trigger(_):
