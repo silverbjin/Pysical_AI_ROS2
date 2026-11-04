@@ -57,3 +57,9 @@ MoveIt2.12.4 planning scene 서비스·attached/world 객체 처리, Jazzy rclpy
 ## v10 보존과 다음 실제 검증
 
 v10 소스336/외부94자산, manifest SHA256 3e697f62ef429ae82cd4f82d54636898fea055a33f67576eb03d115ed21db832. build14.0초·설치58모듈/child 감사·native 사본 전수 hash/공유 lock realpath 확인 PASS. 기존7개 실제 개발 FAIL을 모델 제외raw.tar.gz/raw_manifest.json으로 압축했고 원본은 남겼다. v9 실제 archive를 새 빈 폴더에41파일 hash 복원해 원래trial/BT/nav/source verdict 바이트와FAIL을 보존했다. 복원은 새 engine 실행이나 성공 증거가 아니다. 현재7개 개발 사례는 고정 설정10회 평가가 아니며 전체 연속 미션 인수는 아직 미완료다.
+
+## v10 연속 실행과 v11 분리 처리 후보
+
+v10 첫 UUID8478db34는 startup FUTURE_SOURCE:joints로 실패했다. 동일 소스 재시도614e67e5는 파지 물리 PASS(최소100.418mm/2.18sim초/접촉100%) 후2.54233m 운반·정착·LOWER·지지·실측 개방까지 도달했다. 팔 후퇴의 Cartesian fraction0으로 전체 FAIL이며 post-release hold는 부족했다. 귀환 오차0.052002m·190.64sim초/397.698wall초로 원고 위치/시간 목표도 미달이다. CPU43.101%·최대 tilt0.039292rad, bag close/12자식 정상 종료/worker join/lock free. 이 개발 fixture는 원고 Level1/2/3 인수가 아니다.
+
+팔에 붙인 장면 모델의 parent는reuse/tcp인데 분리 요청은reuse/link6이었다. 공식 MoveIt2.12.4 source 및 설치 API에서 outer success=true여도 attached가 남는 현상을 재현했다. ID-only 분리·GetPlanningScene 사후 검사·물리 release 후 새 RGB-D 중심 적용을 추가했다. 관련3개와 전체317개 회귀 PASS/48.11초. 별도domain136 설치 API probe PASS/정상 shutdown이지만 새 물리 성공은 아직 확인 전이다. 상세 판단과 자료 경로는 PROGRESS/RESEARCH에 남긴다.

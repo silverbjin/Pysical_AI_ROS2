@@ -8,12 +8,12 @@ from unique_identifier_msgs.msg import UUID
 from nav2_msgs.action import NavigateToPose
 from rclpy.action import ActionClient
 from ch13_navigation_reuse.command_gateway import set_stamp
-from ch13_manipulation_reuse.planning import pose,object_cylinder
-from moveit_msgs.msg import AttachedCollisionObject,CollisionObject
-from moveit_msgs.srv import ApplyPlanningScene
+from ch13_manipulation_reuse.planning import pose
+from ch13_mission_orchestration.session import admit_observation
 from .scene_contact import receiving_contact
 from .transport import fresh_return_capture
 from .fixture import RECEIVING_XY
+from .placed_scene import detach_released_cylinder
 
 
 def make_navigation_goal(target,stamp_ns):
@@ -87,14 +87,23 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         start=snapshot()['clock_ns']
         assert until(lambda:snapshot()['clock_ns']-start>=500_000_000,4.)
         assert status().get('target_support_N',0.)>.01,'receiving support lost'
-        control['set_phase']('RELEASE');grip(.03)
+        control['set_phase']('RELEASE');opened=grip(.03)
+        assert opened.reached_goal and not opened.stalled,'actual measured gripper opening required'
+        def physically_released():
+            forces=status().get('gripper_target_contacts',{})
+            return all(type(forces.get(f)) in (int,float) and math.isfinite(forces[f]) and 0<=forces[f]<.005 for f in ('link7','link8'))
+        assert until(physically_released,3.),'physical release contact persists or unavailable'
+        released_ns=snapshot()['clock_ns']
+        def released_observation_ready():
+            current=snapshot();sample=current['observation']
+            try:admit_observation(sample,current['clock_ns'],time.monotonic())
+            except ValueError:return False
+            return sample['capture_ns']>released_ns
+        assert until(released_observation_ready,3.),'fresh original observation after release missing'
         # Remove the attached collision model only after actual release.
-        change=ApplyPlanningScene.Request();change.scene.is_diff=True;change.scene.robot_state.is_diff=True
-        attached=AttachedCollisionObject();attached.link_name='reuse/link6';attached.object.id='pick_target';attached.object.operation=CollisionObject.REMOVE
-        change.scene.robot_state.attached_collision_objects=[attached]
-        change.scene.world.collision_objects=[object_cylinder('pick_target',receiving)]
-        assert planner.call('/apply_planning_scene',change).success
-        planner.revision+=1
+        current=snapshot()
+        detach_released_cylinder(planner,current['observation'],clock_ns=current['clock_ns'],
+            wall=time.monotonic(),released_ns=released_ns)
         receiving_contact(planner,False)
         control['set_phase']('RETREAT')
         tcp=planner.tcp();back=tcp[:3,3]+[.08,0.,0.]

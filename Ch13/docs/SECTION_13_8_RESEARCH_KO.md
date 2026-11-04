@@ -37,3 +37,9 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 실제 venv SciPy1.18.1을 확인하고 [공식 v1.18.1 scipy/ndimage/_morphology.py의 binary_erosion](https://github.com/scipy/scipy/blob/v1.18.1/scipy/ndimage/_morphology.py)을 읽었다. bool 입력·명시적 structuring element·iterations=1로 경계를 식별한다. 경계 전체를 지우는 실험은 원거리 표면 폭 부족으로 회귀2개가 실패해 채택하지 않았다. 최종 후보는 경계의3x3 red/valid-depth 이웃 중간값보다5mm 이상 앞서는 픽셀만 제외하고 정상 silhouette는 보존한다.
 
 [공식 PCL StatisticalOutlierRemoval 설명](https://pointclouds.org/documentation/tutorials/statistical_outlier.html)의 모델 추정 전 이웃 기반 sparse outlier 선별 패턴을 추가로 참고했다. PCL의k-NN/평균·표준편차 알고리즘을 그대로 포팅한 것은 아니다. 정렬된 RGB-D의 경계에서만 같은 frame 이웃 depth를 비교하는 프로젝트 전용 전처리이며 새 PCL 의존성을 추가하지 않는다. 원통 높이75%·RMS1.5mm·q90 2mm 기준은 유지한다. raw RGB-D/hash/촬영 시각/TF를 보존하며 기본13.6/13.7은 filter_boundary=False다. 실제 v9 거부 frame에서 경계1pixel 제외 후 기존 component 최소 크기와 strict fit을 적용해349 surface points·RMS0.0497mm·높이78.996mm를 확인했다. 전체 회귀와 실제 동작 검증은 별도다.
+
+## 실제 release 후 MoveIt 모델 분리
+
+[MoveIt2.12.4 planning_scene.cpp의 processAttachedCollisionObjectMsg REMOVE 분기](https://github.com/moveit/moveit2/blob/2.12.4/moveit_core/planning_scene/src/planning_scene.cpp)는 특정 ID와 비어 있지 않은 link_name이 실제 parent와 다르면 거부한다. 공식 구현이 허용하는 ID-only REMOVE를 채택한다. 기존 continuation은reuse/tcp ADD 뒤reuse/link6 REMOVE를 보내고 outer ApplyPlanningScene.success만 확인했다. 실제614e 로그와 별도 설치 API probe에서 이 잘못된 요청의 outer true/attached 잔류를 재현했다.
+
+보완은 명시적 소유ID만 제거한 뒤 GetPlanningScene의 WORLD_OBJECT_GEOMETRY/NAMES·ROBOT_STATE_ATTACHED_OBJECTS를 조회해 attached 부재·world 단일 형상·새 관측 중심 일치를 확인한다. 물리 개방과 양 finger 접촉 소실을 먼저 확인하고 release 이후 촬영된 새 원본 RGB-D만 사용한다. 기록된 관측으로 domain136 scene service만 시험했으며 shutdown ACK/exit0까지 확인했다. 실제 액추에이터나 engine은 실행하지 않았다. 공식 장면 API 및 이 probe는 물리 release/retreat 성공 증거가 아니다.

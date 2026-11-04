@@ -162,3 +162,17 @@ v10 후보 전체314 PASS/48.87초. 공개 스크립트 stage_runtime.py와 arch
 v10 preflight:5-package build14.0초·설치58모듈/94자산/actual child PASS. 기존7개 실제 FAIL 원본을 유지하면서 각각15.1/40.0/42.2/2.3/5.8/26.4/27.3MB 모델 제외archive를 만들었다. v9 실제27,333,891byte archive SHA256 f87567eb886c519858b519ebdd845aae0356b69807552392deaf4bec52e717eb를 새 빈 폴더에41파일 hash 복원 PASS. trial/BT/nav/source 원본hash와FAIL 보존. raw archives는 로컬에 남기고 선택 commit에는 source·요약·manifest·감사 근거를 남긴다. 원격 게시 검증이 아니다.
 
 v10 source336/assets94 SHA256 3e697f62ef429ae82cd4f82d54636898fea055a33f67576eb03d115ed21db832. 공개 stage_runtime.py로/home/jinho/ch13_reuse_13_8_build/live_source_cfbc43c12f9e4b6eaf74d0a043f021dd/repo를 만들고 native source/94자산·shared lock 동일 realpath를 검증했다. 다음 실제 개발 사례UUID8478db34-ae8b-465f-9337-96bcb615defe. source 변경과 archive/오프라인 복원만으로 성공을 주장하지 않는다.
+
+### v10 실제 두 사례와 내려놓기 후 장면 경계 수정
+
+8478db34-ae8b-465f-9337-96bcb615defe는 startup FUTURE_SOURCE:joints로 FAIL. 새 검출기를 시험할 파지에 도달하지 않았다. trial11.318sim초/25.118wall초·CPU34.804%·tilt0.01506rad·bag close. 동일 동결의 별도 UUID614e67e5-5aac-4ec0-ad89-1664021c2d95 재시도도 전체 FAIL이며 두 실패를 모두 보존한다. 첫 사례를 성공률 분모에서 제거하지 않는다.
+
+614e 사례는 pick 최소100.418mm 상승/2.18sim초 유지/양 finger 접촉100%/slip0.02731mm PASS. 같은 engine에서2.54233m 운반, 정상 yaw 귀환·실제 정착·새 RGB-D로 PLACE 진입, LOWER·지지 접촉·실측 gripper0.0300755m 개방/접촉0까지 실행했다. 최종 원통(-0.798639,-0.017372,0.539891)m·support0.196212N. 그러나 RETREAT Cartesian fraction0으로 중단돼2sim초 post-release hold가 부족했고 전체 FAIL이다. base 귀환 오차0.052002m는 원고3cm 목표를 넘으며 유지한다. trial190.64sim초/397.697939wall초·CPU43.101%·tilt0.039292rad·bag close,12 child clean exit/worker join/공유 lock free. 물리 transport의 placed_hold만 false이나 이는 전체 성공 증거가 아니다.
+
+정확한 원인은 attached parent 불일치였다. ADD는reuse/tcp인데 REMOVE는reuse/link6을 지정했다. launch.log의 MoveIt 오류와 공식2.12.4 planning_scene.cpp REMOVE 분기를 확인했다. 바깥 ApplyPlanningScene.success만 true여도 안쪽 REMOVE는 거부될 수 있다. 이후 MANIPULATION_GRAPH_LOST는 실패 회수 도중의 후속 현상이다.
+
+Ruling: ID-only REMOVE와 GetPlanningScene 사후 조건을 적용한다 — 소유pick_target가 attached에서 사라지고 world에 정확히 하나 존재하는지 검증하며, 물리 release 후 새 원본 RGB-D 중심으로 world 형상을 만든다 — 이전 명령상 receiver 중심과 실제 배치 중심의 차이를 무시하면 retreat 충돌 검사가 잘못될 수 있다. 물리 목적지·full Cartesian fraction·관측 수명·접촉 기준은 완화하지 않는다.
+
+새 placed_scene API 부재 RED 후 관련3 PASS. 별도domain136의 실제 설치 MoveIt API probe도 PASS: 잘못된 parent는 outer success=true/still attached=true 재현, ID-only 제거·관측 world 중심 readback·revision1 확인, shutdown ACK/exit0. 원래614e의191.942sim초 관측과 기록된 수명으로 검사했으며 live 권한이나 새 물리 실행이 아니다. 근거 offline_detach_api_v11.json. 연속 동작은 새 소스 동결 후 별도로 검증한다.
+
+새 후보317 PASS/48.11초, build14.3초·설치59모듈/94자산/venv child 감사 PASS. v11 source338/assets94 SHA256 db5586b32b1e4947d0dc3026cc2f35b2e8c1fac7bc39c6052ab71cb1f9f92389. 공개 staging으로 native 사본과 공유 lock realpath 확인. v10 두 사례 원본·source archive를 유지하고 각각4,433,937/46,324,913byte raw archive 생성. 다음 실제 UUID 408dabfc-fca3-44e9-8087-fafb3984dd14. 새 물리 인수는 아직 대기.
