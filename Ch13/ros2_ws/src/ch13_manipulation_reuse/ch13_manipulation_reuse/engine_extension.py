@@ -3,6 +3,7 @@ import json
 import math
 import time
 import uuid
+import os
 from std_msgs.msg import String
 from ch13_navigation_reuse.command_gateway import N
 from ch13_navigation_reuse.wire import decode
@@ -15,6 +16,9 @@ class EngineExtension:
     def __init__(self, node):
         self.node = node
         self.lease = Lease(str(uuid.uuid4()))
+        if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+            from ch13_system_validation.transport import TransportLease
+            self.lease=TransportLease(self.lease.session)
         self.goals = {}
         self.navigation = None
         self.navigation_receipt = None
@@ -102,15 +106,23 @@ class EngineExtension:
                         and self.navigation.get('phase')=='IDLE'
                         and self.navigation.get('output_held') and not self.navigation.get('fault'))
             pose = [float(q[0]),float(q[1]),state['yaw']]
+            if hasattr(self.lease,'motion_inputs'):
+                contacts=all(self.pick_monitor.forces.get(f,0.)>.005 for f in ('link7','link8'))
+                self.lease.motion_inputs(armed=decision.mode=='ARMED',
+                    moving_supported=tilt<=.20 and math.hypot(v[0],v[1])<=.30 and abs(v[5])<=.35,
+                    contacts=contacts,busy=self.actions.busy,
+                    support=getattr(self.pick_monitor,'support_N',0.)>.01)
             phase = self.lease.evaluate(clock,now,settled=self.node.ready_now(),supported=supported,
                                         goal_status=self.goals,actual_pose=pose,navigation_idle=nav_idle)
             if phase=='READY' and self.anchor is None:
                 self.anchor = pose
-            if self.anchor is not None and phase in ('READY','EXECUTING'):
+            if self.anchor is not None and phase in ('READY','EXECUTING') and getattr(self.lease,'stage','PICK')=='PICK':
                 drift = math.hypot(pose[0]-self.anchor[0],pose[1]-self.anchor[1])
                 yaw_drift = abs(math.atan2(math.sin(pose[2]-self.anchor[2]),math.cos(pose[2]-self.anchor[2])))
                 if drift>.03 or yaw_drift>.10:
                     phase = self.lease.trip('MANIPULATION_BASE_DRIFT')
+            if getattr(self.lease,'stage','PICK')!='PICK' and self.lease.fault:
+                self.node.guard.trip('TRANSPORT:'+self.lease.fault)
             self.status = dict(session=self.lease.session,phase=phase,fault=self.lease.fault,
                                goal_id=self.lease.goal_id,stamp_ns=clock,decision_wall=now,
                                sequence=self.lease.sequence,owners=dict(self.lease.owners),
@@ -122,6 +134,10 @@ class EngineExtension:
             if hasattr(self,'pick_monitor'):
                 self.status['gripper_target_contacts']=dict(self.pick_monitor.forces)
                 self.status['gripper_force_hold']=self.actions.gripper_hold.status()
+                self.status['target_support_N']=getattr(self.pick_monitor,'support_N',0.)
+            if hasattr(self.lease,'stage'):
+                self.status['transport_stage']=self.lease.stage
+                self.status['transport_goal_id']=self.lease.transport_goal
             if phase != self.last_phase:
                 self.events.append(dict(self.status))
                 self.last_phase = phase

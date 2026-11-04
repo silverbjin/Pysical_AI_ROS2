@@ -7,7 +7,8 @@ STEPS=('navigate','find','pick','finish','recover','return','charge')
 
 
 class TaskPort:
-    def __init__(self):
+    def __init__(self,steps=STEPS):
+        self.steps=tuple(steps)
         self.lock=threading.RLock()
         self.data=dict(requested=[],completed={},cancel_reason='',error='',closed=False,exit_code=None,progress={},events=[])
 
@@ -15,7 +16,7 @@ class TaskPort:
         with self.lock:self.data['events'].append(dict(event=event,wall=time.monotonic(),**copy.deepcopy(values)))
 
     def submit(self,name):
-        if name not in STEPS:raise ValueError('unknown task: '+name)
+        if name not in self.steps:raise ValueError('unknown task: '+name)
         with self.lock:
             if self.data['closed'] or (self.data['cancel_reason'] and name!='charge'):return
             if name not in self.data['requested']:

@@ -87,7 +87,8 @@ class Session:
             def destroy(inner):pass  # actual destruction follows result/cancel drain
         try:
             callback(action_client_factory=OwnedClient,**context)
-            if not self.cancel_requested():self.port.complete('pick',dict(session=self.session))
+            if not self.cancel_requested() and 'pick' not in self.port.snapshot()['completed']:
+                self.port.complete('pick',dict(session=self.session))
         except BaseException:
             if not self.cancel_requested():raise
             until=context['until'];status=context['status'];snapshot=context['snapshot']

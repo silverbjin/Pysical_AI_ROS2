@@ -104,23 +104,9 @@ class Lease:
 
     def evaluate(self, clock_ns, wall, *, settled, supported, goal_status,
                  actual_pose, navigation_idle):
-        if self.fault or self.phase == 'REVOKED':
+        if not self.fresh(clock_ns,wall):
             return self.phase
-        if self.last_clock is not None and (clock_ns < self.last_clock or wall < self.last_wall):
-            return self.trip('CLOCK_ROLLBACK')
-        self.last_clock, self.last_wall = clock_ns, wall
-        if self.message is None:
-            return self.phase
-        if not 0 <= wall-self.mission_receipt <= self.timeout:
-            return self.trip('MISSION_EXPIRED')
-        if not -25_000_000 <= clock_ns-self.message['stamp_ns'] <= 300_000_000:
-            return self.trip('MISSION_STAMP_EXPIRED')
-        sample = self.observation
-        if (sample is None or not 0 <= wall-sample['capture_wall'] <= self.timeout
-                or not 0 <= wall-self.observation_receipt <= self.timeout
-                or not -25_000_000 <= clock_ns-sample['capture_ns'] <= 300_000_000):
-            return self.trip('OBSERVATION_EXPIRED')
-        if self.message['capture_ns'] > sample['capture_ns']:
+        if self.message['capture_ns'] > self.observation['capture_ns']:
             return self.phase
         if any(g != self.goal_id and s in (1,2,3) for g,s in goal_status.items()):
             return self.trip('NEW_NAV_GOAL')
@@ -135,3 +121,23 @@ class Lease:
         elif authorized and pose_ok and settled:
             self.phase = 'READY'
         return self.phase
+
+    def fresh(self, clock_ns, wall):
+        """Shared original receipt/capture watchdog; never changes authority."""
+        if self.fault or self.phase == 'REVOKED':
+            return False
+        if self.last_clock is not None and (clock_ns < self.last_clock or wall < self.last_wall):
+            self.trip('CLOCK_ROLLBACK');return False
+        self.last_clock, self.last_wall = clock_ns, wall
+        if self.message is None:
+            return False
+        if not 0 <= wall-self.mission_receipt <= self.timeout:
+            self.trip('MISSION_EXPIRED');return False
+        if not -25_000_000 <= clock_ns-self.message['stamp_ns'] <= 300_000_000:
+            self.trip('MISSION_STAMP_EXPIRED');return False
+        sample = self.observation
+        if (sample is None or not 0 <= wall-sample['capture_wall'] <= self.timeout
+                or not 0 <= wall-self.observation_receipt <= self.timeout
+                or not -25_000_000 <= clock_ns-sample['capture_ns'] <= 300_000_000):
+            self.trip('OBSERVATION_EXPIRED');return False
+        return True

@@ -16,7 +16,7 @@ from ch13_manipulation_reuse.pick_acceptance import assess_pick,assess_held_canc
 from ch13_manipulation_reuse.pick_feedback import lift_correction
 
 
-def work(*,node,until,snapshot,status,control,out,case='pick',action_client_factory=ActionClient):
+def work(*,node,until,snapshot,status,control,out,case='pick',action_client_factory=ActionClient,continuation=None):
     from run_arm_probe import work as warmup
     warmup(node=node,until=until,snapshot=snapshot,status=status,control=control,case='normal',out=out,action_client_factory=action_client_factory)
     planner=Planner(node,until,snapshot,action_client_factory=action_client_factory);gripper=action_client_factory(node,GripperCommand,GRIPPER)
@@ -125,6 +125,9 @@ def work(*,node,until,snapshot,status,control,out,case='pick',action_client_fact
         assert until(lambda:snapshot()['clock_ns']-start>=2.2e9 or status()['phase']=='FAULT',15.)
         assert status()['phase']!='FAULT',status()
         phase('POST_SETTLE');assert until(lambda:snapshot()['platform'].get('stationary_ready'),10.)
+        if continuation is not None:
+            continuation(node=node,until=until,snapshot=snapshot,status=status,control=control,
+                         planner=planner,grip=grip,baseline_z=baseline_z,records=records)
     finally:
         (out/'pick_mission.json').write_text(json.dumps(dict(stages=records,planning=planner.records),indent=2)+'\n')
         gripper.destroy();planner.close()

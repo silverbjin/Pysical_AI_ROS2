@@ -1,5 +1,5 @@
 """Opt-in educational world; upstream robot dynamics and files stay unchanged."""
-import math
+import math,os
 import numpy as np
 import mujoco
 from scipy.spatial.transform import Rotation
@@ -10,6 +10,8 @@ def layout(profile):
  if profile=='obstacle':walls.append(('obstacle',[1.2,0.,.4],[.14,.23,.4]))
  if profile=='blocked':walls.append(('barrier',[1.2,0.,.4],[.14,2.5,.4]))
  if profile=='vision':walls.extend([('target',[1.8,0.,.55],[.05,.05,.05]),('pedestal',[1.8,0.,.25],[.035,.035,.25])])
+ if profile=='vision' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+  walls.append(('receiving_support',[-.55,0.,.25],[.045,.045,.25]))
  return walls
 
 def make_model(source,profile,spec_hook=None):

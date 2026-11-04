@@ -19,10 +19,15 @@ class PickMonitor:
 
     def step(self,p,lease,stamp_ns):
         phase='WAITING' if lease.message is None else lease.message.get('task_phase','WAITING')
-        live=lease.phase in ('READY','EXECUTING')
+        live=lease.phase in ('READY','EXECUTING','CARRY_ARMED','CARRY')
         forces={'link7':0.,'link8':0.}
+        self.support_N=0.
         for index,contact in enumerate(p.mjData.contact):
             a,b=map(int,contact.geom);ba,bb=int(self.model.geom_bodyid[a]),int(self.model.geom_bodyid[b])
+            if ((ba==self.target and self.model.geom(b).name=='reuse_receiving_support')
+                or (bb==self.target and self.model.geom(a).name=='reuse_receiving_support')):
+                force=np.zeros(6);mujoco.mj_contactForce(self.model,p.mjData,index,force)
+                self.support_N+=max(0.,float(force[0]))
             if self.model.geom_group[a]!=5 and self.model.geom_group[b]!=5:continue
             if ba in self.robot_bodies:robot,other=ba,bb
             elif bb in self.robot_bodies:robot,other=bb,ba
@@ -49,6 +54,7 @@ class PickMonitor:
                               relative_tcp=(rotation.T@(target-tcp)).tolist(),target_contact_N=forces,
                               gripper_qpos=p.mjData.qpos[25:27].tolist(),gripper_effort_N=float(p.mjData.actuator_force[18]),
                               internal_gripper_reference=float(p.desired_joint_pos_gripper),
+                              target_support_N=self.support_N,
                               source='actual_engine_freejoint_and_contact_for_evaluation_only'))
 
     def summary(self):

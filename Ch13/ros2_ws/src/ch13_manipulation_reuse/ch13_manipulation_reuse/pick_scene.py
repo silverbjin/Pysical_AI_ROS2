@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation
 from ch13_navigation_reuse.scene import make_model,OPTICAL_R
 
 TARGET='reuse_pick_target'
-GRASP_PHASES={'GRASP_APPROACH','CLOSE','LIFT','HOLD','POST_SETTLE'}
+GRASP_PHASES={'GRASP_APPROACH','CLOSE','LIFT','HOLD','POST_SETTLE','CARRY_ARMED','CARRY','PLACE_WAIT','LOWER','RELEASE','RETREAT'}
 
 
 def add_target(spec):

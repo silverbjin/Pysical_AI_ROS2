@@ -20,13 +20,14 @@ from ch13_mission_orchestration.session import Session
 from ch13_mission_orchestration.tools import lift_interrupt
 
 
-def main():
+def main(argv=None,*,mission_factory=Mission,session_factory=Session,port_factory=TaskPort,
+         pick_continuation=None,configure=None):
     ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True)
     ap.add_argument('--case',choices=['normal','cancel','low_battery','held_cancel'],default='normal')
-    args=ap.parse_args();root=Path(args.repo_root);out=Path(args.evidence)
+    args=ap.parse_args(argv);root=Path(args.repo_root);out=Path(args.evidence)
     if out.exists():raise ValueError('new evidence required')
     out.mkdir(parents=True)
-    port=TaskPort();mission=Mission(port);session=Session(port);worker_result={}
+    port=port_factory();mission=mission_factory(port);session=session_factory(port);worker_result={}
     sys.path[:0]=[str(root/'Ch13/scripts/reuse_13_5'),str(root/'Ch13/scripts/reuse_13_6')]
     def worker():
         try:
@@ -34,7 +35,9 @@ def main():
             from run_handoff import handoff
             from run_pick import work
             def manipulate(**context):
-                def pick(**kw):session.pick_work(lambda **items:work(**items,out=out),evidence=out,**kw)
+                def pick(**kw):
+                    continuation=None if pick_continuation is None else lambda **items:pick_continuation(session=session,call=context['call'],**items)
+                    session.pick_work(lambda **items:work(**items,out=out,continuation=continuation),evidence=out,**kw)
                 return handoff(**context,case='bt',work=pick)
             code=navigate(['--repo-root',str(root),'--evidence',str(out),'--case','vision','--vision-hz','15'],
                 planning=True,pick_scene=True,handoff=manipulate,orchestration=session)
@@ -50,6 +53,7 @@ def main():
     executor=SingleThreadedExecutor(context=context);executor.add_node(node)
     tree=py_trees_ros.trees.BehaviourTree(mission.root,unicode_tree_debug=False)
     tree.setup(node=node,timeout=5.)
+    if configure is not None:configure(node,mission)
     # tick() is driven here so terminal latching cannot silently restart the root.
     held_execution_start=None
     def tick():

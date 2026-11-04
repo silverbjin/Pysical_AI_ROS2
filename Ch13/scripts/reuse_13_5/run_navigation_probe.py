@@ -25,7 +25,7 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
  S={'result':'FAIL','case':args.case,'events':[]};node=None;launch=None;log=None;goal_handle=None;result_future=None;clock_ns=0;state=None;gateway={};platform={};boundary={};poses=[];plans=[];clients={};observation=None;joints=None;grid=None;vision_status={};arm_model=None;vision_record=None;paused_pid=None
  try:
   (out/'boot_id.txt').write_text(Path('/proc/sys/kernel/random/boot_id').read_text());log=(out/'launch.log').open('w')
-  launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch','ch13_navigation_reuse','navigation.launch.py','repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:='+scene,'vision_inference_hz:='+str(args.vision_hz),'manipulation:='+('true' if handoff is not None else 'false'),'planning:='+('true' if planning else 'false'),'pick_scene:='+('true' if pick_scene else 'false'),'max_sim_s:='+('360' if planning else '120')],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+  launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch','ch13_navigation_reuse','navigation.launch.py','repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:='+scene,'vision_inference_hz:='+str(args.vision_hz),'manipulation:='+('true' if handoff is not None else 'false'),'planning:='+('true' if planning else 'false'),'pick_scene:='+('true' if pick_scene else 'false'),'max_sim_s:='+str(getattr(orchestration,'engine_budget_sim_s',360 if planning else 120))],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
   rclpy.init();node=Node('ch13_reuse_navigation_probe');action=ActionClient(node,NavigateToPose,'/navigate_to_pose')
   def on_clock(m):
    nonlocal clock_ns

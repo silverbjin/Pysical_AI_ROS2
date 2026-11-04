@@ -18,6 +18,7 @@ def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', w
     revoked = False
     enabled = True
     task_phase = 'WAITING'
+    transport = {}
     def on_status(message):
         nonlocal status
         status = json.loads(message.data)
@@ -42,6 +43,7 @@ def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', w
                            goal_id=goal_id,terminal=4,target=target,sequence=sequence,
                            stamp_ns=current['clock_ns'],capture_ns=sample['capture_ns'],
                            state='REVOKE' if revoked else 'OFFER',task_phase=task_phase)
+            message.update(transport)
             sent=time.monotonic();publisher.publish(String(data=json.dumps(message)))
             beats.append(dict(sequence=sequence,stamp_ns=message['stamp_ns'],capture_ns=message['capture_ns'],
                               send_wall=sent,publish_return_wall=time.monotonic()))
@@ -73,7 +75,9 @@ def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', w
                     task_phase=value
                     assert until(lambda:status.get('task_phase')==value or status.get('phase')=='FAULT',2.)
                     assert status.get('phase')!='FAULT',status
-                work(node=node,until=until,snapshot=snapshot,status=lambda:status,control={'disable_heartbeat':disable,'set_phase':set_phase})
+                def reserve(goal,target):
+                    transport.update(transport_goal_id=goal,transport_target=list(target))
+                work(node=node,until=until,snapshot=snapshot,status=lambda:status,control={'disable_heartbeat':disable,'set_phase':set_phase,'reserve_transport':reserve})
             if status.get('phase')!='FAULT':
                 revoked = True
                 assert until(lambda:status.get('phase')=='REVOKED',2.),'explicit handoff revoke failed'
