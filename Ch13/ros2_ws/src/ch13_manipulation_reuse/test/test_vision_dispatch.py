@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 from types import SimpleNamespace
 import pytest
 from ch13_navigation_reuse.vision_approach import VisionObserver
@@ -9,6 +10,7 @@ from ch13_navigation_reuse.vision_geometry import FrameCache
 def test_complete_original_frame_can_dispatch_without_next_timer(latest,expected):
     observer=VisionObserver.__new__(VisionObserver)
     observer.latest_camera=latest;observer.cache=FrameCache();observer.receipt_rows=[]
+    observer.native_counts=Counter();observer.packet_counts=Counter()
     calls=[];observer.tick=lambda:calls.append(True)
     info=dict(receipt_wall=10.,publisher_gid=b'camera',native_receipt_wall=10.,canonical_sha256='x',
               canonical_bytes=1,relay_gid='relay',source_timestamp=1)

@@ -24,6 +24,7 @@ def matrix(t):
 class VisionObserver(Node):
  def __init__(self,inference_hz=10.,target_shape='fixture',latest_camera=False):
   self.target_shape=target_shape;self.last_rejected=None;self.latest_camera=latest_camera
+  self.native_counts=Counter();self.packet_counts=Counter()
   super().__init__('ch13_reuse_vision_observer');self.cache=FrameCache();self.camera_link=CameraLink();self.receipt_rows=[];self.clock_ns=0;self.clock_wall=None;self.fault='';self.relay={};self.tf_owners={};self.transforms={};self.map_odom=None;self.last_health=0;self.health_rows=[];self.last_processed=0;self.last_processed_wall=-1e9;self.inference_hz=inference_hz;self.rows=[];self.last_accepted=None;self.rejected=Counter()
   self.observation=self.create_publisher(String,N+'/vision/observation',1);self.point=self.create_publisher(PointStamped,N+'/observed_target',1);self.health=self.create_publisher(String,N+'/vision/health',1);self.status=self.create_publisher(String,N+'/vision/status',1)
   camera_qos=QoSProfile(depth=1 if latest_camera else 2,reliability=ReliabilityPolicy.RELIABLE)
@@ -36,6 +37,7 @@ class VisionObserver(Node):
   else:self.create_subscription(String,N+'/ingress/navigation',lambda m:self.packet(m,'navigation'),16)
   self.create_timer(.02,self.tick,clock=TimerClock(clock_type=ClockType.STEADY_TIME))
  def native(self,kind,message):
+  self.native_counts[kind]+=1
   try:
    matched=self.camera_link.native(kind,message)
    if matched:self.camera_frame(*matched)
@@ -51,6 +53,7 @@ class VisionObserver(Node):
    # tick retains the original inference cap, capture/receipt and TF checks.
    self.tick()
  def packet(self,packet,channel):
+  self.packet_counts[channel]+=1
   try:
    if channel=='camera':
     matched=self.camera_link.receipt(packet.data)
@@ -122,6 +125,13 @@ class VisionObserver(Node):
       self.rejected[str(exc)]+=1
       if str(exc) in ('red fixture not observed','cylinder not observed'):self.fault='TARGET_NOT_OBSERVED'
   self.status.publish(String(data=json.dumps({'fault':self.fault or self.cache.fault,'last_capture_ns':self.last_processed,'accepted':len(self.rows),'rejected':dict(self.rejected)})))
+ def diagnostics(self):
+  return dict(native_callbacks=dict(self.native_counts),ingress_callbacks=dict(self.packet_counts),
+   matched_camera_samples=len(self.receipt_rows),pending_native_by_kind=dict(Counter(k[0] for k in self.camera_link.payloads)),
+   pending_receipts_by_kind=dict(Counter(k[0] for k in self.camera_link.receipts)),
+   camera_owners=dict(self.camera_link.owners),relay=self.camera_link.relay,
+   cached_frames=len(self.cache.frames),tf_samples=len(self.transforms),clock_ns=self.clock_ns,
+   last_processed_ns=self.last_processed,last_health_ns=self.last_health)
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--report',required=True);ap.add_argument('--inference-hz',type=float,choices=[10.,15.],default=10.);ap.add_argument('--target-shape',choices=['fixture','cylinder'],default='fixture');ap.add_argument('--latest-camera',choices=['true','false'],default='false');args=ap.parse_args();out=Path(args.report).parent;rclpy.init(args=[]);node=VisionObserver(args.inference_hz,args.target_shape,args.latest_camera=='true')
  try:rclpy.spin(node)
@@ -131,5 +141,5 @@ def main():
    rgb,depth,meta=node.last_rejected;write_rgb(out/'last_rejected_rgb.png',rgb);np.save(out/'last_rejected_depth.npy',depth);(out/'last_rejected_observation.json').write_text(json.dumps(meta,indent=2)+'\n')
   if node.last_accepted is not None:
    rgb,depth,meta=node.last_accepted;write_rgb(out/'last_accepted_rgb.png',rgb);np.save(out/'last_accepted_depth.npy',depth);(out/'last_accepted_observation.json').write_text(json.dumps(meta,indent=2)+'\n')
-  (out/'camera_receipts.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.receipt_rows));(out/'camera_health.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.health_rows));(out/'vision_observations.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.rows));(out/'vision_summary.json').write_text(json.dumps({'inference_cap_wall_hz':node.inference_hz,'accepted':len(node.rows),'fault':node.fault or node.cache.fault,'rejected':dict(node.rejected)},indent=2)+'\n');node.destroy_node();rclpy.try_shutdown()
+  (out/'camera_receipts.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.receipt_rows));(out/'camera_health.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.health_rows));(out/'vision_observations.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in node.rows));(out/'vision_summary.json').write_text(json.dumps({'inference_cap_wall_hz':node.inference_hz,'accepted':len(node.rows),'fault':node.fault or node.cache.fault,'rejected':dict(node.rejected),'diagnostics':node.diagnostics()},indent=2)+'\n');node.destroy_node();rclpy.try_shutdown()
 if __name__=='__main__':main()
