@@ -1,6 +1,10 @@
 # 13.8 개발 및 검증 보고서
 
-2026-11-04 KST. 단일 작업자. **개발 진행 중이며 전체 원고 인수가 완료된 상태가 아니다.**
+2026-11-05 KST 갱신. 단일 작업자. **개발 진행 중이며 전체 원고 인수가 완료된 상태가 아니다.**
+
+현재 v15 개발 fixture에서 같은 engine의 파지→2.548m 운반→내려놓기→팔 후퇴→유지→정상 종료를 실제 1회 통과했다. 파지/운반 물리 판정 PASS, BT mission SUCCESS, 소유 goal14개 SUCCEEDED, 자식12개와 worker·상태 기록 스레드 정상 회수, bag close/공유 lock free다. 상태 파일에 Windows 읽기 잠금을3.115초 주입했고 기록 오류3회가 제어 취소로 전파되지 않았다. 이 사례는 원고 Level1/2/3나 고정 설정10회 평가를 대신하지 않는다.
+
+귀환 오차0.050165m와 임무210.484sim초/492.119wall초는 원고3cm/120초 목표 미달이다. CPU46.978%·최대 tilt0.039465rad. 정확한 실행 동결과 원본 증거는 UUIDfcf0dbe0-de70-4ca1-a86e-66133a62d2f8의 trial.json/source_manifest.json에 있다.
 
 ## 진행 방식
 
@@ -19,8 +23,9 @@
 |---|---|
 | 원고 확보 | 제목/13.8.1~8 확보, 원본 사본 hash 기록 |
 | 분리 build | 기존6+BT1+새1 패키지 성공 |
-| 설치/child 감사 | v10 기준 navigation34·manipulation24·BT6 감사 및4개 Python 패키지58모듈 소스 바이트 일치, 외부94자산 hash PASS, 실제 venv child NumPy 우선순위 PASS |
-| 부품 회귀 | v10 경계 깊이 검사·747자세 시야·보존/복원까지314 PASS/48.87초. 새 물리 인수와 구분 |
+| 설치/child 감사 | v15 기준 navigation34·manipulation24·BT6 감사 및4개 Python 패키지61모듈 소스 바이트 일치, 외부94자산 hash PASS, 실제 venv child NumPy 우선순위 PASS |
+| 부품 회귀 | v15 합의점 검사·747자세 시야·타입 준비·상태 기록·보존/복원까지325 PASS/48.99초. 실제 인수와 구분 |
+| 개발 fixture 최종 연속 실행 | v15 UUIDfcf0dbe0, 실제 pick/transport PASS·같은 engine의 전체 기능/회수 PASS 1회. 표시 파일 reader-lock 주입 포함. 성능2목표 미달/원고 월드 미인수 |
 | 최초 연속 engine | UUID a96cd6d7-9805-41ce-9dff-4c13916e4653, v2, FAIL. 파지 물리 PASS 후 귀환 회전 중 원통 부분 가림에 따른 OBSERVATION_EXPIRED. --no-bag 개발 사례. 실제 정상 shutdown·12 child clean exit·worker/rx/upstream join·잔여0·lock free |
 | 두 번째 연속 engine | UUID34f5ef1d-8fee-4d81-913b-fa76a3945a47, v4, FAIL. 파지 물리 PASS 후 귀환 navigation VISION_EXPIRED/Nav2 ABORTED. producer 비전 fault 없음·5327관측. 새 camera health 검증과 혼합 native FIFO 반영 사이의 경계를 분석해13.8용 경로 분리. 정상 회수 |
 | 세 번째 연속 engine | UUID1499904c-2d19-4010-a499-03919ecdc832, v5, FAIL. pick100.493mm/2.22sim초/접촉100% PASS. Nav2 SUCCEEDED 뒤 base위치(0.01362,-0.01847)m, yaw2.24356rad로 잘못된 자세. PLACE_WAIT fresh3D 가림 만료. quaternion 일부 설정 오류를 수정 중이며 아직 재실행하지 않음.160.496sim초/415.889wall초, CPU46.05%, tilt0.04458rad, bag close/정상 회수 |

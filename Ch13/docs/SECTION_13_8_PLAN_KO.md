@@ -37,8 +37,8 @@ Interfaces: 사전 예약 transport goal UUID, 정착 기반 phase 전환, 원�
 
 - [x] 예약되지 않은 goal·움직이는 base에서 place·접촉 상실·취소·FAULT latch 시험 RED.
 - [x] 최소 운반/정지 조작 전환 구현과 GREEN, 영향 부품 회귀.
-- [ ] 동일 engine에서 파지 후 최소 이동·내려놓기 실험; 실제 실패와 잔여를 보존. 두 수정 후 같은 실패면 구조 검토 기록.
-- [ ] 선택 commit 및 ledger 기록.
+- [x] 동일 engine에서 파지 후 최소 이동·내려놓기 실험; 실제 실패와 잔여를 보존. 두 수정 후 같은 실패면 구조 검토 기록. v15 실제1회 pick/transport·retreat/hold·회수 PASS, 원고 성능/월드와 별개.
+- [x] 선택 commit 및 ledger 기록. v15 실제 증거와 실패 원본 보존 완료.
 
 ### Task 3: 계측과 rosbag
 

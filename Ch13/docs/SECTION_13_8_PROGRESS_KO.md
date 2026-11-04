@@ -224,3 +224,19 @@ v14 UUID60ecc5f5-8385-44d5-83ec-ecd829af8b3b는파지PASS(최소100.460mm/2.18si
 Ruling: live_status의파일I/O를ROS timer에서owned latest-only writer thread로분리한다 — 상태표시는새권한이나최종판정이아니므로OS reader lock을로봇취소로전파하면안된다 — pending은한개로제한하고느린기록은다음상태로대체하며오류/대체수/마지막오류/실제join을telemetry_delivery.json에남긴다. shutdown후join미확인은정상성공으로바꾸지않는다. 실제제어/BT goal·관측/접촉/취소계약은변경하지않는다. API부재RED 후잠금복구·blocked writer 누적제한·join실패표시·정상atomic최종전달3 PASS/1.85초. 실제Windows deny-delete/WSL probe도PASS. 전체회귀/새실제실행은대기다.
 
 v15 후보325 PASS/48.99초. 설치61모듈/94자산/actual child PASS. source346/assets94 SHA256 05e33c7a6703f2d105d577be240a0dca60d2924cd3e464d940a5f9ea90a4aa74. native staging·공유 lock/잔여 PASS. v14 exact source344 보존 SHA2f1e401ac266e3604b1b9655be5112c56526b88381898088b3cd6689ac675827, raw40,779,702byte SHA4af8b4183642dfa90d1c30ff3133a635804a96595c83c5e9b94aa24ff2f91c39. 다음 actual UUID fcf0dbe0-de70-4ca1-a86e-66133a62d2f8. 동작과 무관한Windows advisory reader lock을3초간주입해예외전파차단도확인할예정이며고정설정10회평가와구분한다.
+
+### v15 동일 engine 연속 임무 최종 PASS
+
+UUIDfcf0dbe0-de70-4ca1-a86e-66133a62d2f8, source v15/346·assets94, SHA25605e33c7a6703f2d105d577be240a0dca60d2924cd3e464d940a5f9ea90a4aa74. 최종trial.success=true/complete=true, BT mission terminalSUCCESS·worker exit0/join, 소유goal14개SUCCEEDED/pending0/errors없음, 자식12개clean exit·잔여0/launch0·공유lock free. 같은engine에서파지→운반→정착→LOWER→실측개방→관측기반충돌모델분리→full Cartesian retreat→유지→REVOKED→Finish를완료했다. 모든Cartesian fraction1.0/error1, detach readback에서attached_removed=true/worldcenter(-0.801368,0.006537,0.539961)m.
+
+파지minimum100.27058mm/max102.94071mm/2.18sim초hold/양finger접촉100%/slip0.027308mm PASS. 운반거리2.5484349m·접촉100%·높이/수령위치/높이/지지/개방/2sim초이상post-release hold의8항목모두true. 물리pick/transport둘다PASS. 선택12토픽bag정상close. 이는개발fixture한사례이며원고Level1/2/3나10회강건성완료가아니다.
+
+임무210.484sim초/492.118861wall초, 귀환오차최종trial기준0.05016494m, tilt0.03946457rad, CPU46.97787%(8 affinity cores 정규화). 120초/3cm목표는미달이며그대로남긴다. 수행중status의약4.6cm와최종return snapshot의5.02cm를혼용하지않는다.
+
+이사례에는Windows reader의DELETE미공유잠금을상태파일에3.115초주입했다. telemetry_delivery는published527/write_errors3/overwritten0/joinedtrue이고3회모두PermissionError다. 이후표시가정상복구됐고미션취소로전파되지않았다. 순수무주입반복평가로표현하지않는다. 과거v14FAULT도삭제하지않는다. 공식패턴의사전타입준비·모델합의점·MoveIt분리postcondition·비제어상태기록분리를합친필수단일연속사례가처음통과했다.
+
+다음월드M0: floor position-only IK에서는0.5~0.7m stand-off 후보를얻었다. 최초full-pose service probe의-21은TF 설정누락이며도달불가능증거가아니다. 원래v1오류자료를보존하고명시적offline 고정odom→base TF로재확인한다. engine/actuator는실행하지않는다. 위치목표미달은기존Nav2 xy_goal_tolerance0.06 설정과공식1.3.13 SimpleGoalChecker를조사했으며아직13.8정밀도수정이나실제인수로표현하지않는다.
+
+v15 사후보존: 실제닫힌bag12토픽/164399메시지무결성PASS. exact native source346개 전수hash보존archive SHA9318dca2a8a37add3d485ae05e20cc27e7db175379642eb466dad67fbbb6292d. 모델제외raw58,135,258byte SHAd42dd09a8dc57adf95b7529f58699fb0f81895778a358c1dca4e2fea34cf752b. 새빈native폴더에41파일hash복원PASS, 원래trial/BT/nav/source hash동일·success=true보존. 실제재실행이나원격다운로드검증은아니다. Task2의최소연속기능인수/증거보존을완료하고원고월드와10회는Task4에남긴다.
+
+바닥월드full-pose M0에서v1의TF누락과v3의양성대조군선정실패를분리했다. v3는floor경사접근후보의실제IK해가있어도table sign+ 대조군이안풀려API_SETUP_FAILURE로보수판정했다. 공식MoveIt2.12.4 kinematics_service_capability.cpp는timeout.sec만setFromIK에전달한다. v4는정수1초·양쪽roll대조군·선택floor후보와독립URDF FK잔차검사를사용했다. table sign- 대조군PASS 및floor stand-off0.55m/pitch45°·0.60/0.65m pitch30°/sign-의pre-grasp/grasp 모두실제TRAC-IK 해를얻었다. position<2mm/orientation<0.02rad FK확인·shutdownACK/exit0. avoid_collisions=false의정적workspace검사이며물리·충돌경로·시야성공은아니다. 새body고정/WBC나학습은추가하지않았다.
