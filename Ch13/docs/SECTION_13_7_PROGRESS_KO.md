@@ -16,3 +16,15 @@ Task 4: v3 normal80fcd4d7-f475-412b-86dc-cf98c746ef9e PASS: 100.0367mm minimum l
 Task 4: v3 low_battery ca2256a9-1800-4dfa-b174-49fc8362c827 PASS: cancel ACK, native canceled terminal, measured stop, no pick, clean join. BT wall25.398s.
 Final review fix pass: DeferredClients/worker join/interrupt phase evidence RED→GREEN; source28 new tests PASS. Prior combined suite240 PASS/63.56s before final lift-injection helper.
 Ruling: add one held-object BT cancel case because actual client-retirement/cancel boundary changed. Do not repeat normal v3 or the16-case matrix for these targeted changes; preserve its exact freeze and disclose version range.
+
+Task 2: complete — live gates and default compatibility verified; same-engine normal and BT cancel evidence retained.
+Task 3: complete — build6+1, dedicated dependencies, byte audits, immutable source freezes; finalv7 source285/assets94.
+Task 4: complete — normal/low_battery(v3), held_cancel/legacy_free(v5) each one PASS; finalverdict preservation and publication metadata only(v6/v7), no engine repeat.
+Final review: self-review (single-worker user requirement); critical/important fixes RED→GREEN; final243 PASS/61.24s. No unresolved Critical/Important. No delegated review.
+Ruling: finalv7 archive/verdict metadata differs from physical v3/v5 code; preserve original verdicts and exact source ranges. v3 exact281-byte source set recovered and hash-checked into source_v3_verified; no physical rerun claimed.
+Final: publication restore contract fixed — test_published_archive_restores_hash_checked_evidence_without_models RED(KeyError archive)→GREEN; verdict overwrite reproducer RED→GREEN. Source/install/assets audit PASS.
+
+Final: source285/assets94 freezev7 verified again;243 PASS/61.24s and final installed byte audit PASS. All4 selected engine cases PASS, all4 mock CLI outputs match declared results.
+Final: exactv3 runtime source281 hash-checked; normal archive restored44 files into an empty folder and offline physical/BT verdict PASS. Raw originals and initial failure remain local; archives omit models. Final residual PASS with no owned stack and free shared lock.
+Finish: local feat/ch13-section-13-7 branch and worktree retained; no remote push, PR creation or main merge.
+Ruling: install the Session adapter in ch13_mission_orchestration/session.py instead of another scripts/session.py — keeps the reused hook implementation importable and byte-audited. Final hook names are recorded in the plan; no runner/bridge copy.

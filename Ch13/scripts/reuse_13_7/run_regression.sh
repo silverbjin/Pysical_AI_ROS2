@@ -6,7 +6,7 @@ bt_repo="$(cd "$bt_scripts/../../.." && pwd)"
 bt_out=${1:?new evidence directory}
 if [[ -e "$bt_out" ]]; then echo 'new evidence directory required' >&2; exit 2; fi
 mkdir -p "$bt_out"
-bash "$bt_scripts/env.sh" "$bt_scripts/freeze_runtime.py" verify "$bt_repo/Ch13/dependencies/section_13_7_bt_v5.json" > "$bt_out/freeze_audit.json" 2>&1
+bash "$bt_scripts/env.sh" "$bt_scripts/freeze_runtime.py" verify "$bt_repo/Ch13/dependencies/section_13_7_bt_v7.json" > "$bt_out/freeze_audit.json" 2>&1
 bash "$bt_scripts/env.sh" "$bt_scripts/audit_install.py" "$bt_out/install_audit.json" > "$bt_out/audit.log" 2>&1
 bash "$bt_scripts/env.sh" "$bt_repo/Ch13/scripts/reuse_13_5/inspect_r2_residuals.py" "$bt_out/pre_residual.json" > "$bt_out/pre_residual.log" 2>&1
 bt_rc=0

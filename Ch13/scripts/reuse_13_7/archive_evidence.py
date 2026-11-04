@@ -21,7 +21,7 @@ def archive(folder):
                 if publish:
                     info=tar.gettarinfo(str(p),arcname=name);info.uid=info.gid=0;info.uname=info.gname='';info.mtime=0
                     with p.open('rb') as src:tar.addfile(info,src)
-    manifest.write_text(json.dumps(dict(archive_sha256=hashlib.sha256(output.read_bytes()).hexdigest(),files=rows),indent=2)+'\n')
+    manifest.write_text(json.dumps(dict(archive=output.name,archive_sha256=hashlib.sha256(output.read_bytes()).hexdigest(),files=rows),indent=2)+'\n')
     relative=folder.relative_to(ROOT).as_posix()
     with (ROOT/'.gitignore').open('a') as target:target.write(f'\n/{relative}/**\n!/{relative}/raw.tar.gz\n!/{relative}/raw_manifest.json\n')
     print(folder.name,len(rows),output.stat().st_size)

@@ -31,3 +31,16 @@ def test_lift_cancel_waits_for_actual_execution_not_planning_phase():
     assert lift_interrupt(progress,None)==(2_000_000_000,False)
     progress['clock_ns']=3_000_000_000
     assert lift_interrupt(progress,2_000_000_000)==(2_000_000_000,True)
+
+
+def test_verifier_preserves_an_existing_verdict(tmp_path):
+    import json,subprocess,sys
+    root=Path(__file__).resolve().parents[5];run=tmp_path/'run';run.mkdir()
+    original='{"result":"PASS","preserve":"original verdict"}\n'
+    (tmp_path/'mission_verification.json').write_text(original)
+    (run/'bt_summary.json').write_text(json.dumps({'profile':'actual','case':'cancel'}))
+    (run/'navigation_summary.json').write_text('{}')
+    for name in ('pre_residual','post_residual'):(tmp_path/(name+'.json')).write_text('{"result":"PASS"}')
+    result=subprocess.run([sys.executable,str(root/'Ch13/scripts/reuse_13_7/verify_mission.py'),str(tmp_path)],capture_output=True,text=True)
+    assert result.returncode!=0
+    assert (tmp_path/'mission_verification.json').read_text()==original
