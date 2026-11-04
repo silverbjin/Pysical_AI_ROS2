@@ -18,3 +18,8 @@ py_trees_ros2.6.0의 nonblocking tick/INVALID 취소, Jazzy callback ownership �
 공식 MoveIt/rclpy 예제를 합친 것만으로 Go2가 물체를 운반하는 안전 계약이 생기지 않는다. 운반 phase·고정 팔·예약 goal·연속 tactile contact·fresh camera health·정지 후 fresh3D 재획득은 이 프로젝트의 설계다. v2 실제 실행에서 관측 부분 가림과 정상 force-hold의 차이를 확인한 후 이 경계를 명시적으로 분리했다. 사후 physics verdict는 실제 freejoint/contact 로그를 평가하며 제어 입력이 아니다.
 
 Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 근거로 사용하지 않았다. 실행된 기존 Planner와 위2.12.4 공식 서비스 원본·설치 메시지 타입·자체 부품 시험을 근거로 썼다.
+# 귀환 quaternion 재확인
+
+[ROS Jazzy 공식 Quaternion-Fundamentals 원본](https://github.com/ros2/ros2_documentation/blob/jazzy/source/Tutorials/Intermediate/Tf2/Quaternion-Fundamentals.rst)을 재조회했다. ROS 순서(x,y,z,w), norm1, Python에서 네 성분을 명시하는 패턴을 적용한다. 설치 메시지는 실제로w=1 기본값이며 기존 continuation은z만 덮어써 오류를 만들었다. 수정은 planar yaw의sin(yaw/2),cos(yaw/2)를 포함한 전체 성분 설정이다. 이는 입력 표현의 수정이며 실제 귀환/내려놓기 성공을 대신하지 않는다.
+
+[MuJoCo3.13.0 XMLreference.rst](https://github.com/google-deepmind/mujoco/blob/3.13.0/doc/XMLreference.rst)의 body/camera를 GitHub connector로 읽었다. fixed 모드는 body-relative pos/quat, MuJoCo view는-Z/up+Y이므로 기존 optical 변환diag(1,-1,-1)을 유지한다. 새 설정은 compile 전 camera.pos/quat이며 SensorSuite가 compiled model에서 실제 TF를 생성한다. 3.3.0 검색 문서를 설치 버전 증거로 대신하지 않았다. [PCL 공식 cylinder segmentation](https://pointclouds.org/documentation/tutorials/cylinder_segmentation.html)은 robust plane/반경 제한 패턴만 조사했고 추가 PCL 설치나 runtime 검출기 채택은 하지 않았다. 저장 부분 영상에서 충분한 평면 근거를 얻지 못했기 때문이다.

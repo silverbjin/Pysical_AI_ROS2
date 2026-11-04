@@ -82,3 +82,23 @@ Ruling: fresh health가 renderer→검증 단계에서 유효해도 혼합 navig
 Ruling: fresh3D가 필요한 place 위치는 기존 카메라의 시야를 유지하도록 fixture를 배치한다 — 기존 팔 길이/카메라/원통을 유지하며x=-0.80m 채택 — 원고(0,0)는 robot return goal이며 실제 수령 받침대 좌표는 별도 공개; 이 정적 확인만으로 가림/도달/물리 성공을 보증하지 않음.
 
 v5 source320/assets94, SHA256 a8a3a1fa258b05633110ef3b280aa7cdff20fd2387b4f25db8a1ccd391d3b8c1. 세 번째 사례 UUID1499904c-2d19-4010-a499-03919ecdc832, 선별 bag 기록 포함, 실제 인수 대기.
+
+## v5 실제 결과 및 재개 후 진단
+
+세 번째 사례는 전체 FAIL. pick 최소100.493mm·2.22sim초 hold·양 접촉100%·상대 slip0.02780mm PASS. Nav2는 terminal4 SUCCEEDED, 마지막 실제 base 위치(0.01362,-0.01847)m였지만 yaw2.24356rad로 예약 목표pi와 달랐다. 이어 PLACE_WAIT에서 fresh3D를 얻지 못해4wall초 만료. 비전 fault는 비어 있었고 accepted4847/rejected527; 마지막 거부 원인은 원통 upright 높이 가시성 부족이었다. trial160.496sim초/415.889wall초·CPU46.05147%(8cores)·최대 tilt0.044578rad, bag 정상 close. worker join·12 child clean exit·잔여0·공유 lock free. 위치 도달만으로 귀환/미션 성공을 선언하지 않는다.
+
+원인1: continuation의 귀환 quaternion에서z만1로 대입하고 ROS 메시지 기본w=1을 남겼다. 설치 NavigateToPose.Goal의 실제 기본값으로 재현했고 norm=sqrt(2)인 잘못된 입력이다. 공식 Jazzy Quaternion-Fundamentals의 전체(x,y,z,w) 설정·unit norm 패턴을 적용해 yaw/2의sin/cos를 모두 설정한다. 새 goal 생성 시험은 함수 부재로 RED, 수정 후 단위 norm·pi yaw·원본 stamp와 잘못된 정착 자세의 독립 차단2개 PASS/12.53초. fresh3D 대기 중에도 실제 자세 불일치는 즉시 PLACE_POSE_MISMATCH로 latch한다. quaternion 수정이 가림까지 해결한다는 근거는 없어 저장 RGB-D를 먼저 분석한다.
+
+v5의320개 당시 소스는a7786a05에서 전수 hash 대조해 source_v5/runtime_source.tar.gz로 사후 보존했다. SHA256 6109993d775026f4d3559c68e83b91d292a7bbe98bd804e5306eca7627fae363. 원래 증거/동결/FAIL은 보존하며 새 실행으로 간주하지 않는다.
+
+### 같은 가림 실패의 구조 검토
+
+두 차례 가림 실패 후 저장 자료에서 camera/hand 시야 관계를 검토했다. 공식 PCL cylinder segmentation의 평면/원통 분리와 반경 제한 패턴을 조사했지만, 저장 영상의 아래 뚜껑 후보는 robust plane의 충분한 inlier/축 안정성을 얻지 못했다. 따라서 partial cylinder detector를 runtime에 넣지 않았다. 기존 fit의75% 높이·1.5mm residual과300ms 수명을 낮추지 않는다.
+
+별도 정지 렌더링 도구 check_camera_mounts.py로 v5의 기동/파지/운반/정착8개 실제 저장 qpos를 비교했다. 물리 step·actuator·live ROS 권한 없이 기존 Renderer의 paired RGB/depth와 동일 geomgroup/그림자 설정을 사용한다. 최초 비교는 group5를 표시하지 않아 전부 target missing이었으며 해당 로그도 보존했다. 이를 바로잡은15개 고정 mount 비교에서 높이0.35m·pitch down5도 후보는8개 모두 기존 엄격 fit을 통과했다. 부품 회귀에는8개 상태의 qpos만 읽기 전용 fixture로 동결하고 추정값의 사후 oracle 오차≤4mm를 확인한다. oracle는 추정 함수 입력으로 쓰지 않는다.
+
+Ruling: 새로운 부분 가림 추정기를 추가하는 대신13.8 carry_v1에서만 camera base 위치를(0.4,0.25,0.35)m, yaw=-20도·pitch down5도로 고정한다 — 기존 카메라보다10cm 높이고 엄격한 기존 검출·TF/수명 계약을 유지하는 작은 설정 변경 — 실제 해당 mount와 다른 카메라 설치에는 이 결과를 적용할 수 없고 정적 렌더링만으로 연속 물리 성공을 보증하지 않음. 기존13.6/13.7 기본 mount는 그대로 둔다. 이전의 카메라 유지 판단은 이 구조 검토로13.8 opt-in에 한해 변경한다.
+
+공식 MuJoCo3.13.0 doc/XMLreference.rst의 body/camera fixed·body-relative pos/quat와 -Z view/+X right/+Y up을 연결 GitHub에서 확인했다. 컴파일 전 MjSpec camera 설정과 기존 SensorSuite의 compiled extrinsics→ROS optical TF 패턴을 사용한다. 카메라 위치를 실행 중 물체에 따라 이동하거나 오래된 영상을 새 capture로 바꾸지 않는다. 저장 시야 회귀는 기존 배치에서 RED(1 failed/1 passed,6.34초)를 확인했다.
+
+v6 전체 부품299 PASS/49.03초·5-package build18.8초·설치56모듈/외부94자산/child 감사 PASS. 실행 전 소유 stack0·공유 lock free·boot5d88983d-6bab-4532-93f2-7ea991a80ff5를 확인했다. source323/assets94, SHA256 2deed5c8c159818eb96298606a283228d02d08abcca1021b436c84b3611d3ee0. 다음 네 번째 실제 개발 사례 UUID13ef4150-a1fc-4a55-8a47-f697f5507449, 결과 대기. 이전 v2/v4/v5 실패를10회 고정 설정 평가에 섞지 않는다.

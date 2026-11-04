@@ -108,14 +108,14 @@ class TransportLease(Lease):
             return self.trip('ARM_ACTION_DURING_CARRY')
         current=goal_status.get(self.transport_goal)
         if current in (5,6):return self.trip('RETURN_GOAL_FAILED')
-        if (self.stage=='PLACE_WAIT' and current==4 and navigation_idle and settled and supported
-            and self.observation_fresh(clock_ns,wall)):
+        if self.stage=='PLACE_WAIT' and current==4 and navigation_idle and settled and supported:
             # The new stationary authority is admitted once, from measured return.
             target=self.transport_target
             if (math.hypot(actual_pose[0]-target[0],actual_pose[1]-target[1])>.10
                 or abs(math.atan2(math.sin(actual_pose[2]-target[2]),math.cos(actual_pose[2]-target[2])))>.10):
                 return self.trip('PLACE_POSE_MISMATCH')
-            self.stage='PLACE';self.phase='READY';self.place_anchor=list(actual_pose)
+            if self.observation_fresh(clock_ns,wall):
+                self.stage='PLACE';self.phase='READY';self.place_anchor=list(actual_pose)
         if self.stage=='PLACE':
             if current!=4 or not navigation_idle or not supported:return self.trip('PLACE_BASE_NOT_ZERO')
             if (math.hypot(actual_pose[0]-self.place_anchor[0],actual_pose[1]-self.place_anchor[1])>.03

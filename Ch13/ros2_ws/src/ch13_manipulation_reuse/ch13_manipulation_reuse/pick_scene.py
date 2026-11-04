@@ -1,5 +1,6 @@
 """Opt-in dynamic cylinder; explicit contact permissions and original robot."""
 from pathlib import Path
+import os
 import numpy as np
 import mujoco
 from scipy.spatial.transform import Rotation
@@ -12,6 +13,10 @@ GRASP_PHASES={'GRASP_APPROACH','CLOSE','LIFT','HOLD','POST_SETTLE','CARRY_ARMED'
 def add_target(spec):
     camera=spec.camera('reuse_rgbd');camera.pos=[.4,.25,.25]
     R=Rotation.from_euler('z',-20.,degrees=True).as_matrix()@OPTICAL_R@np.diag([1.,-1.,-1.])
+    if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+        from ch13_system_validation.fixture import TRANSPORT_CAMERA_POS,TRANSPORT_CAMERA_YAW_DEG,TRANSPORT_CAMERA_PITCH_UP_DEG
+        camera.pos=TRANSPORT_CAMERA_POS
+        R=Rotation.from_euler('ZYX',[TRANSPORT_CAMERA_YAW_DEG,-TRANSPORT_CAMERA_PITCH_UP_DEG,0.],degrees=True).as_matrix()@OPTICAL_R@np.diag([1.,-1.,-1.])
     camera.quat=np.roll(Rotation.from_matrix(R).as_quat(),1)
     spec.delete(spec.geom('reuse_target'))
     body=spec.worldbody.add_body(name=TARGET,pos=[1.8,0.,.54])

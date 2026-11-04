@@ -16,6 +16,16 @@ from .transport import fresh_return_capture
 from .fixture import RECEIVING_XY
 
 
+def make_navigation_goal(target,stamp_ns):
+    goal=NavigateToPose.Goal();goal.pose.header.frame_id='reuse/map'
+    set_stamp(goal.pose.header.stamp,stamp_ns)
+    goal.pose.pose.position.x=float(target[0]);goal.pose.pose.position.y=float(target[1])
+    goal.pose.pose.position.z=0.
+    q=goal.pose.pose.orientation
+    q.x=0.;q.y=0.;q.z=math.sin(target[2]/2);q.w=math.cos(target[2]/2)
+    return goal
+
+
 def drain_owned_goals(session,until,extra=()):
     tracker=session.goals;tracker.cancel()
     def drained():
@@ -40,9 +50,7 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         response=call('navigation/require_vision');assert response.success,response.message
         control['set_phase']('CARRY')
         response=call('navigation/enable');assert response.success,response.message
-        goal=NavigateToPose.Goal();goal.pose.header.frame_id='reuse/map'
-        set_stamp(goal.pose.header.stamp,snapshot()['clock_ns'])
-        goal.pose.pose.orientation.z=1.
+        goal=make_navigation_goal(home,snapshot()['clock_ns'])
         sent=client.send_goal_async(goal,goal_uuid=UUID(uuid=list(identity.bytes)))
         if not getattr(client,'tracked_by_session',False):session.track_goal(sent)
         assert until(sent.done,5.);handle=sent.result();assert handle.accepted,'return Nav2 rejected'

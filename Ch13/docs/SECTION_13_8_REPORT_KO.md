@@ -23,6 +23,7 @@
 | 부품 회귀 | 동일 hash WSL native source/fixture 사본에서278 PASS/34.47초 |
 | 최초 연속 engine | UUID a96cd6d7-9805-41ce-9dff-4c13916e4653, v2, FAIL. 파지 물리 PASS 후 귀환 회전 중 원통 부분 가림에 따른 OBSERVATION_EXPIRED. --no-bag 개발 사례. 실제 정상 shutdown·12 child clean exit·worker/rx/upstream join·잔여0·lock free |
 | 두 번째 연속 engine | UUID34f5ef1d-8fee-4d81-913b-fa76a3945a47, v4, FAIL. 파지 물리 PASS 후 귀환 navigation VISION_EXPIRED/Nav2 ABORTED. producer 비전 fault 없음·5327관측. 새 camera health 검증과 혼합 native FIFO 반영 사이의 경계를 분석해13.8용 경로 분리. 정상 회수 |
+| 세 번째 연속 engine | UUID1499904c-2d19-4010-a499-03919ecdc832, v5, FAIL. pick100.493mm/2.22sim초/접촉100% PASS. Nav2 SUCCEEDED 뒤 base위치(0.01362,-0.01847)m, yaw2.24356rad로 잘못된 자세. PLACE_WAIT fresh3D 가림 만료. quaternion 일부 설정 오류를 수정 중이며 아직 재실행하지 않음.160.496sim초/415.889wall초, CPU46.05%, tilt0.04458rad, bag close/정상 회수 |
 | 원고 Level1/2/3 | 개발 fixture와 별개. 실제 인수 미완료 |
 | rosbag 실제 기록/재생 | v4 실패 사례의 MCAP131424메시지/필수12토픽 무결성 PASS. 별도domain136 sensor/BT replay reception PASS/16.46wall초. raw RGB-D 전체/비전·Nav2 알고리즘 전체 재생은 아님 |
 | 고정 설정10회/목표 성능 | 미완료 |
@@ -40,3 +41,7 @@ MoveIt2.12.4 planning scene 서비스·attached/world 객체 처리, Jazzy rclpy
 ## 주장하지 않는 범위
 
 교재의 콜라 일반 인식, 새로운 WBC·CoM 이동, 실기·SLAM/AMCL·Gazebo 동등 구현,99% 강건성을 검증하지 않았다. 원고120초/CPU70%/3cm/0.1rad는 목표이며 달성 전제로 timeout이나 원본 제어 한도를 완화하지 않는다. 파지 이후 새 engine을 시작하는 것을 연속 운반으로 집계하지 않는다.
+
+## v6 수정 검증
+
+귀환 quaternion 전체 성분을 설정하고, fresh3D 대기 중에도 잘못된 실제 귀환 자세를 별도 거부한다. 부분 원통 추정기의 평면 근거는 부족해 채택하지 않았다.13.8 opt-in 고정 camera를10cm 높이고 아래5도로 기울여 기존 검출 조건을 유지했다. 저장된 실제8개 자세의 렌더링 회귀와 기존 기본 mount 보존을 포함해299 PASS/49.03초.5-package rebuild18.8초, 설치56모듈·외부94자산·실제 venv child 감사 PASS. 정지 렌더링은 새 물리 실행 성공 증거가 아니다.

@@ -29,6 +29,10 @@ bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/audit_install.py /tm
 
 현재 연속 수명 경계 개발 fixture는 알려진 upright20g 원통과 기존 파지 받침대, 귀환 측 수령 받침대다. 이는 원고 Level 1의2m fixture나 공통 (3,1) 테이블·장애물·5도 경사·좁은 문·식탁 아래 목표 전체를 구현했다는 뜻이 아니다. 실제 지원 fixture와 source freeze를 결과 보고서에 명시한다.
 
+v5 개발 fixture의 robot 귀환 goal은(0,0,π)이고 수령 받침대는(-0.80,0), 지지면0.50m다. v2/v4의-0.55m 위치는 기존 카메라의 화면 경계를 벗어나므로 v5에서 정적 투영 시험 후 조정했다. 이는 원고의 미션 목표와 개발 fixture를 혼용하지 않도록 공개한 좌표이며 실제 place 성공은 별도 판정한다.
+
+v6의13.8 전용 carry_v1 camera는 base 좌표(0.4,0.25,0.35)m, yaw -20도·pitch down5도다. 기존 파지 카메라보다10cm 높은 고정 mount로, 손가락 가림을 줄이기 위한 설정이다. 기존13.6/13.7 기본 mount와 원통 fit의 엄격한 조건·capture300ms/TF100ms를 유지한다. 실제 extrinsics는 sensor_summary.json과 해당 capture의T_map_camera로 확인한다. 정지 영상8개 회귀와 실제 연속 미션 판정은 구분한다.
+
 최종 성공은 동일 engine의 실제 파지, 운반 중 접촉/높이 유지, 귀환 terminal와 실측 정착, 수령 받침대 지지 후 개방, 물체 분리와2sim초 안정 유지, 정상 회수까지 모두 필요하다. 제어는 원본 RGB-D fit과 live 접촉을 사용하고, target freejoint는 engine 종료 뒤 판정에만 사용한다. 논리적 planning attach는 물리 weld가 아니다.
 
 ## 3. 13.8.3 순차 기동과 미션
@@ -41,13 +45,13 @@ bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/audit_install.py /tm
 python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py /tmp/ch13_13_8_before.json
 ```
 
-터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v2는 최초 개발 실행용 동결이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
+터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v5는 현재 개발 실행용 동결이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
 
 ```bash
 CASE=$(python3 -c 'import uuid; print(uuid.uuid4())')
 bash Ch13/scripts/reuse_13_8/env.sh -u Ch13/scripts/reuse_13_8/run_mission.py \
   --repo-root "$ROOT" --evidence "$ROOT/Ch13/evidence/section_13_8_system/$CASE" \
-  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v2.json"
+  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v6.json"
 ```
 
 터미널 B는 시스템 ROS CLI 환경이다. engine/센서가 준비된 뒤 /start_mission을 보내야 하며 현재 시작 대기 예산은 준비 후30wall초다. 개발 자동 시작은 runner에 --auto-start를 지정하며 같은 토픽 수신을 통과한다.
@@ -59,6 +63,8 @@ ros2 topic pub --once /start_mission std_msgs/msg/Empty '{}'
 ```
 
 기본적으로 선별 bag를 기록한다. 최초 불확실한 물리 개발 사례는 --no-bag로 계측 영향과 운반 경계를 분리할 수 있으며, bag 실습 완료로 집계하지 않는다. live_status.json은 진행 참고이며 새 권한이나 최종 판정이 아니다.
+
+운반은 원본300ms 이내 camera capture health와 매 physics step의 지정 양 finger 접촉·force-hold를 검사한다. 만료된3D point는 그대로 만료 상태이며 팔 계획/개방의 권한이 아니다. 귀환 후 실제 정착과 fresh3D 재획득이 있어야 PLACE에 들어간다. source 나이100wallms 이내인 새 capture를 기다린 뒤 귀환을 재진입하며, 기존300ms watchdog을 늘리지 않는다.
 
 ## 4. 건강 상태와 데이터 흐름
 
@@ -108,6 +114,17 @@ trial.json의 sim_s/wall_s는 /start_mission 수신부터 실제 place 완료까
 ## 6. 13.8.7 기록과 재생
 
 기본 bag에는 /clock, /tf, /tf_static, joint_states, odometry, cmd_vel_safe, vision/observation, manipulation/status, /start_mission을 선별 기록한다. 현재 compressed image publisher가 없으므로 원고의 compressed 토픽을 기록했다고 표시하지 않는다. 원본 RGB-D 증거는 기존 renderer capture 자료에 별도 보존한다. bag는 SIGINT로 닫힌 뒤 metadata와 메시지 수를 확인해야 한다.
+
+현재 추가로 vision/health, navigation/status, validation/bt_log도 기록한다. 실제 v4 실패 사례의12토픽131424메시지 무결성과 별도domain136 수신 재생을 확인했다. 이는 전체 raw RGB-D 이미지 bag나 비전/Nav2 알고리즘 전체 재생 검증은 아니다.
+
+```bash
+bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/inspect_recording.py \
+  --bag /absolute/path/to/case/bag --output /absolute/path/to/case/bag_verification_new.json
+bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/replay_recording.py \
+  --bag /absolute/path/to/case/bag --output /absolute/path/to/case/replay_verification_new.json
+```
+
+두 도구는 기존 출력 덮어쓰기를 거부한다. inspect는 ROS node를 시작하지 않고 CDR를 읽는다. replay는 스스로 domain136을 사용하고 TF static·관측·camera health·BT log만 선택해 player clock으로 재생한다. live lease, 시작 명령과 actuator topic은 내보내지 않는다. 기록/재생 PASS는 원래 실패한 미션을 PASS로 바꾸지 않는다.
 
 재생은 engine을 끄고 별도 domain136에서 수행한다. 기록된 /clock과 새 player clock을 동시에 발행하지 않도록 재생 토픽을 선택한다. live lease 토픽과 actuator command를 재생하지 않는다.
 

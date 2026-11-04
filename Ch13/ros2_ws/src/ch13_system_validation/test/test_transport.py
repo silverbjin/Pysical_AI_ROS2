@@ -155,3 +155,15 @@ def test_place_yaw_drift_still_latches():
         lease.heartbeat(message(phase,seq,transport_goal_id='home',transport_target=[0.,0.,3.14]),'owner',10.05)
     assert evaluate(lease,{'outbound':4,'home':4},pose=[0.,0.,3.14])=='READY'
     assert evaluate(lease,{'outbound':4,'home':4},pose=[0.,0.,3.35])=='FAULT'
+
+
+def test_wrong_return_pose_is_rejected_even_while_waiting_for_fresh_3d():
+    lease=live();arm(lease)
+    lease.observe_capture(dict(capture_ns=1_500_000_000,capture_wall=10.5,
+        scope='validated_RGBD_capture_and_past_TF'),'camera_health',10.51)
+    for seq,phase in ((3,'CARRY'),(4,'PLACE_WAIT')):
+        request=message(phase,seq,transport_goal_id='home',transport_target=[0.,0.,3.14]);request['stamp_ns']=1_500_000_000
+        lease.heartbeat(request,'owner',10.51)
+    assert lease.evaluate(1_500_000_000,10.52,settled=True,supported=True,
+        goal_status={'outbound':4,'home':4},actual_pose=[0.,0.,2.24356],navigation_idle=True)=='FAULT'
+    assert lease.fault=='PLACE_POSE_MISMATCH'
