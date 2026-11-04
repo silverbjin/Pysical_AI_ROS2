@@ -55,6 +55,12 @@ class ProcessCPU:
             owned.update(added)
         current={(pid,table[pid][1]):table[pid][2] for pid in owned if pid in table}
         if self.last_wall is not None:
-            seconds=sum(max(0.,value-self.previous.get(key,value)) for key,value in current.items())
-            self.rows.append(dict(wall=now,percent=cpu_percent(seconds,now-self.last_wall,self.cores),owned_pids=sorted(owned)))
+            deltas={key[0]:max(0.,value-self.previous.get(key,value)) for key,value in current.items()}
+            seconds=sum(deltas.values());processes=[]
+            for pid,seconds_used in deltas.items():
+                try:command=(Path('/proc')/str(pid)/'cmdline').read_bytes().replace(b'\0',b' ').decode(errors='replace')[:1024]
+                except (FileNotFoundError,PermissionError,ProcessLookupError):command='exited_during_sample'
+                processes.append(dict(pid=pid,cpu_seconds=seconds_used,command=command))
+            self.rows.append(dict(wall=now,interval_s=now-self.last_wall,
+                percent=cpu_percent(seconds,now-self.last_wall,self.cores),owned_pids=sorted(owned),processes=processes))
         self.previous=current;self.last_wall=now

@@ -63,9 +63,11 @@ def render_process(model,initial_q,requests,results,ready,stop,latest=False,outp
   while not stop.is_set():
    try:q,stamp,capture_wall=requests.get(timeout=.1)
    except queue.Empty:continue
+   render_started=time.monotonic();render_cpu=time.process_time()
    data.qpos[:]=q;data.time=stamp/1e9;mujoco.mj_forward(model,data);rgb,depth=render()
    meta={'capture_ns':stamp,'capture_wall':capture_wall,'render_finished_wall':time.monotonic(),'rgb_sha256':hashlib.sha256(rgb.tobytes()).hexdigest()}
-   if latest:meta.update(render_profile='paired_raw_RGB_depth_v1',skybox=False,mujoco_version=mujoco.__version__)
+   if latest:meta.update(render_profile='paired_raw_RGB_depth_v1',skybox=False,mujoco_version=mujoco.__version__,
+       render_started_wall=render_started,render_elapsed_cpu_s=time.process_time()-render_cpu)
    if publisher is not None:
     meta['publisher_route']='renderer_process_DDS_v1'
     started=time.monotonic();publisher.publish(rgb,depth,meta)

@@ -43,3 +43,11 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 [MoveIt2.12.4 planning_scene.cpp의 processAttachedCollisionObjectMsg REMOVE 분기](https://github.com/moveit/moveit2/blob/2.12.4/moveit_core/planning_scene/src/planning_scene.cpp)는 특정 ID와 비어 있지 않은 link_name이 실제 parent와 다르면 거부한다. 공식 구현이 허용하는 ID-only REMOVE를 채택한다. 기존 continuation은reuse/tcp ADD 뒤reuse/link6 REMOVE를 보내고 outer ApplyPlanningScene.success만 확인했다. 실제614e 로그와 별도 설치 API probe에서 이 잘못된 요청의 outer true/attached 잔류를 재현했다.
 
 보완은 명시적 소유ID만 제거한 뒤 GetPlanningScene의 WORLD_OBJECT_GEOMETRY/NAMES·ROBOT_STATE_ATTACHED_OBJECTS를 조회해 attached 부재·world 단일 형상·새 관측 중심 일치를 확인한다. 물리 개방과 양 finger 접촉 소실을 먼저 확인하고 release 이후 촬영된 새 원본 RGB-D만 사용한다. 기록된 관측으로 domain136 scene service만 시험했으며 shutdown ACK/exit0까지 확인했다. 실제 액추에이터나 engine은 실행하지 않았다. 공식 장면 API 및 이 probe는 물리 release/retreat 성공 증거가 아니다.
+
+## 반복 관측 지연: 2026-11-05 공식 근거와 적용 판단
+
+[ROS2 Jazzy executor 공식 원본](https://github.com/ros2/ros2_documentation/blob/jazzy/source/Concepts/Intermediate/About-Executors.rst)과 [callback groups 공식 원본](https://github.com/ros2/ros2_documentation/blob/jazzy/source/How-To-Guides/Using-callback-groups.rst)을 조회했다. 웹 문서는 접근 차단되어 같은 공식 저장소의 Jazzy 원본을 읽었다. 기본 mutually-exclusive 그룹에 모두 두면 executor의 스레드 수만 늘려도 병렬 처리가 되지 않는다. 긴 콜백·스케줄 순서의 지연을 우선 분해하고 원래 단일 ROS owner를 유지한다.
+
+[ros2/rclpy #1223](https://github.com/ros2/rclpy/issues/1223)은 Iron/Ubuntu22.04/FastDDS에서 MultiThreadedExecutor의 timer rate 하락·CPU 증가를 보고한 재현 코드다. 이 프로젝트의 Jazzy 원인을 증명하거나 해당 제보의 수정이 검증됐다는 뜻이 아니다. 일괄 executor 변경을 회피하고 설치 환경에서 직접 계측해야 한다는 비교 사례로 사용한다.
+
+[Mesa 공식 LLVMpipe 설명](https://docs.mesa3d.org/drivers/llvmpipe.html)과 [환경 변수 문서](https://docs.mesa3d.org/envvars.html#lp-num-threads)를 확인했다. LLVMpipe는 CPU software rasterizer이고 LP_NUM_THREADS는 렌더 worker 수다. 실제GL query는Mesa25.2.8/LLVM20.1.2·llvmpipe를 반환했다. 기존2를 임의로 늘리거나 driver/GPU 설치를 추가하지 않는다. 현재 문서의 기능 설명과 실제 설치 query를 구분한다. render 시작/끝·process CPU를 기록해 queue 지연과 계산/스케줄 지연을 구분한 후 필요한 작은 변경만 적용한다. 원본 capture/TF와300ms 기준은 유지한다.

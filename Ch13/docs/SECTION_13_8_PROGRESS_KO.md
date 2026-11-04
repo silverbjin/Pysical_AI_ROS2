@@ -176,3 +176,17 @@ Ruling: ID-only REMOVE와 GetPlanningScene 사후 조건을 적용한다 — 소
 새 placed_scene API 부재 RED 후 관련3 PASS. 별도domain136의 실제 설치 MoveIt API probe도 PASS: 잘못된 parent는 outer success=true/still attached=true 재현, ID-only 제거·관측 world 중심 readback·revision1 확인, shutdown ACK/exit0. 원래614e의191.942sim초 관측과 기록된 수명으로 검사했으며 live 권한이나 새 물리 실행이 아니다. 근거 offline_detach_api_v11.json. 연속 동작은 새 소스 동결 후 별도로 검증한다.
 
 새 후보317 PASS/48.11초, build14.3초·설치59모듈/94자산/venv child 감사 PASS. v11 source338/assets94 SHA256 db5586b32b1e4947d0dc3026cc2f35b2e8c1fac7bc39c6052ab71cb1f9f92389. 공개 staging으로 native 사본과 공유 lock realpath 확인. v10 두 사례 원본·source archive를 유지하고 각각4,433,937/46,324,913byte raw archive 생성. 다음 실제 UUID 408dabfc-fca3-44e9-8087-fafb3984dd14. 새 물리 인수는 아직 대기.
+
+### 2026-11-05 재개: 반복 지연을 근거별로 분해
+
+v11 UUID408dabfc-fca3-44e9-8087-fafb3984dd14는 이동 초기에 VISION_EXPIRED로 전체 FAIL. trial4.878sim초/26.334wall초·CPU52.347%·tilt0.031468rad·bag close/12 child 정상 회수/worker join/잔여0/lock free. source338을 실제 native 사본에서 source_v11/runtime_source.tar.gz로 전수 hash 보존(SHA7d9379e25f7114808e43cdf962e342e99437cb6a3c939c1ddb9e6a3d651d8515). 분리 수정의 물리 평가 구간에는 도달하지 않았다.
+
+fault decision284.319901497wall에서 마지막 health의 capture284.016571911wall은303.330ms 나이였다. 그 frame의 render 완료는284.157893wall(141.321ms), publish 종료284.159183wall, health validation284.182517wall. 다음 capture284.176819wall은 render284.293698wall(116.879ms), publish284.295161wall, validation284.324161wall로 fault보다4.259ms 늦었다. 이후 수신된 fresh frame을 과거 판정에 소급 적용하지 않는다. 이 사례는 v4의 혼합 FIFO 지연과 구분하며 원본300ms 기준을 유지한다.
+
+공식 Jazzy executor/콜백 그룹 문서와rclpy GitHub #1223을 조회했다. 기본 callback group은 mutually exclusive이며 단순 MultiThreadedExecutor 교체는 독립 실행을 보증하지 않는다. #1223은 Iron/FastDDS의 제보로 이 Jazzy 로봇의 동일 원인 증거가 아니다. 무조건 executor/QoS 교체 대신 현재 source→render→publish→native receipt→validation 경계를 측정한다.
+
+종료 후 실제 저장20자세를100frame 다시 렌더했다(새 physics/ROS/명령 없음). 실제 graphics는Mesa25.2.8-0ubuntu0.24.04.4·llvmpipe LLVM20.1.2이며 EGL을 쓴다고 하드웨어 GPU라고 부르지 않는다. warmup5개 제외95frame의 forward median0.129ms/update0.039ms/render4.758ms(p95 8.325ms/max27.471ms). 따라서141ms를 고정 모델 렌더 비용으로 단정할 수 없다. idle benchmark로 부하 중 deadline을 보증하지 않는다. 실제 작업 cgroup/non-systemd cpu.max는max100000, throttled0이며 조회 시점 pressure0이다. 과거 실행 중 부하 상태는 이 값만으로 판단하지 않는다.
+
+Ruling: 다음 실행은 제어/기하/임계값을 바꾸지 않고 render 시작·완료·process CPU와 소유 프로세스별 CPU를 계측한다 — queue 대기와 실제 계산/스케줄 지연을 분리하지 않고 렌더 옵션이나 스레드 수를 바꾸면 추측성 수정이 된다 — 한 번의 diagnostic 실행 비용을 허용하고 원인을 특정한다. source capture 시각은 유지한다. renderer 계측 RED1/PASS1 후 GREEN3(PASS5.22초,314 deselected). 전체317개 중 변경 영향의 작은 실제 renderer/CPU 시험만 재확인했으며 전체 재실행으로 표현하지 않는다.
+
+v12 계측 후보: build15.6초·설치59모듈/94자산/actual child PASS. source338/assets94 SHA256 a4aa2be7819fd36fc12abd4f4c7e793ad11c80c1dc0cc79fbfda514f045abfda. 새 native staging·공유 lock/잔여 확인 PASS. 다음 actual diagnostic UUID b0ccbf5f-0c95-4325-bf7f-a71338dc5cd0. 제어/물리/한도 변경 없음.

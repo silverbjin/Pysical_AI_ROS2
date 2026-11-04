@@ -55,3 +55,7 @@ def test_renderer_delivery_does_not_depend_on_blocked_parent_retention(latest,tm
         assert len(ledger['captures'])>=len(seen)>=2
         assert len(worker.source_captures)==len(ledger['captures'])
         assert all(r['capture']['capture_wall']<=r['publish_started_wall']<=r['publish_finished_wall'] for r in ledger['captures'])
+        for row in ledger['captures']:
+            meta=row['capture']
+            assert meta['capture_wall']<=meta['render_started_wall']<=meta['render_finished_wall']
+            assert meta['render_elapsed_cpu_s']>=0
