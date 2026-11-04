@@ -24,10 +24,10 @@ Files: 새 ch13_system_validation/{metrics,tools}.py 및 test/test_metrics.py, t
 
 Interfaces: assess_trials(trials, expected=10) -> dict; validate_build(value) -> Path. 이후 runner의 UUID·complete·success·sim_s·wall_s·position_error_m·max_tilt_rad·cpu_percent 필드를 소비한다.
 
-- [ ] 누락/중복/비유한 지표·실패 분모·경계값·보호 경로 시험을 먼저 작성하고 RED 확인.
-- [ ] 판정과 보호 구현 후 GREEN. 공식 패턴 및 M0 보고서 작성.
-- [ ] 별도 BT overlay와 8개 패키지 build/설치 감사. 기존 소스 baseline은 필요한 부품만 확인.
-- [ ] 선택 파일 commit 및 ledger 기록.
+- [x] 누락/중복/비유한 지표·실패 분모·경계값·보호 경로 시험을 먼저 작성하고 RED 확인.
+- [x] 판정과 보호 구현 후 GREEN. 공식 패턴 및 M0 보고서 작성.
+- [x] 별도 BT overlay와 8개 패키지 build/설치 감사. 기존 소스 baseline은 필요한 부품만 확인.
+- [x] 선택 파일 commit 및 ledger 기록.
 
 ### Task 2: 연속 임무 수명 경계
 
@@ -35,8 +35,8 @@ Files: 새 transport.py; 기존 engine_extension.py, run_pick.py, run_navigation
 
 Interfaces: 사전 예약 transport goal UUID, 정착 기반 phase 전환, 원본 lease 소유권 유지. 기존 실행 기본값 유지.
 
-- [ ] 예약되지 않은 goal·움직이는 base에서 place·접촉 상실·취소·FAULT latch 시험 RED.
-- [ ] 최소 운반/정지 조작 전환 구현과 GREEN, 영향 부품 회귀.
+- [x] 예약되지 않은 goal·움직이는 base에서 place·접촉 상실·취소·FAULT latch 시험 RED.
+- [x] 최소 운반/정지 조작 전환 구현과 GREEN, 영향 부품 회귀.
 - [ ] 동일 engine에서 파지 후 최소 이동·내려놓기 실험; 실제 실패와 잔여를 보존. 두 수정 후 같은 실패면 구조 검토 기록.
 - [ ] 선택 commit 및 ledger 기록.
 
@@ -46,9 +46,11 @@ Files: 새 monitor.py, recording.py, scripts/reuse_13_8의 기록/재생/평가 
 
 Interfaces: Task 1 trial schema; 실제 토픽 원본 timestamp/receipt; 별도 domain 분석.
 
-- [ ] 시간 역행·누락 샘플·CPU 분모·재생 격리 시험 RED → 구현 GREEN.
-- [ ] 실제 bag 기록/닫기/읽기 확인 및 health report, 토픽/TF 흐름 문서.
-- [ ] 선택 commit 및 ledger 기록.
+- [x] 시간 역행·누락 샘플·CPU 분모·재생 격리 시험 RED → 구현 GREEN.
+- [x] 실제 bag 기록/닫기/읽기 확인 및 health report, 토픽/TF 흐름 문서.
+- [x] 선택 commit 및 ledger 기록.
+
+Task 3의 통과 범위는 선별 sensor/BT reception replay이며 전체 raw RGB-D·비전/Nav2 알고리즘 재생은 아니다. Task 2/4/5는 아직 미완료이며 개발 FAIL·수명 보완은 PROGRESS/REPORT에 기록한다.
 
 ### Task 4: 월드와 반복 검증
 

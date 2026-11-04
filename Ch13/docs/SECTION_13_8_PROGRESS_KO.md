@@ -124,3 +124,21 @@ trial17.70sim초/41.652wall초·CPU43.734%·tilt0.034776rad, bag close·worker j
 v8은 관련 action/그리퍼/회수17 PASS/3.66초, 전체300 PASS/43.98초, 초기화 세부 시각 기록 후 지연 시험1 PASS/4.91초.5-package rebuild19.3초·설치56모듈/94자산/child PASS. source324/assets94 SHA256 11762c18c95f7fc5e4d41240a5538342b449a469d402476e7e6721ae49a05260. 소유 stack0·공유 lock free를 다시 확인했다.
 
 Ruling: 실제 runtime도 전수 hash가 같은 WSL native source snapshot을 사용한다 — Windows mount의 source 접근을 hot path에서 줄이고 기존 단일 owner/파일 바이트/정책/설치본을 유지 — 복사본의 상대경로·자산·잠금 연결이 달라질 위험이 있으므로324파일 hash 및94자산 freeze를 재검증하고 두 symlink의 realpath가 원래 sibling 자산·공유 lock과 같은지 확인한다. 증거 출력은 원래 worktree의 새 UUID로 지정하며 이 복사는 물리 실행 증거가 아니다. 준비 도구·경로는 section_13_8_preparation_20261104/runtime_stage_v8.json에 보존한다.
+
+native 사본/home/jinho/ch13_reuse_13_8_build/live_source_b1b1649ca2ff470d801d15f94eadb728/repo의324소스·94자산 동결 검증 PASS. 자산과lock realpath가 기존 work/ 아래 원본과 같음을 확인했다. v8 실제 개발 사례UUIDe1c738a7-42a2-417b-9e66-4aa445bd9875를 시작하며 결과는 원래 worktree에 남긴다. 소스commit8bf25e10이며 아직 성공 판정이 아니다.
+
+### v8 접근 중 가림 실패 및 검증 표본 보완
+
+v8은 초기화/준비 action을 통과했지만 실제 파지 전 GRASP_APPROACH 도중370.036915580wall에 OBSERVATION_EXPIRED로 정지했다. 비전 accepted3027·높이 가시성 부족 거부56·fault비어있음. trial100.56sim초/240.879wall초·CPU44.443%·tilt0.034256rad·bag close. worker join/12 child clean exit·engine/rx/upstream join·잔여0·공유 lock free. 이 실행은 파지·귀환·내려놓기 성공이 아니다.
+
+초기화 실측: description 읽기/poll1.507ms, arm client9.584ms, service 생성59.214/2.381/13.663/2.716ms, pick gripper client10.765ms. 이는 이번 native 실행의 수치이며 이전v7의 어떤 하위 호출이399.695ms를 소비했는지 소급 입증하지 않는다. v8 당시324파일은8bf25e10에서 hash 확인 보존했고 source_v8/runtime_source.tar.gz SHA256 5610e2751299b0fc4f76cb93dc960637fb2121793c9267514b2dcb35236ed9c2이다.
+
+이전8개 시야 표본은 접근 중간 자세를 충분히 포함하지 못했다. 정적 회귀의 표본 선정 결함을 인정하고, v5 성공 파지/운반 궤적과v8 실제 접근 실패 궤적 전체를 사용해 보완한다. 원본2초 간격134자세·16개 고정 mount 비교에서(0.4,0.4,0.3)m 후보만134/134 fit과 사후 오차4mm 이내를 통과했다. 그러나0.1sim초 간격2653자세 재확인에서는v5 106.72sim초의 단 한 자세에서 기존75% 높이 가시성에 못 미쳤다. 이를 전수PASS나 여유가 있는 시야로 표현하지 않고 경계 구간을 추가 확인한다. 새 회귀 fixture는0.5sim초 간격532자세와 원본 로그hash를 보존한다. 아직 runtime mount를 다시 바꾸지 않았다.
+
+후속 경계 비교: 전체0.5sim초 간격+100~112sim초 구간0.05sim초 간격747자세,6개 작은 위치 차이 후보를 확인했다. 최소 변경 후보(0.4,0.4,0.29)m·yaw=-31.607502도·pitch0은747/747, 최소 visible height71.177mm(원통80mm의88.97%), 사후 위치오차최대1.545mm였다. 이를 두 전체 궤적의0.1sim초 간격2653자세로 다시 확인해2653/2653, 최대 사후 오차2.580mm를 얻었다. camera mount 외에 기존 fit/물리/한도/TF·capture 수명은 바꾸지 않는다. 초기134자세 비교만으로 인수하지 않았고, 실제 동작의 새로운 팔 경로·보행 변동은 여전히 추가 확인 대상이다.
+
+532자세 회귀는 기존v6/v8 camera에서 RED(1 failed/1 passed,6.44초)를 확인했다. critical 구간까지 포함하는747자세 fixture를 별도로 추가하며 원래8/532자세 자료도 보존한다. Runtime mount는 위 최소 변경 후보로 갱신하고 기존 default camera 유지 시험과 함께 전체 회귀 중이다. 모든 렌더링은 engine 종료 후 저장 상태에 대한 관측 시험이며 새 물리 실행 성공이 아니다.
+
+새 mount/747자세 회귀·원래 default camera 유지·기존 수명/취소/수치 판정 포함301 PASS/49.60초. 다음 실제 사례는 새 v9 동결과 native source 사본으로 격리한다. 원래 v8 FAIL·초기8자세 표본 한계·중간2652/2653 결과는 그대로 보존한다.
+
+v9 준비 첫 시도는 일회성 Bash 스크립트의 Windows CRLF 때문에line2에서 시작 전 중단됐다. LF로 정규화한 별도 retry 로그를 보존했고 engine은 그 실패 시도에서 시작하지 않았다. 이후 build·설치56모듈/94자산/child 감사 PASS. v9 source326/assets94 SHA256 7a08ea204ffc5d4b682712cd6f1213e63dc783af4313a65cff3e54e06cd586a9, native 사본/home/jinho/ch13_reuse_13_8_build/live_source_5c1a8ce1dde440e0b622259f216947b6/repo에서 전수 재검증 PASS. 자산/공유 lock realpath 동일. 다음 실제 사례f50ddb77-4c68-4e37-8e0c-df8c9fae07a9, 원래 worktree에 새 증거를 기록한다.

@@ -3,18 +3,20 @@ import json,math
 from pathlib import Path
 import mujoco
 import numpy as np
+import pytest
 from ch13_manipulation_reuse.pick_scene import make_pick_model
 from ch13_manipulation_reuse.cylinder_vision import fit_cylinder
 from ch13_navigation_reuse.camera_worker import render_rgbd
 
 
-def test_transport_camera_keeps_original_fit_visible_in_saved_pick_and_carry_states(monkeypatch):
+@pytest.mark.parametrize('fixture',['held_visibility_v5.json','camera_trace_v5_v8_dense.json'])
+def test_transport_camera_keeps_original_fit_visible_in_saved_pick_and_carry_states(monkeypatch,fixture):
     monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
     source=Path(__file__).resolve().parents[5].parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml'
     model=make_pick_model(source);model.vis.quality.offsamples=0
     data=mujoco.MjData(model);camera=model.camera('reuse_rgbd').id
     option=mujoco.MjvOption();option.geomgroup[2]=0;option.geomgroup[3]=1;option.geomgroup[5]=1
-    states=json.loads((Path(__file__).parent/'data/held_visibility_v5.json').read_text())['states']
+    states=json.loads((Path(__file__).parent/'data'/fixture).read_text())['states']
     focal=240/(2*math.tan(math.radians(55)/2));renderer=mujoco.Renderer(model,240,320)
     try:
         for state in states:
