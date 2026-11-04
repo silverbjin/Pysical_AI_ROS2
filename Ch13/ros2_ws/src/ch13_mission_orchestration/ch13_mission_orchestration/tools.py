@@ -36,6 +36,9 @@ def verify_bt(data):
         injections=[e for e in events if e.get('event')=='injection']
         stops=[e for e in events if e.get('event')=='navigation_terminal_and_settled']
         checks.update(aborted=data.get('terminal')=='ABORTED',injected=len(injections)==1,
+            cancel_ack=any(data.get('goals',{}).get('cancel_acks',[])),
+            actual_canceled_terminal=5 in data.get('goals',{}).get('terminals',[]),
+            all_goals_drained=data.get('goals',{}).get('pending')==0,
             canceled=bool(p.get('cancel_reason')),no_pick_after_nav_cancel=('pick' not in requested if data.get('case')!='held_cancel' else True),
             actual_nav_stop=any(e.get('terminal')==5 and e.get('stationary_ready') and e.get('displacement_m',0)>.03 for e in stops) if data.get('case')!='held_cancel' else any(e.get('event')=='pick_canceled_and_settled' for e in events))
     return dict(result='PASS' if all(checks.values()) else 'FAIL',checks=checks)

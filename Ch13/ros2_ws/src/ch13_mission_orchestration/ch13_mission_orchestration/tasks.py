@@ -49,15 +49,19 @@ class TaskPort:
 class GoalTracker:
     """Polled only by the ROS owner, including after a BT leaf is INVALID."""
     def __init__(self):
-        self.rows=[];self.canceling=False;self.terminals=[];self.errors=[]
+        self.rows=[];self.canceling=False;self.terminals=[];self.errors=[];self.cancel_acks=[]
 
     def add(self,sent):self.rows.append(dict(sent=sent,handle=None,result=None,cancel=None,done=False))
     def cancel(self):self.canceling=True
 
     def poll(self):
         for row in self.rows:
-            if row['done']:continue
             try:
+                cancel=row.get('cancel')
+                if cancel is not None and cancel.done() and not row.get('ack_recorded'):
+                    self.cancel_acks.append(bool(getattr(cancel.result(),'goals_canceling',[])))
+                    row['ack_recorded']=True
+                if row['done']:continue
                 if row['handle'] is None:
                     if not row['sent'].done():continue
                     handle=row['sent'].result()
@@ -72,3 +76,8 @@ class GoalTracker:
 
     @property
     def drained(self):return all(r['done'] for r in self.rows)
+
+    def audit(self):
+        return dict(terminals=list(self.terminals),errors=list(self.errors),
+            cancel_requests=sum(r['cancel'] is not None for r in self.rows),cancel_acks=list(self.cancel_acks),
+            pending=sum(not r['done'] for r in self.rows))

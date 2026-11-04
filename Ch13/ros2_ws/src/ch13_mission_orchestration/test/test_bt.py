@@ -57,6 +57,16 @@ def test_rejected_goal_and_send_exception_are_drained():
     tracker.poll(); assert tracker.drained and tracker.errors
 
 
+def test_cancel_ack_and_terminal_are_separately_audited():
+    tracker=GoalTracker(); sent=Future(); h=Handle(); sent.set_result(h); tracker.add(sent)
+    tracker.cancel(); tracker.poll()
+    assert tracker.audit()['cancel_requests']==1 and tracker.audit()['cancel_acks']==[]
+    h.cancel.set_result(type('Ack',(),{'goals_canceling':[1]})());tracker.poll()
+    assert tracker.audit()['cancel_acks']==[True] and not tracker.drained
+    h.result.set_result(type('Result',(),{'status':5})());tracker.poll()
+    assert tracker.audit()['terminals']==[5] and tracker.drained
+
+
 def test_snapshots_cannot_mutate_authority_and_unknown_steps_rejected():
     p=TaskPort(); p.submit('navigate'); s=p.snapshot(); s['requested'].append('pick')
     assert p.snapshot()['requested']==['navigate']
