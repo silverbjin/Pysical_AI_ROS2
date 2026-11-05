@@ -89,3 +89,7 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 ## v20: 같은 연속 제한 안에서의 시간 배율 세분화
 
 [MoveIt2.12.4 TOTG](https://github.com/moveit/moveit2/blob/2.12.4/moveit_core/trajectory_processing/src/time_optimal_trajectory_generation.cpp)의 속도/가속도 제한에 따른 시간화와 [ros2_control Jazzy 궤적 설명](https://control.ros.org/jazzy/doc/ros2_controllers/joint_trajectory_controller/doc/trajectory.html)의 quintic 연속성/overshoot를 확인했다. 실제 제어기는 기존 custom native이며 다른 controller로 교체하지 않는다. v19의1.0배 궤적은 가속도0.109915rad/s²로0.1 한계를 넘었고, 기존1.25배는93.728sim초였다. 같은 연속 proof로1.05909배/79.413sim초를 확인했다. floor opt-in만 feasible coarse 구간의 bounded 탐색과1% 여유를 사용하며 같은 proof를 다시 요구한다. 12회/1%는 프로젝트 선택이며 공식 권장 수치로 표현하지 않는다. 경로와 waypoint·정책/PD·속도/가속도/시간 제한은 유지한다. 자세한 실제 실패·시험·한계는 TIMING_DIAGNOSIS 보고서에 있다.
+
+## v23: Level1 도착 허용 반경의 분리 적용
+
+공식GitHub connector로 Nav2 1.3.13 nav2_controller/plugins/simple_goal_checker.cpp 전체를 재조회했다. xy_goal_tolerance의 제곱 거리 비교와 stateful=true에서 check_xy_=false로 전환하는 실제 구현을 확인했다. v22의44.449mm 정착 오차가6cm 허용 안에 있다는 사실과 원고3cm 목표를 구분한다. Level1 carry_v1 환경에서만 controller_server에 goal_checker.xy_goal_tolerance=0.015를 YAML 뒤의 명시 파라미터로 전달한다. 다른 node와 development/13.6/13.7 YAML, yaw0.06/statefultrue·속도·정책·정착 경계는 유지한다. 1.5cm는 프로젝트의 정착 여유 선택이며 공식 권장값으로 표현하지 않는다. 설정만으로3cm를 달성했다고 쓰지 않고, 실제 GetParameters 읽기와 unloaded navigation1회/정식 navigation판정으로 확인한다. 귀환π회전/적재/장애물의 강건성은 별도다.

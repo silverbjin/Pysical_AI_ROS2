@@ -2,7 +2,9 @@
 
 2026-11-05 KST 갱신. 단일 작업자. **개발 진행 중이며 전체 원고 인수가 완료된 상태가 아니다.**
 
-최신 v21 Level1 실제 사례는 파지→2.560m 운반→귀환→지지 정착→실제 개방·detach 후 팔 후퇴 중 MISSION_EXPIRED로 FAIL했다. heartbeat 발행 사이364.214ms 공백이 있었고 마지막 발행은 즉시 수신됐다. 생산 프로세스의 멈춤 원인은 아직 확정되지 않았다. 190.252sim초/457.378wall초·귀환36.336mm·tilt0.045512rad·CPU43.886%, worker/자식12개 회수·bag close·lock free다. 운반 판정도 초기 높이 대비21.802mm 하강으로20mm 기준을 초과해 FAIL이며 원본 판정을 유지한다. 상세 조사와 후속 변경은 SECTION_13_8_LATENCY_DIAGNOSIS_KO.md에 기록한다.
+최신 v22 Level1은 파지→2.566m 운반→귀환→지지 정착→실제 개방·detach→팔 후퇴→유지→정상 종료까지 완료했다. BT SUCCESS와 worker/자식12개 회수·bag close·lock free를 확인했다. 다만 높이 하강20.094mm가20mm 기준을 초과해 물리 운반 및 trial 최종 판정은 **FAIL**이다. 199.538sim초/490.768wall초·귀환44.449mm·tilt0.044629rad·CPU45.950%로3cm/120초 목표도 미달이다. 원래 판정을 보존하며 BT SUCCESS와 전체 인수를 구분한다.
+
+반복 지연은 CPython3.12.3/rosbag2 0.26.11 공식 구현을 조사해 원문 journal과 owner GC 관측을 적용했다. 전체 부품357 PASS/61.30초, 소스361개와 실행 동결 전수 일치다. v22 heartbeat9,012회 중250/300ms 초과0회, 최대235.980ms였다. gen2 GC63~65ms가 관측됐지만 최대 간격과 겹치지 않아 v21의364ms 공백 원인을 GC로 확정하거나 반복 강건성을 주장하지 않는다. 상세 근거는 SECTION_13_8_LATENCY_DIAGNOSIS_KO.md, 원본 UUID는 ab482f62-ea28-462d-a176-235c58573edb다.
 
 개발 fixture의 v15에서는 같은 engine의 파지→2.548m 운반→내려놓기→팔 후퇴→유지→정상 종료를 실제 1회 통과했다. 파지/운반 물리 판정 PASS, BT mission SUCCESS, 소유 goal14개 SUCCEEDED, 자식12개와 worker·상태 기록 스레드 정상 회수, bag close/공유 lock free다. 상태 파일에 Windows 읽기 잠금을3.115초 주입했고 기록 오류3회가 제어 취소로 전파되지 않았다. 이 사례는 원고 Level1/2/3나 고정 설정10회 평가를 대신하지 않는다.
 
@@ -84,3 +86,5 @@ v10 첫 UUID8478db34는 startup FUTURE_SOURCE:joints로 실패했다. 동일 소
 v11은source 나이303ms의초기이동중단, v12는최초arm 준비중455ms heartbeat 공백, v13은접근중소수surface outlier에따른관측거부로모두FAIL했다. 카메라·relay·owner 초기화를같은원인으로묶지않고원본시각별로구분했다. 공식Jazzy/rclpy7.1.12·Mesa·PCL1.15.1·SciPy1.18.1을조사했다. 초기타입준비를동작전으로옮긴뒤v13의실제arm client15.922ms/gripper11.856ms로첫준비실패구간을통과했다. 전체강건성통과는아니다.
 
 v14 후보는원통모델의95%/2mm 합의점선별후재계산을적용한다. RMS1.5mm의모집단이합의점으로바뀌므로검출계약변경으로명시하고rawRMS/제외점수/합의점비율도기록한다. 두실제거부영상·오염/가림·747자세·기존수명포함322 PASS/54.67초. 새로운실제인수는대기다. 별도상세보고서SECTION_13_8_LATENCY_DIAGNOSIS_KO.md에근거·참고링크·남은검증을정리했다.
+
+최근 정밀도 조사에서는 설치 Nav21.3.13의 공식 SimpleGoalChecker와 navigation_launch.py 패턴을 참고했다. 첫 dict override의 실제 미적용을 재현하고 RewrittenYaml로 노드별 항목을 재작성했다. 관련13개 시험 PASS 후 실제 서버에서1.5cm 설정을 읽었으며 짐 없는 전진 이동1회 정착 오차11.82mm/정식 navigation PASS를 확인했다(UUID9e86b6f2-91e6-4a89-a6d9-a28b550ae40d). 앞선 설정 미적용·시작 전 미래 입력 실패도 보존했다. 이 결과는 적재 귀환3cm나 원고 전체 성공이 아니다. 근거와 한계는 SECTION_13_8_NAVIGATION_PRECISION_DIAGNOSIS_KO.md에 있다.

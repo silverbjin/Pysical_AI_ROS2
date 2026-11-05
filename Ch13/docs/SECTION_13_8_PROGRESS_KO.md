@@ -328,3 +328,23 @@ Ruling: 저장status20,417개의원문문자열보관실험은RSS308764→199492
 
 실제handoff수명시험2 FAIL/1 PASS(3.49초)→관련4 PASS/3.41초. 예외회수/prettyJSON/legacy까지추가한전체최종357 PASS/61.30초. 시험native component_source_d5518f38026c4349a1320136d15f3bd3. 원래v21 FAIL과archive/hash·실험원본을보존했다. 아직v22실제성공이아니다.
 v22 build17.1초/설치63모듈·94자산·actualchild NumPy우선순위PASS. source361/assets94 SHA25656ebcc593888d49b3bbf77eeec59e23b33a0a3083ff271186f83ddb6cd0bc870. 전체357시험과동결361개전수hash일치. native live_source_fc8a33d4cf684a69b6afc210c57cc7a7와원래공유lockrealpath동일/실행전소유잔여0/lockfree를확인했다.
+
+### v22 actual: 정상 연속 동작·종료, 원래 물리 기준 FAIL
+
+local43917781 뒤UUIDab482f62-ea28-462d-a176-235c58573edb를source361/assets94동결로실행했다. BT SUCCESS, worker join/자식12개정상exit/engine정상종료/bagclose/lockfree다. 바닥pick104.458mm/hold2.2sim/접촉100% PASS→2.566m운반→귀환→지지정착→실제개방·detach→RETREAT→유지→Finish까지완료했다. trial199.538sim/490.767708wall초·runner513.623501wall초·귀환44.449mm·tilt0.0446295rad·CPU45.9498%. 3cm/120초목표미달.
+
+물리transport는carry_height만false/나머지7true이며trial최종FAIL이다. 높이20.094314mm하강으로20mm기준을0.094314mm초과했다. 같은때TCP자체18.406087mm하강/상대이동3.977737mm,전체carry최대상대이동5.299600mm·환경지지힘최대0N이었다. 좌표계차이를별도carry_frame_analysis_v22.json으로보존하되기준이나원본판정을바꾸지않는다.
+
+실제heartbeat9012회에서250/300ms초과공백0. 최대235.979593ms는GC와겹치지않았고마지막종료부근이다. gen2 GC2회65.110/63.029ms는각94.849/111.147ms발행간격과겹쳤다. 원문journal의부담은줄였지만실제gen2에는다른owner객체도포함된다. 이전364ms원인이나반복강건성해결로단정하지않는다. 프로세스소유/300ms계약/GC정책은유지했다. 초기사후분석shell의변수전달이빈경로가돼API실패했으며리터럴인자호출로수정,실제물리실패와구분했다.
+
+sourcearchive SHA256ce8188ac386987553b97c1de820f2a5ec4b942c991b542e2e6f683671cfef9ef. raw56,066,134bytes/SHA256203fcbcf7d3b81abd46ecdd3f6348036092174b10b6fb0b048360b76e0de08ae,원본삭제없음. carry분석은archive생성이후생성한별도사후결과로보존한다. 다음은기존0.06mNav2허용반경과원고3cm목표의불일치를공식1.3.13구현에맞춰별도최소navigation사례로검증한다. 원래높이판정FAIL을숨기거나긴13.8전체사례를또반복하지않는다.
+Ruling: 반복된3cm미달은기존Nav2 0.06m허용반경과목표불일치가확인됐다 — 공식1.3.13 SimpleGoalChecker를GitHub connector로재조회하고Level1 carry_v1 controller_server에만0.015m override를추가한다 — YAML기본/yaw/stateful/속도·정책과정착조건은유지한다. 되돌릴수있는3줄설정에구현을따라쓰는unit을추가하지않고실제parameter읽기+짧은navigation정식판정으로검증한다. 아직v23실제인수결과가아니다.
+
+v23 navigation-only UUID93bcce10-caa5-4535-a31c-6c5e4a6ee0ee는실제GetParameters=0.06으로이동전PARAMETER_ADMISSION_FAILURE. 자식10개정상회수/lockfree. 이후terminal없는자료를원래정식verifier가읽어KeyError난도구실패도보존했다. 소스/설치launch hash7718e6649ddb7c0a694dbb2e1626d7e262913a0eaab47f379b48746007915bf1동일. 실제launchdict에는0.015가있었고ROSparser에서node-specific YAML뒤/**override를넣어도0.06이되는문제를엔진없이재현했다.
+
+Ruling: 단순dictoverride는이설정범위에서실제적용되지않는다 — 공식Nav2 1.3.13 navigation_launch.py의ParameterFile/RewrittenYaml패턴과설치원본을읽고controller_server.ros__parameters.goal_checker.xy_goal_tolerance전체경로만재작성한다 — 원본YAML/legacy값은그대로이며실제ROSparser시험을추가한다. 최초1 FAIL/2 PASS(3.49초)→관련13 PASS/5.40초(347 deselected). nav2_common직접의존성을명시했고새글로벌설치는없다. v23실패freeze를수정하지않고v24새freeze로검증한다. 자세한근거는SECTION_13_8_NAVIGATION_PRECISION_DIAGNOSIS_KO.md.
+
+v24 source362/assets94 SHA256ae5d7f4dbd5da8e6e619360071a580b3857a6669a7112f96497f17ae13cb30fa,build15.5초/설치63모듈과94자산감사PASS. 관련13시험과freeze362개전수hash일치PASS. 첫actual UUID6916dedd-6e65-403c-b8ba-180850a35b38는이동허가전FUTURE_SOURCE:base/ready_for_arm=false로시작실패했으며자식10개회수/lockfree. 제어/수명변경없이기존startup trace만켜같은동결의1회재현을확인했다.
+
+두번째v24 actual UUID9e86b6f2-91e6-4a89-a6d9-a28b550ae40d 는controller실제xy0.015/yaw0.06/statefultrue를반환했다. unloaded forward(0.65,0,0) 정착11.822090mm/yaw0.000997rad/정식navigation PASS/precision PASS. 정지window0.710sim초/고유356sample,engine정상종료·자식10개정상회수·잔여0·lockfree다. 앞선startup실패원인해결이나반복강건성을주장하지않고,적재귀환π회전/Level1전체새실행은남아있다. 전체13.8완료나고정10회평가로확대하지않는다.
+v23설정FAIL/v24시작FAIL/v24navigationPASS 세사례의정확한실행source와모델제외raw archive/hash를보존했다. v24공통sourcearchive00546a3806d65d1e817d58e136d40fcbdf87cd93eff713f82fa28172a5466686,통과raw2,502,749bytes/SHA256d439df23a389ba9099025722d38e7eb36bbf455f9f3c4e35bedf7b766cd68496. 최종소유잔여0/공유lockfree(boot5ca2452a-b323-4a82-a75a-ffbad896b59f)확인. source/freeze/과거FAIL/원본은변경하지않았다.

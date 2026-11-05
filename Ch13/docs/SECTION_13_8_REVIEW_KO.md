@@ -33,3 +33,11 @@
 v15 개발 fixture에서 실제pick/transport·detach readback·full Cartesian retreat·post-release hold·worker/14goal/12child/상태writer 회수를확인했다. Windows reader-lock3.115초로발생한advisory 오류3회는제어취소로전파되지않았다. 기본제어/모델/관측수명을바꾸지않고구조상오류를해결했지만한번의선택사례이며반복강건성은미검증이다. 3cm/120초목표미달·원고Level1/2/3·10회미완료를보존한다.
 
 검출의모집단을합의점으로바꾼점은명시적계약변경이다. raw/inlier수치와실제raw 영상은함께보존했다. 전체RMS조건을유지했다고잘못설명하지않도록검토했다. source346·외부94자산·325회귀·실제bag164399/12토픽·모델제외41파일복원PASS를구분한다. 다음floor는static6D IK해를얻었으나충돌/접촉/시야/경로인수전이며기존fixture 성공을옮겨쓰지않는다.
+
+## v22~v24 재개 작업 자체 검토
+
+원문 journal은 현재 상태 json.loads를 유지하고 과거 container 보관만 줄였다. pretty JSON 정규화/legacy/default/작업 예외 후 콜백 제거와 client 회수 시험을 포함해v22전체357 PASS다. 원문보관의 작은 GC 실험과 실제 owner전체GC를 구분했다. v22실제정상종료/9012 heartbeat에서300ms초과0회만으로과거364ms원인해결을주장하지않는다. v22전체trial은carry_height FAIL이며BT SUCCESS로대체하지않았다.
+
+v23설정의실제미적용은소스/설치hash감사만으로탐지할수없었다. 실제GetParameters와엔진없는ROSparser를추가해검증경계를보완했다. v24공식RewrittenYaml재작성은관련13 PASS와실제11.82mm전진1회로확인했다. 첫cold-start FUTURE_SOURCE:base FAIL도별도보존했으므로반복강건성은미확인이다. default0.06/yaw/stateful/속도보존을시험했고원본설정파일은바꾸지않았다.
+
+남은필수범위: 적재귀환π회전에서새정밀도확인,관측/발행cold-start지연의반복강건성,common table/Level2/3와고정10회평가,최종가이드·배포/복원검증. 이검토는13.8완료승인이나독립리뷰가아니다. 원격게시하지않는다.

@@ -107,3 +107,9 @@ Ruling: 13.8 carry_v1 opt-in에서만 과거 status를 원문 문자열로 보�
 실제 handoff 함수로 정상/예외·원문/pretty JSON·legacy 경계를 시험한다. 최초2 FAIL/1 PASS(3.49초)는 새 원문/계측 계약 부재였고 구현 후 관련4 PASS/3.41초였다. 예외 경로까지 추가한 전체 회귀 결과는 PROGRESS에 기록한다. 이는 DDS·물리 성공 시험을 대신하지 않는다.
 
 v21 정확한360개 실행 소스 archive SHA256 fe51caeb746f9f10cfcaff63a80e581a759b97f3968d1f40cc206d66d924bd87, 모델 제외 raw49,801,676bytes/SHA25695ae5a46f7d0a476bb4837b310bd3ec37b4b3ace40fa320cbdc71736c1b49c5f. 사후 hash 보존이며 새 실행 증거가 아니다.
+
+### v22 실제 확인: 이번에는 만료 없음, 원인 확정은 유보
+
+UUID ab482f62-ea28-462d-a176-235c58573edb는 BT SUCCESS/정상 종료와12 child·worker 회수까지 완료했다. 실제 heartbeat9,012회에서250/300ms 초과 공백0회, 최대235.980ms는 종료 부근이고 GC와 겹치지 않았다. owner gen2 GC2회65.110/63.029ms는94.849/111.147ms 발행 간격과 겹쳤다. GC 정책은 그대로다. 원문 journal 외에도 owner에 다른 장수 객체가 있으므로 사후 작은 실험의17ms가 실제 프로세스 전체 상한은 아니다. 이전364ms 사건의 원인 해결이나 반복 성공을 입증하지 않는다. owner_deadline_analysis_v22.json과 owner_gc_timing.json으로 수집/발행 시각을 보존했다.
+
+최종 trial은 물리 carry_height 기준 때문에 FAIL이다. 물체 world Z 하강20.094314mm, 같은때 TCP world Z 하강18.406087mm, 상대 이동3.977737mm였고 전체 운반의 TCP 기준 최대 상대 이동5.299600mm·환경 지지힘0N이었다. 기존 pick_monitor는 회전까지 포함한 rotation.T@(target-tcp)를 기록하며 기존 pick_acceptance도 이 상대 좌표로 slip을 평가한다. 높이와 상대 유지의 구분은 carry_frame_analysis_v22.json의 별도 진단이며 원래20mm 기준과 trial을 고쳐 PASS로 만들지 않는다.

@@ -28,6 +28,13 @@ def generate_launch_description():
   ('nav2_controller','controller_server','controller_server',[('cmd_vel','/ch13/reuse/nav_cmd')],{}),
   ('nav2_velocity_smoother','velocity_smoother','velocity_smoother',[('cmd_vel','/ch13/reuse/nav_cmd'),('cmd_vel_smoothed','/ch13/reuse/smoothed_cmd')],{}),
   ('nav2_bt_navigator','bt_navigator','bt_navigator',[],{'default_nav_to_pose_bt_xml':bt})]:
-  actions.append(Node(package=package,executable=executable,name=name,parameters=[params,extra],remappings=remaps,output='screen'))
+  node_params=params
+  if (name=='controller_server' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+      and os.environ.get('CH13_VALIDATION_SCENARIO')=='level1_floor'):
+   from nav2_common.launch import RewrittenYaml
+   from launch_ros.descriptions import ParameterFile
+   node_params=ParameterFile(RewrittenYaml(source_file=params,param_rewrites={
+    'controller_server.ros__parameters.goal_checker.xy_goal_tolerance':'0.015'},convert_types=True),allow_substs=True)
+  actions.append(Node(package=package,executable=executable,name=name,parameters=[node_params,extra],remappings=remaps,output='screen'))
  actions.append(Node(package='nav2_lifecycle_manager',executable='lifecycle_manager',name='reuse_lifecycle_manager',parameters=[{'use_sim_time':True,'autostart':True,'bond_timeout':10.,'node_names':['planner_server','controller_server','velocity_smoother','bt_navigator']}],output='screen'))
  return LaunchDescription(actions)
