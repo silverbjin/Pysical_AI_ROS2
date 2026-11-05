@@ -348,3 +348,10 @@ v24 source362/assets94 SHA256ae5d7f4dbd5da8e6e619360071a580b3857a6669a7112f96497
 
 두번째v24 actual UUID9e86b6f2-91e6-4a89-a6d9-a28b550ae40d 는controller실제xy0.015/yaw0.06/statefultrue를반환했다. unloaded forward(0.65,0,0) 정착11.822090mm/yaw0.000997rad/정식navigation PASS/precision PASS. 정지window0.710sim초/고유356sample,engine정상종료·자식10개정상회수·잔여0·lockfree다. 앞선startup실패원인해결이나반복강건성을주장하지않고,적재귀환π회전/Level1전체새실행은남아있다. 전체13.8완료나고정10회평가로확대하지않는다.
 v23설정FAIL/v24시작FAIL/v24navigationPASS 세사례의정확한실행source와모델제외raw archive/hash를보존했다. v24공통sourcearchive00546a3806d65d1e817d58e136d40fcbdf87cd93eff713f82fa28172a5466686,통과raw2,502,749bytes/SHA256d439df23a389ba9099025722d38e7eb36bbf455f9f3c4e35bedf7b766cd68496. 최종소유잔여0/공유lockfree(boot5ca2452a-b323-4a82-a75a-ffbad896b59f)확인. source/freeze/과거FAIL/원본은변경하지않았다.
+
+## Level2/3·총10회 작업(3447c9e8/v24 이후)
+
+사용자의명세후실행지시에따라LEVEL23_EVALUATION_SPEC/PLAN을먼저작성했다. 단일작업자·추가질문없이실행한다. Level2(3,1,0.54)테이블/박스·5도ramp,Level3(3,1,0.04)식탁아래/1.1m문. 초기시야밖이므로소유된지도기반관측이동뒤fresh3D최종접근을연결한다. 총10slot은L2/L3교대각5회,실패/미완료/미실행포함분모10. 기존world높이20mm기준을이번결과에맞춰수정하지않는다. geometry치수는작업자선택이며명세에공개했다.
+
+Ruling: 기존Task4와새계획이공유하는Scenario/goal/평가필드는새계획에정의하고이기록에L23 Task번호로진행상태를남긴다. Windows linked worktree의Git은Windows에서만다루며WSL Git경로를고쳐skill도구를억지로실행하지않는다. 재개시이ledger와commit을우선한다.
+L23 Task1: in_progress. Task2/3/4: pending. 공식Nav21.3.13 static_layer.cpp와MuJoCo3.13.0 mjmodel.h를GitHub connector로읽었으며walkable지면/정적2D장애물/3D상판을분리하는기존API패턴을재사용한다. 이는물리성공증거가아니다.
