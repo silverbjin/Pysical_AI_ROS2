@@ -1,0 +1,30 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_c7d352c5e0584d40bee0f7e1c9612618/repo
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_capture_overlap_preserves_snapshot_and_original_stamp[True] _______
+
+overlap = True
+
+    @pytest.mark.parametrize('overlap',[False,True])
+    def test_capture_overlap_preserves_snapshot_and_original_stamp(overlap):
+        suite=SensorSuite.__new__(SensorSuite);suite.overlap_capture=overlap
+        suite.next_scan=float('inf');suite.next_rgb=0.;suite.camera=object()
+        suite.latest_camera=True;suite.capture_stage_total=0;suite.capture_stage_timing=deque(maxlen=256)
+        events=[];p=SimpleNamespace(mjData=SimpleNamespace(qpos=np.array([1.,2.,3.])))
+        state={'stamp_ns':1234567};submitted=[]
+        def offer(q,stamp,wall):
+            events.append('capture');submitted.append((q.copy(),stamp,wall));return True
+        def publish(robot,snapshot):
+            assert snapshot is state;events.append('state');robot.mjData.qpos[0]=99.
+        suite.request_capture=offer;suite.node=SimpleNamespace(publish_state=publish)
+        suite.step(p,state)
+>       assert events==(['capture','state'] if overlap else ['state','capture'])
+E       AssertionError: assert ['state', 'capture'] == ['capture', 'state']
+E         At index 0 diff: 'state' != 'capture'
+E         Use -v to get more diff
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_capture_overlap.py:20: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_capture_overlap.py::test_capture_overlap_preserves_snapshot_and_original_stamp[True]
+1 failed, 1 passed, 394 deselected in 2.97s
+

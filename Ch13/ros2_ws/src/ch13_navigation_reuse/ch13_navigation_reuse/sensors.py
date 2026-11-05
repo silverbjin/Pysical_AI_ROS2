@@ -1,5 +1,5 @@
 """Actual engine rays and asynchronous RGB-D from immutable engine snapshots."""
-import math,time,json
+import math,time,json,os
 from collections import deque
 from pathlib import Path
 import numpy as np,mujoco
@@ -20,6 +20,7 @@ class HeadlessViewer:
 class SensorSuite:
  def __init__(self,model,data,profile,out,latest_camera=False):
   self.latest_camera=latest_camera
+  self.overlap_capture=latest_camera and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
   self.capture_stage_timing=deque(maxlen=256);self.capture_stage_total=0
   self.profile=profile;self.out=Path(out);self.next_scan=0.;self.last_scan_ns=None;self.next_rgb=0.;self.scans=0;self.frames=0;self.meta=[];self.first=None;self.last=None;self.node=None;self.camera=None;self.joined=True
   if profile=='vision':
@@ -49,13 +50,20 @@ class SensorSuite:
    self.next_scan=wall+.1;m=LaserScan();set_stamp(m.header.stamp,stamp);m.header.frame_id='reuse/scan';m.angle_min=-math.pi;m.angle_max=math.pi;m.angle_increment=2*math.pi/180;m.range_min=.05;m.range_max=4.;m.scan_time=0. if self.last_scan_ns is None else (stamp-self.last_scan_ns)/1e9;self.last_scan_ns=stamp;m.ranges=ray_scan(p.mjModel,p.mjData);self.scan_pub.publish(m);self.scans+=1
    scan_wall_s=time.monotonic()-wall
   if self.camera is not None and wall>=self.next_rgb:
-   self.next_rgb=wall+1/15.;q=p.mjData.qpos.copy();state_start=time.monotonic();self.node.publish_state(p,state)
-   offer_start=time.monotonic();self.request_capture(q,stamp,wall);finished=time.monotonic()
+   self.next_rgb=wall+1/15.;q=p.mjData.qpos.copy()
+   if getattr(self,'overlap_capture',False):
+    offer_start=time.monotonic();self.request_capture(q,stamp,wall);offer_end=time.monotonic()
+    state_start=time.monotonic();self.node.publish_state(p,state);state_end=time.monotonic()
+   else:
+    state_start=time.monotonic();self.node.publish_state(p,state);state_end=time.monotonic()
+    offer_start=time.monotonic();self.request_capture(q,stamp,wall);offer_end=time.monotonic()
+   finished=time.monotonic()
    if self.latest_camera:
     self.capture_stage_total+=1
     self.capture_stage_timing.append(dict(capture_ns=stamp,capture_wall=wall,scan_wall_s=scan_wall_s,
-        state_publish_wall_s=offer_start-state_start,pre_offer_wall_s=offer_start-wall,
-        request_offer_wall_s=finished-offer_start,finished_wall=finished))
+        state_publish_wall_s=state_end-state_start,pre_offer_wall_s=offer_start-wall,
+        request_offer_wall_s=offer_end-offer_start,finished_wall=finished,
+        offered_before_state_publish=getattr(self,'overlap_capture',False)))
  def close(self):
   if self.camera is not None:self.joined=self.camera.close()
   if self.latest_camera and self.camera is not None and self.camera.source_captures is not None:self.meta=self.camera.source_captures
