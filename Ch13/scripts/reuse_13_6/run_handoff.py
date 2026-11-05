@@ -1,6 +1,7 @@
 """Same-engine live handoff acceptance; delegates navigation to its sole owner."""
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -11,6 +12,11 @@ from ch13_navigation_reuse.command_gateway import N
 
 
 def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', work=None):
+    validation = os.environ.get('CH13_VALIDATION_PROFILE') == 'carry_v1'
+    owner_gc = None
+    if validation:
+        from ch13_manipulation_reuse.gc_timing import GCTiming
+        owner_gc = GCTiming()
     status = {}
     rows = []
     beats = []
@@ -22,12 +28,20 @@ def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', w
     def on_status(message):
         nonlocal status
         status = json.loads(message.data)
-        rows.append(dict(status))
+        # Control reads the parsed current sample; history needs no object graph.
+        # Preserve ordinary JSON verbatim, normalize multiline JSON to one row.
+        if validation:
+            raw = message.data
+            rows.append(json.dumps(status) if '\n' in raw or '\r' in raw else raw)
+        else:
+            rows.append(dict(status))
     subscription = node.create_subscription(String,N+'/manipulation/status',on_status,16)
     publisher = node.create_publisher(String,N+'/manipulation/lease',1)
     timer = None
     extra = None
     try:
+        if owner_gc is not None:
+            owner_gc.start()
         assert until(lambda:bool(status.get('session')),3.),'no live engine session'
         session = status['session']
         def beat():
@@ -84,14 +98,19 @@ def handoff(*, node, until, call, out, goal_id, target, snapshot, case='hold', w
         return dict(result='PASS',case=case,session=session,goal_id=goal_id,
                     final_status=status,live_status_samples=len(rows))
     finally:
+        if owner_gc is not None:
+            owner_gc.stop()
         if timer is not None:
             node.destroy_timer(timer)
         node.destroy_subscription(subscription)
         if extra is not None:
             node.destroy_publisher(extra)
         node.destroy_publisher(publisher)
-        (out/'manipulation_status.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in rows))
+        (out/'manipulation_status.jsonl').write_text(''.join(
+            (r if validation else json.dumps(r))+'\n' for r in rows))
         (out/'mission_heartbeats.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in beats))
+        if owner_gc is not None:
+            (out/'owner_gc_timing.json').write_text(json.dumps(owner_gc.summary(),indent=2)+'\n')
 
 
 def main():

@@ -1,0 +1,154 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_dc90ad2d3b9a41df9126b7ac684fbe5c/repo
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+__ test_owner_status_journal_and_gc_probe_follow_live_handoff[carry_v1-False] __
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_owner_status_journal_and_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7488a5657cb0>
+profile = 'carry_v1', pretty = False
+
+    @pytest.mark.parametrize('profile,pretty', [('carry_v1', False), ('carry_v1', True), ('', False)])
+    def test_owner_status_journal_and_gc_probe_follow_live_handoff(tmp_path, monkeypatch, profile, pretty):
+        monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[4]/'scripts/reuse_13_6'))
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE', profile)
+        from run_handoff import handoff
+        from std_msgs.msg import String
+    
+        raw_rows = []
+        class Node:
+            phase = 'WAITING'
+            timer = None
+            destroyed = []
+            def create_subscription(self, kind, name, callback, depth):
+                self.callback = callback
+                return 'subscription'
+            def create_publisher(self, *args):
+                return self
+            def publish(self, message):
+                self.phase = 'REVOKED' if json.loads(message.data)['state'] == 'REVOKE' else 'READY'
+            def create_timer(self, period, callback, **kwargs):
+                self.timer = callback
+                return 'timer'
+            def destroy_timer(self, handle): self.destroyed.append(handle)
+            def destroy_subscription(self, handle): self.destroyed.append(handle)
+            def destroy_publisher(self, handle): self.destroyed.append('publisher')
+            def emit(self):
+                value = dict(session='unit-session', phase=self.phase, nested={'values': [1, 2]})
+                raw = json.dumps(value, indent=2) if pretty else json.dumps(value, separators=(',', ':'))
+                raw_rows.append(raw)
+                self.callback(String(data=raw))
+        node = Node()
+        def until(predicate, timeout):
+            for _ in range(4):
+                if node.timer: node.timer()
+                node.emit()
+                if predicate(): return True
+            return False
+        before = list(gc.callbacks)
+        enabled = gc.isenabled()
+        def work(**context):
+            gc.collect(2)
+            assert context['status']()['phase'] == 'READY'
+        result = handoff(node=node, until=until, call=None, out=tmp_path, goal_id='unit-goal',
+                         target=[0, 0], snapshot=lambda:dict(clock_ns=123, observation={'capture_ns': 123}),
+                         case='pick', work=work)
+        assert result['final_status']['phase'] == 'REVOKED'
+        assert result['live_status_samples'] == len(raw_rows)
+        lines = (tmp_path/'manipulation_status.jsonl').read_text().splitlines()
+        assert [json.loads(line) for line in lines] == [json.loads(raw) for raw in raw_rows]
+        assert node.destroyed == ['timer', 'subscription', 'publisher']
+        assert list(gc.callbacks) == before and gc.isenabled() == enabled
+        if profile == 'carry_v1':
+>           if not pretty: assert lines == raw_rows
+E           assert ['{"session":...s": [1, 2]}}'] == ['{"session":...ues":[1,2]}}']
+E             At index 0 diff: '{"session": "unit-session", "phase": "WAITING", "nested": {"values": [1, 2]}}' != '{"session":"unit-session","phase":"WAITING","nested":{"values":[1,2]}}'
+E             Use -v to get more diff
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_owner_journal.py:61: AssertionError
+__ test_owner_status_journal_and_gc_probe_follow_live_handoff[carry_v1-True] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_owner_status_journal_and_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7488b593f560>
+profile = 'carry_v1', pretty = True
+
+    @pytest.mark.parametrize('profile,pretty', [('carry_v1', False), ('carry_v1', True), ('', False)])
+    def test_owner_status_journal_and_gc_probe_follow_live_handoff(tmp_path, monkeypatch, profile, pretty):
+        monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[4]/'scripts/reuse_13_6'))
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE', profile)
+        from run_handoff import handoff
+        from std_msgs.msg import String
+    
+        raw_rows = []
+        class Node:
+            phase = 'WAITING'
+            timer = None
+            destroyed = []
+            def create_subscription(self, kind, name, callback, depth):
+                self.callback = callback
+                return 'subscription'
+            def create_publisher(self, *args):
+                return self
+            def publish(self, message):
+                self.phase = 'REVOKED' if json.loads(message.data)['state'] == 'REVOKE' else 'READY'
+            def create_timer(self, period, callback, **kwargs):
+                self.timer = callback
+                return 'timer'
+            def destroy_timer(self, handle): self.destroyed.append(handle)
+            def destroy_subscription(self, handle): self.destroyed.append(handle)
+            def destroy_publisher(self, handle): self.destroyed.append('publisher')
+            def emit(self):
+                value = dict(session='unit-session', phase=self.phase, nested={'values': [1, 2]})
+                raw = json.dumps(value, indent=2) if pretty else json.dumps(value, separators=(',', ':'))
+                raw_rows.append(raw)
+                self.callback(String(data=raw))
+        node = Node()
+        def until(predicate, timeout):
+            for _ in range(4):
+                if node.timer: node.timer()
+                node.emit()
+                if predicate(): return True
+            return False
+        before = list(gc.callbacks)
+        enabled = gc.isenabled()
+        def work(**context):
+            gc.collect(2)
+            assert context['status']()['phase'] == 'READY'
+        result = handoff(node=node, until=until, call=None, out=tmp_path, goal_id='unit-goal',
+                         target=[0, 0], snapshot=lambda:dict(clock_ns=123, observation={'capture_ns': 123}),
+                         case='pick', work=work)
+        assert result['final_status']['phase'] == 'REVOKED'
+        assert result['live_status_samples'] == len(raw_rows)
+        lines = (tmp_path/'manipulation_status.jsonl').read_text().splitlines()
+        assert [json.loads(line) for line in lines] == [json.loads(raw) for raw in raw_rows]
+        assert node.destroyed == ['timer', 'subscription', 'publisher']
+        assert list(gc.callbacks) == before and gc.isenabled() == enabled
+        if profile == 'carry_v1':
+            if not pretty: assert lines == raw_rows
+>           probe = json.loads((tmp_path/'owner_gc_timing.json').read_text())
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_owner_journal.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/pathlib.py:1029: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/tmp/pytest-of-jinho/pytest-0/test_owner_status_journal_and_1/owner_gc_timing.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-jinho/pytest-0/test_owner_status_journal_and_1/owner_gc_timing.json'
+
+/usr/lib/python3.12/pathlib.py:1015: FileNotFoundError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_owner_journal.py::test_owner_status_journal_and_gc_probe_follow_live_handoff[carry_v1-False]
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_owner_journal.py::test_owner_status_journal_and_gc_probe_follow_live_handoff[carry_v1-True]
+2 failed, 1 passed, 351 deselected in 3.49s
+

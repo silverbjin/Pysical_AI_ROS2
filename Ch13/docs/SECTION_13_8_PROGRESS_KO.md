@@ -317,3 +317,14 @@ v21계측API부재2 FAIL/기존1 PASS→계측3 PASS/6.43초(348 deselected). �
 Ruling: v21은제어변경없이카메라/센서단계계측만추가한진단source로freeze한다 — 부품에서재현되지않은전체부하의pre-offer/전달경계를실제한사례로분리해야한다 — 기본350검증control을유지하고변경영향camera/startup/IPC시험과실제부품probe를확인한다. metadata만을이유로전체350을다시반복하지않고관련선택결과를정확히기록한다. 기존native160f4eba6cee4271bd684ea26284a2af가현재계측source와같은hash인지는새freeze와전수비교한다. 긴기존matrix는반복하지않는다.
 v21camera/startup/IPC선택은20 PASS/1 FAIL(20.65초),기존test_camera_cadence가SensorSuite.__new__로만들어latest_camera기본값이없었다. 실제free생성자는renderer/ROS부작용이없으므로두cadence시험을실제생성자로바꿔향후초기화누락을방지했다. 원래시각/cadence검증은그대로다. 최종동일선택시험이통과할때만prepare_v21을진행한다. production계측외제어변경은없다.
 v21최종관련21 PASS/24.23초(330 deselected). source360/assets94 SHA256d17a2607042d4e324c064008715233df8eacd6989cb5a80ead9112dc2be94f65. 실제venvchild/설치63모듈·94자산/동일공유lock/소유잔여감사PASS. 21선택시험snapshot과실행동결360개소스hash전수일치PASS. 실제control350이력과계측21시험을구분한다.
+
+### v21 실제 FAIL 보존과 v22 owner 진단
+
+v21 UUIDe0b2d5b0-0678-41e0-87c6-c48793781402는190.252sim/457.378wall초에RETREAT 중MISSION_EXPIRED FAIL. 바닥pick PASS,2.560m운반/귀환/실제지지·개방·detach를확인했다. 귀환36.336mm·CPU43.886%·tilt0.045512rad. 운반carry_height는21.802mm하강으로20mm기준을초과해원본FAIL유지(나머지7개true). worker/12child회수·bagclose·lockfree다. 최신256개capturestage에서pre-offer최대41.321ms/put3.118ms이며전체6502개최대통계가아니다.
+
+첫faultwall471.764171에서마지막heartbeat발행471.449932/즉시native수신471.450333였고다음발행471.814146까지364.214ms공백이다. 두stamp는189902000000ns로같다. owner생산지연이며engineGC자료만으로별도ownerGC를배제할수없다. 원인확정전300ms수명이나50ms주기·OS/GIL정책·소유스레드를바꾸지않는다.
+
+Ruling: 저장status20,417개의원문문자열보관실험은RSS308764→199492KiB/추적객체236304→93391/수동gen2약64→17ms로줄었다 — 현재파싱된status만제어에사용하고과거journal은원문으로보관하는13.8opt-in을적용한다 — 실제364ms원인해결과동일시하지않으며같은owner에기존GCTiming관측을추가한다. CPython3.12.3 gc.rst callbacks/is_tracked 및rosbag2 0.26.11 serialized recorder패턴과차이는LATENCY_DIAGNOSIS에기록했다. GC정책/권한/원본시각은그대로다.
+
+실제handoff수명시험2 FAIL/1 PASS(3.49초)→관련4 PASS/3.41초. 예외회수/prettyJSON/legacy까지추가한전체최종357 PASS/61.30초. 시험native component_source_d5518f38026c4349a1320136d15f3bd3. 원래v21 FAIL과archive/hash·실험원본을보존했다. 아직v22실제성공이아니다.
+v22 build17.1초/설치63모듈·94자산·actualchild NumPy우선순위PASS. source361/assets94 SHA25656ebcc593888d49b3bbf77eeec59e23b33a0a3083ff271186f83ddb6cd0bc870. 전체357시험과동결361개전수hash일치. native live_source_fc8a33d4cf684a69b6afc210c57cc7a7와원래공유lockrealpath동일/실행전소유잔여0/lockfree를확인했다.

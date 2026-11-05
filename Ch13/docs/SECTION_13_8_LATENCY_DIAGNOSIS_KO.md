@@ -87,3 +87,23 @@ v21계측후보는원본capturewall을그대로보존하며실제request_offer_w
 원래vision/relay를붙인첫probe는정적map→odom TF누락으로tf_samples0/accepted0이었다. 원본을API_SETUP_FAILURE로분리보존했다. TF를보완한v2는22.731초/277frame/vision221 accepted·거부0,두자식과camera정상회수였다. 원래12토픽목록의recorder와추가상태발행까지붙인63.391초probe는830frame/vision731 accepted·거부0,세자식과camera정상회수였다. 최근256개producer통계의pre-offer최대11.059ms,전체frame의요청→시작최대6.273ms/render최대8.707ms였다. 실제발행되지않는토픽은대상설정만있는fixture이므로실제12토픽임무bag완료로쓰지않는다. 전체physics/policy/Nav2/MoveIt부하는없다. 이결과로QoS나OS설정을추측변경하지않는다.
 
 관련camera/startup/IPC최종21 PASS/24.23초(330 deselected). 최초20 PASS/1 FAIL은기존cadence시험이생성자를건너뛰어latest_camera기본값이없던fixture초기화누락이며,실제부작용없는free생성자를사용하도록보완했다. 제어350회귀는v20이력이고v21에서전체351을실행한것은아니다. v21은실제한사례로전체부하의pre-offer/전달구간을구분할계측동결이다.
+
+## v21 실제 결과와 owner 프로세스 진단
+
+UUID e0b2d5b0-0678-41e0-87c6-c48793781402는 전체 FAIL이다. 바닥 pick PASS(최소104.914mm 상승,2.2sim초 유지,양 finger 접촉100%), 운반2.560m·귀환36.336mm 후 실제 지지 정착/개방/detach까지 진행했다. 정착은6.917wall초로 새20wall gate 안에서 완료했다. RETREAT 중 최초 fault는 wall471.764171/sim189.944의 MISSION_EXPIRED다. worker/자식12개 정상 회수, bag close와 lock free를 확인했다.
+
+마지막 heartbeat8074는 send471.449932/return471.450114, native receipt471.450333/engine process471.458105였다. 다음8075의 send는471.814146으로 **발행 공백364.214ms**다. 두 stamp는 동일한189902000000ns였다. 발행 뒤 전달 지연으로 해석하지 않는다. 같은 시각 camera health와 observation 수신은 계속 갱신됐다. engine의 GC 기록만으로 별도 owner 프로세스의 GC를 배제할 수 없다.
+
+원래 운반 판정은 carry_height만 false이고 나머지7개 true다. 초기 world Z0.145675628m 대비 최소0.123873742m로21.801886mm 하강해20mm 기준을1.801886mm 초과했다. 그때 TCP 상대 위치 변화는 약4.1mm였으므로 몸통의 높이 변화와 물체 미끄러짐을 구분할 후속 분석이 필요하다. 기존 판정/임계값은 보존하며 바닥 여유가 있다는 이유로 PASS로 바꾸지 않는다. 원고3cm/120초 목표도 미달이다.
+
+### 공식 패턴과 작은 저장 자료 실험
+
+[CPython v3.12.3 gc.rst](https://github.com/python/cpython/blob/v3.12.3/Doc/library/gc.rst)의 is_tracked와 callbacks를 읽었다. 문자열 같은 원자 타입과 중첩 container의 GC 추적 차이, 수집 전후 콜백으로 시간을 관측하는 패턴을 사용한다. disable/freeze/threshold 변경은 적용하지 않는다. [rosbag2 0.26.11 recorder.cpp의 create_subscription](https://github.com/ros2/rosbag2/blob/0.26.11/rosbag2_transport/src/rosbag2_transport/recorder.cpp#L694)은 serialized message와 원래 수신/송신 시각을 보존해 writer로 전달한다. 여기서는 C++ recorder를 복제하지 않고, **현재 제어 상태만 파싱하고 과거 기록은 원문으로 보관**하는 원칙을 참고한다. JSON 원문은 DDS serialized buffer와 같지 않으며 zero-copy라고 부르지 않는다.
+
+저장된 실제 status20,417개를 별도 프로세스에서 읽은 비교: 중첩 dict 보관은 최대 RSS308,764KiB/추적 객체236,304개/수동 gen2 GC61.5~64.5ms였다. 원문 문자열 보관은199,492KiB/93,391개/15.8~17.5ms였고 마지막 상태 의미는 같았다. 원본 실험은 preparation의 owner_status_gc_{parsed,raw}_v21.json에 있다. 로봇·발행자·실제 부하가 없는 사후 실험이며64ms만으로 실제364ms 공백을 설명하지 못한다.
+
+Ruling: 13.8 carry_v1 opt-in에서만 과거 status를 원문 문자열로 보관한다. 현재 status의 json.loads와 제어 판단은 유지하고 pretty JSON은 JSONL 한 줄로 정규화한다. 같은 owner 프로세스의 기존 GCTiming을 lease 전부터 종료까지 관측하고 콜백을 제거한 뒤 owner_gc_timing.json을 쓴다. 종료 후 파일 I/O만 수행한다. 원본 capture/heartbeat 시각,300ms lease,50ms timer,ROS 소유 스레드와 GC 정책은 그대로다. 원문 기록의 메모리 부담 감소는 검증했지만 실제 MISSION_EXPIRED 해결은 미확인이다.
+
+실제 handoff 함수로 정상/예외·원문/pretty JSON·legacy 경계를 시험한다. 최초2 FAIL/1 PASS(3.49초)는 새 원문/계측 계약 부재였고 구현 후 관련4 PASS/3.41초였다. 예외 경로까지 추가한 전체 회귀 결과는 PROGRESS에 기록한다. 이는 DDS·물리 성공 시험을 대신하지 않는다.
+
+v21 정확한360개 실행 소스 archive SHA256 fe51caeb746f9f10cfcaff63a80e581a759b97f3968d1f40cc206d66d924bd87, 모델 제외 raw49,801,676bytes/SHA25695ae5a46f7d0a476bb4837b310bd3ec37b4b3ace40fa320cbdc71736c1b49c5f. 사후 hash 보존이며 새 실행 증거가 아니다.
