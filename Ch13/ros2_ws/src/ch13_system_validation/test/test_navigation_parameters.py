@@ -32,6 +32,8 @@ def test_book_goal_tolerance_survives_node_specific_ros_yaml(tmp_path, monkeypat
         assert node.get_parameter('goal_checker.xy_goal_tolerance').value == expected
         assert node.get_parameter('goal_checker.yaw_goal_tolerance').value == .06
         assert node.get_parameter('goal_checker.stateful').value is stateful
+        controller_stateful=node.get_parameter('FollowPath.stateful').value if node.has_parameter('FollowPath.stateful') else True
+        assert controller_stateful is stateful
         assert node.get_parameter('FollowPath.desired_linear_vel').value == .15
     finally:
         if node is not None: node.destroy_node()

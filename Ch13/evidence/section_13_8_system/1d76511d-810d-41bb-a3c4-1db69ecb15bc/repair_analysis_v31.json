@@ -1,0 +1,54 @@
+{
+  "meaning": "v31 L3 serial-capture control, outside v28 ten",
+  "trial": {
+    "uuid": "1d76511d-810d-41bb-a3c4-1db69ecb15bc",
+    "complete": true,
+    "success": false,
+    "sim_s": 53.2,
+    "wall_s": 128.86633537100005,
+    "position_error_m": null,
+    "max_tilt_rad": 0.05621711189740493,
+    "cpu_percent": 45.5341507023323,
+    "bag_closed": true,
+    "profile": "actual",
+    "level": "level3_house",
+    "scenario": "level3_house",
+    "scenario_sha256": "46b0eadbbed639fd8bf759ae73218b61d9b8a2b0cc17700ee7d45b5d4184978c",
+    "cpu_basis": "owned process tree / sched_getaffinity cores",
+    "allowed_cores": 8,
+    "source_manifest_sha256": "dba3874e7ac7cf1adc3a3cac4a06e5008c8347d54f2b411a1e64539c7eeef3f0",
+    "physical": {
+      "pick": {
+        "result": "FAIL",
+        "failures": [
+          "INVALID_OR_INCOMPLETE_PHYSICS_EVIDENCE"
+        ],
+        "reason": "pre-grasp baseline and measured hold required"
+      },
+      "transport": {
+        "result": "FAIL",
+        "reason": "carry and post-release evidence required"
+      },
+      "world": {
+        "result": "FAIL",
+        "checks": {
+          "fresh_find": false,
+          "door_passage": true,
+          "target_below_table": true
+        },
+        "scope": "actual post-exit base/contact plus admitted fresh find",
+        "door_crossing_y_m": [
+          0.13079018034717912
+        ]
+      }
+    }
+  },
+  "normal_shutdown_requested": true,
+  "result": "FAIL",
+  "error": "Traceback (most recent call last):\n  File \"/home/jinho/ch13_reuse_13_8_build/live_source_07b40bf05c314d7a883ffd15bc49ef4c/repo/Ch13/scripts/reuse_13_5/run_navigation_probe.py\", line 116, in main\n    if orchestration is not None:orchestration.ready(node=node,until=until,snapshot=snapshot)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jinho/ch13_reuse_13_8_build/live_source_07b40bf05c314d7a883ffd15bc49ef4c/repo/Ch13/scripts/reuse_13_8/run_mission.py\", line 53, in ready\n    observe_from_waypoint(self,scenario=scenario,**context)\n  File \"/home/jinho/ch13_reuse_13_8_build/install/ch13_system_validation/lib/python3.12/site-packages/ch13_system_validation/survey.py\", line 32, in observe_from_waypoint\n    assert until(lambda:result.done() or session.cancel_requested()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: survey deadline\n",
+  "remaining": [],
+  "limitation": "survey deadline; first XY14.379mm at yaw1.5905rad, closest5.502mm, later drift303.301mm; RPP stateful default true conflicts with goal checker false; actual final approach and pick not reached",
+  "engine_result": "COMPLETED",
+  "expected_children": 12,
+  "clean_children": 12
+}

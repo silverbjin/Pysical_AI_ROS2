@@ -30,3 +30,14 @@ L3 v30은trial elapsed6.446sim/133.757835wall초,successfalse/complete true였�
 실행당시8CPU/메모리여유/스왑0을읽기전용으로확인했다. 마지막256capture의statepublish평균41.367ms/최대146.958ms,pre-offer평균7.693ms였다. 조기제출은직렬대기는줄였지만현재실행의전체성능성공을입증하지못했다. 같은설치함수의offline100회/no-opDDS profile은.59146wall/.59139CPU초였다. 이대조는liveDDS/부하가없어실제지연상한이나overlap인과증명이아니다. SciPy1.18.1/NumPy2.5.4/Torch2.9.0+cpu이며과거보고와같은SciPy버전이므로업그레이드탓으로단정하지않는다.
 
 Ruling: v30의미통과상태에서조기제출을기본추천하지않는다. 원래직렬순서로되돌리고carry_v1+CH13_CAPTURE_OVERLAP=1에서만실험적으로사용하게한다. 수명/TF/상태발행빈도/속도/OS설정을바꾸지않는다. 이대조의새freeze v31로한번더확인하고,성능실패가반복되면계층경계를재검토하며동일실패를새10회로덮지않는다. v30의모델제외raw/source archive와hash를보존했다.
+## v31 대조와 두 개의 XY 상태 경계
+
+v31(source376/assets94 SHA256dba3874e7ac7cf1adc3a3cac4a06e5008c8347d54f2b411a1e64539c7eeef3f0)은전체402 PASS/59.57초·동일sourcehash·설치감사뒤CH13_CAPTURE_OVERLAP=0으로실행했다. L3 UUID1d76511d-810d-41bb-a3c4-1db69ecb15bc는elapsed53.2sim/128.866wall초로진행속도는회복됐지만같은survey120wall초deadline에서FAIL이었다. engine정상종료·12child정상회수·잔여0/lockfree. v31계획L2 86f26a07-e692-483a-88d4-0754be975dc1는이경계진단때문에아직기동하지않았다. 후속계획이지본10회slot이아니므로성공으로대체하거나숫자를섞지않는다.
+
+저장궤적에서survey목표(1.9,1,0)의최초XY통과는오차14.379mm/yaw1.590514rad,최소XY오차5.502mm/yaw1.579378rad였다. 이후최종yaw회전중오차303.301mm로이탈했다. 앞선진행해석중최종접근이라고했던구간은survey였고원본event로정정했다.
+
+[공식Nav21.3.13 RPP controller](https://github.com/ros-navigation/navigation2/blob/1.3.13/nav2_regulated_pure_pursuit_controller/src/regulated_pure_pursuit_controller.cpp)의shouldRotateToGoalHeading과[parameter_handler](https://github.com/ros-navigation/navigation2/blob/1.3.13/nav2_regulated_pure_pursuit_controller/src/parameter_handler.cpp)를읽었다. RPP의FollowPath.stateful도별도로기본true여서최초XY통과후방향회전에머문다. 앞선goal_checker.statefulfalse만의수정은불완전했다. 목표판정기는XY복귀를요구하지만제어기는방향회전에latched되어XY를복구하지않는조합이다.
+
+Ruling: 같은도달/회전계열이최소수정후에도남아두상태경계를함께재검토했다. 새L2/L3에서만FollowPath.statefulfalse도명시한다. goal_checkerfalse·XY.015/yaw.06·속도/충돌검사/수명/물리안전한계는유지한다. 두실제ROSparam의일치시험2 FAIL/3 PASS(4.19초)를확인했고새동결v32로별도검증한다. 현재원인이설치원본과실제궤적에맞는다는것과실제수렴성공은구분한다.
+
+짧은sleep0/.5/1/2ms20회씩계측은각평균.058/.537/1.061/2.054ms였다. OS대기정밀도저하가이번문제의확정원인이라는가설은지지되지않았고OS시간/우선순위설정을바꾸지않았다. v30/v31의성능차이만으로overlap인과를확정하지않는다.

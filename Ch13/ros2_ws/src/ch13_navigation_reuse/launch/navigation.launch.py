@@ -37,6 +37,8 @@ def generate_launch_description():
    if os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house'):
     # Keep checking XY while turning: the first tolerance crossing is not arrival.
     rewrites['controller_server.ros__parameters.goal_checker.stateful']='false'
+    # RPP has its own XY latch; both must keep correcting position.
+    rewrites['controller_server.ros__parameters.FollowPath.stateful']='false'
    node_params=ParameterFile(RewrittenYaml(source_file=params,param_rewrites=rewrites,
     convert_types=True),allow_substs=True)
   parameter_files=[node_params]
