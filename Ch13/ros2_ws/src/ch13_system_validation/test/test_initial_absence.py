@@ -4,18 +4,18 @@ from ch13_navigation_reuse.vision_approach import VisionObserver
 
 def observer(allow,seen=False):
     node=VisionObserver.__new__(VisionObserver)
-    node.allow_initial_absence=allow;node.rows=[{}] if seen else []
+    node.allow_unobserved_target=allow;node.rows=[{}] if seen else []
     node.rejected=Counter();node.fault=''
     return node
 
 
-def test_initial_survey_absence_is_counted_without_latching_sensor_fault():
+def test_survey_absence_never_fabricates_observation_or_latches_sensor_fault():
     node=observer(True)
     node.record_rejection('cylinder not observed')
     assert node.fault=='' and node.rejected['cylinder not observed']==1
     node.rows.append({'source':'actual accepted observation'})
     node.record_rejection('cylinder not observed')
-    assert node.fault=='TARGET_NOT_OBSERVED'
+    assert node.fault=='' and len(node.rows)==1
 
 
 def test_legacy_absence_and_non_cylinder_absence_still_latch():

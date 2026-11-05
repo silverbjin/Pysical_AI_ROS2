@@ -1,0 +1,20 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_a56b91a21604440cbe6aee89c7a6b945/repo
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+___ test_survey_absence_never_fabricates_observation_or_latches_sensor_fault ___
+
+    def test_survey_absence_never_fabricates_observation_or_latches_sensor_fault():
+        node=observer(True)
+        node.record_rejection('cylinder not observed')
+        assert node.fault=='' and node.rejected['cylinder not observed']==1
+        node.rows.append({'source':'actual accepted observation'})
+        node.record_rejection('cylinder not observed')
+>       assert node.fault=='' and len(node.rows)==1
+E       AssertionError: assert ('TARGET_NOT_OBSERVED' == ''
+E         + TARGET_NOT_OBSERVED)
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_initial_absence.py:18: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_initial_absence.py::test_survey_absence_never_fabricates_observation_or_latches_sensor_fault
+1 failed, 1 passed, 385 deselected in 1.89s
+
