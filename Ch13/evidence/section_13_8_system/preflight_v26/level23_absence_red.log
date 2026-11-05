@@ -1,0 +1,24 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_873576b57a3d4aafab1c24d6f525497d/repo
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_initial_survey_absence_is_counted_without_latching_sensor_fault _____
+
+    def test_initial_survey_absence_is_counted_without_latching_sensor_fault():
+        node=observer(True)
+>       node.record_rejection('cylinder not observed')
+E       AttributeError: 'VisionObserver' object has no attribute 'record_rejection'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_initial_absence.py:14: AttributeError
+___________ test_legacy_absence_and_non_cylinder_absence_still_latch ___________
+
+    def test_legacy_absence_and_non_cylinder_absence_still_latch():
+        for allow,reason in ((False,'cylinder not observed'),(True,'red fixture not observed')):
+>           node=observer(allow);node.record_rejection(reason)
+E           AttributeError: 'VisionObserver' object has no attribute 'record_rejection'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_initial_absence.py:23: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_initial_absence.py::test_initial_survey_absence_is_counted_without_latching_sensor_fault
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_initial_absence.py::test_legacy_absence_and_non_cylinder_absence_still_latch
+2 failed, 384 deselected in 2.95s
+

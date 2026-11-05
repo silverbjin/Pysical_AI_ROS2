@@ -26,6 +26,10 @@ class VisionObserver(Node):
   self.target_shape=target_shape;self.last_rejected=None;self.latest_camera=latest_camera
   self.filter_boundary=False
   self.robust_consensus=os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+  self.allow_initial_absence=False
+  if self.robust_consensus and target_shape=='cylinder':
+   from ch13_system_validation.scenarios import active_scenario
+   self.allow_initial_absence=active_scenario().survey_pose is not None
   self.native_counts=Counter();self.packet_counts=Counter()
   super().__init__('ch13_reuse_vision_observer');self.cache=FrameCache();self.camera_link=CameraLink();self.receipt_rows=[];self.clock_ns=0;self.clock_wall=None;self.fault='';self.relay={};self.tf_owners={};self.transforms={};self.map_odom=None;self.last_health=0;self.health_rows=[];self.last_processed=0;self.last_processed_wall=-1e9;self.inference_hz=inference_hz;self.rows=[];self.last_accepted=None;self.rejected=Counter()
   self.observation=self.create_publisher(String,N+'/vision/observation',1);self.point=self.create_publisher(PointStamped,N+'/observed_target',1);self.health=self.create_publisher(String,N+'/vision/health',1);self.status=self.create_publisher(String,N+'/vision/status',1)
@@ -124,9 +128,12 @@ class VisionObserver(Node):
       if str(exc).startswith('cylinder'):
        self.last_rejected=(rgb.copy(),depth.copy(),dict(capture_ns=stamp,capture_wall=capture_wall,
           tf_stamp_ns=tf_stamp,T_map_camera=transform.tolist(),calibration=calibration,reason=str(exc)))
-      self.rejected[str(exc)]+=1
-      if str(exc) in ('red fixture not observed','cylinder not observed'):self.fault='TARGET_NOT_OBSERVED'
+      self.record_rejection(str(exc))
   self.status.publish(String(data=json.dumps({'fault':self.fault or self.cache.fault,'last_capture_ns':self.last_processed,'accepted':len(self.rows),'rejected':dict(self.rejected)})))
+ def record_rejection(self,reason):
+  self.rejected[reason]+=1
+  initial=reason=='cylinder not observed' and self.allow_initial_absence and not self.rows
+  if reason in ('red fixture not observed','cylinder not observed') and not initial:self.fault='TARGET_NOT_OBSERVED'
  def diagnostics(self):
   return dict(native_callbacks=dict(self.native_counts),ingress_callbacks=dict(self.packet_counts),
    matched_camera_samples=len(self.receipt_rows),pending_native_by_kind=dict(Counter(k[0] for k in self.camera_link.payloads)),
