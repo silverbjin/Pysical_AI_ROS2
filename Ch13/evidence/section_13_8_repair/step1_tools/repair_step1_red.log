@@ -1,0 +1,110 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_43ca756fd0e44ef699032f31f4bda852/repo
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_saved_actual_level3_pregrasp_matches_collision_free_full_pose[ddd74629] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71f4eccc7500>
+row = {'center': [3.0000561124014014, 0.9999229328011386, 0.0408074297296149], 'expected_pre_distance_m': 0.03, 'q_arm': [-0..., 0.9971230858225071, 0.29627058137128265, 0.9999786283243709, -0.004301865113692549, 0.0006553035107673169, ...], ...}
+
+    @pytest.mark.parametrize('row',FIXTURES,ids=lambda r:r['uuid'][:8])
+    def test_saved_actual_level3_pregrasp_matches_collision_free_full_pose(monkeypatch,row):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+        monkeypatch.setenv('CH13_VALIDATION_SCENARIO','level3_house')
+        root=Path(__file__).resolve().parents[5]
+        model=make_pick_model(root.parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml')
+        data=mujoco.MjData(model);data.qpos[:]=row['qpos']
+        for i,value in enumerate(row['q_arm'],1):data.qpos[model.jnt_qposadr[model.joint('joint'+str(i)).id]]=value
+        mujoco.mj_forward(model,data)
+        center=np.array(row['center']);forward=center-np.array([*data.qpos[:2],center[2]])
+        expected,rotation=grasp_pose(center,forward,-1.,get_scenario('level3_house'))
+        link=model.body('link6').id;actual_rotation=data.xmat[link].reshape(3,3)
+        actual=data.xpos[link]+actual_rotation@TCP_LINK6
+>       assert np.linalg.norm(actual-expected)<.001
+E       AssertionError: assert np.float64(0.03000013702150453) < 0.001
+E        +  where np.float64(0.03000013702150453) = <function norm at 0x71f5109e2c70>((array([2.97407463, 0.99978738, 0.0558053 ]) - array([2.94809521, 0.99966914, 0.07080743])))
+E        +    where <function norm at 0x71f5109e2c70> = <module 'numpy.linalg' from '/home/jinho/ch13_reuse_iit_d010212_venv/lib/python3.12/site-packages/numpy/linalg/__init__.py'>.norm
+E        +      where <module 'numpy.linalg' from '/home/jinho/ch13_reuse_iit_d010212_venv/lib/python3.12/site-packages/numpy/linalg/__init__.py'> = np.linalg
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py:25: AssertionError
+_ test_saved_actual_level3_pregrasp_matches_collision_free_full_pose[d382c578] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71f4ecba0cb0>
+row = {'center': [3.0000513509796747, 0.9999191777517347, 0.04021596435029419], 'expected_pre_distance_m': 0.03, 'q_arm': [0...8216, 0.9998105101354189, 0.29604039872885746, 0.9999549685576834, -0.0059103380248571, 0.00547084372253769, ...], ...}
+
+    @pytest.mark.parametrize('row',FIXTURES,ids=lambda r:r['uuid'][:8])
+    def test_saved_actual_level3_pregrasp_matches_collision_free_full_pose(monkeypatch,row):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+        monkeypatch.setenv('CH13_VALIDATION_SCENARIO','level3_house')
+        root=Path(__file__).resolve().parents[5]
+        model=make_pick_model(root.parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml')
+        data=mujoco.MjData(model);data.qpos[:]=row['qpos']
+        for i,value in enumerate(row['q_arm'],1):data.qpos[model.jnt_qposadr[model.joint('joint'+str(i)).id]]=value
+        mujoco.mj_forward(model,data)
+        center=np.array(row['center']);forward=center-np.array([*data.qpos[:2],center[2]])
+        expected,rotation=grasp_pose(center,forward,-1.,get_scenario('level3_house'))
+        link=model.body('link6').id;actual_rotation=data.xmat[link].reshape(3,3)
+        actual=data.xpos[link]+actual_rotation@TCP_LINK6
+>       assert np.linalg.norm(actual-expected)<.001
+E       AssertionError: assert np.float64(0.02999634619173782) < 0.001
+E        +  where np.float64(0.02999634619173782) = <function norm at 0x71f5109e2c70>((array([2.97407132, 0.99991232, 0.05522453]) - array([2.94808983, 0.99990919, 0.07021596])))
+E        +    where <function norm at 0x71f5109e2c70> = <module 'numpy.linalg' from '/home/jinho/ch13_reuse_iit_d010212_venv/lib/python3.12/site-packages/numpy/linalg/__init__.py'>.norm
+E        +      where <module 'numpy.linalg' from '/home/jinho/ch13_reuse_iit_d010212_venv/lib/python3.12/site-packages/numpy/linalg/__init__.py'> = np.linalg
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py:25: AssertionError
+_ test_saved_actual_level3_pregrasp_matches_collision_free_full_pose[4b413caf] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71f4ecca3590>
+row = {'center': [3.0000543466990672, 0.9999218078037663, 0.040694556527922685], 'expected_pre_distance_m': 0.03, 'q_arm': [...913, 1.0018137463114525, 0.29632703021731105, 0.999949813078102, -0.004732573169576269, 0.00262586057132712, ...], ...}
+
+    @pytest.mark.parametrize('row',FIXTURES,ids=lambda r:r['uuid'][:8])
+    def test_saved_actual_level3_pregrasp_matches_collision_free_full_pose(monkeypatch,row):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+        monkeypatch.setenv('CH13_VALIDATION_SCENARIO','level3_house')
+        root=Path(__file__).resolve().parents[5]
+        model=make_pick_model(root.parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml')
+        data=mujoco.MjData(model);data.qpos[:]=row['qpos']
+        for i,value in enumerate(row['q_arm'],1):data.qpos[model.jnt_qposadr[model.joint('joint'+str(i)).id]]=value
+        mujoco.mj_forward(model,data)
+        center=np.array(row['center']);forward=center-np.array([*data.qpos[:2],center[2]])
+        expected,rotation=grasp_pose(center,forward,-1.,get_scenario('level3_house'))
+        link=model.body('link6').id;actual_rotation=data.xmat[link].reshape(3,3)
+        actual=data.xpos[link]+actual_rotation@TCP_LINK6
+>       assert np.linalg.norm(actual-expected)<.001
+E       AssertionError: assert np.float64(0.03000302535666036) < 0.001
+E        +  where np.float64(0.03000302535666036) = <function norm at 0x71f5109e2c70>((array([2.97407409, 1.00000312, 0.05568916]) - array([2.9480931 , 1.00009258, 0.07069456])))
+E        +    where <function norm at 0x71f5109e2c70> = <module 'numpy.linalg' from '/home/jinho/ch13_reuse_iit_d010212_venv/lib/python3.12/site-packages/numpy/linalg/__init__.py'>.norm
+E        +      where <module 'numpy.linalg' from '/home/jinho/ch13_reuse_iit_d010212_venv/lib/python3.12/site-packages/numpy/linalg/__init__.py'> = np.linalg
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py:25: AssertionError
+_ test_saved_actual_level3_pregrasp_matches_collision_free_full_pose[29b1f378] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x71f4eccc7e00>
+row = {'center': [3.0000533934411275, 0.9999214893694992, 0.041032385273577526], 'expected_pre_distance_m': 0.03, 'q_arm': [...64, 1.000886369669576, 0.2963941428438733, 0.9999811612355926, -0.004893455340201786, 0.0024568233718950403, ...], ...}
+
+    @pytest.mark.parametrize('row',FIXTURES,ids=lambda r:r['uuid'][:8])
+    def test_saved_actual_level3_pregrasp_matches_collision_free_full_pose(monkeypatch,row):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+        monkeypatch.setenv('CH13_VALIDATION_SCENARIO','level3_house')
+        root=Path(__file__).resolve().parents[5]
+        model=make_pick_model(root.parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml')
+        data=mujoco.MjData(model);data.qpos[:]=row['qpos']
+        for i,value in enumerate(row['q_arm'],1):data.qpos[model.jnt_qposadr[model.joint('joint'+str(i)).id]]=value
+        mujoco.mj_forward(model,data)
+        center=np.array(row['center']);forward=center-np.array([*data.qpos[:2],center[2]])
+        expected,rotation=grasp_pose(center,forward,-1.,get_scenario('level3_house'))
+        link=model.body('link6').id;actual_rotation=data.xmat[link].reshape(3,3)
+        actual=data.xpos[link]+actual_rotation@TCP_LINK6
+>       assert np.linalg.norm(actual-expected)<.001
+E       AssertionError: assert np.float64(0.02999854417357222) < 0.001
+E        +  where np.float64(0.02999854417357222) = <function norm at 0x71f5109e2c70>((array([2.97407154, 0.99996574, 0.05603334]) - array([2.94809194, 1.00000874, 0.07103239])))
+E        +    where <function norm at 0x71f5109e2c70> = <module 'numpy.linalg' from '/home/jinho/ch13_reuse_iit_d010212_venv/lib/python3.12/site-packages/numpy/linalg/__init__.py'>.norm
+E        +      where <module 'numpy.linalg' from '/home/jinho/ch13_reuse_iit_d010212_venv/lib/python3.12/site-packages/numpy/linalg/__init__.py'> = np.linalg
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py:25: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py::test_saved_actual_level3_pregrasp_matches_collision_free_full_pose[ddd74629]
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py::test_saved_actual_level3_pregrasp_matches_collision_free_full_pose[d382c578]
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py::test_saved_actual_level3_pregrasp_matches_collision_free_full_pose[4b413caf]
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py::test_saved_actual_level3_pregrasp_matches_collision_free_full_pose[29b1f378]
+4 failed, 390 deselected in 3.24s
+

@@ -1,0 +1,17 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_f3bf184bd0e349eaab4d7b712aa875be/repo
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_house_survey_enters_final_approach_along_same_heading __________
+
+    def test_house_survey_enters_final_approach_along_same_heading():
+        scenario=get_scenario('level3_house');x,y,yaw=scenario.survey_pose
+        # Avoid an additional final yaw turn alongside the legs; no yaw permission change.
+>       assert abs(y-scenario.target_xyz[1])<.01
+E       assert 0.6 < 0.01
+E        +  where 0.6 = abs((0.4 - 1.0))
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py:35: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_level3_repair.py::test_house_survey_enters_final_approach_along_same_heading
+1 failed, 393 deselected in 1.96s
+
