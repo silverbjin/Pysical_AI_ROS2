@@ -34,7 +34,7 @@ bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/audit_install.py /tm
 | scenario | 대상 중심(m) | 수령 중심(m) | 지지면 높이(m) | 실제 상태 |
 |---|---|---|---|---|
 | development | (1.8,0,0.54) | (-0.8,0,0.54) | 0.50 | v15 연속 기능 1회 PASS, 시간/위치 목표 미달 |
-| level1_floor | (2,0,0.04) | (-0.6,0,0.04) | 0 | v17 파지/귀환 PASS·놓기 FAIL, v18 작은 조각 폐기로 관측 FAIL, v19 팔wall deadline FAIL, v20 검증 준비 |
+| level1_floor | (2,0,0.04) | (-0.6,0,0.04) | 0 | v17 파지/귀환 PASS·놓기 FAIL, v18 작은 조각 폐기로 관측 FAIL, v19 팔wall deadline FAIL, v20 관측deadline FAIL, v21 계측 검증 준비 |
 
 고정 camera는 base 좌표(0.4,0.4,0.29)m다. development는 yaw -31.607502도/pitch0, Level1은 yaw -40도/pitch down35도다. 실제 extrinsics는 sensor_summary.json과 해당 capture의T_map_camera로 확인한다. 과거 mount와 실패별 변경 이력은 PROGRESS에 보존했다. 현재 검출은 §9의 합의점 검사이며 과거 boundary 이웃 필터와 누적하지 않는다. source/capture/TF/hash를 보존하며 설정을 실행 중 바꾸지 않는다.
 
@@ -50,20 +50,20 @@ bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/audit_install.py /tm
 python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py /tmp/ch13_13_8_before.json
 ```
 
-터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v20은 현재 개발 실행용 동결이며 Level1 실제 인수는 진행 중이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
+터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v21은 현재 개발 실행용 동결이며 Level1 실제 인수는 진행 중이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
 
 ```bash
 CASE=$(python3 -c 'import uuid; print(uuid.uuid4())')
 STAGE_REPORT=/tmp/ch13_13_8_stage_$CASE.json
 bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/stage_runtime.py \
-  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v20.json" --output "$STAGE_REPORT"
+  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v21.json" --output "$STAGE_REPORT"
 RUN_ROOT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["runtime_root"])' "$STAGE_REPORT")
 bash "$RUN_ROOT/Ch13/scripts/reuse_13_8/env.sh" -u "$RUN_ROOT/Ch13/scripts/reuse_13_8/run_mission.py" \
   --repo-root "$RUN_ROOT" --evidence "$ROOT/Ch13/evidence/section_13_8_system/$CASE" \
-  --manifest "$RUN_ROOT/Ch13/dependencies/section_13_8_system_v20.json"
+  --manifest "$RUN_ROOT/Ch13/dependencies/section_13_8_system_v21.json"
 ```
 
-staging은 engine이 꺼진 상태에서 소스 동결별로 한 번 준비한다. Windows mount의 source 접근 지연을 피하기 위해 새13.8 build 아래 같은 hash의 소스 사본을 만들고, 외부 자산과 engine lock은 기존 sibling 파일로 연결한다. 이 단계는 로봇 실행이나 새 권한을 만들지 않는다. 같은 동결로 반복 실행할 때는 RUN_ROOT를 재사용하고 CASE만 새 UUID로 바꾼다. source가 바뀌면 기존 동결을 수정하지 말고 새 동결/사본을 준비한다. runner가 runtime_stage.json으로 실행 사본의 근거를 보존한다. 현재 v20 명령은 개발 검증 대상이며 물리 인수 상태는 보고서를 확인한다.
+staging은 engine이 꺼진 상태에서 소스 동결별로 한 번 준비한다. Windows mount의 source 접근 지연을 피하기 위해 새13.8 build 아래 같은 hash의 소스 사본을 만들고, 외부 자산과 engine lock은 기존 sibling 파일로 연결한다. 이 단계는 로봇 실행이나 새 권한을 만들지 않는다. 같은 동결로 반복 실행할 때는 RUN_ROOT를 재사용하고 CASE만 새 UUID로 바꾼다. source가 바뀌면 기존 동결을 수정하지 말고 새 동결/사본을 준비한다. runner가 runtime_stage.json으로 실행 사본의 근거를 보존한다. 현재 v21 명령은 개발 검증 대상이며 물리 인수 상태는 보고서를 확인한다.
 
 터미널 B는 시스템 ROS CLI 환경이다. engine/센서가 준비된 뒤 /start_mission을 보내야 하며 현재 시작 대기 예산은 준비 후30wall초다. 개발 자동 시작은 runner에 --auto-start를 지정하며 같은 토픽 수신을 통과한다.
 
@@ -184,10 +184,12 @@ v15에서는 live_status.json 파일 기록을ROS timer 밖의단일owned writer
 
 ## 10. 원고 Level1 연결 상태
 
-명시적`--scenario level1_floor`는바닥2m 원통·받침대없음·귀환측바닥수령점을사용한다. 기본값`--scenario development`는이전개발fixture다. 기능PASS실측은v15 development 1회이며Level1 전체는v20 실제검증을준비중이다. 원고Level2/3·10회평가완료로해석하지않는다.
+명시적`--scenario level1_floor`는바닥2m 원통·받침대없음·귀환측바닥수령점을사용한다. 기본값`--scenario development`는이전개발fixture다. 기능PASS실측은v15 development 1회이며Level1 전체는v21 계측실제검증을준비중이다. 원고Level2/3·10회평가완료로해석하지않는다.
 
 Level1은카메라를아래35도·yaw-40도로고정하고팔은아래30도/사전6cm 접근을사용한다. 실제floor지지와새관측수령영역확인전에는개방하지않고팔이몸통/다리/바닥에힘을주며관통하면latch fault다. 명령의다른인자는같으며새CASE로runner에`--scenario level1_floor`를추가한다. source/설정이달라진사례를v15정상실측이나고정10회에섞지않는다. 상세M0·구현계획은SECTION_13_8_WORLD_PLAN_KO.md를참조한다.
 
 v17의센서stream은물리표면이아닌붉은attachment_site 보조표시를제외한다. segmentation ID를실제검출에사용하지않는다. v18의floor LOWER는action terminal후실측팔저속/base정착/지지접촉을0.5sim초연속확인하며최대20wall초를기다린다. 이후에도기존지지확인·개방·실제접촉해제·새관측·scene분리readback·후퇴·유지가필요하다. 관측수명/물리/힘제한을늘려통과시키지않는다. 원인과공식ref는SECTION_13_8_FLOOR_VISION_DIAGNOSIS_KO.md에있다.
 
  v20의floor 시간보정은기존coarse배율안에서같은연속제한을통과하는세밀한배율을찾는다. 경로/모든waypoint와0.05rad/s·0.1rad/s²·120sim/240wallaction한계는유지한다. 기본development는기존정책이다. 실제policy는pick_mission.json의execution_time_adapter.scale_policy와scale로확인하며,공식자료/실패원인은SECTION_13_8_TIMING_DIAGNOSIS_KO.md에있다.
+
+v21은제어를유지한진단계측동결이다. capture_stage_timing.json의최근256개scan/상태발행/pre-offer/put비용과renderer_captures.json의request_offer_wall·request_to_render_wall_s를확인한다. capture_wall은원래촬영시각이며offer시각으로대체하지않는다. 현재관련21시험·짧은센서재현만통과했고실제전체부하deadline원인은조사중이다.

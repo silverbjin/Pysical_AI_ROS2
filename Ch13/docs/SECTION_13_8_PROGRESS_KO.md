@@ -298,3 +298,22 @@ Ruling: floor13.8 opt-in만기존coarsefeasible구간안에서12회bounded구간
 v20최초전체348 PASS/2 FAIL(57.62초). 두실패는기존test_candidate_timing의Planner.__new__ fixture가새constructor옵션을설정하지않은AttributeError다. 실제constructor는기본False를설정한다. fake에도False를명시하고전체최종회귀를다시확인한다. production기준이나검증기를수정해실패를숨기지않는다. 아직350전체PASS라고쓰지않는다.
 fixture초기화보완후최종350 PASS/53.98초. 새로운production source를추가변경하지않고v20 build/설치/동결을진행한다. 최초348 PASS/2 FAIL도보존한다. 새actual은별도UUID/실행소스동결/공유lock으로검증하며이unit결과만으로walldeadline해결이나물리놓기성공을주장하지않는다.
 v20 build16.6초/설치63모듈·94자산·actualchild PASS. source359/assets94 SHA2563c0d9de00c27ab52f6612e24b7c8e4bae46539099e3d8f6557e3d74c49ead006. 350시험source와실행동결359개전수동일PASS. native source/공유lock/소유잔여없는새boot확인PASS.
+
+local28d17dec에v20시간보정/350시험·v19FAIL보존/보고서를선택commit했다. 새actualUUIDf4dd835b-09b0-4aed-b7ff-9a86b0eebcfb, native92c1c8a5244047acafe5391e07f5e5da. 새boot8e1bcbe0-655e-40d5-9e9e-f6e2e4db4003에서소유잔여0/공유lockfree를확인하고실행했다. Nav2정밀도는여전히기존0.06m이며새튜닝을누적하지않았다. 실제임무의성공과3cm/120초목표는별도로판정한다.
+
+### v20 actual: 시간보정활성확인, 드문원본capture지연으로FAIL
+
+UUIDf4dd835b-09b0-4aed-b7ff-9a86b0eebcfb,trial61.686sim/158.594726wall초·CPU42.3786%·tilt0.031605rad. PRE_GRASP중OBSERVATION_EXPIRED FAIL,vision2031 accepted/거부1(capture/clock/TF expired)·형상거부0·visionfault없음. 새timeadapter policy continuous_bracket_1pct_margin/scale1.06295349·선택plan79.656225sim초가실제적용됐으나완료전에관측fault로중단됐으므로240wall완료를입증하지못했다. 접촉fault없음·worker/12child회수·lockfree.
+
+첫faultwall181.029897/sim61.820, engine이사용한관측capture61.814sim의원본wall180.701058은328.839ms나이였다. 그frame의render시작180.866025/끝180.891282(25.257ms),대기+pre-offer포함164.967ms. sourcecapture61.816sim/wall180.872739의다음frame은inference180.997220에이미완료됐으나engine의observation channel최종처리는180.962708인상태에서fault가발생했다. camerahealthchannel은181.006100에새frame을처리했다. sourceage를receipt나now로치환하지않는다.
+
+같은시점engine step_outlier는capture_sensor stage172.623ms/threadCPU87.604ms,GC사건없음이었다. 이stage는ray scan/TF publish/requestoffer등을묶으며요청은mp.Queue feeder를지나므로164.967ms를순수renderer계산이나순수queue대기라고단정할수없다. 다음은실제offer시각과scan/TF단계를작게분리계측하고저장상태의짧은부품probe로구분한다. 프로파일없이카메라위치·검출threshold·300ms수명이나OS우선순위를바꾸지않는다. 긴actual을추측수정으로반복하지않는다.
+v21계측API부재2 FAIL/기존1 PASS→계측3 PASS/6.43초(348 deselected). 원본capturewall은보존하고request_offer_wall/요청→render시작을추가했다. SensorSuite scan/상태발행/put비용은최근256개deque와총수로만모으고close때파일을쓴다. 순서/동작/임계값변경은없다. Python3.12 공식Queue/CPython3.12.3 feeder소스를읽어put반환과worker수신을구분했다.
+
+짧은domain136 부품재현: quiet producer22.294초/276frame/정상camera회수,pre-offer최대12.012ms/요청→시작최대1.237ms. 첫vision/relay연결은원래map→odom 정적TF를fixture에빠뜨려tf_samples0/accepted0이었으므로end-to-end API_SETUP_FAILURE로보존했다. TF를명시한v2는22.731초/277frame/vision221 accepted·거부0·fault없음/자식2개와camera정상회수,pre-offer최대11.315ms/요청→시작1.179ms였다.
+
+원래12토픽목록의recorder와추가상태발행을붙인63.391초probe도830frame/vision731 accepted·거부0·fault없음/자식3개와camera정상회수였다. pre-offer최대11.059ms/요청→시작6.273ms/render8.707ms,최근256개stage통계다. 발행자가없는토픽은record대상설정만있으며원래실제12토픽mission bag완료로부르지않는다. 원래물리/정책/전체ROS부하는없어서165ms지연은여전히재현되지않았다. recorder단독원인이나해결완료로단정하지않고QoS/전역설정을바꾸지않는다.
+
+Ruling: v21은제어변경없이카메라/센서단계계측만추가한진단source로freeze한다 — 부품에서재현되지않은전체부하의pre-offer/전달경계를실제한사례로분리해야한다 — 기본350검증control을유지하고변경영향camera/startup/IPC시험과실제부품probe를확인한다. metadata만을이유로전체350을다시반복하지않고관련선택결과를정확히기록한다. 기존native160f4eba6cee4271bd684ea26284a2af가현재계측source와같은hash인지는새freeze와전수비교한다. 긴기존matrix는반복하지않는다.
+v21camera/startup/IPC선택은20 PASS/1 FAIL(20.65초),기존test_camera_cadence가SensorSuite.__new__로만들어latest_camera기본값이없었다. 실제free생성자는renderer/ROS부작용이없으므로두cadence시험을실제생성자로바꿔향후초기화누락을방지했다. 원래시각/cadence검증은그대로다. 최종동일선택시험이통과할때만prepare_v21을진행한다. production계측외제어변경은없다.
+v21최종관련21 PASS/24.23초(330 deselected). source360/assets94 SHA256d17a2607042d4e324c064008715233df8eacd6989cb5a80ead9112dc2be94f65. 실제venvchild/설치63모듈·94자산/동일공유lock/소유잔여감사PASS. 21선택시험snapshot과실행동결360개소스hash전수일치PASS. 실제control350이력과계측21시험을구분한다.

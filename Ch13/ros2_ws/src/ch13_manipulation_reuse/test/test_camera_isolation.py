@@ -58,4 +58,6 @@ def test_renderer_delivery_does_not_depend_on_blocked_parent_retention(latest,tm
         for row in ledger['captures']:
             meta=row['capture']
             assert meta['capture_wall']<=meta['render_started_wall']<=meta['render_finished_wall']
+            assert meta['capture_wall']<=meta['request_offer_wall']<=meta['render_started_wall']
+            assert meta['request_to_render_wall_s']>=0
             assert meta['render_elapsed_cpu_s']>=0

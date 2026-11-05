@@ -1,0 +1,33 @@
+F....................                                                    [100%]
+=================================== FAILURES ===================================
+_____ CameraCadenceTests.test_slow_sim_new_photos_keep_original_sim_stamps _____
+
+self = <test_camera_cadence.CameraCadenceTests testMethod=test_slow_sim_new_photos_keep_original_sim_stamps>
+
+    def test_slow_sim_new_photos_keep_original_sim_stamps(self):
+     s=SensorSuite.__new__(SensorSuite);s.camera=Mock();s.next_scan=float('inf');s.next_rgb=0.;s.node=Mock();s.request_capture=Mock();p=Mock();p.mjData.qpos=np.zeros(27)
+     for sim,wall in [(2.,10.),(2.002,10.03),(2.004,10.068)]:
+>     with patch('ch13_navigation_reuse.sensors.time.monotonic',return_value=wall):s.step(p,{'stamp_ns':round(sim*1e9)})
+
+Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_camera_cadence.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <ch13_navigation_reuse.sensors.SensorSuite object at 0x786ba8a92e70>
+p = <Mock id='132403786494512'>, state = {'stamp_ns': 2000000000}
+
+    def step(self,p,state):
+     stamp=state['stamp_ns'];sim=stamp/1e9;wall=time.monotonic()
+     scan_wall_s=0.
+     if wall>=self.next_scan:
+      self.next_scan=wall+.1;m=LaserScan();set_stamp(m.header.stamp,stamp);m.header.frame_id='reuse/scan';m.angle_min=-math.pi;m.angle_max=math.pi;m.angle_increment=2*math.pi/180;m.range_min=.05;m.range_max=4.;m.scan_time=0. if self.last_scan_ns is None else (stamp-self.last_scan_ns)/1e9;self.last_scan_ns=stamp;m.ranges=ray_scan(p.mjModel,p.mjData);self.scan_pub.publish(m);self.scans+=1
+      scan_wall_s=time.monotonic()-wall
+     if self.camera is not None and wall>=self.next_rgb:
+      self.next_rgb=wall+1/15.;q=p.mjData.qpos.copy();state_start=time.monotonic();self.node.publish_state(p,state)
+      offer_start=time.monotonic();self.request_capture(q,stamp,wall);finished=time.monotonic()
+>     if self.latest_camera:
+E     AttributeError: 'SensorSuite' object has no attribute 'latest_camera'
+
+Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/sensors.py:54: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_camera_cadence.py::CameraCadenceTests::test_slow_sim_new_photos_keep_original_sim_stamps
+1 failed, 20 passed, 330 deselected in 20.65s

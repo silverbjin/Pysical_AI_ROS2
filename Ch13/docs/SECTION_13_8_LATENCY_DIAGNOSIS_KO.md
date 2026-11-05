@@ -2,7 +2,9 @@
 
 2026-11-05 KST. 단일 작업자. 개발 중간 기록이며 전체 원고 인수 보고서가 아니다.
 
-최신 확인: v15 개발 fixture의 연속 임무와 물리 pick/transport가 실제1회 PASS했다. 같은 engine에서 내려놓기·팔 후퇴·유지·전체 회수까지 끝냈다. 표시 파일 reader-lock3.115초/오류3회도 제어 취소로 전파되지 않았다. 귀환5.02cm/210.484sim초는 원고 목표 미달이며 Level1/2/3·10회 평가와 구분한다. 아래는 그 결과에 이르기까지 보존한 실패별 조사 기록이다.
+이전에 확인한 v15 개발 fixture의 연속 임무와 물리 pick/transport는 실제1회 PASS했다. 같은 engine에서 내려놓기·팔 후퇴·유지·전체 회수까지 끝냈다. 표시 파일 reader-lock3.115초/오류3회도 제어 취소로 전파되지 않았다. 귀환5.02cm/210.484sim초는 원고 목표 미달이며 Level1/2/3·10회 평가와 구분한다.
+
+현재 최신 v20 Level1은 사전 파지 중 원본 관측 나이가300ms를 넘겨 FAIL했다. 형상 검출 거부는 없었고, 문제 프레임은 렌더 계산25.26ms에 비해 촬영부터 렌더 시작까지164.97ms가 걸렸다. 이 구간에는 요청 전 작업과 큐 전달이 함께 포함돼 있어 아직 원인을 단정하지 않는다. 다음은 작은 부품 계측으로 구간을 나누는 작업이며 원본 수명을 늘리지 않는다. 아래 과거 실패별 기록과 최신 조사 결과를 구분한다.
 
 ## 조사 방식
 
@@ -70,3 +72,18 @@ v14는 실제 파지 물리 PASS(최소100.460mm/2.18sim초/양 finger 접촉100
 [Windows 공식 파일 공유 규칙](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew)에 따르면rename도delete공유가필요하다. 새시험파일을Windows reader가DELETE공유없이연상태에서WSL replace를시도해같은PermissionError를실제재현했다. OS권한이나다른프로세스를변경하지않는다.
 
 v15는상태표시파일I/O를한개의owned writer thread로분리한다. pending은하나뿐이고오래대기한표시상태는다음상태로대체한다. 오류·대체수·실제join은telemetry_delivery.json에남긴다. 원래제어·관측·접촉·취소계약은유지한다. 잠금복구/느린writer/한도/join실패·정상종료시험과실제Windows/WSL재현PASS, 전체325 PASS/48.99초. 원고바닥캔의정적위치IK조사에서는0.5~0.7m stand-off 후보를얻었으나6D계획/물리성공증거는아니다. 그확장은연속미션인수후진행한다.
+
+## v20 원본 관측 deadline과 v21 계측
+
+v20 UUIDf4dd835b-09b0-4aed-b7ff-9a86b0eebcfb는61.686sim초/158.594726wall초에FAIL했다. 비전2031회수락/거부1회(capture/clock/TF expired),형상거부0회다. 최초원인은OBSERVATION_EXPIRED이며worker/자식12개정상회수·lockfree다. 새시간보정policy/scale1.06295349·선택plan79.656225sim초는실제적용됐지만완료전에중단됐으므로walldeadline해결을입증하지않는다.
+
+최초faultwall181.029897에서사용중인원본capturewall180.701058은328.839ms전이었다. renderer는180.866025에시작해180.891282에끝났다. 같은시점capture_sensor stage는172.623ms/threadCPU87.604ms였고GC사건은없었다. 다음frame은capturewall180.872739/관측계산180.997220으로fault전에계산됐지만engine의최종observation channel처리는180.962708이었다. camerahealth는181.006100에갱신됐다. 25ms renderer계산만으로전체지연을설명하지않는다.
+
+[Python3.12 multiprocessing Queue 설명](https://docs.python.org/3.12/library/multiprocessing.html#pipes-and-queues)과 [설치계열CPython3.12.3 queues.py](https://github.com/python/cpython/blob/v3.12.3/Lib/multiprocessing/queues.py)를확인했다. put은buffer에넣고별도feeder thread가pickle/pipe전송을수행한다. 따라서put반환이worker수신완료를뜻하지않는다. 이설명만으로이번실패가feeder원인이라고확정하지않는다.
+
+v21계측후보는원본capturewall을그대로보존하며실제request_offer_wall과render시작사이시간을별도로기록한다. SensorSuite의scan/TF상태발행/offer비용을분리하고최대256개최근기록과총수를보존한다. ray/TF/offer순서·제어·모델·관측수명은변경하지않는다. API부재2 FAIL/1기존PASS후새계측/실제별도renderer경로3 PASS/6.43초(348 deselected).
+
+공유lock을잡고별도domain136에서저장qpos300자세의센서생산만재구성한22.29wall초probe는276frame/정상camera회수였다. 최근256기록의scan최대3.13ms,TF상태발행10.14ms,pre-offer12.01ms,put반환0.136ms,요청→renderer시작최대1.237ms,render최대9.827ms였다. 실제walking policy/물리/전체ROS부하가없어165ms지연은재현되지않았다. idle최대값을실제deadline보장으로해석하지않는다. 다음은원래vision/relay를붙인짧은probe다. 추측성새튜닝이나긴engine재시도는이자료로대체하지않는다.
+원래vision/relay를붙인첫probe는정적map→odom TF누락으로tf_samples0/accepted0이었다. 원본을API_SETUP_FAILURE로분리보존했다. TF를보완한v2는22.731초/277frame/vision221 accepted·거부0,두자식과camera정상회수였다. 원래12토픽목록의recorder와추가상태발행까지붙인63.391초probe는830frame/vision731 accepted·거부0,세자식과camera정상회수였다. 최근256개producer통계의pre-offer최대11.059ms,전체frame의요청→시작최대6.273ms/render최대8.707ms였다. 실제발행되지않는토픽은대상설정만있는fixture이므로실제12토픽임무bag완료로쓰지않는다. 전체physics/policy/Nav2/MoveIt부하는없다. 이결과로QoS나OS설정을추측변경하지않는다.
+
+관련camera/startup/IPC최종21 PASS/24.23초(330 deselected). 최초20 PASS/1 FAIL은기존cadence시험이생성자를건너뛰어latest_camera기본값이없던fixture초기화누락이며,실제부작용없는free생성자를사용하도록보완했다. 제어350회귀는v20이력이고v21에서전체351을실행한것은아니다. v21은실제한사례로전체부하의pre-offer/전달구간을구분할계측동결이다.

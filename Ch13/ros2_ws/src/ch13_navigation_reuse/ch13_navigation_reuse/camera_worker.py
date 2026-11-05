@@ -69,13 +69,14 @@ def render_process(model,initial_q,requests,results,ready,stop,latest=False,outp
   stage('first_render_begin');render();stage('first_render_end');stage('ready');ready.set()
   if startup is not None:startup.close();startup=None
   while not stop.is_set():
-   try:q,stamp,capture_wall=requests.get(timeout=.1)
+   try:q,stamp,capture_wall,offer_wall=requests.get(timeout=.1)
    except queue.Empty:continue
    render_started=time.monotonic();render_cpu=time.process_time()
    data.qpos[:]=q;data.time=stamp/1e9;mujoco.mj_forward(model,data);rgb,depth=render()
    meta={'capture_ns':stamp,'capture_wall':capture_wall,'render_finished_wall':time.monotonic(),'rgb_sha256':hashlib.sha256(rgb.tobytes()).hexdigest()}
    if latest:meta.update(render_profile='paired_raw_RGB_depth_v1',skybox=False,mujoco_version=mujoco.__version__,
-       render_started_wall=render_started,render_elapsed_cpu_s=time.process_time()-render_cpu)
+       render_started_wall=render_started,render_elapsed_cpu_s=time.process_time()-render_cpu,
+       request_offer_wall=offer_wall,request_to_render_wall_s=render_started-offer_wall)
    if publisher is not None:
     meta['publisher_route']='renderer_process_DDS_v1'
     started=time.monotonic();publisher.publish(rgb,depth,meta)
@@ -149,7 +150,7 @@ class CameraWorker:
    error=RuntimeError(failure);error.startup_profile=self.startup_profile;raise error
  def offer(self,q,stamp,capture_wall):
   if self.stopping or self.error:return False
-  item=(q.copy(),stamp,capture_wall)
+  snapshot=q.copy();item=(snapshot,stamp,capture_wall,time.monotonic())
   try:self.requests.put_nowait(item);return True
   except queue.Full:
    self.overwritten+=1
