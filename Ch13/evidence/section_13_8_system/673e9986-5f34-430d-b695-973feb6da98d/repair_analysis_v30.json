@@ -1,0 +1,59 @@
+{
+  "meaning": "v30 L3 follow-up, not v28 fixed ten",
+  "limitation": "survey deadline before final approach/pick; overlap causality unproven; engine KeyboardInterrupt during owned launch teardown",
+  "result": "FAIL",
+  "error": "Traceback (most recent call last):\n  File \"/home/jinho/ch13_reuse_13_8_build/live_source_948097fd4fff4bc2a9477f0ca57ba315/repo/Ch13/scripts/reuse_13_5/run_navigation_probe.py\", line 116, in main\n    if orchestration is not None:orchestration.ready(node=node,until=until,snapshot=snapshot)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jinho/ch13_reuse_13_8_build/live_source_948097fd4fff4bc2a9477f0ca57ba315/repo/Ch13/scripts/reuse_13_8/run_mission.py\", line 53, in ready\n    observe_from_waypoint(self,scenario=scenario,**context)\n  File \"/home/jinho/ch13_reuse_13_8_build/install/ch13_system_validation/lib/python3.12/site-packages/ch13_system_validation/survey.py\", line 32, in observe_from_waypoint\n    assert until(lambda:result.done() or session.cancel_requested()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: survey deadline\n",
+  "trial": {
+    "uuid": "673e9986-5f34-430d-b695-973feb6da98d",
+    "complete": true,
+    "success": false,
+    "sim_s": 6.446,
+    "wall_s": 133.757835479,
+    "position_error_m": null,
+    "max_tilt_rad": 0.05656995535645063,
+    "cpu_percent": 59.38632886916028,
+    "bag_closed": true,
+    "profile": "actual",
+    "level": "level3_house",
+    "scenario": "level3_house",
+    "scenario_sha256": "46b0eadbbed639fd8bf759ae73218b61d9b8a2b0cc17700ee7d45b5d4184978c",
+    "cpu_basis": "owned process tree / sched_getaffinity cores",
+    "allowed_cores": 8,
+    "source_manifest_sha256": "816e0d8cfa2385d9080bc4c2082bb2ce2f4032227d28fa3d683ab13ef6522298",
+    "physical": {
+      "pick": {
+        "result": "FAIL",
+        "failures": [
+          "INVALID_OR_INCOMPLETE_PHYSICS_EVIDENCE"
+        ],
+        "reason": "pre-grasp baseline and measured hold required"
+      },
+      "transport": {
+        "result": "FAIL",
+        "reason": "carry and post-release evidence required"
+      },
+      "world": {
+        "result": "FAIL",
+        "checks": {
+          "fresh_find": false,
+          "door_passage": false,
+          "target_below_table": true
+        },
+        "scope": "actual post-exit base/contact plus admitted fresh find",
+        "door_crossing_y_m": []
+      }
+    }
+  },
+  "engine_error": "Traceback (most recent call last):\n  File \"/home/jinho/ch13_reuse_13_8_build/install/ch13_navigation_reuse/lib/python3.12/site-packages/ch13_navigation_reuse/platform_adapter.py\", line 266, in main\n    try:p.run()\n        ^^^^^^^\n  File \"ch13_pinned_run\", line 115, in run\n    qpos, qvel = self.mjData.qpos, self.mjData.qvel\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jinho/ch13_reuse_13_8_build/install/ch13_navigation_reuse/lib/python3.12/site-packages/ch13_navigation_reuse/platform_adapter.py\", line 254, in step\n    sensors.step(p,state)\n  File \"/home/jinho/ch13_reuse_13_8_build/install/ch13_navigation_reuse/lib/python3.12/site-packages/ch13_navigation_reuse/sensors.py\", line 56, in step\n    state_start=time.monotonic();self.node.publish_state(p,state);state_end=time.monotonic()\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jinho/ch13_reuse_13_8_build/install/ch13_navigation_reuse/lib/python3.12/site-packages/ch13_navigation_reuse/platform_adapter.py\", line 138, in publish_state\n    position=rp.inv().apply(p.mjData.xpos[body]-p.mjData.xpos[parent]);quat=(rp.inv()*rc).as_quat()\n             ^^^^^^^^\n  File \"/home/jinho/ch13_reuse_iit_d010212_venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation.py\", line 1911, in inv\n    q_inv = self._backend.inv(self._quat)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nKeyboardInterrupt\n",
+  "remaining": [],
+  "residual": {
+    "owned_stack_matches": [],
+    "engine_lock_free": true,
+    "boot_id": "c5eba66c-cb54-4639-852b-ad9fc2d2aa5b",
+    "result": "PASS"
+  },
+  "clean_children": 11,
+  "expected_children": 12,
+  "normal_shutdown_requested": false,
+  "engine_result": "ERROR"
+}

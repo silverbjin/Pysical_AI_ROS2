@@ -1,0 +1,48 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_79142a585dc84e0db9f11153f7cc86fb/repo
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_overlap_is_experimental_opt_in_after_actual_survey_regression[None] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ec3d666d220>
+enabled = None
+
+    @pytest.mark.parametrize('enabled',[None,'0','1'])
+    def test_overlap_is_experimental_opt_in_after_actual_survey_regression(monkeypatch,enabled):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+        if enabled is None:monkeypatch.delenv('CH13_CAPTURE_OVERLAP',raising=False)
+        else:monkeypatch.setenv('CH13_CAPTURE_OVERLAP',enabled)
+        monkeypatch.setattr(sensors,'CameraWorker',lambda *args,**kwargs:object())
+        model=SimpleNamespace(camera=lambda name:SimpleNamespace(id=0),cam_pos=np.array([[.4,.4,.29]]),
+                              cam_quat=np.array([[1.,0.,0.,0.]]))
+        suite=SensorSuite(model,SimpleNamespace(qpos=np.zeros(34)),'vision','unused',latest_camera=True)
+>       assert suite.overlap_capture is (enabled=='1')
+E       AssertionError: assert True is (None == '1')
+E        +  where True = <ch13_navigation_reuse.sensors.SensorSuite object at 0x7ec3d666e120>.overlap_capture
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_capture_overlap.py:36: AssertionError
+____ test_overlap_is_experimental_opt_in_after_actual_survey_regression[0] _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ec3d666d760>
+enabled = '0'
+
+    @pytest.mark.parametrize('enabled',[None,'0','1'])
+    def test_overlap_is_experimental_opt_in_after_actual_survey_regression(monkeypatch,enabled):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+        if enabled is None:monkeypatch.delenv('CH13_CAPTURE_OVERLAP',raising=False)
+        else:monkeypatch.setenv('CH13_CAPTURE_OVERLAP',enabled)
+        monkeypatch.setattr(sensors,'CameraWorker',lambda *args,**kwargs:object())
+        model=SimpleNamespace(camera=lambda name:SimpleNamespace(id=0),cam_pos=np.array([[.4,.4,.29]]),
+                              cam_quat=np.array([[1.,0.,0.,0.]]))
+        suite=SensorSuite(model,SimpleNamespace(qpos=np.zeros(34)),'vision','unused',latest_camera=True)
+>       assert suite.overlap_capture is (enabled=='1')
+E       AssertionError: assert True is ('0' == '1'
+E        +  where True = <ch13_navigation_reuse.sensors.SensorSuite object at 0x7ec3d666e840>.overlap_capture
+E         - 1
+E         + 0)
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_capture_overlap.py:36: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_capture_overlap.py::test_overlap_is_experimental_opt_in_after_actual_survey_regression[None]
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_capture_overlap.py::test_overlap_is_experimental_opt_in_after_actual_survey_regression[0]
+2 failed, 1 passed, 399 deselected in 3.61s
+

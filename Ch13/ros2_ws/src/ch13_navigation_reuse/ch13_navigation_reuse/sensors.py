@@ -20,7 +20,8 @@ class HeadlessViewer:
 class SensorSuite:
  def __init__(self,model,data,profile,out,latest_camera=False):
   self.latest_camera=latest_camera
-  self.overlap_capture=latest_camera and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+  self.overlap_capture=(latest_camera and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+      and os.environ.get('CH13_CAPTURE_OVERLAP')=='1')
   self.capture_stage_timing=deque(maxlen=256);self.capture_stage_total=0
   self.profile=profile;self.out=Path(out);self.next_scan=0.;self.last_scan_ns=None;self.next_rgb=0.;self.scans=0;self.frames=0;self.meta=[];self.first=None;self.last=None;self.node=None;self.camera=None;self.joined=True
   if profile=='vision':

@@ -3,6 +3,7 @@ from collections import deque
 from types import SimpleNamespace
 import numpy as np,pytest
 from ch13_navigation_reuse.sensors import SensorSuite
+import ch13_navigation_reuse.sensors as sensors
 
 @pytest.mark.parametrize('overlap',[False,True])
 def test_capture_overlap_preserves_snapshot_and_original_stamp(overlap):
@@ -21,3 +22,15 @@ def test_capture_overlap_preserves_snapshot_and_original_stamp(overlap):
     assert submitted[0][1]==state['stamp_ns']
     np.testing.assert_array_equal(submitted[0][0],[1.,2.,3.])
     assert submitted[0][2]==suite.capture_stage_timing[-1]['capture_wall']
+
+
+@pytest.mark.parametrize('enabled',[None,'0','1'])
+def test_overlap_is_experimental_opt_in_after_actual_survey_regression(monkeypatch,enabled):
+    monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+    if enabled is None:monkeypatch.delenv('CH13_CAPTURE_OVERLAP',raising=False)
+    else:monkeypatch.setenv('CH13_CAPTURE_OVERLAP',enabled)
+    monkeypatch.setattr(sensors,'CameraWorker',lambda *args,**kwargs:object())
+    model=SimpleNamespace(camera=lambda name:SimpleNamespace(id=0),cam_pos=np.array([[.4,.4,.29]]),
+                          cam_quat=np.array([[1.,0.,0.,0.]]))
+    suite=SensorSuite(model,SimpleNamespace(qpos=np.zeros(34)),'vision','unused',latest_camera=True)
+    assert suite.overlap_capture is (enabled=='1')
