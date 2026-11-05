@@ -378,3 +378,9 @@ v28전체387 PASS/57.07초,실행372개소스와full387 snapshot전수hash일치
 
 Ruling: 9건모두1.5cm안에들어간뒤Nav2terminal에서3.3~6.9cm밖으로다시벗어난증거를확인했다 — 공식Nav21.3.13 SimpleGoalChecker의statefultrue XY latch와일치한다 — 새L2/L3에만statefulfalse를설정하고floor/development·plugin·yaw·속도/정책을유지한다. 이수정을6D계획/수명문제해결로확대하지않는다. 2 RED/3 PASS→5 PASS/6.36초. v28본10회는그대로보존하고v29별도후속사례로동작을검증한다. 새10회를재실행한것으로표현하지않는다.
 L23 Task1~4 수행완료(목표달성FAIL). v29 전체389 PASS/62.25초·동일372소스hash일치·설치67/94 PASS. 후속L3 UUIDb2feddf0-745f-4728-92dd-5aed5fab4d3b는82.622sim/178.196wall초FAIL,접근중RPP충돌경고후RR_foot:world금지접촉으로engineERROR. 이후입력timeout은후행증상이다. 정상종료false·threadjoin모두true·11/12clean(1engineexit1)·잔여0/lockfree. v29는실제도달이나6D실패해결증거가아니다. 본10회0/10과분리하고원본/source/raw를보존했다. 11사례archivehash감사PASS. 다음은저장자료의foot접촉geom/경로/6D목표분리이며추측튜닝으로장시간재시도하지않는다.
+
+## 2026-11-05 순차수정 재개(기준9a2a00bd)
+
+사용자의1번부터연속진행·단계별md/commit지시. 계획eaadea27→단계1 d4c9a1d3(실제L3 4건pre-grasp base/link3 자기충돌·.03m pre로충돌IK4/4;방향정렬;관련7 PASS)→단계2 a843ce85(원본age335/315/317ms의실제만료·statepublish170ms직렬지연;기존renderer조기제출·71 PASS/17resource_tracker경고보존)→단계3 f045a111(500Hz최초yaw실측.361>.35·명령.173;L2명령cap±.1·37 PASS). 상세공식ref/재현/한계는REPAIR_STEP1/2/3보고에있다.
+
+높이23.359663mm중TCP21.202939mm/세계상대2.156724mm,base는7.720995mm상승했고orientation기여약-27.330mm(2ms전표본)였다. 높이20mm·원본policy/PD·수명/충돌guard는유지했다. 고정팔의세계높이보증은아직없다. 새실제검증과필요하면새10회는단계4 gate를따른다. 현재v30분리build/동결/전체회귀준비중이며이기록은실제성공증거가아니다. 단일작업자이며별도리뷰/서브에이전트를사용하지않았다.
