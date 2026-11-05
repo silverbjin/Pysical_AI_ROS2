@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_costmap_update_requires_expected_frame_bounds_and_nonlethal_target_cell _
+
+    def test_costmap_update_requires_expected_frame_bounds_and_nonlethal_target_cell():
+        meta=SimpleNamespace(resolution=.1,size_x=10,size_y=10,
+            origin=SimpleNamespace(position=SimpleNamespace(x=0.,y=0.)))
+        m=SimpleNamespace(header=SimpleNamespace(frame_id='reuse/map'),metadata=meta,data=[0]*100)
+        assert target_cell_clear(m,[.5,.5])
+>       m.data[55]=253;assert target_cell_clear(m,[.5,.5])  # Inflation near table legs is not the removed object.
+E       AssertionError: assert False
+E        +  where False = target_cell_clear(namespace(header=namespace(frame_id='reuse/map'), metadata=namespace(resolution=0.1, size_x=10, size_y=10, origin=name..., 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), [0.5, 0.5])
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_target_map_lifecycle.py:60: AssertionError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_target_map_lifecycle.py::test_costmap_update_requires_expected_frame_bounds_and_nonlethal_target_cell
+1 failed, 431 deselected in 21.52s

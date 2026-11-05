@@ -15,7 +15,7 @@ def generate_launch_description():
  manipulation=LaunchConfiguration('manipulation')
  platform=ExecuteProcess(cmd=[python,'-m','ch13_navigation_reuse.platform_adapter','--repo-root',repo,'--report',report,'--scene',scene,'--max-sim-s',limit,'--manipulation',manipulation,'--pick-scene',LaunchConfiguration('pick_scene')],output='screen')
  actions=[DeclareLaunchArgument('python',default_value=os.environ.get('CH13_REUSE_VENV','/home/jinho/ch13_reuse_iit_d010212_venv')+'/bin/python'),DeclareLaunchArgument('repo_root'),DeclareLaunchArgument('report'),DeclareLaunchArgument('scene',default_value='free'),DeclareLaunchArgument('max_sim_s',default_value='120'),DeclareLaunchArgument('vision_inference_hz',default_value='10'),DeclareLaunchArgument('manipulation',default_value='false',choices=['true','false']),DeclareLaunchArgument('pick_scene',default_value='false',choices=['true','false']),DeclareLaunchArgument('planning',default_value='false',choices=['true','false']),SetEnvironmentVariable('ROS_LOCALHOST_ONLY','1'),SetEnvironmentVariable('ROS_DOMAIN_ID','135'),SetEnvironmentVariable('MUJOCO_GL','egl'),SetEnvironmentVariable('LP_NUM_THREADS','2'),RegisterEventHandler(OnProcessExit(target_action=platform,on_exit=[EmitEvent(event=Shutdown(reason='owned engine exited'))])),ExecuteProcess(cmd=[get_package_prefix('ch13_reuse_wire')+'/lib/ch13_reuse_wire/ingress',PythonExpression(["'--manipulation' if '",manipulation,"' == 'true' else '--navigation-only'"])],output='screen')]
- for module,args in [('command_gateway',['--manipulation',manipulation]),('navigation_boundary',[]),('world_map',['--scene',scene])]:actions.append(ExecuteProcess(cmd=[python,'-m','ch13_navigation_reuse.'+module]+args,output='screen'))
+ for module,args in [('command_gateway',['--manipulation',manipulation]),('navigation_boundary',[]),('world_map',['--scene',scene,'--report',report])]:actions.append(ExecuteProcess(cmd=[python,'-m','ch13_navigation_reuse.'+module]+args,output='screen'))
  def planner(context):
   from ch13_piper_moveit_config.configuration import parameters
   return [Node(package='ch13_manipulation_planner',executable='planner_runtime',name='reuse_move_group',
@@ -42,6 +42,9 @@ def generate_launch_description():
    node_params=ParameterFile(RewrittenYaml(source_file=params,param_rewrites=rewrites,
     convert_types=True),allow_substs=True)
   parameter_files=[node_params]
+  if (name in ('planner_server','velocity_smoother') and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+      and os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house')):
+   parameter_files.append(str(share/'config/heading_aware_navigation.yaml'))
   if (name=='velocity_smoother' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
       and os.environ.get('CH13_VALIDATION_SCENARIO')=='level2_obstacles'):
    parameter_files.append(str(share/'config/level2_velocity_limits.yaml'))

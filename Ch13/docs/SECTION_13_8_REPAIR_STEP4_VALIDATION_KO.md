@@ -41,3 +41,12 @@ v31(source376/assets94 SHA256dba3874e7ac7cf1adc3a3cac4a06e5008c8347d54f2b411a1e6
 Ruling: 같은도달/회전계열이최소수정후에도남아두상태경계를함께재검토했다. 새L2/L3에서만FollowPath.statefulfalse도명시한다. goal_checkerfalse·XY.015/yaw.06·속도/충돌검사/수명/물리안전한계는유지한다. 두실제ROSparam의일치시험2 FAIL/3 PASS(4.19초)를확인했고새동결v32로별도검증한다. 현재원인이설치원본과실제궤적에맞는다는것과실제수렴성공은구분한다.
 
 짧은sleep0/.5/1/2ms20회씩계측은각평균.058/.537/1.061/2.054ms였다. OS대기정밀도저하가이번문제의확정원인이라는가설은지지되지않았고OS시간/우선순위설정을바꾸지않았다. v30/v31의성능차이만으로overlap인과를확정하지않는다.
+
+## v32 및 구조 보완 진행
+
+v32의 L3 02676843-e611-4161-89d0-16d71df94863와 L2 9590b5a2-052a-49d3-9d54-e97fe7c1d374는 각각 survey deadline FAIL이다. 두 engine 정상 종료·12 child 회수·잔여 0이다. source 376개를 실제 native snapshot과 hash 대조해 보존했다. L3 raw 13,952,561 bytes, L2 raw 14,582,029 bytes이며 원본은 유지한다. 구조 원인과 후속 구현은 [경로·지도 수명 보고서](SECTION_13_8_REPAIR_NAVIGATION_STRUCTURE_KO.md)에 기록한다. 새로운 10회 평가의 기능 gate는 아직 통과하지 않았다.
+
+### v33 실행 전 동결
+
+분리 build 5 packages/15.4초, 설치 감사 navigation 38·manipulation 24·BT 6 및 실제 venv child 모듈 감사 PASS. 전체 432 PASS/57.25초이며 모든 테스트 소스가 v33의 382개 소스와 일치한다. 외부 94 자산 및 공유 lock 실제 경로를 확인했다. manifest SHA256=05eb3e8ac12be65d568e63a2f56c608899dfba3eb5ef2b201f7c9ee966269b24. L3 UUID=99a9e20e-1713-42b7-8dd3-24379f9b6812 를 실행 전에 고정했다. 아직 실제 성공 주장이 아니다.
+

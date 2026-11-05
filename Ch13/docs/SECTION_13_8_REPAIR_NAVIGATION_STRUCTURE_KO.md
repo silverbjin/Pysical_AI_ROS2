@@ -32,3 +32,20 @@ L2의원래survey(1.7,.3,.494)는SE2경로가거부됐고,(1.6,-.3,.6)는1.738m�
 ## 비용과 한계
 
 새일반객체인식·학습·WBC·실기드라이버·OS변경은없다. 공식플러그인이이미설치돼전역의존성설치는없다. 지도갱신은경로기하를바꾸며물리부착이나arm/navlease를대신하지않는다. 계획반경이실제정책의폐루프추종을보장하지않으므로실제속도·접촉·회수판정은계속필수다. 구현및실제결과는후속기록으로갱신한다.
+## 2026-11-05 추가 구현과 작은 부품의 결과
+
+`cache_obstacle_heuristic=true`에서는 같은 귀환 목표를 유지한 채 지도를 갱신해도 이전 장애물 탐색 정보가 남았다. 같은 publisher의 전체 지도 갱신은 실제 StaticLayer에서 대상 비용 254→70으로 관측됐지만 귀환 계획은 거부됐다. 캐시만 false로 바꾸자 계획이 반환됐다. [설치 버전 AStar::setGoal](https://github.com/ros-navigation/navigation2/blob/1.3.13/nav2_smac_planner/src/a_star.cpp)의 목표 변경/캐시 조건과 일치한다. [공식 설정 설명](https://docs.nav2.org/configuration/packages/smac/configuring-smac-hybrid.html)은 캐시를 대체로 정적인 지도에서 사용하는 최적화로 설명한다. 최신 문서의 모든 새 매개변수를 Jazzy 1.3.13에 적용한 것은 아니다.
+
+계획 성공만으로 실행 가능하다고 판단하지 않았다. 실제 반환 pose 전체와 원래 직사각형 footprint(+기존 1cm padding)에 대해 채워진 다각형 SAT 검사를 추가했다. 서쪽 귀환은 평활화 true에서 충돌 pose 10개, false에서도 2개가 남았다. 따라서 평활화만 원인이라고 단정하지 않는다. padding 2cm 비교도 2개가 남았고 4cm 비교는 계획 자체를 거부했다. 이 여유 변경은 제품 설정에 채택하지 않았다. 원래 footprint와 1cm padding을 유지한다.
+
+반면 평활화 false의 북쪽 접근(3,1.6,-π/2) 및 대상 자리 제거 후 북쪽 귀환은 모든 반환 pose에서 채워진 footprint 검사를 통과했다. Ruling: L3 고정 교육 시나리오는 검증된 북쪽 접근 방향 하나로 제한한다. 일반 방향 탐색 성공이나 모든 접근의 강건성을 주장하지 않는다. 더 긴 경로와 제한된 접근 범위가 비용이다. 원래 L3 survey는 유지하고, 새 L2/L3 계획에서 평활화와 장애물 캐시를 false로 명시한다. 실제 폐루프 성공 여부는 별도 engine 사례로 판정한다.
+
+북쪽 가상 배치의 MoveIt 검사는 과거 4개 실제 joint/tilt 표본을 회전·이동한 계획 전용 입력이다. 실제 북쪽 이동 증거가 아니다. pre-grasp/grasp 8개 모두 설치된 collision-aware IK와 GetStateValidity를 통과했다. 실제 Renderer의 survey 및 설정된 접근 방향 전체에 대한 알려진 원통 fit 검사도 통과했다. 실제 원고 관측 수명과 원본 capture는 그대로 유지한다.
+
+지도 변경은 native 상태의 최초 GID/session, fresh CARRY_ARMED, 서로 다른 outbound/reserved goal, 실제 양 finger 접촉, force-hold ready와 capture health가 모두 있을 때 한 번만 허용한다. 읽기 전용 Trigger 응답과 실제 global costmap 갱신을 같은 ROS owner에서 비동기로 확인한다. 지도 갱신은 물리 부착이나 이동 권한을 만들지 않는다. 기존 정적 벽·다리·박스는 보존한다.
+
+L2 비교에서는 대상 제거 후 중심 비용이 254→253이었다. 이는 주변 table leg의 inscribed inflation이며 대상 자체의 lethal 점유와 구분해야 한다. 지도 ACK는 `<254`를 확인하도록 회귀 검사에서 먼저 실패를 재현했다. 로봇의 경로/충돌 허용 임계값은 바꾸지 않았다. 그러나 서쪽 L2 귀환은 여전히 NO_VALID_PATH였다. L2 전체 연속 기능은 아직 통과하지 않았으며 새 10회 평가의 진입 조건을 충족하지 않는다.
+
+부품 결과: 최초 지도 gate 18 PASS, 실제 WorldMap callback 추가 후 20 PASS, 비동기 worker까지 22 PASS. worker의 응답 전 시각을 재사용한 fresh 검사 오류는 응답 수신 후 시간을 읽도록 수정해 22 PASS(3.46초)했다. filled-route 2 PASS(3.32초), 캐시 수정 관련 28 PASS(24.52초), 북쪽/평활화·카메라·후보 8 PASS(22.18초). 실제 ROS parser 검사에서 캐시 2 FAIL, 평활화/북쪽 3 FAIL을 먼저 확인했다. 새 전체 회귀 및 실제 engine 결과는 단계4 보고서에 추가한다.
+
+진단 도구의 XML `name` KeyError, Python 들여쓰기 SyntaxError, 잘못 전달된 root 경로와 L2 ACK 가정 실패는 각각 도구/계획 검증 실패로 보존한다. 이들은 실제 물리 실패 횟수에 포함하지 않는다. v32 실제 L3/L2 실패는 별도 raw archive와 정확한 376개 소스 바이트로 보존했고 원본을 삭제하지 않았다.

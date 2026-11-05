@@ -1,0 +1,78 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_0f99f7c0d80449b59c1c89820859d629/repo
+..FF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_book_heading_planner_preserves_forward_motion_and_legacy[level2_obstacles-True] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7a92902cca40>
+scenario = 'level2_obstacles', heading_aware = True
+
+    @pytest.mark.parametrize('scenario,heading_aware',[('development',False),('level1_floor',False),('level2_obstacles',True),('level3_house',True)])
+    def test_book_heading_planner_preserves_forward_motion_and_legacy(monkeypatch,scenario,heading_aware):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1');monkeypatch.setenv('CH13_VALIDATION_SCENARIO',scenario)
+        source=Path(__file__).resolve().parents[2]/'ch13_navigation_reuse/launch/navigation.launch.py'
+        spec=importlib.util.spec_from_file_location('heading_launch',source)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        monkeypatch.setattr(module,'get_package_share_directory',lambda name:str(source.parents[1]))
+        planner=next(a for a in module.generate_launch_description().entities if getattr(a,'_Node__node_name',None)=='planner_server')
+        files=[p for p in planner._Node__parameters if hasattr(p,'evaluate')];args=['--ros-args']
+        for p in files:args+=['--params-file',str(p.evaluate(LaunchContext()))]
+        context=Context();node=None;rclpy.init(context=context)
+        try:
+            node=rclpy.create_node('planner_server',context=context,use_global_arguments=False,cli_args=args,
+                automatically_declare_parameters_from_overrides=True)
+            expected='nav2_smac_planner::SmacPlannerHybrid' if heading_aware else 'nav2_navfn_planner::NavfnPlanner'
+            assert node.get_parameter('GridBased.plugin').value==expected
+            if heading_aware:
+                assert node.get_parameter('GridBased.motion_model_for_search').value=='DUBIN'
+                assert node.get_parameter('GridBased.minimum_turning_radius').value==.3
+                assert node.get_parameter('GridBased.max_planning_time').value==2.
+>               assert node.get_parameter('GridBased.cache_obstacle_heuristic').value is False
+E               AssertionError: assert True is False
+E                +  where True = <rclpy.parameter.Parameter object at 0x7a92902f48c0>.value
+E                +    where <rclpy.parameter.Parameter object at 0x7a92902f48c0> = <bound method Node.get_parameter of <rclpy.node.Node object at 0x7a92903f0860>>('GridBased.cache_obstacle_heuristic')
+E                +      where <bound method Node.get_parameter of <rclpy.node.Node object at 0x7a92903f0860>> = <rclpy.node.Node object at 0x7a92903f0860>.get_parameter
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py:90: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793887334.076610552] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793887334.076638950] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+_ test_book_heading_planner_preserves_forward_motion_and_legacy[level3_house-True] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7a92902f6450>
+scenario = 'level3_house', heading_aware = True
+
+    @pytest.mark.parametrize('scenario,heading_aware',[('development',False),('level1_floor',False),('level2_obstacles',True),('level3_house',True)])
+    def test_book_heading_planner_preserves_forward_motion_and_legacy(monkeypatch,scenario,heading_aware):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1');monkeypatch.setenv('CH13_VALIDATION_SCENARIO',scenario)
+        source=Path(__file__).resolve().parents[2]/'ch13_navigation_reuse/launch/navigation.launch.py'
+        spec=importlib.util.spec_from_file_location('heading_launch',source)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        monkeypatch.setattr(module,'get_package_share_directory',lambda name:str(source.parents[1]))
+        planner=next(a for a in module.generate_launch_description().entities if getattr(a,'_Node__node_name',None)=='planner_server')
+        files=[p for p in planner._Node__parameters if hasattr(p,'evaluate')];args=['--ros-args']
+        for p in files:args+=['--params-file',str(p.evaluate(LaunchContext()))]
+        context=Context();node=None;rclpy.init(context=context)
+        try:
+            node=rclpy.create_node('planner_server',context=context,use_global_arguments=False,cli_args=args,
+                automatically_declare_parameters_from_overrides=True)
+            expected='nav2_smac_planner::SmacPlannerHybrid' if heading_aware else 'nav2_navfn_planner::NavfnPlanner'
+            assert node.get_parameter('GridBased.plugin').value==expected
+            if heading_aware:
+                assert node.get_parameter('GridBased.motion_model_for_search').value=='DUBIN'
+                assert node.get_parameter('GridBased.minimum_turning_radius').value==.3
+                assert node.get_parameter('GridBased.max_planning_time').value==2.
+>               assert node.get_parameter('GridBased.cache_obstacle_heuristic').value is False
+E               AssertionError: assert True is False
+E                +  where True = <rclpy.parameter.Parameter object at 0x7a92902ffe30>.value
+E                +    where <rclpy.parameter.Parameter object at 0x7a92902ffe30> = <bound method Node.get_parameter of <rclpy.node.Node object at 0x7a92906c7ce0>>('GridBased.cache_obstacle_heuristic')
+E                +      where <bound method Node.get_parameter of <rclpy.node.Node object at 0x7a92906c7ce0>> = <rclpy.node.Node object at 0x7a92906c7ce0>.get_parameter
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py:90: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793887334.166256551] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793887334.166293349] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py::test_book_heading_planner_preserves_forward_motion_and_legacy[level2_obstacles-True]
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py::test_book_heading_planner_preserves_forward_motion_and_legacy[level3_house-True]
+2 failed, 2 passed, 427 deselected in 4.11s
+

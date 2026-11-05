@@ -384,3 +384,5 @@ L23 Task1~4 수행완료(목표달성FAIL). v29 전체389 PASS/62.25초·동일3
 사용자의1번부터연속진행·단계별md/commit지시. 계획eaadea27→단계1 d4c9a1d3(실제L3 4건pre-grasp base/link3 자기충돌·.03m pre로충돌IK4/4;방향정렬;관련7 PASS)→단계2 a843ce85(원본age335/315/317ms의실제만료·statepublish170ms직렬지연;기존renderer조기제출·71 PASS/17resource_tracker경고보존)→단계3 f045a111(500Hz최초yaw실측.361>.35·명령.173;L2명령cap±.1·37 PASS). 상세공식ref/재현/한계는REPAIR_STEP1/2/3보고에있다.
 
 높이23.359663mm중TCP21.202939mm/세계상대2.156724mm,base는7.720995mm상승했고orientation기여약-27.330mm(2ms전표본)였다. 높이20mm·원본policy/PD·수명/충돌guard는유지했다. 고정팔의세계높이보증은아직없다. 새실제검증과필요하면새10회는단계4 gate를따른다. 현재v30분리build/동결/전체회귀준비중이며이기록은실제성공증거가아니다. 단일작업자이며별도리뷰/서브에이전트를사용하지않았다.
+2026-11-05 경로 구조 보완: v32 두 survey 실패 보존 → 설치 Nav2 1.3.13 비교 → native 파지 확인 지도 수명·캐시 비활성·L3 북쪽 접근 및 filled footprint 거부 추가. v33 382 source/94 assets, 전체 432 PASS/57.25초, exact tested/runtime hash PASS. L2 서쪽 귀환 계획 FAIL은 미해결이며 새 10회 진입 gate 미통과. 단일 L3 실제 기능 확인 예정 UUID=99a9e20e-1713-42b7-8dd3-24379f9b6812. 근거·채택 비용은 REPAIR_NAVIGATION_STRUCTURE/STEP4 보고서 참조.
+

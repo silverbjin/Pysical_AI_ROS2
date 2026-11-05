@@ -86,7 +86,7 @@ def test_level23_actual_camera_fits_target_at_survey_and_approach(monkeypatch,na
     approach=np.array(scenario.target_xyz[:2])-scenario.approach_standoff_m*np.array([math.cos(yaw),math.sin(yaw)])
     focal=240/(2*math.tan(math.radians(55)/2))
     with mujoco.Renderer(model,240,320) as renderer:
-        for x,y in ((sx,sy),approach):
+        for x,y,yaw in [(sx,sy,yaw),(*approach,yaw)]+[(scenario.target_xyz[0]-scenario.approach_standoff_m*math.cos(b),scenario.target_xyz[1]-scenario.approach_standoff_m*math.sin(b),b) for b in scenario.approach_bearings]:
             data.qpos[:]=model.key_qpos[model.key('home').id]
             data.qpos[:2]=[x,y];data.qpos[3:7]=[math.cos(yaw/2),0.,0.,math.sin(yaw/2)]
             mujoco.mj_forward(model,data)

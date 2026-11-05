@@ -2,10 +2,13 @@
 import math
 import uuid
 import time
+import json
 import numpy as np
 from scipy.spatial.transform import Rotation
 from unique_identifier_msgs.msg import UUID
 from nav2_msgs.action import NavigateToPose
+from nav2_msgs.srv import GetCostmap
+from std_srvs.srv import Trigger
 from rclpy.action import ActionClient
 from ch13_navigation_reuse.command_gateway import set_stamp
 from ch13_manipulation_reuse.planning import pose
@@ -15,6 +18,8 @@ from .transport import fresh_return_capture
 from .scenarios import active_scenario,retreat_point
 from .placed_scene import detach_released_cylinder
 from .place_settling import PlacementSupportGate
+from ch13_navigation_reuse.command_gateway import N
+from ch13_navigation_reuse.map_target import attestation_matches,target_cell_clear
 
 
 def make_navigation_goal(target,stamp_ns):
@@ -37,6 +42,38 @@ def drain_owned_goals(session,until,extra=()):
     assert not tracker.errors,tracker.errors
 
 
+def await_target_map(*,node,until,session,goal,transport_goal,target,records):
+    """Read-only geometry acknowledgement; all action authority stays native."""
+    clients=[]
+    try:
+        for typ,name in ((Trigger,N+'/map/target_state'),(GetCostmap,'/global_costmap/get_costmap')):
+            clients.append(node.create_client(typ,name))
+        assert until(lambda:all(c.service_is_ready() for c in clients),3.),'target map services unavailable'
+        phase=0;future=None;next_request=0.;attestation=None;costmap=None
+        def updated():
+            nonlocal phase,future,next_request,attestation,costmap
+            now=time.monotonic()
+            if future is None:
+                if now<next_request:return False
+                request=Trigger.Request() if phase==0 else GetCostmap.Request()
+                future=clients[phase].call_async(request)
+            if not future.done():return False
+            response=future.result();future=None;now=time.monotonic();next_request=now+.05
+            if phase==0:
+                try:value=json.loads(response.message)
+                except (TypeError,ValueError):return False
+                if response.success and attestation_matches(value,session,goal,transport_goal,now):
+                    attestation=value;phase=1
+                return False
+            costmap=response.map
+            return target_cell_clear(costmap,target)
+        assert until(updated,3.),'matching physical hold / global costmap target update absent'
+        records.append(dict(event='nav_target_map_cleared',map_attestation=attestation,
+            costmap_update_time=dict(sec=costmap.metadata.update_time.sec,nanosec=costmap.metadata.update_time.nanosec)))
+    finally:
+        for client in clients:node.destroy_client(client)
+
+
 def continue_mission(*,session,call,node,until,snapshot,status,control,planner,grip,baseline_z,records,action_client_factory=ActionClient):
     scenario=active_scenario()
     session.port.complete('pick',dict(session=session.session))
@@ -45,6 +82,10 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
     control['reserve_transport'](identity.hex,home);control['set_phase']('CARRY_ARMED')
     assert until(lambda:status().get('phase') in ('CARRY_ARMED','FAULT'),3.)
     assert status()['phase']=='CARRY_ARMED',status()
+    if scenario.world in ('obstacles','house'):
+        native=status()
+        await_target_map(node=node,until=until,session=native['session'],goal=native['goal_id'],
+                         transport_goal=identity.hex,target=scenario.target_xyz[:2],records=records)
     client=action_client_factory(node,NavigateToPose,'/navigate_to_pose');handle=None;result=None
     try:
         assert until(client.server_is_ready,3.)

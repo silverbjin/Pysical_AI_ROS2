@@ -120,7 +120,7 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
   if args.case in ['cancel','raw_loss']:target=[2.5,0.,0.]
   if args.case=='vision':
    from vision_mission import select_goal
-   target,vision_record,arm_model=select_goal(root,node,until,lambda:observation,lambda:state,lambda:joints,lambda:grid,lambda:clock_ns);S['vision_admission']=vision_record
+   target,vision_record,arm_model=select_goal(root,node,until,lambda:observation,lambda:state,lambda:joints,lambda:grid,lambda:clock_ns,record_paths=lambda values:S.update(vision_path_checks=list(values)));S['vision_admission']=vision_record
    required_capture=vision_record['source_observation']['capture_ns'];assert until(lambda:boundary.get('vision_capture_ns',0)>=required_capture and boundary.get('vision_capture_age_wall_s',1.)<=.3,2),'navigation boundary has not received the same fresh capture'
    response=call('navigation/require_vision');assert response.success,response.message
 
