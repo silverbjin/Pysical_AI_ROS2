@@ -26,12 +26,14 @@ def select_goal(root,node,until,get_observation,get_state,get_joints,get_grid,ge
  def fresh(observation):return observation is not None and admissible(observation['capture_ns'],observation['capture_wall'],get_clock(),time.monotonic(),observation['tf_stamp_ns'])
  assert until(lambda:fresh(get_observation()) and get_joints() is not None and get_grid() is not None and planner.server_is_ready(),8),'no fresh actual RGB-D observation/TF/map'
  initial=get_observation();point=np.array(initial['point']);q=current_q(get_state(),get_joints());grid=get_grid()
- distances=None
+ distances=None;bearing_options={}
  if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
   from ch13_system_validation.scenarios import active_scenario
   standoff=active_scenario().approach_standoff_m
   if standoff is not None:distances=(standoff,)
- choices=candidates(model,q,point,grid,fp,distances=distances);assert choices,'no collision-free arm-reachable approach candidate'
+  bearings=active_scenario().approach_bearings
+  if bearings is not None:bearing_options['bearings']=bearings
+ choices=candidates(model,q,point,grid,fp,distances=distances,**bearing_options);assert choices,'no collision-free arm-reachable approach candidate'
  evaluated=[]
  def path_cost(pose,stamp):
   goal=ComputePathToPose.Goal();goal.goal.header.frame_id='reuse/map';set_stamp(goal.goal.header.stamp,stamp);goal.goal.pose.position.x=pose[0];goal.goal.pose.position.y=pose[1];goal.goal.pose.orientation.z=math.sin(pose[2]/2);goal.goal.pose.orientation.w=math.cos(pose[2]/2);goal.planner_id='GridBased';goal.use_start=False

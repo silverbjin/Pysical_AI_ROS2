@@ -1,4 +1,5 @@
 import math
+import json
 import numpy as np
 import mujoco
 import pytest
@@ -97,3 +98,24 @@ def test_level23_actual_camera_fits_target_at_survey_and_approach(monkeypatch,na
             transform[:3,3]=data.cam_xpos[camera]
             fit=fit_cylinder(rgb,depth,[focal,focal,159.5,119.5],transform,.02,.08,robust_consensus=True)
             np.testing.assert_allclose(fit['center'],scenario.target_xyz,atol=.004)
+
+
+def test_saved_house_approach_adds_valid_cardinal_candidates_without_bypassing_legs(monkeypatch):
+    from ch13_navigation_reuse.scene import make_model,map_layout
+    from ch13_navigation_reuse.approach_geometry import candidates
+    monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+    monkeypatch.setenv('CH13_VALIDATION_SCENARIO','level3_house')
+    root=Path(__file__).resolve().parents[5]
+    fixture=json.loads((Path(__file__).parent/'data/level3_survey_approach_v26.json').read_text())
+    model=make_model(root.parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml','vision')
+    fp=json.loads((root/'Ch13/ros2_ws/src/ch13_navigation_reuse/config/footprint.json').read_text())['footprint']
+    grid=dict(width=120,height=100,resolution=.05,origin=[-2.,-2.5],data=[])
+    obstacles=map_layout('vision')
+    for y in range(100):
+        for x in range(120):
+            px=-2+(x+.5)*.05;py=-2.5+(y+.5)*.05
+            grid['data'].append(100 if any(abs(px-p[0])<=z[0]+.025 and abs(py-p[1])<=z[1]+.025 for _,p,z in obstacles) else 0)
+    q=np.array(fixture['qpos']);point=fixture['point']
+    assert candidates(model,q,point,grid,fp,distances=(.6,))==[]
+    extra=candidates(model,q,point,grid,fp,distances=(.6,),bearings=(0.,math.pi/2,math.pi,3*math.pi/2))
+    assert len(extra)==3 and all(r['ik']['collision_free'] for r in extra)

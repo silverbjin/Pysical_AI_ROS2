@@ -360,3 +360,8 @@ L23 v25사전L2 UUID8b798b22-ed31-4222-a0ef-9cc075bcd2f1: 44.8sim/97.152wall초F
 
 Ruling: survey를가진새scenario만최초accepted이전cylinder부재를계속기록하며관측한다 — 초기시야밖인명세와영구fault가충돌했다 — 좌표를생성하거나수명/TF/shape조건을완화하지않고첫실제검출뒤부재/legacy/redfixture부재는기존fault로유지한다. 공식vision_msgs/ros2 Detection3DArray의검출목록과센서고장구분을비교했지만해당message/API/의존성을추가한것은아니다. 2 RED확인후camera/원본수명회귀로검증한다. v25freeze/FAIL은수정하지않고v26새동결로분리한다.
 v26初期부재2 RED→camera/원본수명포함28 PASS/27.71초(358 deselected). 같은시험snapshot과실행동결371개전수hash일치PASS. source371/assets94 SHA256b5f6db568696d808f11b80af88e7c5eccbab3036a9d3978475eb024d433cdc0b,설치67모듈actualchild/94자산감사PASS. v25실제실패source/archive를보존했다. 다음은가장불확실한L3문/식탁아래/관측이동연결을본10회이전에한번확인한다.
+L23 v26사전L3 UUIDc0bb5917-06b5-4d18-9247-505dabc7f764: 실제문통과·survey정착·fresh원통관측254회(최종260)/visionfault없음. 이후기존direct±0.15rad 후보3개가모두footprint에서거부돼FAIL,19.84sim/43.801wall초·worker/12child정상회수/lockfree. 관측수정의첫실제구간은통과했으며전체임무성공은아니다.
+
+저장된실제qpos와관측점으로원래지도/모델을재구성했다. direct3개의IK는모두true지만footprintfalse,cardinal4개중3개는같은footprint+실제worldIK모두true였다. 첫probe의상대root경로누락은도구API_SETUP_FAILURE로보존하고resolve후재현했다. scene/충돌threshold는바꾸지않는다.
+Ruling: 새L2/L3만관측점주변의table축4방향을추가표본으로평가한다 — 기존현재위치주변3방향이table다리로모두막힌것은탐색범위문제였다 — 기존map/IK검사와Nav2실제경로비용순위를유지하고legacy3방향은그대로다. 공식MoveIt Task Constructor ros2 GenerateGraspPose의각도표본생성패턴을비교했지만MTC의존성/실행stage는도입하지않는다. 실제실패fixture로새API부재1 RED/3.20초확인후v27전체회귀중. v26source와FAIL은보존한다.
+v27全회귀387 PASS/61.26초,동일snapshot과실행372개소스전수hash일치PASS. source372/assets94 SHA2566cba8d93f759aa31a51b0d12edc3804fe7dedab492a30fe25601fb2311f3cb6c. 설치67모듈/94자산actualchild감사PASS. 새bearing필드는source/scenario hash로동결한다. 다음L3사전사례뒤본10회고정계획을생성한다.
