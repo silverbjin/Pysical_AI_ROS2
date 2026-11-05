@@ -1,6 +1,20 @@
 """Source-preserving lease for controller -> smoother -> safety gateway."""
 import math
 from .safety import Guard
+
+def prepared_zero(snapshot,*,already_armed=False,now):
+ b=snapshot['boundary'];g=snapshot['gateway'];p=snapshot['platform']
+ if not (b.get('phase')=='ACTIVE' and b.get('output_held') is True):return False
+ if g.get('ready_for_arm') is True:return True
+ if not already_armed:return False
+ try:
+  return (g['mode']==p['mode']=='ARMED' and g['fault']==p['fault']==''
+      and p['stationary_ready'] is True and g['pending_future_count']==0
+      and all(type(b[k]) in (int,float) and math.isfinite(b[k]) and abs(b[k])<=1e-12 for k in ('vx','wz'))
+      and 0<=now-g['decision_wall']<=.3
+      and all(0<=now-g['source_receipts'][k]['receipt_wall']<=.3 for k in ('raw','base','joints')))
+ except (KeyError,TypeError):return False
+
 class NavigationContract:
  def __init__(self):
   self.g=Guard(required=('nav','smooth','scan','tf'),control='nav');self.phase='IDLE';self.edges={};self.smoothed=(0.,0.);self.wait_wall=None;self.last_output_ns=0;self.last_output=(0.,0.)

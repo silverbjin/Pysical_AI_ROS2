@@ -20,6 +20,8 @@ class Scenario:
     grasp_pitch_down_deg:float
     pre_distance_m:float
     approach_standoff_m:float|None
+    world:str='empty'
+    survey_pose:tuple|None=None
 
     @property
     def support_geom(self):return 'floor' if self.support_height_m==0. else 'reuse_receiving_support'
@@ -27,7 +29,9 @@ class Scenario:
     def planning_support(self):return 'ground' if self.support_height_m==0. else 'reuse_receiving_support'
     @property
     def level(self):return 'continuous_development_fixture' if self.name=='development' else self.name
-    def record(self):return asdict(self)
+    def record(self):
+        from .worlds import elements
+        return dict(asdict(self),world_geometry=[g.record() for g in elements(self)])
 
     def receiving_support_ready(self,force,observation):
         if type(force) not in (int,float) or not math.isfinite(force) or force<=.01:return False
@@ -44,6 +48,11 @@ SCENARIOS=MappingProxyType({
     'development':Scenario('development',(1.8,0.,.54),(-.8,0.,.54),.5,
         TRANSPORT_CAMERA_POS,TRANSPORT_CAMERA_YAW_DEG,TRANSPORT_CAMERA_PITCH_UP_DEG,0.,.12,None),
     'level1_floor':Scenario('level1_floor',(2.,0.,.04),(-.6,0.,.04),0.,(.4,.4,.29),-40.,-35.,30.,.06,.6),
+    'level2_obstacles':Scenario('level2_obstacles',(3.,1.,.54),(-.8,0.,.54),.5,
+        TRANSPORT_CAMERA_POS,TRANSPORT_CAMERA_YAW_DEG,TRANSPORT_CAMERA_PITCH_UP_DEG,0.,.12,.8,
+        'obstacles',(1.7,.3,math.atan2(.7,1.3))),
+    'level3_house':Scenario('level3_house',(3.,1.,.04),(-.6,0.,.04),0.,(.4,.4,.29),-40.,-35.,30.,.06,.6,
+        'house',(1.9,.4,math.atan2(.6,1.1))),
 })
 
 

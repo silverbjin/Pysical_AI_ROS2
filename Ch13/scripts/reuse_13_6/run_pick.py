@@ -51,6 +51,10 @@ def work(*,node,until,snapshot,status,control,out,case='pick',action_client_fact
         sample,center=observation()
         objects=[object_box('ground',[0.,0.,-.01],[20.,20.,.02])]
         objects += [object_box('reuse_'+name,c,2*np.array(size)) for name,c,size in layout('vision') if name!='target']
+        if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+            from ch13_system_validation.scenarios import active_scenario
+            from ch13_system_validation.worlds import planning_objects
+            objects += planning_objects(active_scenario())
         objects.append(object_cylinder('pick_target',center));planner.apply_objects(objects)
         root=snapshot()['state'].pose.pose.position
         forward=center-np.array([root.x,root.y,center[2]]);forward/=np.linalg.norm(forward)

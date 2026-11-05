@@ -14,6 +14,7 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from ch13_navigation_reuse.command_gateway import N,ns,set_stamp
 from run_r2_probe import service_call
+from ch13_navigation_reuse.nav_contract import prepared_zero
 
 def yaw(q):return math.atan2(2*(q.w*q.z+q.x*q.y),1-2*(q.y*q.y+q.z*q.z))
 class _StartupComplete(Exception):pass
@@ -129,12 +130,16 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
   sent=action.send_goal_async(goal)
   if orchestration is not None:orchestration.track_goal(sent)
   assert until(sent.done,5),'goal admission deadline';goal_handle=sent.result();assert goal_handle.accepted,'Nav2 goal rejected';result_future=goal_handle.get_result_async();S['events'].append({'event':'goal_accepted','sim_ns':clock_ns,'wall':time.monotonic()})
-  assert until(lambda:result_future.done() or boundary.get('phase')=='FAULT' or (boundary.get('phase')=='ACTIVE' and boundary.get('output_held') and gateway.get('ready_for_arm')),5),'controller preparation deadline'
+  prearmed=bool(getattr(orchestration,'motion_prearmed',False))
+  prepared=lambda:prepared_zero(snapshot(),already_armed=prearmed,now=time.monotonic())
+  assert until(lambda:result_future.done() or boundary.get('phase')=='FAULT' or prepared(),5),'controller preparation deadline'
   if not result_future.done():
-   assert boundary.get('phase')=='ACTIVE' and boundary.get('output_held') and gateway.get('ready_for_arm'),'controller not prepared at zero'
+   assert prepared(),'controller not prepared at zero'
    S['motion_admission']={'boundary_phase':boundary['phase'],'held':boundary['output_held'],'gateway_before':gateway['mode'],'controller_stamp_ns':boundary['stamp_ns']}
-   response=call('gateway/arm');assert response.success,response.message;S['motion_admission']['gateway_arm_wall']=time.monotonic()
-   response=call('platform/arm');assert response.success,response.message;S['motion_admission']['platform_arm_wall']=time.monotonic()
+   if not prearmed:
+    response=call('gateway/arm');assert response.success,response.message;S['motion_admission']['gateway_arm_wall']=time.monotonic()
+    response=call('platform/arm');assert response.success,response.message;S['motion_admission']['platform_arm_wall']=time.monotonic()
+   else:S['motion_admission']['already_armed_after_owned_survey']=True
    response=call('navigation/release');assert response.success,response.message;S['motion_admission']['release_wall']=time.monotonic();S['motion_release_sim_ns']=clock_ns
   else:S['motion_not_released_terminal']=result_future.result().status
   if args.case in ['cancel','raw_loss']:

@@ -355,3 +355,4 @@ v23설정FAIL/v24시작FAIL/v24navigationPASS 세사례의정확한실행source�
 
 Ruling: 기존Task4와새계획이공유하는Scenario/goal/평가필드는새계획에정의하고이기록에L23 Task번호로진행상태를남긴다. Windows linked worktree의Git은Windows에서만다루며WSL Git경로를고쳐skill도구를억지로실행하지않는다. 재개시이ledger와commit을우선한다.
 L23 Task1: in_progress. Task2/3/4: pending. 공식Nav21.3.13 static_layer.cpp와MuJoCo3.13.0 mjmodel.h를GitHub connector로읽었으며walkable지면/정적2D장애물/3D상판을분리하는기존API패턴을재사용한다. 이는물리성공증거가아니다.
+L23 Task1~3部품: world4 RED→5 PASS/3.77초,prearmed9 RED→관련20 PASS/3.23초,batch/world witness9 RED→전체382 PASS/58.80초. 이후관측지점/접근정적카메라2 PASS/6.95초를추가했다. full384를새로실행한것은아니다. full382production239파일/추가camera2시험전체370파일이v25freeze와일치PASS. build13.4초/설치67모듈·94자산actualchild감사PASS. source370/assets94 SHA256c31ad64b7ebeeaf2df2c30b56f6278335deb231bceb74860bf9dc49d31de54fa. Task1/2/3코드와부품은구현,실제연결은아직미확인. Task4사전실제L2부터확인한다. 본시험10slot은아직생성하지않았다.

@@ -6,7 +6,7 @@ from rclpy.qos import QoSProfile,DurabilityPolicy
 from nav_msgs.msg import OccupancyGrid
 from tf2_ros import StaticTransformBroadcaster
 from geometry_msgs.msg import TransformStamped
-from .scene import layout
+from .scene import map_layout as layout
 from .command_gateway import N
 class WorldMap(Node):
  def __init__(self,profile):

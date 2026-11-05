@@ -48,6 +48,9 @@ def main():
             # All of this stays on the ROS owner before a manipulation OFFER.
             for record in prepare_manipulation_types():self.port.event('startup_preparation',**record)
             super().ready(**context)
+            if scenario.survey_pose is not None:
+                from ch13_system_validation.survey import observe_from_waypoint
+                observe_from_waypoint(self,scenario=scenario,**context)
 
     class WaitStart(py_trees.behaviour.Behaviour):
         def __init__(self,mission):super().__init__('Wait /start_mission');self.m=mission
@@ -136,6 +139,8 @@ def main():
             engine=json.loads((out/'engine.json').read_text()) if (out/'engine.json').exists() else {}
             physical_rows=engine.get('pick_physics',{}).get('rows',[])
             physics=dict(pick=assess_pick(physical_rows),transport=assess_transport(physical_rows,scenario=scenario))
+            from ch13_system_validation.world_assessment import assess_world
+            physics['world']=assess_world(physical_rows,scenario,found=bool(completed.get('find')))
             physical_ok=all(v['result']=='PASS' for v in physics.values())
             finished=place.get('wall',time.monotonic())
             mission_cpu=[r['percent'] for r in cpu.rows if began and began[1]<=r['wall']<=finished]

@@ -30,7 +30,7 @@ def generate_launch_description():
   ('nav2_bt_navigator','bt_navigator','bt_navigator',[],{'default_nav_to_pose_bt_xml':bt})]:
   node_params=params
   if (name=='controller_server' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
-      and os.environ.get('CH13_VALIDATION_SCENARIO')=='level1_floor'):
+      and os.environ.get('CH13_VALIDATION_SCENARIO') in ('level1_floor','level2_obstacles','level3_house')):
    from nav2_common.launch import RewrittenYaml
    from launch_ros.descriptions import ParameterFile
    node_params=ParameterFile(RewrittenYaml(source_file=params,param_rewrites={

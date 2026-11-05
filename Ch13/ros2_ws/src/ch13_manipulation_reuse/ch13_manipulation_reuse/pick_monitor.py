@@ -22,14 +22,24 @@ class PickMonitor:
             if ancestor==base:self.robot_bodies.add(body)
         self.target=model.body(TARGET).id;self.free=int(model.jnt_qposadr[model.joint('reuse_target_free').id])
         self.link6=model.body('link6').id
+        self.terrain={'floor'}
+        if self.scenario is not None:
+            from ch13_system_validation.worlds import elements
+            self.terrain.update('reuse_'+g.name for g in elements(self.scenario) if g.terrain)
 
     def step(self,p,lease,stamp_ns):
         phase='WAITING' if lease.message is None else lease.message.get('task_phase','WAITING')
         live=lease.phase in ('READY','EXECUTING','CARRY_ARMED','CARRY')
         forces={'link7':0.,'link8':0.}
         self.support_N=0.
+        ramp_force=0.
         for index,contact in enumerate(p.mjData.contact):
             a,b=map(int,contact.geom);ba,bb=int(self.model.geom_bodyid[a]),int(self.model.geom_bodyid[b])
+            ga,gb=self.model.geom(a).name,self.model.geom(b).name
+            if ((ga in self.terrain-{'floor'} and bb in self.robot_bodies)
+                or (gb in self.terrain-{'floor'} and ba in self.robot_bodies)):
+                measured=np.zeros(6);mujoco.mj_contactForce(self.model,p.mjData,index,measured)
+                ramp_force+=max(0.,float(measured[0]))
             if ((ba==self.target and self.model.geom(b).name==self.support_geom)
                 or (bb==self.target and self.model.geom(a).name==self.support_geom)):
                 force=np.zeros(6);mujoco.mj_contactForce(self.model,p.mjData,index,force)
@@ -37,8 +47,8 @@ class PickMonitor:
             if self.scenario is not None and self.scenario.support_height_m==0. and live and contact.dist<0:
                 an=self.model.body(ba).name;bn=self.model.body(bb).name
                 arm_a=an.startswith('link');arm_b=bn.startswith('link')
-                forbidden=(arm_a and ((bb in self.robot_bodies and not arm_b) or self.model.geom(b).name=='floor')
-                    or arm_b and ((ba in self.robot_bodies and not arm_a) or self.model.geom(a).name=='floor'))
+                forbidden=(arm_a and ((bb in self.robot_bodies and not arm_b) or gb in self.terrain)
+                    or arm_b and ((ba in self.robot_bodies and not arm_a) or ga in self.terrain))
                 if forbidden:
                     force=np.zeros(6);mujoco.mj_contactForce(self.model,p.mjData,index,force)
                     if float(force[0])>.005:
@@ -67,6 +77,7 @@ class PickMonitor:
         rotation=p.mjData.xmat[self.link6].reshape(3,3)
         tcp=p.mjData.xpos[self.link6]+rotation@np.array(TCP_LINK6)
         self.rows.append(dict(sim_s=sim,phase=phase,target=target.tolist(),tcp=tcp.tolist(),
+                              base_xyz=p.mjData.qpos[:3].tolist(),ramp_contact_N=ramp_force,
                               relative_tcp=(rotation.T@(target-tcp)).tolist(),target_contact_N=forces,
                               gripper_qpos=p.mjData.qpos[25:27].tolist(),gripper_effort_N=float(p.mjData.actuator_force[18]),
                               internal_gripper_reference=float(p.desired_joint_pos_gripper),

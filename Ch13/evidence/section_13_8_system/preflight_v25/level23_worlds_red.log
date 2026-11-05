@@ -1,0 +1,68 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_30d3c332ec2b4b26bf27b3d8f05c7869/repo
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___________ test_level23_geometry_and_original_profiles_are_explicit ___________
+
+    def test_level23_geometry_and_original_profiles_are_explicit():
+>       from ch13_system_validation.worlds import elements
+E       ModuleNotFoundError: No module named 'ch13_system_validation.worlds'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_level23_worlds.py:10: ModuleNotFoundError
+_________ test_ramp_top_faces_are_five_degrees_and_join_without_a_step _________
+
+    def test_ramp_top_faces_are_five_degrees_and_join_without_a_step():
+>       from ch13_system_validation.worlds import elements
+E       ModuleNotFoundError: No module named 'ch13_system_validation.worlds'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_level23_worlds.py:23: ModuleNotFoundError
+____ test_map_keeps_table_legs_and_door_but_not_table_top_or_walkable_ramp _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7db8f1a4a960>
+
+    def test_map_keeps_table_legs_and_door_but_not_table_top_or_walkable_ramp(monkeypatch):
+>       from ch13_navigation_reuse.scene import map_layout
+E       ImportError: cannot import name 'map_layout' from 'ch13_navigation_reuse.scene' (/home/jinho/ch13_reuse_13_8_build/component_source_30d3c332ec2b4b26bf27b3d8f05c7869/repo/Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/scene.py)
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_level23_worlds.py:38: ImportError
+____ test_actual_models_preserve_actuators_and_put_target_under_house_table ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7db8f1a4b0e0>
+
+    def test_actual_models_preserve_actuators_and_put_target_under_house_table(monkeypatch):
+        from ch13_manipulation_reuse.pick_scene import make_pick_model
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE', 'carry_v1')
+        root = Path(__file__).resolve().parents[5]
+        source = root.parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml'
+        monkeypatch.setenv('CH13_VALIDATION_SCENARIO', 'level1_floor')
+        original = make_pick_model(source)
+        for name in ('level2_obstacles', 'level3_house'):
+            monkeypatch.setenv('CH13_VALIDATION_SCENARIO', name)
+>           model = make_pick_model(source)
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_level23_worlds.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/pick_scene.py:32: in make_pick_model
+    def make_pick_model(source):return make_model(source,'vision',spec_hook=add_target)
+Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/scene.py:31: in make_model
+    for name,pos,size in layout(profile):s.worldbody.add_geom(name='reuse_'+name,type=mujoco.mjtGeom.mjGEOM_BOX,pos=pos,size=size,group=5,rgba=[.9,.02,.02,1.] if name=='target' else [.3,.35,.4,1.])
+Ch13/ros2_ws/src/ch13_navigation_reuse/ch13_navigation_reuse/scene.py:14: in layout
+    scenario=active_scenario();point=scenario.target_xyz
+Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/scenarios.py:57: in active_scenario
+    return get_scenario(os.environ.get('CH13_VALIDATION_SCENARIO','development'))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'level2_obstacles'
+
+    def get_scenario(name='development'):
+        try:return SCENARIOS[name]
+>       except (KeyError,TypeError):raise ValueError('unknown validation scenario: '+str(name)) from None
+E       ValueError: unknown validation scenario: level2_obstacles
+
+Ch13/ros2_ws/src/ch13_system_validation/ch13_system_validation/scenarios.py:52: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_level23_worlds.py::test_level23_geometry_and_original_profiles_are_explicit
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_level23_worlds.py::test_ramp_top_faces_are_five_degrees_and_join_without_a_step
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_level23_worlds.py::test_map_keeps_table_legs_and_door_but_not_table_top_or_walkable_ramp
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_level23_worlds.py::test_actual_models_preserve_actuators_and_put_target_under_house_table
+4 failed, 360 deselected in 4.07s
+

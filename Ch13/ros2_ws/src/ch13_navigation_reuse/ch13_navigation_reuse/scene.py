@@ -13,7 +13,7 @@ def layout(profile):
   from ch13_system_validation.scenarios import active_scenario
   scenario=active_scenario();point=scenario.target_xyz
   walls.append(('target',[point[0],point[1],point[2]+.01],[.05,.05,.05]))
-  if scenario.support_height_m>0:
+  if scenario.support_height_m>0 and scenario.world!='obstacles':
    height=scenario.support_height_m
    walls.append(('pedestal',[point[0],point[1],height/2],[.035,.035,height/2]))
  elif profile=='vision':walls.extend([('target',[1.8,0.,.55],[.05,.05,.05]),('pedestal',[1.8,0.,.25],[.035,.035,.25])])
@@ -23,12 +23,24 @@ def layout(profile):
    walls.append(('receiving_support',[*scenario.receiving_xyz[:2],height/2],[.045,.045,height/2]))
  return walls
 
+def map_layout(profile):
+ result=list(layout(profile))
+ if profile=='vision' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+  from ch13_system_validation.scenarios import active_scenario
+  from ch13_system_validation.worlds import elements
+  result.extend((g.name,g.center,g.half) for g in elements(active_scenario()) if g.navigation_obstacle)
+ return result
+
 def make_model(source,profile,spec_hook=None):
  if profile not in ('free','obstacle','blocked','vision'):raise ValueError('unknown educational scene')
  s=mujoco.MjSpec.from_file(str(source))
  for geom in list(s.worldbody.geoms):
   if geom.name!='floor':s.delete(geom)
  for name,pos,size in layout(profile):s.worldbody.add_geom(name='reuse_'+name,type=mujoco.mjtGeom.mjGEOM_BOX,pos=pos,size=size,group=5,rgba=[.9,.02,.02,1.] if name=='target' else [.3,.35,.4,1.])
+ if profile=='vision' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+  from ch13_system_validation.scenarios import active_scenario
+  from ch13_system_validation.worlds import add_physics
+  add_physics(s,active_scenario())
  # MuJoCo camera has right/up/back axes; ROS optical is right/down/forward.
  camera_r=OPTICAL_R@np.diag([1.,-1.,-1.]);quat=np.roll(Rotation.from_matrix(camera_r).as_quat(),1)
  s.body('base').add_camera(name='reuse_rgbd',pos=CAM_POS,quat=quat,fovy=55.)
