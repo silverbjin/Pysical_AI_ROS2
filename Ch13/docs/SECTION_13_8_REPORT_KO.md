@@ -1,5 +1,7 @@
 # 13.8 개발 및 검증 보고서
 
+최신 종합 정리는 [진행·문제 해결·반복 문제 보고서](SECTION_13_8_PROGRESS_AND_ISSUES_REPORT_KO.md), 남은 작업은 [향후 작업 보고서](SECTION_13_8_NEXT_TASKS_REPORT_KO.md)를 참고한다. 아래에는 과거 시점의 개발 기록도 함께 남아 있다.
+
 2026-11-05 KST 갱신. 단일 작업자. **개발 진행 중이며 전체 원고 인수가 완료된 상태가 아니다.**
 
 최신 v22 Level1은 파지→2.566m 운반→귀환→지지 정착→실제 개방·detach→팔 후퇴→유지→정상 종료까지 완료했다. BT SUCCESS와 worker/자식12개 회수·bag close·lock free를 확인했다. 다만 높이 하강20.094mm가20mm 기준을 초과해 물리 운반 및 trial 최종 판정은 **FAIL**이다. 199.538sim초/490.768wall초·귀환44.449mm·tilt0.044629rad·CPU45.950%로3cm/120초 목표도 미달이다. 원래 판정을 보존하며 BT SUCCESS와 전체 인수를 구분한다.
