@@ -93,3 +93,7 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 ## v23: Level1 도착 허용 반경의 분리 적용
 
 공식GitHub connector로 Nav2 1.3.13 nav2_controller/plugins/simple_goal_checker.cpp 전체를 재조회했다. xy_goal_tolerance의 제곱 거리 비교와 stateful=true에서 check_xy_=false로 전환하는 실제 구현을 확인했다. v22의44.449mm 정착 오차가6cm 허용 안에 있다는 사실과 원고3cm 목표를 구분한다. Level1 carry_v1 환경에서만 controller_server에 goal_checker.xy_goal_tolerance=0.015를 YAML 뒤의 명시 파라미터로 전달한다. 다른 node와 development/13.6/13.7 YAML, yaw0.06/statefultrue·속도·정책·정착 경계는 유지한다. 1.5cm는 프로젝트의 정착 여유 선택이며 공식 권장값으로 표현하지 않는다. 설정만으로3cm를 달성했다고 쓰지 않고, 실제 GetParameters 읽기와 unloaded navigation1회/정식 navigation판정으로 확인한다. 귀환π회전/적재/장애물의 강건성은 별도다.
+
+## Level 2·3 본10회 이후 최소 수정 근거(2026-11-05)
+
+설치와같은Nav21.3.13의SimpleGoalChecker.cpp를공식GitHub connector로다시읽었다. statefultrue는처음XY반경을통과하면check_xy_를false로바꿔yaw만검사한다. v28의9개도달사례는1.5cm안에들어갔다가terminal시점3.3~6.9cm로벗어난실제pose기록이있다. 따라서v29는L2/L3에한해statefulfalse를node-specific RewrittenYaml로재작성한다. floor/development는true,XY.015/yaw.06·SimpleGoalChecker·속도·물리제어는유지한다. 같은ref의StoppedGoalChecker도비교했지만plugin교체는채택하지않아원인을한변수로분리한다. 정확한참조는[SimpleGoalChecker](https://github.com/ros-navigation/navigation2/blob/1.3.13/nav2_controller/plugins/simple_goal_checker.cpp)와[StoppedGoalChecker](https://github.com/ros-navigation/navigation2/blob/1.3.13/nav2_controller/plugins/stopped_goal_checker.cpp)다. 설정시험2 RED/3 PASS→5 PASS,전체389 PASS/62.25초. 이시험은실제정착이나6D계획성공증거가아니다.

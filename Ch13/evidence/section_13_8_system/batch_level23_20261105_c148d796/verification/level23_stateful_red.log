@@ -1,0 +1,88 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_a4d14d64cc2845b5a4c6a41d16555386/repo
+...FF                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_book_goal_tolerance_survives_node_specific_ros_yaml[carry_v1-level2_obstacles-0.015-False] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-5/test_book_goal_tolerance_survi3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7aa37d45d1f0>
+profile = 'carry_v1', scenario = 'level2_obstacles', expected = 0.015
+stateful = False
+
+    @pytest.mark.parametrize('profile,scenario,expected,stateful', [('', 'level1_floor', .06,True),
+        ('carry_v1', 'development', .06,True), ('carry_v1', 'level1_floor', .015,True),
+        ('carry_v1','level2_obstacles',.015,False),('carry_v1','level3_house',.015,False)])
+    def test_book_goal_tolerance_survives_node_specific_ros_yaml(tmp_path, monkeypatch, profile, scenario, expected,stateful):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE', profile)
+        monkeypatch.setenv('CH13_VALIDATION_SCENARIO', scenario)
+        source = Path(__file__).resolve().parents[2]/'ch13_navigation_reuse/launch/navigation.launch.py'
+        spec = importlib.util.spec_from_file_location('precision_launch', source)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        controller = next(a for a in module.generate_launch_description().entities
+                          if getattr(a, '_Node__node_name', None) == 'controller_server')
+        parameter_file = controller._Node__parameters[0]
+        path = Path(parameter_file.evaluate(LaunchContext()))
+        context = Context()
+        node = None
+        rclpy.init(context=context)
+        try:
+            node = rclpy.create_node('controller_server', context=context, use_global_arguments=False,
+                cli_args=['--ros-args', '--params-file', str(path)],
+                automatically_declare_parameters_from_overrides=True)
+            assert node.get_parameter('goal_checker.xy_goal_tolerance').value == expected
+            assert node.get_parameter('goal_checker.yaw_goal_tolerance').value == .06
+>           assert node.get_parameter('goal_checker.stateful').value is stateful
+E           AssertionError: assert True is False
+E            +  where True = <rclpy.parameter.Parameter object at 0x7aa36e5356d0>.value
+E            +    where <rclpy.parameter.Parameter object at 0x7aa36e5356d0> = <bound method Node.get_parameter of <rclpy.node.Node object at 0x7aa37d4e5bb0>>('goal_checker.stateful')
+E            +      where <bound method Node.get_parameter of <rclpy.node.Node object at 0x7aa37d4e5bb0>> = <rclpy.node.Node object at 0x7aa37d4e5bb0>.get_parameter
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py:34: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793856007.936850787] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793856007.936862154] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+_ test_book_goal_tolerance_survives_node_specific_ros_yaml[carry_v1-level3_house-0.015-False] _
+
+tmp_path = PosixPath('/tmp/pytest-of-jinho/pytest-5/test_book_goal_tolerance_survi4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7aa36e4ed310>
+profile = 'carry_v1', scenario = 'level3_house', expected = 0.015
+stateful = False
+
+    @pytest.mark.parametrize('profile,scenario,expected,stateful', [('', 'level1_floor', .06,True),
+        ('carry_v1', 'development', .06,True), ('carry_v1', 'level1_floor', .015,True),
+        ('carry_v1','level2_obstacles',.015,False),('carry_v1','level3_house',.015,False)])
+    def test_book_goal_tolerance_survives_node_specific_ros_yaml(tmp_path, monkeypatch, profile, scenario, expected,stateful):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE', profile)
+        monkeypatch.setenv('CH13_VALIDATION_SCENARIO', scenario)
+        source = Path(__file__).resolve().parents[2]/'ch13_navigation_reuse/launch/navigation.launch.py'
+        spec = importlib.util.spec_from_file_location('precision_launch', source)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        controller = next(a for a in module.generate_launch_description().entities
+                          if getattr(a, '_Node__node_name', None) == 'controller_server')
+        parameter_file = controller._Node__parameters[0]
+        path = Path(parameter_file.evaluate(LaunchContext()))
+        context = Context()
+        node = None
+        rclpy.init(context=context)
+        try:
+            node = rclpy.create_node('controller_server', context=context, use_global_arguments=False,
+                cli_args=['--ros-args', '--params-file', str(path)],
+                automatically_declare_parameters_from_overrides=True)
+            assert node.get_parameter('goal_checker.xy_goal_tolerance').value == expected
+            assert node.get_parameter('goal_checker.yaw_goal_tolerance').value == .06
+>           assert node.get_parameter('goal_checker.stateful').value is stateful
+E           AssertionError: assert True is False
+E            +  where True = <rclpy.parameter.Parameter object at 0x7aa36e4af7d0>.value
+E            +    where <rclpy.parameter.Parameter object at 0x7aa36e4af7d0> = <bound method Node.get_parameter of <rclpy.node.Node object at 0x7aa37d587110>>('goal_checker.stateful')
+E            +      where <bound method Node.get_parameter of <rclpy.node.Node object at 0x7aa37d587110>> = <rclpy.node.Node object at 0x7aa37d587110>.get_parameter
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py:34: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793856008.069195367] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793856008.069207376] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py::test_book_goal_tolerance_survives_node_specific_ros_yaml[carry_v1-level2_obstacles-0.015-False]
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py::test_book_goal_tolerance_survives_node_specific_ros_yaml[carry_v1-level3_house-0.015-False]
+2 failed, 3 passed, 384 deselected in 3.43s
+

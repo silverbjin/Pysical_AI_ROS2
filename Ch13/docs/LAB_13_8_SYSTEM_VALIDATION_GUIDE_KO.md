@@ -4,7 +4,7 @@
 
 ## 1. 소스 확보와 환경
 
-현재 기준은 공개13.6이 아니라 로컬13.7의13ecb58d에서 확장한 feat/ch13-section-13-8이다. 원격13.7/13.8 게시·새 환경 다운로드 검증은 아직 하지 않았다. 기존 로컬 work/Pysical_AI_ROS2_13_8를 사용한다. sources/와 과거 worktree·증거를 수정하지 않는다.
+현재 기준은 공개13.6이 아니라 로컬13.7의13ecb58d에서 확장한 feat/ch13-section-13-8이다. 13.8 branch는3447c9e8까지 원격 게시한 이력이 있다. 현재 최신 remote ref는 다시 확인하며 새 환경 다운로드/engine 재현 검증은 별도다. 기존 로컬 work/Pysical_AI_ROS2_13_8를 사용한다. sources/와 과거 worktree·증거를 수정하지 않는다.
 
 WSL Ubuntu24.04, ROS2 Jazzy, /home/jinho/ch13_reuse_iit_d010212_venv와 sibling upstream-iit-locomanipulation-d010212 자산을 재사용한다. MuJoCo3.13.0, MoveIt2.12.4, moveit_msgs2.6.0, rosbag2/rosbag2_py0.26.11이며 원본 정책·native arm PD·gripper0.5N을 유지한다. 전역 venv 활성화나 시스템 dist-packages 선삽입을 하지 않는다.
 
@@ -27,7 +27,7 @@ bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/audit_install.py /tm
 
 ## 2. 13.8.2 테스트 베드와 성공 정의
 
-현재 연속 수명 경계 개발 fixture는 알려진 upright20g 원통과 기존 파지 받침대, 귀환 측 수령 받침대다. 이는 원고 Level 1의2m fixture나 공통 (3,1) 테이블·장애물·5도 경사·좁은 문·식탁 아래 목표 전체를 구현했다는 뜻이 아니다. 실제 지원 fixture와 source freeze를 결과 보고서에 명시한다.
+현재 연속 수명 경계 개발 fixture는 알려진 upright20g 원통과 기존 파지 받침대, 귀환 측 수령 받침대다. 이전 개발 단계의 설명이다. 현재 Level1 바닥 및 아래의 Level2/3 기하는 구현됐으며 실제 인수 실패·제한은 전용 평가 보고를 따른다. 실제 지원 fixture와 source freeze를 결과 보고서에 명시한다.
 
 현재 지원 fixture는 아래와 같다. 귀환 base 목표는 모두(0,0,π)이며 development를 원고 Level1로 부르지 않는다.
 
@@ -194,3 +194,45 @@ v17의센서stream은물리표면이아닌붉은attachment_site 보조표시를�
 
 v22은제어를유지한진단계측동결이다. capture_stage_timing.json의최근256개scan/상태발행/pre-offer/put비용과renderer_captures.json의request_offer_wall·request_to_render_wall_s를확인한다. capture_wall은원래촬영시각이며offer시각으로대체하지않는다. 현재관련21시험·짧은센서재현만통과했고실제전체부하deadline원인은조사중이다.
 현재v24는Level1 도착 허용 반경1.5cm를공식Nav2 RewrittenYaml로전달한동결이다. 관련13개회귀와짐없는전진navigation1회(11.82mm)만추가검증했으며,이동허가전cold-start실패가한차례있었다. v22의전체연속동작/물리높이FAIL이력을v24전체인수로옮겨쓰지않는다. startup FAULT는arm/강제reset으로우회하지말고원본을보존한다.
+
+## 12. Level 2·3 및 고정 총 10회 평가
+
+[작업명세](SECTION_13_8_LEVEL23_EVALUATION_SPEC_KO.md)와 [실제평가보고](SECTION_13_8_LEVEL23_EVALUATION_REPORT_KO.md)를 먼저 읽는다. 현재 L2/L3는 v28 각5회 모두 엄격한 성공 기준에 미달했다. `level2_obstacles`는 0.5m 테이블/박스/5도 경사, `level3_house`는 폭1.1m 문/식탁 아래 바닥 원통이다. 개발용 실패 사례를 학생의 성공 예제로 제시하지 않는다.
+
+기존 1~3절의 분리 build·의존성 감사 후 **실제 소스와 일치하는 새 이름의 freeze**를 만든다. 과거 v28/v29 파일을 덮어쓰지 않는다. 현재 checkout과 과거 freeze가 불일치하면 원래 버전의 보존 소스 또는 정확한 commit을 사용한다. build/시험/큰 archive 작업이 모두 끝나고 실제 잔여/공유 lock free를 확인한 뒤 engine을 실행한다.
+
+```bash
+# 준비/감사는 engine 실행 전에 한다. 새 경로를 선택한다.
+bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/freeze_runtime.py write Ch13/dependencies/ch13_my_freeze.json
+bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/stage_runtime.py --manifest Ch13/dependencies/ch13_my_freeze.json --output /tmp/ch13_my_stage.json
+```
+
+stage JSON의 `runtime_root`와 `manifest_relative_path`를 확인한다. manifest는 저장소 안의 새 경로여야 하며 외부 /tmp manifest는 staging에서 거부한다. 수동으로 snapshot 소스를 수정하지 않는다. 아래 변수를 실제 JSON에서 읽고 native snapshot으로 이동한다.
+
+```bash
+RUNTIME=$(python3 -c 'import json; print(json.load(open("/tmp/ch13_my_stage.json"))["runtime_root"])')
+REL_MANIFEST=$(python3 -c 'import json; print(json.load(open("/tmp/ch13_my_stage.json"))["manifest_relative_path"])')
+MANIFEST="$RUNTIME/$REL_MANIFEST"
+# CASE_ROOT와 BATCH는 충분한 디스크 공간이 있는 새 evidence 경로를 선택한다.
+cd "$RUNTIME"
+python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py /tmp/ch13_before_level23.json
+bash Ch13/scripts/reuse_13_8/env.sh -u Ch13/scripts/reuse_13_8/run_mission.py \
+  --repo-root "$RUNTIME" --manifest "$MANIFEST" \
+  --evidence "$CASE_ROOT/$(cat /proc/sys/kernel/random/uuid)" \
+  --auto-start --scenario level2_obstacles
+# Level3는 scenario만 level3_house로 선택한다. 한 번에 engine 하나만 실행한다.
+```
+
+고정 총10회는 새 빈 batch 폴더로 plan을 먼저 만들고 UUID/source/scenario hash를 기록한 후 실행한다. 교대 각5회이며 10회씩 각각의 평가가 아니다. seed는 기존 초기 설정이고 스케줄링은 비결정적이다.
+
+```bash
+bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/evaluate_batch.py prepare \
+  --repo-root "$RUNTIME" --manifest "$MANIFEST" --batch "$BATCH" --case-root "$CASE_ROOT"
+# plan.json 보존 후 동일한 인자로 실행. 중간 소스/조건 변경·실패 교체 금지.
+bash Ch13/scripts/reuse_13_8/env.sh -u Ch13/scripts/reuse_13_8/evaluate_batch.py run \
+  --repo-root "$RUNTIME" --manifest "$MANIFEST" --batch "$BATCH" --case-root "$CASE_ROOT"
+```
+
+`run`은 기존 attempt를 거부하고 사례 사이 잔여 검사를 수행한다. 결과 FAIL의 exit1은 완료된 평가의 실패일 수 있으므로 JSON/CSV와 종료 자료를 함께 읽는다. `trial.complete`는 worker 종료 자료 완성이며 성공이 아니다. 원래 `trial.success`, Pick/transport/world 판정과 각 목표를 확인한다. 누락 수치를0으로 채우거나 유효1건 평균을10건 성공 평균으로 표현하지 않는다. before/after 잔여 FAIL이면 다음 engine을 실행하지 않는다. 정상 종료·cancel ACK·terminal·실제 정지·자식회수는 별개다.
+
+개발자 부품 시험은 engine이 없는 상태에서만 선택 실행한다. 학생 기본 실습마다 전체389개나과거engine matrix가필수는아니다. 실패 수명/TF/소유권 조건을완화하거나과거FAIL을덮어쓰지않는다.

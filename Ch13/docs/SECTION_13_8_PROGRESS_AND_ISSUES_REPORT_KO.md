@@ -156,3 +156,9 @@ v22 실제 pick은 최소104.458mm 상승/2.2sim초 유지/양 접촉100%로 PAS
 기존 untracked 원본·과거 FAIL·외부 자산을 임의 추가/삭제하지 않는다. 보고서2개와 지정한 문서 변경만 새 commit으로 만들고, 게시 완료는 push 성공과 원격 branch HEAD=로컬 HEAD 일치로 확인한다. 원격 게시 자체를13.8의 기능 인수나 목표 성능 달성으로 해석하면 안 된다.
 
 상세 과거 일지는 [PROGRESS](SECTION_13_8_PROGRESS_KO.md),실행 계획은 [PLAN](SECTION_13_8_PLAN_KO.md),학생 가이드는 [LAB](LAB_13_8_SYSTEM_VALIDATION_GUIDE_KO.md)를 참고한다. 과거 문서의 '다음 실행/아직 미확인' 문장은 당시 시점 기록일 수 있으므로 이 종합 보고서의 최신 판정과 구분한다.
+
+## 2026-11-05 Level 2·3 실제 평가 갱신
+
+이전 문단의 미래 작업 상태보다 [Level 2·3 평가 보고](SECTION_13_8_LEVEL23_EVALUATION_REPORT_KO.md)를 우선한다. 명세 작성 후 실제 월드/관측 이동/고정10slot 도구를 구현하고 v28 총10회(각 Level 5회)를 완료했다. 엄격한 성공은0/10이며 목표 달성은 남아 있다. 도구가 없는 상태와 목표가 미달한 상태를 구분한다.
+
+다음 과제는 (1) Level3 실제 정착자세의pre-grasp/grasp6D IK·collision 분리, (2) Level2의최초관측/health만료와capture·TF·추론latency 연계, (3) 적재귀환 TRANSPORT_PLATFORM_UNSAFE의최초위반항목 분리, (4) 세계높이하락23.360mm와TCP/물체상대운동 분리, (5) 시작deadline의ready지연/자식회수 원인이다. 위치XY latch는공식Nav21.3.13코드를근거로별도v29수정·시험한다. 기존수명/물리기준을늘려성공시키지않는다. 저장된실패자료→작은부품/계획서비스재현→새동결의필요한실제사례순서다. 이후새고정10회를수행하면새batch/UUID/조건을명시하며v28의0/10을삭제하거나교체하지않는다.

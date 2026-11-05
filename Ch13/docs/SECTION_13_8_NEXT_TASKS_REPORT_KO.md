@@ -134,3 +134,9 @@ trial 원본/집계 JSON·CSV와 학생이 읽을 표/그림을 남긴다. 목�
 공식 문서·GitHub의 **실제 설치 버전** 구현/시험을 먼저 조사하고 채택 패턴·차이를 짧게 기록한다. 구현 계획 실행은 `superpowers:executing-plans`로 단일 작업자가 진행한다. 저장 자료→작은 부품→필요한 실제 사례 순서를 지키며,같은 실패 계열이 두 최소 수정 뒤에도 남으면 의존성/구조/실행 경계를 재검토한다.
 
 engine 중 build/pytest/대용량 분석을 병행하지 않는다. 새 변경은 새 source freeze/UUID로 분리하며 기존 v7/v24·과거 FAIL을 수정해 성공으로 만들지 않는다. `sources/`,Ch01~12·외부 checkout/underlay 원본은 읽기 전용으로 유지한다. 사용자 원본·untracked 자료를 임의 stage/정리하지 않는다. OS/드라이버/전역 시간·우선순위를 변경하지 않는다.
+
+## 2026-11-05 Level 2·3 실제 평가 갱신
+
+이전 문단의 미래 작업 상태보다 [Level 2·3 평가 보고](SECTION_13_8_LEVEL23_EVALUATION_REPORT_KO.md)를 우선한다. 명세 작성 후 실제 월드/관측 이동/고정10slot 도구를 구현하고 v28 총10회(각 Level 5회)를 완료했다. 엄격한 성공은0/10이며 목표 달성은 남아 있다. 도구가 없는 상태와 목표가 미달한 상태를 구분한다.
+
+다음 과제는 (1) Level3 실제 정착자세의pre-grasp/grasp6D IK·collision 분리, (2) Level2의최초관측/health만료와capture·TF·추론latency 연계, (3) 적재귀환 TRANSPORT_PLATFORM_UNSAFE의최초위반항목 분리, (4) 세계높이하락23.360mm와TCP/물체상대운동 분리, (5) 시작deadline의ready지연/자식회수 원인이다. 위치XY latch는공식Nav21.3.13코드를근거로별도v29수정·시험한다. 기존수명/물리기준을늘려성공시키지않는다. 저장된실패자료→작은부품/계획서비스재현→새동결의필요한실제사례순서다. 이후새고정10회를수행하면새batch/UUID/조건을명시하며v28의0/10을삭제하거나교체하지않는다.

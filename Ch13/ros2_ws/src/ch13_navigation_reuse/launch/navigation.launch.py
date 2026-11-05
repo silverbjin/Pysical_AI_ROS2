@@ -33,8 +33,12 @@ def generate_launch_description():
       and os.environ.get('CH13_VALIDATION_SCENARIO') in ('level1_floor','level2_obstacles','level3_house')):
    from nav2_common.launch import RewrittenYaml
    from launch_ros.descriptions import ParameterFile
-   node_params=ParameterFile(RewrittenYaml(source_file=params,param_rewrites={
-    'controller_server.ros__parameters.goal_checker.xy_goal_tolerance':'0.015'},convert_types=True),allow_substs=True)
+   rewrites={'controller_server.ros__parameters.goal_checker.xy_goal_tolerance':'0.015'}
+   if os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house'):
+    # Keep checking XY while turning: the first tolerance crossing is not arrival.
+    rewrites['controller_server.ros__parameters.goal_checker.stateful']='false'
+   node_params=ParameterFile(RewrittenYaml(source_file=params,param_rewrites=rewrites,
+    convert_types=True),allow_substs=True)
   actions.append(Node(package=package,executable=executable,name=name,parameters=[node_params,extra],remappings=remaps,output='screen'))
  actions.append(Node(package='nav2_lifecycle_manager',executable='lifecycle_manager',name='reuse_lifecycle_manager',parameters=[{'use_sim_time':True,'autostart':True,'bond_timeout':10.,'node_names':['planner_server','controller_server','velocity_smoother','bt_navigator']}],output='screen'))
  return LaunchDescription(actions)

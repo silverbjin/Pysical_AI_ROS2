@@ -8,9 +8,10 @@ from launch import LaunchContext
 from rclpy.context import Context
 
 
-@pytest.mark.parametrize('profile,scenario,expected', [('', 'level1_floor', .06),
-    ('carry_v1', 'development', .06), ('carry_v1', 'level1_floor', .015)])
-def test_book_goal_tolerance_survives_node_specific_ros_yaml(tmp_path, monkeypatch, profile, scenario, expected):
+@pytest.mark.parametrize('profile,scenario,expected,stateful', [('', 'level1_floor', .06,True),
+    ('carry_v1', 'development', .06,True), ('carry_v1', 'level1_floor', .015,True),
+    ('carry_v1','level2_obstacles',.015,False),('carry_v1','level3_house',.015,False)])
+def test_book_goal_tolerance_survives_node_specific_ros_yaml(tmp_path, monkeypatch, profile, scenario, expected,stateful):
     monkeypatch.setenv('CH13_VALIDATION_PROFILE', profile)
     monkeypatch.setenv('CH13_VALIDATION_SCENARIO', scenario)
     source = Path(__file__).resolve().parents[2]/'ch13_navigation_reuse/launch/navigation.launch.py'
@@ -30,7 +31,7 @@ def test_book_goal_tolerance_survives_node_specific_ros_yaml(tmp_path, monkeypat
             automatically_declare_parameters_from_overrides=True)
         assert node.get_parameter('goal_checker.xy_goal_tolerance').value == expected
         assert node.get_parameter('goal_checker.yaw_goal_tolerance').value == .06
-        assert node.get_parameter('goal_checker.stateful').value is True
+        assert node.get_parameter('goal_checker.stateful').value is stateful
         assert node.get_parameter('FollowPath.desired_linear_vel').value == .15
     finally:
         if node is not None: node.destroy_node()

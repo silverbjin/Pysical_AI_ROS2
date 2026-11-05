@@ -61,3 +61,11 @@ Nav21.3.13 static_layer.cpp/공식navigation_launch.py의지도와node-specific 
 명세→실행계획→실패시험→최소구현→부품/설치/source감사→필요한사전실제사례→새동결의10회순차실행→집계/보존/자체검토순서로진행한다. engine중build/pytest/대용량분석을병행하지않는다. 같은계열두수정후에도실패하면구조/의존성/경계를검토한다. 실패때기준을늘리지않는다.
 
 산출물: worlds/survey/batch평가코드,기하·guard·집계음성시험,새source freeze,batch plan/10slot실제자료,JSON/CSV/한국어결과보고,가이드/진행기록갱신. 원고Level1/기존FAIL·외부자산·sources/는변경하지않는다. 자체검토는단일작업자의독립성한계를표시한다.
+
+## 구현 중 확인한 경계의 명세 보충(2026-11-05)
+
+기존 명세나 원고 목표 수치를 바꾸지 않고 실제 연결 선택을 명시한다. v27부터 새 월드의 최종 접근 후보는 map축0/π/2/π/3π/2 네 방향이다. legacy는현재위치기준0/±0.15rad를유지한다. 후보별기존footprint·위치IK·Nav2경로비용검사를생략하지않는다. 이검사는전체6D팔계획가능성보증이아니다.
+
+v28부터survey가있는새L2/L3에서는검출없음을camera/TF/clock고장과분리한다. 검출실패시좌표·관측stamp를발행하거나갱신하지않는다. 새arm/find권한은기존300ms원본관측조건을계속요구한다. legacy/fixture부재fault는유지한다. 이전v25/v26/v27실패를새조건으로재판정하지않는다.
+
+v29는본10회밖후속수정동결이다. 새L2/L3만Nav2 goal_checker.stateful=false로XY/yaw를함께검사하며기존floor/developmenttrue·XY.015/yaw.06·플러그인/속도를유지한다. 정확도설정시험과실제도달성은별도로평가한다. v29사례를v28의10회에교체투입하지않는다.

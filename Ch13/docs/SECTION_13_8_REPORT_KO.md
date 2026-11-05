@@ -1,5 +1,7 @@
 # 13.8 개발 및 검증 보고서
 
+최신 Level 2·3 및 총10회 결과: [전용 평가 보고](SECTION_13_8_LEVEL23_EVALUATION_REPORT_KO.md). v28 실제10회 완료·엄격 성공0/10이며 아래 과거 기록과 구분한다.
+
 최신 종합 정리는 [진행·문제 해결·반복 문제 보고서](SECTION_13_8_PROGRESS_AND_ISSUES_REPORT_KO.md), 남은 작업은 [향후 작업 보고서](SECTION_13_8_NEXT_TASKS_REPORT_KO.md)를 참고한다. 아래에는 과거 시점의 개발 기록도 함께 남아 있다.
 
 2026-11-05 KST 갱신. 단일 작업자. **개발 진행 중이며 전체 원고 인수가 완료된 상태가 아니다.**

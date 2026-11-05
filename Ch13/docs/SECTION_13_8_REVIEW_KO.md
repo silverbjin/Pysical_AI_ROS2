@@ -41,3 +41,9 @@ v15 개발 fixture에서 실제pick/transport·detach readback·full Cartesian r
 v23설정의실제미적용은소스/설치hash감사만으로탐지할수없었다. 실제GetParameters와엔진없는ROSparser를추가해검증경계를보완했다. v24공식RewrittenYaml재작성은관련13 PASS와실제11.82mm전진1회로확인했다. 첫cold-start FUTURE_SOURCE:base FAIL도별도보존했으므로반복강건성은미확인이다. default0.06/yaw/stateful/속도보존을시험했고원본설정파일은바꾸지않았다.
 
 남은필수범위: 적재귀환π회전에서새정밀도확인,관측/발행cold-start지연의반복강건성,common table/Level2/3와고정10회평가,최종가이드·배포/복원검증. 이검토는13.8완료승인이나독립리뷰가아니다. 원격게시하지않는다.
+
+## Level 2·3 총10회 자체 검토(2026-11-05)
+
+단일 작업자의 자체 검토이며 독립 리뷰가 아니다. v28은 10건의 UUID/source/scenario 일치·worker 완료·실행 전후 잔여 검사를 대조했다. 전체0/10 FAIL과 world9/10·Pick3·BT1을 구분했다. 슬롯4의 lifecycle_manager 강제 종료를 정상 자식 종료로 세지 않았다. 귀환 오차 누락9건을0으로 채워 평균하지 않았다. 원본 판정과v28 고정 소스를 변경하지 않았다.
+
+미해결은 L3의6D 목표 부적합4건, L2의관측수명2건, 운반 안전/health 중단 각1건, 연속완료예의 높이23.360mm·귀환55.231mm·259.912sim초, 시작deadline1건이다. v29는 증거가 확인된XY latch만 최소 변경하고 다른 원인 해결을 주장하지 않는다. 신구 조건을 섞은 성공률이나 새10회 평가로 보고하지 않는다. 실기·일반인식·SLAM 검증이 아니다.

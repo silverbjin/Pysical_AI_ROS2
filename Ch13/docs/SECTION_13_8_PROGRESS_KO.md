@@ -369,3 +369,12 @@ v27사전L3 UUID8f49f091-a137-42cd-be80-5d6b09327755는survey/원통434관측/�
 
 Ruling: 같은부재계열재발에따라target검출없음과camera/clock/TF고장을새L2/L3전체에서분리한다 — 방향전환의일시적FOV이탈은sensorfault가아니며원래camerahealth와fresh3D권한도분리돼있다 — 검출실패에서는관측점/시각을발행·갱신하지않고arm/find의기존300msfresh3D조건을그대로유지한다. legacy/fixture부재latch는그대로다. 공식vision_msgs의검출배열과고장분리를비교하고기존schema를유지했다. 첫검출뒤에도좌표가추가되지않는계약시험1 RED/1 PASS(1.89초)를확인한후v28전체회귀중. v25/v26/v27각원인/원본은보존한다. 이수정뒤새동결의본10회동안에는제어/문턱/치수를수정하지않고실패도집계한다.
 v28전체387 PASS/57.07초,실행372개소스와full387 snapshot전수hash일치PASS. source SHA2567522c22eb7d6a7715837cb8cc2d278b67606b8b647738bf89d724d12bf998c99/assets94,설치67모듈actualchild감사PASS. 본평가batch batch_level23_20261105_c148d796 의10UUID/source/scenariohash를실행전에생성했다. Level2/3교대각5회,개발사전실패는분모에섞지않는다. 지금부터batch중source/조건/UUID교체와재시도는하지않는다. L23 Task4: in_progress.
+
+## L23 v28 본 10회 완료와 v29 분리 수정
+
+고정 batch_level23_20261105_c148d796의10slot을교대각5회·한slot1기동으로모두완료했다. trial성공0/10,world witness9/10,Pick PASS3건(3/5/7),BT SUCCESS1건(7)이지만운반높이23.360mm>20mm·귀환55.231mm·259.912sim초로전체FAIL이다. Level3 4건은pre-grasp6Dgoalinvalid,1건startupdeadline. Level2관측수명2건/안전중단1건/health중단1건/엄격물리기준미달1건이다. 정확한UUID/수치/구분은새 LEVEL23_EVALUATION_REPORT에기록했다. elapsed sim과절대liveclock을혼동했던중간판독을정정했다. 10worker완료/engine정상종료,9건12child정상·slot4 lifecycle_manager강제종료,모두최종잔여0/lockfree. 기존trial/FAIL은수정하지않았다.
+
+사례별v28실행소스372개전수hash검사후보존sourcearchive SHA2561fdf3bb5169bb7cbd58488fe6b00bd2dcd5102f19bf2148bdf7c9fc5946add03. 10개raw/archive/hash보존완료,원본삭제없음. before_engine_v29의lockfree=false는별도로진행중이던증거archive의공유lock소유와겹친조회다. 소유engine은없었으며archive완료후새잔여검사를통과해야후속engine을허용한다.
+
+Ruling: 9건모두1.5cm안에들어간뒤Nav2terminal에서3.3~6.9cm밖으로다시벗어난증거를확인했다 — 공식Nav21.3.13 SimpleGoalChecker의statefultrue XY latch와일치한다 — 새L2/L3에만statefulfalse를설정하고floor/development·plugin·yaw·속도/정책을유지한다. 이수정을6D계획/수명문제해결로확대하지않는다. 2 RED/3 PASS→5 PASS/6.36초. v28본10회는그대로보존하고v29별도후속사례로동작을검증한다. 새10회를재실행한것으로표현하지않는다.
+L23 Task1~4 수행완료(목표달성FAIL). v29 전체389 PASS/62.25초·동일372소스hash일치·설치67/94 PASS. 후속L3 UUIDb2feddf0-745f-4728-92dd-5aed5fab4d3b는82.622sim/178.196wall초FAIL,접근중RPP충돌경고후RR_foot:world금지접촉으로engineERROR. 이후입력timeout은후행증상이다. 정상종료false·threadjoin모두true·11/12clean(1engineexit1)·잔여0/lockfree. v29는실제도달이나6D실패해결증거가아니다. 본10회0/10과분리하고원본/source/raw를보존했다. 11사례archivehash감사PASS. 다음은저장자료의foot접촉geom/경로/6D목표분리이며추측튜닝으로장시간재시도하지않는다.
