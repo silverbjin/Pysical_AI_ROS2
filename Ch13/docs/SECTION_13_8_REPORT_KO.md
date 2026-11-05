@@ -6,9 +6,11 @@
 
 귀환 오차0.050165m와 임무210.484sim초/492.119wall초는 원고3cm/120초 목표 미달이다. CPU46.978%·최대 tilt0.039465rad. 정확한 실행 동결과 원본 증거는 UUIDfcf0dbe0-de70-4ca1-a86e-66133a62d2f8의 trial.json/source_manifest.json에 있다.
 
-원고 Level1은 v17에서 실제 바닥 파지와 귀환까지 통과했다. 붉은 팔 끝 보조 site가 카메라에 섞인 원인을 공식 MuJoCo3.13.0 표시 그룹 구현과 같은 실패 자세로 확인해 수정했고, 실제 관측6134회 수락/거부0이었다. 최소103.97mm 상승·접촉100%로 pick PASS였으나 내려놓기 지지 접촉을5wall초 내 확인하지 못해 **전체 FAIL**이다. 200.394sim초/478.197wall초·귀환43.34mm·CPU44.46%·tilt0.04542rad, 정상 회수와 lock free를 확인했다. v18은 실제 저속/정착/지지를 연속 확인하는 별도 경계를 추가해 검증 중이다. 세부 근거와 공식 ref는 SECTION_13_8_FLOOR_VISION_DIAGNOSIS_KO.md에 있다.
+원고 Level1은 v17에서 실제 바닥 파지와 귀환까지 통과했다. 붉은 팔 끝 보조 site가 카메라에 섞인 원인을 공식 MuJoCo3.13.0 표시 그룹 구현과 같은 실패 자세로 확인해 수정했고, 실제 관측6134회 수락/거부0이었다. 최소103.97mm 상승·접촉100%로 pick PASS였으나 내려놓기 지지 접촉을5wall초 내 확인하지 못해 **전체 FAIL**이다. 200.394sim초/478.197wall초·귀환43.34mm·CPU44.46%·tilt0.04542rad, 정상 회수와 lock free를 확인했다. 후속v18은 작은 가림 조각의 조기 폐기로 접근 중 FAIL했고, v19는 팔wall deadline으로 FAIL해 지지 정착 수정의 실제 인수는 남아 있다. 세부 근거와 공식 ref는 SECTION_13_8_FLOOR_VISION_DIAGNOSIS_KO.md에 있다.
 
 ## 진행 방식
+
+최신 v19 실제 실행은 비전3908회 수락/거부0회였으나, 사전 파지 팔 동작이240wall초를 넘겨 FAIL했다. 종료 과정의MISSION_EXPIRED와 최초wall deadline을 구분했다. 저장된 실제 궤적에서 기존1.25배 시간 보정의 불필요한 여유를 확인했고, v20 후보는 같은 연속 제한을 통과하는 세밀한 배율을 사용한다. 실제751개 점과 경로를 보존한 시험을 통과했으며 새 실제 미션은 아직 검증하지 않았다. 수치·공식ref·변경 범위는 SECTION_13_8_TIMING_DIAGNOSIS_KO.md에 있다.
 
 사용자가 제공한13.8 원고를 확보하고 로컬13.7/v7에서 격리했다. 공식 문서·GitHub의 설치 버전에 맞는 구현을 먼저 확인한 뒤 작은 부품→단일 engine의 가장 불확실한 연속 임무→월드/반복 평가 순서로 진행한다. 방법·근거·실패와 변경 판단은 SECTION_13_8_PROGRESS_KO.md에 계속 기록한다.
 
@@ -31,9 +33,11 @@
 | 최초 연속 engine | UUID a96cd6d7-9805-41ce-9dff-4c13916e4653, v2, FAIL. 파지 물리 PASS 후 귀환 회전 중 원통 부분 가림에 따른 OBSERVATION_EXPIRED. --no-bag 개발 사례. 실제 정상 shutdown·12 child clean exit·worker/rx/upstream join·잔여0·lock free |
 | 두 번째 연속 engine | UUID34f5ef1d-8fee-4d81-913b-fa76a3945a47, v4, FAIL. 파지 물리 PASS 후 귀환 navigation VISION_EXPIRED/Nav2 ABORTED. producer 비전 fault 없음·5327관측. 새 camera health 검증과 혼합 native FIFO 반영 사이의 경계를 분석해13.8용 경로 분리. 정상 회수 |
 | 세 번째 연속 engine | UUID1499904c-2d19-4010-a499-03919ecdc832, v5, FAIL. pick100.493mm/2.22sim초/접촉100% PASS. Nav2 SUCCEEDED 뒤 base위치(0.01362,-0.01847)m, yaw2.24356rad로 잘못된 자세. PLACE_WAIT fresh3D 가림 만료. quaternion 일부 설정 오류를 수정 중이며 아직 재실행하지 않음.160.496sim초/415.889wall초, CPU46.05%, tilt0.04458rad, bag close/정상 회수 |
-| 원고 Level1 | v16 관측 FAIL→v17 관측/바닥 pick/귀환 PASS·놓기 FAIL. v18 조각 폐기 관측 FAIL→v19 실제 검증 준비. 전체 인수 미완료 |
+| 원고 Level1 | v17 관측/바닥 pick/귀환 PASS·놓기 FAIL. v18 조각 폐기 관측 FAIL, v19 팔wall deadline FAIL, v20 실제 검증 준비. 전체 인수 미완료 |
 | 원고 Level2/3 | 개발 fixture 및 Level1과 별개. 실제 인수 미완료 |
 | 최신 부품/설치 | v18 최초344 PASS/53.74초 후 READY/PLACE guard 보강, 최종 소스 관련8 PASS/1.89초. 설치63모듈/94자산·actual child PASS, source353/assets94 동결. 전체344개를 최종 guard 뒤 다시 실행했다고 표현하지 않음 |
+| v19 최종 회귀/동결 | 작은 조각/234자세 재현·실측 지지 정착·DDS 시험 준비를 포함한348 PASS/57.79초. source357개 hash가 실제 실행 동결과 전수 일치. 설치63모듈/94자산 PASS. 수정 전 회귀의347 PASS/1 FAIL과 후속23 PASS/1 FAIL도 보존 |
+| v20 시간 보정/동결 | 최종350 PASS/53.98초, source359개와시험source359개hash전수동일. 설치63모듈/94자산·actual child PASS. 같은연속제약/경로/시간한도유지, 새실제미션은별도검증 |
 | rosbag 실제 기록/재생 | v4 실패 사례의 MCAP131424메시지/필수12토픽 무결성 PASS. 별도domain136 sensor/BT replay reception PASS/16.46wall초. raw RGB-D 전체/비전·Nav2 알고리즘 전체 재생은 아님 |
 | 고정 설정10회/목표 성능 | 미완료 |
 

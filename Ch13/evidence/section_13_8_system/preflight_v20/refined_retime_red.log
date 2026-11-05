@@ -1,0 +1,15 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_97f76dec7664446aae55f043d7a0139e/repo
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_refinement_cannot_repair_or_hide_invalid_joint_positions _________
+
+    def test_refinement_cannot_repair_or_hide_invalid_joint_positions():
+        names,points=actual_plan();points[5]['positions'][0]=10.
+>       with pytest.raises(ValueError):normalize_points(names,points,points[0]['positions'],LIMITS,refine_scale=True)
+E       TypeError: normalize_points() got an unexpected keyword argument 'refine_scale'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_refined_retime.py:39: TypeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_refined_retime.py::test_refinement_cannot_repair_or_hide_invalid_joint_positions
+1 failed, 1 passed, 348 deselected in 3.38s
+

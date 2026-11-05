@@ -1,0 +1,64 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_2a5b13cbf46c4ec1b3421fb7dfba6780/repo
+........................................................................ [ 20%]
+...................................FF................................... [ 41%]
+........................................................................ [ 61%]
+........................................................................ [ 82%]
+..............................................................           [100%]
+=================================== FAILURES ===================================
+____ test_choose_executable_normalized_route_instead_of_shortest_raw_route _____
+
+    def test_choose_executable_normalized_route_instead_of_shortest_raw_route():
+        planner,plans=setup_planner()
+        original=[[p.time_from_start.sec+p.time_from_start.nanosec/1e9 for p in plan['trajectory'].joint_trajectory.points] for plan in plans]
+        assert original[1][-1]<original[0][-1]
+        # The shorter raw route needs scale2 for acceleration, so the scale1.25
+        # longer raw route still wins. Both are now feasible; spacing rejects none.
+>       assert planner.choose_timed_plan(plans)==0
+
+Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_candidate_timing.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/planning.py:226: in choose_timed_plan
+    try:prepared,scale=self.prepare_execution(plan)
+Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/planning.py:220: in prepare_execution
+    return self.compute(lambda:normalize_points(tuple(trajectory.joint_names),points,measured,limits,
+Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_candidate_timing.py:18: in <lambda>
+    planner.compute=lambda callback:callback()  # Scheduling only; real validator runs.
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    return self.compute(lambda:normalize_points(tuple(trajectory.joint_names),points,measured,limits,
+>       refine_scale=self.refine_execution_scale))
+E   AttributeError: 'Planner' object has no attribute 'refine_execution_scale'
+
+Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/planning.py:221: AttributeError
+_____ test_all_time_inadmissible_candidates_are_rejected_without_execution _____
+
+    def test_all_time_inadmissible_candidates_are_rejected_without_execution():
+        planner,plans=setup_planner()
+        # A genuinely overlong route, rather than the previously over-gated short
+        # final knot in the real fixture, must still be rejected.
+        for point in plans[1]['trajectory'].joint_trajectory.points:
+            point.time_from_start.sec*=100
+            point.velocities=[v/100 for v in point.velocities]
+            point.accelerations=[a/10000 for a in point.accelerations]
+>       assert planner.choose_timed_plan([plans[1]]) is None
+
+Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_candidate_timing.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/planning.py:226: in choose_timed_plan
+    try:prepared,scale=self.prepare_execution(plan)
+Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/planning.py:220: in prepare_execution
+    return self.compute(lambda:normalize_points(tuple(trajectory.joint_names),points,measured,limits,
+Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_candidate_timing.py:18: in <lambda>
+    planner.compute=lambda callback:callback()  # Scheduling only; real validator runs.
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    return self.compute(lambda:normalize_points(tuple(trajectory.joint_names),points,measured,limits,
+>       refine_scale=self.refine_execution_scale))
+E   AttributeError: 'Planner' object has no attribute 'refine_execution_scale'
+
+Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/planning.py:221: AttributeError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_candidate_timing.py::test_choose_executable_normalized_route_instead_of_shortest_raw_route
+FAILED Ch13/ros2_ws/src/ch13_manipulation_reuse/test/test_candidate_timing.py::test_all_time_inadmissible_candidates_are_rejected_without_execution
+2 failed, 348 passed in 57.62s
+

@@ -13,7 +13,7 @@ def setup_planner():
     for data in fixture['trajectories']:
         trajectory=JointTrajectory();set_message_fields(trajectory,data)
         plans.append({'trajectory':SimpleNamespace(joint_trajectory=trajectory)})
-    planner=Planner.__new__(Planner);planner.records=[]
+    planner=Planner.__new__(Planner);planner.records=[];planner.refine_execution_scale=False
     planner.joints=lambda:list(plans[0]['trajectory'].joint_trajectory.points[0].positions)
     planner.compute=lambda callback:callback()  # Scheduling only; real validator runs.
     return planner,plans

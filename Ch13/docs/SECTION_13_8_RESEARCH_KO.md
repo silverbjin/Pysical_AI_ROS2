@@ -85,3 +85,7 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 ## v19: 연결조각과 전체물체 최소점수의 구분
 
 [PCL1.15.1 실제cylinder_segmentation.cpp](https://github.com/PointCloudLibrary/pcl/blob/pcl-1.15.1/doc/tutorials/content/sources/cylinder_segmentation/cylinder_segmentation.cpp)의setInputCloud/segment/inlier추출순서를재확인했다. v18실제거부영상은상부245/하부13pixel이며두조각모두같은엄격한원통모델에맞는다. 기존2D성분별20pixel earlyfilter를전체물체의side20점검사와혼동하지않는다. robust mode에한해작은조각은anchor와의기하결합까지보존하고기존전체모델조건으로평가한다. 기본legacy는유지하고작은조각은단독후보가될수없다. 16개후보/256개전체성분계산상한도유지해많은잡음성분은failclosed거부한다. PCL자유축/normal/RANSAC를실제로사용한것은아니며경계값을이식하지않는다. 자세한원본·음성시험·234자세검증은FLOOR_VISION_DIAGNOSIS보고서에있다.
+
+## v20: 같은 연속 제한 안에서의 시간 배율 세분화
+
+[MoveIt2.12.4 TOTG](https://github.com/moveit/moveit2/blob/2.12.4/moveit_core/trajectory_processing/src/time_optimal_trajectory_generation.cpp)의 속도/가속도 제한에 따른 시간화와 [ros2_control Jazzy 궤적 설명](https://control.ros.org/jazzy/doc/ros2_controllers/joint_trajectory_controller/doc/trajectory.html)의 quintic 연속성/overshoot를 확인했다. 실제 제어기는 기존 custom native이며 다른 controller로 교체하지 않는다. v19의1.0배 궤적은 가속도0.109915rad/s²로0.1 한계를 넘었고, 기존1.25배는93.728sim초였다. 같은 연속 proof로1.05909배/79.413sim초를 확인했다. floor opt-in만 feasible coarse 구간의 bounded 탐색과1% 여유를 사용하며 같은 proof를 다시 요구한다. 12회/1%는 프로젝트 선택이며 공식 권장 수치로 표현하지 않는다. 경로와 waypoint·정책/PD·속도/가속도/시간 제한은 유지한다. 자세한 실제 실패·시험·한계는 TIMING_DIAGNOSIS 보고서에 있다.

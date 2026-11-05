@@ -21,7 +21,11 @@ from ch13_manipulation_reuse.pick_feedback import lift_correction
 def work(*,node,until,snapshot,status,control,out,case='pick',action_client_factory=ActionClient,continuation=None):
     from run_arm_probe import work as warmup
     warmup(node=node,until=until,snapshot=snapshot,status=status,control=control,case='normal',out=out,action_client_factory=action_client_factory)
-    planner=Planner(node,until,snapshot,action_client_factory=action_client_factory)
+    refine=False
+    if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+        from ch13_system_validation.scenarios import active_scenario
+        refine=active_scenario().support_height_m==0.
+    planner=Planner(node,until,snapshot,action_client_factory=action_client_factory,refine_execution_scale=refine)
     creation_start=time.monotonic();gripper=action_client_factory(node,GripperCommand,GRIPPER)
     planner.records.append(dict(kind='initialization',step='pick_gripper_client_creation',start_wall=creation_start,end_wall=time.monotonic()))
     records=[]

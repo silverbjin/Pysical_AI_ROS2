@@ -49,8 +49,9 @@ def object_cylinder(name,center,radius=.02,height=.08):
 
 
 class Planner:
-    def __init__(self,node,until,snapshot,action_client_factory=ActionClient):
+    def __init__(self,node,until,snapshot,action_client_factory=ActionClient,*,refine_execution_scale=False):
         self.node,self.until,self.snapshot=node,until,snapshot
+        self.refine_execution_scale=refine_execution_scale
         self.clients={};self.revision=0;self.records=[]
         self.compute_worker=ThreadPoolExecutor(max_workers=1,thread_name_prefix='reuse_planning_validation')
         def initialized(step,start):
@@ -216,7 +217,8 @@ class Planner:
                      velocities=list(p.velocities),accelerations=list(p.accelerations)) for p in trajectory.points]
         limits=[[-2.618,2.618],[0.,3.14],[-2.697,0.],[-1.832,1.832],[-1.22,1.22],[-3.14,3.14]]
         measured=self.joints()
-        return self.compute(lambda:normalize_points(tuple(trajectory.joint_names),points,measured,limits))
+        return self.compute(lambda:normalize_points(tuple(trajectory.joint_names),points,measured,limits,
+            refine_scale=self.refine_execution_scale))
 
     def choose_timed_plan(self,plans):
         feasible=[]
@@ -245,7 +247,8 @@ class Planner:
             point.time_from_start.nanosec=total_ns%1_000_000_000
             point.velocities=updated['velocities'];point.accelerations=updated['accelerations']
         self.records.append(dict(kind='execution_time_adapter',scale=scale,positions_preserved=True,
-                                 boundary_velocity_acceleration_zero=True))
+                                 boundary_velocity_acceleration_zero=True,
+                                 scale_policy='continuous_bracket_1pct_margin' if self.refine_execution_scale else 'legacy_discrete'))
         current=self.snapshot();sample=current['observation']
         assert execution_admission(plan['revision'],self.revision,plan['start'],self.joints(),
             sample['capture_ns'],current['clock_ns'],sample['capture_wall'],__import__('time').monotonic()),'state changed during time adaptation'
