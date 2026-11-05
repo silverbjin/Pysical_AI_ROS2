@@ -11,6 +11,7 @@ from action_msgs.msg import GoalStatusArray
 TYPES={'raw':TwistStamped,'safe':TwistStamped,'base':Odometry,'joints':JointState,'clock':Clock,'nav':TwistStamped,'smooth':TwistStamped,'scan':LaserScan,'tf':TFMessage,'tf_static':TFMessage,'rgb':Image,'depth':Image,'camera_info':CameraInfo,'camera_meta':String,'vision_health':String}
 TYPES.update(mission_lease=String,manipulation_observation=String,manipulation_navigation=String,manipulation_gateway=String,manipulation_goals=GoalStatusArray)
 TYPES['manipulation_capture_health']=String
+TYPES['map_physical_hold']=String
 def decode(data):
     if len(data)>1050000:raise ValueError('oversized ingress')
     version,key,source_gid,relay_gid,receipt_ns,source_ns,payload=data.split('|',6)

@@ -50,3 +50,11 @@ v32의 L3 02676843-e611-4161-89d0-16d71df94863와 L2 9590b5a2-052a-49d3-9d54-e97
 
 분리 build 5 packages/15.4초, 설치 감사 navigation 38·manipulation 24·BT 6 및 실제 venv child 모듈 감사 PASS. 전체 432 PASS/57.25초이며 모든 테스트 소스가 v33의 382개 소스와 일치한다. 외부 94 자산 및 공유 lock 실제 경로를 확인했다. manifest SHA256=05eb3e8ac12be65d568e63a2f56c608899dfba3eb5ef2b201f7c9ee966269b24. L3 UUID=99a9e20e-1713-42b7-8dd3-24379f9b6812 를 실행 전에 고정했다. 아직 실제 성공 주장이 아니다.
 
+### v33 실제 시작 실패와 콜백 경계 보완
+
+L3 UUID 99a9e20e-1713-42b7-8dd3-24379f9b6812는 실제 실행을 시작했지만 world_map 콜백의 KeyError: publisher_gid로 시작 단계에서 실패했다. trial 11.15sim/23.949wall초, BT runner 37.173wall초다. engine은 정상 종료했으나 지도 노드가 비정상 종료하여 11/12 child 정상 회수이며 실제 잔여는 0이다. 파지·운반 기능 성공이나 경로 실패로 해석하지 않는다.
+
+직접 콜백을 호출한 기존 검사가 실제 rclpy 메타데이터와 중계 메타데이터의 차이를 놓쳤다. 실제 DDS→WorldMap 재현 검사에서 먼저 1 FAIL/432 deselected(21.11초)을 확인했다. 기존 C++ ingress의 rclcpp::MessageInfo/get_rmw_message_info 패턴을 재사용해 native GID·원래 첫 receipt·변경 없는 CDR을 전용 latest-only 채널로 전달한다. Python callback 정보에 publisher_gid를 새로 만들거나 현재 시각을 원래 receipt로 치환하지 않는다. relay 최초 소유자도 고정하고 교체·stale 패킷은 거부한다. [ROS2 공식 C++ MessageInfo](https://github.com/ros2/rclcpp/blob/jazzy/rclcpp/include/rclcpp/message_info.hpp)를 참고했다. Jazzy Python 문서는 접근 차단, 7.1.12 소스 URL은 조회 실패였으며 그 실패를 설치 API 확인으로 꾸미지 않는다. 실제 송수신 회귀와 새 동결 v34로 재확인한다.
+
+
+v34는 전체 433 PASS/62.72초. 검사/실행 소스 383개 hash 일치, 외부 94 자산, 실제 venv child 69 module 감사 PASS. L3 UUID=9e160887-cc8a-4f1d-a4e7-83aae4f77818 를 실행 전에 고정했다. manifest=0faa40478e47270fb2c3f298b1c16511902612dbf7c682668bc72fd55b0dce4c。

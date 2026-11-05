@@ -75,7 +75,7 @@ def test_world_map_publishes_only_target_removal_after_native_hold(monkeypatch):
     try:
         node=WorldMap('vision');initial=list(node.map.data)
         row=status();row['decision_wall']=time.monotonic()
-        node.status_message(String(data=json.dumps(row)),SimpleNamespace(publisher_gid=b'engine'))
+        node.status_message(String(data=json.dumps(row)),{'publisher_gid':b'engine','receipt_wall':time.monotonic()})
         assert node.map_gate.removed
         expected=occupancy_data([g for g in map_layout('vision') if g[0]!='target'])
         assert list(node.map.data)==expected and list(node.map.data)!=initial

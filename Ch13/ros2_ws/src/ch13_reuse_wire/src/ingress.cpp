@@ -112,6 +112,12 @@ public:
         auto relay=create_publisher<Packet>("/ch13/reuse/ingress/manipulation/"+source.first,1);
         manipulation_relays_.push_back(relay);connect<Packet>(source.first,source.second,relay);
       }
+      const auto* scenario=std::getenv("CH13_VALIDATION_SCENARIO");
+      if(isolated_health && scenario && (std::string(scenario)=="level2_obstacles" || std::string(scenario)=="level3_house")){
+        auto relay=create_publisher<Packet>("/ch13/reuse/ingress/manipulation/map_physical_hold",1);
+        manipulation_relays_.push_back(relay);
+        connect<Packet>("map_physical_hold","/ch13/reuse/manipulation/status",relay);
+      }
       auto goals=create_publisher<Packet>("/ch13/reuse/ingress/manipulation/manipulation_goals",1);
       manipulation_relays_.push_back(goals);
       connect<action_msgs::msg::GoalStatusArray>("manipulation_goals","/navigate_to_pose/_action/status",goals,rclcpp::QoS(1).transient_local().reliable());
