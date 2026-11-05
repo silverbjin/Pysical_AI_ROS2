@@ -1,0 +1,24 @@
+.......F...                                                              [100%]
+=================================== FAILURES ===================================
+____________ WireTests.test_live_raw_to_safe_requires_explicit_arm _____________
+
+self = <test_ros_wire.WireTests testMethod=test_live_raw_to_safe_requires_explicit_arm>
+
+    def test_live_raw_to_safe_requires_explicit_arm(self):
+        self.assertTrue(self.until(lambda:len(self.outputs)>2));self.assertEqual(self.outputs[-1].twist.linear.x,0.)
+>       self.arm();self.vx=.15;self.assertTrue(self.until(lambda:self.outputs[-1].twist.linear.x>.05))
+
+Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py:50: in arm
+    self.assertTrue(self.until(lambda:self.status.get('ready_for_arm'),timeout=3.),str(self.status));f=client.call_async(Trigger.Request());self.assertTrue(self.until(f.done));self.assertTrue(f.result().success,f.result().message)
+E   AssertionError: False is not true : {'mode': 'FAULT', 'fault': 'FUTURE_SOURCE:base', 'fault_details': None, 'stamp_ns': 5640000000, 'clock_ns': 5640000000, 'origin': 'generated_safety_zero', 'decision_wall': 32587.966271367, 'source_receipts': {}, 'counts': {'clock': 1, 'raw': 1, 'base': 1, 'joints': 1, 'relay': 1}, 'safe_watermark_ns': 5640000000, 'pending_future_count': 0, 'startup_sync': True, 'ready_for_arm': False}
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793831592.732219061] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793831592.732238403] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[INFO] [1793831592.770932369] [ch13_reuse_gateway]: mode=DISARMED 
+[INFO] [1793831593.370980064] [ch13_reuse_gateway]: mode=FAULT FUTURE_SOURCE:base
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py::WireTests::test_live_raw_to_safe_requires_explicit_arm
+1 failed, 10 passed in 10.62s
+[{"file": "gateway_10_startup_trace.json", "fault": {"reason": "INPUT_OR_CLOCK_TIMEOUT", "pending": [], "clock_ns": 2180000000, "clock_receipt_wall": 32589.360892403, "decision_wall": 32589.67491178}, "events": 20}, {"file": "gateway_11_startup_trace.json", "fault": {"reason": "DUPLICATE_OWNER:raw", "pending": [], "clock_ns": 2140000000, "clock_receipt_wall": 32589.97936354, "decision_wall": 32589.992466098}, "events": 14}, {"file": "gateway_1_startup_trace.json", "fault": {"reason": "INPUT_OR_CLOCK_TIMEOUT", "pending": [], "clock_ns": 2120000000, "clock_receipt_wall": 32579.74537946, "decision_wall": 32579.752976065}, "events": 29}, {"file": "gateway_2_startup_trace.json", "fault": {"reason": "INPUT_OR_CLOCK_TIMEOUT", "pending": [], "clock_ns": 2420000000, "clock_receipt_wall": 32580.574523795, "decision_wall": 32580.888890441}, "events": 161}, {"file": "gateway_3_startup_trace.json", "fault": {"reason": "OLD_SOURCE:base", "pending": [], "clock_ns": 2160000000, "clock_receipt_wall": 32581.441521046, "decision_wall": 32581.477344155}, "events": 24}, {"file": "gateway_4_startup_trace.json", "fault": {"reason": "FUTURE_SOURCE:base", "pending": [], "clock_ns": 2160000000, "clock_receipt_wall": 32581.789260861, "decision_wall": 32581.809672271}, "events": 20}, {"file": "gateway_5_startup_trace.json", "fault": {"reason": "INPUT_OR_CLOCK_TIMEOUT", "pending": [], "clock_ns": 2200000000, "clock_receipt_wall": 32582.309125506, "decision_wall": 32582.323849374}, "events": 29}, {"file": "gateway_6_startup_trace.json", "fault": {"reason": "OWNER_REPLACED:raw", "pending": [], "clock_ns": 2320000000, "clock_receipt_wall": 32583.039504041, "decision_wall": 32583.052579918}, "events": 20}, {"file": "gateway_7_startup_trace.json", "fault": {"reason": "INPUT_OR_CLOCK_TIMEOUT", "pending": [], "clock_ns": 2660000000, "clock_receipt_wall": 32583.98914858, "decision_wall": 32584.003811213}, "events": 159}, {"file": "gateway_8_startup_trace.json", "fault": {"reason": "FUTURE_SOURCE:base", "pending": [{"key": "raw", "stamp_ns": 2400000000, "receipt_wall": 32584.917244685, "publisher_gid": "010fb405a0ab9d770000070000002d03", "relay_gid": "010fb40568ac31760000000000001403"}, {"key": "joints", "stamp_ns": 2440000000, "receipt_wall": 32584.917288227, "publisher_gid": "010fb405a0ab9d770000070000002c03", "relay_gid": "010fb40568ac31760000000000001403"}], "clock_ns": 2340000000, "clock_receipt_wall": 32584.917187943, "decision_wall": 32584.919059593}, "events": 9}, {"file": "gateway_9_startup_trace.json", "fault": {"reason": "INPUT_OR_CLOCK_TIMEOUT", "pending": [], "clock_ns": 2600000000, "clock_receipt_wall": 32588.725581917, "decision_wall": 32588.74113115}, "events": 89}]

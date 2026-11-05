@@ -29,11 +29,14 @@ bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/audit_install.py /tm
 
 현재 연속 수명 경계 개발 fixture는 알려진 upright20g 원통과 기존 파지 받침대, 귀환 측 수령 받침대다. 이는 원고 Level 1의2m fixture나 공통 (3,1) 테이블·장애물·5도 경사·좁은 문·식탁 아래 목표 전체를 구현했다는 뜻이 아니다. 실제 지원 fixture와 source freeze를 결과 보고서에 명시한다.
 
-v5 개발 fixture의 robot 귀환 goal은(0,0,π)이고 수령 받침대는(-0.80,0), 지지면0.50m다. v2/v4의-0.55m 위치는 기존 카메라의 화면 경계를 벗어나므로 v5에서 정적 투영 시험 후 조정했다. 이는 원고의 미션 목표와 개발 fixture를 혼용하지 않도록 공개한 좌표이며 실제 place 성공은 별도 판정한다.
+현재 지원 fixture는 아래와 같다. 귀환 base 목표는 모두(0,0,π)이며 development를 원고 Level1로 부르지 않는다.
 
-v6의13.8 전용 carry_v1 camera는 base 좌표(0.4,0.25,0.35)m, yaw -20도·pitch down5도다. 기존 파지 카메라보다10cm 높은 고정 mount로, 손가락 가림을 줄이기 위한 설정이다. 기존13.6/13.7 기본 mount와 원통 fit의 엄격한 조건·capture300ms/TF100ms를 유지한다. 실제 extrinsics는 sensor_summary.json과 해당 capture의T_map_camera로 확인한다. 정지 영상8개 회귀와 실제 연속 미션 판정은 구분한다.
+| scenario | 대상 중심(m) | 수령 중심(m) | 지지면 높이(m) | 실제 상태 |
+|---|---|---|---|---|
+| development | (1.8,0,0.54) | (-0.8,0,0.54) | 0.50 | v15 연속 기능 1회 PASS, 시간/위치 목표 미달 |
+| level1_floor | (2,0,0.04) | (-0.6,0,0.04) | 0 | v17 파지/귀환 PASS·놓기 FAIL, v18 작은 조각 폐기로 관측 FAIL, v19 검증 예정 |
 
-위v6/v8 mount는 실제 접근 중간 자세를 포괄하지 못했다. v9 이후 camera는(0.4,0.4,0.29)m·yaw -31.607502도·pitch0으로 갱신했다. v10 후보는 RGB-D 경계의 이상 foreground 깊이만 선별하는 전처리를 추가한다. camera나 표면 임계값을 실행 중 바꾸지 않으며 원본 이미지/hash/capture·TF는 보존한다. 단순 전체 mask erosion은 채택하지 않았다. 세부 근거·실제 인수 상태는 PROGRESS/REPORT에 있다.
+고정 camera는 base 좌표(0.4,0.4,0.29)m다. development는 yaw -31.607502도/pitch0, Level1은 yaw -40도/pitch down35도다. 실제 extrinsics는 sensor_summary.json과 해당 capture의T_map_camera로 확인한다. 과거 mount와 실패별 변경 이력은 PROGRESS에 보존했다. 현재 검출은 §9의 합의점 검사이며 과거 boundary 이웃 필터와 누적하지 않는다. source/capture/TF/hash를 보존하며 설정을 실행 중 바꾸지 않는다.
 
 최종 성공은 동일 engine의 실제 파지, 운반 중 접촉/높이 유지, 귀환 terminal와 실측 정착, 수령 받침대 지지 후 개방, 물체 분리와2sim초 안정 유지, 정상 회수까지 모두 필요하다. 제어는 원본 RGB-D fit과 live 접촉을 사용하고, target freejoint는 engine 종료 뒤 판정에만 사용한다. 논리적 planning attach는 물리 weld가 아니다.
 
@@ -47,20 +50,20 @@ v6의13.8 전용 carry_v1 camera는 base 좌표(0.4,0.25,0.35)m, yaw -20도·pit
 python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py /tmp/ch13_13_8_before.json
 ```
 
-터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v16은 현재 개발 실행용 동결이며 실제 연속 인수는 진행 중이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
+터미널 A에서 새 UUID와 검증할 manifest를 명시한다. 아래 v19는 현재 개발 실행용 동결이며 Level1 실제 인수는 진행 중이다. 현재 소스와 다르면 freeze verify가 거부하며, 기존 manifest를 수정해 통과시키지 않는다.
 
 ```bash
 CASE=$(python3 -c 'import uuid; print(uuid.uuid4())')
 STAGE_REPORT=/tmp/ch13_13_8_stage_$CASE.json
 bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/stage_runtime.py \
-  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v16.json" --output "$STAGE_REPORT"
+  --manifest "$ROOT/Ch13/dependencies/section_13_8_system_v19.json" --output "$STAGE_REPORT"
 RUN_ROOT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["runtime_root"])' "$STAGE_REPORT")
 bash "$RUN_ROOT/Ch13/scripts/reuse_13_8/env.sh" -u "$RUN_ROOT/Ch13/scripts/reuse_13_8/run_mission.py" \
   --repo-root "$RUN_ROOT" --evidence "$ROOT/Ch13/evidence/section_13_8_system/$CASE" \
-  --manifest "$RUN_ROOT/Ch13/dependencies/section_13_8_system_v16.json"
+  --manifest "$RUN_ROOT/Ch13/dependencies/section_13_8_system_v19.json"
 ```
 
-staging은 engine이 꺼진 상태에서 소스 동결별로 한 번 준비한다. Windows mount의 source 접근 지연을 피하기 위해 새13.8 build 아래 같은 hash의 소스 사본을 만들고, 외부 자산과 engine lock은 기존 sibling 파일로 연결한다. 이 단계는 로봇 실행이나 새 권한을 만들지 않는다. 같은 동결로 반복 실행할 때는 RUN_ROOT를 재사용하고 CASE만 새 UUID로 바꾼다. source가 바뀌면 기존 동결을 수정하지 말고 새 동결/사본을 준비한다. runner가 runtime_stage.json으로 실행 사본의 근거를 보존한다. 현재 v16 명령은 개발 검증 대상이며 물리 인수 상태는 보고서를 확인한다.
+staging은 engine이 꺼진 상태에서 소스 동결별로 한 번 준비한다. Windows mount의 source 접근 지연을 피하기 위해 새13.8 build 아래 같은 hash의 소스 사본을 만들고, 외부 자산과 engine lock은 기존 sibling 파일로 연결한다. 이 단계는 로봇 실행이나 새 권한을 만들지 않는다. 같은 동결로 반복 실행할 때는 RUN_ROOT를 재사용하고 CASE만 새 UUID로 바꾼다. source가 바뀌면 기존 동결을 수정하지 말고 새 동결/사본을 준비한다. runner가 runtime_stage.json으로 실행 사본의 근거를 보존한다. 현재 v19 명령은 개발 검증 대상이며 물리 인수 상태는 보고서를 확인한다.
 
 터미널 B는 시스템 ROS CLI 환경이다. engine/센서가 준비된 뒤 /start_mission을 보내야 하며 현재 시작 대기 예산은 준비 후30wall초다. 개발 자동 시작은 runner에 --auto-start를 지정하며 같은 토픽 수신을 통과한다.
 
@@ -181,6 +184,8 @@ v15에서는 live_status.json 파일 기록을ROS timer 밖의단일owned writer
 
 ## 10. 원고 Level1 연결 상태
 
-v16의명시적`--scenario level1_floor`는바닥2m 원통·받침대없음·귀환측바닥수령점을사용한다. 기본값`--scenario development`는이전개발fixture다. 기능PASS실측은v15 development 1회이며v16 Level1은실제검증중이다. 원고Level2/3·10회평가완료로해석하지않는다.
+명시적`--scenario level1_floor`는바닥2m 원통·받침대없음·귀환측바닥수령점을사용한다. 기본값`--scenario development`는이전개발fixture다. 기능PASS실측은v15 development 1회이며Level1 전체는v19 실제검증을준비중이다. 원고Level2/3·10회평가완료로해석하지않는다.
 
 Level1은카메라를아래35도·yaw-40도로고정하고팔은아래30도/사전6cm 접근을사용한다. 실제floor지지와새관측수령영역확인전에는개방하지않고팔이몸통/다리/바닥에힘을주며관통하면latch fault다. 명령의다른인자는같으며새CASE로runner에`--scenario level1_floor`를추가한다. source/설정이달라진사례를v15정상실측이나고정10회에섞지않는다. 상세M0·구현계획은SECTION_13_8_WORLD_PLAN_KO.md를참조한다.
+
+v17의센서stream은물리표면이아닌붉은attachment_site 보조표시를제외한다. segmentation ID를실제검출에사용하지않는다. v18의floor LOWER는action terminal후실측팔저속/base정착/지지접촉을0.5sim초연속확인하며최대20wall초를기다린다. 이후에도기존지지확인·개방·실제접촉해제·새관측·scene분리readback·후퇴·유지가필요하다. 관측수명/물리/힘제한을늘려통과시키지않는다. 원인과공식ref는SECTION_13_8_FLOOR_VISION_DIAGNOSIS_KO.md에있다.

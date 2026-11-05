@@ -35,9 +35,10 @@ def test_sensor_camera_excludes_red_attachment_marker_in_actual_floor_failure(mo
                 assert fit['surface_inlier_fraction']>=.95
 
 
-@pytest.mark.parametrize('fixture',['held_visibility_v5.json','camera_trace_v5_v8_dense.json'])
+@pytest.mark.parametrize('fixture',['held_visibility_v5.json','camera_trace_v5_v8_dense.json','floor_approach_trace_v17_v18.json'])
 def test_transport_camera_keeps_original_fit_visible_in_saved_pick_and_carry_states(monkeypatch,fixture):
     monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+    if fixture.startswith('floor_'):monkeypatch.setenv('CH13_VALIDATION_SCENARIO','level1_floor')
     source=Path(__file__).resolve().parents[5].parent/'upstream-iit-locomanipulation-d010212/robot_model/scene_rough.xml'
     model=make_pick_model(source);model.vis.quality.offsamples=0
     data=mujoco.MjData(model);camera=model.camera('reuse_rgbd').id

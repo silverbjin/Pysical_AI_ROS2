@@ -1,0 +1,24 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_8671e42e24c74fba8a4b85f4b2b3dc2c/repo
+............F...........                                                 [100%]
+=================================== FAILURES ===================================
+______________ WireTests.test_live_base_loss_latches_after_return ______________
+
+self = <test_ros_wire.WireTests testMethod=test_live_base_loss_latches_after_return>
+
+    def test_live_base_loss_latches_after_return(self):
+>       self.arm();self.base_enabled=False;self.fault_stays_zero();self.base_enabled=True;self.fault_stays_zero()
+
+Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py:50: in arm
+    self.assertTrue(self.until(lambda:self.status.get('ready_for_arm'),timeout=3.),str(self.status));f=client.call_async(Trigger.Request());self.assertTrue(self.until(f.done));self.assertTrue(f.result().success,f.result().message)
+E   AssertionError: False is not true : {'mode': 'FAULT', 'fault': 'FUTURE_SOURCE:joints', 'fault_details': None, 'stamp_ns': 4980000000, 'clock_ns': 4980000000, 'origin': 'generated_safety_zero', 'decision_wall': 32467.74083208, 'source_receipts': {'raw': {'stamp_ns': 2360000000, 'receipt_wall': 32465.204685237, 'gid': '010fb4051da5b91600000c0000002d03'}}, 'counts': {'clock': 1, 'raw': 1, 'base': 1, 'joints': 1, 'relay': 1}, 'safe_watermark_ns': 4980000000, 'pending_future_count': 0, 'startup_sync': True, 'ready_for_arm': False}
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793831463.402879981] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793831463.402899045] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[INFO] [1793831463.435399830] [ch13_reuse_gateway]: mode=DISARMED 
+[INFO] [1793831463.894768189] [ch13_reuse_gateway]: mode=FAULT FUTURE_SOURCE:joints
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py::WireTests::test_live_base_loss_latches_after_return
+1 failed, 23 passed, 324 deselected in 23.91s
+

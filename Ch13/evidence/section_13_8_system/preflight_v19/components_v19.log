@@ -1,0 +1,28 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_591e02c70b164e3aba6e1c371f2c330a/repo
+....................................................F................... [ 20%]
+........................................................................ [ 41%]
+........................................................................ [ 62%]
+........................................................................ [ 82%]
+............................................................             [100%]
+=================================== FAILURES ===================================
+_______ WireTests.test_live_publisher_replacement_uses_actual_sample_gid _______
+
+self = <test_ros_wire.WireTests testMethod=test_live_publisher_replacement_uses_actual_sample_gid>
+
+    def test_live_publisher_replacement_uses_actual_sample_gid(self):
+>       self.arm();old=self.status['source_receipts']['raw']['gid'];self.raw=False;self.n.destroy_publisher(self.cmd)
+
+Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py:50: in arm
+    self.assertTrue(self.until(lambda:self.status.get('ready_for_arm'),timeout=3.),str(self.status));f=client.call_async(Trigger.Request());self.assertTrue(self.until(f.done));self.assertTrue(f.result().success,f.result().message)
+E   AssertionError: False is not true : {'mode': 'FAULT', 'fault': 'FUTURE_SOURCE:joints', 'fault_details': None, 'stamp_ns': 4980000000, 'clock_ns': 4980000000, 'origin': 'generated_safety_zero', 'decision_wall': 32341.547612582, 'source_receipts': {'raw': {'stamp_ns': 2420000000, 'receipt_wall': 32339.147172022, 'gid': '010fb4053399c96e00001c0000002d03'}, 'joints': {'stamp_ns': 2420000000, 'receipt_wall': 32339.147201077, 'gid': '010fb4053399c96e00001c0000002c03'}}, 'counts': {'clock': 1, 'raw': 1, 'base': 1, 'joints': 1, 'relay': 1}, 'safe_watermark_ns': 4980000000, 'pending_future_count': 0, 'startup_sync': True, 'ready_for_arm': False}
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793831326.998902299] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793831326.998931725] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[INFO] [1793831327.059119210] [ch13_reuse_gateway]: mode=DISARMED 
+[INFO] [1793831327.658654388] [ch13_reuse_gateway]: mode=FAULT FUTURE_SOURCE:joints
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_ros_wire.py::WireTests::test_live_publisher_replacement_uses_actual_sample_gid
+1 failed, 347 passed in 81.39s (0:01:21)
+

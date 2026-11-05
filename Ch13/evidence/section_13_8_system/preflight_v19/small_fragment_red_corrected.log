@@ -1,0 +1,162 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_5e68ac4732be4c01898acd7e9907eed3/repo
+F.F                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_actual_small_occlusion_fragment_is_kept_until_combined_model_validation _
+
+    def test_actual_small_occlusion_fragment_is_kept_until_combined_model_validation():
+        args=frame('v18_small_fragment')
+        with pytest.raises(ValueError,match='height visibility'):fit_cylinder(*args,.02,.08)
+>       result=fit_cylinder(*args,.02,.08,robust_consensus=True)
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rgb = array([[[ 36,  42,  48],
+        [ 36,  42,  48],
+        [ 36,  42,  48],
+        ...,
+        [ 38,  44,  50],
+     ...    ...,
+        [237, 237, 237],
+        [237, 237, 237],
+        [237, 237, 237]]], shape=(240, 320, 3), dtype=uint8)
+depth = array([[1.6841664 , 1.6885082 , 1.6928725 , ..., 2.2291198 , 2.2241344 ,
+        2.2191713 ],
+       [1.6863999 , 1.69...0.58188045, 0.58188844, 0.5818964 , ..., 0.5844237 , 0.58443177,
+        0.5844398 ]], shape=(240, 320), dtype=float32)
+calibration = [230.51785523653993, 230.51785523653993, 159.5, 119.5]
+transform = array([[-0.74630007, -0.38440336,  0.54338776,  1.829564  ],
+       [-0.66560211,  0.42711335, -0.61200328,  0.4215223...    [ 0.00316795, -0.81841814, -0.57461441,  0.5825046 ],
+       [ 0.        ,  0.        ,  0.        ,  1.        ]])
+radius = 0.02, height = 0.08
+
+    def fit_cylinder(rgb,depth,calibration,transform,radius,height,*,filter_boundary=False,robust_consensus=False):
+        if np.shape(rgb)!=(240,320,3) or np.shape(depth)!=(240,320):
+            raise ValueError('cylinder calibrated320x240 RGB-D required')
+        k=np.asarray(calibration,dtype=float);T=np.asarray(transform,dtype=float)
+        if (k.shape!=(4,) or not np.isfinite(k).all() or min(k[:2])<=0
+                or T.shape!=(4,4) or not np.isfinite(T).all()
+                or not np.allclose(T[:3,:3].T@T[:3,:3],np.eye(3),atol=1e-5)
+                or not math.isfinite(radius) or not math.isfinite(height) or min(radius,height)<=0):
+            raise ValueError('cylinder invalid calibration/shape prior')
+        color=rgb.astype(float)
+        mask=(color[:,:,0]>80)&(color[:,:,0]>1.8*color[:,:,1])&(color[:,:,0]>1.8*color[:,:,2])
+        valid=mask&np.isfinite(depth)&(depth>.01)
+        if filter_boundary:valid,boundary_removed=_foreground_boundary(valid,depth)
+        labels,count=label(valid)
+        sizes=np.bincount(labels.ravel());candidates=[];errors=[];merged_errors=[];components=[]
+        if count>256:raise ValueError('cylinder excessive red components')
+        for component in range(1,count+1):
+            if sizes[component]<20:continue
+            ys,xs=np.nonzero(labels==component)
+            z=depth[ys,xs].astype(float)
+            camera=np.column_stack(((xs-k[2])*z/k[0],(ys-k[3])*z/k[1],z))
+            world=camera@T[:3,:3].T+T[:3,3]
+            components.append((xs,ys,np.mean(world[:,:2],axis=0),float(world[:,2].min()),float(world[:,2].max())))
+            try:
+                candidate=_fit_component(depth,k,T,radius,height,xs,ys,robust_consensus=robust_consensus);candidate['components_used']=1;candidates.append(candidate)
+            except ValueError as error:errors.append(str(error))
+        if len(components)>16:raise ValueError('cylinder excessive significant components')
+        # A gray occluder can split the same red side into upper/lower patches.
+        # Merge only nearby axial patches, then require the same full height-span
+        # and circle residual bounds. Separate red robot geometry is not merged.
+        for index,first in enumerate(components):
+            for second in components[index+1:]:
+                if np.linalg.norm(first[2]-second[2])>radius:continue
+                span=max(first[4],second[4])-min(first[3],second[3])
+                if not .75*height<=span<=1.05*height:continue
+                xs=np.concatenate((first[0],second[0]));ys=np.concatenate((first[1],second[1]))
+                try:
+                    candidate=_fit_component(depth,k,T,radius,height,xs,ys,robust_consensus=robust_consensus);candidate['components_used']=2;candidates.append(candidate)
+                except ValueError as error:merged_errors.append(str(error))
+        unique=[]
+        for candidate in sorted(candidates,key=lambda c:c['residual_m']):
+            if not any(np.linalg.norm(np.array(candidate['center'])-other['center'])<=.002 for other in unique):unique.append(candidate)
+        if len(unique)>1:raise ValueError('cylinder ambiguous matching components')
+        if not candidates:
+>           if errors:raise ValueError('cylinder no matching component: '+(merged_errors[0] if (filter_boundary or robust_consensus) and merged_errors else errors[0]))
+E           ValueError: cylinder no matching component: cylinder insufficient upright height visibility
+
+Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/cylinder_vision.py:66: ValueError
+__________ test_unrelated_small_red_patch_is_not_merged_into_cylinder __________
+
+    def test_unrelated_small_red_patch_is_not_merged_into_cylinder():
+        rgb,depth,k,T=frame('v18_small_fragment')
+        rgb[20:23,20:23]=[230,0,0];depth[20:23,20:23]=.1
+>       result=fit_cylinder(rgb,depth,k,T,.02,.08,robust_consensus=True)
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rgb = array([[[ 36,  42,  48],
+        [ 36,  42,  48],
+        [ 36,  42,  48],
+        ...,
+        [ 38,  44,  50],
+     ...    ...,
+        [237, 237, 237],
+        [237, 237, 237],
+        [237, 237, 237]]], shape=(240, 320, 3), dtype=uint8)
+depth = array([[1.6841664 , 1.6885082 , 1.6928725 , ..., 2.2291198 , 2.2241344 ,
+        2.2191713 ],
+       [1.6863999 , 1.69...0.58188045, 0.58188844, 0.5818964 , ..., 0.5844237 , 0.58443177,
+        0.5844398 ]], shape=(240, 320), dtype=float32)
+calibration = [230.51785523653993, 230.51785523653993, 159.5, 119.5]
+transform = array([[-0.74630007, -0.38440336,  0.54338776,  1.829564  ],
+       [-0.66560211,  0.42711335, -0.61200328,  0.4215223...    [ 0.00316795, -0.81841814, -0.57461441,  0.5825046 ],
+       [ 0.        ,  0.        ,  0.        ,  1.        ]])
+radius = 0.02, height = 0.08
+
+    def fit_cylinder(rgb,depth,calibration,transform,radius,height,*,filter_boundary=False,robust_consensus=False):
+        if np.shape(rgb)!=(240,320,3) or np.shape(depth)!=(240,320):
+            raise ValueError('cylinder calibrated320x240 RGB-D required')
+        k=np.asarray(calibration,dtype=float);T=np.asarray(transform,dtype=float)
+        if (k.shape!=(4,) or not np.isfinite(k).all() or min(k[:2])<=0
+                or T.shape!=(4,4) or not np.isfinite(T).all()
+                or not np.allclose(T[:3,:3].T@T[:3,:3],np.eye(3),atol=1e-5)
+                or not math.isfinite(radius) or not math.isfinite(height) or min(radius,height)<=0):
+            raise ValueError('cylinder invalid calibration/shape prior')
+        color=rgb.astype(float)
+        mask=(color[:,:,0]>80)&(color[:,:,0]>1.8*color[:,:,1])&(color[:,:,0]>1.8*color[:,:,2])
+        valid=mask&np.isfinite(depth)&(depth>.01)
+        if filter_boundary:valid,boundary_removed=_foreground_boundary(valid,depth)
+        labels,count=label(valid)
+        sizes=np.bincount(labels.ravel());candidates=[];errors=[];merged_errors=[];components=[]
+        if count>256:raise ValueError('cylinder excessive red components')
+        for component in range(1,count+1):
+            if sizes[component]<20:continue
+            ys,xs=np.nonzero(labels==component)
+            z=depth[ys,xs].astype(float)
+            camera=np.column_stack(((xs-k[2])*z/k[0],(ys-k[3])*z/k[1],z))
+            world=camera@T[:3,:3].T+T[:3,3]
+            components.append((xs,ys,np.mean(world[:,:2],axis=0),float(world[:,2].min()),float(world[:,2].max())))
+            try:
+                candidate=_fit_component(depth,k,T,radius,height,xs,ys,robust_consensus=robust_consensus);candidate['components_used']=1;candidates.append(candidate)
+            except ValueError as error:errors.append(str(error))
+        if len(components)>16:raise ValueError('cylinder excessive significant components')
+        # A gray occluder can split the same red side into upper/lower patches.
+        # Merge only nearby axial patches, then require the same full height-span
+        # and circle residual bounds. Separate red robot geometry is not merged.
+        for index,first in enumerate(components):
+            for second in components[index+1:]:
+                if np.linalg.norm(first[2]-second[2])>radius:continue
+                span=max(first[4],second[4])-min(first[3],second[3])
+                if not .75*height<=span<=1.05*height:continue
+                xs=np.concatenate((first[0],second[0]));ys=np.concatenate((first[1],second[1]))
+                try:
+                    candidate=_fit_component(depth,k,T,radius,height,xs,ys,robust_consensus=robust_consensus);candidate['components_used']=2;candidates.append(candidate)
+                except ValueError as error:merged_errors.append(str(error))
+        unique=[]
+        for candidate in sorted(candidates,key=lambda c:c['residual_m']):
+            if not any(np.linalg.norm(np.array(candidate['center'])-other['center'])<=.002 for other in unique):unique.append(candidate)
+        if len(unique)>1:raise ValueError('cylinder ambiguous matching components')
+        if not candidates:
+>           if errors:raise ValueError('cylinder no matching component: '+(merged_errors[0] if (filter_boundary or robust_consensus) and merged_errors else errors[0]))
+E           ValueError: cylinder no matching component: cylinder insufficient upright height visibility
+
+Ch13/ros2_ws/src/ch13_manipulation_reuse/ch13_manipulation_reuse/cylinder_vision.py:66: ValueError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py::test_actual_small_occlusion_fragment_is_kept_until_combined_model_validation
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_surface_consensus.py::test_unrelated_small_red_patch_is_not_merged_into_cylinder
+2 failed, 1 passed, 344 deselected in 4.30s
+

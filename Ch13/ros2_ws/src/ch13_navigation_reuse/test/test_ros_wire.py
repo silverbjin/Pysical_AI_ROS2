@@ -25,9 +25,20 @@ class WireTests(unittest.TestCase):
         self.clock=self.n.create_publisher(Clock,'/clock',1);self.base=self.n.create_publisher(Odometry,N+'/engine_state',1);self.joints=self.n.create_publisher(JointState,N+'/joint_states',1);self.cmd=self.n.create_publisher(TwistStamped,N+'/cmd_vel_raw',1)
         self.n.create_subscription(TwistStamped,N+'/cmd_vel_safe',lambda x:self.outputs.append(x),10)
         self.n.create_subscription(String,N+'/gateway/status',lambda x:setattr(self,'status',json.loads(x.data)),10)
+        self.source_ready=False
         self.timer=self.n.create_timer(.02,self.send,clock=__import__('rclpy.clock',fromlist=['Clock']).Clock(clock_type=__import__('rclpy.clock_type',fromlist=['ClockType']).ClockType.STEADY_TIME))
         self.ex=SingleThreadedExecutor();self.ex.add_node(self.g);self.ex.add_node(self.n);self.t=threading.Thread(target=self.ex.spin);self.t.start()
     def send(self):
+        if not self.source_ready:
+            # Do not advance the synthetic clock while the relay is still
+            # constructing/discovering its separate clock/state subscriptions.
+            # Once admitted, loss/replacement tests retain their original flow.
+            self.source_ready=(self.clock.get_subscription_count()==2
+                and self.base.get_subscription_count()==1
+                and self.joints.get_subscription_count()==1
+                and self.cmd.get_subscription_count()==1
+                and self.g.count_publishers(N+'/ingress/gateway')==1)
+            if not self.source_ready:return
         if not self.paused:self.ns+=20_000_000
         stamp_ns=self.ns-(1_000_000_000 if self.rollback else 0)
         c=Clock();c.clock.sec=stamp_ns//1_000_000_000;c.clock.nanosec=stamp_ns%1_000_000_000;self.clock.publish(c)

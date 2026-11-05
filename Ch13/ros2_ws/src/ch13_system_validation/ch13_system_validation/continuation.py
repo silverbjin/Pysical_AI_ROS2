@@ -14,6 +14,7 @@ from .scene_contact import receiving_contact
 from .transport import fresh_return_capture
 from .scenarios import active_scenario,retreat_point
 from .placed_scene import detach_released_cylinder
+from .place_settling import PlacementSupportGate
 
 
 def make_navigation_goal(target,stamp_ns):
@@ -84,6 +85,20 @@ def continue_mission(*,session,call,node,until,snapshot,status,control,planner,g
         path=planner.cartesian([pose(goal,Rotation.from_matrix(tcp[:3,:3]))])
         assert path is not None,'complete collision-checked place path required'
         planner.execute(path)
+        if scenario.support_height_m==0.:
+            gate=PlacementSupportGate()
+            records.append(dict(event='placement_settle_start',clock_ns=snapshot()['clock_ns'],wall=time.monotonic(),deadline_wall_s=20.))
+            def placement_settled():
+                current=snapshot();state=status()
+                assert state.get('phase')!='FAULT',state
+                admit_observation(current['observation'],current['clock_ns'],time.monotonic())
+                joints=current['joints'];speeds=dict(zip(joints.name,joints.velocity))
+                velocities=[speeds.get('joint'+str(i),float('nan')) for i in range(1,7)]
+                ready=(current['platform'].get('stationary_ready') is True
+                       and state.get('phase')=='READY' and state.get('transport_stage')=='PLACE')
+                return gate.update(current['clock_ns'],velocities,ready,state.get('target_support_N'))
+            assert until(placement_settled,20.),'measured floor support/arm settling absent'
+            records.append(dict(event='placement_settled',clock_ns=snapshot()['clock_ns'],wall=time.monotonic(),support_N=status()['target_support_N']))
         assert until(lambda:status().get('target_support_N',0.)>.01,5.),'receiving support contact missing'
         start=snapshot()['clock_ns']
         assert until(lambda:snapshot()['clock_ns']-start>=500_000_000,4.)

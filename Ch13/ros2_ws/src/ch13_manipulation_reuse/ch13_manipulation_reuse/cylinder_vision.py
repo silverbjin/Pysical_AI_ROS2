@@ -36,12 +36,15 @@ def fit_cylinder(rgb,depth,calibration,transform,radius,height,*,filter_boundary
     sizes=np.bincount(labels.ravel());candidates=[];errors=[];merged_errors=[];components=[]
     if count>256:raise ValueError('cylinder excessive red components')
     for component in range(1,count+1):
-        if sizes[component]<20:continue
+        if sizes[component]<20 and not robust_consensus:continue
         ys,xs=np.nonzero(labels==component)
         z=depth[ys,xs].astype(float)
         camera=np.column_stack(((xs-k[2])*z/k[0],(ys-k[3])*z/k[1],z))
         world=camera@T[:3,:3].T+T[:3,3]
         components.append((xs,ys,np.mean(world[:,:2],axis=0),float(world[:,2].min()),float(world[:,2].max())))
+        # An occluded object's small patch is not an independent object, but
+        # may complete an anchored model. Keep it until the combined 3D fit.
+        if sizes[component]<20:continue
         try:
             candidate=_fit_component(depth,k,T,radius,height,xs,ys,robust_consensus=robust_consensus);candidate['components_used']=1;candidates.append(candidate)
         except ValueError as error:errors.append(str(error))
@@ -51,12 +54,15 @@ def fit_cylinder(rgb,depth,calibration,transform,radius,height,*,filter_boundary
     # and circle residual bounds. Separate red robot geometry is not merged.
     for index,first in enumerate(components):
         for second in components[index+1:]:
+            if max(len(first[0]),len(second[0]))<20:continue
             if np.linalg.norm(first[2]-second[2])>radius:continue
             span=max(first[4],second[4])-min(first[3],second[3])
             if not .75*height<=span<=1.05*height:continue
             xs=np.concatenate((first[0],second[0]));ys=np.concatenate((first[1],second[1]))
             try:
-                candidate=_fit_component(depth,k,T,radius,height,xs,ys,robust_consensus=robust_consensus);candidate['components_used']=2;candidates.append(candidate)
+                candidate=_fit_component(depth,k,T,radius,height,xs,ys,robust_consensus=robust_consensus);candidate['components_used']=2
+                if robust_consensus:candidate['auxiliary_fragment_points']=sum(len(p[0]) for p in (first,second) if len(p[0])<20)
+                candidates.append(candidate)
             except ValueError as error:merged_errors.append(str(error))
     unique=[]
     for candidate in sorted(candidates,key=lambda c:c['residual_m']):

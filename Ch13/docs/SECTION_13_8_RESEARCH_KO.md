@@ -75,3 +75,13 @@ Jazzy MTC 예제의 추정 경로 한 곳은 GitHub 조회에 실패해 채택 �
 설치와같은공식3.13.0의 [mjvisualize.h](https://github.com/google-deepmind/mujoco/blob/3.13.0/include/mujoco/mjvisualize.h), [engine_vis_visualize.c](https://github.com/google-deepmind/mujoco/blob/3.13.0/src/engine/engine_vis_visualize.c), [visualization.rst](https://github.com/google-deepmind/mujoco/blob/3.13.0/doc/programming/visualization.rst)를읽었다. geomgroup과sitegroup은별도이며site도시각장면의형상으로추가된다. 기존코드는geomgroup만설정해서붉은attachment_site가센서에보였다. 종료후segmentation41pixel모두동일site임을확인했고sitegroup만off한같은실패자세에서표면합의78.42→100%를확인했다.
 
 채택: latest paired센서stream의MjvOption.sitegroup[:]=0. 외부XML/site좌표·기존geom그룹·물리·추정기95%기준·관측수명은유지한다. segmentation/target truth를live검출에사용하지않는다. legacy옵션은유지한다. 전체336부품PASS는수정된실패장면의회귀를포함하며실제Level1전체성공과구분한다. 자세한원인·반증·버전·한계는SECTION_13_8_FLOOR_VISION_DIAGNOSIS_KO.md에기록했다.
+## 바닥 놓기의 action terminal과 접촉 정착
+
+실제설치control_msgs5.10.0 package.xml을확인하고 [같은ref의 FollowJointTrajectory.action](https://github.com/ros-controls/control_msgs/blob/5.10.0/control_msgs/action/FollowJointTrajectory.action)을읽었다. goal_tolerance는관절최종값의허용오차이며물체지지접촉성공을뜻하지않는다. 첫조회4.8.0과구분한다. v17은팔terminal시바닥보다1.7886mm높았고support는5.124567wall초뒤처음발생했다. nativebridge의기존0.05rad/0.05rad/s 관절완료계약을바꾸지않고floor LOWER뒤별도실측저속/지지/정착gate를둔다. 기존pick의저속0.003rad/s/0.5sim초/20wall초정착패턴을재사용하며명시적상한변경과지지없는개방금지를기록했다.
+
+## 원고3cm 목표를 위한 Nav2 설정 검토(아직수정/실제검증아님)
+
+[설치와같은Nav2 1.3.13 SimpleGoalChecker](https://github.com/ros-navigation/navigation2/blob/1.3.13/nav2_controller/plugins/simple_goal_checker.cpp)를다시읽었다. 현재YAML의xy_goal_tolerance0.06/statefultrue는6cm반경에들어온후XY재검사를중단하고yaw를확인한다. v15귀환50.16mm/v17귀환43.34mm는원고3cm와별도로FAIL이다. 초기navigation오차34.35mm도같은설정으로허용될수있다. 후보는book scenario전용0.015m override이며기본development/기존YAML값은유지한다. body정착드리프트와RPP접근속도·progress checker를실제navigation에서확인해야하며단순파라미터변경을3cm달성으로표현하지않는다. v18의기능검증에는아직적용하지않았다.
+## v19: 연결조각과 전체물체 최소점수의 구분
+
+[PCL1.15.1 실제cylinder_segmentation.cpp](https://github.com/PointCloudLibrary/pcl/blob/pcl-1.15.1/doc/tutorials/content/sources/cylinder_segmentation/cylinder_segmentation.cpp)의setInputCloud/segment/inlier추출순서를재확인했다. v18실제거부영상은상부245/하부13pixel이며두조각모두같은엄격한원통모델에맞는다. 기존2D성분별20pixel earlyfilter를전체물체의side20점검사와혼동하지않는다. robust mode에한해작은조각은anchor와의기하결합까지보존하고기존전체모델조건으로평가한다. 기본legacy는유지하고작은조각은단독후보가될수없다. 16개후보/256개전체성분계산상한도유지해많은잡음성분은failclosed거부한다. PCL자유축/normal/RANSAC를실제로사용한것은아니며경계값을이식하지않는다. 자세한원본·음성시험·234자세검증은FLOOR_VISION_DIAGNOSIS보고서에있다.
