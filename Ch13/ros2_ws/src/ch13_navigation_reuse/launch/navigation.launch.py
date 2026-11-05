@@ -39,6 +39,10 @@ def generate_launch_description():
     rewrites['controller_server.ros__parameters.goal_checker.stateful']='false'
    node_params=ParameterFile(RewrittenYaml(source_file=params,param_rewrites=rewrites,
     convert_types=True),allow_substs=True)
-  actions.append(Node(package=package,executable=executable,name=name,parameters=[node_params,extra],remappings=remaps,output='screen'))
+  parameter_files=[node_params]
+  if (name=='velocity_smoother' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+      and os.environ.get('CH13_VALIDATION_SCENARIO')=='level2_obstacles'):
+   parameter_files.append(str(share/'config/level2_velocity_limits.yaml'))
+  actions.append(Node(package=package,executable=executable,name=name,parameters=[*parameter_files,extra],remappings=remaps,output='screen'))
  actions.append(Node(package='nav2_lifecycle_manager',executable='lifecycle_manager',name='reuse_lifecycle_manager',parameters=[{'use_sim_time':True,'autostart':True,'bond_timeout':10.,'node_names':['planner_server','controller_server','velocity_smoother','bt_navigator']}],output='screen'))
  return LaunchDescription(actions)

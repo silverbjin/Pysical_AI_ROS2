@@ -37,3 +37,29 @@ def test_book_goal_tolerance_survives_node_specific_ros_yaml(tmp_path, monkeypat
         if node is not None: node.destroy_node()
         context.shutdown()
         parameter_file.cleanup()
+
+
+@pytest.mark.parametrize('scenario,cap',[('level2_obstacles',.10),('level3_house',.20),('development',.20)])
+def test_level2_turn_cap_uses_actual_node_specific_array_parameters(monkeypatch,scenario,cap):
+    monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+    monkeypatch.setenv('CH13_VALIDATION_SCENARIO',scenario)
+    source=Path(__file__).resolve().parents[2]/'ch13_navigation_reuse/launch/navigation.launch.py'
+    spec=importlib.util.spec_from_file_location('turn_cap_launch',source)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    monkeypatch.setattr(module,'get_package_share_directory',lambda name:str(source.parents[1]))
+    smoother=next(a for a in module.generate_launch_description().entities
+                  if getattr(a,'_Node__node_name',None)=='velocity_smoother')
+    files=[p for p in smoother._Node__parameters if hasattr(p,'evaluate')]
+    args=['--ros-args']
+    for p in files:args+=['--params-file',str(p.evaluate(LaunchContext()))]
+    context=Context();node=None;rclpy.init(context=context)
+    try:
+        node=rclpy.create_node('velocity_smoother',context=context,use_global_arguments=False,
+            cli_args=args,automatically_declare_parameters_from_overrides=True)
+        assert list(node.get_parameter('max_velocity').value)==[.20,0.,cap]
+        assert list(node.get_parameter('min_velocity').value)==[0.,0.,-cap]
+        assert list(node.get_parameter('max_accel').value)==[.30,0.,.50]
+    finally:
+        if node is not None:node.destroy_node()
+        context.shutdown()
+        for p in files:p.cleanup()

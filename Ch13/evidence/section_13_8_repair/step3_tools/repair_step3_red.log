@@ -1,0 +1,37 @@
+NATIVE_TEST_SOURCE /home/jinho/ch13_reuse_13_8_build/component_source_fb3589380a0c421288418c2510c1b90f/repo
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_level2_turn_cap_uses_actual_node_specific_array_parameters[level2_obstacles-0.1] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7a065c034f50>
+scenario = 'level2_obstacles', cap = 0.1
+
+    @pytest.mark.parametrize('scenario,cap',[('level2_obstacles',.10),('level3_house',.20),('development',.20)])
+    def test_level2_turn_cap_uses_actual_node_specific_array_parameters(monkeypatch,scenario,cap):
+        monkeypatch.setenv('CH13_VALIDATION_PROFILE','carry_v1')
+        monkeypatch.setenv('CH13_VALIDATION_SCENARIO',scenario)
+        source=Path(__file__).resolve().parents[2]/'ch13_navigation_reuse/launch/navigation.launch.py'
+        spec=importlib.util.spec_from_file_location('turn_cap_launch',source)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        smoother=next(a for a in module.generate_launch_description().entities
+                      if getattr(a,'_Node__node_name',None)=='velocity_smoother')
+        files=[p for p in smoother._Node__parameters if hasattr(p,'evaluate')]
+        args=['--ros-args']
+        for p in files:args+=['--params-file',str(p.evaluate(LaunchContext()))]
+        context=Context();node=None;rclpy.init(context=context)
+        try:
+            node=rclpy.create_node('velocity_smoother',context=context,use_global_arguments=False,
+                cli_args=args,automatically_declare_parameters_from_overrides=True)
+>           assert list(node.get_parameter('max_velocity').value)==[.20,0.,cap]
+E           assert [0.2, 0.0, 0.2] == [0.2, 0.0, 0.1]
+E             At index 2 diff: 0.2 != 0.1
+E             Use -v to get more diff
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py:58: AssertionError
+----------------------------- Captured stderr call -----------------------------
+[WARN] [1793880687.656001679] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1793880687.656044279] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_navigation_parameters.py::test_level2_turn_cap_uses_actual_node_specific_array_parameters[level2_obstacles-0.1]
+1 failed, 2 passed, 396 deselected in 4.51s
+
