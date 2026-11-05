@@ -18,7 +18,7 @@ from run_r2_probe import service_call
 def yaw(q):return math.atan2(2*(q.w*q.z+q.x*q.y),1-2*(q.y*q.y+q.z*q.z))
 class _StartupComplete(Exception):pass
 
-def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=False):
+def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=False,orchestration=None):
  ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True);ap.add_argument('--vision-hz',type=int,choices=[10,15],default=10);ap.add_argument('--case',choices=['free','obstacle','blocked','cancel','raw_loss','vision'],default='free');args=ap.parse_args(argv)
  if handoff is not None and args.case!='vision':raise ValueError('live manipulation requires vision mission')
  root=Path(args.repo_root);out=Path(args.evidence);out.mkdir(parents=True,exist_ok=True);scene=args.case if args.case in ['obstacle','blocked','vision'] else 'free'
@@ -59,6 +59,7 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
    end=time.monotonic()+timeout
    while time.monotonic()<end:
     rclpy.spin_once(node,timeout_sec=.01)
+    if orchestration is not None:orchestration.poll()
     if predicate():return True
     if launch.poll() is not None:raise RuntimeError('owned launch exited: '+str(launch.returncode))
    return False
@@ -110,6 +111,8 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
     until(lambda:False,.1)
   for name in ['navigation/enable','navigation/require_vision','navigation/release','navigation/idle','platform/arm','gateway/arm','platform/shutdown']:
    full=N+'/'+name;client=node.create_client(Trigger,full);clients[full]=client;assert until(client.service_is_ready,3),'missing admission service '+full
+  snapshot=lambda:{'observation':observation,'state':state,'joints':joints,'clock_ns':clock_ns,'platform':platform,'boundary':boundary,'gateway':gateway}
+  if orchestration is not None:orchestration.ready(node=node,until=until,snapshot=snapshot)
   target=[.65,0.,0.]
   if args.case=='obstacle':target=[2.25,0.,0.]
   if args.case=='blocked':target=[2.25,0.,0.]
@@ -123,7 +126,9 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
   S['target']=target;start_xy=[state.pose.pose.position.x,state.pose.pose.position.y];start_sim=clock_ns;start_wall=time.monotonic();response=call('navigation/enable');assert response.success,response.message
   goal=NavigateToPose.Goal();goal.pose.header.frame_id='reuse/map';set_stamp(goal.pose.header.stamp,vision_record['source_observation']['capture_ns'] if vision_record is not None else clock_ns);goal.pose.pose.position.x=target[0];goal.pose.pose.position.y=target[1];goal.pose.pose.orientation.z=math.sin(target[2]/2);goal.pose.pose.orientation.w=math.cos(target[2]/2)
   S['goal_header_stamp_ns']=ns(goal.pose.header.stamp)
-  sent=action.send_goal_async(goal);assert until(sent.done,5),'goal admission deadline';goal_handle=sent.result();assert goal_handle.accepted,'Nav2 goal rejected';result_future=goal_handle.get_result_async();S['events'].append({'event':'goal_accepted','sim_ns':clock_ns,'wall':time.monotonic()})
+  sent=action.send_goal_async(goal)
+  if orchestration is not None:orchestration.track_goal(sent)
+  assert until(sent.done,5),'goal admission deadline';goal_handle=sent.result();assert goal_handle.accepted,'Nav2 goal rejected';result_future=goal_handle.get_result_async();S['events'].append({'event':'goal_accepted','sim_ns':clock_ns,'wall':time.monotonic()})
   assert until(lambda:result_future.done() or boundary.get('phase')=='FAULT' or (boundary.get('phase')=='ACTIVE' and boundary.get('output_held') and gateway.get('ready_for_arm')),5),'controller preparation deadline'
   if not result_future.done():
    assert boundary.get('phase')=='ACTIVE' and boundary.get('output_held') and gateway.get('ready_for_arm'),'controller not prepared at zero'
@@ -155,7 +160,10 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
    if not result_future.done():
     S['safety_fault_before_terminal']={'boundary':boundary.get('fault'),'gateway':gateway.get('fault'),'platform':platform.get('fault')};canceled=goal_handle.cancel_goal_async();assert until(canceled.done,3);assert until(result_future.done,3),'terminal missing after safety cancellation'
   assert until(result_future.done,3),'NavigateToPose terminal deadline';terminal=result_future.result();S['terminal_status']=terminal.status;S['terminal_sim_ns']=clock_ns
-  expected=6 if args.case=='blocked' else (5 if args.case in ['cancel','raw_loss'] else 4);assert terminal.status==expected,('unexpected terminal',terminal.status,boundary,gateway)
+  bt_canceled=orchestration is not None and orchestration.cancel_requested()
+  if bt_canceled:
+   S.update(case='cancel',navigation_profile=args.case,bt_cancel_reason=orchestration.port.snapshot()['cancel_reason'])
+  expected=6 if args.case=='blocked' else (5 if args.case in ['cancel','raw_loss'] or bt_canceled else 4);assert terminal.status==expected,('unexpected terminal',terminal.status,boundary,gateway)
   assert clock_ns-start_sim<=90_000_000_000,'navigation sim budget'
   if args.case!='raw_loss':response=call('navigation/idle');assert response.success,response.message
   zero_wall=time.monotonic();zero_sim=clock_ns;assert until(lambda:platform.get('stationary_ready'),8),'terminal received but physical stop not settled';assert clock_ns-zero_sim<=5_000_000_000
@@ -163,22 +171,28 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
   if expected==4:assert S['actual_goal_error_m']<=.10 and S['actual_goal_yaw_error_rad']<=.10
   if args.case=='obstacle':assert max(abs(p['y']) for p in poses)>.45,'no measured obstacle bypass'
   if args.case=='raw_loss':assert gateway['mode']=='FAULT'
-  if args.case=='vision':
+  if orchestration is not None:orchestration.navigation_complete(dict(terminal=terminal.status,stationary_ready=True,position_error_m=S['actual_goal_error_m'],displacement_m=S['displacement_m'],goal_id=bytes(goal_handle.goal_id.uuid).hex()))
+  if args.case=='vision' and not bt_canceled:
    from vision_mission import current_q
    from ch13_navigation_reuse.approach_geometry import position_ik
    from ch13_navigation_reuse.vision_geometry import admissible,manipulation_ready
-   assert until(lambda:observation is not None and admissible(observation['capture_ns'],observation['capture_wall'],clock_ns,time.monotonic(),observation['tf_stamp_ns']),2),'no fresh final observation'
+   if orchestration is not None:orchestration.await_step('find',until)
+   previous_capture=observation['capture_ns'] if orchestration is not None and observation else 0
+   assert until(lambda:observation is not None and observation['capture_ns']>previous_capture and admissible(observation['capture_ns'],observation['capture_wall'],clock_ns,time.monotonic(),observation['tf_stamp_ns']),2),'no fresh final observation'
    final_observation=observation;reach=position_ik(arm_model,current_q(state,joints),final_observation['point']);S['final_arm_workspace']=reach
    valid_observation=reach is not None and admissible(final_observation['capture_ns'],final_observation['capture_wall'],clock_ns,time.monotonic(),final_observation['tf_stamp_ns'])
    ready=manipulation_ready(terminal.status,S['actual_goal_error_m'],S['actual_goal_yaw_error_rad'],platform.get('stationary_ready'),valid_observation,bool(gateway.get('fault') or boundary.get('fault') or vision_status.get('fault')));assert ready,'terminal/pose/stop/observation/workspace not ready'
    ready_pub=node.create_publisher(String,N+'/ready_for_manipulation',1);payload={'state':'READY_FOR_MANIPULATION','terminal':terminal.status,'actual_position_error_m':S['actual_goal_error_m'],'actual_yaw_error_rad':S['actual_goal_yaw_error_rad'],'capture_ns':final_observation['capture_ns'],'workspace':reach,'stamp_ns':clock_ns,'capture_wall':final_observation['capture_wall'],'decision_wall':time.monotonic(),'tf_stamp_ns':final_observation['tf_stamp_ns']};ready_pub.publish(String(data=json.dumps(payload)));S['ready_for_manipulation']=payload
    if handoff is not None:
+    if orchestration is not None:
+     orchestration.found(final_observation,clock_ns);orchestration.await_step('pick',until)
     S['manipulation_handoff']=handoff(node=node,until=until,call=call,out=out,
       goal_id=bytes(goal_handle.goal_id.uuid).hex(),target=list(target),
       snapshot=lambda:{'observation':observation,'state':state,'joints':joints,'clock_ns':clock_ns,'platform':platform,'boundary':boundary,'gateway':gateway})
     assert not gateway.get('fault') and not boundary.get('fault') and not platform.get('fault'),('fault during manipulation',gateway,boundary,platform)
    else:until(lambda:False,.15)
    ready_pub.publish(String(data=json.dumps({'state':'NOT_READY','reason':'normal_shutdown','stamp_ns':clock_ns})))
+  if orchestration is not None and not orchestration.cancel_requested():orchestration.await_step('finish',until)
   stop_owned_planner()
   S['plan_count']=len(plans);S['max_abs_y_m']=max(abs(p['y']) for p in poses);response=call('platform/shutdown');assert response.success,response.message;launch.wait(timeout=12);assert launch.returncode==0;S['engine']=json.loads((out/'engine.json').read_text());assert S['engine']['normal_shutdown_requested'] and S['engine']['rx_joined'] and S['engine']['upstream_threads_joined'];S['result']='PASS'
  except _StartupComplete:pass

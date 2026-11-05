@@ -48,12 +48,12 @@ def object_cylinder(name,center,radius=.02,height=.08):
 
 
 class Planner:
-    def __init__(self,node,until,snapshot):
+    def __init__(self,node,until,snapshot,action_client_factory=ActionClient):
         self.node,self.until,self.snapshot=node,until,snapshot
         self.clients={};self.revision=0;self.records=[]
         self.compute_worker=ThreadPoolExecutor(max_workers=1,thread_name_prefix='reuse_planning_validation')
         self.description=(Path(get_package_share_directory('ch13_piper_moveit_config'))/'config/robot.urdf').read_text()
-        self.execution=ActionClient(node,FollowJointTrajectory,ARM)
+        self.execution=action_client_factory(node,FollowJointTrajectory,ARM)
         for typ,name in [(GetMotionPlan,'/plan_kinematic_path'),(GetCartesianPath,'/compute_cartesian_path'),
                          (ApplyPlanningScene,'/apply_planning_scene'),(GetPlanningScene,'/get_planning_scene')]:
             client=node.create_client(typ,name);self.clients[name]=client

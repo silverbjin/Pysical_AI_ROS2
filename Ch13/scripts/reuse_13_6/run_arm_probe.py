@@ -26,9 +26,9 @@ def arm_goal(q,offset=.02):
     return goal
 
 
-def work(*,node,until,snapshot,status,control,case,out):
-    arm=ActionClient(node,FollowJointTrajectory,ARM)
-    gripper=ActionClient(node,GripperCommand,GRIPPER)
+def work(*,node,until,snapshot,status,control,case,out,action_client_factory=ActionClient):
+    arm=action_client_factory(node,FollowJointTrajectory,ARM)
+    gripper=action_client_factory(node,GripperCommand,GRIPPER)
     records=[]
     def measured():
         joints=snapshot()['joints'];values=dict(zip(joints.name,joints.position))

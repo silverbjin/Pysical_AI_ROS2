@@ -16,10 +16,10 @@ from ch13_manipulation_reuse.pick_acceptance import assess_pick,assess_held_canc
 from ch13_manipulation_reuse.pick_feedback import lift_correction
 
 
-def work(*,node,until,snapshot,status,control,out,case='pick'):
+def work(*,node,until,snapshot,status,control,out,case='pick',action_client_factory=ActionClient):
     from run_arm_probe import work as warmup
-    warmup(node=node,until=until,snapshot=snapshot,status=status,control=control,case='normal',out=out)
-    planner=Planner(node,until,snapshot);gripper=ActionClient(node,GripperCommand,GRIPPER)
+    warmup(node=node,until=until,snapshot=snapshot,status=status,control=control,case='normal',out=out,action_client_factory=action_client_factory)
+    planner=Planner(node,until,snapshot,action_client_factory=action_client_factory);gripper=action_client_factory(node,GripperCommand,GRIPPER)
     records=[]
     def phase(value):
         control['set_phase'](value)

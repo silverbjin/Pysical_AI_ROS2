@@ -1,0 +1,205 @@
+{
+  "result": "PASS",
+  "scope": "one execution per selected case; single-worker self-review",
+  "final_source_freeze": "section_13_7_bt_v6",
+  "final_suite": "242 PASS / 64.79s",
+  "cases": {
+    "normal": {
+      "uuid": "80fcd4d7-f475-412b-86dc-cf98c746ef9e",
+      "result": "PASS",
+      "checks": 18,
+      "engine_wall_s": 368.79023316900003,
+      "engine_sim_s": 161.90000000004494,
+      "clean_children": 12,
+      "remaining": [],
+      "source_freeze": {
+        "result": "PASS",
+        "revision": "section_13_7_bt_v3",
+        "sources": 281,
+        "assets": 94,
+        "sha256": "c374d501d7412fe68437786c86322602af828069fd916eabea167767d9299f35"
+      },
+      "bt_wall_s": 386.175924623,
+      "terminal": "SUCCESS",
+      "session": "fdc03d89-64fc-41db-b123-9b85a8ac919a",
+      "requested": [
+        "navigate",
+        "find",
+        "pick",
+        "finish"
+      ],
+      "goals": {
+        "terminals": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "errors": [],
+        "cancel_requests": 0,
+        "cancel_acks": [],
+        "pending": 0
+      },
+      "physics": {
+        "result": "PASS",
+        "failures": [],
+        "baseline_z_m": 0.5398912637065778,
+        "minimum_lift_m": 0.10003669433780238,
+        "maximum_lift_m": 0.10272605080458308,
+        "hold_sim_s": 2.180000000000007,
+        "relative_slip_m": 2.7300951800261195e-05,
+        "dual_contact_fraction": 1.0
+      }
+    },
+    "low_battery": {
+      "uuid": "ca2256a9-1800-4dfa-b174-49fc8362c827",
+      "result": "PASS",
+      "checks": 20,
+      "engine_wall_s": 9.535174943000015,
+      "engine_sim_s": 4.421999999999735,
+      "clean_children": 12,
+      "remaining": [],
+      "source_freeze": {
+        "result": "PASS",
+        "revision": "section_13_7_bt_v3",
+        "sources": 281,
+        "assets": 94,
+        "sha256": "c374d501d7412fe68437786c86322602af828069fd916eabea167767d9299f35"
+      },
+      "bt_wall_s": 25.398202754999943,
+      "terminal": "ABORTED",
+      "session": "f15f1911-3e7e-405c-a50e-b98d8124f576",
+      "requested": [
+        "navigate"
+      ],
+      "goals": {
+        "terminals": [
+          5
+        ],
+        "errors": [],
+        "cancel_requests": 1,
+        "cancel_acks": [
+          true
+        ],
+        "pending": 0
+      }
+    },
+    "held_cancel": {
+      "uuid": "e546e92d-2653-478d-9bbf-fe22855e886c",
+      "result": "PASS",
+      "checks": 20,
+      "engine_wall_s": 257.3414992669998,
+      "engine_sim_s": 118.72999999990469,
+      "clean_children": 12,
+      "remaining": [],
+      "source_freeze": {
+        "result": "PASS",
+        "revision": "section_13_7_bt_v5",
+        "sources": 284,
+        "assets": 94,
+        "sha256": "a682fa060dd07d50b3541264ebc2dab22cef570eaeea44b6bb6c6e90e32afe36"
+      },
+      "bt_wall_s": 274.9340560119999,
+      "terminal": "ABORTED",
+      "session": "90c86b4b-e13d-4186-9b76-fbc4648e7d70",
+      "requested": [
+        "navigate",
+        "find",
+        "pick"
+      ],
+      "goals": {
+        "terminals": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          5
+        ],
+        "errors": [],
+        "cancel_requests": 1,
+        "cancel_acks": [
+          true
+        ],
+        "pending": 0
+      },
+      "physics": {
+        "result": "PASS",
+        "scope": "held-object cancellation safety, not physical pick completion",
+        "hold_sim_s": 2.180000000000007,
+        "maximum_drop_m": 0.0,
+        "relative_slip_m": 3.3418860257247975e-05,
+        "dual_contact_fraction": 1.0
+      }
+    },
+    "legacy_free": {
+      "uuid": "9ccb809e-ff0c-4363-b60a-1e8b2ac0ed60",
+      "result": "PASS",
+      "checks": 23,
+      "engine_wall_s": 15.166366736999862,
+      "engine_sim_s": 11.130000000000386,
+      "clean_children": 10,
+      "remaining": [],
+      "source_freeze": {
+        "result": "PASS",
+        "revision": "section_13_7_bt_v5",
+        "sources": 284,
+        "assets": 94,
+        "sha256": "a682fa060dd07d50b3541264ebc2dab22cef570eaeea44b6bb6c6e90e32afe36"
+      }
+    }
+  },
+  "mock": {
+    "normal": {
+      "profile": "mock",
+      "terminal": "SUCCESS",
+      "requested": [
+        "navigate",
+        "find",
+        "pick",
+        "return",
+        "finish"
+      ]
+    },
+    "low_battery": {
+      "profile": "mock",
+      "terminal": "ABORTED",
+      "requested": [
+        "navigate",
+        "charge"
+      ]
+    },
+    "fallen": {
+      "profile": "mock",
+      "terminal": "SUCCESS",
+      "requested": [
+        "recover",
+        "navigate",
+        "find",
+        "pick",
+        "return",
+        "finish"
+      ]
+    },
+    "not_found": {
+      "profile": "mock",
+      "terminal": "FAILURE",
+      "requested": [
+        "navigate",
+        "find"
+      ]
+    }
+  },
+  "dynamic_profiles_compiled_model_unchanged": true,
+  "exact_v3_source_archive": "4cc7a1f3de173658fa99f48ce967907a219455090abe7b9e64a0d9ce79516217",
+  "source_ranges": "v3 normal/low_battery; v5 held_cancel/legacy_free; v6 verdict preservation only, offline regraded without rerunning engine"
+}
