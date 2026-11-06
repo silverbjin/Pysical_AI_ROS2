@@ -42,7 +42,7 @@ def generate_launch_description():
    node_params=ParameterFile(RewrittenYaml(source_file=params,param_rewrites=rewrites,
     convert_types=True),allow_substs=True)
   parameter_files=[node_params]
-  if (name in ('planner_server','velocity_smoother') and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+  if (name in ('planner_server','controller_server','velocity_smoother') and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
       and os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house')):
    parameter_files.append(str(share/'config/heading_aware_navigation.yaml'))
   if (name=='velocity_smoother' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'

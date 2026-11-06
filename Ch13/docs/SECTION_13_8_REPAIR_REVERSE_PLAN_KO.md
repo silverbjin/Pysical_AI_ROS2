@@ -24,10 +24,10 @@ Upstream pinned deploy/console.py의 vx 감소 및 deploy/joystick.py의 signed 
 
 ## 구현과 검증 순서
 
-- [ ] 실제 설치 controller_server를 엔진 없이 configure하는 부품 도구를 작성한다. shim/RPP 로드, 원래 회전 속도 .15·가속 .5, 실제 내부 stateful=false를 조회한다. 잘못된 prefix/누락 설정을 먼저 실패로 확인한다.
-- [ ] 실제 PositionGoalChecker의 12mm 도달→20mm 이탈 재검사로 latch가 해제되는지 확인한다. 모의 객체로 대체하지 않는다.
-- [ ] 실제 ROS parser 회귀를 먼저 RED로 확인한다. 새 L2/L3만 Smac REEDS_SHEPP, shim primary RPP, allow_reversing=true/use_rotate_to_heading=false, rotate_to_goal_heading=true, use_path_orientations=true, rotate_to_heading_once=true, 두 position_checker stateful=false를 선택한다. legacy/L1은 유지한다.
-- [ ] 새 L2/L3의 smoother min vx=-.10을 적용한다. 기존 yaw cap(.10/.20), max vx .20, 가속도, 원래 footprint+1cm padding, 지도 5cm와 native guard는 유지한다. 시나리오 접근 방향은 검증한 서쪽 (bearing 0) 하나로 제한하고 비용을 기록한다.
+- [x] 실제 설치 controller_server를 엔진 없이 configure하는 부품 도구를 작성한다. shim/RPP 로드, 원래 회전 속도 .15·가속 .5, 실제 내부 stateful=false를 조회한다. 잘못된 prefix/누락 설정을 먼저 실패로 확인한다.
+- [x] 실제 PositionGoalChecker의 12mm 도달→20mm 이탈 재검사로 latch가 해제되는지 확인한다. 모의 객체로 대체하지 않는다.
+- [x] 실제 ROS parser 회귀를 먼저 RED로 확인한다. 새 L2/L3만 Smac REEDS_SHEPP, shim primary RPP, allow_reversing=true/use_rotate_to_heading=false, rotate_to_goal_heading=true, use_path_orientations=true, rotate_to_heading_once=true, 두 position_checker stateful=false를 선택한다. legacy/L1은 유지한다.
+- [x] 새 L2/L3의 smoother min vx=-.10을 적용한다. 기존 yaw cap(.10/.20), max vx .20, 가속도, 원래 footprint+1cm padding, 지도 5cm와 native guard는 유지한다. 시나리오 접근 방향은 검증한 서쪽 (bearing 0) 하나로 제한하고 비용을 기록한다.
 - [ ] 관련 부품 → 분리 build/실제 venv child 설치·전체 회귀 → 새로운 v35 이상 동결 및 tested/runtime 전체 hash 대조 → source/case UUID를 실행 전에 고정하고 커밋한다.
 - [ ] 단일 엔진 L3/L2 기능 사례를 순차 실행한다. actual signed command·속도·접촉·관측·정착·terminal·join·잔여를 확인하고 실패 원본/소스/보고서를 커밋한다. 엔진 중 build/pytest/대용량 분석은 병행하지 않는다.
 - [ ] 연속 기능 gate가 통과하면 새 source/scenario/10UUID를 고정하여 새 10회를 실행한다. 높이·정밀도·시간 수치 실패를 그대로 보고하며 기존 v28 결과를 대체하지 않는다. 기능 미통과 시 새 평가로 실패 원인을 덮지 않고 원인 조사로 돌아간다.
@@ -35,3 +35,11 @@ Upstream pinned deploy/console.py의 vx 감소 및 deploy/joystick.py의 signed 
 ## Review focus
 
 모든 checker의 독립 latch, shim과 primary의 동일 namespace, 역방향 경로 cusp와 shim의 orientation 해석, 원래 first receipt/GID 유지, native goal/lease 변경 여부, 실제 음수 vx가 정책에 전달되는 경계, 대조 지도와 실제 costmap의 차이를 확인한다. 단일 작업자의 자체 검토로 기록하며 독립 리뷰로 표현하지 않는다.
+
+## 2026-11-06 재개 검증 기록
+
+기존 RED 7 FAIL/5 PASS를 보존한 뒤 계획대로 운영 YAML/launch를 반영했다. 실제 ROS parser·설정 격리·카메라 검사는 14 PASS/45.70초다. 두 Level은 서쪽 접근만 선택하고, 명령 후진 하한 -0.10m/s 및 기존 yaw/가속도/물리 guard를 유지한다. 실제 후진 성공 주장이 아니다.
+
+실제 설치 controller_server의 구성/정리는 성공했으며 내부 `.position_checker.stateful`은 잘못된 prefix만 설정했을 때 true, 올바른 YAML 키를 추가했을 때 false였다. 실제 C++ PositionGoalChecker는 12mm 도달 후 20mm로 이탈한 입력을 기본값에서 계속 도달로 판단했고, 수정 뒤 false로 재판정했다. CLI `-p .position_checker.stateful:=false`는 ROS 인자 문법에서 거부돼 종료됐고 이 도구 실패도 보존했다. YAML 경로에서는 정상 처리됐다. 명령·정책·외부 소스 변경이나 ROS 전역 설정 변경은 없었다.
+
+검증 증거: `../evidence/section_13_8_repair/step4_reverse_components/`. 이후 분리 build/전체 회귀 및 v35 동결을 확인하고, 같은 소스로 실제 기능을 검증한다.

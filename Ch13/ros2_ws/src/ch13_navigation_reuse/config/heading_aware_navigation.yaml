@@ -1,9 +1,9 @@
-# Opt-in book worlds: plan pose-compatible forward paths, not an endpoint turn.
+# Opt-in book worlds: signed paths with independently checked goal rotation.
 planner_server:
   ros__parameters:
     GridBased:
       plugin: nav2_smac_planner::SmacPlannerHybrid
-      motion_model_for_search: DUBIN
+      motion_model_for_search: REEDS_SHEPP
       minimum_turning_radius: 0.3
       angle_quantization_bins: 72
       tolerance: 0.01
@@ -15,3 +15,18 @@ planner_server:
 velocity_smoother:
   ros__parameters:
     scale_velocities: true
+    min_velocity: [-0.10, 0.0, -0.20]
+controller_server:
+  ros__parameters:
+    # Nav2 1.3.13 initializes this checker before assigning the plugin name.
+    .position_checker.stateful: false
+    FollowPath:
+      plugin: nav2_rotation_shim_controller::RotationShimController
+      primary_controller: nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
+      use_rotate_to_heading: false
+      allow_reversing: true
+      rotate_to_goal_heading: true
+      rotate_to_heading_once: true
+      use_path_orientations: true
+      position_checker:
+        stateful: false

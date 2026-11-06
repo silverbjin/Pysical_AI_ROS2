@@ -43,5 +43,5 @@ def test_survey_has_structural_footprint_clearance(monkeypatch,name):
     assert get_scenario('level1_floor').pre_distance_m==.06
 
 
-def test_house_fixture_uses_the_audited_north_approach_with_forward_return():
-    assert get_scenario('level3_house').approach_bearings==(3*math.pi/2,)
+def test_house_fixture_uses_the_audited_west_approach_with_reverse_return():
+    assert get_scenario('level3_house').approach_bearings==(0.,)

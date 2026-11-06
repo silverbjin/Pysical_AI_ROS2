@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+project(ch13_shim_state_diagnostic)
+find_package(ament_cmake REQUIRED)
+find_package(nav2_controller REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+add_executable(shim_state_probe main.cpp)
+ament_target_dependencies(shim_state_probe nav2_controller rclcpp_lifecycle)
