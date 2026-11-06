@@ -34,7 +34,8 @@ def generate_launch_description():
    from nav2_common.launch import RewrittenYaml
    from launch_ros.descriptions import ParameterFile
    rewrites={'controller_server.ros__parameters.goal_checker.xy_goal_tolerance':'0.015'}
-   if os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house'):
+   if (os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house')
+       and os.environ.get('CH13_EXPERIMENTAL_SE2')=='1'):
     # Keep checking XY while turning: the first tolerance crossing is not arrival.
     rewrites['controller_server.ros__parameters.goal_checker.stateful']='false'
     # RPP has its own XY latch; both must keep correcting position.
@@ -43,11 +44,13 @@ def generate_launch_description():
     convert_types=True),allow_substs=True)
   parameter_files=[node_params]
   if (name in ('planner_server','controller_server','velocity_smoother') and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+      and os.environ.get('CH13_EXPERIMENTAL_SE2')=='1'
       and os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house')):
    parameter_files.append(str(share/'config/heading_aware_navigation.yaml'))
   if (name=='velocity_smoother' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
       and os.environ.get('CH13_VALIDATION_SCENARIO')=='level2_obstacles'):
-   parameter_files.append(str(share/'config/level2_velocity_limits.yaml'))
+   limits='level2_reverse_velocity_limits.yaml' if os.environ.get('CH13_EXPERIMENTAL_SE2')=='1' else 'level2_velocity_limits.yaml'
+   parameter_files.append(str(share/'config'/limits))
   actions.append(Node(package=package,executable=executable,name=name,parameters=[*parameter_files,extra],remappings=remaps,output='screen'))
  actions.append(Node(package='nav2_lifecycle_manager',executable='lifecycle_manager',name='reuse_lifecycle_manager',parameters=[{'use_sim_time':True,'autostart':True,'bond_timeout':10.,'node_names':['planner_server','controller_server','velocity_smoother','bt_navigator']}],output='screen'))
  return LaunchDescription(actions)

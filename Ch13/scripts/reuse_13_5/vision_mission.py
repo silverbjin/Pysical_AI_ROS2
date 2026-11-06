@@ -33,7 +33,7 @@ def select_goal(root,node,until,get_observation,get_state,get_joints,get_grid,ge
   if standoff is not None:distances=(standoff,)
   bearings=active_scenario().approach_bearings
   if bearings is not None:bearing_options['bearings']=bearings
-  audit_paths=active_scenario().world in ('obstacles','house')
+  audit_paths=(active_scenario().world in ('obstacles','house') and os.environ.get('CH13_EXPERIMENTAL_SE2')=='1')
  choices=candidates(model,q,point,grid,fp,distances=distances,**bearing_options);assert choices,'no collision-free arm-reachable approach candidate'
  evaluated=[];path_checks=[]
  def path_cost(pose,stamp):

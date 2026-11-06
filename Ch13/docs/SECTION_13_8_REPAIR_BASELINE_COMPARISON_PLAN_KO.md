@@ -25,3 +25,13 @@ NavFn은 SE2 body orientation 경로가 아니다. 새 filled-footprint SE2 pose
 2. CH13_EXPERIMENTAL_SE2=1일 때만 기존 v35 SE2/후진/shim을 선택한다. 기본 NavFn/RPP와 원래 stateful 구성을 복원하고, 실험 모드의 검사도 유지한다. 기존 legacy/L1에 새 동작을 주입하지 않는다.
 3. 관련 검사 → 분리 build/전체 회귀 → 새 v36 이상 freeze/테스트·실행 전수 hash → 사전 UUID 및 보고/커밋 후 단일 engine으로 대조한다. 이전 실패를 재사용/덮어쓰지 않는다.
 4. 실제 연속 기능이 확인되면 새 고정 10회로 평가한다. 목표 미달은 원래 strict FAIL로 남긴다. 불필요한 과거 matrix 재실행은 하지 않는다.
+
+## 2026-11-06 구현 전후 부품 검증
+
+기본 구성 검사 2 FAIL/437 deselected(26.22초), 모드가 scenario hash에 들어가는 검사 3 FAIL/439 deselected(26.17초)를 먼저 확인했다. 기본/실험 설정 분리와 새 survey footprint/실제 Renderer를 포함한 관련 검사는 20 PASS/30.68초다. 모드는 scenario.record의 navigation_profile로 동결되며 기본/실험 조건이 같은 source만으로 혼합되지 않도록 한다.
+
+기본 상태는 기존 NavFn/RPP와 stateful=true다. 원래 XY .015/yaw .06 및 엄격 수치 판정은 유지했다. 실험 SE2의 전체 pose 검사는 CH13_EXPERIMENTAL_SE2=1에서만 사용하며 기존 source/실제 실패 증거는 그대로 보존했다. 전역 설정이나 모델·정책·물리 guard를 변경하지 않았다. 다음은 v36 전체 검증과 실제 대조다.
+
+공식 [NavFn 1.3.13 구현](https://github.com/ros-navigation/navigation2/blob/1.3.13/nav2_navfn_planner/src/navfn_planner.cpp)의 getPlanFromPotential도 확인했다. 중간 pose orientation은 identity로 채우며 이것이 이동 중 로봇의 body heading을 뜻하지 않는다. 따라서 SE2 pose 검사를 기본 NavFn 경로의 회전 안전 보증으로 해석하지 않는다. 기본 endpoint·fresh IK·실시간 collision/물리 guard는 유지한다.
+
+v36 실행 전 확인: 분리 build 5개/16.0초, navigation39/manipulation24/BT6 및 실제 venv child69 module 감사 PASS. 전체442 PASS/69.00초, source384/외부94자산 및 테스트·실행 소스 전수 hash 일치 PASS. manifest f0b4f1bc276109e822db030e2793bea863c1ee1e8558dc560f2ea6a04559c5d2. 두 실제 대조 UUID와 experimental_se2=0을 step4_preflight_v36/case_plan.json에 사전 고정했다. 실제 기능 성공 주장이 아니다.

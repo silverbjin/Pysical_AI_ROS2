@@ -32,7 +32,8 @@ class Scenario:
     def level(self):return 'continuous_development_fixture' if self.name=='development' else self.name
     def record(self):
         from .worlds import elements
-        return dict(asdict(self),world_geometry=[g.record() for g in elements(self)])
+        mode='experimental_se2' if self.name in ('level2_obstacles','level3_house') and os.environ.get('CH13_EXPERIMENTAL_SE2')=='1' else 'baseline_navfn'
+        return dict(asdict(self),world_geometry=[g.record() for g in elements(self)],navigation_profile=mode)
 
     def receiving_support_ready(self,force,observation):
         if type(force) not in (int,float) or not math.isfinite(force) or force<=.01:return False
@@ -51,7 +52,7 @@ SCENARIOS=MappingProxyType({
     'level1_floor':Scenario('level1_floor',(2.,0.,.04),(-.6,0.,.04),0.,(.4,.4,.29),-40.,-35.,30.,.06,.6),
     'level2_obstacles':Scenario('level2_obstacles',(3.,1.,.54),(-.8,0.,.54),.5,
         TRANSPORT_CAMERA_POS,TRANSPORT_CAMERA_YAW_DEG,TRANSPORT_CAMERA_PITCH_UP_DEG,0.,.12,.8,
-        'obstacles',(1.6,-.3,.6),(0.,)),
+        'obstacles',(1.9,.3,math.atan2(.7,1.1)),(0.,)),
     'level3_house':Scenario('level3_house',(3.,1.,.04),(-.6,0.,.04),0.,(.4,.4,.29),-40.,-35.,30.,.03,.6,
         'house',(1.9,.4,math.atan2(.6,1.1)),(0.,)),
 })

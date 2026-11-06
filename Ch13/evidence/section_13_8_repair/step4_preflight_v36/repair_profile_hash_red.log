@@ -1,0 +1,43 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_record_freezes_the_navigation_profile_in_scenario_hash[level3_house-0-baseline_navfn] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7d900ac95b50>
+name = 'level3_house', flag = '0', expected = 'baseline_navfn'
+
+    @pytest.mark.parametrize('name,flag,expected',[('level3_house','0','baseline_navfn'),('level2_obstacles','1','experimental_se2'),('development','1','baseline_navfn')])
+    def test_record_freezes_the_navigation_profile_in_scenario_hash(monkeypatch,name,flag,expected):
+        monkeypatch.setenv('CH13_EXPERIMENTAL_SE2',flag)
+>       assert get_scenario(name).record()['navigation_profile']==expected
+E       KeyError: 'navigation_profile'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_scenarios.py:68: KeyError
+_ test_record_freezes_the_navigation_profile_in_scenario_hash[level2_obstacles-1-experimental_se2] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7d8ff7d1d460>
+name = 'level2_obstacles', flag = '1', expected = 'experimental_se2'
+
+    @pytest.mark.parametrize('name,flag,expected',[('level3_house','0','baseline_navfn'),('level2_obstacles','1','experimental_se2'),('development','1','baseline_navfn')])
+    def test_record_freezes_the_navigation_profile_in_scenario_hash(monkeypatch,name,flag,expected):
+        monkeypatch.setenv('CH13_EXPERIMENTAL_SE2',flag)
+>       assert get_scenario(name).record()['navigation_profile']==expected
+E       KeyError: 'navigation_profile'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_scenarios.py:68: KeyError
+_ test_record_freezes_the_navigation_profile_in_scenario_hash[development-1-baseline_navfn] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7d8ff7d1d6d0>
+name = 'development', flag = '1', expected = 'baseline_navfn'
+
+    @pytest.mark.parametrize('name,flag,expected',[('level3_house','0','baseline_navfn'),('level2_obstacles','1','experimental_se2'),('development','1','baseline_navfn')])
+    def test_record_freezes_the_navigation_profile_in_scenario_hash(monkeypatch,name,flag,expected):
+        monkeypatch.setenv('CH13_EXPERIMENTAL_SE2',flag)
+>       assert get_scenario(name).record()['navigation_profile']==expected
+E       KeyError: 'navigation_profile'
+
+Ch13/ros2_ws/src/ch13_system_validation/test/test_scenarios.py:68: KeyError
+=========================== short test summary info ============================
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_scenarios.py::test_record_freezes_the_navigation_profile_in_scenario_hash[level3_house-0-baseline_navfn]
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_scenarios.py::test_record_freezes_the_navigation_profile_in_scenario_hash[level2_obstacles-1-experimental_se2]
+FAILED Ch13/ros2_ws/src/ch13_system_validation/test/test_scenarios.py::test_record_freezes_the_navigation_profile_in_scenario_hash[development-1-baseline_navfn]
+3 failed, 439 deselected in 26.17s
