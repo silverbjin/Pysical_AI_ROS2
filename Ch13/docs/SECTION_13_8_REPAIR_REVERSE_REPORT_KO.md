@@ -22,3 +22,9 @@
 ## v35 실행 전 검증
 
 분리 build 5개/21.2초, navigation 38·manipulation 24·BT 6 및 실제 venv child 69 module 감사 PASS. 전체 437 PASS/83.46초. source 383개/외부94자산, tested/runtime source 전수 hash 일치 PASS. manifest SHA256 ac5894e0c059dbbc12008c2ef820b86934cbce99168497c72986cdec54101942. 실제 L3/L2 UUID와 기능/엄격 수치 판정 구분은 step4_preflight_v35/case_plan.json에 실행 전에 고정했다. 숫자 목표를 못 맞추면 원래 strict FAIL을 보존한다.
+
+## v35 실제 판정
+
+두 사례 모두 FAIL이다. L3 dfcd2bc6-d8d1-44f3-b0cc-a0634bbba959는 RR_thigh:world:WAITING 금지 접촉이 최초 engine ERROR이며, 후속 VISION_EXPIRED를 별도 카메라 지연 원인으로 오해하지 않는다. trial 58.446sim/216.592wall초, 11 child 정상 종료/잔여0이다. L2 272870f5-e785-4d52-8b08-e966cf65d738는 survey deadline FAIL이고 engine/12 child 정상 종료·잔여0이다. 사전 고정한 각 사례 1회이며 새 10회 평가가 아니다.
+
+원본과 정확한 source383개를 보존했다. L3 raw18,477,792 bytes·L2 raw14,657,365 bytes. 부품437 PASS와 실제 기능 인수 실패를 분리한다. 새 조합은 기본 채택하지 않고 명시적 실험 모드로 남기는 기준 복귀 대조 계획을 먼저 작성했다. 후속 범위·채택/기각 근거는 SECTION_13_8_REPAIR_BASELINE_COMPARISON_PLAN_KO.md에 있다.
