@@ -46,15 +46,20 @@ class Scenario:
         except (TypeError,ValueError):return False
 
 
+def _survey_pose(x,y,target=(3.,1.)):
+    """Orient a map observation waypoint toward the known search region."""
+    return (x,y,math.atan2(target[1]-y,target[0]-x))
+
+
 SCENARIOS=MappingProxyType({
     'development':Scenario('development',(1.8,0.,.54),(-.8,0.,.54),.5,
         TRANSPORT_CAMERA_POS,TRANSPORT_CAMERA_YAW_DEG,TRANSPORT_CAMERA_PITCH_UP_DEG,0.,.12,None),
     'level1_floor':Scenario('level1_floor',(2.,0.,.04),(-.6,0.,.04),0.,(.4,.4,.29),-40.,-35.,30.,.06,.6),
     'level2_obstacles':Scenario('level2_obstacles',(3.,1.,.54),(-.8,0.,.54),.5,
         TRANSPORT_CAMERA_POS,TRANSPORT_CAMERA_YAW_DEG,TRANSPORT_CAMERA_PITCH_UP_DEG,0.,.12,.8,
-        'obstacles',(1.9,.3,math.atan2(.7,1.1)),(0.,)),
+        'obstacles',_survey_pose(1.75,-.2),(0.,)),
     'level3_house':Scenario('level3_house',(3.,1.,.04),(-.6,0.,.04),0.,(.4,.4,.29),-40.,-35.,30.,.03,.6,
-        'house',(1.9,.4,math.atan2(.6,1.1)),(0.,)),
+        'house',_survey_pose(1.9,.4),(0.,)),
 })
 
 
