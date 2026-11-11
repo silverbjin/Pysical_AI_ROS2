@@ -6,12 +6,14 @@ import pytest
 from ch13_system_validation.scenarios import get_scenario
 
 
-def test_level2_observes_before_the_saved_late_rotation_without_relaxing_goal():
+def test_level2_observes_before_the_saved_late_rotation_without_relaxing_goal(monkeypatch):
+    monkeypatch.setenv('CH13_EXPERIMENTAL_SE2','0')
     scenario=get_scenario('level2_obstacles')
     assert scenario.survey_pose==pytest.approx((1.65,-.3,math.atan2(1.3,1.35)))
     assert scenario.target_xyz==(3.,1.,.54)
     assert scenario.approach_standoff_m==.8
-    assert scenario.vision_hz==10
+    assert scenario.vision_hz==15
+    assert scenario.record()['navigation_profile']=='baseline_forward_dubin'
     assert get_scenario('level3_house').vision_hz==15
     assert get_scenario('level3_house').survey_pose==pytest.approx((1.9,.4,math.atan2(.6,1.1)))
 

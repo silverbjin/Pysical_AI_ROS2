@@ -145,3 +145,11 @@ UUID4f4d4ce4-0d83-40f8-a0e2-4584b6e3097b는 최종 navigate11.311mm/정착/find/
 해당 구간 pre_offer는 약0.004~0.012ms로 Scan 이전 요청이 실제 적용됐다. 최초 fault8757.348507426에 사용한 원본 capture8757.046126638은302.381ms였다. 다음 capture8757.229389063의 네 native/metadata는8757.273662까지 도착했지만 inference 시작8757.329831725/종료8757.354383926으로 직전300ms 만료8757.346126638를 넘겼다. 10Hz cap이 앞선 inference8757.212981876 이후100ms를 기다리는 구간이 있다. 원래15Hz 지원값의67ms 간격을 이용하는 저장 deadline 재현을 다음 단계로 좁혔다. 과거15Hz 실패와 이번 개선된 생산 경계를 섞지 않으며 전체 성공으로 선언하지 않는다.
 
 PRE_GRASP 첫 후보의 execution duration67.234sim초도 기록했다. 전체120sim초 목표에 부담이 되는 별도 항목이며 아직 실행 완료하지 않았다. 이번 관측 처리율 작업과 함께 팔 속도나 물리/경로를 바꾸지 않는다. 정상 완주·정식10회 재평가·Owner 인수는 계속 미완료다.
+
+## v49 원본 처리율 복원 RED→GREEN→REFACTOR→REVIEW
+
+명세ea4a054b. v48 저장 native/metadata 완료 시각과 실제 관측 소요24.552ms를 사용한 실제 VisionObserver fixture가10Hz에서 새 frame 처리0건으로 RED1FAIL/4.37초였다. 지원15Hz로 복원하면 같은 원본 frame을 옛 관측300ms 만료 전에 처리하고 기존 Lease의 freshness 검사를 통과한다. 원본 capture/TF/first receipt/GID/hash를 바꾸지 않는 시험이다. 과거v42의15Hz 실패를 삭제하거나 이 부품 시험을 실제 성공으로 표시하지 않는다.
+
+Ruling: 검토 중 Scenario.record의 Level2 기본 navigation_profile이 v45 이후에도 baseline_navfn으로 기록되는 메타데이터 오류를 발견했다. 실제 launch는 DUBIN이며 launch 로그와 execution_profile로 확인했다. 과거 JSON/hash는 수정하지 않고 이 원장으로 해석 한계를 남긴다. 새 기록을 baseline_forward_dubin으로 바로잡는 계약 RED1FAIL/3PASS/4.30초→관련 전체7PASS/4.48초였다. 기록의 정정은 planner/geometry/권한을 바꾸지 않는다. 기존 portable 시험도15Hz와 새 기록 이름을 확인하도록 보완했다.
+
+GREEN 후 REFACTOR에서 별도 추상화나 추가 속도/경로/모델 변경 없이 Level2의10Hz 특례만 제거했다. 전체487PASS/72.43초, snapshot43f69030ee5a4b0ab9930fca5ec7b685. 자체 REVIEW에서 native CLI가 이미 지원하는15Hz를 사용하고 다른Level/원본stamp·300ms·TF100ms·단일 owner·제어·접촉·종료 기준을 유지하는 것을 확인했다. 다음 COMMIT→공개CI→새 freeze/build/audit→15Hz 실제 사례다. 성공과 CPU/시간 목표는 아직 검증 전이다.

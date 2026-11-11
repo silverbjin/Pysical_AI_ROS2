@@ -31,10 +31,11 @@ class Scenario:
     @property
     def level(self):return 'continuous_development_fixture' if self.name=='development' else self.name
     @property
-    def vision_hz(self):return 10 if self.name=='level2_obstacles' else 15
+    def vision_hz(self):return 15
     def record(self):
         from .worlds import elements
         mode='experimental_se2' if self.name in ('level2_obstacles','level3_house') and os.environ.get('CH13_EXPERIMENTAL_SE2')=='1' else 'baseline_navfn'
+        if mode=='baseline_navfn' and self.name=='level2_obstacles':mode='baseline_forward_dubin'
         return dict(asdict(self),world_geometry=[g.record() for g in elements(self)],navigation_profile=mode,vision_inference_hz=self.vision_hz)
 
     def receiving_support_ready(self,force,observation):

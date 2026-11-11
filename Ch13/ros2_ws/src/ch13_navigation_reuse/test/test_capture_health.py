@@ -49,4 +49,26 @@ class CaptureHealthTests(unittest.TestCase):
   trace=self.n.diagnostics()['callback_timing']
   self.assertEqual([r['name'] for r in trace['rows']],['vision.tick'])
   self.assertGreaterEqual(trace['rows'][0]['end_wall'],trace['rows'][0]['start_wall'])
+ def test_level2_cadence_processes_arrived_frame_before_saved_capture_deadline(self):
+  from types import SimpleNamespace
+  from ch13_system_validation.scenarios import get_scenario
+  from ch13_manipulation_reuse.lease import Lease
+  from ch13_navigation_reuse.vision_approach import red_point
+  self.n.destroy_node();self.n=VisionObserver(inference_hz=get_scenario('level2_obstacles').vision_hz)
+  # Actual v48 frame was complete by8757.273662; this tick occurs at8757.280.
+  clock=[8757.280];self.wall=clock[0];self.stamp=67808000000
+  self.n.clock_ns=self.stamp;self.n.clock_wall=self.wall;self.n.transforms[self.stamp]=np.eye(4)
+  self.fill(8757.229389063);self.n.last_processed=67796000000
+  self.n.last_processed_wall=8757.212981876
+  def measured_fit(*args):
+   result=red_point(*args);clock[0]+=.024552201;return result
+  with patch('ch13_navigation_reuse.vision_approach.time',SimpleNamespace(monotonic=lambda:clock[0])),patch('ch13_navigation_reuse.vision_approach.red_point',side_effect=measured_fit):
+   self.n.tick()
+  self.assertEqual(len(self.n.rows),1,'arrived frame deferred by inference cap')
+  observation=self.n.rows[0]
+  self.assertEqual(observation['capture_wall'],8757.229389063)
+  self.assertLess(observation['inference_finished_wall'],8757.046126638+.3)
+  lease=Lease('saved-deadline-component')
+  self.assertTrue(lease.observe(observation,'observer',clock[0]))
+  self.assertTrue(lease.observation_fresh(67820000000,8757.348507426))
  def tearDown(self):self.n.destroy_node();rclpy.try_shutdown()

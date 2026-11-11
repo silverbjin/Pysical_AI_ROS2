@@ -62,7 +62,7 @@ def test_floor_model_uses_original_ground_and_robot_with_no_fake_receiving_patch
     np.testing.assert_array_equal(floor.actuator_ctrlrange,legacy.actuator_ctrlrange)
     assert floor.opt.timestep==legacy.opt.timestep==.002
 
-@pytest.mark.parametrize('name,flag,expected',[('level3_house','0','baseline_navfn'),('level2_obstacles','1','experimental_se2'),('development','1','baseline_navfn')])
+@pytest.mark.parametrize('name,flag,expected',[('level2_obstacles','0','baseline_forward_dubin'),('level3_house','0','baseline_navfn'),('level2_obstacles','1','experimental_se2'),('development','1','baseline_navfn')])
 def test_record_freezes_the_navigation_profile_in_scenario_hash(monkeypatch,name,flag,expected):
     monkeypatch.setenv('CH13_EXPERIMENTAL_SE2',flag)
     assert get_scenario(name).record()['navigation_profile']==expected
