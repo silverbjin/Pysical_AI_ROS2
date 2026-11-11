@@ -89,3 +89,11 @@ UUID aebe4a05-2e76-4999-b46a-29a4d588928b는 실제 Smac DUBIN 선택을 launch 
 최초 fault decision7403.213691897의 사용 관측 capture58618000000/capture_wall7402.873216175로 실제 나이는340.476ms다. 다음 capture58622000000은7403.013220668에 촬영, 모든 원본·receipt 조합은 약7403.081에 도착했으나 10Hz cap 때문에 추론 시작7403.13308646, 종료7403.179966016이었다. 직전 관측의300ms 만료7403.173216175 이후다. 이 수치는 camera/추론/engine 수신 경계의 합성 지연을 보여 주며 rosbag RX gap이나 단일 callback 지연 하나로 단정하지 않는다. v42의301.704ms 실패와 같은 관측 만료 계열이 반복됐다. 15Hz도 과거 실패가 있으므로 단순 rate 재변경만으로 해결됐다고 하지 않는다.
 
 다음은 기존 단일 executor를 유지한 채 monitor/관측 수신 callback의 내부 소요 시간을 계측하여 graph query·lock·DDS 전달 중 어느 경계가 추가 지연을 만드는지 분리하는 최소 진단이다. executor 재구성·수명/임계값 변경은 하지 않는다. Level2 정상 완주와 Owner 인수는 계속 보류다.
+
+## v46 제한 계측 RED→GREEN→REFACTOR→REVIEW
+
+명세5ca3c19e. 공식 Jazzy rclpy executors.py 원본을 확인하고 단일 executor/원래 callback을 보존하는 opt-in 계측만 추가했다. RED는 계측 모듈 부재로 수집 실패(3.56초). GREEN 관련5PASS/2.53초 후 실제 monitor 상태·소유권 검사 보존 시험을 더했다. REFACTOR에서 module docstring/미사용 import만 정리했다. callback의 반환·예외를 그대로 전달하며 꺼짐에서는 시계를 읽지 않는다. 기록은 최대4096건이고 원본 stamp/receipt나 수명을 갱신하지 않는다.
+
+첫 full은480PASS/1FAIL(65.77초)였다. 실패는 test_platform_wire의 연결 준비 중 OLD_SOURCE:safe로, 첫 safe sample 전에 모의 시계가 진행한 시험 fixture 문제다. 기존 ROS wire fixture의 발견 대기 패턴을 참고했다. 고정 재현 RED1FAIL/3.23초(2.04s가2s 기대와 불일치) 후 첫 safe sample 수신까지 모의 시계를 유지하도록 수정했다. 이후 관련10PASS/1FAIL(34.33초)의 별도 실패는 초기 callback이3초 준비 시간 안에 실행되지 않은 경우이며, 앞의 시각 불일치 해결과 같은 원인이라고 단정하지 않는다. engine 없이 별도 작은 플랫폼 시험5PASS/4.28초를 확인했다. 모든 실패 출력은 prep에 보존하며 마지막 전체 재검증만 성공으로 보고한다.
+
+최종 full482PASS/68.73초, snapshot aa628fc6c93742fe82efce53d880fa9b. 자체 REVIEW: opt-in 기본 꺼짐, 기존 executor/lock/graph 조회 횟수/제어/수명/회수 판정 불변, 실제 monitor 상태 발행 보존 확인. 독립 검토가 아니다. 공개 portable CI에는 계측 반환·예외/상한/꺼짐 계약2건을 추가해 총11건을 실행한다. 다음 COMMIT→공개CI 실제 Job 확인→동일 조건의 단일 계측 사례다. 현재 Level2 정상 완주/인수 보류 상태는 바뀌지 않는다.

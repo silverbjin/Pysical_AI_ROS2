@@ -16,11 +16,13 @@ if ROS:
 class PlatformWireTests(unittest.TestCase):
  def setUp(self):
   self.relay=subprocess.Popen([__import__('ament_index_python.packages',fromlist=['get_package_prefix']).get_package_prefix('ch13_reuse_wire')+'/lib/ch13_reuse_wire/ingress'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-  rclpy.init();self.p=Platform();self.n=Node('reuse_safe_wire_probe');self.ns=2_000_000_000;self.sending=True;self.paused=False;self.vx=0.;self.decision=None
+  rclpy.init();self.p=Platform();self.n=Node('reuse_safe_wire_probe');self.ns=2_000_000_000;self.source_ready=False;self.sending=True;self.paused=False;self.vx=0.;self.decision=None
   self.pub=self.n.create_publisher(TwistStamped,N+'/cmd_vel_safe',1)
   self.n.create_timer(.02,self.send);self.ex=SingleThreadedExecutor();self.ex.add_node(self.p);self.ex.add_node(self.n);self.thread=threading.Thread(target=self.ex.spin);self.thread.start()
  def send(self):
-  if not self.paused:self.ns+=20_000_000
+  # Synthetic discovery must not make the first relay sample stale.
+  if not self.source_ready:self.source_ready='safe' in self.p.guard.samples
+  if self.source_ready and not self.paused:self.ns+=20_000_000
   self.decision,_=self.p.engine_command(self.ns);c=Clock();set_stamp(c.clock,self.ns);self.p.clock_pub.publish(c)
   if self.sending:
    m=TwistStamped();set_stamp(m.header.stamp,self.ns);m.header.frame_id='reuse/nav_base';m.twist.linear.x=self.vx;self.pub.publish(m)
@@ -51,3 +53,18 @@ class PlatformWireTests(unittest.TestCase):
  def tearDown(self):
   self.ex.shutdown(timeout_sec=2.);self.thread.join(2.);self.n.destroy_node();self.p.destroy_node();rclpy.shutdown();self.relay.terminate();self.relay.wait(timeout=3.);self.assertFalse(self.thread.is_alive())
 if __name__=='__main__':unittest.main()
+
+
+@unittest.skipUnless(ROS,'requires Jazzy messages')
+class PlatformFixtureClockTests(unittest.TestCase):
+ def test_discovery_holds_clock_until_first_safe_sample_is_admitted(self):
+  from types import SimpleNamespace
+  fixture=PlatformWireTests.__new__(PlatformWireTests);sent=[]
+  fixture.ns=2_000_000_000;fixture.source_ready=False;fixture.paused=False;fixture.sending=True;fixture.vx=0.
+  fixture.p=SimpleNamespace(guard=SimpleNamespace(samples={}),engine_command=lambda stamp:(None,None),clock_pub=SimpleNamespace(publish=lambda m:sent.append(('clock',m.clock.sec,m.clock.nanosec))))
+  fixture.pub=SimpleNamespace(publish=lambda m:sent.append(('safe',m.header.stamp.sec,m.header.stamp.nanosec)))
+  fixture.send();fixture.send()
+  self.assertEqual(fixture.ns,2_000_000_000)
+  self.assertEqual({(r[1],r[2]) for r in sent},{(2,0)})
+  fixture.p.guard.samples['safe']={};fixture.send()
+  self.assertEqual(fixture.ns,2_020_000_000)

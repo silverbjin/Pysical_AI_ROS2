@@ -1,5 +1,6 @@
 """Standard actions with engine-measured completion and a sole PD target slot."""
 import math
+from ch13_navigation_reuse.callback_timing import timed_callback
 import time
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
@@ -246,6 +247,7 @@ class ActionBridge:
             else:active['settle_since']=None
             if sim_s-active['start']>8. and not active['stopping']:active['stop_request']='gripper_timeout'
 
+    @timed_callback('action.monitor')
     def monitor(self):
         for action in (ARM,GRIPPER):
             if self.node.count_publishers(action+'/_action/status')>1:

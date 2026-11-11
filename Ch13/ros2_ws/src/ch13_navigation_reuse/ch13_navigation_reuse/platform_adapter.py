@@ -20,10 +20,12 @@ from .command_gateway import N,JOINT_NAMES,ns,gid,set_stamp
 from .safety import Guard
 from .state_adapter import adapt
 from .wire import decode
+from .callback_timing import CallbackTiming,timed_callback
 
 class Platform(Node):
     def __init__(self):
         super().__init__('ch13_reuse_platform')
+        self.callback_timing=CallbackTiming() if os.environ.get('CH13_CALLBACK_TIMING')=='1' else None
         self.lock=threading.RLock();self.guard=Guard(required=('safe',),control='safe')
         self.stationary_ready=False;self.stationary_start=None;self.last_capture_wall=None;self.pending_arm=0.;self.last_arm_wall=-1e9
         self.allow_tf_broadcasters=False;self.stop_requested=False;self.last_state=None;self.previous_mode=None;self.events=[]
@@ -78,6 +80,7 @@ class Platform(Node):
         return SetParametersResult(successful=True)
     def ready_now(self):
         return self.stationary_ready and self.last_capture_wall is not None and 0<=time.monotonic()-self.last_capture_wall<=.30
+    @timed_callback('platform.monitor')
     def monitor(self):
         queried_wall=time.monotonic()
         counts={'clock':self.count_publishers('/clock'),'safe':self.count_publishers(N+'/cmd_vel_safe'),'relay':self.count_publishers(N+'/ingress/platform')}
@@ -275,6 +278,7 @@ def main():
     finally:
         if p is not None and hasattr(p,'_ch13_pick'):S['pick_physics']=p._ch13_pick.summary()
         if node is not None and node.manipulation is not None:S['manipulation']=node.manipulation.summary()
+        if node is not None and node.callback_timing is not None:S['callback_timing']=node.callback_timing.summary()
         if scheduler is not None:S['scheduler']=scheduler.summary()
         if sensors is not None:
             S['camera_worker_joined']=sensors.close()

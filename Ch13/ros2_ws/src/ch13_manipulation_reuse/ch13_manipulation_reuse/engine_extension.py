@@ -8,6 +8,7 @@ from std_msgs.msg import String
 from ch13_navigation_reuse.command_gateway import N
 from ch13_navigation_reuse.wire import decode
 from .lease import Lease
+from ch13_navigation_reuse.callback_timing import timed_callback
 
 CHANNELS=('mission_lease','manipulation_observation','manipulation_navigation','manipulation_gateway','manipulation_goals')
 
@@ -38,6 +39,7 @@ class EngineExtension:
         from .action_bridge import ActionBridge
         self.actions = ActionBridge(self)
 
+    @timed_callback('manipulation.packet',channel_index=1)
     def packet(self, packet, channel):
         with self.node.lock:
             try:
@@ -71,6 +73,7 @@ class EngineExtension:
             except (ValueError,TypeError,KeyError) as exc:
                 self.lease.trip('INVALID_MANIPULATION_INGRESS:'+str(exc))
 
+    @timed_callback('manipulation.monitor')
     def monitor(self):
         now = time.monotonic()
         counts = {key:self.node.count_publishers(topic) for key,topic in (

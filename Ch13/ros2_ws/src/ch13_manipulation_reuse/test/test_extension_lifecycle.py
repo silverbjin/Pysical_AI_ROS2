@@ -62,3 +62,23 @@ def test_freshness_clock_is_sampled_after_receipt_lock(monkeypatch):
                    {'stamp_ns':1_000_000_000,'yaw':0.},0.)
     assert observed['navigation_idle']
     assert observed['now']==10.001
+
+
+def test_diagnostic_spans_preserve_real_monitor_status_and_ownership_counts():
+    from ch13_navigation_reuse.callback_timing import CallbackTiming
+    from ch13_manipulation_reuse.action_bridge import ActionBridge
+    import json
+    published=[]
+    node=SimpleNamespace(lock=threading.RLock(),callback_timing=CallbackTiming(),count_publishers=lambda topic:1)
+    extension=EngineExtension.__new__(EngineExtension);extension.node=node
+    extension.lease=Lease('engine');extension.status={'phase':'WAITING','fault':''}
+    extension.channels=('mission_lease','manipulation_observation')
+    extension.publisher=SimpleNamespace(publish=lambda msg:published.append(json.loads(msg.data)))
+    bridge=ActionBridge.__new__(ActionBridge);bridge.node=node;bridge.extension=extension;bridge.feedback=None
+    extension.actions=bridge
+    extension.monitor()
+    assert published==[{'phase':'WAITING','fault':''}]
+    assert extension.lease.fault=='' and all(v==1 for v in extension.graph.values())
+    spans=node.callback_timing.summary()['rows']
+    assert [r['name'] for r in spans]==['action.monitor','manipulation.monitor']
+    assert spans[1]['start_wall']<=spans[0]['start_wall']<=spans[0]['end_wall']<=spans[1]['end_wall']
