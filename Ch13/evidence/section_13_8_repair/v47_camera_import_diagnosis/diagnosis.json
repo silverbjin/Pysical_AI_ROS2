@@ -1,0 +1,81 @@
+{
+  "scope": "isolated saved-pose first-callback initialization measurement; no physics/action/lease; not live mission success",
+  "input_case": "09fda61e-5f05-4719-8f9b-9241409e74eb",
+  "source_manifest": "section_13_8_system_v46.json",
+  "source_manifest_sha256": "971ba2f72643070a08b0bbd9885af690134eabbef69e554d038166908857589e",
+  "pose_sim_window_s": [
+    82,
+    86
+  ],
+  "runs": {
+    "lazy": {
+      "boot_id": "e68f5c48-8b58-435c-a1c3-03c4c0ecfb95",
+      "imports": [
+        {
+          "name": "ch13_manipulation_reuse.cylinder_vision",
+          "start_wall": 6912.989377686,
+          "end_wall": 6913.399611032,
+          "cpu_s": 0.17859130000000012
+        }
+      ],
+      "max_tick_wall_s": 0.4136312549999275,
+      "max_health_validation_gap_s": 0.4217337050004062,
+      "accepted": 0,
+      "rejected": {
+        "cylinder not observed": 106
+      },
+      "component_result": "FAIL",
+      "child_exits": [
+        {
+          "name": "vision",
+          "returncode": 0,
+          "forced": false
+        },
+        {
+          "name": "ingress",
+          "returncode": 0,
+          "forced": false
+        }
+      ],
+      "camera_joined": true,
+      "raw_vision_summary_sha256": "d39986fbfe0c2f2ab04917834f7733e1563545645eb4cbcc9f4807c122285575"
+    },
+    "preload": {
+      "boot_id": "e68f5c48-8b58-435c-a1c3-03c4c0ecfb95",
+      "imports": [
+        {
+          "name": "ch13_manipulation_reuse.cylinder_vision",
+          "start_wall": 6971.988462402,
+          "end_wall": 6972.221345841,
+          "cpu_s": 0.1491192
+        }
+      ],
+      "max_tick_wall_s": 0.00471869200009678,
+      "max_health_validation_gap_s": 0.13581892900037928,
+      "accepted": 0,
+      "rejected": {
+        "cylinder not observed": 93
+      },
+      "component_result": "FAIL",
+      "child_exits": [
+        {
+          "name": "vision",
+          "returncode": 0,
+          "forced": false
+        },
+        {
+          "name": "ingress",
+          "returncode": 0,
+          "forced": false
+        }
+      ],
+      "camera_joined": true,
+      "raw_vision_summary_sha256": "71ec295c5d9d51d91a0d8b70558fa39174f3ceb698f5b2d7b23833a7d63b0404"
+    }
+  },
+  "scripts": {
+    "vision_callback_probe_v47.py": "f6fe44df25bdcaa47c1846bdd1c643d36b4f86b22bf8f19bda53852ebbb80c59",
+    "probe_saved_camera_callback_v47.py": "23d85f986237077b634b09e8c439f74905f38eb0597b1ab4d4f28b9609d2607f"
+  },
+  "limit": "Both legacy component verdicts remain FAIL because these saved poses do not reveal the target (accepted 0); this comparison measures first import latency only. Long-running v45/v46 expiration is unresolved."
+}

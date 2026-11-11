@@ -2,6 +2,7 @@
 import argparse,hashlib,json,math,time,os
 from pathlib import Path
 from collections import Counter
+from types import SimpleNamespace
 import numpy as np
 from scipy.spatial.transform import Rotation
 import rclpy
@@ -18,12 +19,19 @@ from .command_gateway import N,ns,set_stamp
 from .wire import decode
 from .vision_geometry import FrameCache,admissible,red_point
 from .image_artifact import write_rgb
+from .callback_timing import CallbackTiming,timed_callback
 
 def matrix(t):
  q=t.transform.rotation;p=t.transform.translation;a=np.eye(4);a[:3,:3]=Rotation.from_quat([q.x,q.y,q.z,q.w]).as_matrix();a[:3,3]=[p.x,p.y,p.z];return a
 class VisionObserver(Node):
  def __init__(self,inference_hz=10.,target_shape='fixture',latest_camera=False):
+  self.callback_timing=CallbackTiming() if os.environ.get('CH13_CALLBACK_TIMING')=='1' else None
   self.target_shape=target_shape;self.last_rejected=None;self.latest_camera=latest_camera
+  self.cylinder_fit=None
+  if target_shape=='cylinder':
+   # Prepare scipy/model imports before subscribing or publishing first health.
+   from ch13_manipulation_reuse.cylinder_vision import fit_cylinder
+   self.cylinder_fit=fit_cylinder
   self.filter_boundary=False
   self.robust_consensus=os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
   self.allow_unobserved_target=False
@@ -42,6 +50,7 @@ class VisionObserver(Node):
     self.create_subscription(String,N+'/ingress/'+channel,lambda m,key=channel:self.packet(m,key),qos)
   else:self.create_subscription(String,N+'/ingress/navigation',lambda m:self.packet(m,'navigation'),16)
   self.create_timer(.02,self.tick,clock=TimerClock(clock_type=ClockType.STEADY_TIME))
+ @timed_callback('vision.native',channel_index=0)
  def native(self,kind,message):
   self.native_counts[kind]+=1
   try:
@@ -58,6 +67,7 @@ class VisionObserver(Node):
    # Single-threaded executor: process an eligible complete frame immediately.
    # tick retains the original inference cap, capture/receipt and TF checks.
    self.tick()
+ @timed_callback('vision.packet',channel_index=1)
  def packet(self,packet,channel):
   self.packet_counts[channel]+=1
   try:
@@ -86,6 +96,7 @@ class VisionObserver(Node):
      self.transforms[ts[0]]=self.map_odom@matrix(edges[needed[0]])@matrix(edges[needed[1]])@matrix(edges[needed[2]])
      while len(self.transforms)>120:del self.transforms[min(self.transforms)]
   except (ValueError,TypeError,KeyError) as exc:self.fault=str(exc)
+ @timed_callback('vision.tick')
  def tick(self):
   now=time.monotonic()
   if not self.fault and not self.cache.fault:
@@ -115,9 +126,7 @@ class VisionObserver(Node):
       rgb=np.frombuffer(rgb_bytes,dtype=np.uint8).reshape(240,320,3);depth=np.frombuffer(bytes(depthm.data),dtype='<f4').reshape(240,320);calibration=[info.k[0],info.k[4],info.k[2],info.k[5]];transform=self.transforms[tf_stamp]
       fit=None
       if self.target_shape=='cylinder':
-       from ch13_manipulation_reuse.cylinder_vision import fit_cylinder
-       from types import SimpleNamespace
-       fit=fit_cylinder(rgb,depth,calibration,transform,.02,.08,filter_boundary=self.filter_boundary,robust_consensus=self.robust_consensus)
+       fit=self.cylinder_fit(rgb,depth,calibration,transform,.02,.08,filter_boundary=self.filter_boundary,robust_consensus=self.robust_consensus)
        optical=np.array(fit['optical_center']);world=np.array(fit['center']);box=SimpleNamespace(**fit['box'])
       else:
        optical,box=red_point(rgb,depth,calibration);world=transform[:3,:3]@optical+transform[:3,3]
@@ -135,12 +144,14 @@ class VisionObserver(Node):
   initial=reason=='cylinder not observed' and self.allow_unobserved_target
   if reason in ('red fixture not observed','cylinder not observed') and not initial:self.fault='TARGET_NOT_OBSERVED'
  def diagnostics(self):
-  return dict(native_callbacks=dict(self.native_counts),ingress_callbacks=dict(self.packet_counts),
+  report=dict(native_callbacks=dict(self.native_counts),ingress_callbacks=dict(self.packet_counts),
    matched_camera_samples=len(self.receipt_rows),pending_native_by_kind=dict(Counter(k[0] for k in self.camera_link.payloads)),
    pending_receipts_by_kind=dict(Counter(k[0] for k in self.camera_link.receipts)),
    camera_owners=dict(self.camera_link.owners),relay=self.camera_link.relay,
    cached_frames=len(self.cache.frames),tf_samples=len(self.transforms),clock_ns=self.clock_ns,
    last_processed_ns=self.last_processed,last_health_ns=self.last_health)
+  if self.callback_timing is not None:report['callback_timing']=self.callback_timing.summary()
+  return report
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--report',required=True);ap.add_argument('--inference-hz',type=float,choices=[10.,15.],default=10.);ap.add_argument('--target-shape',choices=['fixture','cylinder'],default='fixture');ap.add_argument('--latest-camera',choices=['true','false'],default='false');args=ap.parse_args();out=Path(args.report).parent;rclpy.init(args=[]);node=VisionObserver(args.inference_hz,args.target_shape,args.latest_camera=='true')
  try:rclpy.spin(node)
