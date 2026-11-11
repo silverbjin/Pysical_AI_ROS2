@@ -56,6 +56,9 @@ def work(*,node,until,snapshot,status,control,out,case='pick',action_client_fact
             from ch13_system_validation.worlds import planning_objects
             objects += planning_objects(active_scenario())
         objects.append(object_cylinder('pick_target',center));planner.apply_objects(objects)
+        if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
+            from ch13_system_validation.planning_clearance import apply_pregrasp_clearance
+            apply_pregrasp_clearance(planner,active_scenario())
         root=snapshot()['state'].pose.pose.position
         forward=center-np.array([root.x,root.y,center[2]]);forward/=np.linalg.norm(forward)
         up=np.array([0.,0.,1.]);side=np.cross(up,forward)

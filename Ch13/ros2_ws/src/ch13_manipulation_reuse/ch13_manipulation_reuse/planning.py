@@ -104,10 +104,14 @@ class Planner:
 
     def scene_hash(self):
         request=GetPlanningScene.Request()
-        request.components.components=(PlanningSceneComponents.WORLD_OBJECT_GEOMETRY|PlanningSceneComponents.ALLOWED_COLLISION_MATRIX|PlanningSceneComponents.ROBOT_STATE_ATTACHED_OBJECTS)
+        request.components.components=(PlanningSceneComponents.WORLD_OBJECT_GEOMETRY|PlanningSceneComponents.ALLOWED_COLLISION_MATRIX|PlanningSceneComponents.ROBOT_STATE_ATTACHED_OBJECTS|PlanningSceneComponents.LINK_PADDING_AND_SCALING)
         scene=self.call('/get_planning_scene',request).scene
         value=dict(world=message_to_ordereddict(scene.world),acm=message_to_ordereddict(scene.allowed_collision_matrix),
                    attached=[message_to_ordereddict(x) for x in scene.robot_state.attached_collision_objects])
+        padding=sorted((x.link_name,x.padding) for x in scene.link_padding if x.padding!=0.)
+        scaling=sorted((x.link_name,x.scale) for x in scene.link_scale if x.scale!=1.)
+        if padding or scaling:
+            value['link_padding_and_scaling']=dict(padding=padding,scaling=scaling)
         return hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest()
 
     def apply_objects(self,objects):
