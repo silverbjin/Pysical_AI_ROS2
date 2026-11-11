@@ -45,3 +45,11 @@ v41 기본 사례586327fb-5fd7-4280-bf0a-d3091fbceec1은survey를통과하고최
 동일v41소스의기존CH13_CAPTURE_OVERLAP=1단일진단5576989e-4e60-4556-bfe5-687a1419c48e는survey/최종접근/find와ramp실제접촉251.49N을확인한뒤normal warmup의20wall결과대기가먼저끝났다. 실제arm은59.888sim/7652.222wall시작,20.047wall뒤cancel ACK,약7.774wall뒤실제CANCELED였다.4sim경로가끝나기전에client가취소했다. DeferredClients5wall회수도미확정이므로정상action회수라하지않는다. engine은최종SIGINT로중단됐고11/12clean·최종OS잔여[]/lockfree다. 두사례독립FAIL/source/archive/config를보존했다. overlap1은명시적실험설정이며기본강건성증거가아니다.
 
 v42 RED실제warmup호출자1FAIL/12.99초→GREEN1PASS/2.40초. carry_v1정상준비동작만기존server240wall상한내에서실제result를기다린다. legacy와cancel/loss20wall은유지한다. 원래4sim경로·PD/속도·접촉·실제terminal판정은유지했다. REFACTOR는arm/gripper대기예산공유와기록,legacy경계추가다. full470PASS/77.78초,snapshotf8f9f9aee21a496a8fee06306c966aae. REVIEW에서결과대기연결만변경함을확인했다. 준비시험삭제·새제어기·executor변경은없다. 다음COMMIT→공개CI→v42실제Level2이며명시적overlap1진단설정을기록한다.
+
+## v42 준비 동작 통과·v43 기존 관측 처리율 연결
+
+v42 actual d8d65f1a-a736-46ea-863b-bfe28ce45fd9는준비팔/양gripper정상terminal과PRE_GRASP계획까지진행했다. arm은62.536sim/3233.911wall시작→3255.627wall정상terminal로20wall을넘었지만기존경로/판정그대로성공했다. 이후arm실행거부의최초원인은OBSERVATION_EXPIRED다. 첫FAULT69968000000/3268.335954087에서원본capture69962000000/capture_wall3268.034249846의age301.704ms였다. 다음관측69964000000은3268.333010138에추론을마쳤다. 최종status에남은오래된관측을2.6초backlog라고오독하지않고최초fault event로원인을분리했다. 실제관측기수신은계속됐고기존faultlatch를해제하지않았다. 12child정상회수/잔여[]/lockfree. raw21,735,621bytes/SHA64d8cdadf7f7feb49ae620879aa6f6143e54856d5fe55d221832f07dfb5723f7.
+
+도서범위최소보완으로새executor나인식기를만들지않고기존run_navigation_probe의지원값10/15Hz를기존session→worker에전달한다. Level2만10Hz를선택하고다른Level·13.7기본은15Hz유지,300ms/TF100ms·health·접촉기준은유지한다. 처리부하감소가실제상한을보장한다고주장하지않으며새실제gate로확인한다. scenario.record에실제선택처리율을남겨조건을숨기지않는다. CH13_CAPTURE_OVERLAP=1은계속명시적기존실험설정이다.
+
+RED9FAIL/3.72초→GREEN9PASS/2.69초→REFACTOR기존worker인자구성함수로한정→full478PASS/71.49초(snapshot5822bf69b28247e79b75e66d7112d762). REVIEW: 지원값외거부·legacy15보존·동일owner/명령·시간/안전기준불변·인자전달경계를확인했다. 공개CI기존portable시험도새Level2처리율선택을검사한다. 다음COMMIT→공개CI→v43실제인수다. 전체성공/Owner인수는아직미완료이며물리기준이나도서목표를낮춰완료처리하지않는다.

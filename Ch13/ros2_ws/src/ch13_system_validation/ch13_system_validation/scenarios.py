@@ -30,10 +30,12 @@ class Scenario:
     def planning_support(self):return 'ground' if self.support_height_m==0. else 'reuse_receiving_support'
     @property
     def level(self):return 'continuous_development_fixture' if self.name=='development' else self.name
+    @property
+    def vision_hz(self):return 10 if self.name=='level2_obstacles' else 15
     def record(self):
         from .worlds import elements
         mode='experimental_se2' if self.name in ('level2_obstacles','level3_house') and os.environ.get('CH13_EXPERIMENTAL_SE2')=='1' else 'baseline_navfn'
-        return dict(asdict(self),world_geometry=[g.record() for g in elements(self)],navigation_profile=mode)
+        return dict(asdict(self),world_geometry=[g.record() for g in elements(self)],navigation_profile=mode,vision_inference_hz=self.vision_hz)
 
     def receiving_support_ready(self,force,observation):
         if type(force) not in (int,float) or not math.isfinite(force) or force<=.01:return False

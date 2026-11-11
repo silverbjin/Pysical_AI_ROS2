@@ -20,6 +20,14 @@ from ch13_mission_orchestration.session import Session
 from ch13_mission_orchestration.tools import lift_interrupt
 
 
+def navigation_arguments(root,out,session):
+    """Forward only the existing bounded inference choices to the same owner."""
+    hz=getattr(session,'vision_hz',15)
+    if type(hz) is not int or hz not in (10,15):
+        raise ValueError('supported inference rate must be 10 or 15 Hz')
+    return ['--repo-root',str(root),'--evidence',str(out),'--case','vision','--vision-hz',str(hz)]
+
+
 def main(argv=None,*,mission_factory=Mission,session_factory=Session,port_factory=TaskPort,
          pick_continuation=None,configure=None):
     ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True)
@@ -39,7 +47,7 @@ def main(argv=None,*,mission_factory=Mission,session_factory=Session,port_factor
                     continuation=None if pick_continuation is None else lambda **items:pick_continuation(session=session,call=context['call'],**items)
                     session.pick_work(lambda **items:work(**items,out=out,continuation=continuation),evidence=out,**kw)
                 return handoff(**context,case='bt',work=pick)
-            code=navigate(['--repo-root',str(root),'--evidence',str(out),'--case','vision','--vision-hz','15'],
+            code=navigate(navigation_arguments(root,out,session),
                 planning=True,pick_scene=True,handoff=manipulate,orchestration=session)
             worker_result['exit_code']=code
             if code:port.fail('owned robot session failed; see navigation_summary.json')

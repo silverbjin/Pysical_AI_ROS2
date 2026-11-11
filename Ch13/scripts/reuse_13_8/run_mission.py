@@ -43,6 +43,7 @@ def main():
 
     class ValidationSession(Session):
         engine_budget_sim_s=600.
+        vision_hz=scenario.vision_hz
         def ready(self,**context):
             from ch13_system_validation.startup import prepare_manipulation_types
             # All of this stays on the ROS owner before a manipulation OFFER.
