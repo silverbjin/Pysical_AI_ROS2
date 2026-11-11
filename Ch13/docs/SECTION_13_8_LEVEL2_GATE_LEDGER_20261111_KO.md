@@ -128,7 +128,7 @@ v46 저장 자세82~86sim초를 별도domain136에서 재현했다. physics/poli
 
 engine COMPLETED/normal shutdown true,12child 정상 회수·worker/port/rosbag 완료·잔여[]/lockfree다. raw13,528,247bytes/SHAbaa1567a543cdfb736aacf7849d79879e49f2a2edf0a5e1f589c8f0bda3fbd26/source_v47 정확 바이트 보존 PASS. 정상 완주/Owner 인수는 계속 보류. 다음 명세7f569e52는 기존 overlap1 요청을 Scan 앞에 보내는 최소 순서 보완이며 임계값이나 executor 변경이 아니다.
 
-## v48 撮영 요청 순서 보완 RED→GREEN→REFACTOR→REVIEW
+## v48 촬영 요청 순서 보완 RED→GREEN→REFACTOR→REVIEW
 
 명세7f569e52는 촬영 시각 치환 없이 기존 opt-in overlap1의 불변 snapshot 요청만 Scan보다 앞에 보낸다. 설치 MuJoCo3.13.0 공식 doc/python.rst의 내부 배열 직접 참조/필요 시 copy 패턴을 확인했고 기존 CameraWorker 계약을 그대로 쓴다. 기본 overlap0에서는 기존 Scan→state→요청 순서를 유지한다. Scan 비용을 요청 이전 전체 시간과 별도로 재는 측정 경계도 정리했다.
 
