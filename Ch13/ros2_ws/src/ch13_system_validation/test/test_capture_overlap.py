@@ -34,3 +34,25 @@ def test_overlap_is_experimental_opt_in_after_actual_survey_regression(monkeypat
                           cam_quat=np.array([[1.,0.,0.,0.]]))
     suite=SensorSuite(model,SimpleNamespace(qpos=np.zeros(34)),'vision','unused',latest_camera=True)
     assert suite.overlap_capture is (enabled=='1')
+
+
+def test_overlap_submits_original_snapshot_before_measured_scan_delay(monkeypatch,tmp_path):
+    clock=[10.];submitted=[];events=[]
+    monkeypatch.setattr(sensors,'time',SimpleNamespace(monotonic=lambda:clock[0]))
+    def scan(*args):events.append('scan');clock[0]+=.042;return [1.]*181
+    monkeypatch.setattr(sensors,'ray_scan',scan)
+    suite=SensorSuite(None,None,'free',tmp_path,latest_camera=True);suite.overlap_capture=True
+    def offer(q,stamp,source_wall):
+        events.append('capture');submitted.append((q,stamp,source_wall,clock[0]));return True
+    def publish(*args):events.append('state');clock[0]+=.088
+    suite.camera=SimpleNamespace(offer=offer);suite.node=SimpleNamespace(publish_state=publish)
+    suite.scan_pub=SimpleNamespace(publish=lambda msg:None)
+    q=np.array([1.,2.]);platform=SimpleNamespace(mjModel=None,mjData=SimpleNamespace(qpos=q))
+    suite.step(platform,dict(stamp_ns=1234));q[0]=99.
+    assert events==['capture','scan','state']
+    assert submitted[0][1:]==(1234,10.,10.)
+    np.testing.assert_array_equal(submitted[0][0],[1.,2.])
+    row=suite.capture_stage_timing[-1]
+    assert row['capture_wall']==10. and row['pre_offer_wall_s']==0.
+    assert row['scan_wall_s']==pytest.approx(.042)
+    assert row['state_publish_wall_s']==pytest.approx(.088)

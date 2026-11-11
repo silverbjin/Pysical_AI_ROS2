@@ -47,16 +47,21 @@ class SensorSuite:
  def step(self,p,state):
   stamp=state['stamp_ns'];sim=stamp/1e9;wall=time.monotonic()
   scan_wall_s=0.
+  capture_due=self.camera is not None and wall>=self.next_rgb
+  capture_first=capture_due and getattr(self,'overlap_capture',False)
+  if capture_first:
+   # Preserve this exact engine snapshot/time before synchronous scan work.
+   q=p.mjData.qpos.copy();offer_start=time.monotonic()
+   self.request_capture(q,stamp,wall);offer_end=time.monotonic()
   if wall>=self.next_scan:
+   scan_start=time.monotonic()
    self.next_scan=wall+.1;m=LaserScan();set_stamp(m.header.stamp,stamp);m.header.frame_id='reuse/scan';m.angle_min=-math.pi;m.angle_max=math.pi;m.angle_increment=2*math.pi/180;m.range_min=.05;m.range_max=4.;m.scan_time=0. if self.last_scan_ns is None else (stamp-self.last_scan_ns)/1e9;self.last_scan_ns=stamp;m.ranges=ray_scan(p.mjModel,p.mjData);self.scan_pub.publish(m);self.scans+=1
-   scan_wall_s=time.monotonic()-wall
-  if self.camera is not None and wall>=self.next_rgb:
-   self.next_rgb=wall+1/15.;q=p.mjData.qpos.copy()
-   if getattr(self,'overlap_capture',False):
-    offer_start=time.monotonic();self.request_capture(q,stamp,wall);offer_end=time.monotonic()
-    state_start=time.monotonic();self.node.publish_state(p,state);state_end=time.monotonic()
-   else:
-    state_start=time.monotonic();self.node.publish_state(p,state);state_end=time.monotonic()
+   scan_wall_s=time.monotonic()-scan_start
+  if capture_due:
+   self.next_rgb=wall+1/15.
+   if not capture_first:q=p.mjData.qpos.copy()
+   state_start=time.monotonic();self.node.publish_state(p,state);state_end=time.monotonic()
+   if not capture_first:
     offer_start=time.monotonic();self.request_capture(q,stamp,wall);offer_end=time.monotonic()
    finished=time.monotonic()
    if self.latest_camera:
