@@ -8,7 +8,7 @@ from ch13_system_validation.scenarios import get_scenario
 
 def test_level2_observes_before_the_saved_late_rotation_without_relaxing_goal():
     scenario=get_scenario('level2_obstacles')
-    assert scenario.survey_pose==pytest.approx((1.75,-.2,math.atan2(1.2,1.25)))
+    assert scenario.survey_pose==pytest.approx((1.65,-.3,math.atan2(1.3,1.35)))
     assert scenario.target_xyz==(3.,1.,.54)
     assert scenario.approach_standoff_m==.8
     assert get_scenario('level3_house').survey_pose==pytest.approx((1.9,.4,math.atan2(.6,1.1)))

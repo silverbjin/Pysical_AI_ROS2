@@ -15,3 +15,11 @@
 ## 장애 계층 구분
 
 호스티드 실행 실패는 runner_id/steps/log/artifact로 별도 판독하며 내부 GitHub 원인을 단정하지 않는다. Scan rosbag RX gap과 monotonic callback 지터를 혼동하지 않는다. read-only 관측의 지터만으로 안전정지를 완화하지 않는다. 현재13.8은 native ground-truth localization profile이며 별도 Supervisor/localization manager45초 정지의 선행 증거는 없다. 사용자 지침을 그 문제가 여기서 발생했다는 진단으로 바꾸지 않는다. 해당현상 발생 시 발견/manager callback/node lifecycle/응답전달을 나눠 측정한다. executor/임계값 조정은 하지 않았다.
+
+## v38 실제 실패 후 v39 경로 구조 재검토
+
+공개CI run42940490924/head96f0a462/job130260857460/runner1000005163은실제steps8개와success를확인했다. v38source391/assets94 SHA bcce909f80f0dc9c461f0b9dc3526452808dfb5a7be24a992b4090102fc7b8d6로actual858e39ed-05d5-408d-ad42-8e2d3c21a211을실행했으나survey deadline FAIL/12child clean/잔여[]/lockfree였다. 기존 ACTIVE/fault빈값 뒤wall만료로cancel됐으며Supervisor/Scan/lifecycle 문제로전용하지않는다. raw12,186,909bytes/SHA350a4f00ea7c75bd7027b1bcd50a556e370f0646ebaec23e3f3d9a4c39f44a03,sourcearchive69d98d4a861274d86955259b34c144844cf2ac06375229633f5287e8ee9ff13d.
+
+같은deadline재발로지점거리가아닌경로접선과최종방향의관계를재검토했다. 실제v38경로에서첫60mm진입은기존후보(1.75,-.2)가34.48sim/방향오차.533517rad,이전후보(1.65,-.3)는27.22sim/방향오차.001825rad였다. 두후보의RGB-D static fit은이미통과했다. 따라서위치와방향을함께충족하는후보를선택한다. 안전기준/120wall/yaw.06/XY.06/최종점수/동역학변경없음.
+
+RED: 새후보계약1FAIL/3.11초. GREEN: native full460PASS/65.91초,snapshotcomponent_source_ca69f342ea7a4c1f976aec9fc3bcefec. REFACTOR: 기존_survey_pose추상화에좌표만전달하므로추가구조변경불필요로판단했다. REVIEW: 자체diff2행과회귀/filled footprint/렌더검사를검토했고원본target/world와L3불변을확인했다. 독립review를수행했다고쓰지않는다. 다음COMMIT→새head공개CI→새동결실제인수검증순서다. 아직Level2완료가아니다.

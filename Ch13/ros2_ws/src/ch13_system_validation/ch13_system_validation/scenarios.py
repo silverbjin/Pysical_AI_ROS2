@@ -57,7 +57,7 @@ SCENARIOS=MappingProxyType({
     'level1_floor':Scenario('level1_floor',(2.,0.,.04),(-.6,0.,.04),0.,(.4,.4,.29),-40.,-35.,30.,.06,.6),
     'level2_obstacles':Scenario('level2_obstacles',(3.,1.,.54),(-.8,0.,.54),.5,
         TRANSPORT_CAMERA_POS,TRANSPORT_CAMERA_YAW_DEG,TRANSPORT_CAMERA_PITCH_UP_DEG,0.,.12,.8,
-        'obstacles',_survey_pose(1.75,-.2),(0.,)),
+        'obstacles',_survey_pose(1.65,-.3),(0.,)),
     'level3_house':Scenario('level3_house',(3.,1.,.04),(-.6,0.,.04),0.,(.4,.4,.29),-40.,-35.,30.,.03,.6,
         'house',_survey_pose(1.9,.4),(0.,)),
 })
