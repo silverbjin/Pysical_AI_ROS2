@@ -16,6 +16,7 @@ jobs:
             Ch13/ros2_ws/src/ch13_system_validation
             Ch13/ros2_ws/src/ch13_navigation_reuse
             Ch13/ros2_ws/src/ch13_mission_orchestration
+            Ch13/scripts/reuse_13_8
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -24,4 +25,4 @@ jobs:
       - name: Check Level 2 waypoint and filled footprint
         env:
           PYTHONPATH: Ch13/ros2_ws/src/ch13_system_validation:Ch13/ros2_ws/src/ch13_navigation_reuse:Ch13/ros2_ws/src/ch13_mission_orchestration
-        run: python -m pytest -q -p no:cacheprovider Ch13/ros2_ws/src/ch13_system_validation/test/test_level2_survey_route.py Ch13/ros2_ws/src/ch13_system_validation/test/test_survey_budget.py Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_callback_timing.py
+        run: python -m pytest -q -p no:cacheprovider Ch13/ros2_ws/src/ch13_system_validation/test/test_level2_survey_route.py Ch13/ros2_ws/src/ch13_system_validation/test/test_survey_budget.py Ch13/ros2_ws/src/ch13_navigation_reuse/test/test_callback_timing.py Ch13/ros2_ws/src/ch13_system_validation/test/test_metrics.py Ch13/ros2_ws/src/ch13_system_validation/test/test_education_criteria.py Ch13/ros2_ws/src/ch13_system_validation/test/test_level23_evaluation.py

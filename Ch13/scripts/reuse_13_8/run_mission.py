@@ -16,11 +16,15 @@ from statistics import mean
 
 def main():
     from ch13_system_validation.scenarios import SCENARIOS,get_scenario
+    from ch13_system_validation.criteria import PROFILES,get_criteria
     ap=argparse.ArgumentParser();ap.add_argument('--repo-root',required=True);ap.add_argument('--evidence',required=True)
     ap.add_argument('--manifest',required=True)
     ap.add_argument('--auto-start',action='store_true');ap.add_argument('--no-bag',action='store_true')
     ap.add_argument('--scenario',choices=tuple(SCENARIOS),default='development')
+    ap.add_argument('--criteria-profile',choices=tuple(PROFILES),default='education_v1',
+                    help='Performance evaluation policy (default: education_v1); safety is unchanged')
     args=ap.parse_args();root=Path(args.repo_root).resolve();out=Path(args.evidence).resolve()
+    criteria=get_criteria(args.criteria_profile)
     manifest=Path(args.manifest).resolve()
     subprocess.run([sys.executable,str(root/'Ch13/scripts/reuse_13_8/freeze_runtime.py'),'verify',str(manifest)],check=True)
     os.environ['CH13_VALIDATION_PROFILE']='carry_v1'
@@ -74,6 +78,7 @@ def main():
     def configure(node,mission):
         (out/'source_manifest.json').write_bytes(manifest.read_bytes())
         (out/'scenario.json').write_bytes(scenario_bytes)
+        (out/'criteria.json').write_text(json.dumps(criteria.record(),indent=2)+'\n')
         stage=root.parent/'source_stage.json'
         if stage.exists():
             staged=json.loads(stage.read_text())
@@ -153,6 +158,7 @@ def main():
                 max_tilt_rad=max(tilts) if tilts else None,cpu_percent=mean(mission_cpu) if mission_cpu else None,
                 bag_closed=bag_closed,profile='actual',level=scenario.level,
                 scenario=scenario.name,scenario_sha256=hashlib.sha256(scenario_bytes).hexdigest(),
+                criteria_profile=criteria.profile,criteria=criteria.record(),
                 cpu_basis='owned process tree / sched_getaffinity cores',allowed_cores=cpu.cores)
             row.update(source_manifest_sha256=hashlib.sha256(manifest.read_bytes()).hexdigest(),physical=physics)
             (out/'trial.json').write_text(json.dumps(row,indent=2,allow_nan=False)+'\n')

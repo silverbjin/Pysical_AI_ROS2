@@ -4,6 +4,10 @@
 
 2026-11-12 현재: 사용자 지시에 따라 Level2 반복 튜닝은 중단했다. 기존 Level3를 변경 없이1회 확인해 문 통과·새 관측은 통과했으나 PRE_GRASP의 MoveIt 충돌 계획 검증에서 거절됐다. 파지·귀환·놓기 정상 완주는 미달이며 인수 보류다. 최신 판단은 [기준 검토·전환 보고](SECTION_13_8_STATUS_CRITERIA_LEVEL3_SWITCH_20261112_KO.md)와 [Level3 단일 검증 결과](SECTION_13_8_LEVEL3_BASELINE_RESULT_20261112_KO.md)를 우선한다. 원고의3cm/평균120초와 내부15mm·높이20mm 등의 추가 witness를 구분하며, 이 가이드 실행만으로 목표 달성을 보증하지 않는다.
 
+이후 같은 날짜의 사용자 정책 변경에 따라 새 교육용 평가는 `education_v1`을 사용한다. 목표는10회 중8회 이상 성공/성공 임무 평균600sim초 이하/최종 오차10cm 미만/측정 최대 기울기.15rad 미만/평균CPU85% 미만이다. 원고 기준 `book_v1`과 과거 FAIL은 보존한다. [정책 명세와 적용 범위](SECTION_13_8_EDUCATION_CRITERIA_SPEC_20261112_KO.md)를 참조한다. 충돌 검사·관측/입력 수명·실제 접촉·안전 종료와 내부 제어 설정은 이 평가 수치 변경으로 완화되지 않는다.
+
+새 단일 임무는 `--criteria-profile education_v1`(기본값)을 기록한다. 새 batch의 `prepare`도 기본 education_v1이며 plan에 수치까지 고정한다. 원고 비교용 새 batch는 prepare 때 `--criteria-profile book_v1`을 명시한다. run/report 때 다른 기준으로 전환할 수 없고 기존v1 plan은 book_v1로 계속 해석한다. 교육용 평균 시간/위치는 성공 임무만 계산하고 실패도 전체 성공률 분모에 남긴다. CPU/기울기는 실패를 포함한 유효 측정을 사용하며 표본 수를 공개한다. 기준 선택은 충돌 경로 실행이나 미완료 임무의 성공을 뜻하지 않는다.
+
 ## 1. 소스 확보와 환경
 
 현재 기준은 공개13.6이 아니라 로컬13.7의13ecb58d에서 확장한 feat/ch13-section-13-8이다. 13.8 branch는3447c9e8까지 원격 게시한 이력이 있다. 현재 최신 remote ref는 다시 확인하며 새 환경 다운로드/engine 재현 검증은 별도다. 기존 로컬 work/Pysical_AI_ROS2_13_8를 사용한다. sources/와 과거 worktree·증거를 수정하지 않는다.
