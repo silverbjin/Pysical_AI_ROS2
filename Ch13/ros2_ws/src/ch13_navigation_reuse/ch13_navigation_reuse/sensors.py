@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation
 from sensor_msgs.msg import LaserScan,Image,CameraInfo
 from std_msgs.msg import String
 from rclpy.qos import QoSProfile,ReliabilityPolicy
-from .scene import ray_scan,SCAN_POS,CAM_POS,OPTICAL_R
+from .scene import ray_scan,scan_backend,SCAN_POS,CAM_POS,OPTICAL_R
 from .command_gateway import N,set_stamp
 from .camera_worker import CameraWorker
 from .image_artifact import write_rgb
@@ -19,7 +19,7 @@ class HeadlessViewer:
  def close(self):self.closed=True
 class SensorSuite:
  def __init__(self,model,data,profile,out,latest_camera=False):
-  self.latest_camera=latest_camera
+  self.model=model;self.latest_camera=latest_camera
   self.overlap_capture=(latest_camera and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
       and os.environ.get('CH13_CAPTURE_OVERLAP')=='1')
   self.capture_stage_timing=deque(maxlen=256);self.capture_stage_total=0
@@ -76,4 +76,4 @@ class SensorSuite:
   if self.first is not None:write_rgb(self.out/'first_rgb.png',self.first[0]);np.save(self.out/'first_depth.npy',self.first[1])
   if self.latest_camera:
    (self.out/'capture_stage_timing.json').write_text(json.dumps(dict(scope='bounded last256 producer stages; original capture time unchanged',total=self.capture_stage_total,rows=list(self.capture_stage_timing)),indent=2)+'\n')
-  summary={'scan_origin':'mj_ray environment group5, body-fixed frame; explicit self/floor filter','camera_origin':'Renderer on immutable actual engine qpos snapshots; single worker/slot, source capture stamp/wall unchanged','scan_count':self.scans,'rgbd_count':self.frames,'camera_worker_joined':self.joined,'camera_worker_pid':None if self.camera is None else self.camera.worker_pid,'camera_tracker_pid':None if self.camera is None else self.camera.tracker_pid,'camera_worker_exit_code':None if self.camera is None else self.camera.process.exitcode,'camera_worker_error':'' if self.camera is None else self.camera.error,'overwritten_waiting_snapshots':0 if self.camera is None else self.camera.overwritten,'camera_pos_base_m':None if self.camera is None else self.camera_pos.tolist(),'camera_optical_quat_base_xyzw':None if self.camera is None else self.camera_quat.tolist(),'latest_camera':self.latest_camera,'overwritten_render_results':0 if self.camera is None else self.camera.output_dropped.value,'captures':self.meta};(self.out/'sensor_summary.json').write_text(json.dumps(summary,indent=2)+'\n');return self.joined
+  summary={'scan_origin':'MuJoCo geometry rays group5, body-fixed frame; explicit self/floor filter','scan_backend':scan_backend(self.model),'camera_origin':'Renderer on immutable actual engine qpos snapshots; single worker/slot, source capture stamp/wall unchanged','scan_count':self.scans,'rgbd_count':self.frames,'camera_worker_joined':self.joined,'camera_worker_pid':None if self.camera is None else self.camera.worker_pid,'camera_tracker_pid':None if self.camera is None else self.camera.tracker_pid,'camera_worker_exit_code':None if self.camera is None else self.camera.process.exitcode,'camera_worker_error':'' if self.camera is None else self.camera.error,'overwritten_waiting_snapshots':0 if self.camera is None else self.camera.overwritten,'camera_pos_base_m':None if self.camera is None else self.camera_pos.tolist(),'camera_optical_quat_base_xyzw':None if self.camera is None else self.camera_quat.tolist(),'latest_camera':self.latest_camera,'overwritten_render_results':0 if self.camera is None else self.camera.output_dropped.value,'captures':self.meta};(self.out/'sensor_summary.json').write_text(json.dumps(summary,indent=2)+'\n');return self.joined

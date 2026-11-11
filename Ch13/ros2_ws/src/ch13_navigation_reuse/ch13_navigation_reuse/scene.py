@@ -47,10 +47,34 @@ def make_model(source,profile,spec_hook=None):
  if spec_hook is not None:spec_hook(s)
  return s.compile()
 
+def scan_backend(model):
+ # Batch API is pinned, and the rotated-offset body culling issue is excluded.
+ if (mujoco.__version__!='3.13.0' or os.environ.get('CH13_VALIDATION_PROFILE')!='carry_v1'
+     or os.environ.get('CH13_VALIDATION_SCENARIO')!='level2_obstacles'
+     or not isinstance(model,mujoco.MjModel)):return 'mj_ray'
+ symmetric=(mujoco.mjtGeom.mjGEOM_SPHERE,mujoco.mjtGeom.mjGEOM_CAPSULE,
+            mujoco.mjtGeom.mjGEOM_ELLIPSOID,mujoco.mjtGeom.mjGEOM_CYLINDER,mujoco.mjtGeom.mjGEOM_BOX)
+ for body in np.unique(model.geom_bodyid[model.geom_group==5]):
+  if body==0:continue  # world inertial frame never rotates
+  # BVH uses all body geoms, including those excluded by the scan group mask.
+  geoms=model.geom_bodyid==body
+  if (not np.isin(model.geom_type[geoms],symmetric).all()
+      or not np.all(model.geom_pos[geoms]==model.body_ipos[body])):return 'mj_ray'
+ return 'mj_multiRay'
+
+
 def ray_scan(model,data,count=181):
  mujoco.mj_kinematics(model,data) # ray origin and header use the same post-integration state
  base=model.body('base').id;r=data.xmat[base].reshape(3,3);origin=data.xpos[base]+r@SCAN_POS
  groups=np.zeros(6,dtype=np.uint8);groups[5]=1;hit=np.zeros(1,dtype=np.int32);result=[]
+ if scan_backend(model)=='mj_multiRay':
+  angles=np.linspace(-math.pi,math.pi,count)
+  if not len(angles):return []
+  directions=np.array([r@np.array([math.cos(a),math.sin(a),0.]) for a in angles])
+  hits=np.empty(count,dtype=np.int32);distances=np.empty(count,dtype=np.float64)
+  mujoco.mj_multiRay(model,data,origin,directions.reshape(-1),groups,True,-1,
+                    hits,distances,None,count,mujoco.mjMAXVAL)
+  return np.where((distances>=.05)&(distances<=4.),distances,np.inf).tolist()
  for angle in np.linspace(-math.pi,math.pi,count):
   direction=r@np.array([math.cos(angle),math.sin(angle),0.]);distance=mujoco.mj_ray(model,data,origin,direction,groups,1,-1,hit)
   result.append(float(distance) if 0.05<=distance<=4. else float('inf'))
