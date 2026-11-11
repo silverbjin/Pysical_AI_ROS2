@@ -19,3 +19,13 @@ REFACTOR는 정책 조회를 하나로 모으고 기존 strict 계산을 별도 
 이번 변경만으로 새 engine이나10회 평가를 다시 실행할 이유는 없다. 다음 실제 개발 경계는 저장된 Level3 실패 경로의 충돌 원인을 독립적으로 조사하는 것이며, 세계 형상/충돌검사를 없애거나 이미 거절된 경로를 실행하지 않는다. 새로운 제어기·WBC·실기·학습은 범위에 추가하지 않는다.
 
 설치·소스 동결·저장 자료의 별도 오프라인 비교·게시 CI 결과는 아래에 후속 기록한다. 기존 FAIL과 v28의0/10은 수정하지 않는다.
+
+## 설치·동결·공개 CI·저장 자료 비교
+
+구현 f523e760을 개발 브랜치에 게시했다. 공개CI run43065881256/job130680560147/runner1000006192의 모든step success를 확인했다. 전용13.8 재빌드 후 설치감사73모듈과 외부94자산이 PASS했으며 실제 실행 Python의 `run_mission.py --help`에서 education_v1 기본 정책이 표시됐다. pytest가 주입한 소스 경로로 실제 설치 성공을 대신 주장하지 않았다.
+
+v52 동결은402소스/94자산, SHAaea24f35ae998b46730fcaf7c8dafaea604b8cf49b62fbbfd6e8c4aac89f4546이다. native 전체521PASS snapshot의 소스와 manifest의 모든 hash가 일치했다. 새 실행 스냅샷 준비는 소스 검증이며 새 engine 실행이 아니다.
+
+별도 `evidence/section_13_8_policy/education_v1_20261112/comparison.json`은 retrospective=true를 명시한다. 원래v28 plan/UUID/출처를 book_v1로 확인한 뒤 저장된 success/측정값을 education_v1로 비교했다. 원래0/10은 새 기준에서도0/10이고 최근Level3 e475ece0도 FAIL이다. 물리 성공을 재판정하거나 원본 trial/verdict/profile을 바꾸지 않았다. 새 정책 아래 실행한 사전 동결10회 결과로 해석하지 않는다.
+
+현재 완화 정책 적용·부품 검증·설치·게시가 완료됐다. Level2 반복 튜닝 중단은 유지한다. Level3의 다음 해결 대상은 성능 수치가 아니라 이미 보존된 PRE_GRASP 계획 충돌이며, 그 문제를 해결했다고 주장하지 않는다.
