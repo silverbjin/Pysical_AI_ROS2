@@ -61,3 +61,13 @@ v43 actualcba70217-f682-405b-9c92-e6cba4a46b50는실제10Hz로동작했고survey
 공식Nav21.3.13 regulated_pure_pursuit_controller.cpp의shouldRotateToGoalHeading은stateful true에서XY최초통과를latch하고false에서는매번거리를다시검사한다. 공식원본을GitHub connector로읽고설치libnav2_regulated_pure_pursuit_controller.so의stateful지원도확인했다. URL: https://github.com/ros-navigation/navigation2/blob/1.3.13/nav2_regulated_pure_pursuit_controller/src/regulated_pure_pursuit_controller.cpp . 이기존설정패턴을사용하며새제어기·executor를추가하지않는다.
 
 Level2기본NavFn/RPP에만goal_checker.stateful=false와FollowPath.stateful=false를적용한다. 기존실험SE2설정과독립시키고다른Level기본/XY.015/yaw.06/최종3cm기준을유지한다. RED실제ROSparser1FAIL/1PASS/4.72초→GREEN9PASS/3.69초→REFACTOR설정경계주석정리→full478PASS/79.76초. REVIEW에서플러그인·속도·충돌·기준불변과legacy보존을확인했다. 다음COMMIT→공개CI→단일v44실제인수다. 이보완도실제성공증거가아니다.
+
+## v44 실제 gate와 도서용 Owner 검토
+
+기본v44 b949c443-0529-415c-98cb-125d0eafb3ca는survey후최종접근240wall deadline FAIL(88.970sim/394.671wall)이다. 별도read-only노드로실제goal_checker/RPP statefulfalse와XY.015/.06을읽었다. 저장표본에서위치·방향동시통과0건이며12child정상회수·잔여[]/lockfree다. raw27,737,255bytes/SHA84d4b4d35afefe5912b6ec2efcf113d8b3bda1131a091adc0f33e756731749de.
+
+같은v44소스의기존SE2실험설정단일대조3593fe57-b619-4ea7-a7bf-05374efb2651은survey중Failed to make progress/ABORT였다. 설정을기본채택하지않고FAIL/12child정상회수/잔여[]/lockfree를보존한다. raw9,302,728bytes/SHA841ab7e73404a1f7ce849eedb6446d647aca5b0c634cca99082d43b11aac0530. 새코드나제어기를추가한실행이아니며조건은execution_profile.json에기록했다.
+
+도서용최소범위라는최신사용자지시에따라새제어기·WBC·executor개편을추가하지않는다. 정상완주gate는미충족이며Owner승인을대신하지않는다. 검토문서 SECTION_13_8_LEVEL2_OWNER_REVIEW_20261111_KO.md에부분별실제증거와미완료범위·결정사항을정리했다.
+
+최종무실행점검PASS(boot4375c65d-8c7c-40ce-8daa-62dbf2f327f8). 디스크정책에따라11개닫힌사례의비추적대형중복86파일/764,073,110bytes를삭제했다. 각raw.tar.gz전체SHA와삭제파일의압축내부/로컬SHA를대조하고판정·manifest·sourcearchive·설정·raw압축본은보존했다. 원래manifest의raw_originals표현은생성당시기록이며현재상태는retention_level2_duplicates_20261111.json이갱신한다. 원본의완전한바이트는raw압축본에서복원한다.
