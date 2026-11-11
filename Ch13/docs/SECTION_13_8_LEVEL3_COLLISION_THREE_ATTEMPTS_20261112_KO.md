@@ -8,6 +8,12 @@
 
 현재 튜닝 사용0/3. 세 설정을 미리 탐색하거나 장시간 matrix를 돌리지 않는다.
 
+## 기준 진단 완료·시도1 등록
+
+원본archive SHA를 확인한뒤 설치MoveIt의GetStateValidity로 후보0의539/540와 후보1의389~391/967/1014~1020 충돌을 재현했다. 침투는약.082~1.234mm이며 양끝점은valid였다. 인접한 valid표본 사이의관절공간거리는각.02338/.02286이다. domain136 planner의shutdown ACK/exit0을확인했다. 원래실패index와같은충돌을확인했지만사후재구성base/관측의정확한계획시각일치는보증하지않는다.
+
+시도1/3: Level3 group의longest_valid_segment_fraction을.005→.0001로좁혀같은끝목표2개를각1회계획한다. 작은팔에서짧은식탁충돌구간을건너뛰는가설에대한검증이며원인확정이아니다. 시간화후ValidateSolution/path_tolerance.001/link3 padding.03/2초계획예산/모델·장면·ACM은그대로다. 검사를느슨하게하지않으며새planner를추가하지않는다. 성공응답도기존실행시간·속도·가속도계약을별도로검사한다. 이설정의숫자를다시바꾸면시도2다. 결과가나오기전추가설정은시험하지않는다.
+
 ## 현재 근거와 공식 패턴
 
 실제 MoveIt ValidateSolution은 후보0의539/540(1102점)에서 table_top/link3, 후보1의389~391/967/1014~1020(1595점)에서 table_leg_0/link7 충돌을 기록했다. 두응답은error99999이며 팔 궤적은 미실행이다. Level3의 link3 padding.03m와 TOTG path_tolerance.001은 이미 적용돼 있다. 과거 padding/TOTG 수정이 이번 충돌을 해결했다고 취급하지 않는다.
