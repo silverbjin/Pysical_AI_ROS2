@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+project(ch13_rpp_readonly_probe LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+find_package(ament_cmake REQUIRED)
+find_package(nav2_regulated_pure_pursuit_controller REQUIRED)
+add_executable(rpp_geometry_probe probe.cpp)
+ament_target_dependencies(rpp_geometry_probe nav2_regulated_pure_pursuit_controller)

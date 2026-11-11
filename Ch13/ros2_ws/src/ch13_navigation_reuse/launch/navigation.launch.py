@@ -60,6 +60,10 @@ def generate_launch_description():
    # Heading-aware forward path only; keep the baseline RPP and no reversing.
    parameter_files.append(str(share/'config/level2_forward_heading_planner.yaml'))
   if (name=='controller_server' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+      and os.environ.get('CH13_VALIDATION_SCENARIO')=='level2_obstacles'
+      and os.environ.get('CH13_EXPERIMENTAL_SE2')!='1'):
+   parameter_files.append(str(share/'config/level2_goal_approach.yaml'))
+  if (name=='controller_server' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
       and os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house')):
    parameter_files.append(str(share/'config/survey_navigation.yaml'))
   if (name in ('planner_server','controller_server','velocity_smoother') and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'

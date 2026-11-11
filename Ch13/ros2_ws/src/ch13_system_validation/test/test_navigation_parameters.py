@@ -163,3 +163,49 @@ def test_default_book_reuses_verified_forward_controllers_and_checker_policy(mon
             if node is not None:node.destroy_node()
             context.shutdown()
             for p in files:p.cleanup()
+@pytest.mark.parametrize('scenario,experimental,enabled', [
+    ('level2_obstacles', False, True), ('level2_obstacles', True, False),
+    ('level1_floor', False, False), ('level3_house', False, False),
+    ('development', False, False)])
+def test_goal_extension_is_scoped_to_default_level2_rpp(monkeypatch, scenario, experimental, enabled):
+    monkeypatch.setenv('CH13_VALIDATION_PROFILE', 'carry_v1')
+    monkeypatch.setenv('CH13_VALIDATION_SCENARIO', scenario)
+    monkeypatch.setenv('CH13_EXPERIMENTAL_SE2', '1' if experimental else '0')
+    source = Path(__file__).resolve().parents[2]/'ch13_navigation_reuse/launch/navigation.launch.py'
+    spec = importlib.util.spec_from_file_location('goal_extension_launch', source)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    monkeypatch.setattr(module, 'get_package_share_directory', lambda name: str(source.parents[1]))
+    action = next(a for a in module.generate_launch_description().entities
+                  if getattr(a, '_Node__node_name', None) == 'controller_server')
+    files = [p for p in action._Node__parameters if hasattr(p, 'evaluate')]
+    args = ['--ros-args']
+    for p in files:
+        args += ['--params-file', str(p.evaluate(LaunchContext()))]
+    context = Context()
+    node = None
+    rclpy.init(context=context)
+    try:
+        node = rclpy.create_node('controller_server', context=context, use_global_arguments=False,
+            cli_args=args, automatically_declare_parameters_from_overrides=True)
+        for key in ('use_fixed_curvature_lookahead', 'interpolate_curvature_after_goal'):
+            name = 'FollowPath.'+key
+            assert (node.get_parameter(name).value if node.has_parameter(name) else False) is enabled
+        if enabled:
+            assert node.get_parameter('FollowPath.curvature_lookahead_dist').value == .25
+            assert node.get_parameter('FollowPath.lookahead_dist').value == .45
+            assert node.get_parameter('FollowPath.allow_reversing').value is False
+            assert node.get_parameter('FollowPath.use_rotate_to_heading').value is True
+            assert node.get_parameter('FollowPath.use_collision_detection').value is True
+            assert node.get_parameter('FollowPath.stateful').value is False
+            assert node.get_parameter('goal_checker.stateful').value is False
+            assert node.get_parameter('goal_checker.xy_goal_tolerance').value == .015
+            assert node.get_parameter('goal_checker.yaw_goal_tolerance').value == .06
+            assert node.get_parameter('FollowPath.desired_linear_vel').value == .15
+            assert node.get_parameter('FollowPath.max_angular_accel').value == .5
+    finally:
+        if node is not None:
+            node.destroy_node()
+        context.shutdown()
+        for p in files:
+            p.cleanup()

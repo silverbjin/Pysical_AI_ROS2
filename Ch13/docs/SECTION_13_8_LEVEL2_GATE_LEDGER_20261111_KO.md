@@ -169,3 +169,13 @@ GREEN 후 REFACTOR에서 별도 추상화나 추가 속도/경로/모델 변경 
 최종 전체497PASS/158.14초, native snapshoted8397ab1a1646019dee0da1a3d809fc. 자체 REVIEW에서 기존 mass/actuator/robot policy/Scan stamp·원점·group/static 필터·범위·단일 owner·cancel/종료 계약 불변과 known offset bug 회피를 확인했다. 복사한 개발자 ray probe는 소스 변경 후 비교가 순환하지 않도록 재현판의 scalar 기준을 직접 고정하고 원실행판도 보존했다. 공개 CI의 portable11건과 native497건을 구분한다. 다음 COMMIT→공개CI→source freeze/build/audit→단일 실제 사례다. Level2 정상 완주와 Owner 인수는 보류다.
 
 재현판 probe를 현재 source에서 다시 실행해30자세/5,430 rays의0m오차를 확인했다. 새 경합 측정은 scalar1.557~82.977ms/batch6.724~18.097ms로, 일부 scalar 최단치는 batch보다 빨랐다. 따라서 일률적 가속이나 모든 실행의 지연 상한을 보증하지 않는다. 두 비교 결과를 모두 보존하며 실제 안전 수신 개선 여부는 다음 live case에서 판정한다.
+
+## 2026-11-12 재개 — v50 실제 결과와 v51 제한 명세
+
+v50 실제 UUID990fa443-b46e-4790-9dce-a2f9515a8dec의 입력/관측 수명 초과는 없었으나 최종 이동240wall초 기한으로 FAIL했다. trial73.93sim/450.356wall/CPU55.214%, engine COMPLETED/normal true/12child 정상 회수/잔여[]/lockfree. 최소XY2.085mm에서yaw.355077rad, 최소yaw.088746rad에서XY25.633mm로 저장 표본 공동 목표 통과0건이다. 마지막256 생산 기록의Scan37건 최대18.365ms이며 전구간 상한은 아니다. v50 freeze399/assets94 및 정확한 실행 source/raw/archive를 보존했다. 공개 CI43040197736 실제runner1000006007/모든step 성공과497 native PASS는 별도 증거다. 전체 정상 완주/정식10회 재평가/Owner 인수는 여전히 미완료다.
+
+명세34676130은 기존Nav2 1.3.13 RPP의fixed curvature+끝점 보간만 Level2 기본 경로에서 조사한다. 설치 라이브러리 getLookAheadPoint의 저장 자세9개 재구성 비교는 기하 동작 확인이며 정확한 timestamp 연결된 제어 replay가 아니다. 최초 개발 도구는 자유 함수를 멤버로 오해해 build 실패했고 로그를 보존한 뒤 수정했다. 실습 소스에는 영향이 없었다. smoother scale_velocities는 절대 각속도 포화의 직접 해법이 아니라 기각했다. 수명300ms/TF100ms/목표오차/속도/정책/단일owner/종료 기준을 변경하지 않는다.
+
+RED1FAIL/4PASS/4.39초로 실제 ROS launch 파라미터의 보간 미적용을 확인했다. Level2 기본 경로에만use_fixed_curvature_lookahead=true/curvature_lookahead_dist=.25/interpolate_curvature_after_goal=true overlay를 더해 관련7PASS/2.90초였다. .25m는 기존 최소lookahead를 재사용한다. 일반lookahead.45/목표회전/충돌검사/stateful false/전진만 허용은 유지한다. REFACTOR 검토 결과 추가 추상화 없이 기존 overlay 구조가 충분해 별도 구현 확장은 하지 않는다. 다른Level/실험SE2 경로 비적용을 실제 ROS parser로 확인했다. 전체 회귀와 COMMIT/공개 CI/새 실제 사례는 각각 별도 기록한다.
+
+v51 최종 전체502PASS/73.97초, native snapshot9ef9668ee0dc44b8a7cafb57d7ab1f7c. 단일 작업자 자체 REVIEW에서 원래 RPP/충돌검사·일반 목표carrot·지속XY검사·최종 수치와 caps/다른Level·실험SE2 경로 불변을 확인했다. 별도 독립 검토자 검증은 아니다. 공식 path_handler의 마지막 두 점 보존과 단일점 거절 조건을 확인했으며 라이브러리를 패치하지 않았다. 부품 PASS를 물리 정상 완주로 확대하지 않는다.
