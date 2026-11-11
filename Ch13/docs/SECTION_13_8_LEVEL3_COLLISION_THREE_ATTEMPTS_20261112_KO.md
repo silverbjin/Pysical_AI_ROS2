@@ -14,6 +14,10 @@
 
 시도1/3: Level3 group의longest_valid_segment_fraction을.005→.0001로좁혀같은끝목표2개를각1회계획한다. 작은팔에서짧은식탁충돌구간을건너뛰는가설에대한검증이며원인확정이아니다. 시간화후ValidateSolution/path_tolerance.001/link3 padding.03/2초계획예산/모델·장면·ACM은그대로다. 검사를느슨하게하지않으며새planner를추가하지않는다. 성공응답도기존실행시간·속도·가속도계약을별도로검사한다. 이설정의숫자를다시바꾸면시도2다. 결과가나오기전추가설정은시험하지않는다.
 
+시도1결과: 두roll모두OMPL 2.0초 TIMED_OUT/외부error99999, 성공경로없음. 엔진/팔미실행, planner shutdown ACK/exit0. 설정은실습소스에적용하지않았다. 사용1/3.
+
+시도2/3등록: 같은.0001분할/2초예산/기존충돌·시간화설정에서 충돌검사포함GetPositionIK로현재6D목표의관절해를먼저얻고, 그관절해에기존joint_goal RRTConnect를요청한다. IK성공만으로통과하지않고endpoint유효성/전체ValidateSolution/기존실행제한을모두요구한다. 과거joint값을새실행권한으로사용하지않는다. 이비교가통과할경우에만fresh원본관측에서동일하게계산하는구현을검토한다. 단순deadline확대나재시도는하지않는다.
+
 ## 현재 근거와 공식 패턴
 
 실제 MoveIt ValidateSolution은 후보0의539/540(1102점)에서 table_top/link3, 후보1의389~391/967/1014~1020(1595점)에서 table_leg_0/link7 충돌을 기록했다. 두응답은error99999이며 팔 궤적은 미실행이다. Level3의 link3 padding.03m와 TOTG path_tolerance.001은 이미 적용돼 있다. 과거 padding/TOTG 수정이 이번 충돌을 해결했다고 취급하지 않는다.
