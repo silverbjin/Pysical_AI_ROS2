@@ -153,3 +153,19 @@ PRE_GRASP 첫 후보의 execution duration67.234sim초도 기록했다. 전체12
 Ruling: 검토 중 Scenario.record의 Level2 기본 navigation_profile이 v45 이후에도 baseline_navfn으로 기록되는 메타데이터 오류를 발견했다. 실제 launch는 DUBIN이며 launch 로그와 execution_profile로 확인했다. 과거 JSON/hash는 수정하지 않고 이 원장으로 해석 한계를 남긴다. 새 기록을 baseline_forward_dubin으로 바로잡는 계약 RED1FAIL/3PASS/4.30초→관련 전체7PASS/4.48초였다. 기록의 정정은 planner/geometry/권한을 바꾸지 않는다. 기존 portable 시험도15Hz와 새 기록 이름을 확인하도록 보완했다.
 
 GREEN 후 REFACTOR에서 별도 추상화나 추가 속도/경로/모델 변경 없이 Level2의10Hz 특례만 제거했다. 전체487PASS/72.43초, snapshot43f69030ee5a4b0ab9930fca5ec7b685. 자체 REVIEW에서 native CLI가 이미 지원하는15Hz를 사용하고 다른Level/원본stamp·300ms·TF100ms·단일 owner·제어·접촉·종료 기준을 유지하는 것을 확인했다. 다음 COMMIT→공개CI→새 freeze/build/audit→15Hz 실제 사례다. 성공과 CPU/시간 목표는 아직 검증 전이다.
+
+## v49 실제 검증 — safe 입력 receipt 만료, 관측과 구분
+
+0a9ee86b 공개 CI run43022260798/job130528087652/runner1000006006 모든 step 성공, native487PASS/source398/assets94 동결SHAb79bbc48f7a93d32001abf823b7fa11c5df0ed299cad716804f9449047c2d572/설치감사72/실행 원본 일치 PASS. 실제 UUID0e7456d4-adcd-4ffc-873b-4ab4a054afa4는 survey 이후 INPUT_OR_CLOCK_TIMEOUT의sample_wall_expired:safe로 FAIL(38.246sim/119.298wall)했다. 최초 decision9794.111659792/원본 safe receipt9793.810324414로301.335ms. 당시 저장 navigation 상태는ACTIVE/vision age166.520ms로 관측 만료가 아니다. Nav action CANCELED5를 정상 SUCCEEDED4로 바꾸지 않는다. engine COMPLETED 및 source_v49 보존/원본 raw12,651,416bytes SHA9a4a84d86af64ea30d5f072fec24d5773810ff689e6759952aa0cee19adf6a51을 보존했다.
+
+직전 sim39.706/.708/.710의capture_sensor100.954/108.620/172.863ms와 Scan124.571ms가 확인됐다. 별도 단일-thread executor membership 비교는 효과가 일관되지 않아 기각했다. 공식 MuJoCo3.13.0 batch ray와 알려진 이슈를 조사했고 저장 자세30개/5430 rays는scalar와0m오차로 일치했다. JSON thread 경합에서 batch5.505~10.880ms/scalar36.985~64.321ms였다. 이 부분 측정만으로 전체 안전 정지 원인을 해결했다고 하지 않는다. 다음은 eligibility guard와 scalar fallback을 갖춘 최소 batch 경계의 RED→GREEN 및 기존 안전 회귀다.
+
+## v50 batch Scan RED→GREEN→REFACTOR→REVIEW
+
+명세2d389790. 공식3.13.0 MultiRayEqualsSingleRay 테스트와 engine_ray 구현, 이슈3731/3736을 먼저 확인했다. RED3FAIL/7PASS/17.32초에서 지원 모델의 batch 호출이 없던 경계를 재현했다. GREEN13PASS/17.87초로 동일181 거리/회전 centred primitive/qpos 불변/near·4m 필터/offset 위험 모델 scalar fallback/다른 profile scalar 보존/원본 sensor 모델을 확인했다. 실제 Level2 모델의world0 및 inertial 원점[0,0,0] centred cylinder body26도 batch 적격이다. REFACTOR에서 모델 eligibility와 기존 scalar fallback을 분리하고 sensor summary에 backend를 기록했다. 새 executor/thread/권한/안전 수치를 바꾸지 않았다.
+
+첫 full496PASS/1FAIL/208.96초의 실패는 test_launch_lifecycle의6초 기한이 실제 플랫폼의 SciPy import 중 끝난 시작 fixture 문제였다. 물리 모델이나 engine은 시작하지 않았다. Ruling: 기존35초 bootstrap 한도와 실패 report 이후6초 shutdown gate를 분리한다. 공식 Jazzy OnProcessExit는 프로세스 종료 뒤의 handler이므로 cold import를 종료 처리 시간에 포함하지 않는다.7초 cold bootstrap을 시험에만 주입한 RED1FAIL/17.16초→GREEN1PASS/20.94초로 경계 구분과 실제 owned children 회수를 검증했다.20.94초는 준비를 포함한 총 시험 시간이고 shutdown gate는6초 그대로다. 실제 runtime timeout이나 안전 기준을 늘린 것이 아니다.
+
+최종 전체497PASS/158.14초, native snapshoted8397ab1a1646019dee0da1a3d809fc. 자체 REVIEW에서 기존 mass/actuator/robot policy/Scan stamp·원점·group/static 필터·범위·단일 owner·cancel/종료 계약 불변과 known offset bug 회피를 확인했다. 복사한 개발자 ray probe는 소스 변경 후 비교가 순환하지 않도록 재현판의 scalar 기준을 직접 고정하고 원실행판도 보존했다. 공개 CI의 portable11건과 native497건을 구분한다. 다음 COMMIT→공개CI→source freeze/build/audit→단일 실제 사례다. Level2 정상 완주와 Owner 인수는 보류다.
+
+재현판 probe를 현재 source에서 다시 실행해30자세/5,430 rays의0m오차를 확인했다. 새 경합 측정은 scalar1.557~82.977ms/batch6.724~18.097ms로, 일부 scalar 최단치는 batch보다 빨랐다. 따라서 일률적 가속이나 모든 실행의 지연 상한을 보증하지 않는다. 두 비교 결과를 모두 보존하며 실제 안전 수신 개선 여부는 다음 live case에서 판정한다.
