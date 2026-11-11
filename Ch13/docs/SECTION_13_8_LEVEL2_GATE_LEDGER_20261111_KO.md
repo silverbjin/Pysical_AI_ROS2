@@ -117,3 +117,13 @@ v46 저장 자세82~86sim초를 별도domain136에서 재현했다. physics/poli
 명세633f36fd. RED는 실제 ROS fixture 첫 frame의 cylinder import를 차단해1FAIL/30.41초. GREEN5PASS/2.92초에서 기존 capture/hash/TF 건강 판정과 원본 시각 보존을 확인했다. Ruling: 남은 경계가 다른 프로세스인 vision이라 기존 opt-in callback 계측을 그 노드에도 연결한다. 단일 executor와 수신 순서는 유지하며, 기본 꺼짐/4096건 상한이다. 이 경계 추가가 없으면 다음 실제 사례에서도 frame 결합 누락이 callback 내부 지연인지 분리할 수 없다. 새 callback 계측 계약 RED1FAIL/2.85초→GREEN6PASS/6.46초. REFACTOR는 stdlib 초기화 위치와 진단 dict 가독성만 정리했다.
 
 최종484PASS/77.10초, snapshot d5fdc2e26c6a49a8b52f7f2134580178. 자체 REVIEW에서 기존 fit 함수를 그대로 준비/호출하고 fixture 기본/단일 owner/정책/제어/수명300ms/TF100ms/원본 시각·GID·hash·충돌·종료 기준을 보존한 것을 확인했다. module이 없으면 callback 전 초기화에서 실패한다. 별도 모델·인식기를 추가하지 않았다. 대조 요약·실패·개발용 재현 script/hash는 v47_camera_import_diagnosis에 보존했다. 다음 COMMIT→공개 CI→source freeze/build/audit→필요한 실제 사례다. 정상 완주와 Owner 인수는 계속 보류다.
+
+## v47 실제 검증 — 초기화와 장시간 생산 지연 분리
+
+35de775e 공개 CI run43016918196/job130510180983/runner1000005995 모든 step success. 별도 설치감사72/source398/assets94 동결 SHA7ae82c54d282c17912f3c6e5fdd73dec33c3121697227468c13538747cc283d1과 native484PASS snapshot/runtime 바이트 일치. 새 boot e68f5c48-8b58-435c-a1c3-03c4c0ecfb95에서 무실행/lockfree를 다시 확인했다.
+
+실제 a581a30c-3a1a-45da-9392-709c21df9044는 survey 이후 VISION_EXPIRED로 FAIL(40.628sim/139.293wall). 최초 decision7792.104163454/원본 capture7791.789161775로315.002ms였고, 마지막 상태의395.342ms와 구분한다. 해당 구간 vision.tick 최대17.083ms, 마지막4096 callback 중 최대17.889ms로 초기 import 지연이 재발한 기록은 아니다. 최신 native health receipt는 fault 이후 다른 메시지일 수 있으므로 frozen sample과 같은 메시지의 지연으로 묶지 않는다.
+
+다음 frame은7791.959185867에 촬영됐으나 Scan42.013ms를 마친7792.00122518에 renderer로 제출됐다. render 종료7792.04467845/publish 완료7792.088460057/health validation7792.106197675로 직전300ms 만료보다17.036ms 늦었다. 직전 state publish88.070ms와 촬영 간격170.024ms도 함께 기록됐다. 단일 callback/rosbag RX만의 문제로 단정하지 않고 생산→render→검증 누적 지연으로 분리한다.
+
+engine COMPLETED/normal shutdown true,12child 정상 회수·worker/port/rosbag 완료·잔여[]/lockfree다. raw13,528,247bytes/SHAbaa1567a543cdfb736aacf7849d79879e49f2a2edf0a5e1f589c8f0bda3fbd26/source_v47 정확 바이트 보존 PASS. 정상 완주/Owner 인수는 계속 보류. 다음 명세7f569e52는 기존 overlap1 요청을 Scan 앞에 보내는 최소 순서 보완이며 임계값이나 executor 변경이 아니다.
