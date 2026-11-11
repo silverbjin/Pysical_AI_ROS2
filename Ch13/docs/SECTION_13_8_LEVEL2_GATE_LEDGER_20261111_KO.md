@@ -179,3 +179,9 @@ v50 실제 UUID990fa443-b46e-4790-9dce-a2f9515a8dec의 입력/관측 수명 초�
 RED1FAIL/4PASS/4.39초로 실제 ROS launch 파라미터의 보간 미적용을 확인했다. Level2 기본 경로에만use_fixed_curvature_lookahead=true/curvature_lookahead_dist=.25/interpolate_curvature_after_goal=true overlay를 더해 관련7PASS/2.90초였다. .25m는 기존 최소lookahead를 재사용한다. 일반lookahead.45/목표회전/충돌검사/stateful false/전진만 허용은 유지한다. REFACTOR 검토 결과 추가 추상화 없이 기존 overlay 구조가 충분해 별도 구현 확장은 하지 않는다. 다른Level/실험SE2 경로 비적용을 실제 ROS parser로 확인했다. 전체 회귀와 COMMIT/공개 CI/새 실제 사례는 각각 별도 기록한다.
 
 v51 최종 전체502PASS/73.97초, native snapshot9ef9668ee0dc44b8a7cafb57d7ab1f7c. 단일 작업자 자체 REVIEW에서 원래 RPP/충돌검사·일반 목표carrot·지속XY검사·최종 수치와 caps/다른Level·실험SE2 경로 불변을 확인했다. 별도 독립 검토자 검증은 아니다. 공식 path_handler의 마지막 두 점 보존과 단일점 거절 조건을 확인했으며 라이브러리를 패치하지 않았다. 부품 PASS를 물리 정상 완주로 확대하지 않는다.
+
+## 사용자 결정 — 반복 튜닝 중단·Level3 전환
+
+2026-11-12 사용자는 반복 튜닝이면 작업을 정지하고 Level3로 넘어가며 기준의 과도함을 점검하라고 지시했다. v45~v51 반복 보완 뒤에도 정상 완주가 미입증이므로 Level2 추가 튜닝·재시도를 중단한다. 정상 완주/Owner 인수 보류와 원래0/10은 유지한다. 상세 기준표와 Level3 한 번의 변경 없는 검증 명세는 SECTION_13_8_STATUS_CRITERIA_LEVEL3_SWITCH_20261112_KO.md에 있다. 원고3cm/120초와 내부15mm/20mm 등 추가 witness를 구분했으며 기존 판정/안전 수치를 바꾸지 않는다.
+
+v51 실제9a8a2b9c-3f35-4245-9cf7-e9e2aac876b5는32.46sim/112.473wall초 FAIL, boundary VISION_EXPIRED307.756ms 뒤 engine safe receipt302.685ms 초과가 기록됐다. 목표 접근 보간 효과는 평가되지 못했다. engine COMPLETED/normal true/12child 정상 회수/잔여[]/lockfree. source400/assets94 정확 바이트 보존, raw11,165,178bytes/SHA335e1be3a9c2d3d40603b5e4883db113bc0de8f31493eae2a383f392e35d52fb. 공개CI43046466943/job130611605650/runner1000006064 모든step 성공과 실제 실패를 구분한다. 추가 Level2 시험은 하지 않는다.
