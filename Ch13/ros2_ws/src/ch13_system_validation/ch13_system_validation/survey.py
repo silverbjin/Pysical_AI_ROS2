@@ -9,6 +9,7 @@ from nav2_msgs.action import NavigateToPose
 from ch13_navigation_reuse.command_gateway import N
 from ch13_navigation_reuse.nav_contract import prepared_zero
 from .continuation import make_navigation_goal,drain_owned_goals
+from .survey_budget import SurveyBudget,WALL_SECONDS
 
 
 def make_survey_goal(target, clock_ns):
@@ -40,8 +41,16 @@ def observe_from_waypoint(session,*,node,until,snapshot,scenario):
         assert until(lambda:result.done() or prepared_zero(snapshot(),now=time.monotonic()),5.),'survey not prepared at zero'
         assert not result.done(),'survey terminated before motion admission'
         call('gateway/arm');call('platform/arm');call('navigation/release')
-        assert until(lambda:result.done() or session.cancel_requested()
-                     or snapshot()['boundary'].get('phase')=='FAULT',120.),'survey deadline'
+        budget=SurveyBudget(clock_ns=snapshot()['clock_ns'],wall=time.monotonic())
+        def stopped():
+            if result.done() or session.cancel_requested():return True
+            current=snapshot()
+            return (current['boundary'].get('phase')=='FAULT'
+                    or budget.reason(clock_ns=current['clock_ns'],wall=time.monotonic()) is not None)
+        session.port.event('survey_budget_started',clock_ns=budget.start_clock,
+            wall=budget.start_wall,sim_budget_s=120,wall_budget_s=WALL_SECONDS)
+        assert until(stopped,WALL_SECONDS),'survey wall deadline'
+        assert budget.reason(clock_ns=snapshot()['clock_ns'],wall=time.monotonic()) is None,'survey duration deadline'
         assert not session.cancel_requested(),'survey canceled'
         assert result.done() and result.result().status==4,'survey navigation failed'
         call('navigation/idle')
