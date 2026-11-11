@@ -79,3 +79,13 @@ Owner는 정상 완주 기준 유지·인수 보류를 확정했다. 명세6efc7
 RED 실제 ROS parser: 1FAIL/1PASS/4.06초(기존 NavFn이 DUBIN 기대와 불일치). GREEN 관련 설정18PASS/4.33초. REFACTOR: planner-only YAML과 적용 조건만 추가하고 다른 구조 변경은 하지 않았다. 전체478PASS/67.94초, native snapshot e602230aea684a62899f7ff58680a6c7. REVIEW는 단일 작업자 자체 검토로, 실제 parser가 전진 RPP/역주행 금지/XY.015/yaw.06/stateful false/속도 상한 유지 및 Level3 기본·기존 SE2 opt-in 불변을 확인했다. package.xml에 이미 nav2_smac_planner 의존성이 있고 setup config glob에 새 YAML이 포함된다. 공식 1.3.13 구현의 DUBIN 기본 패턴과 대조했다.
 
 이 변경은 가설의 최소 실험이다. 경로 계획 개선만으로 로봇의 도달·파지·운반·놓기 성공을 주장하지 않는다. 다음은 COMMIT→공개 CI 실제 runner/steps 확인→v45 분리 build/audit/freeze→단일 실제 실행이다. 기존0/10 평가와 과거 실패는 보존한다.
+
+## v45 실제 결과 — 이동 통과, 관측 만료 반복
+
+코드d2be10ae 공개 CI run42976398827/job130376388217/runner1000005679에서 모든 step success를 확인했다. 별도 build/audit71 및 실제 venv child 의존성 확인, source396/assets94 동결 SHA f212f439b4eb09f717fc228ae1ee80c131c71ca3e141d732632515d4d94c7721과 전체시험 snapshot/runtime 바이트 일치 PASS다.
+
+UUID aebe4a05-2e76-4999-b46a-29a4d588928b는 실제 Smac DUBIN 선택을 launch 로그로 확인했고 survey→최종 navigate→find를 연속 통과했다. 최종 위치 오차14.847mm, 실제 ramp 접촉212.465N. 이후 팔 준비 중 OBSERVATION_EXPIRED로 FAIL(57.758sim/204.961wall초). engine COMPLETED/launch exit0, runner FAILURE, worker join/port closed/rosbag close와 잔여[]/공유lockfree를 구분한다. raw17,958,417bytes/SHA585862dc879c2d84353e515d8a3f127c9d0c83d50ea736777319dd8977b71a13, 정확한 source_v45 보존 PASS.
+
+최초 fault decision7403.213691897의 사용 관측 capture58618000000/capture_wall7402.873216175로 실제 나이는340.476ms다. 다음 capture58622000000은7403.013220668에 촬영, 모든 원본·receipt 조합은 약7403.081에 도착했으나 10Hz cap 때문에 추론 시작7403.13308646, 종료7403.179966016이었다. 직전 관측의300ms 만료7403.173216175 이후다. 이 수치는 camera/추론/engine 수신 경계의 합성 지연을 보여 주며 rosbag RX gap이나 단일 callback 지연 하나로 단정하지 않는다. v42의301.704ms 실패와 같은 관측 만료 계열이 반복됐다. 15Hz도 과거 실패가 있으므로 단순 rate 재변경만으로 해결됐다고 하지 않는다.
+
+다음은 기존 단일 executor를 유지한 채 monitor/관측 수신 callback의 내부 소요 시간을 계측하여 graph query·lock·DDS 전달 중 어느 경계가 추가 지연을 만드는지 분리하는 최소 진단이다. executor 재구성·수명/임계값 변경은 하지 않는다. Level2 정상 완주와 Owner 인수는 계속 보류다.
