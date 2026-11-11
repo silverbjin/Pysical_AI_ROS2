@@ -29,6 +29,8 @@ def arm_goal(q,offset=.02):
 
 def work(*,node,until,snapshot,status,control,case,out,action_client_factory=ActionClient):
     records=[];started=time.monotonic()
+    terminal_timeout=240. if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1' and case=='normal' else 20.
+    records.append(dict(kind='action_wait_budget',case=case,wall_s=terminal_timeout))
     arm=action_client_factory(node,FollowJointTrajectory,ARM)
     if os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1':
         records.append(dict(kind='initialization',step='warmup_arm_client',start_wall=started,end_wall=time.monotonic()))
@@ -54,7 +56,7 @@ def work(*,node,until,snapshot,status,control,case,out,action_client_factory=Act
                 canceled=handle.cancel_goal_async();assert until(canceled.done,3.)
                 assert canceled.result().goals_canceling,'cancel ACK absent'
             else:control['disable_heartbeat']()
-        assert until(result.done,20.),'measured arm terminal deadline'
+        assert until(result.done,terminal_timeout),'measured arm terminal deadline'
         terminal=result.result();expected={'normal':4,'cancel':5,'loss':6}[case]
         assert terminal.status==expected,(terminal.status,terminal.result.error_string,status())
         q_after,_=measured()
@@ -65,7 +67,7 @@ def work(*,node,until,snapshot,status,control,case,out,action_client_factory=Act
             for target in (.03,0.):
                 request=GripperCommand.Goal();request.command.position=target;request.command.max_effort=.5
                 grip_handle,grip_result=send(gripper,request)
-                assert until(grip_result.done,20.),'gripper measured terminal deadline'
+                assert until(grip_result.done,terminal_timeout),'gripper measured terminal deadline'
                 response=grip_result.result();assert response.status==4
                 assert response.result.reached_goal and not response.result.stalled
                 _,values=measured()

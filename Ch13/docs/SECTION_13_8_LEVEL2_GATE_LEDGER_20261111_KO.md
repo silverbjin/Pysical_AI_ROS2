@@ -37,3 +37,11 @@ Ruling: 기존LEVEL23_EVALUATION_SPEC의개별action120sim/240wall계약을surve
 actualc2939327-10d9-48c3-874a-430e17c3d54e는survey_budget_started의wall키가TaskPort.event의예약wall키와중복돼TypeError로중단됐다. 시간예산정책의실제성공/실패로집계하지않는다. 원본FAIL·12childclean/잔여[]/lockfree와source393/archive를보존했다. raw3,198,416bytes/SHA7415eee23dc06843b84875233e933a780221059ea4fda895e0c91597080f5d13. 에이전트가추가한기록결함이며기존물리·관측문제와구분한다.
 
 RED: 실제TaskPort에동일wall전달TypeError를재현(1FAIL/2.74초),budget.record_start의budget_start_wall로분리했다. REFACTOR: 기록경계를작은메서드로모았다. 최초full은1FAIL/466PASS/76.63초였고기존wire시험기동중FUTURE_SOURCE:base였다. DDS발견과첫clock수신을동일시하던fixture의경계를분리했다. 결정적fixture RED1FAIL/3.19초→clock실제수신을기다린후상태발행으로수정. productiongateway·freshness·native C++는변경없다. 최종GREEN468PASS/85.90초(snapshot36c34308c6384cedbbf8b690dc10f6a7). REVIEW: 예약키분리·single-owner/cancel·negative clock/future/loss회귀유지확인. 기존CRLF/-text파일은CR-at-eol설정으로diff공백검사해통과했고원본바이트를줄바꿈만으로바꾸지않았다. 공개CI에실제TaskPort통합회귀도포함한다. 다음COMMIT→공개CI→새v41실제인수다.
+
+## v41 실제 진행과 v42 최소 연결 보완
+
+v41 기본 사례586327fb-5fd7-4280-bf0a-d3091fbceec1은survey를통과하고최종접근중VISION_EXPIRED로정지했다. capture36198000000의원래capture_wall7165.174774162에서state_publish161.774ms뒤offer,render_finished7165.359759529,healthvalidation7165.372463585,nativehealthreceipt7165.488845813,decision7165.489614044다. 원본촬영→native수신약314ms다. Scan RX gap이나Supervisorcallback으로해석하지않으며300ms/TF100ms와안전fault를유지한다.
+
+동일v41소스의기존CH13_CAPTURE_OVERLAP=1단일진단5576989e-4e60-4556-bfe5-687a1419c48e는survey/최종접근/find와ramp실제접촉251.49N을확인한뒤normal warmup의20wall결과대기가먼저끝났다. 실제arm은59.888sim/7652.222wall시작,20.047wall뒤cancel ACK,약7.774wall뒤실제CANCELED였다.4sim경로가끝나기전에client가취소했다. DeferredClients5wall회수도미확정이므로정상action회수라하지않는다. engine은최종SIGINT로중단됐고11/12clean·최종OS잔여[]/lockfree다. 두사례독립FAIL/source/archive/config를보존했다. overlap1은명시적실험설정이며기본강건성증거가아니다.
+
+v42 RED실제warmup호출자1FAIL/12.99초→GREEN1PASS/2.40초. carry_v1정상준비동작만기존server240wall상한내에서실제result를기다린다. legacy와cancel/loss20wall은유지한다. 원래4sim경로·PD/속도·접촉·실제terminal판정은유지했다. REFACTOR는arm/gripper대기예산공유와기록,legacy경계추가다. full470PASS/77.78초,snapshotf8f9f9aee21a496a8fee06306c966aae. REVIEW에서결과대기연결만변경함을확인했다. 준비시험삭제·새제어기·executor변경은없다. 다음COMMIT→공개CI→v42실제Level2이며명시적overlap1진단설정을기록한다.
