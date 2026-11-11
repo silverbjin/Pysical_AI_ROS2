@@ -145,8 +145,8 @@ def test_default_book_reuses_verified_forward_controllers_and_checker_policy(mon
                 assert node.get_parameter('FollowPath.plugin').value=='nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController'
                 assert node.get_parameter('goal_checker.xy_goal_tolerance').value==.015
                 assert node.get_parameter('goal_checker.yaw_goal_tolerance').value==.06
-                assert node.get_parameter('goal_checker.stateful').value is True
-                assert not node.has_parameter('FollowPath.stateful') or node.get_parameter('FollowPath.stateful').value is True
+                assert node.get_parameter('goal_checker.stateful').value is (scenario!='level2_obstacles')
+                assert (node.get_parameter('FollowPath.stateful').value if node.has_parameter('FollowPath.stateful') else True) is (scenario!='level2_obstacles')
                 assert node.get_parameter('FollowPath.use_rotate_to_heading').value is True
                 assert node.get_parameter('FollowPath.allow_reversing').value is False
             else:

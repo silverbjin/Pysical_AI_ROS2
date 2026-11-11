@@ -44,8 +44,10 @@ def generate_launch_description():
    from launch_ros.descriptions import ParameterFile
    rewrites={'controller_server.ros__parameters.goal_checker.xy_goal_tolerance':'0.015'}
    if (os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house')
-       and os.environ.get('CH13_EXPERIMENTAL_SE2')=='1'):
-    # Keep checking XY while turning: the first tolerance crossing is not arrival.
+       and (os.environ.get('CH13_EXPERIMENTAL_SE2')=='1'
+            or os.environ.get('CH13_VALIDATION_SCENARIO')=='level2_obstacles')):
+    # Level 2 keeps its baseline controller while continuously checking XY.
+    # Reaching the tolerance once cannot authorize a later drifted terminal.
     rewrites['controller_server.ros__parameters.goal_checker.stateful']='false'
     # RPP has its own XY latch; both must keep correcting position.
     rewrites['controller_server.ros__parameters.FollowPath.stateful']='false'

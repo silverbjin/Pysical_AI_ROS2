@@ -53,3 +53,11 @@ v42 actual d8d65f1a-a736-46ea-863b-bfe28ce45fd9는준비팔/양gripper정상term
 도서범위최소보완으로새executor나인식기를만들지않고기존run_navigation_probe의지원값10/15Hz를기존session→worker에전달한다. Level2만10Hz를선택하고다른Level·13.7기본은15Hz유지,300ms/TF100ms·health·접촉기준은유지한다. 처리부하감소가실제상한을보장한다고주장하지않으며새실제gate로확인한다. scenario.record에실제선택처리율을남겨조건을숨기지않는다. CH13_CAPTURE_OVERLAP=1은계속명시적기존실험설정이다.
 
 RED9FAIL/3.72초→GREEN9PASS/2.69초→REFACTOR기존worker인자구성함수로한정→full478PASS/71.49초(snapshot5822bf69b28247e79b75e66d7112d762). REVIEW: 지원값외거부·legacy15보존·동일owner/명령·시간/안전기준불변·인자전달경계를확인했다. 공개CI기존portable시험도새Level2처리율선택을검사한다. 다음COMMIT→공개CI→v43실제인수다. 전체성공/Owner인수는아직미완료이며물리기준이나도서목표를낮춰완료처리하지않는다.
+
+## v43 위치 terminal 불일치·v44 기존 검사 정책 보완
+
+v43 actualcba70217-f682-405b-9c92-e6cba4a46b50는실제10Hz로동작했고survey뒤최종Nav2성공terminal을받았으나실측위치106.107mm/방향.028453rad로기존probe100mm검사를통과하지못했다. 이번사례의최초실패는관측만료가아니다. 12child정상회수/잔여[]/lockfree,원본FAIL/source/archive보존. raw20,544,336bytes/SHAedbb9bedf95297abd5a237c698ffc7ba143a035e913fcdbd6e9ad2489a2c9a30.
+
+공식Nav21.3.13 regulated_pure_pursuit_controller.cpp의shouldRotateToGoalHeading은stateful true에서XY최초통과를latch하고false에서는매번거리를다시검사한다. 공식원본을GitHub connector로읽고설치libnav2_regulated_pure_pursuit_controller.so의stateful지원도확인했다. URL: https://github.com/ros-navigation/navigation2/blob/1.3.13/nav2_regulated_pure_pursuit_controller/src/regulated_pure_pursuit_controller.cpp . 이기존설정패턴을사용하며새제어기·executor를추가하지않는다.
+
+Level2기본NavFn/RPP에만goal_checker.stateful=false와FollowPath.stateful=false를적용한다. 기존실험SE2설정과독립시키고다른Level기본/XY.015/yaw.06/최종3cm기준을유지한다. RED실제ROSparser1FAIL/1PASS/4.72초→GREEN9PASS/3.69초→REFACTOR설정경계주석정리→full478PASS/79.76초. REVIEW에서플러그인·속도·충돌·기준불변과legacy보존을확인했다. 다음COMMIT→공개CI→단일v44실제인수다. 이보완도실제성공증거가아니다.
