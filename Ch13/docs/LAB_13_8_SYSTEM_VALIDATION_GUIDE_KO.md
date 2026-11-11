@@ -2,6 +2,8 @@
 
 개발 중인 가이드. 연속 운반·내려놓기의 실제 인수와 Level 1/2/3·10회 평가는 SECTION_13_8_REPORT_KO.md의 실제 결과를 확인한다. 명령의 존재나 BT SUCCESS만으로 물리 성공을 판단하지 않는다.
 
+2026-11-12 현재: 사용자 지시에 따라 Level2 반복 튜닝은 중단했다. 기존 Level3를 변경 없이1회 확인해 문 통과·새 관측은 통과했으나 PRE_GRASP의 MoveIt 충돌 계획 검증에서 거절됐다. 파지·귀환·놓기 정상 완주는 미달이며 인수 보류다. 최신 판단은 [기준 검토·전환 보고](SECTION_13_8_STATUS_CRITERIA_LEVEL3_SWITCH_20261112_KO.md)와 [Level3 단일 검증 결과](SECTION_13_8_LEVEL3_BASELINE_RESULT_20261112_KO.md)를 우선한다. 원고의3cm/평균120초와 내부15mm·높이20mm 등의 추가 witness를 구분하며, 이 가이드 실행만으로 목표 달성을 보증하지 않는다.
+
 ## 1. 소스 확보와 환경
 
 현재 기준은 공개13.6이 아니라 로컬13.7의13ecb58d에서 확장한 feat/ch13-section-13-8이다. 13.8 branch는3447c9e8까지 원격 게시한 이력이 있다. 현재 최신 remote ref는 다시 확인하며 새 환경 다운로드/engine 재현 검증은 별도다. 기존 로컬 work/Pysical_AI_ROS2_13_8를 사용한다. sources/와 과거 worktree·증거를 수정하지 않는다.
