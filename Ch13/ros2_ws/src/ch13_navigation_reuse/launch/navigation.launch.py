@@ -54,6 +54,11 @@ def generate_launch_description():
    node_params=ParameterFile(RewrittenYaml(source_file=params,param_rewrites=rewrites,
     convert_types=True),allow_substs=True)
   parameter_files=[node_params]
+  if (name=='planner_server' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
+      and os.environ.get('CH13_VALIDATION_SCENARIO')=='level2_obstacles'
+      and os.environ.get('CH13_EXPERIMENTAL_SE2')!='1'):
+   # Heading-aware forward path only; keep the baseline RPP and no reversing.
+   parameter_files.append(str(share/'config/level2_forward_heading_planner.yaml'))
   if (name=='controller_server' and os.environ.get('CH13_VALIDATION_PROFILE')=='carry_v1'
       and os.environ.get('CH13_VALIDATION_SCENARIO') in ('level2_obstacles','level3_house')):
    parameter_files.append(str(share/'config/survey_navigation.yaml'))

@@ -71,3 +71,11 @@ Level2기본NavFn/RPP에만goal_checker.stateful=false와FollowPath.stateful=fal
 도서용최소범위라는최신사용자지시에따라새제어기·WBC·executor개편을추가하지않는다. 정상완주gate는미충족이며Owner승인을대신하지않는다. 검토문서 SECTION_13_8_LEVEL2_OWNER_REVIEW_20261111_KO.md에부분별실제증거와미완료범위·결정사항을정리했다.
 
 최종무실행점검PASS(boot4375c65d-8c7c-40ce-8daa-62dbf2f327f8). 디스크정책에따라11개닫힌사례의비추적대형중복86파일/764,073,110bytes를삭제했다. 각raw.tar.gz전체SHA와삭제파일의압축내부/로컬SHA를대조하고판정·manifest·sourcearchive·설정·raw압축본은보존했다. 원래manifest의raw_originals표현은생성당시기록이며현재상태는retention_level2_duplicates_20261111.json이갱신한다. 원본의완전한바이트는raw압축본에서복원한다.
+
+## v45 Owner 결정·전진 경로 계획 분리
+
+Owner는 정상 완주 기준 유지·인수 보류를 확정했다. 명세6efc71d1의 순서로 진행한다. 저장 v44 실제 survey 위치와 설치 Nav2 1.3.13 planner를 사용한 비교에서 최종 경로 진행 방향 오차는 NavFn .784540rad/DUBIN .122715rad였고, 보수적 filled footprint 위반은 두 경로 모두0이다. 초기→survey도 유효했다. 진단 planner exit0, lifecycle 정리 완료다. 새 실제 이동 성공을 뜻하지 않는다.
+
+RED 실제 ROS parser: 1FAIL/1PASS/4.06초(기존 NavFn이 DUBIN 기대와 불일치). GREEN 관련 설정18PASS/4.33초. REFACTOR: planner-only YAML과 적용 조건만 추가하고 다른 구조 변경은 하지 않았다. 전체478PASS/67.94초, native snapshot e602230aea684a62899f7ff58680a6c7. REVIEW는 단일 작업자 자체 검토로, 실제 parser가 전진 RPP/역주행 금지/XY.015/yaw.06/stateful false/속도 상한 유지 및 Level3 기본·기존 SE2 opt-in 불변을 확인했다. package.xml에 이미 nav2_smac_planner 의존성이 있고 setup config glob에 새 YAML이 포함된다. 공식 1.3.13 구현의 DUBIN 기본 패턴과 대조했다.
+
+이 변경은 가설의 최소 실험이다. 경로 계획 개선만으로 로봇의 도달·파지·운반·놓기 성공을 주장하지 않는다. 다음은 COMMIT→공개 CI 실제 runner/steps 확인→v45 분리 build/audit/freeze→단일 실제 실행이다. 기존0/10 평가와 과거 실패는 보존한다.

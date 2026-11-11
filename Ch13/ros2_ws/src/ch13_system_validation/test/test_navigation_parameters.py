@@ -140,7 +140,14 @@ def test_default_book_reuses_verified_forward_controllers_and_checker_policy(mon
         context=Context();node=None;rclpy.init(context=context)
         try:
             node=rclpy.create_node(name,context=context,use_global_arguments=False,cli_args=args,automatically_declare_parameters_from_overrides=True)
-            if name=='planner_server':assert node.get_parameter('GridBased.plugin').value=='nav2_navfn_planner::NavfnPlanner'
+            if name=='planner_server':
+                assert node.get_parameter('GridBased.plugin').value==('nav2_smac_planner::SmacPlannerHybrid' if scenario=='level2_obstacles' else 'nav2_navfn_planner::NavfnPlanner')
+                if scenario=='level2_obstacles':
+                    assert node.get_parameter('GridBased.motion_model_for_search').value=='DUBIN'
+                    assert node.get_parameter('GridBased.minimum_turning_radius').value==.3
+                    assert node.get_parameter('GridBased.tolerance').value==.01
+                    assert node.get_parameter('GridBased.cache_obstacle_heuristic').value is False
+                    assert node.get_parameter('GridBased.smooth_path').value is False
             elif name=='controller_server':
                 assert node.get_parameter('FollowPath.plugin').value=='nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController'
                 assert node.get_parameter('goal_checker.xy_goal_tolerance').value==.015
