@@ -1,0 +1,767 @@
+reuse_move_group:
+  ros__parameters:
+    allow_trajectory_execution: true
+    default_planning_pipeline: ompl
+    moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
+    moveit_manage_controllers: false
+    moveit_simple_controller_manager:
+      ch13/reuse/manipulation/arm_controller:
+        action_ns: follow_joint_trajectory
+        default: true
+        joints:
+        - joint1
+        - joint2
+        - joint3
+        - joint4
+        - joint5
+        - joint6
+        type: FollowJointTrajectory
+      ch13/reuse/manipulation/gripper_controller:
+        action_ns: gripper_cmd
+        command_joint: joint7
+        default: true
+        joints:
+        - joint7
+        type: GripperCommand
+      controller_names:
+      - ch13/reuse/manipulation/arm_controller
+      - ch13/reuse/manipulation/gripper_controller
+    ompl:
+      manipulator_arm:
+        longest_valid_segment_fraction: 0.005
+        planner_configs:
+        - RRTConnectkConfigDefault
+      path_tolerance: 0.001
+      planner_configs:
+        RRTConnectkConfigDefault:
+          range: 0.0
+          type: geometric::RRTConnect
+      planning_plugins:
+      - ompl_interface/OMPLPlanner
+      request_adapters:
+      - default_planning_request_adapters/ResolveConstraintFrames
+      - default_planning_request_adapters/ValidateWorkspaceBounds
+      - default_planning_request_adapters/CheckStartStateBounds
+      - default_planning_request_adapters/CheckStartStateCollision
+      response_adapters:
+      - default_planning_response_adapters/AddTimeOptimalParameterization
+      - default_planning_response_adapters/ValidateSolution
+    planning_pipelines:
+    - ompl
+    publish_geometry_updates: true
+    publish_planning_scene: true
+    publish_state_updates: true
+    publish_transforms_updates: true
+    robot_description: "<robot name=\"ch13_go2_piper_reuse\">\n  <link name=\"reuse/base\"\
+      >\n    <inertial>\n      <origin xyz=\"0.021112 0 -0.005366\" rpy=\"-2.9649322332082\
+      \ -1.5525258585013 -0.17834937181988\" />\n      <mass value=\"6.921\" />\n\
+      \      <inertia ixx=\"0.107027\" iyy=\"0.0980771\" izz=\"0.0244531\" ixy=\"\
+      0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"geom_107_0\"\
+      >\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <box\
+      \ size=\"0.26 0.0935 0.12\" />\n      </geometry>\n    </collision>\n    <visual\
+      \ name=\"geom_107_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n     \
+      \ <geometry>\n        <box size=\"0.26 0.0935 0.12\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_108_0\">\n\
+      \      <origin xyz=\"-0.02 0 0.06\" rpy=\"0 0 0\" />\n      <geometry>\n   \
+      \     <box size=\"0.14 0.08 0.02\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_108_0\">\n      <origin xyz=\"-0.02 0 0.06\" rpy=\"\
+      0 0 0\" />\n      <geometry>\n        <box size=\"0.14 0.08 0.02\" />\n    \
+      \  </geometry>\n      <material name=\"collision_proxy\">\n        <color rgba=\"\
+      .5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision name=\"geom_109_0\"\
+      >\n      <origin xyz=\"0.18 0 0.055\" rpy=\"0 0 0\" />\n      <geometry>\n \
+      \       <box size=\"0.09 0.04 0.04\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_109_0\">\n      <origin xyz=\"0.18 0 0.055\" rpy=\"\
+      0 0 0\" />\n      <geometry>\n        <box size=\"0.09 0.04 0.04\" />\n    \
+      \  </geometry>\n      <material name=\"collision_proxy\">\n        <color rgba=\"\
+      .5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision name=\"geom_110_0\"\
+      >\n      <origin xyz=\"0 0.05 0.01\" rpy=\"-0 1.5707963267949 0\" />\n     \
+      \ <geometry>\n        <cylinder radius=\"0.045\" length=\"0.16\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_110_0\">\n      <origin xyz=\"0 0.05\
+      \ 0.01\" rpy=\"-0 1.5707963267949 0\" />\n      <geometry>\n        <cylinder\
+      \ radius=\"0.045\" length=\"0.16\" />\n      </geometry>\n      <material name=\"\
+      collision_proxy\">\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n\
+      \    </visual>\n    <collision name=\"geom_110_1\">\n      <origin xyz=\"-0.08\
+      \ 0.05 0.01\" rpy=\"-0 1.5707963267949 0\" />\n      <geometry>\n        <sphere\
+      \ radius=\"0.045\" />\n      </geometry>\n    </collision>\n    <visual name=\"\
+      geom_110_1\">\n      <origin xyz=\"-0.08 0.05 0.01\" rpy=\"-0 1.5707963267949\
+      \ 0\" />\n      <geometry>\n        <sphere radius=\"0.045\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_110_2\">\n\
+      \      <origin xyz=\"0.08 0.05 0.01\" rpy=\"-0 1.5707963267949 0\" />\n    \
+      \  <geometry>\n        <sphere radius=\"0.045\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_110_2\">\n      <origin xyz=\"0.08 0.05 0.01\" rpy=\"\
+      -0 1.5707963267949 0\" />\n      <geometry>\n        <sphere radius=\"0.045\"\
+      \ />\n      </geometry>\n      <material name=\"collision_proxy\">\n       \
+      \ <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision\
+      \ name=\"geom_111_0\">\n      <origin xyz=\"0 -0.05 0.01\" rpy=\"-0 1.5707963267949\
+      \ 0\" />\n      <geometry>\n        <cylinder radius=\"0.045\" length=\"0.16\"\
+      \ />\n      </geometry>\n    </collision>\n    <visual name=\"geom_111_0\">\n\
+      \      <origin xyz=\"0 -0.05 0.01\" rpy=\"-0 1.5707963267949 0\" />\n      <geometry>\n\
+      \        <cylinder radius=\"0.045\" length=\"0.16\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_111_1\">\n\
+      \      <origin xyz=\"-0.08 -0.05 0.01\" rpy=\"-0 1.5707963267949 0\" />\n  \
+      \    <geometry>\n        <sphere radius=\"0.045\" />\n      </geometry>\n  \
+      \  </collision>\n    <visual name=\"geom_111_1\">\n      <origin xyz=\"-0.08\
+      \ -0.05 0.01\" rpy=\"-0 1.5707963267949 0\" />\n      <geometry>\n        <sphere\
+      \ radius=\"0.045\" />\n      </geometry>\n      <material name=\"collision_proxy\"\
+      >\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n\
+      \    <collision name=\"geom_111_2\">\n      <origin xyz=\"0.08 -0.05 0.01\"\
+      \ rpy=\"-0 1.5707963267949 0\" />\n      <geometry>\n        <sphere radius=\"\
+      0.045\" />\n      </geometry>\n    </collision>\n    <visual name=\"geom_111_2\"\
+      >\n      <origin xyz=\"0.08 -0.05 0.01\" rpy=\"-0 1.5707963267949 0\" />\n \
+      \     <geometry>\n        <sphere radius=\"0.045\" />\n      </geometry>\n \
+      \     <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_112_0\">\n\
+      \      <origin xyz=\"0.285 0 0.01\" rpy=\"0 0 0\" />\n      <geometry>\n   \
+      \     <cylinder radius=\"0.05\" length=\"0.036\" />\n      </geometry>\n   \
+      \ </collision>\n    <visual name=\"geom_112_0\">\n      <origin xyz=\"0.285\
+      \ 0 0.01\" rpy=\"0 0 0\" />\n      <geometry>\n        <cylinder radius=\"0.05\"\
+      \ length=\"0.036\" />\n      </geometry>\n      <material name=\"collision_proxy\"\
+      >\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n\
+      \    <collision name=\"geom_112_1\">\n      <origin xyz=\"0.285 0 -0.008\" rpy=\"\
+      0 0 0\" />\n      <geometry>\n        <sphere radius=\"0.05\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_112_1\">\n      <origin xyz=\"0.285\
+      \ 0 -0.008\" rpy=\"0 0 0\" />\n      <geometry>\n        <sphere radius=\"0.05\"\
+      \ />\n      </geometry>\n      <material name=\"collision_proxy\">\n       \
+      \ <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision\
+      \ name=\"geom_112_2\">\n      <origin xyz=\"0.285 0 0.028\" rpy=\"0 0 0\" />\n\
+      \      <geometry>\n        <sphere radius=\"0.05\" />\n      </geometry>\n \
+      \   </collision>\n    <visual name=\"geom_112_2\">\n      <origin xyz=\"0.285\
+      \ 0 0.028\" rpy=\"0 0 0\" />\n      <geometry>\n        <sphere radius=\"0.05\"\
+      \ />\n      </geometry>\n      <material name=\"collision_proxy\">\n       \
+      \ <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision\
+      \ name=\"geom_113_0\">\n      <origin xyz=\"0.293 0 -0.06\" rpy=\"0 0 0\" />\n\
+      \      <geometry>\n        <sphere radius=\"0.047\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_113_0\">\n      <origin xyz=\"0.293\
+      \ 0 -0.06\" rpy=\"0 0 0\" />\n      <geometry>\n        <sphere radius=\"0.047\"\
+      \ />\n      </geometry>\n      <material name=\"collision_proxy\">\n       \
+      \ <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n  </link>\n\
+      \  <link name=\"reuse/FL_hip\">\n    <inertial>\n      <origin xyz=\"-0.0054\
+      \ 0.00194 -0.000105\" rpy=\"1.5802709600833 0.004958737006258 1.5782599400483\"\
+      \ />\n      <mass value=\"0.678\" />\n      <inertia ixx=\"0.00088403\" iyy=\"\
+      0.000596003\" izz=\"0.000479967\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n\
+      \    <collision name=\"geom_117_0\">\n      <origin xyz=\"0 0.05 0\" rpy=\"\
+      1.5707963267949 0 0\" />\n      <geometry>\n        <cylinder radius=\"0.046\"\
+      \ length=\"0.04\" />\n      </geometry>\n    </collision>\n    <visual name=\"\
+      geom_117_0\">\n      <origin xyz=\"0 0.05 0\" rpy=\"1.5707963267949 0 0\" />\n\
+      \      <geometry>\n        <cylinder radius=\"0.046\" length=\"0.04\" />\n \
+      \     </geometry>\n      <material name=\"collision_proxy\">\n        <color\
+      \ rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision name=\"\
+      geom_117_1\">\n      <origin xyz=\"0 0.07 0\" rpy=\"1.5707963267949 0 0\" />\n\
+      \      <geometry>\n        <sphere radius=\"0.046\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_117_1\">\n      <origin xyz=\"0 0.07\
+      \ 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n        <sphere radius=\"\
+      0.046\" />\n      </geometry>\n      <material name=\"collision_proxy\">\n \
+      \       <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n  \
+      \  <collision name=\"geom_117_2\">\n      <origin xyz=\"0 0.03 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <sphere radius=\"0.046\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_117_2\">\n      <origin xyz=\"0 0.03\
+      \ 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n        <sphere radius=\"\
+      0.046\" />\n      </geometry>\n      <material name=\"collision_proxy\">\n \
+      \       <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n  </link>\n\
+      \  <joint name=\"FL_hip_joint\" type=\"revolute\">\n    <axis xyz=\"1 0 0\"\
+      \ />\n    <limit lower=\"-1.0472\" upper=\"1.0472\" effort=\"23.7\" velocity=\"\
+      .5\" />\n    <parent link=\"reuse/base\" />\n    <child link=\"reuse/FL_hip\"\
+      \ />\n    <origin xyz=\"0.1934 0.0465 0\" rpy=\"0 0 0\" />\n  </joint>\n  <link\
+      \ name=\"reuse/FL_thigh\">\n    <inertial>\n      <origin xyz=\"-0.00374 -0.0223\
+      \ -0.0327\" rpy=\"0.11974375656896 -0.12714340351103 1.1660365778214\" />\n\
+      \      <mass value=\"1.152\" />\n      <inertia ixx=\"0.00594973\" iyy=\"0.00584149\"\
+      \ izz=\"0.000878787\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n  \
+      \  <collision name=\"geom_120_0\">\n      <origin xyz=\"0 0 -0.1065\" rpy=\"\
+      -0 1.5707963267949 0\" />\n      <geometry>\n        <box size=\"0.213 0.0245\
+      \ 0.034\" />\n      </geometry>\n    </collision>\n    <visual name=\"geom_120_0\"\
+      >\n      <origin xyz=\"0 0 -0.1065\" rpy=\"-0 1.5707963267949 0\" />\n     \
+      \ <geometry>\n        <box size=\"0.213 0.0245 0.034\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"FL_thigh_joint\"\
+      \ type=\"revolute\">\n    <axis xyz=\"0 1 0\" />\n    <limit lower=\"-1.5708\"\
+      \ upper=\"3.4907\" effort=\"23.7\" velocity=\".5\" />\n    <parent link=\"reuse/FL_hip\"\
+      \ />\n    <child link=\"reuse/FL_thigh\" />\n    <origin xyz=\"0 0.0955 0\"\
+      \ rpy=\"0 0 0\" />\n  </joint>\n  <link name=\"reuse/FL_calf\">\n    <inertial>\n\
+      \      <origin xyz=\"0.00629595 -0.000622121 -0.141417\" rpy=\"-0.0041426795949211\
+      \ -0.0085655797858484 1.5606824894148\" />\n      <mass value=\"0.241352\" />\n\
+      \      <inertia ixx=\"0.0014901\" iyy=\"0.00146356\" izz=\"5.31397e-05\" ixy=\"\
+      0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"geom_123_0\"\
+      >\n      <origin xyz=\"0.008 0 -0.06\" rpy=\"0 -0.20999957254786 0\" />\n  \
+      \    <geometry>\n        <box size=\"0.024 0.034 0.12\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_123_0\">\n      <origin xyz=\"0.008\
+      \ 0 -0.06\" rpy=\"0 -0.20999957254786 0\" />\n      <geometry>\n        <box\
+      \ size=\"0.024 0.034 0.12\" />\n      </geometry>\n      <material name=\"collision_proxy\"\
+      >\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n\
+      \    <collision name=\"geom_124_0\">\n      <origin xyz=\"0.02 0 -0.148\" rpy=\"\
+      0 0.049999983984335 0\" />\n      <geometry>\n        <box size=\"0.022 0.034\
+      \ 0.06\" />\n      </geometry>\n    </collision>\n    <visual name=\"geom_124_0\"\
+      >\n      <origin xyz=\"0.02 0 -0.148\" rpy=\"0 0.049999983984335 0\" />\n  \
+      \    <geometry>\n        <box size=\"0.022 0.034 0.06\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_125_0\">\n\
+      \      <origin xyz=\"0.008 0 -0.19\" rpy=\"0 0.49005523795706 0\" />\n     \
+      \ <geometry>\n        <box size=\"0.022 0.034 0.034\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_125_0\">\n      <origin xyz=\"0.008\
+      \ 0 -0.19\" rpy=\"0 0.49005523795706 0\" />\n      <geometry>\n        <box\
+      \ size=\"0.022 0.034 0.034\" />\n      </geometry>\n      <material name=\"\
+      collision_proxy\">\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n\
+      \    </visual>\n  </link>\n  <joint name=\"FL_calf_joint\" type=\"revolute\"\
+      >\n    <axis xyz=\"0 1 0\" />\n    <limit lower=\"-2.7227\" upper=\"-0.83776\"\
+      \ effort=\"45.43\" velocity=\".5\" />\n    <parent link=\"reuse/FL_thigh\" />\n\
+      \    <child link=\"reuse/FL_calf\" />\n    <origin xyz=\"0 0 -0.213\" rpy=\"\
+      0 0 0\" />\n  </joint>\n  <link name=\"reuse/FL_foot\">\n    <inertial>\n  \
+      \    <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <mass value=\"0.02\" />\n\
+      \      <inertia ixx=\"3.872e-06\" iyy=\"3.872e-06\" izz=\"3.872e-06\" ixy=\"\
+      0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"geom_127_0\"\
+      >\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <sphere\
+      \ radius=\"0.022\" />\n      </geometry>\n    </collision>\n    <visual name=\"\
+      geom_127_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.022\" />\n      </geometry>\n      <material name=\"\
+      collision_proxy\">\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n\
+      \    </visual>\n  </link>\n  <joint name=\"fixed_FL_foot\" type=\"fixed\">\n\
+      \    <parent link=\"reuse/FL_calf\" />\n    <child link=\"reuse/FL_foot\" />\n\
+      \    <origin xyz=\"-0.002 0 -0.213\" rpy=\"0 0 0\" />\n  </joint>\n  <link name=\"\
+      reuse/FR_hip\">\n    <inertial>\n      <origin xyz=\"-0.0054 -0.00194 -0.000105\"\
+      \ rpy=\"1.5802709600833 -0.004958737006258 1.5633327135415\" />\n      <mass\
+      \ value=\"0.678\" />\n      <inertia ixx=\"0.00088403\" iyy=\"0.000596003\"\
+      \ izz=\"0.000479967\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n  \
+      \  <collision name=\"geom_130_0\">\n      <origin xyz=\"0 -0.05 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <cylinder radius=\"0.046\" length=\"0.04\"\
+      \ />\n      </geometry>\n    </collision>\n    <visual name=\"geom_130_0\">\n\
+      \      <origin xyz=\"0 -0.05 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n\
+      \        <cylinder radius=\"0.046\" length=\"0.04\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_130_1\">\n\
+      \      <origin xyz=\"0 -0.03 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.046\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_130_1\">\n      <origin xyz=\"0 -0.03 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <sphere radius=\"0.046\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_130_2\">\n\
+      \      <origin xyz=\"0 -0.07 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.046\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_130_2\">\n      <origin xyz=\"0 -0.07 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <sphere radius=\"0.046\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"FR_hip_joint\"\
+      \ type=\"revolute\">\n    <axis xyz=\"1 0 0\" />\n    <limit lower=\"-1.0472\"\
+      \ upper=\"1.0472\" effort=\"23.7\" velocity=\".5\" />\n    <parent link=\"reuse/base\"\
+      \ />\n    <child link=\"reuse/FR_hip\" />\n    <origin xyz=\"0.1934 -0.0465\
+      \ 0\" rpy=\"0 0 0\" />\n  </joint>\n  <link name=\"reuse/FR_thigh\">\n    <inertial>\n\
+      \      <origin xyz=\"-0.00374 0.0223 -0.0327\" rpy=\"0.11974375656896 0.12714340351103\
+      \ 1.9755560757684\" />\n      <mass value=\"1.152\" />\n      <inertia ixx=\"\
+      0.00594973\" iyy=\"0.00584149\" izz=\"0.000878787\" ixy=\"0\" ixz=\"0\" iyz=\"\
+      0\" />\n    </inertial>\n    <collision name=\"geom_133_0\">\n      <origin\
+      \ xyz=\"0 0 -0.1065\" rpy=\"-0 1.5707963267949 0\" />\n      <geometry>\n  \
+      \      <box size=\"0.213 0.0245 0.034\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_133_0\">\n      <origin xyz=\"0 0 -0.1065\" rpy=\"\
+      -0 1.5707963267949 0\" />\n      <geometry>\n        <box size=\"0.213 0.0245\
+      \ 0.034\" />\n      </geometry>\n      <material name=\"collision_proxy\">\n\
+      \        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n \
+      \ </link>\n  <joint name=\"FR_thigh_joint\" type=\"revolute\">\n    <axis xyz=\"\
+      0 1 0\" />\n    <limit lower=\"-1.5708\" upper=\"3.4907\" effort=\"23.7\" velocity=\"\
+      .5\" />\n    <parent link=\"reuse/FR_hip\" />\n    <child link=\"reuse/FR_thigh\"\
+      \ />\n    <origin xyz=\"0 -0.0955 0\" rpy=\"0 0 0\" />\n  </joint>\n  <link\
+      \ name=\"reuse/FR_calf\">\n    <inertial>\n      <origin xyz=\"0.00629595 0.000622121\
+      \ -0.141417\" rpy=\"-0.0041426795949212 0.0085655797858484 1.5809101641749\"\
+      \ />\n      <mass value=\"0.241352\" />\n      <inertia ixx=\"0.0014901\" iyy=\"\
+      0.00146356\" izz=\"5.31397e-05\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n\
+      \    <collision name=\"geom_136_0\">\n      <origin xyz=\"0.008 0 -0.06\" rpy=\"\
+      0 -0.20999957254786 0\" />\n      <geometry>\n        <box size=\"0.024 0.034\
+      \ 0.12\" />\n      </geometry>\n    </collision>\n    <visual name=\"geom_136_0\"\
+      >\n      <origin xyz=\"0.008 0 -0.06\" rpy=\"0 -0.20999957254786 0\" />\n  \
+      \    <geometry>\n        <box size=\"0.024 0.034 0.12\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_137_0\">\n\
+      \      <origin xyz=\"0.02 0 -0.148\" rpy=\"0 0.049999983984335 0\" />\n    \
+      \  <geometry>\n        <box size=\"0.022 0.034 0.06\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_137_0\">\n      <origin xyz=\"0.02\
+      \ 0 -0.148\" rpy=\"0 0.049999983984335 0\" />\n      <geometry>\n        <box\
+      \ size=\"0.022 0.034 0.06\" />\n      </geometry>\n      <material name=\"collision_proxy\"\
+      >\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n\
+      \    <collision name=\"geom_138_0\">\n      <origin xyz=\"0.008 0 -0.19\" rpy=\"\
+      0 0.49005523795706 0\" />\n      <geometry>\n        <box size=\"0.022 0.034\
+      \ 0.034\" />\n      </geometry>\n    </collision>\n    <visual name=\"geom_138_0\"\
+      >\n      <origin xyz=\"0.008 0 -0.19\" rpy=\"0 0.49005523795706 0\" />\n   \
+      \   <geometry>\n        <box size=\"0.022 0.034 0.034\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"FR_calf_joint\"\
+      \ type=\"revolute\">\n    <axis xyz=\"0 1 0\" />\n    <limit lower=\"-2.7227\"\
+      \ upper=\"-0.83776\" effort=\"45.43\" velocity=\".5\" />\n    <parent link=\"\
+      reuse/FR_thigh\" />\n    <child link=\"reuse/FR_calf\" />\n    <origin xyz=\"\
+      0 0 -0.213\" rpy=\"0 0 0\" />\n  </joint>\n  <link name=\"reuse/FR_foot\">\n\
+      \    <inertial>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <mass value=\"\
+      0.02\" />\n      <inertia ixx=\"3.872e-06\" iyy=\"3.872e-06\" izz=\"3.872e-06\"\
+      \ ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"\
+      geom_140_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.022\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_140_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\"\
+      \ />\n      <geometry>\n        <sphere radius=\"0.022\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"fixed_FR_foot\"\
+      \ type=\"fixed\">\n    <parent link=\"reuse/FR_calf\" />\n    <child link=\"\
+      reuse/FR_foot\" />\n    <origin xyz=\"-0.002 0 -0.213\" rpy=\"0 0 0\" />\n \
+      \ </joint>\n  <link name=\"reuse/RL_hip\">\n    <inertial>\n      <origin xyz=\"\
+      0.0054 0.00194 -0.000105\" rpy=\"1.5613216935065 0.004958737006258 1.5633327135415\"\
+      \ />\n      <mass value=\"0.678\" />\n      <inertia ixx=\"0.00088403\" iyy=\"\
+      0.000596003\" izz=\"0.000479967\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n\
+      \    <collision name=\"geom_143_0\">\n      <origin xyz=\"0 0.05 0\" rpy=\"\
+      1.5707963267949 0 0\" />\n      <geometry>\n        <cylinder radius=\"0.046\"\
+      \ length=\"0.04\" />\n      </geometry>\n    </collision>\n    <visual name=\"\
+      geom_143_0\">\n      <origin xyz=\"0 0.05 0\" rpy=\"1.5707963267949 0 0\" />\n\
+      \      <geometry>\n        <cylinder radius=\"0.046\" length=\"0.04\" />\n \
+      \     </geometry>\n      <material name=\"collision_proxy\">\n        <color\
+      \ rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision name=\"\
+      geom_143_1\">\n      <origin xyz=\"0 0.07 0\" rpy=\"1.5707963267949 0 0\" />\n\
+      \      <geometry>\n        <sphere radius=\"0.046\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_143_1\">\n      <origin xyz=\"0 0.07\
+      \ 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n        <sphere radius=\"\
+      0.046\" />\n      </geometry>\n      <material name=\"collision_proxy\">\n \
+      \       <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n  \
+      \  <collision name=\"geom_143_2\">\n      <origin xyz=\"0 0.03 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <sphere radius=\"0.046\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_143_2\">\n      <origin xyz=\"0 0.03\
+      \ 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n        <sphere radius=\"\
+      0.046\" />\n      </geometry>\n      <material name=\"collision_proxy\">\n \
+      \       <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n  </link>\n\
+      \  <joint name=\"RL_hip_joint\" type=\"revolute\">\n    <axis xyz=\"1 0 0\"\
+      \ />\n    <limit lower=\"-1.0472\" upper=\"1.0472\" effort=\"23.7\" velocity=\"\
+      .5\" />\n    <parent link=\"reuse/base\" />\n    <child link=\"reuse/RL_hip\"\
+      \ />\n    <origin xyz=\"-0.1934 0.0465 0\" rpy=\"0 0 0\" />\n  </joint>\n  <link\
+      \ name=\"reuse/RL_thigh\">\n    <inertial>\n      <origin xyz=\"-0.00374 -0.0223\
+      \ -0.0327\" rpy=\"0.11974375656896 -0.12714340351103 1.1660365778214\" />\n\
+      \      <mass value=\"1.152\" />\n      <inertia ixx=\"0.00594973\" iyy=\"0.00584149\"\
+      \ izz=\"0.000878787\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n  \
+      \  <collision name=\"geom_146_0\">\n      <origin xyz=\"0 0 -0.1065\" rpy=\"\
+      -0 1.5707963267949 0\" />\n      <geometry>\n        <box size=\"0.213 0.0245\
+      \ 0.034\" />\n      </geometry>\n    </collision>\n    <visual name=\"geom_146_0\"\
+      >\n      <origin xyz=\"0 0 -0.1065\" rpy=\"-0 1.5707963267949 0\" />\n     \
+      \ <geometry>\n        <box size=\"0.213 0.0245 0.034\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"RL_thigh_joint\"\
+      \ type=\"revolute\">\n    <axis xyz=\"0 1 0\" />\n    <limit lower=\"-0.5236\"\
+      \ upper=\"4.5379\" effort=\"23.7\" velocity=\".5\" />\n    <parent link=\"reuse/RL_hip\"\
+      \ />\n    <child link=\"reuse/RL_thigh\" />\n    <origin xyz=\"0 0.0955 0\"\
+      \ rpy=\"0 0 0\" />\n  </joint>\n  <link name=\"reuse/RL_calf\">\n    <inertial>\n\
+      \      <origin xyz=\"0.00629595 -0.000622121 -0.141417\" rpy=\"-0.0041426795949211\
+      \ -0.0085655797858484 1.5606824894148\" />\n      <mass value=\"0.241352\" />\n\
+      \      <inertia ixx=\"0.0014901\" iyy=\"0.00146356\" izz=\"5.31397e-05\" ixy=\"\
+      0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"geom_149_0\"\
+      >\n      <origin xyz=\"0.008 0 -0.06\" rpy=\"0 -0.20999957254786 0\" />\n  \
+      \    <geometry>\n        <box size=\"0.024 0.034 0.12\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_149_0\">\n      <origin xyz=\"0.008\
+      \ 0 -0.06\" rpy=\"0 -0.20999957254786 0\" />\n      <geometry>\n        <box\
+      \ size=\"0.024 0.034 0.12\" />\n      </geometry>\n      <material name=\"collision_proxy\"\
+      >\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n\
+      \    <collision name=\"geom_150_0\">\n      <origin xyz=\"0.02 0 -0.148\" rpy=\"\
+      0 0.049999983984335 0\" />\n      <geometry>\n        <box size=\"0.022 0.034\
+      \ 0.06\" />\n      </geometry>\n    </collision>\n    <visual name=\"geom_150_0\"\
+      >\n      <origin xyz=\"0.02 0 -0.148\" rpy=\"0 0.049999983984335 0\" />\n  \
+      \    <geometry>\n        <box size=\"0.022 0.034 0.06\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_151_0\">\n\
+      \      <origin xyz=\"0.008 0 -0.19\" rpy=\"0 0.49005523795706 0\" />\n     \
+      \ <geometry>\n        <box size=\"0.022 0.034 0.034\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_151_0\">\n      <origin xyz=\"0.008\
+      \ 0 -0.19\" rpy=\"0 0.49005523795706 0\" />\n      <geometry>\n        <box\
+      \ size=\"0.022 0.034 0.034\" />\n      </geometry>\n      <material name=\"\
+      collision_proxy\">\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n\
+      \    </visual>\n  </link>\n  <joint name=\"RL_calf_joint\" type=\"revolute\"\
+      >\n    <axis xyz=\"0 1 0\" />\n    <limit lower=\"-2.7227\" upper=\"-0.83776\"\
+      \ effort=\"45.43\" velocity=\".5\" />\n    <parent link=\"reuse/RL_thigh\" />\n\
+      \    <child link=\"reuse/RL_calf\" />\n    <origin xyz=\"0 0 -0.213\" rpy=\"\
+      0 0 0\" />\n  </joint>\n  <link name=\"reuse/RL_foot\">\n    <inertial>\n  \
+      \    <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <mass value=\"0.02\" />\n\
+      \      <inertia ixx=\"3.872e-06\" iyy=\"3.872e-06\" izz=\"3.872e-06\" ixy=\"\
+      0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"geom_153_0\"\
+      >\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <sphere\
+      \ radius=\"0.022\" />\n      </geometry>\n    </collision>\n    <visual name=\"\
+      geom_153_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.022\" />\n      </geometry>\n      <material name=\"\
+      collision_proxy\">\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n\
+      \    </visual>\n  </link>\n  <joint name=\"fixed_RL_foot\" type=\"fixed\">\n\
+      \    <parent link=\"reuse/RL_calf\" />\n    <child link=\"reuse/RL_foot\" />\n\
+      \    <origin xyz=\"-0.002 0 -0.213\" rpy=\"0 0 0\" />\n  </joint>\n  <link name=\"\
+      reuse/RR_hip\">\n    <inertial>\n      <origin xyz=\"0.0054 -0.00194 -0.000105\"\
+      \ rpy=\"1.5613216935065 -0.004958737006258 1.5782599400483\" />\n      <mass\
+      \ value=\"0.678\" />\n      <inertia ixx=\"0.00088403\" iyy=\"0.000596003\"\
+      \ izz=\"0.000479967\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n  \
+      \  <collision name=\"geom_156_0\">\n      <origin xyz=\"0 -0.05 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <cylinder radius=\"0.046\" length=\"0.04\"\
+      \ />\n      </geometry>\n    </collision>\n    <visual name=\"geom_156_0\">\n\
+      \      <origin xyz=\"0 -0.05 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n\
+      \        <cylinder radius=\"0.046\" length=\"0.04\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_156_1\">\n\
+      \      <origin xyz=\"0 -0.03 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.046\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_156_1\">\n      <origin xyz=\"0 -0.03 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <sphere radius=\"0.046\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_156_2\">\n\
+      \      <origin xyz=\"0 -0.07 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.046\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_156_2\">\n      <origin xyz=\"0 -0.07 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <sphere radius=\"0.046\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"RR_hip_joint\"\
+      \ type=\"revolute\">\n    <axis xyz=\"1 0 0\" />\n    <limit lower=\"-1.0472\"\
+      \ upper=\"1.0472\" effort=\"23.7\" velocity=\".5\" />\n    <parent link=\"reuse/base\"\
+      \ />\n    <child link=\"reuse/RR_hip\" />\n    <origin xyz=\"-0.1934 -0.0465\
+      \ 0\" rpy=\"0 0 0\" />\n  </joint>\n  <link name=\"reuse/RR_thigh\">\n    <inertial>\n\
+      \      <origin xyz=\"-0.00374 0.0223 -0.0327\" rpy=\"0.11974375656896 0.12714340351103\
+      \ 1.9755560757684\" />\n      <mass value=\"1.152\" />\n      <inertia ixx=\"\
+      0.00594973\" iyy=\"0.00584149\" izz=\"0.000878787\" ixy=\"0\" ixz=\"0\" iyz=\"\
+      0\" />\n    </inertial>\n    <collision name=\"geom_159_0\">\n      <origin\
+      \ xyz=\"0 0 -0.1065\" rpy=\"-0 1.5707963267949 0\" />\n      <geometry>\n  \
+      \      <box size=\"0.213 0.0245 0.034\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_159_0\">\n      <origin xyz=\"0 0 -0.1065\" rpy=\"\
+      -0 1.5707963267949 0\" />\n      <geometry>\n        <box size=\"0.213 0.0245\
+      \ 0.034\" />\n      </geometry>\n      <material name=\"collision_proxy\">\n\
+      \        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n \
+      \ </link>\n  <joint name=\"RR_thigh_joint\" type=\"revolute\">\n    <axis xyz=\"\
+      0 1 0\" />\n    <limit lower=\"-0.5236\" upper=\"4.5379\" effort=\"23.7\" velocity=\"\
+      .5\" />\n    <parent link=\"reuse/RR_hip\" />\n    <child link=\"reuse/RR_thigh\"\
+      \ />\n    <origin xyz=\"0 -0.0955 0\" rpy=\"0 0 0\" />\n  </joint>\n  <link\
+      \ name=\"reuse/RR_calf\">\n    <inertial>\n      <origin xyz=\"0.00629595 0.000622121\
+      \ -0.141417\" rpy=\"-0.0041426795949212 0.0085655797858484 1.5809101641749\"\
+      \ />\n      <mass value=\"0.241352\" />\n      <inertia ixx=\"0.0014901\" iyy=\"\
+      0.00146356\" izz=\"5.31397e-05\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n\
+      \    <collision name=\"geom_162_0\">\n      <origin xyz=\"0.008 0 -0.06\" rpy=\"\
+      0 -0.20999957254786 0\" />\n      <geometry>\n        <box size=\"0.024 0.034\
+      \ 0.12\" />\n      </geometry>\n    </collision>\n    <visual name=\"geom_162_0\"\
+      >\n      <origin xyz=\"0.008 0 -0.06\" rpy=\"0 -0.20999957254786 0\" />\n  \
+      \    <geometry>\n        <box size=\"0.024 0.034 0.12\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_163_0\">\n\
+      \      <origin xyz=\"0.02 0 -0.148\" rpy=\"0 0.049999983984335 0\" />\n    \
+      \  <geometry>\n        <box size=\"0.022 0.034 0.06\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_163_0\">\n      <origin xyz=\"0.02\
+      \ 0 -0.148\" rpy=\"0 0.049999983984335 0\" />\n      <geometry>\n        <box\
+      \ size=\"0.022 0.034 0.06\" />\n      </geometry>\n      <material name=\"collision_proxy\"\
+      >\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n\
+      \    <collision name=\"geom_164_0\">\n      <origin xyz=\"0.008 0 -0.19\" rpy=\"\
+      0 0.49005523795706 0\" />\n      <geometry>\n        <box size=\"0.022 0.034\
+      \ 0.034\" />\n      </geometry>\n    </collision>\n    <visual name=\"geom_164_0\"\
+      >\n      <origin xyz=\"0.008 0 -0.19\" rpy=\"0 0.49005523795706 0\" />\n   \
+      \   <geometry>\n        <box size=\"0.022 0.034 0.034\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"RR_calf_joint\"\
+      \ type=\"revolute\">\n    <axis xyz=\"0 1 0\" />\n    <limit lower=\"-2.7227\"\
+      \ upper=\"-0.83776\" effort=\"45.43\" velocity=\".5\" />\n    <parent link=\"\
+      reuse/RR_thigh\" />\n    <child link=\"reuse/RR_calf\" />\n    <origin xyz=\"\
+      0 0 -0.213\" rpy=\"0 0 0\" />\n  </joint>\n  <link name=\"reuse/RR_foot\">\n\
+      \    <inertial>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <mass value=\"\
+      0.02\" />\n      <inertia ixx=\"3.872e-06\" iyy=\"3.872e-06\" izz=\"3.872e-06\"\
+      \ ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"\
+      geom_166_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.022\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_166_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\"\
+      \ />\n      <geometry>\n        <sphere radius=\"0.022\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"fixed_RR_foot\"\
+      \ type=\"fixed\">\n    <parent link=\"reuse/RR_calf\" />\n    <child link=\"\
+      reuse/RR_foot\" />\n    <origin xyz=\"-0.002 0 -0.213\" rpy=\"0 0 0\" />\n \
+      \ </joint>\n  <link name=\"reuse/link1\">\n    <inertial>\n      <origin xyz=\"\
+      -0.000108818 0.000607029 -0.00538686\" rpy=\"1.5868163864152 0.0050265539263865\
+      \ -0.0052340446190408\" />\n      <mass value=\"0.71\" />\n      <inertia ixx=\"\
+      0.000458361\" iyy=\"0.000409985\" izz=\"0.000334505\" ixy=\"0\" ixz=\"0\" iyz=\"\
+      0\" />\n    </inertial>\n  </link>\n  <joint name=\"joint1\" type=\"revolute\"\
+      >\n    <axis xyz=\"0 0 1\" />\n    <limit lower=\"-2.618\" upper=\"2.618\" effort=\"\
+      32.0\" velocity=\".5\" />\n    <parent link=\"reuse/base\" />\n    <child link=\"\
+      reuse/link1\" />\n    <origin xyz=\"0.000852257 -0.00011245 0.192997\" rpy=\"\
+      0.00091425239532262 0.0069289724039354 3.1674277018685e-06\" />\n  </joint>\n\
+      \  <link name=\"reuse/link2\">\n    <inertial>\n      <origin xyz=\"0.258453\
+      \ -0.00907882 0.00209824\" rpy=\"1.5753515724999 -0.59391415653078 1.5414238768557\"\
+      \ />\n      <mass value=\"1.16404\" />\n      <inertia ixx=\"0.0162743\" iyy=\"\
+      0.0162573\" izz=\"0.000956571\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n\
+      \    <collision name=\"geom_169_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0\
+      \ 1.5707963267949\" />\n      <geometry>\n        <cylinder radius=\"0.04\"\
+      \ length=\"0.04\" />\n      </geometry>\n    </collision>\n    <visual name=\"\
+      geom_169_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0 1.5707963267949\" />\n\
+      \      <geometry>\n        <cylinder radius=\"0.04\" length=\"0.04\" />\n  \
+      \    </geometry>\n      <material name=\"collision_proxy\">\n        <color\
+      \ rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision name=\"\
+      geom_169_1\">\n      <origin xyz=\"0 0 -0.02\" rpy=\"0 0 1.5707963267949\" />\n\
+      \      <geometry>\n        <sphere radius=\"0.04\" />\n      </geometry>\n \
+      \   </collision>\n    <visual name=\"geom_169_1\">\n      <origin xyz=\"0 0\
+      \ -0.02\" rpy=\"0 0 1.5707963267949\" />\n      <geometry>\n        <sphere\
+      \ radius=\"0.04\" />\n      </geometry>\n      <material name=\"collision_proxy\"\
+      >\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n\
+      \    <collision name=\"geom_169_2\">\n      <origin xyz=\"0 0 0.02\" rpy=\"\
+      0 0 1.5707963267949\" />\n      <geometry>\n        <sphere radius=\"0.04\"\
+      \ />\n      </geometry>\n    </collision>\n    <visual name=\"geom_169_2\">\n\
+      \      <origin xyz=\"0 0 0.02\" rpy=\"0 0 1.5707963267949\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.04\" />\n      </geometry>\n      <material name=\"\
+      collision_proxy\">\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n\
+      \    </visual>\n    <collision name=\"geom_170_0\">\n      <origin xyz=\"0.15\
+      \ -0.025 0\" rpy=\"-1.495936797277 1.4214950226378 -1.6456558563128\" />\n \
+      \     <geometry>\n        <cylinder radius=\"0.03\" length=\"0.2\" />\n    \
+      \  </geometry>\n    </collision>\n    <visual name=\"geom_170_0\">\n      <origin\
+      \ xyz=\"0.15 -0.025 0\" rpy=\"-1.495936797277 1.4214950226378 -1.6456558563128\"\
+      \ />\n      <geometry>\n        <cylinder radius=\"0.03\" length=\"0.2\" />\n\
+      \      </geometry>\n      <material name=\"collision_proxy\">\n        <color\
+      \ rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision name=\"\
+      geom_170_1\">\n      <origin xyz=\"0.051112475161761 -0.01016693455886 -0.0011124751617611\"\
+      \ rpy=\"-1.495936797277 1.4214950226378 -1.6456558563128\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.03\" />\n      </geometry>\n    </collision>\n \
+      \   <visual name=\"geom_170_1\">\n      <origin xyz=\"0.051112475161761 -0.01016693455886\
+      \ -0.0011124751617611\" rpy=\"-1.495936797277 1.4214950226378 -1.6456558563128\"\
+      \ />\n      <geometry>\n        <sphere radius=\"0.03\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_170_2\">\n\
+      \      <origin xyz=\"0.24888752483824 -0.03983306544114 0.0011124751617611\"\
+      \ rpy=\"-1.495936797277 1.4214950226378 -1.6456558563128\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.03\" />\n      </geometry>\n    </collision>\n \
+      \   <visual name=\"geom_170_2\">\n      <origin xyz=\"0.24888752483824 -0.03983306544114\
+      \ 0.0011124751617611\" rpy=\"-1.495936797277 1.4214950226378 -1.6456558563128\"\
+      \ />\n      <geometry>\n        <sphere radius=\"0.03\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"joint2\"\
+      \ type=\"revolute\">\n    <axis xyz=\"0 0 1\" />\n    <limit lower=\"0.0\" upper=\"\
+      3.14\" effort=\"32.0\" velocity=\".5\" />\n    <parent link=\"reuse/link1\"\
+      \ />\n    <child link=\"reuse/link2\" />\n    <origin xyz=\"0 0 0\" rpy=\"1.5707963171116\
+      \ -0.13578657307922 -3.1415925111835\" />\n  </joint>\n  <link name=\"reuse/link3\"\
+      >\n    <inertial>\n      <origin xyz=\"-0.00810222 -0.192422 -0.000651809\"\
+      \ rpy=\"1.5608068797563 -0.092607424664364 0.035379704951831\" />\n      <mass\
+      \ value=\"0.583343\" />\n      <inertia ixx=\"0.00556992\" iyy=\"0.00550867\"\
+      \ izz=\"0.000258804\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n  \
+      \  <collision name=\"geom_172_0\">\n      <origin xyz=\"0 0 0\" rpy=\"0 0 1.5707963267949\"\
+      \ />\n      <geometry>\n        <cylinder radius=\"0.04\" length=\"0.04\" />\n\
+      \      </geometry>\n    </collision>\n    <visual name=\"geom_172_0\">\n   \
+      \   <origin xyz=\"0 0 0\" rpy=\"0 0 1.5707963267949\" />\n      <geometry>\n\
+      \        <cylinder radius=\"0.04\" length=\"0.04\" />\n      </geometry>\n \
+      \     <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_172_1\">\n\
+      \      <origin xyz=\"0 0 -0.02\" rpy=\"0 0 1.5707963267949\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.04\" />\n      </geometry>\n    </collision>\n \
+      \   <visual name=\"geom_172_1\">\n      <origin xyz=\"0 0 -0.02\" rpy=\"0 0\
+      \ 1.5707963267949\" />\n      <geometry>\n        <sphere radius=\"0.04\" />\n\
+      \      </geometry>\n      <material name=\"collision_proxy\">\n        <color\
+      \ rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision name=\"\
+      geom_172_2\">\n      <origin xyz=\"0 0 0.02\" rpy=\"0 0 1.5707963267949\" />\n\
+      \      <geometry>\n        <sphere radius=\"0.04\" />\n      </geometry>\n \
+      \   </collision>\n    <visual name=\"geom_172_2\">\n      <origin xyz=\"0 0\
+      \ 0.02\" rpy=\"0 0 1.5707963267949\" />\n      <geometry>\n        <sphere radius=\"\
+      0.04\" />\n      </geometry>\n      <material name=\"collision_proxy\">\n  \
+      \      <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n   \
+      \ <collision name=\"geom_173_0\">\n      <origin xyz=\"-0.01 -0.17 0\" rpy=\"\
+      1.5695463239082 -0.049958427335063 0.050020888537613\" />\n      <geometry>\n\
+      \        <cylinder radius=\"0.025\" length=\"0.16\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_173_0\">\n      <origin xyz=\"-0.01\
+      \ -0.17 0\" rpy=\"1.5695463239082 -0.049958427335063 0.050020888537613\" />\n\
+      \      <geometry>\n        <cylinder radius=\"0.025\" length=\"0.16\" />\n \
+      \     </geometry>\n      <material name=\"collision_proxy\">\n        <color\
+      \ rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision name=\"\
+      geom_173_1\">\n      <origin xyz=\"-0.013995011881406 -0.090099875438368 -9.9875438368442e-05\"\
+      \ rpy=\"1.5695463239082 -0.049958427335063 0.050020888537613\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.025\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_173_1\">\n      <origin xyz=\"-0.013995011881406 -0.090099875438368\
+      \ -9.9875438368442e-05\" rpy=\"1.5695463239082 -0.049958427335063 0.050020888537613\"\
+      \ />\n      <geometry>\n        <sphere radius=\"0.025\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_173_2\">\n\
+      \      <origin xyz=\"-0.0060049881185944 -0.24990012456163 9.9875438368442e-05\"\
+      \ rpy=\"1.5695463239082 -0.049958427335063 0.050020888537613\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.025\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_173_2\">\n      <origin xyz=\"-0.0060049881185944 -0.24990012456163\
+      \ 9.9875438368442e-05\" rpy=\"1.5695463239082 -0.049958427335063 0.050020888537613\"\
+      \ />\n      <geometry>\n        <sphere radius=\"0.025\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"joint3\"\
+      \ type=\"revolute\">\n    <axis xyz=\"0 0 1\" />\n    <limit lower=\"-2.697\"\
+      \ upper=\"0.0\" effort=\"32.0\" velocity=\".5\" />\n    <parent link=\"reuse/link2\"\
+      \ />\n    <child link=\"reuse/link3\" />\n    <origin xyz=\"0.33823 0 0\" rpy=\"\
+      0 0 -1.7938499197812\" />\n  </joint>\n  <link name=\"reuse/link4\">\n    <inertial>\n\
+      \      <origin xyz=\"0.00312889 -0.00168781 -0.00425666\" rpy=\"0.046782955681884\
+      \ -0.26786501287229 1.0339207768985\" />\n      <mass value=\"0.366062\" />\n\
+      \      <inertia ixx=\"0.000174503\" iyy=\"0.000169733\" izz=\"0.000142021\"\
+      \ ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"\
+      geom_175_0\">\n      <origin xyz=\"0 0 0\" rpy=\"1.5707963267949 0 0\" />\n\
+      \      <geometry>\n        <cylinder radius=\"0.03\" length=\"0.03\" />\n  \
+      \    </geometry>\n    </collision>\n    <visual name=\"geom_175_0\">\n     \
+      \ <origin xyz=\"0 0 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n \
+      \       <cylinder radius=\"0.03\" length=\"0.03\" />\n      </geometry>\n  \
+      \    <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_175_1\">\n\
+      \      <origin xyz=\"0 0.015 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.03\" />\n      </geometry>\n    </collision>\n \
+      \   <visual name=\"geom_175_1\">\n      <origin xyz=\"0 0.015 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <sphere radius=\"0.03\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_175_2\">\n\
+      \      <origin xyz=\"0 -0.015 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n\
+      \        <sphere radius=\"0.03\" />\n      </geometry>\n    </collision>\n \
+      \   <visual name=\"geom_175_2\">\n      <origin xyz=\"0 -0.015 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <sphere radius=\"0.03\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"joint4\"\
+      \ type=\"revolute\">\n    <axis xyz=\"0 0 1\" />\n    <limit lower=\"-1.832\"\
+      \ upper=\"1.832\" effort=\"8.0\" velocity=\".5\" />\n    <parent link=\"reuse/link3\"\
+      \ />\n    <child link=\"reuse/link4\" />\n    <origin xyz=\"0 -0.32075 0\" rpy=\"\
+      1.5708005363182 -5.9994800505336e-07 0.15000008911996\" />\n  </joint>\n  <link\
+      \ name=\"reuse/link5\">\n    <inertial>\n      <origin xyz=\"0.00417769 -0.0639706\
+      \ -0.00267944\" rpy=\"0.27773172065659 -1.1935238985718 1.2843713679769\" />\n\
+      \      <mass value=\"0.376242\" />\n      <inertia ixx=\"0.000302186\" iyy=\"\
+      0.000295139\" izz=\"0.000150851\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n\
+      \    <collision name=\"geom_177_0\">\n      <origin xyz=\"0 -0.08 0\" rpy=\"\
+      1.5707963267949 0 0\" />\n      <geometry>\n        <cylinder radius=\"0.03\"\
+      \ length=\"0.05\" />\n      </geometry>\n    </collision>\n    <visual name=\"\
+      geom_177_0\">\n      <origin xyz=\"0 -0.08 0\" rpy=\"1.5707963267949 0 0\" />\n\
+      \      <geometry>\n        <cylinder radius=\"0.03\" length=\"0.05\" />\n  \
+      \    </geometry>\n      <material name=\"collision_proxy\">\n        <color\
+      \ rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n    <collision name=\"\
+      geom_177_1\">\n      <origin xyz=\"0 -0.055 0\" rpy=\"1.5707963267949 0 0\"\
+      \ />\n      <geometry>\n        <sphere radius=\"0.03\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_177_1\">\n      <origin xyz=\"0 -0.055\
+      \ 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n        <sphere radius=\"\
+      0.03\" />\n      </geometry>\n      <material name=\"collision_proxy\">\n  \
+      \      <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n   \
+      \ <collision name=\"geom_177_2\">\n      <origin xyz=\"0 -0.105 0\" rpy=\"1.5707963267949\
+      \ 0 0\" />\n      <geometry>\n        <sphere radius=\"0.03\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_177_2\">\n      <origin xyz=\"0 -0.105\
+      \ 0\" rpy=\"1.5707963267949 0 0\" />\n      <geometry>\n        <sphere radius=\"\
+      0.03\" />\n      </geometry>\n      <material name=\"collision_proxy\">\n  \
+      \      <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n  </link>\n\
+      \  <joint name=\"joint5\" type=\"revolute\">\n    <axis xyz=\"0 0 1\" />\n \
+      \   <limit lower=\"-1.22\" upper=\"1.22\" effort=\"8.0\" velocity=\".5\" />\n\
+      \    <parent link=\"reuse/link4\" />\n    <child link=\"reuse/link5\" />\n \
+      \   <origin xyz=\"0 0 0\" rpy=\"-1.5708005996134 -0.099999914023531 4.9701541926517e-07\"\
+      \ />\n  </joint>\n  <link name=\"reuse/link6\">\n    <inertial>\n      <origin\
+      \ xyz=\"0.0111527268 0.00269159034 0.0371316254\" rpy=\"1.6582344738975 -0.020662744780645\
+      \ -1.5344884039588\" />\n      <mass value=\"0.537494\" />\n      <inertia ixx=\"\
+      0.000323982045\" iyy=\"0.000453515785\" izz=\"0.000630547405\" ixy=\"0\" ixz=\"\
+      0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"geom_179_0\">\n   \
+      \   <origin xyz=\"0 0 0.06\" rpy=\"-1.570000326963 3.168078996918e-07 1.570000326963\"\
+      \ />\n      <geometry>\n        <box size=\"0.164 0.02 0.02\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_179_0\">\n      <origin xyz=\"0 0\
+      \ 0.06\" rpy=\"-1.570000326963 3.168078996918e-07 1.570000326963\" />\n    \
+      \  <geometry>\n        <box size=\"0.164 0.02 0.02\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n    <collision name=\"geom_182_0\">\n\
+      \      <origin xyz=\"-0.0760961 -0.03 0.032\" rpy=\"0 -1.2199992662051 0\" />\n\
+      \      <geometry>\n        <box size=\"0.034 0.09 0.025\" />\n      </geometry>\n\
+      \    </collision>\n    <visual name=\"geom_182_0\">\n      <origin xyz=\"-0.0760961\
+      \ -0.03 0.032\" rpy=\"0 -1.2199992662051 0\" />\n      <geometry>\n        <box\
+      \ size=\"0.034 0.09 0.025\" />\n      </geometry>\n      <material name=\"collision_proxy\"\
+      >\n        <color rgba=\".5 .6 .7 1\" />\n      </material>\n    </visual>\n\
+      \  </link>\n  <joint name=\"joint6\" type=\"revolute\">\n    <axis xyz=\"0 0\
+      \ 1\" />\n    <limit lower=\"-3.14\" upper=\"3.14\" effort=\"8.0\" velocity=\"\
+      .5\" />\n    <parent link=\"reuse/link5\" />\n    <child link=\"reuse/link6\"\
+      \ />\n    <origin xyz=\"0 -0.091 0\" rpy=\"1.5708005694373 0 0\" />\n  </joint>\n\
+      \  <link name=\"reuse/link7\">\n    <inertial>\n      <origin xyz=\"0.000277817\
+      \ -0.0467674 -0.0092103\" rpy=\"-0.042030451049819 -1.3823300068757 1.5741819299482\"\
+      \ />\n      <mass value=\"0.0264822\" />\n      <inertia ixx=\"1.45133e-05\"\
+      \ iyy=\"1.0004e-05\" izz=\"5.87021e-06\" ixy=\"0\" ixz=\"0\" iyz=\"0\" />\n\
+      \    </inertial>\n    <collision name=\"geom_184_0\">\n      <origin xyz=\"\
+      0 -0.025 -0.003\" rpy=\"0 0 0\" />\n      <geometry>\n        <box size=\"0.02\
+      \ 0.06 0.004\" />\n      </geometry>\n    </collision>\n    <visual name=\"\
+      geom_184_0\">\n      <origin xyz=\"0 -0.025 -0.003\" rpy=\"0 0 0\" />\n    \
+      \  <geometry>\n        <box size=\"0.02 0.06 0.004\" />\n      </geometry>\n\
+      \      <material name=\"collision_proxy\">\n        <color rgba=\".5 .6 .7 1\"\
+      \ />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"joint7\"\
+      \ type=\"prismatic\">\n    <axis xyz=\"0 0 -1\" />\n    <limit lower=\"0.0\"\
+      \ upper=\"0.05\" effort=\"0.5\" velocity=\".04\" />\n    <parent link=\"reuse/link6\"\
+      \ />\n    <child link=\"reuse/link7\" />\n    <origin xyz=\"0 0 0.13503\" rpy=\"\
+      1.5708005694373 0 0\" />\n  </joint>\n  <link name=\"reuse/link8\">\n    <inertial>\n\
+      \      <origin xyz=\"0.000277817 0.0467674 -0.0092103\" rpy=\"-0.042030451049819\
+      \ -1.3823300068757 1.5741819299482\" />\n      <mass value=\"0.0264822\" />\n\
+      \      <inertia ixx=\"1.45133e-05\" iyy=\"1.0004e-05\" izz=\"5.87021e-06\" ixy=\"\
+      0\" ixz=\"0\" iyz=\"0\" />\n    </inertial>\n    <collision name=\"geom_186_0\"\
+      >\n      <origin xyz=\"0 0.025 -0.003\" rpy=\"0 0 0\" />\n      <geometry>\n\
+      \        <box size=\"0.02 0.06 0.004\" />\n      </geometry>\n    </collision>\n\
+      \    <visual name=\"geom_186_0\">\n      <origin xyz=\"0 0.025 -0.003\" rpy=\"\
+      0 0 0\" />\n      <geometry>\n        <box size=\"0.02 0.06 0.004\" />\n   \
+      \   </geometry>\n      <material name=\"collision_proxy\">\n        <color rgba=\"\
+      .5 .6 .7 1\" />\n      </material>\n    </visual>\n  </link>\n  <joint name=\"\
+      joint8\" type=\"prismatic\">\n    <axis xyz=\"0 0 1\" />\n    <limit lower=\"\
+      -0.05\" upper=\"0.0\" effort=\"0.5\" velocity=\".04\" />\n    <mimic joint=\"\
+      joint7\" multiplier=\"-1\" offset=\"0\" />\n    <parent link=\"reuse/link6\"\
+      \ />\n    <child link=\"reuse/link8\" />\n    <origin xyz=\"0 0 0.13503\" rpy=\"\
+      -1.5708005694373 0 0\" />\n  </joint>\n  <link name=\"reuse/tcp\" />\n  <joint\
+      \ name=\"tcp_fixed\" type=\"fixed\">\n    <parent link=\"reuse/link6\" />\n\
+      \    <child link=\"reuse/tcp\" />\n    <origin xyz=\"0 0 0.11003\" rpy=\"0 0\
+      \ 0\" />\n  </joint>\n</robot>\n"
+    robot_description_kinematics:
+      manipulator_arm:
+        kinematics_solver: trac_ik_kinematics_plugin/TRAC_IKKinematicsPlugin
+        kinematics_solver_search_resolution: 0.005
+        kinematics_solver_timeout: 0.05
+        solve_type: Distance
+    robot_description_planning:
+      joint_limits:
+        joint1:
+          has_acceleration_limits: true
+          has_velocity_limits: true
+          max_acceleration: 1.0
+          max_velocity: 0.5
+        joint2:
+          has_acceleration_limits: true
+          has_velocity_limits: true
+          max_acceleration: 1.0
+          max_velocity: 0.5
+        joint3:
+          has_acceleration_limits: true
+          has_velocity_limits: true
+          max_acceleration: 1.0
+          max_velocity: 0.5
+        joint4:
+          has_acceleration_limits: true
+          has_velocity_limits: true
+          max_acceleration: 1.0
+          max_velocity: 0.5
+        joint5:
+          has_acceleration_limits: true
+          has_velocity_limits: true
+          max_acceleration: 1.0
+          max_velocity: 0.5
+        joint6:
+          has_acceleration_limits: true
+          has_velocity_limits: true
+          max_acceleration: 1.0
+          max_velocity: 0.5
+    robot_description_semantic: "<robot name=\"ch13_go2_piper_reuse\">\n  <virtual_joint\
+      \ name=\"world_joint\" type=\"floating\" parent_frame=\"reuse/odom\" child_link=\"\
+      reuse/base\" />\n  <group name=\"manipulator_arm\">\n    <chain base_link=\"\
+      reuse/base\" tip_link=\"reuse/tcp\" />\n  </group>\n  <group name=\"gripper\"\
+      >\n    <joint name=\"joint7\" />\n    <joint name=\"joint8\" />\n  </group>\n\
+      \  <end_effector name=\"piper_gripper\" parent_link=\"reuse/tcp\" group=\"gripper\"\
+      \ parent_group=\"manipulator_arm\" />\n  <group_state name=\"open\" group=\"\
+      gripper\">\n    <joint name=\"joint7\" value=\"0.03\" />\n  </group_state>\n\
+      \  <group_state name=\"close\" group=\"gripper\">\n    <joint name=\"joint7\"\
+      \ value=\"0.0\" />\n  </group_state>\n  <disable_collisions link1=\"reuse/base\"\
+      \ link2=\"reuse/FL_hip\" reason=\"Adjacent\" />\n  <disable_collisions link1=\"\
+      reuse/FL_hip\" link2=\"reuse/FL_thigh\" reason=\"Adjacent\" />\n  <disable_collisions\
+      \ link1=\"reuse/FL_thigh\" link2=\"reuse/FL_calf\" reason=\"Adjacent\" />\n\
+      \  <disable_collisions link1=\"reuse/FL_calf\" link2=\"reuse/FL_foot\" reason=\"\
+      Adjacent\" />\n  <disable_collisions link1=\"reuse/base\" link2=\"reuse/FR_hip\"\
+      \ reason=\"Adjacent\" />\n  <disable_collisions link1=\"reuse/FR_hip\" link2=\"\
+      reuse/FR_thigh\" reason=\"Adjacent\" />\n  <disable_collisions link1=\"reuse/FR_thigh\"\
+      \ link2=\"reuse/FR_calf\" reason=\"Adjacent\" />\n  <disable_collisions link1=\"\
+      reuse/FR_calf\" link2=\"reuse/FR_foot\" reason=\"Adjacent\" />\n  <disable_collisions\
+      \ link1=\"reuse/base\" link2=\"reuse/RL_hip\" reason=\"Adjacent\" />\n  <disable_collisions\
+      \ link1=\"reuse/RL_hip\" link2=\"reuse/RL_thigh\" reason=\"Adjacent\" />\n \
+      \ <disable_collisions link1=\"reuse/RL_thigh\" link2=\"reuse/RL_calf\" reason=\"\
+      Adjacent\" />\n  <disable_collisions link1=\"reuse/RL_calf\" link2=\"reuse/RL_foot\"\
+      \ reason=\"Adjacent\" />\n  <disable_collisions link1=\"reuse/base\" link2=\"\
+      reuse/RR_hip\" reason=\"Adjacent\" />\n  <disable_collisions link1=\"reuse/RR_hip\"\
+      \ link2=\"reuse/RR_thigh\" reason=\"Adjacent\" />\n  <disable_collisions link1=\"\
+      reuse/RR_thigh\" link2=\"reuse/RR_calf\" reason=\"Adjacent\" />\n  <disable_collisions\
+      \ link1=\"reuse/RR_calf\" link2=\"reuse/RR_foot\" reason=\"Adjacent\" />\n \
+      \ <disable_collisions link1=\"reuse/base\" link2=\"reuse/link1\" reason=\"Adjacent\"\
+      \ />\n  <disable_collisions link1=\"reuse/link1\" link2=\"reuse/link2\" reason=\"\
+      Adjacent\" />\n  <disable_collisions link1=\"reuse/link2\" link2=\"reuse/link3\"\
+      \ reason=\"Adjacent\" />\n  <disable_collisions link1=\"reuse/link3\" link2=\"\
+      reuse/link4\" reason=\"Adjacent\" />\n  <disable_collisions link1=\"reuse/link4\"\
+      \ link2=\"reuse/link5\" reason=\"Adjacent\" />\n  <disable_collisions link1=\"\
+      reuse/link5\" link2=\"reuse/link6\" reason=\"Adjacent\" />\n  <disable_collisions\
+      \ link1=\"reuse/link6\" link2=\"reuse/link7\" reason=\"Adjacent\" />\n  <disable_collisions\
+      \ link1=\"reuse/link6\" link2=\"reuse/link8\" reason=\"Adjacent\" />\n  <disable_collisions\
+      \ link1=\"reuse/link7\" link2=\"reuse/link8\" reason=\"Finger closure\" />\n\
+      \  <disable_collisions link1=\"reuse/tcp\" link2=\"reuse/link6\" reason=\"Empty\
+      \ fixed TCP\" />\n  <disable_collisions link1=\"reuse/tcp\" link2=\"reuse/link7\"\
+      \ reason=\"Empty fixed TCP\" />\n  <disable_collisions link1=\"reuse/tcp\" link2=\"\
+      reuse/link8\" reason=\"Empty fixed TCP\" />\n</robot>\n"
+    trajectory_execution:
+      allowed_execution_duration_scaling: 2.0
+      allowed_goal_duration_margin: 2.0
+      allowed_start_tolerance: 0.025
+    use_sim_time: false

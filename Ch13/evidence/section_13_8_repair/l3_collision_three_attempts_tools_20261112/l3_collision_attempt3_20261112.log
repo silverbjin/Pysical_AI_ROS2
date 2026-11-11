@@ -1,0 +1,23 @@
+[WARN] [1794418047.021686258] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1794418047.023937137] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_13_8/../section_13_8_preparation_20261104/diagnose_l3_attempt3_20261112.py", line 111, in <module>
+    response=call('/plan_kinematic_path',request,12.).motion_plan_response
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_13_8/../section_13_8_preparation_20261104/diagnose_l3_attempt3_20261112.py", line 44, in call
+    f=clients[name].call_async(request);assert until(f.done,seconds),name;return f.result()
+                                               ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: /plan_kinematic_path
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_13_8/../section_13_8_preparation_20261104/diagnose_l3_attempt3_20261112.py", line 125, in <module>
+    if process is not None and process.poll() is None:process.send_signal(signal.SIGINT);process.wait(timeout=8.)
+                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1264, in wait
+    return self._wait(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2045, in _wait
+    raise TimeoutExpired(self.args, timeout)
+subprocess.TimeoutExpired: Command '['/home/jinho/ch13_reuse_13_8_build/install/ch13_manipulation_planner/lib/ch13_manipulation_planner/planner_runtime', '--ros-args', '--params-file', '/mnt/c/Users/Jinho/.codex/.chatgpt-projects/g-p-6ad1e56cf8f881919fe23e1ab94d2855/work/Pysical_AI_ROS2_13_8/Ch13/evidence/section_13_8_repair/l3_collision_attempt3_20261112/planner.yaml']' timed out after 8.0 seconds

@@ -8,6 +8,8 @@
 
 새 단일 임무는 `--criteria-profile education_v1`(기본값)을 기록한다. 새 batch의 `prepare`도 기본 education_v1이며 plan에 수치까지 고정한다. 원고 비교용 새 batch는 prepare 때 `--criteria-profile book_v1`을 명시한다. run/report 때 다른 기준으로 전환할 수 없고 기존v1 plan은 book_v1로 계속 해석한다. 교육용 평균 시간/위치는 성공 임무만 계산하고 실패도 전체 성공률 분모에 남긴다. CPU/기울기는 실패를 포함한 유효 측정을 사용하며 표본 수를 공개한다. 기준 선택은 충돌 경로 실행이나 미완료 임무의 성공을 뜻하지 않는다.
 
+Level3 파지 전 충돌의 후속 해결 시도는 사용자 한도3회를 소진해 중단했다. 세 대안은 저장 장면의 독립 MoveIt 진단에 한정했고 실습 소스나 팔 명령에는 적용하지 않았다. 마지막 시도는 시간화 중 서비스 응답 기한을 넘어 해결 미입증이다. [3회 시도·중단 보고](SECTION_13_8_LEVEL3_COLLISION_STOP_REPORT_20261112_KO.md)를 따른다. 추가 튜닝·네 번째 실행을 자동으로 진행하지 않는다.
+
 ## 1. 소스 확보와 환경
 
 현재 기준은 공개13.6이 아니라 로컬13.7의13ecb58d에서 확장한 feat/ch13-section-13-8이다. 13.8 branch는3447c9e8까지 원격 게시한 이력이 있다. 현재 최신 remote ref는 다시 확인하며 새 환경 다운로드/engine 재현 검증은 별도다. 기존 로컬 work/Pysical_AI_ROS2_13_8를 사용한다. sources/와 과거 worktree·증거를 수정하지 않는다.
