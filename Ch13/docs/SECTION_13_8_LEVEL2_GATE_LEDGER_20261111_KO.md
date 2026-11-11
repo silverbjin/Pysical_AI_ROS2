@@ -97,3 +97,15 @@ UUID aebe4a05-2e76-4999-b46a-29a4d588928b는 실제 Smac DUBIN 선택을 launch 
 첫 full은480PASS/1FAIL(65.77초)였다. 실패는 test_platform_wire의 연결 준비 중 OLD_SOURCE:safe로, 첫 safe sample 전에 모의 시계가 진행한 시험 fixture 문제다. 기존 ROS wire fixture의 발견 대기 패턴을 참고했다. 고정 재현 RED1FAIL/3.23초(2.04s가2s 기대와 불일치) 후 첫 safe sample 수신까지 모의 시계를 유지하도록 수정했다. 이후 관련10PASS/1FAIL(34.33초)의 별도 실패는 초기 callback이3초 준비 시간 안에 실행되지 않은 경우이며, 앞의 시각 불일치 해결과 같은 원인이라고 단정하지 않는다. engine 없이 별도 작은 플랫폼 시험5PASS/4.28초를 확인했다. 모든 실패 출력은 prep에 보존하며 마지막 전체 재검증만 성공으로 보고한다.
 
 최종 full482PASS/68.73초, snapshot aa628fc6c93742fe82efce53d880fa9b. 자체 REVIEW: opt-in 기본 꺼짐, 기존 executor/lock/graph 조회 횟수/제어/수명/회수 판정 불변, 실제 monitor 상태 발행 보존 확인. 독립 검토가 아니다. 공개 portable CI에는 계측 반환·예외/상한/꺼짐 계약2건을 추가해 총11건을 실행한다. 다음 COMMIT→공개CI 실제 Job 확인→동일 조건의 단일 계측 사례다. 현재 Level2 정상 완주/인수 보류 상태는 바뀌지 않는다.
+
+## v46 실제 계측과 한계
+
+공개 CI run42979408371/job130386009089/runner1000005720 모든 step success. 전체482PASS와 설치감사72, source398/assets94 동결 SHA971ba2f72643070a08b0bbd9885af690134eabbef69e554d038166908857589e/runtime 전수 일치 PASS.
+
+첫 UUID9d5a5092-4987-480b-9f03-35a8821bdc90는 시작 survey 준비에서 gateway OLD_SOURCE:raw로 중단했다. 목표한 관측/파지 경계에 도달하지 못했고 engine monitor 최대10.456ms는 이 시작 실패의 원인 입증이 아니다. trial2.28sim/7.754wall, engine COMPLETED/launch0, 잔여[]/lockfree. raw3,422,730bytes/SHAcc6c47f7b3de3c08621b6c76460e3b488905433736f2568d90bc40b2fdbc7725.
+
+목표 미도달에 한정해 동일 소스/10Hz/overlap1/SE2=0/계측1을 새 UUID09fda61e-5f05-4719-8f9b-9241409e74eb로 한 번 반복했다. survey 이후 최종 접근 중 VISION_EXPIRED, trial83.98sim/318.143wall FAIL. 최초 decision9113.515155677에서 capture_wall9113.196844728의 나이318.311ms였다. 마지막 상태의343.467ms를 최초 fault 나이로 쓰지 않는다. fault 직전1초의 platform monitor 최대26.222ms/manipulation monitor25.658ms/action monitor15.680ms였으며, 엔진 callback 지연 하나로 관측 만료 전체를 설명할 수 없다. 이 계측은 다른 프로세스인 vision callback의 대기 시간을 직접 측정하지 않았다.
+
+renderer는 그 사이85440/85444/85450ms 촬영 자료를 실제 발행했으나 camera receipt 결합 기록은 세 프레임 모두 누락됐고 다음 건강 관측은85458ms에서 재개했다. 발행·native 수신·메타데이터 결합·inference·health 전달 중 원인을 추가 분리해야 하며 메시지 손실이나 executor 단독 원인으로 단정하지 않는다. controller/route의 정상 재현도 아직 미확인이다. 종료 시 engine ERROR/KeyboardInterrupt, clean child11/12였고 OS 잔여[]/lockfree다. 이 종료를 정상12child 회수로 표시하지 않는다. raw24,834,342bytes/SHA5dade22c5548197db3192881b85d1916bdc9e0f7457a6043ef47116e75030913, 두 사례 source_v46 보존 PASS.
+
+v45 닫힌 사례의 해시 일치 대형 중복12파일83,756,349bytes를 정리했다. 원장retention_v45_duplicates_20261111.json, raw/archive/판정/소스는 유지한다. 기존 v28의0/10이나 Owner 인수 보류는 바뀌지 않는다. 다음에는 저장 자세의 별도 domain136 카메라 재현으로 vision callback을 조사하며 추가 전체 engine 재시도는 먼저 하지 않는다.

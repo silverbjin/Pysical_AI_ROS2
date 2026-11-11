@@ -1,0 +1,125 @@
+{
+  "result": "FAIL",
+  "case": "vision",
+  "events": [],
+  "error": "Traceback (most recent call last):\n  File \"/home/jinho/ch13_reuse_13_8_build/live_source_ee268a82bd5445d68243c9794a622b6d/repo/Ch13/scripts/reuse_13_5/run_navigation_probe.py\", line 116, in main\n    if orchestration is not None:orchestration.ready(node=node,until=until,snapshot=snapshot)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jinho/ch13_reuse_13_8_build/live_source_ee268a82bd5445d68243c9794a622b6d/repo/Ch13/scripts/reuse_13_8/run_mission.py\", line 54, in ready\n    observe_from_waypoint(self,scenario=scenario,**context)\n  File \"/home/jinho/ch13_reuse_13_8_build/install/ch13_system_validation/lib/python3.12/site-packages/ch13_system_validation/survey.py\", line 41, in observe_from_waypoint\n    assert until(lambda:result.done() or prepared_zero(snapshot(),now=time.monotonic()),5.),'survey not prepared at zero'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: survey not prepared at zero\n",
+  "gateway_last": {
+    "mode": "FAULT",
+    "fault": "OLD_SOURCE:raw",
+    "fault_details": null,
+    "stamp_ns": 4160000000,
+    "clock_ns": 4160000000,
+    "origin": "generated_safety_zero",
+    "decision_wall": 8669.351972368,
+    "source_receipts": {
+      "joints": {
+        "stamp_ns": 2588000000,
+        "receipt_wall": 8665.53170345,
+        "gid": "010fb4059a7da3870000000000001603"
+      },
+      "base": {
+        "stamp_ns": 2588000000,
+        "receipt_wall": 8665.531604171,
+        "gid": "010fb4059a7da3870000000000001403"
+      },
+      "raw": {
+        "stamp_ns": 2286000000,
+        "receipt_wall": 8664.736665941,
+        "gid": "010fb405967d4e630000000000001303"
+      }
+    },
+    "counts": {
+      "clock": 1,
+      "raw": 1,
+      "base": 1,
+      "joints": 1,
+      "relay": 1
+    },
+    "safe_watermark_ns": 4160000000,
+    "pending_future_count": 0,
+    "startup_sync": true,
+    "ready_for_arm": false
+  },
+  "platform_last": {
+    "mode": "DISARMED",
+    "fault": "",
+    "stationary_ready": true,
+    "clock_ns": 4162000000,
+    "vx": 0.0,
+    "wz": 0.0,
+    "arm_joint1_target": 0.0,
+    "counts": {
+      "clock": 1,
+      "safe": 1,
+      "relay": 1
+    }
+  },
+  "navigation_last": {
+    "phase": "ACTIVE",
+    "fault": "",
+    "stamp_ns": 4140000000,
+    "vx": 0.0,
+    "wz": 0.0,
+    "output_held": true,
+    "origin": "held_zero_with_controller_stamp",
+    "frames_ready": true,
+    "pending_future_count": 0,
+    "startup_sync": false,
+    "vision_capture_ns": 4124000000,
+    "vision_capture_wall": 8669.273118202,
+    "vision_capture_age_wall_s": 0.08359054299944546,
+    "vision_health_native_receipt": 8669.294517716,
+    "vision_health_processed_wall": 8669.294923371,
+    "isolated_capture_health": true,
+    "vision_fault_record": null,
+    "samples": {
+      "tf": {
+        "stamp_ns": 4160000000,
+        "receipt_wall": 8669.347208018,
+        "gid": "010fb4059a7da3870000000000001703"
+      },
+      "scan": {
+        "stamp_ns": 4152000000,
+        "receipt_wall": 8669.329342926,
+        "gid": "010fb4059a7da3870000000000003703"
+      },
+      "nav": {
+        "stamp_ns": 4140000000,
+        "receipt_wall": 8669.312311853,
+        "gid": "010fb4059c7d76d70000000000006303"
+      },
+      "smooth": {
+        "stamp_ns": 4140000000,
+        "receipt_wall": 8669.342513845,
+        "gid": "010fb4059d7df5e40000000000002003"
+      }
+    }
+  },
+  "vision_last": {
+    "fault": "",
+    "last_capture_ns": 4124000000,
+    "accepted": 0,
+    "rejected": {
+      "cylinder not observed": 63
+    }
+  },
+  "planner_stopped_before_engine": true,
+  "planner_stop_clock_ns": 4300000000,
+  "owned_launch_pids": [
+    32148,
+    32149,
+    32150,
+    32151,
+    32152,
+    32153,
+    32154,
+    32155,
+    32156,
+    32157,
+    32168,
+    32172
+  ],
+  "remaining_launch_pids": [],
+  "clean_launch_exits": 12,
+  "launch_exit_code": 0
+}
