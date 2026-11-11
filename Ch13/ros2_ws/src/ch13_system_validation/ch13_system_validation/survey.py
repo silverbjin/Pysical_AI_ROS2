@@ -1,12 +1,23 @@
 """Known-map survey before fresh vision approach, on the existing ROS owner."""
 import math
 import time
+from pathlib import Path
+from ament_index_python.packages import get_package_share_directory
 from rclpy.action import ActionClient
 from std_srvs.srv import Trigger
 from nav2_msgs.action import NavigateToPose
 from ch13_navigation_reuse.command_gateway import N
 from ch13_navigation_reuse.nav_contract import prepared_zero
 from .continuation import make_navigation_goal,drain_owned_goals
+
+
+def make_survey_goal(target, clock_ns):
+    goal=make_navigation_goal(target,clock_ns)
+    path=Path(get_package_share_directory('ch13_navigation_reuse'))/'config/navigate_survey.xml'
+    if not path.is_file():
+        raise ValueError('installed survey behavior tree missing')
+    goal.behavior_tree=str(path)
+    return goal
 
 
 def observe_from_waypoint(session,*,node,until,snapshot,scenario):
@@ -22,7 +33,7 @@ def observe_from_waypoint(session,*,node,until,snapshot,scenario):
     try:
         assert until(client.server_is_ready,3.)
         call('navigation/enable')
-        sent=client.send_goal_async(make_navigation_goal(target,snapshot()['clock_ns']))
+        sent=client.send_goal_async(make_survey_goal(target,snapshot()['clock_ns']))
         session.track_goal(sent);assert until(sent.done,5.)
         handle=sent.result();assert handle.accepted,'survey goal rejected'
         result=handle.get_result_async()
