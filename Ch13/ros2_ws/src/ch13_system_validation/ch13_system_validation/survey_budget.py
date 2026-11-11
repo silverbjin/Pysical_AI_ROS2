@@ -14,6 +14,10 @@ class SurveyBudget:
         self.last_clock=clock_ns
         self.last_wall=wall
 
+    def record_start(self,port):
+        port.event('survey_budget_started',clock_ns=self.start_clock,
+                   budget_start_wall=self.start_wall,sim_budget_s=SIM_SECONDS,wall_budget_s=WALL_SECONDS)
+
     def reason(self,*,clock_ns,wall):
         if (type(clock_ns) is not int or clock_ns<self.last_clock
                 or not math.isfinite(wall) or wall<self.last_wall):

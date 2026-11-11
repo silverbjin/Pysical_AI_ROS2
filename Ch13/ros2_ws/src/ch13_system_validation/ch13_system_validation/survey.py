@@ -47,8 +47,7 @@ def observe_from_waypoint(session,*,node,until,snapshot,scenario):
             current=snapshot()
             return (current['boundary'].get('phase')=='FAULT'
                     or budget.reason(clock_ns=current['clock_ns'],wall=time.monotonic()) is not None)
-        session.port.event('survey_budget_started',clock_ns=budget.start_clock,
-            wall=budget.start_wall,sim_budget_s=120,wall_budget_s=WALL_SECONDS)
+        budget.record_start(session.port)
         assert until(stopped,WALL_SECONDS),'survey wall deadline'
         assert budget.reason(clock_ns=snapshot()['clock_ns'],wall=time.monotonic()) is None,'survey duration deadline'
         assert not session.cancel_requested(),'survey canceled'

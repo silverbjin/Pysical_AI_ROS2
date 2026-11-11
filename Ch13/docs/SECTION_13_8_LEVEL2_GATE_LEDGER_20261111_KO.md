@@ -31,3 +31,9 @@ v39 actual930cbd2f-2d68-49ff-8cb4-625eeee10884도survey deadline FAIL/12child cl
 Ruling: 기존LEVEL23_EVALUATION_SPEC의개별action120sim/240wall계약을survey작업에도명시적으로적용한다. v37/v38명세에서유지하기로했던survey120wall단일제한을이번원인분리결과에따라대체한다. 이전실패의판정은바꾸지않는다. task예산의wall상한이120→240으로증가하는실제변경이며이사실을숨기지않는다. 120sim또는240steady중먼저도달하면실패/소유goal회수다. 엔진·runner한도와300ms수명/100msTF/안전정지·지터임계값·executor는변경하지않는다. Scan수신gap을이변경의근거로사용하지않았다. 동일survey를사용하는L3도이명시적action예산을사용하므로이단계의영향범위에포함한다.
 
 근거: 공식ROS2 Clock and Time(https://design.ros2.org/articles/clock_and_time.html)은simulation/steady의진행속도와용도를구분한다. 예제존재를이로봇의성공증거로표현하지않는다. RED6FAIL/3.65초→관련GREEN28PASS/7.92초→REFACTOR(단일snapshot으로stop검사·예산시작event)→full466PASS/74.69초(snapshot3663295ec17a43abb75c6745197fc946). REVIEW에서정지sim의wall상한·clock역행거부·기존cancel/FAULT우선검사·finallydrain보존을확인했다. 미초기화/역행시간은예산연장의권한이아니다. 공개CI에이중예산6시험을추가한다. 다음COMMIT→공개CI→실제인수순서다.
+
+## v40 기록 코드 실패·v41 회귀 경계 보완
+
+actualc2939327-10d9-48c3-874a-430e17c3d54e는survey_budget_started의wall키가TaskPort.event의예약wall키와중복돼TypeError로중단됐다. 시간예산정책의실제성공/실패로집계하지않는다. 원본FAIL·12childclean/잔여[]/lockfree와source393/archive를보존했다. raw3,198,416bytes/SHA7415eee23dc06843b84875233e933a780221059ea4fda895e0c91597080f5d13. 에이전트가추가한기록결함이며기존물리·관측문제와구분한다.
+
+RED: 실제TaskPort에동일wall전달TypeError를재현(1FAIL/2.74초),budget.record_start의budget_start_wall로분리했다. REFACTOR: 기록경계를작은메서드로모았다. 최초full은1FAIL/466PASS/76.63초였고기존wire시험기동중FUTURE_SOURCE:base였다. DDS발견과첫clock수신을동일시하던fixture의경계를분리했다. 결정적fixture RED1FAIL/3.19초→clock실제수신을기다린후상태발행으로수정. productiongateway·freshness·native C++는변경없다. 최종GREEN468PASS/85.90초(snapshot36c34308c6384cedbbf8b690dc10f6a7). REVIEW: 예약키분리·single-owner/cancel·negative clock/future/loss회귀유지확인. 기존CRLF/-text파일은CR-at-eol설정으로diff공백검사해통과했고원본바이트를줄바꿈만으로바꾸지않았다. 공개CI에실제TaskPort통합회귀도포함한다. 다음COMMIT→공개CI→새v41실제인수다.

@@ -17,6 +17,26 @@ if ROS:
     from std_msgs.msg import String
     from ch13_navigation_reuse.command_gateway import CommandGateway
 N='/ch13/reuse'
+
+@unittest.skipUnless(ROS,'requires Jazzy messages')
+class FixtureClockAdmissionTests(unittest.TestCase):
+    def test_fixture_holds_states_until_relay_clock_is_observed(self):
+        from types import SimpleNamespace
+        fixture=WireTests.__new__(WireTests);sent=[]
+        fixture.source_ready=False;fixture.ns=2_000_000_000;fixture.status={}
+        fixture.g=SimpleNamespace(count_publishers=lambda name:1)
+        def publisher(name,count):
+            return SimpleNamespace(get_subscription_count=lambda:count,publish=lambda msg:sent.append(name))
+        fixture.clock=publisher('clock',2);fixture.base=publisher('base',1)
+        fixture.joints=publisher('joints',1);fixture.cmd=publisher('raw',1)
+        fixture.paused=False;fixture.rollback=False;fixture.future_base=False
+        fixture.base_enabled=True;fixture.joints_enabled=True;fixture.raw=True
+        fixture.send()
+        self.assertEqual(sent,['clock'])
+        self.assertEqual(fixture.ns,2_000_000_000)
+        fixture.status={'clock_ns':2_000_000_000};sent.clear();fixture.send()
+        self.assertEqual(sent,['clock','base','joints','raw'])
+
 @unittest.skipUnless(ROS,'requires Jazzy local DDS')
 class WireTests(unittest.TestCase):
     def setUp(self):
@@ -33,12 +53,17 @@ class WireTests(unittest.TestCase):
             # Do not advance the synthetic clock while the relay is still
             # constructing/discovering its separate clock/state subscriptions.
             # Once admitted, loss/replacement tests retain their original flow.
-            self.source_ready=(self.clock.get_subscription_count()==2
+            discovered=(self.clock.get_subscription_count()==2
                 and self.base.get_subscription_count()==1
                 and self.joints.get_subscription_count()==1
                 and self.cmd.get_subscription_count()==1
                 and self.g.count_publishers(N+'/ingress/gateway')==1)
-            if not self.source_ready:return
+            if not discovered:return
+            self.source_ready=self.status.get('clock_ns')==self.ns
+            if not self.source_ready:
+                c=Clock();c.clock.sec=self.ns//1_000_000_000;c.clock.nanosec=self.ns%1_000_000_000
+                self.clock.publish(c)
+                return
         if not self.paused:self.ns+=20_000_000
         stamp_ns=self.ns-(1_000_000_000 if self.rollback else 0)
         c=Clock();c.clock.sec=stamp_ns//1_000_000_000;c.clock.nanosec=stamp_ns%1_000_000_000;self.clock.publish(c)
