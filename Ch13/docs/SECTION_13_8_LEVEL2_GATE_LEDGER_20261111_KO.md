@@ -135,3 +135,13 @@ engine COMPLETED/normal shutdown true,12child 정상 회수·worker/port/rosbag 
 RED1FAIL/4.05초에서42ms Scan 뒤 제출하던 기존 순서가 재현됐다. GREEN9PASS/3.20초에서 원본 qpos copy/stamp/wall/Scan 주기와 기본 경로 불변을 확인했다. REFACTOR는 state publish 중복 분기만 합치고 추가 동작은 넣지 않았다. 전체485PASS/82.10초, native snapshot31150757de4b4461a0c170bca51b8fdb. 자체 REVIEW에서 같은 engine snapshot을 복사해 기존 worker에 일찍 전달하며 물리 상태/clock/관측 수명/TF/정책/PD/속도/성공/종료 기준을 변경하지 않은 것을 확인했다. 중복 state publish 제거 같은 별도 변경은 하지 않았다.
 
 닫힌 v46/v47 사례의 대형 중복은 raw 전체 및 멤버/로컬 SHA를 검증한 뒤 retention_v46_v47_duplicates_20261111.json에 따라 정리했다. 원본 archive·판정·정확한 source·필수 진단은 유지한다. 다음 COMMIT→공개CI→v48 별도 freeze/build/audit→동일 조건의 단일 실제 검증이다. Level2 정상 완주와 Owner 인수는 보류이며 기존0/10을 대체하지 않는다.
+
+## v48 실제 검증 — 촬영 선제 제출 확인, 추론 대기 만료
+
+코드25a5688c/문서ecf9c255 공개 CI run43019268300/job130518062927/runner1000006005의 모든 step 성공을 확인했다. 설치감사72/source398/assets94 동결SHA9b3468c7ba9c1872988b5e95df8eecfd43dbd45fdadd02bbf6087e4d7833537e/native485PASS snapshot/runtime 전수 일치.
+
+UUID4f4d4ce4-0d83-40f8-a0e2-4584b6e3097b는 최종 navigate11.311mm/정착/find/팔 준비를 통과한 뒤 PRE_GRASP 중 OBSERVATION_EXPIRED로 FAIL(66.192sim/220.521wall). engine COMPLETED/normal true/12child 정상 회수·worker/port/rosbag 완료·잔여[]/lockfree. raw20,037,484bytes/SHA7692bce9bc801b2a21821a396eb544b795eb02f21c634b83d15d7b0fc71697ff/source_v48 보존 PASS.
+
+해당 구간 pre_offer는 약0.004~0.012ms로 Scan 이전 요청이 실제 적용됐다. 최초 fault8757.348507426에 사용한 원본 capture8757.046126638은302.381ms였다. 다음 capture8757.229389063의 네 native/metadata는8757.273662까지 도착했지만 inference 시작8757.329831725/종료8757.354383926으로 직전300ms 만료8757.346126638를 넘겼다. 10Hz cap이 앞선 inference8757.212981876 이후100ms를 기다리는 구간이 있다. 원래15Hz 지원값의67ms 간격을 이용하는 저장 deadline 재현을 다음 단계로 좁혔다. 과거15Hz 실패와 이번 개선된 생산 경계를 섞지 않으며 전체 성공으로 선언하지 않는다.
+
+PRE_GRASP 첫 후보의 execution duration67.234sim초도 기록했다. 전체120sim초 목표에 부담이 되는 별도 항목이며 아직 실행 완료하지 않았다. 이번 관측 처리율 작업과 함께 팔 속도나 물리/경로를 바꾸지 않는다. 정상 완주·정식10회 재평가·Owner 인수는 계속 미완료다.
