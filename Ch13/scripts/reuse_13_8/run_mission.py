@@ -21,6 +21,8 @@ def main():
     ap.add_argument('--manifest',required=True)
     ap.add_argument('--auto-start',action='store_true');ap.add_argument('--no-bag',action='store_true')
     ap.add_argument('--scenario',choices=tuple(SCENARIOS),default='development')
+    ap.add_argument('--exercise',choices=['basic','full'],default='full',
+                    help='Student guide uses basic: navigate, find, finish; legacy default full is unchanged')
     ap.add_argument('--criteria-profile',choices=tuple(PROFILES),default='education_v1',
                     help='Performance evaluation policy (default: education_v1); safety is unchanged')
     args=ap.parse_args();root=Path(args.repo_root).resolve();out=Path(args.evidence).resolve()
@@ -35,7 +37,7 @@ def main():
     from nav_msgs.msg import Odometry
     from rosgraph_msgs.msg import Clock
     import py_trees
-    from ch13_mission_orchestration.tree import Mission,Task
+    from ch13_mission_orchestration.tree import Mission
     from ch13_mission_orchestration.tasks import TaskPort,STEPS
     from ch13_mission_orchestration.session import Session
     from ch13_system_validation.continuation import continue_mission
@@ -48,10 +50,12 @@ def main():
     class ValidationSession(Session):
         engine_budget_sim_s=600.
         vision_hz=scenario.vision_hz
+        observation_only=args.exercise=='basic'
         def ready(self,**context):
             from ch13_system_validation.startup import prepare_manipulation_types
             # All of this stays on the ROS owner before a manipulation OFFER.
-            for record in prepare_manipulation_types():self.port.event('startup_preparation',**record)
+            if not self.observation_only:
+                for record in prepare_manipulation_types():self.port.event('startup_preparation',**record)
             super().ready(**context)
             if scenario.survey_pose is not None:
                 from ch13_system_validation.survey import observe_from_waypoint
@@ -64,9 +68,10 @@ def main():
     class ValidationMission(Mission):
         def __init__(self,port):
             super().__init__(port);self.started=False
-            main=self.root.children[-1];finish=main.children[-1];main.remove_child(finish)
+            from ch13_system_validation.basic_exercise import configure_tasks
+            configure_tasks(self,args.exercise)
+            main=self.root.children[-1]
             main.insert_child(WaitStart(self),0)
-            main.add_children([Task('return',self),Task('place',self),finish])
             self.log=None
         def tick(self,tree=None):
             super().tick(tree)
@@ -161,7 +166,18 @@ def main():
                 criteria_profile=criteria.profile,criteria=criteria.record(),
                 cpu_basis='owned process tree / sched_getaffinity cores',allowed_cores=cpu.cores)
             row.update(source_manifest_sha256=hashlib.sha256(manifest.read_bytes()).hexdigest(),physical=physics)
-            (out/'trial.json').write_text(json.dumps(row,indent=2,allow_nan=False)+'\n')
+            if args.exercise=='basic':
+                from ch13_system_validation.basic_exercise import assess_basic
+                navigation=json.loads((out/'navigation_summary.json').read_text()) if (out/'navigation_summary.json').exists() else {}
+                grade=assess_basic(summary,navigation,engine,recording_complete=args.no_bag or bag_closed is True,
+                    telemetry_joined=telemetry is None or telemetry['joined'],world_pass=physics['world']['result']=='PASS',
+                    manipulation_artifacts=any((out/name).exists() for name in ('arm_probe.json','pick_mission.json')))
+                row.update(grade,success=code==0 and grade['result']=='PASS',exercise='basic',
+                    physical={'world':physics['world']},position_error_m=completed.get('navigate',{}).get('position_error_m'))
+                (out/'basic_result.json').write_text(json.dumps(row,indent=2,allow_nan=False)+'\n')
+            else:
+                row['exercise']='full'
+                (out/'trial.json').write_text(json.dumps(row,indent=2,allow_nan=False)+'\n')
             if telemetry is not None:(out/'telemetry_delivery.json').write_text(json.dumps(telemetry,indent=2)+'\n')
             (out/'health.json').write_text(json.dumps(dict(topics={k:v.report() for k,v in health.items()},cpu=cpu.rows,
                 battery_voltage='unavailable: no physical voltage model'),indent=2)+'\n')

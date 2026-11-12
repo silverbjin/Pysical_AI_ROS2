@@ -43,12 +43,14 @@ def main(argv=None,*,mission_factory=Mission,session_factory=Session,port_factor
             from run_handoff import handoff
             from run_pick import work
             def manipulate(**context):
+                if getattr(session,'observation_only',False):
+                    return dict(exercise='basic',manipulation_executed=False)
                 def pick(**kw):
                     continuation=None if pick_continuation is None else lambda **items:pick_continuation(session=session,call=context['call'],**items)
                     session.pick_work(lambda **items:work(**items,out=out,continuation=continuation),evidence=out,**kw)
                 return handoff(**context,case='bt',work=pick)
             code=navigate(navigation_arguments(root,out,session),
-                planning=True,pick_scene=True,handoff=manipulate,orchestration=session)
+                planning=not getattr(session,'observation_only',False),pick_scene=True,handoff=manipulate,orchestration=session)
             worker_result['exit_code']=code
             if code:port.fail('owned robot session failed; see navigation_summary.json')
             elif not session.cancel_requested():port.complete('finish',dict(session=session.session))

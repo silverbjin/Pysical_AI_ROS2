@@ -190,7 +190,8 @@ def main(argv=None,handoff=None,planning=False,pick_scene=False,startup_only=Fal
    ready_pub=node.create_publisher(String,N+'/ready_for_manipulation',1);payload={'state':'READY_FOR_MANIPULATION','terminal':terminal.status,'actual_position_error_m':S['actual_goal_error_m'],'actual_yaw_error_rad':S['actual_goal_yaw_error_rad'],'capture_ns':final_observation['capture_ns'],'workspace':reach,'stamp_ns':clock_ns,'capture_wall':final_observation['capture_wall'],'decision_wall':time.monotonic(),'tf_stamp_ns':final_observation['tf_stamp_ns']};ready_pub.publish(String(data=json.dumps(payload)));S['ready_for_manipulation']=payload
    if handoff is not None:
     if orchestration is not None:
-     orchestration.found(final_observation,clock_ns);orchestration.await_step('pick',until)
+     orchestration.found(final_observation,clock_ns)
+     if not getattr(orchestration,'observation_only',False):orchestration.await_step('pick',until)
     S['manipulation_handoff']=handoff(node=node,until=until,call=call,out=out,
       goal_id=bytes(goal_handle.goal_id.uuid).hex(),target=list(target),
       snapshot=lambda:{'observation':observation,'state':state,'joints':joints,'clock_ns':clock_ns,'platform':platform,'boundary':boundary,'gateway':gateway})

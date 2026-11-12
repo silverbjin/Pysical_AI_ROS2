@@ -1,5 +1,7 @@
 # Ch13 복합 로봇 실습
 
+> **13.8 교재 제공 범위(2026-11-12 확정):** [기본 실습 시작하기](docs/START_HERE_13_8_KO.md)에서 이동·관측·상태 확인·안전 종료와 실패 판독을 수행한다. [Level2 과거 운반·놓기 시연](docs/DEMO_13_8_LEVEL2_ARCHIVE_KO.md)은 기록 해설이며, 최신 연속 임무와 Level3 파지 이후는 [향후 과제](docs/FUTURE_13_8_TASKS_KO.md)다. [마무리 검증 보고](docs/SECTION_13_8_BOOK_CLOSEOUT_REPORT_20261112_KO.md)를 함께 확인한다.
+
 > **13.5 공개 플랫폼 개정 실습:** [Go2+Piper·MuJoCo·Nav2 실습 가이드](docs/LAB_13_5_REUSE_GUIDE_KO.md), [설계](docs/SECTION_13_5_REUSE_DESIGN_KO.md), [최종 인수 보고서](docs/SECTION_13_5_REUSE_R5_REPORT_KO.md)를 따른다. 13.5부터 공개 통합 플랫폼으로 전환한다. 아래 기존 자체 crawl/Task8의 미완료·실패 기록은 연구 이력으로 보존한다.
 
 > **13.6 공개 플랫폼 정밀 조작:** [MoveIt·실제 물리 픽킹 실습](docs/LAB_13_6_REUSE_GUIDE_KO.md), [M3 실제 계획·실행](docs/SECTION_13_6_REUSE_M3_REPORT_KO.md), [M4 물리 픽킹과 실패 이력](docs/SECTION_13_6_REUSE_M4_REPORT_KO.md), [명시적 설계 변경](docs/SECTION_13_6_REUSE_ENGINEERING_DECISIONS_KO.md)을 따른다. 같은 Go2+Piper engine을 유지해 Nav2 접근에서 조작으로 인계한다. 20g upright cylinder의 교육 profile이며 아래 과거 로봇/fixture 결과와 구분한다.

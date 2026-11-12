@@ -1,5 +1,7 @@
 # 13.8 복합 시뮬레이션 실습 가이드
 
+**학생용 최신 시작점은 [START_HERE_13_8_KO.md](START_HERE_13_8_KO.md)다.** 사용자가 확정한 기본실습은이동·관측·상태확인·안전종료·실패판독이며명령에`--exercise basic`을명시한다. 아래에는과거전체미션개발명령과시점별기록이포함돼있다. 운반·놓기는[과거시연해설](DEMO_13_8_LEVEL2_ARCHIVE_KO.md),연속임무·Level3파지는[향후과제](FUTURE_13_8_TASKS_KO.md)로분리했다.
+
 개발 중인 가이드. 연속 운반·내려놓기의 실제 인수와 Level 1/2/3·10회 평가는 SECTION_13_8_REPORT_KO.md의 실제 결과를 확인한다. 명령의 존재나 BT SUCCESS만으로 물리 성공을 판단하지 않는다.
 
 2026-11-12 현재: 사용자 지시에 따라 Level2 반복 튜닝은 중단했다. 기존 Level3를 변경 없이1회 확인해 문 통과·새 관측은 통과했으나 PRE_GRASP의 MoveIt 충돌 계획 검증에서 거절됐다. 파지·귀환·놓기 정상 완주는 미달이며 인수 보류다. 최신 판단은 [기준 검토·전환 보고](SECTION_13_8_STATUS_CRITERIA_LEVEL3_SWITCH_20261112_KO.md)와 [Level3 단일 검증 결과](SECTION_13_8_LEVEL3_BASELINE_RESULT_20261112_KO.md)를 우선한다. 원고의3cm/평균120초와 내부15mm·높이20mm 등의 추가 witness를 구분하며, 이 가이드 실행만으로 목표 달성을 보증하지 않는다.

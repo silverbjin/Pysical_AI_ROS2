@@ -1,5 +1,7 @@
 # 13.8 개발 및 검증 보고서
 
+2026-11-12 목표조정: 교재제공범위는[기본실습시작가이드](START_HERE_13_8_KO.md)와[마무리검증보고](SECTION_13_8_BOOK_CLOSEOUT_REPORT_20261112_KO.md)를따른다. 기본은이동·관측·상태확인·안전종료·실패판독,Level2운반·놓기는과거기록시연,최신연속임무/Level3파지이후는향후과제다. 아래원래전체미션의FAIL과0/10기록은그대로보존하며새기본실습PASS와혼동하지않는다.
+
 최신 Level 2·3 및 총10회 결과: [전용 평가 보고](SECTION_13_8_LEVEL23_EVALUATION_REPORT_KO.md). v28 실제10회 완료·엄격 성공0/10이며 아래 과거 기록과 구분한다.
 
 최신 종합 정리는 [진행·문제 해결·반복 문제 보고서](SECTION_13_8_PROGRESS_AND_ISSUES_REPORT_KO.md), 남은 작업은 [향후 작업 보고서](SECTION_13_8_NEXT_TASKS_REPORT_KO.md)를 참고한다. 아래에는 과거 시점의 개발 기록도 함께 남아 있다.
