@@ -1,51 +1,85 @@
-# 6.4절 실습 가이드 — MoveItPy로 Named State → IK 목표 제어
+# Ch06 §6.4 — MoveItPy 경로 계획과 실제 컨트롤러 실행
 
-> 기준일 2026-10-20 KST | 기준 main `1b9e8215e213` | 첨부 원고 6.4절 | Ubuntu 24.04 · ROS 2 Jazzy · MoveIt 2
-> 판정 수준: **정적 검토**. 실제 ROS 2/WSLg/Gazebo 실행·테스트 로그가 이 작업에는 없으므로 동적 검증은 미수행/미검증으로 표시한다.
-> 원본 경로: https://github.com/silverbjin/Pysical_AI_ROS2/tree/1b9e8215e2130c492969bb0da52a82e707c3a16f/Ch06
+> 대상: ROS 2 Jazzy / Ubuntu 24.04. 최초 구현에는 MoveItPy가 존재하지 않는 `my_robot_moveit_config/urdf/my_robot.urdf`를 읽는 차단 결함이 있었다. 이번 최소 수정은 기존 RViz Launch와 동일한 `my_robot_description/urdf/my_robot.ros2_control_rviz.urdf.xacro`를 사용한다. **Headless fake ros2_control 실행은 Gazebo 물리/실물 로봇 실행이 아니다.**
 
-## 목표
-코드로 `arm_group`의 named `ready`와 포즈 목표를 계획하고, **계획 성공 / 액션 실행 성공 / 실제 도달 오차**를 각각 확인한다.
+## 실습 목표와 성공 기준
 
-## 선행 게이트(필수)
-```bash
-source /opt/ros/jazzy/setup.bash
-cd ~/Pysical_AI_ROS2/Ch06/ros2_ws
-rosdep install --from-paths src --ignore-src -r -y
-colcon build --symlink-install --packages-up-to my_robot_control
-source install/setup.bash
-ros2 pkg executables my_robot_control
-P=$(ros2 pkg prefix my_robot_moveit_config)
-find "$P/share/my_robot_moveit_config" -maxdepth 3 -type f | sort
-```
-현 코드의 `hello_moveit.py`가 요청하는 `urdf/my_robot.urdf`가 MoveIt config 설치 폴더에 없다. **이 BLOCKER를 고치기 전에는 정상 실행을 기대하지 말 것.** 권장 변경은 `MoveItConfigsBuilder.robot_description`에 실제 존재하는 Xacro/URDF 경로를 전달하고 SRDF와 root 충돌을 검사하는 것.
+1. 실제 설치된 Xacro/URDF+SRDF를 일관되게 읽는다. 동일 로봇 이름 `my_robot`, `arm_group` 5개 관절, SRDF named `ready`를 확인한다.
+2. `controller_manager`, `joint_state_broadcaster`, `arm_group_controller`가 활성 상태이고 실제 FollowJointTrajectory action 서버가 존재한다.
+3. `ros2 run my_robot_control hello_node`로 MoveItPy의 `ready` 동작을 **계획**, 실제 가상 컨트롤러로 **실행**하고, 응답 `ExecutionStatus=SUCCEEDED`와 `/joint_states` 5관절의 목표 오차 `<=0.06 rad`를 확인한다.
+4. `MoveItPy.plan()`의 성공만으로 실제 관절 동작 PASS를 선언하지 않는다. 명령 실패·센서 미수신·동작 미달이면 비영(非0) 종료코드가 발생한다.
 
-## 실습 순서(수정 및 readiness 검증 후)
+**정확한 목표**: `joint1=0`, `joint2=0`, `joint3=1.5708`, `joint4=0`, `joint_wrist=0` rad. 실제 joint3가 0에서 약 1.57 rad로 움직여야 한다.
+
+## 1. 설치 및 독립 빌드
+
+아래 터미널은 Ch06 workspace만 source한다. 사용자 PC는 ROS 2 Jazzy, MoveItPy, MoveItConfigsUtils, ros2_control, joint_trajectory_controller, joint_state_broadcaster, mock_components 플러그인이 선행 설치되어야 한다.
+
 터미널 A:
 ```bash
 source /opt/ros/jazzy/setup.bash
-cd ~/Pysical_AI_ROS2/Ch06/ros2_ws && source install/setup.bash
-ros2 launch my_robot_moveit_config Rviz_Demo.launch.py
+cd ~/Pysical_AI_ROS2/Ch06/ros2_ws
+rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy
+colcon build --symlink-install --packages-select \
+  my_robot_description my_robot_moveit_config my_robot_control
+source install/setup.bash
+ros2 pkg prefix my_robot_description
+ros2 pkg prefix my_robot_moveit_config
+ros2 pkg executables my_robot_control
 ```
+
+**예상:** 설치 경로가 모두 Ch06 `install/`이고 실행 목록에 `my_robot_control hello_node`가 나온다. `rosdep` 실행만으로 모든 MoveIt/ros2_control 플러그인이 설치되었는지 보장할 수 없으므로 `ros2 pkg prefix moveit_py`, `ros2 pkg prefix controller_manager`도 확인한다.
+
+## 2. Headless 가상 하드웨어 기동 (터미널 A 유지)
+
+```bash
+ros2 launch my_robot_moveit_config moveit_64_headless.launch.py
+```
+
+이 Launch는 로봇 설명과 `ros2_control`의 `mock_components/GenericSystem`을 사용한다. 실제 Gazebo/RViz 화면을 열지 않는다. **이 터미널은 실습 종료까지 유지**한다.
+
 터미널 B:
 ```bash
 source /opt/ros/jazzy/setup.bash
-cd ~/Pysical_AI_ROS2/Ch06/ros2_ws && source install/setup.bash
-ros2 control list_controllers
-ros2 action list -t
+cd ~/Pysical_AI_ROS2/Ch06/ros2_ws
+source install/setup.bash
+ros2 control list_controllers -c /controller_manager
+ros2 action list -t | grep follow_joint_trajectory
 ros2 topic echo /joint_states --once
-ros2 run my_robot_control hello_node
 ```
-위 `Rviz_Demo.launch.py`는 mock hardware 환경이다. GUI 실행 자체는 재검증되지 않았고 controller/TF 이슈가 남아 있을 수 있다. 저장소에 `ros2 run my_robot_control hello_moveit` 명령은 등록되어 있지 않다.
 
-## 코드 읽기 · 수정할 목표
-1. `build_moveit_config()`: 실제 설치 경로, `robot_description`, `ompl`, planning scene monitor 설정을 확인한다.
-2. `arm.set_goal_state(configuration_name="ready")`: SRDF의 `joint3=1.5708`rad를 기준으로 관절 목표를 검사한다.
-3. Pose 목표: 현재 파일의 (0,0,2.1)은 실습 성과를 보장하지 않는다. 먼저 RViz에서 충돌 없는 도달 가능한 위치를 선정하고 각 목표의 orientation을 명시한다. **5축으로 6D 목표의 해가 없을 수 있다**.
-4. `plan_result`가 유효해도 별도로 `execute` 반환 상태와 joint_state/FK 도달 오차를 기록한다.
-5. `os._exit(0)` 제거 후 `try/finally`, 실패 시 비영(非0) 종료 코드 등 정상적인 자원 정리로 수정한다.
+**예상:** `joint_state_broadcaster`, `arm_group_controller`가 `active`. `/arm_group_controller/follow_joint_trajectory [control_msgs/action/FollowJointTrajectory]`와 유효한 `/joint_states` 메시지가 나타난다. 준비되지 않았다면 다음 명령을 실행하지 않는다.
 
-## 제출할 evidence
-패키지 경로 출력, controller state, planning/execution 로그, 기준 목표/최종 FK 오차, 성공·실패 각각의 종료 코드. 실패 원인(URDF 없음, IK 해 없음, 충돌, 액션 미기동)을 구분해야 한다.
+## 3. 실제 MoveItPy 계획·실행·검증 (터미널 B)
 
-**주의:** 이 절은 리뷰 기반 실습 가이드이며 수정 코드를 이미 적용/검증했다는 문서가 아니다. [보고서](SECTION_6_4_REPORT_KO.md).
+```bash
+ros2 run my_robot_control hello_node --mode named
+echo "exit=$?"
+ros2 topic echo /joint_states --once
+```
+
+**정상 시 기대 로그 순서**:
+
+```text
+CH06_MODEL_CONFIG_PASS ...
+CH06_JOINT_STATES_READY ...
+CH06_NAMED_READY_PLANNING_PASS
+CH06_MOVEIT_EXECUTION_STATUS=SUCCEEDED
+CH06_NAMED_READY_EXECUTION_AND_JOINT_GOAL_PASS max_error_rad=...
+CH06_64_NAMED_READY_COMPLETE_POSE_IK_NOT_RUN
+exit=0
+```
+
+`Planning PASS`만 출력되거나 `Execute SUCCEEDED`인데도 관절 목표 오차가 기준보다 크다면 **미완료/FAIL**이다. 최초 장치 상태에 따라 동작 거리는 달라질 수 있다. `STAGE`별 원인 확인에 사용한다.
+
+## 4. 포즈 IK는 별도 실습
+
+기존 `hello_moveit.py`에는 `(x,y,z)=(0,0,2.1)`, 단위 방향 quaternion을 사용하는 5축 팔의 **경계/특이자세 목표**가 있었지만, 성공을 보장할 수 없었고 실행 상태도 무조건 성공 출력했다. 이번 검증은 `ready` named **5관절 실제 궤적 실행까지**만 포함한다. 포즈 IK는 도달 가능한 위치·orientation·관절 한계와 FK 오차를 검증한 뒤 별도 시험으로 진행한다. `--mode named` 외의 모드는 의도적으로 허용하지 않는다.
+
+## 5. 종료·판정 경계
+
+실습 종료 시 터미널 A의 Launch를 `Ctrl+C`로 종료하고, 터미널 B는 작업을 마친 후 닫는다. 외부 SIGTERM/KILL이나 잔여 프로세스가 있으면 정상 종료 PASS를 별도 선언하지 않는다.
+
+**공개 CI 성공 범위**: 실제 ROS 2 Jazzy·MoveItPy 및 fake ros2_control에서 모델 로드→계획→FollowJointTrajectory→관절 목표값까지 검증한다. Gazebo 물리 시뮬레이션, 실제 로봇 하드웨어, RViz GUI, 물체 파지, 포즈 IK는 **NOT_RUN**이다.
+
+[기존 문제 #126](https://github.com/silverbjin/Pysical_AI_ROS2/issues/126) · [실행 검수 PR #133](https://github.com/silverbjin/Pysical_AI_ROS2/pull/133)
