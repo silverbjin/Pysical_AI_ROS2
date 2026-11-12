@@ -7,18 +7,17 @@ import importlib
 import json
 import math
 from pathlib import Path
-import re
+import xml.etree.ElementTree as ET
 import sys
 
 src = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2])
-properties = (src / "urdf/common/robot_properties.xacro").read_text()
+properties = ET.parse(src / "urdf/common/robot_properties.xacro").getroot()
 def val(name):
-    match = re.search(r'<xacro:property name="' + re.escape(name) +
-                      r'" value="([0-9.]+)"', properties)
-    if not match:
-        raise ValueError("Xacro property missing: " + name)
-    return float(match.group(1))
+    for item in properties.iter():
+        if item.tag.endswith("property") and item.get("name") == name:
+            return float(item.get("value"))
+    raise ValueError("Xacro property missing: " + name)
 sys.path.insert(0, str(src))
 solver_type = importlib.import_module("my_quadruped_bot.inverse_kinematics").InverseKinematics
 ik = solver_type()
