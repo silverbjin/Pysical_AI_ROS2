@@ -40,9 +40,9 @@ cleanup() {
   local code="$?"
   trap - EXIT
   set +e
-  for ((i=${#OWNED[@]}-1;i>=0;i--)); do stop_owned "${OWNED[$i]}"; done
   printf '{"chapter":"Ch07","scope":"CAMERA_GAZEBO_TO_ROS_HEADLESS","status":"%s","exit_code":%d,"last_stage":"%s","whole_chapter_accepted":false}\n' \
     "$([[ "$code" -eq 0 ]] && echo PASS || echo FAIL)" "$code" "$STAGE" > "$OUT/result.json"
+  for ((i=${#OWNED[@]}-1;i>=0;i--)); do stop_owned "${OWNED[$i]}"; done
   exit "$code"
 }
 trap cleanup EXIT
@@ -58,6 +58,22 @@ xacro "$WS/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.urdf.xacro" > "$OU
 check_urdf "$OUT/camera.urdf" > "$OUT/check_urdf.txt"
 grep -q 'name="camera_optical_frame"' "$OUT/camera.urdf"
 grep -q 'name="rgbd_camera"' "$OUT/camera.urdf"
+stage RENDERER_XVFB_DISPLAY
+# Retry only the renderer failure boundary: hostless OGRE2 previously crashed in
+# CreateMaterials() before any camera frame was published. Retain raw crash logs.
+if ! command -v Xvfb >/dev/null 2>&1; then
+  export DEBIAN_FRONTEND=noninteractive
+  timeout --signal=TERM --kill-after=5s 60s apt-get update -qq \
+    > "$OUT/apt_update.log" 2>&1
+  timeout --signal=TERM --kill-after=5s 70s \
+    apt-get install -y --no-install-recommends xvfb \
+    > "$OUT/apt_xvfb.log" 2>&1
+fi
+export DISPLAY=:98
+unset EGL_PLATFORM
+start xvfb Xvfb :98 -screen 0 1024x768x24 -nolisten tcp
+sleep 1
+kill -0 "${OWNED[${#OWNED[@]}-1]}"
 stage ROBOT_DESCRIPTION_TF
 python3 - "$OUT/camera.urdf" "$OUT/robot_description.yaml" <<'PY'
 import sys
