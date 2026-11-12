@@ -64,7 +64,7 @@ jobs:
           IMAGE="$(cat ci-results/next/image_digest.txt)"
           RUN_SOURCE_SHA="$(cat ci-results/next/source_sha.txt)"
           for CH in Ch05 Ch09 Ch10 Ch11; do
-            if ${{ "$TARGET" != all && "$CH" != "$TARGET" }}; then continue; fi
+            if [ "$TARGET" != all ] && [ "$CH" != "$TARGET" ]; then continue; fi
             echo "===== $CH ====="
             timeout --signal=TERM --kill-after=12s 235s docker run --rm --pull=never --shm-size=512m \
               --env RUN_SOURCE_SHA="$RUN_SOURCE_SHA" \
@@ -74,7 +74,7 @@ jobs:
               | tee "ci-results/next/$CH.log"
             RC=$?
             printf '%s %s\n' "$CH" "$RC" | tee -a ci-results/next/exit_codes.txt
-            if ${{ "$RC" -ne 0 }}; then FAILED=1; fi
+            if [ "$RC" -ne 0 ]; then FAILED=1; fi
           done
           exit "$FAILED"
       - name: Write evidence summary
