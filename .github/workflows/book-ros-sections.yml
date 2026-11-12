@@ -1,0 +1,73 @@
+name: Book ROS sections (Ch01-Ch02)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ros-sections.yml'
+      - 'ci/ros_labs/**'
+      - 'Ch01/**'
+      - 'Ch02/**'
+  workflow_dispatch:
+    inputs:
+      chapter:
+        type: choice
+        description: 'Run one chapter or both'
+        required: true
+        default: both
+        options: [both, Ch01, Ch02]
+permissions:
+  contents: read
+concurrency:
+  group: book-ros-sections-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  ros-sections:
+    strategy:
+      fail-fast: false
+      matrix:
+        chapter: [Ch01, Ch02]
+    if: ${{ github.event_name == 'pull_request' || inputs.chapter == 'both' || inputs.chapter == matrix.chapter }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            ${{ matrix.chapter }}
+      - uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
+      - name: Install headless X and tutorial ROS dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            xvfb ros-jazzy-turtlesim ros-jazzy-demo-nodes-cpp \
+            ros-jazzy-demo-nodes-py python3-colcon-common-extensions \
+            python3-rosdep ros-jazzy-example-interfaces
+      - name: Execute source-matched ROS2 LAB probes
+        env:
+          CHAPTER: ${{ matrix.chapter }}
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          if test ! -s /etc/ros/rosdep/sources.list.d/20-default.list; then
+            sudo rosdep init
+          fi
+          timeout 120s rosdep update
+          python3 ci/ros_labs/verify.py "$CHAPTER"
+      - name: Publish section matrix
+        if: always()
+        env:
+          CHAPTER: ${{ matrix.chapter }}
+        run: |
+          if test -f "ci-results/$CHAPTER/ros-sections/SUMMARY.md"; then
+            cat "ci-results/$CHAPTER/ros-sections/SUMMARY.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload per-section evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-ros-${{ matrix.chapter }}-${{ github.run_id }}
+          path: ci-results/${{ matrix.chapter }}/ros-sections/
+          if-no-files-found: warn
+          retention-days: 14
