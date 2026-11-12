@@ -11,9 +11,13 @@ cd "$ROOT/Ch02/ros2_ws"
 if test ! -s /etc/ros/rosdep/sources.list.d/20-default.list; then
   sudo rosdep init
 fi
-rosdep update
-rosdep install --from-paths src --ignore-src -r -y
-colcon build --symlink-install
+echo 'CH02_STAGE=ROSDEP_UPDATE'
+timeout 120s rosdep update
+echo 'CH02_STAGE=ROSDEP_INSTALL'
+timeout 180s rosdep install --from-paths src --ignore-src -r -y
+echo 'CH02_STAGE=COLCON_BUILD'
+timeout 180s colcon build --symlink-install
+echo 'CH02_STAGE=ROS_INTERFACE'
 set +u
 source install/setup.bash
 set -u
@@ -25,12 +29,21 @@ ros2 run my_robot_system count_until_server > "$ROOT/ci-results/Ch02/2.6/server.
 SERVER_PID=$!
 cleanup() {
   kill -INT "$SERVER_PID" 2>/dev/null || true
+  for _ in $(seq 1 40); do
+    if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+      wait "$SERVER_PID" 2>/dev/null || true
+      return
+    fi
+    sleep 0.1
+  done
+  echo 'CH02_CLEANUP_ESCALATED_TO_TERM' >&2
+  kill -TERM "$SERVER_PID" 2>/dev/null || true
   wait "$SERVER_PID" 2>/dev/null || true
 }
 trap cleanup EXIT
 READY=0
 for _ in $(seq 1 40); do
-  if ros2 action list -t 2>/dev/null | grep -q '/count_until'; then
+  if timeout 5s ros2 action list -t 2>/dev/null | grep -q '/count_until'; then
     READY=1
     break
   fi
