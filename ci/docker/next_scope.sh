@@ -110,6 +110,10 @@ else
   python3 /work/ci/docker/verify_urdf_joints.py "$OUT/robot.urdf" fr_hip_joint fr_thigh_joint fr_calf_joint fl_hip_joint fl_thigh_joint fl_calf_joint rr_hip_joint rr_thigh_joint rr_calf_joint rl_hip_joint rl_thigh_joint rl_calf_joint | tee "$OUT/joint_contract.txt"
   WORLD=my_empty_world
   SOURCE_WORLD="$WS/src/$PKG/worlds/empty_world.sdf"
+  if [[ "${BOOK_DYNAMIC:-0}" == "1" && "$CH" == Ch11 ]]; then
+    WORLD=sensor_figure_world
+    SOURCE_WORLD="$WS/src/$PKG/worlds/sensor_figure_world.sdf"
+  fi
   ROBOT=my_quadruped
   SPAWN_Z=0.5
 fi
@@ -125,6 +129,33 @@ timeout --signal=TERM --kill-after=3s 30s ros2 topic echo /clock --once > "$OUT/
 grep -q 'sec:' "$OUT/clock.txt"
 
 if [[ "$CH" != Ch05 ]]; then
+  if [[ "${BOOK_DYNAMIC:-0}" == "1" ]]; then
+    if [[ "$CH" == "Ch09" ]]; then
+      stage DYNAMIC_CH09_BRIDGE
+      start joint_bridge ros2 run ros_gz_bridge parameter_bridge \
+        --ros-args -p config_file:="$WS/src/$PKG/config/ros_gz_bridge.yaml"
+      stage DYNAMIC_CH09_SINGLE_LEG
+      start single_leg ros2 run my_quadruped_bot single_leg_mover
+      timeout --signal=TERM --kill-after=4s 24s \
+        python3 /work/ci/docker/verify_dynamic.py ch09 "$OUT/dynamic.json" \
+        2>&1 | tee "$OUT/dynamic.log"
+    elif [[ "$CH" == "Ch10" ]]; then
+      stage DYNAMIC_CH10_IK_GEOMETRY
+      timeout 20s python3 /work/ci/docker/ch10_ik_boundary.py \
+        "$WS/src/$PKG" "$OUT/ik_boundary.json" \
+        2>&1 | tee "$OUT/dynamic.log"
+    else
+      stage DYNAMIC_CH11_SENSOR_BRIDGE
+      start sensor_bridge ros2 run ros_gz_bridge parameter_bridge \
+        --ros-args -p config_file:="$WS/src/$PKG/config/ros_gz_bridge.yaml"
+      timeout --signal=TERM --kill-after=4s 32s \
+        python3 /work/ci/docker/verify_dynamic.py ch11 "$OUT/dynamic.json" \
+        2>&1 | tee "$OUT/dynamic.log"
+    fi
+    stage DYNAMIC_PASS
+    echo "$CH:DYNAMIC_BOUNDARY_PASS_GAIT_SLAM_FULL_NOT_RUN" | tee "$OUT/verdict.txt"
+    exit 0
+  fi
   stage WORLD_SPAWN_CLOCK_PASS
   echo "$CH:WORLD_SPAWN_CLOCK_PASS_GAIT_SLAM_NOT_RUN" | tee "$OUT/verdict.txt"
   exit 0
@@ -145,5 +176,11 @@ stage REAL_GUIDE_TRAJECTORY
 start simple_controller ros2 run manipulation_basics simple_controller
 timeout --signal=TERM --kill-after=5s 35s python3 /work/ci/docker/verify_ch05_motion.py "$OUT/motion.json" 2>&1 | tee "$OUT/motion.log"
 grep -q 'CH05_MEASURED_MOTION_PASS' "$OUT/motion.log"
+if [[ "${BOOK_DYNAMIC:-0}" == "1" ]]; then
+  stage DYNAMIC_CH05_TRACKING_ERROR
+  timeout --signal=TERM --kill-after=4s 22s \
+    python3 /work/ci/docker/verify_dynamic.py ch05 "$OUT/dynamic.json" \
+    2>&1 | tee "$OUT/dynamic.log"
+fi
 stage CH05_PASS
 echo 'CH05_ACTIVE_TRAJECTORY_AND_FEEDBACK_PASS_GUI_NOT_RUN' | tee "$OUT/verdict.txt"
