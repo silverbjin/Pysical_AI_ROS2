@@ -13,7 +13,8 @@ echo "source_sha=$GITHUB_SHA" > "$OUT/env.txt"
 echo "ros_distro=$ROS_DISTRO" >> "$OUT/env.txt"
 ros2 pkg prefix ros_gz_sim | tee -a "$OUT/env.txt"
 ros2 pkg prefix gz_ros2_control | tee -a "$OUT/env.txt"
-gz sim --help > "$OUT/gz_help.txt"
+echo 'STAGE=GZ_HELP' | tee -a "$OUT/stages.log"
+timeout 20s gz sim --help > "$OUT/gz_help.txt"
 grep -Eq 'Gazebo|gazebo|sim' "$OUT/gz_help.txt"
 
 export ROS_DOMAIN_ID=73
@@ -29,6 +30,7 @@ case "$CHAPTER" in
   Ch05) PKG="manipulation_basics" ;;
 esac
 WS="$ROOT/$CHAPTER/ros2_ws"
+echo 'STAGE=BUILD' | tee -a "$OUT/stages.log"
 cd "$WS"
 python3 -m compileall -q src
 timeout --signal=TERM --kill-after=10s 150s \
@@ -39,6 +41,7 @@ source install/setup.bash
 set -u
 ros2 pkg prefix "$PKG" | tee "$OUT/prefix.txt"
 
+echo 'STAGE=CHAPTER_SPECIFIC' | tee -a "$OUT/stages.log"
 if [[ "$CHAPTER" == Ch04 ]]; then
   ros2 run my_robot_tf static_tf_broadcaster > "$OUT/static_tf.log" 2>&1 &
   TF_PID=$!
@@ -75,8 +78,9 @@ cleanup() {
 trap cleanup EXIT
 
 READY=0
-for i in $(seq 1 40); do
-  if timeout 5s gz service -l 2>/dev/null | grep -q '/world/my_first_world/create'; then READY=1; break; fi
+echo 'STAGE=WAIT_GZ_WORLD' | tee -a "$OUT/stages.log"
+for i in $(seq 1 15); do
+  if timeout 3s gz service -l 2>/dev/null | grep -q '/world/my_first_world/create'; then READY=1; break; fi
   if ! kill -0 "$GZ_PID" 2>/dev/null; then break; fi
   sleep 1
 done
@@ -85,6 +89,7 @@ if [[ "$READY" != 1 ]]; then
   tail -100 "$OUT/gz_server.log"
   exit 1
 fi
+echo 'STAGE=CREATE_ENTITY' | tee -a "$OUT/stages.log"
 timeout 45s ros2 run ros_gz_sim create -world my_first_world \
   -name my_arm_test -file "$OUT/arm.urdf" -z 0.1 \
   2>&1 | tee "$OUT/spawn.log"
@@ -93,6 +98,7 @@ grep -Ei 'success|created' "$OUT/spawn.log" >/dev/null || { echo 'Spawn success 
 ros2 run ros_gz_bridge parameter_bridge \
   '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock' > "$OUT/bridge.log" 2>&1 &
 BRIDGE_PID=$!
+echo 'STAGE=BRIDGE_CLOCK' | tee -a "$OUT/stages.log"
 timeout 35s ros2 topic echo /clock --once > "$OUT/clock.txt"
 grep -q 'sec:' "$OUT/clock.txt"
 echo 'CH03_GAZEBO_HEADLESS_WORLD_SPAWN_CLOCK_PASS_GUI_NOT_RUN' | tee "$OUT/verdict.txt"
