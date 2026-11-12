@@ -30,6 +30,8 @@ PROCS = []
 FILES = []
 REPORT = {}
 CURRENT = None
+DISPLAY_PROCESS = None
+DISPLAY_LOG = None
 
 
 def trace(message):
@@ -148,7 +150,7 @@ def required(condition, msg):
 def case(section, omitted, fn):
     global CURRENT
     CURRENT = section.replace(".", "_")
-    REPORT[CURRENT] = {"chapter": CHAPTER, "section": section,
+    REPORT[CURRENT] = {"chapter": CHAPTER, "section": section, "source_sha": os.environ.get("GITHUB_SHA", "UNKNOWN"),
                        "guide": CHAPTER + "/docs/LAB_" + CURRENT + "_GUIDE_KO.md",
                        "status": "RUNNING", "checks": [], "not_automated": omitted}
     try:
@@ -165,15 +167,17 @@ def case(section, omitted, fn):
 
 
 def setup_x():
-    global CURRENT
+    global CURRENT, DISPLAY_PROCESS, DISPLAY_LOG
     CURRENT = "Xvfb"
-    start("display", ["Xvfb", ":98", "-screen", "0", "1024x768x24", "-nolisten", "tcp"])
+    DISPLAY_LOG = (OUT / "Xvfb_display.log").open("w", encoding="utf-8")
+    DISPLAY_PROCESS = subprocess.Popen(
+        ["Xvfb", ":98", "-screen", "0", "1024x768x24", "-nolisten", "tcp"],
+        stdout=DISPLAY_LOG, stderr=subprocess.STDOUT,
+        env=os.environ.copy(), start_new_session=True
+    )
+    trace("START Xvfb pid=" + str(DISPLAY_PROCESS.pid))
     time.sleep(1)
-    required(PROCS[-1].poll() is None, "Xvfb exited")
-    # Xvfb is kept running until end of chapter.
-    PROCS.clear()
-    FILES[-1].close()
-    FILES.clear()
+    required(DISPLAY_PROCESS.poll() is None, "Xvfb exited")
 
 
 def source_workspace(chapter):
@@ -244,7 +248,7 @@ def ch01_14():
           run(["ros2", "pkg", "executables", "examples_rclpy_minimal_publisher"]), "publisher_member_function"))
     _, log = start("minimal_publisher", ["ros2", "run", "examples_rclpy_minimal_publisher", "publisher_member_function"])
     check("publisher /topic hello", lambda: eq_contains(topic_once("/topic"), "Hello World"))
-    check("source overlay", lambda: required("ch01_ws/install" in os.environ.get("AMENT_PREFIX_PATH", ""),
+    check("source overlay", lambda: required("book_ch01_ws_" in os.environ.get("AMENT_PREFIX_PATH", ""),
                                             "Overlay not sourced"))
 
 
@@ -277,7 +281,7 @@ def ch01_16():
 def ch01_17():
     check("installed manifest", lambda: required((ROOT/"Ch01/robot_ws/src/my_robot_controller/package.xml").is_file(), "Manifest missing"))
     check("ROS installation entry", lambda: eq_contains(run(["ros2", "pkg", "executables", "my_robot_controller"]), "test_node"))
-    check("prefix in isolated workspace", lambda: required("ch01_ws/install" in run(["ros2", "pkg", "prefix", "my_robot_controller"]), "Wrong overlay"))
+    check("prefix in isolated workspace", lambda: required("book_ch01_ws_" in run(["ros2", "pkg", "prefix", "my_robot_controller"]), "Wrong overlay"))
 
 
 def ch02_21():
@@ -404,3 +408,12 @@ if __name__ == "__main__":
         sys.exit(main())
     finally:
         finish()
+        if DISPLAY_PROCESS is not None and DISPLAY_PROCESS.poll() is None:
+            try:
+                os.killpg(DISPLAY_PROCESS.pid, signal.SIGINT)
+                DISPLAY_PROCESS.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                os.killpg(DISPLAY_PROCESS.pid, signal.SIGTERM)
+                DISPLAY_PROCESS.wait(timeout=3)
+        if DISPLAY_LOG is not None:
+            DISPLAY_LOG.close()
