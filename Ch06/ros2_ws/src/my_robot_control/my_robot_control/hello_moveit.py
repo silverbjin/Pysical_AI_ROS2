@@ -35,7 +35,7 @@ def robot_model_path():
 
 def build_moveit_config():
     config_package = "my_robot_moveit_config"
-    return (
+    config = (
         MoveItConfigsBuilder("my_robot", package_name=config_package)
         .robot_description(file_path=robot_model_path())
         .robot_description_semantic(file_path="config/my_robot.srdf")
@@ -46,6 +46,26 @@ def build_moveit_config():
         .to_moveit_configs()
         .to_dict()
     )
+    # MoveItConfigsBuilder returns 'planning_pipelines' as a list for move_group,
+    # while the Jazzy MoveItCpp/MoveItPy constructor needs the nested
+    # planning_pipelines.pipeline_names parameter. Preserve the builder's
+    # actual ompl_planning.yaml contents in config['ompl'].
+    assert "ompl" in config and config["ompl"].get("planning_plugins"), (
+        "OMPL planning plugin configuration not loaded"
+    )
+    config["planning_pipelines"] = {
+        "pipeline_names": ["ompl"],
+        "default_planning_pipeline": "ompl",
+    }
+    config["plan_request_params"] = {
+        "planning_pipeline": "ompl",
+        "planner_id": "RRTConnectkConfigDefault",
+        "planning_attempts": 1,
+        "planning_time": 5.0,
+        "max_velocity_scaling_factor": 0.3,
+        "max_acceleration_scaling_factor": 0.3,
+    }
+    return config
 
 
 class JointStateObserver(Node):
