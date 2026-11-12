@@ -73,6 +73,7 @@ class JointStateObserver(Node):
         super().__init__("ch06_moveit_joint_observer")
         self.last = None
         self.messages = 0
+        self.last_stamp_ns = None
         self.create_subscription(JointState, "/joint_states", self._receive, 10)
 
     def _receive(self, msg):
@@ -81,6 +82,9 @@ class JointStateObserver(Node):
                for name in ARM_JOINTS):
             self.last = {name: float(observed[name]) for name in ARM_JOINTS}
             self.messages += 1
+            self.last_stamp_ns = (
+                msg.header.stamp.sec * 1000000000 + msg.header.stamp.nanosec
+            )
 
     def wait_for(self, condition, timeout_sec):
         deadline = time.monotonic() + timeout_sec
@@ -97,6 +101,27 @@ class JointStateObserver(Node):
 def run_named_ready(robot, observer):
     before = observer.wait_for(lambda values: True, timeout_sec=15.0)
     print(f"CH06_JOINT_STATES_READY before={before}", flush=True)
+    # MoveItCpp creates its *own* C++ joint-state monitor after initialization.
+    # The Python subscriber being ready before MoveItCpp exists does not
+    # establish DDS readiness of the new internal subscriber. Measure a
+    # continuous, fresh state stream after construction before first plan.
+    observed_start = observer.messages
+    warmup_deadline = time.monotonic() + 3.0
+    while time.monotonic() < warmup_deadline:
+        rclpy.spin_once(observer, timeout_sec=0.25)
+    actual_stamp = observer.last_stamp_ns or 0
+    age_sec = (observer.get_clock().now().nanoseconds - actual_stamp) / 1e9
+    new_samples = observer.messages - observed_start
+    print(
+        f"CH06_POST_MOVEIT_MONITOR_STREAM samples={new_samples} "
+        f"stamp_ns={actual_stamp} age_sec={age_sec:.3f}",
+        flush=True,
+    )
+    if new_samples < 20 or actual_stamp <= 0 or not (-0.5 <= age_sec <= 1.0):
+        raise RuntimeError(
+            "CH06_JOINT_STATES_STALE_OR_CLOCK_MISMATCH "
+            f"samples={new_samples} stamp={actual_stamp} age={age_sec}"
+        )
     planning = robot.get_planning_component("arm_group")
     planning.set_start_state_to_current_state()
     planning.set_goal_state(configuration_name="ready")
