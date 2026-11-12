@@ -1,0 +1,161 @@
+name: Book continued acceptance excluding Ch10
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-excluding-ch10.yml'
+      - 'ci/docker/next_scope.sh'
+      - 'ci/docker/verify_extended.py'
+      - 'ci/verify_ch08_env.py'
+      - 'ci/audit_ch06_ch07.py'
+  workflow_dispatch:
+    inputs:
+      chapter:
+        description: "Scope selector; Ch10 intentionally excluded"
+        type: choice
+        required: true
+        default: all
+        options: [all, Ch05, Ch09, Ch11]
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-continue-excl-ch10-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  known-prerequisites:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch06
+            Ch07
+      - name: Read-only prerequisite audit (never marks blocked chapters PASS)
+        run: python3 ci/audit_ch06_ch07.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-remaining-blockers-${{ github.run_id }}
+          path: ci-results/extended/prerequisites/
+          retention-days: 14
+  ch08-mujoco-api:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch08
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install minimal headless MuJoCo and Gymnasium deps (no PPO)
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "mujoco==3.3.7" "gymnasium==1.1.1" "numpy==2.2.6"
+      - name: Run Ch08 actual 6DOF environment physics and API
+        env:
+          MUJOCO_GL: egl
+        run: timeout --signal=TERM --kill-after=5s 95s python3 ci/verify_ch08_env.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-Ch08-physics-${{ github.run_id }}
+          path: ci-results/extended/Ch08/
+          retention-days: 14
+  extended-gazebo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch05
+            Ch09
+            Ch11
+      - name: Pin source and immutable image
+        run: |
+          mkdir -p ci-results/extended
+          git rev-parse HEAD | tee ci-results/extended/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            | tee ci-results/extended/image_digest.txt
+      - name: Authenticate GHCR (read-only)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull immutable known-good Gazebo runtime once
+        run: |
+          IMAGE="$(cat ci-results/extended/image_digest.txt)"
+          docker pull "$IMAGE"
+          docker image inspect "$IMAGE" --format '{{.Id}}' \
+            | tee ci-results/extended/local_image_id.txt
+      - name: Run Ch05 triple cold start, Ch09 stand, Ch11 odometry (NO Ch10)
+        env:
+          SELECTED: ${{ github.event_name == 'workflow_dispatch' && inputs.chapter || 'all' }}
+        run: |
+          set +e
+          set -o pipefail
+          FAILED=0
+          IMAGE="$(cat ci-results/extended/image_digest.txt)"
+          SOURCE="$(cat ci-results/extended/source_sha.txt)"
+          for CH in Ch05 Ch09 Ch11; do
+            if [[ "$SELECTED" != all && "$SELECTED" != "$CH" ]]; then continue; fi
+            if [[ "$CH" == Ch05 ]]; then REPEATS=3; else REPEATS=1; fi
+            for IDX in $(seq 1 "$REPEATS"); do
+              LABEL="$CH/run_$IDX"
+              mkdir -p "ci-results/extended/$LABEL"
+              rm -rf "ci-results/next/$CH"
+              echo "===== $CH run $IDX / $REPEATS ====="
+              if [[ "$CH" == Ch05 ]]; then
+                DYNAMIC=1; EXTENDED=0
+              else
+                DYNAMIC=0; EXTENDED=1
+              fi
+              timeout --signal=TERM --kill-after=12s 130s \
+                docker run --rm --pull=never --shm-size=512m \
+                  -e BOOK_DYNAMIC="$DYNAMIC" -e BOOK_EXTENDED="$EXTENDED" \
+                  -e RUN_SOURCE_SHA="$SOURCE" -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+                  -v "$PWD":/work -w /work "$IMAGE" \
+                  bash ci/docker/next_scope.sh "$CH" \
+                2>&1 | tee "ci-results/extended/$LABEL/console.log"
+              RC=$?
+              if [[ -d "ci-results/next/$CH" ]]; then
+                cp -a "ci-results/next/$CH"/. "ci-results/extended/$LABEL"/
+              fi
+              printf '%s run_%s rc=%d\n' "$CH" "$IDX" "$RC" \
+                | tee -a ci-results/extended/exit_codes.txt
+              if (( RC != 0 )); then FAILED=1; fi
+            done
+          done
+          exit "$FAILED"
+      - name: Report observed scope (whole chapters NOT accepted)
+        if: always()
+        run: |
+          {
+            echo '## Continued book CI, excluding Ch10'
+            echo 'Known Ch05, Ch09, Ch11 live test scopes only. Ch10 is HOLD.'
+            echo 'Source SHA:'
+            cat ci-results/extended/source_sha.txt
+            echo 'Prebuilt image digest:'
+            cat ci-results/extended/image_digest.txt
+            echo 'Per-session results:'
+            cat ci-results/extended/exit_codes.txt || true
+            echo 'Ch05: 3 separate Gazebo containers. Ch09: 12-joint stand message+state.'
+            echo 'Ch11: Gazebo simulation odometry -> sim_odometry -> /odom/raw, NOT EKF/map.'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-extended-gazebo-${{ github.run_id }}
+          path: ci-results/extended/
+          retention-days: 14
+          if-no-files-found: warn
