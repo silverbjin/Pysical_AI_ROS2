@@ -86,6 +86,22 @@ xacro "$WS/src/$PKG/urdf/robot.urdf.xacro" > "$OUT/robot.urdf"
 check_urdf "$OUT/robot.urdf" > "$OUT/urdf.txt"
 if [[ "$CH" == Ch05 ]]; then
   python3 /work/ci/docker/verify_urdf_joints.py "$OUT/robot.urdf" joint1 joint2 joint3 joint4 | tee "$OUT/joint_contract.txt"
+  stage CH05_ROBOT_DESCRIPTION
+  # Original GUI launch starts robot_state_publisher BEFORE spawn; its transient
+  # robot_description unblocks gz_ros2_control resource-manager initialization.
+  python3 - "$OUT/robot.urdf" "$OUT/rsp.yaml" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+description = Path(sys.argv[1]).read_text(encoding="utf-8")
+Path(sys.argv[2]).write_text(yaml.safe_dump({
+    "robot_state_publisher": {"ros__parameters": {
+        "robot_description": description,
+        "use_sim_time": True
+    }}
+}, sort_keys=False), encoding="utf-8")
+PY
+  start rsp ros2 run robot_state_publisher robot_state_publisher     --ros-args --params-file "$OUT/rsp.yaml"
   WORLD=empty
   SOURCE_WORLD=empty.sdf
   ROBOT=physical_ai_robot
