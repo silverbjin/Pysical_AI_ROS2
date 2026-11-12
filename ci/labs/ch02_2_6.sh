@@ -7,6 +7,11 @@ source /opt/ros/jazzy/setup.bash
 set -u
 export ROS_DOMAIN_ID=52
 cd "$ROOT/Ch02/ros2_ws"
+# Fresh GitHub runner has no rosdep database even after ROS packages are installed.
+if test ! -s /etc/ros/rosdep/sources.list.d/20-default.list; then
+  sudo rosdep init
+fi
+rosdep update
 rosdep install --from-paths src --ignore-src -r -y
 colcon build --symlink-install
 set +u
