@@ -110,7 +110,7 @@ else
   python3 /work/ci/docker/verify_urdf_joints.py "$OUT/robot.urdf" fr_hip_joint fr_thigh_joint fr_calf_joint fl_hip_joint fl_thigh_joint fl_calf_joint rr_hip_joint rr_thigh_joint rr_calf_joint rl_hip_joint rl_thigh_joint rl_calf_joint | tee "$OUT/joint_contract.txt"
   WORLD=my_empty_world
   SOURCE_WORLD="$WS/src/$PKG/worlds/empty_world.sdf"
-  if [[ "${BOOK_DYNAMIC:-0}" == "1" && "$CH" == Ch11 ]]; then
+  if [[ "$CH" == Ch11 && ( "${BOOK_DYNAMIC:-0}" == 1 || "${BOOK_LOCALIZATION:-0}" == 1 ) ]]; then
     WORLD=sensor_figure_world
     SOURCE_WORLD="$WS/src/$PKG/worlds/sensor_figure_world.sdf"
   fi
@@ -129,6 +129,49 @@ timeout --signal=TERM --kill-after=3s 30s ros2 topic echo /clock --once > "$OUT/
 grep -q 'sec:' "$OUT/clock.txt"
 
 if [[ "$CH" != Ch05 ]]; then
+  if [[ "$CH" == Ch11 && "${BOOK_LOCALIZATION:-0}" == "1" ]]; then
+    stage CH11_REAL_ROBOT_DESCRIPTION
+    python3 - "$OUT/robot.urdf" "$OUT/robot_description.yaml" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+xml=Path(sys.argv[1]).read_text()
+Path(sys.argv[2]).write_text(yaml.safe_dump(
+  {'robot_state_publisher':{'ros__parameters':{
+  'robot_description':xml,'use_sim_time':True}}},sort_keys=False))
+PY
+    start rsp ros2 run robot_state_publisher robot_state_publisher \
+      --ros-args --params-file "$OUT/robot_description.yaml"
+    stage CH11_ORIGINAL_SENSOR_BRIDGE
+    start localization_bridge ros2 run ros_gz_bridge parameter_bridge \
+      --ros-args -p config_file:="$WS/src/$PKG/config/ros_gz_bridge.yaml"
+    stage CH11_SIM_OBSERVATION_ADAPTER
+    start sim_odometry ros2 run my_quadruped_bot sim_odometry
+    stage CH11_EKF_FUSION
+    start ekf ros2 run robot_localization ekf_node \
+      --ros-args -r __node:=ekf_filter_node \
+      --params-file "$WS/src/$PKG/config/ekf.yaml" \
+      -r /odometry/filtered:=/odom
+    stage CH11_ORIGINAL_SCAN_GATE
+    start scan_gate ros2 run my_quadruped_bot slam_scan_filter \
+      --ros-args -p use_sim_time:=true
+    stage CH11_SLAM_TOOLBOX_NO_GUI
+    start slam_launch ros2 launch my_quadruped_bot slam.launch.py \
+      start_rviz:=false start_scan_filter:=false
+    stage CH11_OBSERVED_EKF_TF_SCAN
+    timeout --signal=TERM --kill-after=4s 46s \
+      python3 /work/ci/docker/verify_localization.py "$OUT/localization.json" \
+      2>&1 | tee "$OUT/localization.log"
+    grep -q 'BOOK_CH11_LOCALIZATION_PASS' "$OUT/localization.log"
+    stage CH11_SLAM_LIFECYCLE
+    timeout 14s ros2 lifecycle get /slam_toolbox \
+      2>&1 | tee "$OUT/slam_lifecycle.txt"
+    grep -qi 'active' "$OUT/slam_lifecycle.txt"
+    stage CH11_LOCALIZATION_SCOPED_PASS
+    echo 'CH11_EKF_TF_SCAN_SLAM_ACTIVE_PASS_MAP_SAVE_NOT_RUN' \
+      | tee "$OUT/verdict.txt"
+    exit 0
+  fi
   if [[ "${BOOK_EXTENDED:-0}" == "1" ]]; then
     if [[ "$CH" == Ch09 ]]; then
       stage EXTENDED_CH09_BRIDGE

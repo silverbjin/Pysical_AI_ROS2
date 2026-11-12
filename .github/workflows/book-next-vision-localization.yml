@@ -1,0 +1,149 @@
+name: Book next camera and localization verification (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-next-vision-localization.yml'
+      - 'ci/docker/ch07_camera_once.sh'
+      - 'ci/docker/fixtures/ch07_camera_world.sdf'
+      - 'ci/docker/verify_camera.py'
+      - 'ci/docker/ch11_localization_once.sh'
+      - 'ci/docker/verify_localization.py'
+      - 'ci/verify_preserved_boundaries.py'
+      - 'ci/docker/next_scope.sh'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-next-vision-localization-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  preserved-evidence:
+    name: Ch06/Ch13 boundaries (no simulation)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /ci/verify_preserved_boundaries.py
+            /Ch06/ros2_ws/src/my_robot_moveit_config/**
+            /Ch06/ros2_ws/src/my_robot_control/my_robot_control/hello_moveit.py
+            /Ch07/ros2_ws/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.*
+            /Ch13/evidence/section_13_8_policy/book_closeout_v53_20261112.json
+      - name: Verify preserved evidence and known Ch06 blocker
+        run: timeout 35s python3 ci/verify_preserved_boundaries.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-vision-localization-audit-${{ github.run_id }}
+          path: ci-results/vision/audit/
+          retention-days: 14
+
+  ch07-camera:
+    # Two independent public CI attempts crashed OGRE2, including one with Xvfb.
+    # Keep this real probe runnable manually; do not re-spend PR runner time
+    # on an identical known renderer failure until the runtime changes.
+    if: github.event_name == 'workflow_dispatch'
+    name: Ch07 live RGB-D camera and optical TF (manual, known BLOCKED)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Record exact source and pinned image
+        run: |
+          mkdir -p ci-results/vision
+          git rev-parse HEAD > ci-results/vision/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/vision/image_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull exact tested GHCR image (no Docker rebuild)
+        run: docker pull "$(cat ci-results/vision/image_digest.txt)"
+      - name: Run real camera model and subscriber
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=10s 250s docker run \
+            --rm --pull=never --shm-size=1g \
+            -e RUN_SOURCE_SHA="$(cat ci-results/vision/source_sha.txt)" \
+            -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+            -v "$PWD":/work -w /work \
+            "$(cat ci-results/vision/image_digest.txt)" \
+            bash ci/docker/ch07_camera_once.sh \
+            2>&1 | tee ci-results/vision/Ch07_console.txt
+      - name: Summarize scope
+        if: always()
+        run: |
+          echo 'Ch07 headless RGBD ROS image, CameraInfo, optical TF. GUI and pick/place NOT_RUN.' \
+            >> "$GITHUB_STEP_SUMMARY"
+          cat ci-results/vision/Ch07/result.json >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-camera-live-${{ github.run_id }}
+          path: ci-results/vision/
+          retention-days: 14
+          if-no-files-found: warn
+
+  ch11-localization:
+    name: Ch11 Gazebo EKF and SLAM lifecycle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch11
+      - name: Record source and immutable base
+        run: |
+          mkdir -p ci-results/next/Ch11
+          git rev-parse HEAD > ci-results/next/Ch11/checked_source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/next/Ch11/pinned_base_image.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull exact tested GHCR image (no Docker rebuild)
+        run: docker pull "$(cat ci-results/next/Ch11/pinned_base_image.txt)"
+      - name: Run actual EKF and SLAM (transient apt addon versions recorded)
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 330s docker run \
+            --rm --pull=never --shm-size=1g \
+            -e BOOK_LOCALIZATION=1 \
+            -e RUN_SOURCE_SHA="$(cat ci-results/next/Ch11/checked_source_sha.txt)" \
+            -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+            -v "$PWD":/work -w /work \
+            "$(cat ci-results/next/Ch11/pinned_base_image.txt)" \
+            bash ci/docker/ch11_localization_once.sh \
+            2>&1 | tee ci-results/next/Ch11_console.txt
+      - name: Report actual stage and remaining map acceptance
+        if: always()
+        run: |
+          {
+            echo 'Ch11 scope: Gazebo simulated odometry->EKF /odom+TF, scan filter, slam lifecycle.'
+            echo 'Map save and localization quality NOT_RUN; transient apt dependencies are separately versioned.'
+            cat ci-results/next/Ch11/result.json || true
+            cat ci-results/next/Ch11/slam_lifecycle.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch11-ekf-slam-live-${{ github.run_id }}
+          path: ci-results/next/
+          retention-days: 14
+          if-no-files-found: warn
