@@ -43,7 +43,11 @@ jobs:
           retention-days: 14
 
   ch07-camera:
-    name: Ch07 live RGB-D camera and optical TF
+    # Two independent public CI attempts crashed OGRE2, including one with Xvfb.
+    # Keep this real probe runnable manually; do not re-spend PR runner time
+    # on an identical known renderer failure until the runtime changes.
+    if: github.event_name == 'workflow_dispatch'
+    name: Ch07 live RGB-D camera and optical TF (manual, known BLOCKED)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
