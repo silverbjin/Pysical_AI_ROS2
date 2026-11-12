@@ -174,7 +174,7 @@ def setup_x():
 def source_workspace(chapter):
     base = ROOT / chapter
     if chapter == "Ch01":
-        ws = OUT / "ch01_ws"
+        ws = Path(os.environ.get("RUNNER_TEMP", "/tmp")) / ("book_ch01_ws_" + str(os.getpid()))
         src = ws / "src"
         src.mkdir(parents=True, exist_ok=True)
         origins = [
@@ -244,7 +244,7 @@ def ch01_14():
 
 
 def ch01_15():
-    ws = OUT / "fresh_package"
+    ws = Path(os.environ.get("RUNNER_TEMP", "/tmp")) / ("book_ch01_fresh_" + str(os.getpid()))
     src = ws / "src"
     src.mkdir(parents=True, exist_ok=True)
     if not (src / "my_robot_controller").exists():
