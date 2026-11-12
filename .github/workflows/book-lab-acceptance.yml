@@ -24,7 +24,7 @@ permissions:
   contents: read
 concurrency:
   group: book-lab-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   document-preflight:
     runs-on: ubuntu-24.04
