@@ -115,11 +115,16 @@ def node(name):
                  16, "node " + name)
 
 
-def topic_once(topic, msg_type=None):
+def topic_once(topic, msg_type=None, qos=None):
+    # CLI echo cannot infer message type if the publisher has not registered.
+    until(lambda: topic in run(["ros2", "topic", "list"], timeout=6).split(),
+          12, "topic " + topic)
     args = ["ros2", "topic", "echo", topic]
     if msg_type:
         args.append(msg_type)
     args.append("--once")
+    if qos:
+        args += ["--qos-reliability", qos]
     return run(args, timeout=20)
 
 
@@ -303,7 +308,7 @@ def ch02_24():
     _, serv = start("adder", ["ros2", "run", "my_robot_system", "add_two_ints_server"])
     check("add_two_ints 15", lambda: eq_contains(run(["ros2", "service", "call", "/add_two_ints",
           "example_interfaces/srv/AddTwoInts", "{a: 5, b: 10}"]), "15"))
-    check("spawn client", lambda: run(["ros2", "run", "my_robot_system", "turtle_spawn_client"], timeout=20))
+    check("spawn client", lambda: eq_contains(run(["ros2", "run", "my_robot_system", "turtle_spawn_client"], timeout=20), "Success! Spawning Turtle: robot_turtle"))
 
 
 def ch02_25():
@@ -330,17 +335,19 @@ def ch02_27():
         check("normal launch " + label, lambda n=label: node(n))
     finish()
     _, bad = start("broken_remap", ["ros2", "launch", "my_robot_system", "remap_test.launch.py"])
+    until(lambda: "/cmd_vel_custom" in run(["ros2", "topic", "list"], timeout=5).split(), 12, "broken /cmd_vel_custom")
     check("broken remap publisher", lambda: eq_contains(run(["ros2", "topic", "info", "-v", "/cmd_vel_custom"]), "Publisher count: 1"))
     check("broken remap no subscriber", lambda: eq_contains(run(["ros2", "topic", "info", "-v", "/cmd_vel_custom"]), "Subscription count: 0"))
     finish()
     _, good2 = start("fixed_remap", ["ros2", "launch", "my_robot_system", "remap_fixed.launch.py"])
+    until(lambda: "/cmd_vel_custom" in run(["ros2", "topic", "list"], timeout=5).split(), 12, "fixed /cmd_vel_custom")
     check("fixed publisher", lambda: eq_contains(run(["ros2", "topic", "info", "-v", "/cmd_vel_custom"]), "Publisher count: 1"))
     check("fixed subscription", lambda: eq_contains(run(["ros2", "topic", "info", "-v", "/cmd_vel_custom"]), "Subscription count: 1"))
 
 
 def ch02_28():
     _, source = start("qos_pub", ["ros2", "run", "my_robot_system", "qos_test_node"])
-    check("video topic", lambda: eq_contains(run(["ros2", "topic", "echo", "/video_stream", "--once", "--qos-reliability", "best_effort"], timeout=20), "Frame Data"))
+    check("video topic", lambda: eq_contains(topic_once("/video_stream", qos="best_effort"), "Frame Data"))
     _, bad = start("incompatible", ["ros2", "run", "my_robot_system", "qos_compare_sub",
                                   "--ros-args", "-p", "reliability:=reliable"])
     time.sleep(3)
