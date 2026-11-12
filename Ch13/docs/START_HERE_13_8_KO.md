@@ -1,10 +1,10 @@
 # 13.8 기본 실습 시작하기
 
-이 패키지의 교재 목표는 **이동·관측·상태 확인·안전 종료와 실패 판독**이다. 학생 실행은 아래 `--exercise basic`을 사용한다. 관측 후 파지하지 않고 종료하며 MoveIt 계획 서버와 팔/gripper action을 시작하지 않는다. 원래 보행·native hold·센서·안전 감시는 유지한다. Level2 운반·놓기는 [과거 시연 해설](DEMO_13_8_LEVEL2_ARCHIVE_KO.md), 연속 임무 개발은 [향후 과제](FUTURE_13_8_TASKS_KO.md)로 구분한다.
+이 패키지의 교재 목표는 **이동·관측·상태 확인·안전 종료와 실패 판독**이다. 학생 실행은 아래 `--exercise basic`을 사용한다. 관측 후 파지하지 않고 종료하며 MoveIt 계획 서버를 기동하지 않고 팔/gripper 동작 명령을 발행하지 않는다. 원래 보행·native hold·센서·안전 감시는 유지한다. Level2 운반·놓기는 [과거 시연 해설](DEMO_13_8_LEVEL2_ARCHIVE_KO.md), 연속 임무 개발은 [향후 과제](FUTURE_13_8_TASKS_KO.md)로 구분한다.
 
 ## 1. 다운로드·의존성·분리 build
 
-새 WSL Ubuntu24.04 폴더에 받는 예시다. 기존 작업 폴더를 덮어쓰지 않는다. 이미 이13.8 작업본이 있다면 clone 대신 그 루트를 사용한다.
+새 WSL Ubuntu24.04 폴더에 받는 예시다. 기존 작업 폴더를 덮어쓰지 않는다. 이미 이13.8 작업본이 있다면 clone 대신 그 루트에서 `export ROOT="$PWD"`부터 실행한다.
 
 ```bash
 git clone --filter=blob:none --sparse --single-branch --branch feat/ch13-section-13-8 \
@@ -32,15 +32,14 @@ bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/audit_install.py /tm
 
 실행 중인 다른 engine이 있으면 그 소유 runner에서 정상 회수한다. PID나오래된lock파일만보고다른작업을죽이거나lock을삭제하지않는다. 같은 자산을 쓰는 worktree는 같은 실제 공유 lock을 사용해야 한다.
 
-```bash
-python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py /tmp/ch13_before_basic.json
-```
-
-`owned_stack_matches=[]`, `engine_lock_free=true`, `result=PASS`를 확인한다. 새 폴더에서는 공유lock 파일이필요하다. 기존파일이없을때만다음으로생성한다.
+새 폴더에서는 공유lock 파일이필요하다. 기존파일이없을때만다음으로생성한뒤잔여를조회한다.
 
 ```bash
 test -e "$ROOT/../ch13_reuse_engine.lock" || touch "$ROOT/../ch13_reuse_engine.lock"
+python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py /tmp/ch13_before_basic.json
 ```
+
+`owned_stack_matches=[]`, `engine_lock_free=true`, `result=PASS`를 확인한다.
 
 현재 소스와 일치하는 새 동결을 만든다. 파일명은매번새이름을쓴다. 기존v28/v52/v53 등 과거동결을고쳐맞추지않는다.
 
@@ -61,13 +60,13 @@ RUN_ROOT="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["runt
 CASE="$(python3 -c 'import uuid;print(uuid.uuid4())')"
 EVIDENCE="$ROOT/Ch13/evidence/section_13_8_system/$CASE"
 cd "$RUN_ROOT"
-CH13_CAPTURE_OVERLAP=1 CH13_EXPERIMENTAL_SE2=0 \
+CH13_CAPTURE_OVERLAP=1 CH13_EXPERIMENTAL_SE2=0 CH13_CALLBACK_TIMING=0 \
 bash Ch13/scripts/reuse_13_8/env.sh -u Ch13/scripts/reuse_13_8/run_mission.py \
   --repo-root "$RUN_ROOT" --manifest "$RUN_ROOT/$FREEZE" --evidence "$EVIDENCE" \
   --exercise basic --scenario level2_obstacles --auto-start
 ```
 
-`--auto-start`가 `/start_mission`을보내면 대기→관측지점이동→새RGB-D관측을이용한최종접근→실제정착→새관측확인→종료로진행한다. known upright원통관측이며일반물체인식이아니다. 상태확인을위해두번째터미널에서같은ROOT/build/venv를설정하고읽는다.
+`--auto-start`가 `/start_mission`을보내면 대기→관측지점이동→새RGB-D관측을이용한최종접근→실제정착→새관측확인→종료로진행한다. known upright원통관측이며일반물체인식이아니다. 상태확인을위해두번째터미널에서같은ROOT/build/venv를설정하고, 실행터미널의EVIDENCE경로값도복사해설정한뒤읽는다.
 
 ```bash
 cat "$EVIDENCE/live_status.json"
