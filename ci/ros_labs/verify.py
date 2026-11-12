@@ -331,6 +331,7 @@ def ch02_26():
         "my_robot_interfaces/action/CountUntil", "{target_number: 5, period: 0.1}", "--feedback"], timeout=25), "SUCCEEDED"))
     check("rejection 0", lambda: eq_contains(run(["ros2", "action", "send_goal", "/count_until",
         "my_robot_interfaces/action/CountUntil", "{target_number: 0, period: 1.0}"], timeout=25), "rejected"))
+    check("cancel final status", lambda: eq_contains(run(["python3", str(ROOT / "ci/ros_labs/action_cancel.py")], timeout=25), "STATUS_CANCELED_PASS"))
 
 
 def ch02_27():
@@ -386,7 +387,7 @@ def main():
             ("2.3", ["fault injection by changing topic name", "GUI observation"], ch02_23),
             ("2.4", ["service absence timeout", "duplicate name fault"], ch02_24),
             ("2.5", ["manual instruction analysis"], ch02_25),
-            ("2.6", ["Action Cancel final status", "missing-server timeout"], ch02_26),
+            ("2.6", ["missing-server timeout"], ch02_26),
             ("2.7", ["GUI motion confirmed by observer", "launch event readiness manual"], ch02_27),
             ("2.8", ["GUI and QoS rate estimate"], ch02_28),
         ]
