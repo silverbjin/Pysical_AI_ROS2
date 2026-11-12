@@ -1,168 +1,152 @@
 #!/usr/bin/env python3
+"""Ch06 §6.4: observe -> plan -> execute -> verify (ROS 2 Jazzy / MoveItPy).
+
+Default is the SRDF "ready" joint-state demo. A separate pose-IK exercise
+can be added only after its reachable goal and orientation are validated.
+SIMULATION ONLY: this is not a physical robot safety controller.
+"""
+import argparse
+import math
+from pathlib import Path
+import sys
 import time
-import yaml
-import os
-import gc # 안정적인 종료
 
+from ament_index_python.packages import get_package_share_directory
 import rclpy
-
+from rclpy.node import Node
+from sensor_msgs.msg import JointState
 from moveit.planning import MoveItPy
 from moveit_configs_utils import MoveItConfigsBuilder
 
-from ament_index_python.packages import get_package_share_directory
-from geometry_msgs.msg import PoseStamped
+ARM_JOINTS = ("joint1", "joint2", "joint3", "joint4", "joint_wrist")
+READY = {"joint1": 0., "joint2": 0., "joint3": 1.5708,
+         "joint4": 0., "joint_wrist": 0.}
+JOINT_TOLERANCE_RAD = 0.06
+
+
+def robot_model_path():
+    """Use exactly the same installed model as Rviz_Demo.launch.py."""
+    path = (Path(get_package_share_directory("my_robot_description"))
+            / "urdf" / "my_robot.ros2_control_rviz.urdf.xacro")
+    if not path.is_file():
+        raise FileNotFoundError(f"Ch06 URDF/Xacro is not installed: {path}")
+    return str(path)
 
 
 def build_moveit_config():
-    package_name = "my_robot_moveit_config"
-    pkg_share = get_package_share_directory(package_name)
-    config_dir = os.path.join(pkg_share, "config")
-
-    # 기본 MoveIt 설정 로드
-    moveit_config = (
-        MoveItConfigsBuilder(
-            robot_name="my_robot",
-            package_name=package_name,
-        )
-        .robot_description(
-            file_path="urdf/my_robot.urdf"
-        )
-        .robot_description_semantic(
-            file_path="config/my_robot.srdf"
-        )
-        .robot_description_kinematics(
-            file_path="config/kinematics.yaml"
-        )
-        .joint_limits(
-            file_path="config/joint_limits.yaml"
-        )
-        .trajectory_execution(
-            file_path="config/moveit_controllers.yaml"
-        )
+    config_package = "my_robot_moveit_config"
+    return (
+        MoveItConfigsBuilder("my_robot", package_name=config_package)
+        .robot_description(file_path=robot_model_path())
+        .robot_description_semantic(file_path="config/my_robot.srdf")
+        .robot_description_kinematics(file_path="config/kinematics.yaml")
+        .joint_limits(file_path="config/joint_limits.yaml")
+        .trajectory_execution(file_path="config/moveit_controllers.yaml")
+        .planning_pipelines(pipelines=["ompl"])
         .to_moveit_configs()
+        .to_dict()
     )
 
-    params = moveit_config.to_dict()
 
-    # OMPL 설정 로드
-    ompl_file = os.path.join(
-        config_dir,
-        "ompl_planning.yaml"
-    )
+class JointStateObserver(Node):
+    def __init__(self):
+        super().__init__("ch06_moveit_joint_observer")
+        self.last = None
+        self.messages = 0
+        self.create_subscription(JointState, "/joint_states", self._receive, 10)
 
-    with open(ompl_file, "r") as f:
-        ompl_config = yaml.safe_load(f)
+    def _receive(self, msg):
+        observed = dict(zip(msg.name, msg.position))
+        if all(name in observed and math.isfinite(observed[name])
+               for name in ARM_JOINTS):
+            self.last = {name: float(observed[name]) for name in ARM_JOINTS}
+            self.messages += 1
 
-    # MoveItPy가 기대하는 구조 생성
-    params["ompl"] = ompl_config
-    params["planning_pipelines"] = {
-        "pipeline_names": ["ompl"],
-        "default_planning_pipeline": "ompl",
-    }
-    # Planning Scene Monitor
-    params["planning_scene_monitor_options"] = {
-        "name": "planning_scene_monitor",
-        "robot_description": "robot_description",
-        "joint_state_topic": "/joint_states",
-        "wait_for_initial_state_timeout": 10.0,
-    }
-    # 기본 Planner 설정
-    params["plan_request_params"] = {
-        "planning_pipeline": "ompl",
-        "planner_id": "RRTConnectkConfigDefault",
-        "planning_attempts": 1,
-        "planning_time": 5.0,
-        "max_velocity_scaling_factor": 1.0,
-        "max_acceleration_scaling_factor": 1.0,
-    }
-    return params
-
-
-def main():
-    rclpy.init()
-    print("=== MoveIt Config Loading ===")
-
-    moveit_config = build_moveit_config()
-    print("\n=== Planning Pipeline ===")
-    print(moveit_config["planning_pipelines"])
-    print("\n=== OMPL Plugin ===")
-    print(moveit_config["ompl"]["planning_plugins"])
-
-    # MoveItPy 생성
-    my_robot = MoveItPy(
-        node_name="hello_moveit",
-        config_dict=moveit_config,
-    )
-    # arm_group 획득
-    arm = my_robot.get_planning_component(
-        "arm_group"
-    )
-    # 초기화 대기
-    # time.sleep(1.0)
-    time.sleep(2.0)
-    
-    print("\n=== Robot Ready ===")
-    ##################################################
-    # Task 1 : Named State
-    ##################################################
-    print("\n[Task 1] Move To Named State")
-    arm.set_start_state_to_current_state()
-    arm.set_goal_state(
-        configuration_name="ready"
-    )
-    plan_result = arm.plan()
-
-    if plan_result:
-        print("Planning Success")
-        my_robot.execute(
-            plan_result.trajectory,
-            controllers=[]
+    def wait_for(self, condition, timeout_sec):
+        deadline = time.monotonic() + timeout_sec
+        while time.monotonic() < deadline:
+            rclpy.spin_once(self, timeout_sec=0.25)
+            if self.last is not None and condition(self.last):
+                return dict(self.last)
+        raise TimeoutError(
+            "Ch06 joint state not ready / not at goal: "
+            f"messages={self.messages}, last={self.last}"
         )
-        print("Execution Success")
-    else:
-        print("Planning Failed")
-    time.sleep(2.0)
 
-    ##################################################
-    # Task 2 : IK Goal
-    ##################################################
-    print("\n[Task 2] IK Planning")
-    pose_goal = PoseStamped()
-    pose_goal.header.frame_id = "base_link"
-    pose_goal.pose.position.x = 0.00
-    pose_goal.pose.position.y = 0.00
-    pose_goal.pose.position.z = 2.1
-    pose_goal.pose.orientation.x = 0.0
-    pose_goal.pose.orientation.y = 0.0
-    pose_goal.pose.orientation.z = 0.0
-    pose_goal.pose.orientation.w = 1.0
-    arm.set_start_state_to_current_state()
-    arm.set_goal_state(
-        pose_stamped_msg=pose_goal,
-        pose_link="link_wrist"
+
+def run_named_ready(robot, observer):
+    before = observer.wait_for(lambda values: True, timeout_sec=15.0)
+    print(f"CH06_JOINT_STATES_READY before={before}", flush=True)
+    planning = robot.get_planning_component("arm_group")
+    planning.set_start_state_to_current_state()
+    planning.set_goal_state(configuration_name="ready")
+    result = planning.plan()
+    if not result:
+        raise RuntimeError("CH06_NAMED_READY_PLANNING_FAIL")
+    print("CH06_NAMED_READY_PLANNING_PASS", flush=True)
+
+    # In Jazzy MoveItPy, execute() returns ExecutionStatus with a
+    # .status string and __bool__ implemented for SUCCEEDED.
+    execution = robot.execute(result.trajectory, controllers=[])
+    status = str(execution.status)
+    print(f"CH06_MOVEIT_EXECUTION_STATUS={status}", flush=True)
+    if not bool(execution) or status.upper() != "SUCCEEDED":
+        raise RuntimeError(f"CH06_EXECUTION_FAIL status={status}")
+
+    n_before = observer.messages
+    target = lambda positions: all(abs(positions[name] - READY[name])
+                                   <= JOINT_TOLERANCE_RAD for name in ARM_JOINTS)
+    observed = observer.wait_for(
+        lambda positions: observer.messages > n_before and target(positions),
+        timeout_sec=12.0,
     )
-    plan_result = arm.plan()
+    errors = {name: round(abs(observed[name] - READY[name]), 6)
+              for name in ARM_JOINTS}
+    print(f"CH06_NAMED_READY_EXECUTION_AND_JOINT_GOAL_PASS "
+          f"max_error_rad={max(errors.values())} errors={errors}", flush=True)
+    return errors
 
-    if plan_result:
-        print("IK Planning Success")
-        my_robot.execute(
-            plan_result.trajectory,
-            controllers=[]
-        )
-        print("IK Execution Success")
-    else:
-        print("IK Planning Failed")
-        
-    # 종료 전 대기    
-    time.sleep(2.0)
-    print("\n=== Finished ===")         
-    
-    
-    del my_robot    
-    gc.collect()
-        
-    rclpy.shutdown()
-    os._exit(0)
+
+def main(args=None):
+    parser = argparse.ArgumentParser(
+        description="Ch06 MoveItPy named ready demo; requires headless or RViz demo launch."
+    )
+    parser.add_argument(
+        "--mode", choices=("named",), default="named",
+        help="Only measured named ready is accepted; pose-IK is a separate unverified exercise.",
+    )
+    known, ros_args = parser.parse_known_args(args)
+    robot = None
+    observer = None
+    rclpy.init(args=ros_args)
+    try:
+        config = build_moveit_config()
+        assert "robot_description" in config
+        assert "robot_description_semantic" in config
+        print("CH06_MODEL_CONFIG_PASS "
+              f"model={robot_model_path()} pipelines={config.get('planning_pipelines')}",
+              flush=True)
+        observer = JointStateObserver()
+        # No magic sleeps: readiness is measured from the real controller.
+        observer.wait_for(lambda _: True, timeout_sec=15.0)
+        robot = MoveItPy(node_name="ch06_hello_moveit", config_dict=config)
+        if known.mode == "named":
+            run_named_ready(robot, observer)
+        print("CH06_64_NAMED_READY_COMPLETE_POSE_IK_NOT_RUN", flush=True)
+        return 0
+    except (Exception, KeyboardInterrupt) as exc:
+        print(f"CH06_64_FAIL type={type(exc).__name__} reason={exc}",
+              file=sys.stderr, flush=True)
+        return 1
+    finally:
+        # Never os._exit(0): preserve real error code and release ROS objects.
+        if robot is not None:
+            del robot
+        if observer is not None:
+            observer.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
