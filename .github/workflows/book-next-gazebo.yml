@@ -1,4 +1,4 @@
-name: Book next Gazebo runtime Ch05, Ch09-Ch11
+name: Book next Gazebo runtime Ch05, Ch09, Ch11 (manual legacy; Ch10 HOLD)
 on:
   pull_request:
     paths:
@@ -6,8 +6,6 @@ on:
       - 'ci/docker/verify_urdf_joints.py'
       - 'ci/docker/verify_ch05_motion.py'
       - 'Ch05/**'
-      - 'Ch09/**'
-      - 'Ch10/**'
       - 'Ch11/**'
   workflow_dispatch:
     inputs:
@@ -16,7 +14,7 @@ on:
         required: true
         description: 'Execute a single chapter or all'
         default: all
-        options: [all, Ch05, Ch09, Ch10, Ch11]
+        options: [all, Ch05, Ch09, Ch11]
 permissions:
   contents: read
   packages: read
@@ -25,6 +23,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   next-live:
+    # Legacy broad smoke is manual; chapter-specific workflows own new PR tests.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -62,7 +62,7 @@ jobs:
           FAILED=0
           IMAGE="$(cat ci-results/next/image_digest.txt)"
           RUN_SOURCE_SHA="$(cat ci-results/next/source_sha.txt)"
-          for CH in Ch05 Ch09 Ch10 Ch11; do
+          for CH in Ch05 Ch09 Ch11; do
             if [ "$TARGET" != all ] && [ "$CH" != "$TARGET" ]; then continue; fi
             echo "===== $CH ====="
             timeout --signal=TERM --kill-after=12s 235s docker run --rm --pull=never --shm-size=512m \
