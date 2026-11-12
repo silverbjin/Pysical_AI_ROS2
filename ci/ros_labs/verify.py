@@ -191,7 +191,7 @@ def source_workspace(chapter):
     trace("WORKSPACE " + str(ws))
     run(["colcon", "build", "--symlink-install", "--base-paths", str(ws / "src"),
          "--build-base", str(ws / "build"), "--install-base", str(ws / "install"),
-         "--log-base", str(ws / "log")], timeout=180)
+         ], timeout=180)
     setup = ws / "install" / "setup.bash"
     envcmd = ["bash", "-c", "source " + str(setup) + " && env -0"]
     p = subprocess.run(envcmd, stdout=subprocess.PIPE, check=True, env=os.environ.copy())
