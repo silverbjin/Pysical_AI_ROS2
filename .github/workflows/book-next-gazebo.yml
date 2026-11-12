@@ -1,0 +1,100 @@
+name: Book next Gazebo runtime Ch05, Ch09-Ch11
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-next-gazebo.yml'
+      - 'ci/docker/next_scope.sh'
+      - 'ci/docker/verify_urdf_joints.py'
+      - 'ci/docker/verify_ch05_motion.py'
+      - 'Ch05/**'
+      - 'Ch09/**'
+      - 'Ch10/**'
+      - 'Ch11/**'
+  workflow_dispatch:
+    inputs:
+      chapter:
+        type: choice
+        required: true
+        description: 'Execute a single chapter or all'
+        default: all
+        options: [all, Ch05, Ch09, Ch10, Ch11]
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-next-gazebo-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  next-live:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch05
+            Ch09
+            Ch10
+            Ch11
+      - name: Record source version
+        run: |
+          mkdir -p ci-results/next
+          git rev-parse HEAD | tee ci-results/next/source_sha.txt
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull previously validated immutable Jazzy Harmonic image
+        run: |
+          IMAGE=ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f
+          docker pull "$IMAGE"
+          echo "$IMAGE" > ci-results/next/image_digest.txt
+          docker image inspect "$IMAGE" --format '{{.Id}}' > ci-results/next/local_image_id.txt
+      - name: Execute isolated chapter scenarios
+        env:
+          TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.chapter || 'all' }}
+        run: |
+          set +e
+          set -o pipefail
+          FAILED=0
+          IMAGE="$(cat ci-results/next/image_digest.txt)"
+          RUN_SOURCE_SHA="$(cat ci-results/next/source_sha.txt)"
+          for CH in Ch05 Ch09 Ch10 Ch11; do
+            if ${{ "$TARGET" != all && "$CH" != "$TARGET" }}; then continue; fi
+            echo "===== $CH ====="
+            timeout --signal=TERM --kill-after=12s 235s docker run --rm --pull=never --shm-size=512m \
+              --env RUN_SOURCE_SHA="$RUN_SOURCE_SHA" \
+              --env GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+              -v "$PWD":/work -w /work "$IMAGE" \
+              bash ci/docker/next_scope.sh "$CH" 2>&1 \
+              | tee "ci-results/next/$CH.log"
+            RC=$?
+            printf '%s %s\n' "$CH" "$RC" | tee -a ci-results/next/exit_codes.txt
+            if ${{ "$RC" -ne 0 }}; then FAILED=1; fi
+          done
+          exit "$FAILED"
+      - name: Write evidence summary
+        if: always()
+        run: |
+          {
+            echo '## Next Gazebo live run'
+            echo 'Tested in one pinned GHCR image: Ch05 physical controller/feedback; Ch09-Ch11 world, model and clock.'
+            echo 'GUI, gait, SLAM quality and Ch05 full guide are NOT_RUN.'
+            echo 'Source:'
+            cat ci-results/next/source_sha.txt || true
+            echo 'Image:'
+            cat ci-results/next/image_digest.txt || true
+            cat ci-results/next/exit_codes.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-next-gazebo-${{ github.run_id }}
+          path: ci-results/next/
+          if-no-files-found: warn
+          retention-days: 14
