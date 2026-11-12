@@ -120,7 +120,7 @@ try:
             "scan_lengths": sorted({x[1] for x in scans}),
             "scan_valid_counts": [x[2] for x in scans[:6]],
             "imu_stamp_nonzero": any(sec > 0 or ns > 0 for _,_,_,sec,ns in imu),
-            "scan_stamp_nonzero": any(sec > 0 or ns > 0 for _,_,_,sec,ns in scans),
+            "scan_stamp_nonzero": any(sec > 0 or ns > 0 for _,_,_,_,sec,ns in scans),
         }
         ok = len(imu) >= 5 and len(scans) >= 2 and any(n >= 350 and finite > 10 for _,n,finite,*_ in scans)
         ok = ok and data["evidence"]["imu_stamp_nonzero"] and data["evidence"]["scan_stamp_nonzero"]
