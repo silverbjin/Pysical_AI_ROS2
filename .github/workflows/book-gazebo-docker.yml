@@ -44,10 +44,18 @@ jobs:
           mkdir -p ci-results/gazebo
           git rev-parse HEAD | tee ci-results/gazebo/source_sha.txt
           df -h . | tee ci-results/gazebo/disk_before.txt
-      - name: Build common Jazzy and Gazebo Harmonic image once
+      - uses: docker/setup-buildx-action@v3
+      - name: Build common Jazzy and Gazebo Harmonic image once (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ci/docker/Dockerfile
+          load: true
+          tags: book-gazebo:ci
+          cache-from: type=gha,scope=book-gazebo
+          cache-to: type=gha,scope=book-gazebo,mode=max
+      - name: Record image identity
         run: |
-          docker build --progress=plain -f ci/docker/Dockerfile -t book-gazebo:ci . \
-            2>&1 | tee ci-results/gazebo/build.log
           docker image inspect book-gazebo:ci --format '{{.Id}}' \
             | tee ci-results/gazebo/local_image_id.txt
       - name: Run isolated chapter probes from same image
@@ -61,13 +69,13 @@ jobs:
               continue
             fi
             echo "===== $CHAPTER ====="
-            docker run --rm --shm-size=512m \
+            timeout --signal=TERM --kill-after=20s 280s docker run --rm --shm-size=512m \
               --env GITHUB_SHA="$GITHUB_SHA" \
               -v "$PWD":/work -w /work book-gazebo:ci \
               bash "ci/docker/smoke.sh" "$CHAPTER" \
-              > "ci-results/gazebo/$CHAPTER.log" 2>&1
-            RC=$?
-            tail -70 "ci-results/gazebo/$CHAPTER.log"
+              2>&1 | tee "ci-results/gazebo/$CHAPTER.log"
+            RC=${PIPESTATUS[0]}
+            tail -40 "ci-results/gazebo/$CHAPTER.log"
             printf '%s %s\n' "$CHAPTER" "$RC" | tee -a ci-results/gazebo/exit_codes.txt
             if [[ "$RC" != 0 ]]; then STATUS=1; fi
           done
