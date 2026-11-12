@@ -58,6 +58,7 @@ jobs:
         run: |
           docker image inspect book-gazebo:ci --format '{{.Id}}' \
             | tee ci-results/gazebo/local_image_id.txt
+          grep '^FROM ' ci/docker/Dockerfile | tee ci-results/gazebo/base_manifest_ref.txt
       - name: Run isolated chapter probes from same image
         env:
           SELECTED_CHAPTER: ${{ github.event_name == 'workflow_dispatch' && inputs.chapter || 'all' }}
@@ -89,7 +90,12 @@ jobs:
           echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           docker tag book-gazebo:ci "$IMAGE"
           docker push "$IMAGE" | tee ci-results/gazebo/ghcr_push.log
-          docker image inspect "$IMAGE" --format '{{index .RepoDigests 0}}' \
+          DIGEST="$(docker buildx imagetools inspect "$IMAGE" | awk '$1 == "Digest:" {print $2; exit}')"
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Unable to verify remote GHCR registry digest" >&2
+            exit 1
+          fi
+          printf '%s@%s\n' "${IMAGE%:*}" "$DIGEST" \
             | tee ci-results/gazebo/published_registry_digest.txt
       - name: Evidence summary
         if: always()

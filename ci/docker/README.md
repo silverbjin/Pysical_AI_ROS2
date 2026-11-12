@@ -1,6 +1,6 @@
 # Common Gazebo CI Docker image (Jazzy / Harmonic)
 
-The image is built once per Actions run from `ci/docker/Dockerfile` and reused for three isolated chapter probes. The image is **not yet immutable** while its upstream base is tag-based; the first tested `main` push publishes to GHCR and records a registry digest in the Actions artifact. Later acceptance must also pin the base image digest and apt packages.
+The image is built once per Actions run from `ci/docker/Dockerfile` and reused for three isolated chapter probes. The upstream ROS base manifest is pinned to `sha256:00b8d47a6e6384a2834e3d01fa87ae767876543baa574f2d64a75c04ea33c698`, observed in public Actions logs. The first tested `main` push publishes the built result to GHCR and records a registry digest in the Actions artifact. Apt versions are not yet frozen: a rebuild can still change the output. The published GHCR digest is the immutable runtime identity for final parity.
 
 | Chapter | Actually executed in Docker | Not covered |
 |---|---|---|

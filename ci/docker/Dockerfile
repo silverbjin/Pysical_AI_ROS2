@@ -1,6 +1,6 @@
 # Shared ROS 2 Jazzy + Gazebo Harmonic verification runtime.
-# Base tag NOT immutable until base manifest digest is separately pinned.
-FROM ros:jazzy-ros-base-noble
+# Base manifest digest observed in public GitHub Actions and pinned here.
+FROM ros:jazzy-ros-base-noble@sha256:00b8d47a6e6384a2834e3d01fa87ae767876543baa574f2d64a75c04ea33c698
 
 ENV DEBIAN_FRONTEND=noninteractive     ROS_DISTRO=jazzy     QT_QPA_PLATFORM=offscreen     LIBGL_ALWAYS_SOFTWARE=1
 
