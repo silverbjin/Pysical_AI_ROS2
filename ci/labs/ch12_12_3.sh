@@ -6,7 +6,6 @@ cd "$ROOT"
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e './Ch12[test,visual]'
-export MUJOCO_GL=egl
 python -m pytest Ch12/tests/test_locomotion_env.py \
   -q --junitxml=ci-results/Ch12/12.3/junit.xml
 quadruped-rl --section 12.3 --policy stand \
