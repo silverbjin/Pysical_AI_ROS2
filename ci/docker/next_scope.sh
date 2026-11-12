@@ -192,27 +192,26 @@ PY
       2>&1 | tee "$OUT/slam_lifecycle.txt"
     grep -qi 'active' "$OUT/slam_lifecycle.txt"
     if [[ "${BOOK_MAP_SAVE:-0}" == "1" ]]; then
-      stage CH11_MAP_SAVE_SERVICE_DISCOVERY
-      FOUND=0
-      for i in $(seq 1 20); do
-        if timeout 4s ros2 service list -t \
-          | grep -Fq '/slam_toolbox/save_map [slam_toolbox/srv/SaveMap]'; then
-          FOUND=1; break
-        fi
-        sleep .3
-      done
-      [[ "$FOUND" -eq 1 ]] || { echo 'CH11_MAP_SAVE_SERVICE_MISSING'; exit 1; }
-      stage CH11_REAL_SAVE_MAP_REQUEST
+      stage CH11_MAP_TOPIC_QOS_DIAGNOSTIC
+      timeout 10s ros2 topic info -v /map \
+        > "$OUT/map_topic_qos.txt" 2>&1 || true
+      stage CH11_NAV2_MAP_SAVER_CLI_LONGER_WAIT
+      # The original slam_toolbox/save_map wrapper returned result=255 because
+      # its transient map_saver did not receive a map within its 2s default.
+      # Use the official nav2_map_server CLI on the SAME real SLAM /map, with
+      # an explicit bounded subscription timeout. Never claim the wrapper PASS.
       timeout --signal=TERM --kill-after=5s 38s \
-        ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap \
-          "{name: {data: '$OUT/book_ch11_map'}}" \
-        2>&1 | tee "$OUT/save_map_service.log"
+        ros2 run nav2_map_server map_saver_cli \
+          -f "$OUT/book_ch11_map" \
+          --ros-args -p save_map_timeout:=15.0 \
+          -p map_subscribe_transient_local:=true \
+        2>&1 | tee "$OUT/map_saver_cli.log"
       stage CH11_SAVED_MAP_FILES_AND_PIXELS
       python3 /work/ci/docker/verify_ch11_saved_map.py \
         "$OUT" book_ch11_map 2>&1 | tee "$OUT/map_save_probe.log"
       grep -q CH11_MAP_SAVE_FILES_AND_PIXELS_PASS "$OUT/map_save_probe.log"
       stage CH11_MAP_SAVE_SCOPED_PASS
-      echo 'CH11_MAP_SAVE_PIXELS_PASS_ACCURACY_NOT_RUN' | tee "$OUT/verdict.txt"
+      echo 'CH11_NAV2_MAP_SAVER_CLI_PIXELS_PASS_SLAM_TOOLBOX_SERVICE_KNOWN_FAIL' | tee "$OUT/verdict.txt"
       exit 0
     fi
     stage CH11_LOCALIZATION_SCOPED_PASS
