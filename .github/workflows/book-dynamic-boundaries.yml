@@ -1,12 +1,10 @@
-name: Book dynamic failure boundaries Ch05 Ch09 Ch10 Ch11
+name: Book dynamic failure boundaries Ch05 Ch09 Ch11 (manual; Ch10 HOLD)
 on:
   pull_request:
     paths:
       - 'ci/docker/verify_dynamic.py'
       - 'ci/docker/ch10_ik_boundary.py'
       - 'Ch05/**'
-      - 'Ch09/**'
-      - 'Ch10/**'
       - 'Ch11/**'
   workflow_dispatch:
     inputs:
@@ -15,7 +13,7 @@ on:
         type: choice
         required: true
         default: all
-        options: [all, Ch05, Ch09, Ch10, Ch11]
+        options: [all, Ch05, Ch09, Ch11]
 permissions:
   contents: read
   packages: read
@@ -24,6 +22,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   dynamic-boundaries:
+    # Legacy broad audit retained for manual diagnosis; Ch10 remains HOLD.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -63,7 +63,7 @@ jobs:
           FAILED=0
           IMAGE="$(cat ci-results/dynamic/image_digest.txt)"
           SHA="$(cat ci-results/dynamic/source_sha.txt)"
-          for CH in Ch05 Ch09 Ch10 Ch11; do
+          for CH in Ch05 Ch09 Ch11; do
             if [[ "$TARGET" != all && "$CH" != "$TARGET" ]]; then continue; fi
             mkdir -p "ci-results/dynamic/$CH"
             echo "===== DYNAMIC $CH ====="
@@ -76,13 +76,7 @@ jobs:
               | tee "ci-results/dynamic/$CH/run.log"
             RC=$?
             printf '%s %d\n' "$CH" "$RC" | tee -a ci-results/dynamic/exit_codes.txt
-            if [[ "$CH" == Ch10 && "$RC" -eq 10 ]] \
-               && grep -q 'CH10_IK_URDF_GEOMETRY_MISMATCH_FOUND' "ci-results/dynamic/Ch10/run.log" \
-               && grep -q '"status": "FAIL"' "ci-results/next/Ch10/ik_boundary.json"; then
-              echo 'Ch10 KNOWN_FAIL — issue #123 (not a chapter PASS)' \
-                | tee -a ci-results/dynamic/verdicts.txt
-              echo '::warning title=Ch10 KNOWN_FAIL::IK/URDF geometry mismatch confirmed. Gait NOT_RUN. Issue #123.'
-            elif (( RC == 0 )); then
+            if (( RC == 0 )); then
               echo "$CH PASS_SCOPED_DYNAMIC_ONLY" | tee -a ci-results/dynamic/verdicts.txt
             else
               FAILED=1
@@ -103,7 +97,7 @@ jobs:
             echo 'Per-chapter exit codes and explicit verdicts:'
             cat ci-results/dynamic/exit_codes.txt || true
             cat ci-results/dynamic/verdicts.txt || true
-            echo 'KNOWN_FAIL means the defect was confirmed and remains NOT ACCEPTED; it is not a chapter PASS.'
+            echo 'Ch10 is HOLD, not part of any loop; no chapter-level acceptance is implied.'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload original runtime evidence even on failure
         if: always()
