@@ -129,6 +129,42 @@ timeout --signal=TERM --kill-after=3s 30s ros2 topic echo /clock --once > "$OUT/
 grep -q 'sec:' "$OUT/clock.txt"
 
 if [[ "$CH" != Ch05 ]]; then
+  if [[ "${BOOK_EXTENDED:-0}" == "1" ]]; then
+    if [[ "$CH" == Ch09 ]]; then
+      stage EXTENDED_CH09_BRIDGE
+      start joint_bridge ros2 run ros_gz_bridge parameter_bridge \
+        --ros-args -p config_file:="$WS/src/$PKG/config/ros_gz_bridge.yaml"
+      stage EXTENDED_CH09_PROBE_LISTEN_FIRST
+      timeout --signal=TERM --kill-after=4s 24s \
+        python3 /work/ci/docker/verify_extended.py ch09 "$OUT/extended.json" \
+        > "$OUT/extended.log" 2>&1 &
+      CHECK_PID="$!"
+      BG="$CHECK_PID $BG"
+      sleep 2
+      stage EXTENDED_CH09_ORIGINAL_STAND_UP
+      start stand_up ros2 run my_quadruped_bot stand_up
+      wait "$CHECK_PID"
+      cat "$OUT/extended.log"
+      grep -q 'BOOK_EXTENDED_CH09_PASS' "$OUT/extended.log"
+    elif [[ "$CH" == Ch11 ]]; then
+      stage EXTENDED_CH11_BRIDGE
+      start localization_bridge ros2 run ros_gz_bridge parameter_bridge \
+        --ros-args -p config_file:="$WS/src/$PKG/config/ros_gz_bridge.yaml"
+      stage EXTENDED_CH11_ODOMETRY_ADAPTER
+      start simulation_odometry ros2 run my_quadruped_bot sim_odometry
+      stage EXTENDED_CH11_MEASURED_ODOM_PAIR
+      timeout --signal=TERM --kill-after=4s 24s \
+        python3 /work/ci/docker/verify_extended.py ch11 "$OUT/extended.json" \
+        2>&1 | tee "$OUT/extended.log"
+      grep -q 'BOOK_EXTENDED_CH11_PASS' "$OUT/extended.log"
+    else
+      echo "Unsupported BOOK_EXTENDED chapter $CH" >&2
+      exit 2
+    fi
+    stage EXTENDED_BOUNDARY_PASS
+    echo "$CH:EXTENDED_BOUNDARY_PASS_NOT_WHOLE_CHAPTER" | tee "$OUT/verdict.txt"
+    exit 0
+  fi
   if [[ "${BOOK_DYNAMIC:-0}" == "1" ]]; then
     if [[ "$CH" == "Ch09" ]]; then
       stage DYNAMIC_CH09_BRIDGE
