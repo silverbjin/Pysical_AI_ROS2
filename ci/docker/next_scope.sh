@@ -83,6 +83,11 @@ set -u
 ros2 pkg prefix "$PKG" | tee "$OUT/prefix.txt"
 stage XACRO_CHECK
 xacro "$WS/src/$PKG/urdf/robot.urdf.xacro" > "$OUT/robot.urdf"
+if [[ "$CH" == Ch09 && "${BOOK_STANCE:-0}" == 1 ]]; then
+  stage CH09_CI_INSTRUMENT_ODOMETRY_ONLY
+  python3 /work/ci/docker/instrument_ch09_odom.py "$OUT/robot.urdf" \
+    2>&1 | tee "$OUT/ci_instrumentation.log"
+fi
 check_urdf "$OUT/robot.urdf" > "$OUT/urdf.txt"
 if [[ "$CH" == Ch05 ]]; then
   python3 /work/ci/docker/verify_urdf_joints.py "$OUT/robot.urdf" joint1 joint2 joint3 joint4 | tee "$OUT/joint_contract.txt"
@@ -129,6 +134,25 @@ timeout --signal=TERM --kill-after=3s 30s ros2 topic echo /clock --once > "$OUT/
 grep -q 'sec:' "$OUT/clock.txt"
 
 if [[ "$CH" != Ch05 ]]; then
+  if [[ "$CH" == Ch09 && "${BOOK_STANCE:-0}" == "1" ]]; then
+    stage CH09_ORIGINAL_JOINT_BRIDGE
+    start stance_joint_bridge ros2 run ros_gz_bridge parameter_bridge \
+      --ros-args -p config_file:="$WS/src/$PKG/config/ros_gz_bridge.yaml"
+    stage CH09_GAZEBO_BASE_OBSERVATION
+    start stance_odom_bridge ros2 run ros_gz_bridge parameter_bridge \
+      '/model/my_quadruped/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry' \
+      --ros-args -r /model/my_quadruped/odometry:=/stand_observation/odom
+    stage CH09_ORIGINAL_STAND_UP
+    start stand_up ros2 run my_quadruped_bot stand_up
+    stage CH09_LATE_WINDOW_TILT_HEIGHT_DRIFT
+    timeout --signal=TERM --kill-after=4s 30s \
+      python3 /work/ci/docker/verify_ch09_stance.py "$OUT/stance_verdict.json" \
+      2>&1 | tee "$OUT/stance_probe.log"
+    grep -q CH09_POSTURE_STABILITY_PASS "$OUT/stance_probe.log"
+    stage CH09_POSTURE_SCOPED_PASS
+    echo 'CH09_POSTURE_PROXY_PASS_FOOT_CONTACT_NOT_TESTED' | tee "$OUT/verdict.txt"
+    exit 0
+  fi
   if [[ "$CH" == Ch11 && "${BOOK_LOCALIZATION:-0}" == "1" ]]; then
     stage CH11_REAL_ROBOT_DESCRIPTION
     python3 - "$OUT/robot.urdf" "$OUT/robot_description.yaml" <<'PY'
@@ -167,6 +191,29 @@ PY
     timeout 14s ros2 lifecycle get /slam_toolbox \
       2>&1 | tee "$OUT/slam_lifecycle.txt"
     grep -qi 'active' "$OUT/slam_lifecycle.txt"
+    if [[ "${BOOK_MAP_SAVE:-0}" == "1" ]]; then
+      stage CH11_MAP_TOPIC_QOS_DIAGNOSTIC
+      timeout 10s ros2 topic info -v /map \
+        > "$OUT/map_topic_qos.txt" 2>&1 || true
+      stage CH11_NAV2_MAP_SAVER_CLI_LONGER_WAIT
+      # The original slam_toolbox/save_map wrapper returned result=255 because
+      # its transient map_saver did not receive a map within its 2s default.
+      # Use the official nav2_map_server CLI on the SAME real SLAM /map, with
+      # an explicit bounded subscription timeout. Never claim the wrapper PASS.
+      timeout --signal=TERM --kill-after=5s 38s \
+        ros2 run nav2_map_server map_saver_cli \
+          -f "$OUT/book_ch11_map" \
+          --ros-args -p save_map_timeout:=15.0 \
+          -p map_subscribe_transient_local:=true \
+        2>&1 | tee "$OUT/map_saver_cli.log"
+      stage CH11_SAVED_MAP_FILES_AND_PIXELS
+      python3 /work/ci/docker/verify_ch11_saved_map.py \
+        "$OUT" book_ch11_map 2>&1 | tee "$OUT/map_save_probe.log"
+      grep -q CH11_MAP_SAVE_FILES_AND_PIXELS_PASS "$OUT/map_save_probe.log"
+      stage CH11_MAP_SAVE_SCOPED_PASS
+      echo 'CH11_NAV2_MAP_SAVER_CLI_PIXELS_PASS_SLAM_TOOLBOX_SERVICE_KNOWN_FAIL' | tee "$OUT/verdict.txt"
+      exit 0
+    fi
     stage CH11_LOCALIZATION_SCOPED_PASS
     echo 'CH11_EKF_TF_SCAN_SLAM_ACTIVE_PASS_MAP_SAVE_NOT_RUN' \
       | tee "$OUT/verdict.txt"
