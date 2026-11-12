@@ -2,12 +2,16 @@
 # Ch02/docs/LAB_2_6_GUIDE_KO.md: ready/build and Action CLI Goal/Result.
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+set +u
 source /opt/ros/jazzy/setup.bash
+set -u
 export ROS_DOMAIN_ID=52
 cd "$ROOT/Ch02/ros2_ws"
 rosdep install --from-paths src --ignore-src -r -y
 colcon build --symlink-install
+set +u
 source install/setup.bash
+set -u
 ros2 pkg prefix my_robot_system
 ros2 pkg prefix my_robot_interfaces
 ros2 interface show my_robot_interfaces/action/CountUntil
