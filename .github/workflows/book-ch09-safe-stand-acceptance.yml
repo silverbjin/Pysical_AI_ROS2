@@ -1,0 +1,81 @@
+name: Book Ch09 real stand-up physics (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch09-safe-stand-acceptance.yml'
+      - 'Ch09/ros2_ws/src/my_quadruped_bot/my_quadruped_bot/stand_up.py'
+      - 'Ch09/ros2_ws/src/my_quadruped_bot/package.xml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  original-stand-up:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch09
+      - name: Record pinned pre-accepted environment
+        run: |
+          mkdir -p ci-results/ch09-fixed
+          git rev-parse HEAD > ci-results/ch09-fixed/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/ch09-fixed/image_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull immutable runtime once
+        run: docker pull "$(cat ci-results/ch09-fixed/image_digest.txt)"
+      - name: Verify actual installed stand_up in Gazebo with original 20-degree limit
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 145s \
+            docker run --rm --pull=never --shm-size=512m \
+            -e BOOK_STANCE=1 \
+            -e RUN_SOURCE_SHA="$(cat ci-results/ch09-fixed/source_sha.txt)" \
+            -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+            -v "$PWD":/work -w /work \
+            "$(cat ci-results/ch09-fixed/image_digest.txt)" \
+            bash ci/docker/next_scope.sh Ch09 \
+            2>&1 | tee ci-results/ch09-fixed/console.log
+          grep -q STAND_UP_MEASURED_START_RAMP_6S ci-results/next/Ch09/stand_up.log
+          grep -q STAND_UP_RAMP_COMPLETE_ORIGINAL_GOALS ci-results/next/Ch09/stand_up.log
+          grep -q CH09_POSTURE_STABILITY_PASS ci-results/next/Ch09/stance_probe.log
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('ci-results/next/Ch09/stance_verdict.json').read_text())
+          e=d["evidence"]
+          assert d["status"]=="PASS"
+          assert e["late_window_max_abs_roll_or_pitch_deg"]<=20.0
+          assert e["min_base_height_m"]>=.12
+          assert e["late_window_height_spread_m"]<=.08
+          assert e["late_window_horizontal_displacement_m"]<=.20
+          print("CH09_ACTUAL_ORIGINAL_STAND_RAMP_PASS")
+          PY
+      - name: Preserve physical evidence, even on failure
+        if: always()
+        run: |
+          mkdir -p ci-results/ch09-fixed/raw
+          if [[ -d ci-results/next/Ch09 ]]; then
+            cp -a ci-results/next/Ch09/. ci-results/ch09-fixed/raw/
+          fi
+          {
+            echo '## Ch09 actual stand_up (not counterfactual)'
+            echo 'Ch10 held. Same targets/PIDs; observed-start 6s ramp only.'
+            echo 'No direct contact forces, three starts, GUI or hardware.'
+            cat ci-results/ch09-fixed/raw/stance_verdict.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch09-original-stand-fixed-${{ github.run_id }}
+          path: ci-results/ch09-fixed
+          retention-days: 14
