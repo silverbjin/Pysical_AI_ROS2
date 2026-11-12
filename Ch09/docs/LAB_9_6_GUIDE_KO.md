@@ -19,7 +19,7 @@ ros2 pkg prefix my_quadruped_bot
 PKG="$(ros2 pkg prefix --share my_quadruped_bot)"
 ```
 
-패키지 prefix는 **Ch09**의 `install`이어야 한다. 다른 장의 `my_quadruped_bot`이 조회되면 새 터미널에서 source를 다시 수행한다. `package.xml`의 실행 의존성 선언은 불충분하므로 `rosdep`만으로 모든 프로그램이 설치된다고 가정하지 말고 `ros2 pkg executables ros_gz_sim`, `ros2 pkg executables ros_gz_bridge` 등을 점검한다.
+패키지 prefix는 **Ch09**의 `install`이어야 한다. 다른 장의 `my_quadruped_bot`이 조회되면 새 터미널에서 source를 다시 수행한다. `package.xml`에는 이 기립 노드의 `rclpy`·`std_msgs`·`sensor_msgs` 실행 의존성을 명시했지만, `rosdep`만으로 모든 시뮬레이터 프로그램이 설치된다고 가정하지 말고 `ros2 pkg executables ros_gz_sim`, `ros2 pkg executables ros_gz_bridge` 등을 점검한다.
 
 ## 2. 시뮬레이션과 기립 노드
 
@@ -41,6 +41,10 @@ ros2 topic echo /model/my_quadruped/joint/fr_thigh_joint/cmd_pos --once
 ```
 
 **실제 코드의 명목 목표:** hip=0.0 rad, thigh=-0.6 rad, calf=+1.2 rad, 전송 10 Hz. ROS 토픽에 `/0/`가 없음을 유의한다. Gazebo 값이 변하지 않으면 브리지 맵부터 확인한다.
+
+**기립 안정성 수정 (2026-11-12):** 위 목표각을 처음부터 갑자기 발행하면 실제 Gazebo에서 몸체 Pitch −40.70°와 앞발 이탈이 발생했다. 같은 목표각을 현재 `/joint_states`에서 측정한 12개 시작 관절각에서 **6초 smoothstep 보간**해 발행한 대조 시험에서는 Pitch 약 −0.46°와 네 발의 지면 높이 정렬을 관측했다. 따라서 `stand_up.py`는 지금 실제 관절값을 모두 받기 전까지 임의 명령을 발행하지 않고, 그 후 6초 동안 보간한다. 명령값·토픽·10Hz·Gazebo PID는 바꾸지 않았다.
+
+터미널 2에서 `STAND_UP_MEASURED_START_RAMP_6S` → `STAND_UP_RAMP_COMPLETE_ORIGINAL_GOALS`가 순서대로 출력되는지 확인한다. `STAND_UP_NO_JOINT_STATES_NO_COMMAND`가 출력되면 `/joint_states` 및 브리지를 확인한다. 이 로그는 **기립 성공 증거가 아니라 명령 수행 단계의 증거**다. 실제 몸체 Pitch/Roll과 발 접촉 상태는 별도로 확인해야 한다.
 
 ## 3. P-D 튜닝 실험 설계
 
