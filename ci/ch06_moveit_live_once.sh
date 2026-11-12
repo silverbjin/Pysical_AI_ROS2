@@ -55,7 +55,7 @@ packages=(
   ros-jazzy-ros2controlcli
   ros-jazzy-joint-trajectory-controller
   ros-jazzy-joint-state-broadcaster
-  ros-jazzy-mock-components
+  ros-jazzy-ros2-control
   ros-jazzy-robot-state-publisher
   ros-jazzy-xacro
 )
