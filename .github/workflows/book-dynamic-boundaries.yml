@@ -1,0 +1,119 @@
+name: Book dynamic failure boundaries Ch05 Ch09 Ch10 Ch11
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-dynamic-boundaries.yml'
+      - 'ci/docker/next_scope.sh'
+      - 'ci/docker/verify_dynamic.py'
+      - 'ci/docker/ch10_ik_boundary.py'
+      - 'Ch05/**'
+      - 'Ch09/**'
+      - 'Ch10/**'
+      - 'Ch11/**'
+  workflow_dispatch:
+    inputs:
+      chapter:
+        description: 'Select one failed boundary or all'
+        type: choice
+        required: true
+        default: all
+        options: [all, Ch05, Ch09, Ch10, Ch11]
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-dynamic-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  dynamic-boundaries:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch05
+            Ch09
+            Ch10
+            Ch11
+      - name: Record source, pinned environment and scope
+        run: |
+          mkdir -p ci-results/dynamic
+          git rev-parse HEAD | tee ci-results/dynamic/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            | tee ci-results/dynamic/image_digest.txt
+      - name: Authenticate read-only GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull once — exact previously accepted Docker digest
+        run: |
+          IMAGE="$(cat ci-results/dynamic/image_digest.txt)"
+          docker pull "$IMAGE"
+          docker image inspect "$IMAGE" --format '{{.Id}}' \
+            | tee ci-results/dynamic/local_image_id.txt
+      - name: Run each bounded dynamic probe, preserve known failures
+        env:
+          TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.chapter || 'all' }}
+        run: |
+          set +e
+          set -o pipefail
+          FAILED=0
+          IMAGE="$(cat ci-results/dynamic/image_digest.txt)"
+          SHA="$(cat ci-results/dynamic/source_sha.txt)"
+          for CH in Ch05 Ch09 Ch10 Ch11; do
+            if [[ "$TARGET" != all && "$CH" != "$TARGET" ]]; then continue; fi
+            mkdir -p "ci-results/dynamic/$CH"
+            echo "===== DYNAMIC $CH ====="
+            timeout --signal=TERM --kill-after=15s 175s \
+              docker run --rm --pull=never --shm-size=512m \
+              -e BOOK_DYNAMIC=1 \
+              -e RUN_SOURCE_SHA="$SHA" -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+              -v "$PWD":/work -w /work "$IMAGE" \
+              bash ci/docker/next_scope.sh "$CH" 2>&1 \
+              | tee "ci-results/dynamic/$CH/run.log"
+            RC=$?
+            printf '%s %d\n' "$CH" "$RC" | tee -a ci-results/dynamic/exit_codes.txt
+            if [[ "$CH" == Ch10 && "$RC" -eq 10 ]] \
+               && grep -q 'CH10_IK_URDF_GEOMETRY_MISMATCH_FOUND' "ci-results/dynamic/Ch10/run.log" \
+               && grep -q '"status": "FAIL"' "ci-results/next/Ch10/ik_boundary.json"; then
+              echo 'Ch10 KNOWN_FAIL — issue #123 (not a chapter PASS)' \
+                | tee -a ci-results/dynamic/verdicts.txt
+              echo '::warning title=Ch10 KNOWN_FAIL::IK/URDF geometry mismatch confirmed. Gait NOT_RUN. Issue #123.'
+            elif (( RC == 0 )); then
+              echo "$CH PASS_SCOPED_DYNAMIC_ONLY" | tee -a ci-results/dynamic/verdicts.txt
+            else
+              FAILED=1
+              echo "$CH UNEXPECTED_FAIL rc=$RC" | tee -a ci-results/dynamic/verdicts.txt
+            fi
+          done
+          exit "$FAILED"
+      - name: Publish actual test scopes and failures
+        if: always()
+        run: |
+          {
+            echo '## Book dynamic failure boundaries'
+            echo 'PASS only for observed dynamic contracts; FAIL and NOT_RUN are not chapter acceptance.'
+            echo 'Source SHA:'
+            cat ci-results/dynamic/source_sha.txt || true
+            echo 'Runtime image:'
+            cat ci-results/dynamic/image_digest.txt || true
+            echo 'Per-chapter exit codes and explicit verdicts:'
+            cat ci-results/dynamic/exit_codes.txt || true
+            cat ci-results/dynamic/verdicts.txt || true
+            echo 'KNOWN_FAIL means the defect was confirmed and remains NOT ACCEPTED; it is not a chapter PASS.'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload original runtime evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-dynamic-boundaries-${{ github.run_id }}
+          path: |
+            ci-results/dynamic
+            ci-results/next
+          retention-days: 14
+          if-no-files-found: warn
