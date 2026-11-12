@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Ch03–Ch05 bounded probes executed from the SAME prebuilt Docker image.
 set -Eeuo pipefail
+set +u
 source /opt/ros/jazzy/setup.bash
+set -u
 CHAPTER="$1"
 case "$CHAPTER" in Ch03|Ch04|Ch05) ;; *) echo "Usage: smoke.sh Ch03|Ch04|Ch05" >&2; exit 2 ;; esac
 ROOT=/work
@@ -32,7 +34,9 @@ python3 -m compileall -q src
 timeout --signal=TERM --kill-after=10s 150s \
   colcon build --symlink-install --packages-select "$PKG" \
   2>&1 | tee "$OUT/colcon.log"
+set +u
 source install/setup.bash
+set -u
 ros2 pkg prefix "$PKG" | tee "$OUT/prefix.txt"
 
 if [[ "$CHAPTER" == Ch04 ]]; then
