@@ -1,5 +1,7 @@
 # Ch13 복합 로봇 실습
 
+> **13.8 수정 교재 본문:** [복합 시뮬레이션 프로젝트 실습 및 검증](docs/TEXTBOOK_SECTION_13_8_REVISED_KO.md). 확정된 기본 실습, 과거 Level2 시연, 향후 과제를 반영한13.8.1~13.8.8 원고다.
+
 > **13.8 교재 제공 범위(2026-11-12 확정):** [기본 실습 시작하기](docs/START_HERE_13_8_KO.md)에서 이동·관측·상태 확인·안전 종료와 실패 판독을 수행한다. [Level2 과거 운반·놓기 시연](docs/DEMO_13_8_LEVEL2_ARCHIVE_KO.md)은 기록 해설이며, 최신 연속 임무와 Level3 파지 이후는 [향후 과제](docs/FUTURE_13_8_TASKS_KO.md)다. [마무리 검증 보고](docs/SECTION_13_8_BOOK_CLOSEOUT_REPORT_20261112_KO.md)를 함께 확인한다.
 
 > **13.5 공개 플랫폼 개정 실습:** [Go2+Piper·MuJoCo·Nav2 실습 가이드](docs/LAB_13_5_REUSE_GUIDE_KO.md), [설계](docs/SECTION_13_5_REUSE_DESIGN_KO.md), [최종 인수 보고서](docs/SECTION_13_5_REUSE_R5_REPORT_KO.md)를 따른다. 13.5부터 공개 통합 플랫폼으로 전환한다. 아래 기존 자체 crawl/Task8의 미완료·실패 기록은 연구 이력으로 보존한다.
