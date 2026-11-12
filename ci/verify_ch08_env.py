@@ -14,7 +14,6 @@ root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / "Ch08/ros2_ws"))
 from rl_env import ReachEnv
 
-os.environ.setdefault("MUJOCO_GL", "egl")
 out = root / "ci-results/extended/Ch08"
 out.mkdir(parents=True, exist_ok=True)
 result = {"scope": "Ch08 8.2-8.5 headless model and Gymnasium 5-return API",
