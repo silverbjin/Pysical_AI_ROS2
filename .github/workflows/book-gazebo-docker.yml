@@ -1,0 +1,121 @@
+name: Book Gazebo common Docker
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-gazebo-docker.yml'
+      - 'ci/docker/**'
+      - 'Ch03/**'
+      - 'Ch04/**'
+      - 'Ch05/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/book-gazebo-docker.yml'
+      - 'ci/docker/**'
+  workflow_dispatch:
+    inputs:
+      chapter:
+        type: choice
+        description: 'Select headless probe'
+        required: true
+        default: all
+        options: [all, Ch03, Ch04, Ch05]
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: book-gazebo-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  docker-gazebo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch03
+            Ch04
+            Ch05
+      - name: Record source
+        run: |
+          mkdir -p ci-results/gazebo
+          git rev-parse HEAD | tee ci-results/gazebo/source_sha.txt
+          df -h . | tee ci-results/gazebo/disk_before.txt
+      - uses: docker/setup-buildx-action@v3
+      - name: Build common Jazzy and Gazebo Harmonic image once (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ci/docker/Dockerfile
+          load: true
+          tags: book-gazebo:ci
+          cache-from: type=gha,scope=book-gazebo
+          cache-to: type=gha,scope=book-gazebo,mode=max
+      - name: Record image identity
+        run: |
+          docker image inspect book-gazebo:ci --format '{{.Id}}' \
+            | tee ci-results/gazebo/local_image_id.txt
+          grep '^FROM ' ci/docker/Dockerfile | tee ci-results/gazebo/base_manifest_ref.txt
+      - name: Run isolated chapter probes from same image
+        env:
+          SELECTED_CHAPTER: ${{ github.event_name == 'workflow_dispatch' && inputs.chapter || 'all' }}
+        run: |
+          set +e
+          STATUS=0
+          for CHAPTER in Ch03 Ch04 Ch05; do
+            if [[ "$SELECTED_CHAPTER" != all && "$SELECTED_CHAPTER" != "$CHAPTER" ]]; then
+              continue
+            fi
+            echo "===== $CHAPTER ====="
+            timeout --signal=TERM --kill-after=20s 280s docker run --rm --shm-size=512m \
+              --env GITHUB_SHA="$GITHUB_SHA" \
+              -v "$PWD":/work -w /work book-gazebo:ci \
+              bash "ci/docker/smoke.sh" "$CHAPTER" \
+              2>&1 | tee "ci-results/gazebo/$CHAPTER.log"
+            RC=${PIPESTATUS[0]}
+            tail -40 "ci-results/gazebo/$CHAPTER.log"
+            printf '%s %s\n' "$CHAPTER" "$RC" | tee -a ci-results/gazebo/exit_codes.txt
+            if [[ "$RC" != 0 ]]; then STATUS=1; fi
+          done
+          exit "$STATUS"
+      - name: Publish image to GHCR only after tested main push
+        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IMAGE=ghcr.io/silverbjin/pysical-ai-book-gazebo:jazzy-harmonic-20261112
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker tag book-gazebo:ci "$IMAGE"
+          docker push "$IMAGE" | tee ci-results/gazebo/ghcr_push.log
+          DIGEST="$(docker buildx imagetools inspect "$IMAGE" | awk '$1 == "Digest:" {print $2; exit}')"
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Unable to verify remote GHCR registry digest" >&2
+            exit 1
+          fi
+          printf '%s@%s\n' "${IMAGE%:*}" "$DIGEST" \
+            | tee ci-results/gazebo/published_registry_digest.txt
+      - name: Evidence summary
+        if: always()
+        run: |
+          {
+            echo '## Gazebo common Docker probes'
+            echo 'Source:'
+            cat ci-results/gazebo/source_sha.txt || true
+            echo 'Image identity:'
+            cat ci-results/gazebo/local_image_id.txt || true
+            echo 'Scope: Ch03 actual headless world/spawn/clock; Ch04 TF only; Ch05 xacro only.'
+            echo 'GUI, Ch05 controller lifecycle, Ch09–Ch11 and physical performance: NOT_RUN.'
+            cat ci-results/gazebo/exit_codes.txt || true
+            cat ci-results/gazebo/published_registry_digest.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-gazebo-docker-${{ github.run_id }}
+          path: ci-results/gazebo/
+          if-no-files-found: warn
+          retention-days: 14
