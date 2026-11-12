@@ -1,0 +1,69 @@
+name: Book Ch09 smooth-ramp counterfactual (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch09-ramp-counterfactual.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch09-ramp-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  ch09-ramp:
+    name: Ch09 same final pose with 6-second ramp, analysis only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch09
+      - name: Pin exact image and source
+        run: |
+          mkdir -p ci-results/ch09-ramp
+          git rev-parse HEAD > ci-results/ch09-ramp/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/ch09-ramp/image_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull the previously proven immutable runtime once
+        run: docker pull "$(cat ci-results/ch09-ramp/image_digest.txt)"
+      - name: Single controlled ramp comparison (no original source or gain changes)
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 135s \
+            docker run --rm --pull=never --shm-size=512m \
+              -e BOOK_STANCE_RAMP_DIAG=1 \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch09-ramp/source_sha.txt)" \
+              -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch09-ramp/image_digest.txt)" \
+              bash ci/docker/next_scope.sh Ch09 \
+              2>&1 | tee ci-results/ch09-ramp/console.log
+      - name: Keep actual data independent of original stance FAIL
+        if: always()
+        run: |
+          mkdir -p ci-results/ch09-ramp/raw
+          if [[ -d ci-results/next/Ch09 ]]; then
+            cp -a ci-results/next/Ch09/. ci-results/ch09-ramp/raw/
+          fi
+          {
+            echo '## Counterfactual comparison, NOT source release acceptance'
+            echo 'Same model, world, original goal angles and gains. Only command profile is ramped.'
+            echo 'DIAG_CAPTURED does not mean stance PASS; Issue #129 remains open.'
+            cat ci-results/ch09-ramp/raw/cause_diagnostic.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch09-ramp-counterfactual-${{ github.run_id }}
+          path: ci-results/ch09-ramp/
+          retention-days: 14
+          if-no-files-found: warn

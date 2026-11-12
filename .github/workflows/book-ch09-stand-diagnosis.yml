@@ -1,0 +1,70 @@
+name: Book Ch09 standing root-cause diagnostic (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch09-stand-diagnosis.yml'
+      - 'ci/docker/diagnose_ch09_stand.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch09-cause-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  ch09-cause:
+    name: Ch09 roll pitch joint commands and symmetry (not stance PASS)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch09
+      - name: Pin exactly accepted image and source
+        run: |
+          mkdir -p ci-results/ch09-cause
+          git rev-parse HEAD | tee ci-results/ch09-cause/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            | tee ci-results/ch09-cause/image_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull preaccepted runtime (one time, no image rebuild)
+        run: docker pull "$(cat ci-results/ch09-cause/image_digest.txt)"
+      - name: Observe original stand once (diagnostic evidence, not acceptance)
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 130s \
+            docker run --rm --pull=never --shm-size=512m \
+              -e BOOK_STANCE_DIAG=1 \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch09-cause/source_sha.txt)" \
+              -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch09-cause/image_digest.txt)" \
+              bash ci/docker/next_scope.sh Ch09 \
+              2>&1 | tee ci-results/ch09-cause/console.log
+      - name: Preserve original diagnostic and failure boundary
+        if: always()
+        run: |
+          mkdir -p ci-results/ch09-cause/raw
+          if [[ -d ci-results/next/Ch09 ]]; then
+            cp -a ci-results/next/Ch09/. ci-results/ch09-cause/raw/
+          fi
+          {
+            echo '## Ch09 root-cause capture'
+            echo 'DIAG_CAPTURED is not posture PASS. The 40.71-degree stance FAIL remains.'
+            echo 'Ch10 held. No changes to robot source, physics or control gains.'
+            cat ci-results/ch09-cause/raw/cause_diagnostic.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch09-root-cause-${{ github.run_id }}
+          path: ci-results/ch09-cause/
+          retention-days: 14
+          if-no-files-found: warn

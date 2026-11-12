@@ -83,7 +83,7 @@ set -u
 ros2 pkg prefix "$PKG" | tee "$OUT/prefix.txt"
 stage XACRO_CHECK
 xacro "$WS/src/$PKG/urdf/robot.urdf.xacro" > "$OUT/robot.urdf"
-if [[ "$CH" == Ch09 && "${BOOK_STANCE:-0}" == 1 ]]; then
+if [[ "$CH" == Ch09 && ( "${BOOK_STANCE:-0}" == 1 || "${BOOK_STANCE_DIAG:-0}" == 1 || "${BOOK_STANCE_RAMP_DIAG:-0}" == 1 ) ]]; then
   stage CH09_CI_INSTRUMENT_ODOMETRY_ONLY
   python3 /work/ci/docker/instrument_ch09_odom.py "$OUT/robot.urdf" \
     2>&1 | tee "$OUT/ci_instrumentation.log"
@@ -134,7 +134,7 @@ timeout --signal=TERM --kill-after=3s 30s ros2 topic echo /clock --once > "$OUT/
 grep -q 'sec:' "$OUT/clock.txt"
 
 if [[ "$CH" != Ch05 ]]; then
-  if [[ "$CH" == Ch09 && "${BOOK_STANCE:-0}" == "1" ]]; then
+  if [[ "$CH" == Ch09 && ( "${BOOK_STANCE:-0}" == 1 || "${BOOK_STANCE_DIAG:-0}" == 1 || "${BOOK_STANCE_RAMP_DIAG:-0}" == 1 ) ]]; then
     stage CH09_ORIGINAL_JOINT_BRIDGE
     start stance_joint_bridge ros2 run ros_gz_bridge parameter_bridge \
       --ros-args -p config_file:="$WS/src/$PKG/config/ros_gz_bridge.yaml"
@@ -142,6 +142,35 @@ if [[ "$CH" != Ch05 ]]; then
     start stance_odom_bridge ros2 run ros_gz_bridge parameter_bridge \
       '/model/my_quadruped/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry' \
       --ros-args -r /model/my_quadruped/odometry:=/stand_observation/odom
+    if [[ "${BOOK_STANCE_DIAG:-0}" == 1 || "${BOOK_STANCE_RAMP_DIAG:-0}" == 1 ]]; then
+      stage CH09_DIAGNOSTIC_LISTEN_BEFORE_COMMAND
+      timeout --signal=TERM --kill-after=4s 26s \
+        python3 /work/ci/docker/diagnose_ch09_stand.py "$OUT/cause_diagnostic.json" \
+        > "$OUT/cause_diagnostic.log" 2>&1 &
+      CAUSE_PID="$!"
+      BG="$CAUSE_PID $BG"
+      sleep 2
+      if [[ "${BOOK_STANCE_RAMP_DIAG:-0}" == 1 ]]; then
+        stage CH09_COUNTERFACTUAL_6S_RAMP_TO_SAME_TARGET
+        start counterfactual_ramp python3 /work/ci/docker/ch09_ramp_counterfactual.py
+      else
+        stage CH09_ORIGINAL_STAND_UP_FOR_DIAG
+        start stand_up ros2 run my_quadruped_bot stand_up
+      fi
+      stage CH09_CAPTURE_DYNAMIC_FAILURE_BOUNDARY
+      wait "$CAUSE_PID"
+      cat "$OUT/cause_diagnostic.log"
+      grep -q CH09_ROOT_CAUSE_DIAG_CAPTURED "$OUT/cause_diagnostic.log"
+      stage CH09_DIAGNOSTIC_CAPTURED_NOT_STANCE_PASS
+      if [[ "${BOOK_STANCE_RAMP_DIAG:-0}" == 1 ]]; then
+        echo 'CH09_RAMP_COUNTERFACTUAL_CAPTURED_NOT_ORIGINAL_STAND_PASS' \
+          | tee "$OUT/verdict.txt"
+      else
+        echo 'CH09_DIAG_CAPTURED_EXISTING_STANCE_FAIL_PRESERVED' \
+          | tee "$OUT/verdict.txt"
+      fi
+      exit 0
+    fi
     stage CH09_ORIGINAL_STAND_UP
     start stand_up ros2 run my_quadruped_bot stand_up
     stage CH09_LATE_WINDOW_TILT_HEIGHT_DRIFT
