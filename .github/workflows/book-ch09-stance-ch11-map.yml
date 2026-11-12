@@ -1,0 +1,138 @@
+name: Book Ch09 posture and Ch11 map save (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch09-stance-ch11-map.yml'
+      - 'ci/docker/next_scope.sh'
+      - 'ci/docker/instrument_ch09_odom.py'
+      - 'ci/docker/verify_ch09_stance.py'
+      - 'ci/docker/verify_ch11_saved_map.py'
+  workflow_dispatch:
+    inputs:
+      target:
+        type: choice
+        required: true
+        default: all
+        description: 'Ch10 is never run'
+        options: [all, Ch09, Ch11]
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch09-stance-ch11-map-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  ch09-stance:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'Ch09' }}
+    name: Ch09 real Gazebo base posture after original stand_up
+    runs-on: ubuntu-24.04
+    timeout-minutes: 11
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch09
+      - name: Record source and pinned image (no rebuild)
+        run: |
+          mkdir -p ci-results/stance/Ch09
+          git rev-parse HEAD | tee ci-results/stance/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            | tee ci-results/stance/image_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull exact previously accepted image
+        run: docker pull "$(cat ci-results/stance/image_digest.txt)"
+      - name: Run original stand_up with simulation-only base posture instrument
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 170s \
+            docker run --rm --pull=never --shm-size=512m \
+              -e BOOK_STANCE=1 \
+              -e RUN_SOURCE_SHA="$(cat ci-results/stance/source_sha.txt)" \
+              -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/stance/image_digest.txt)" \
+              bash ci/docker/next_scope.sh Ch09 \
+              2>&1 | tee ci-results/stance/Ch09/console.log
+      - name: Retain actual first-failure stage and evidence
+        if: always()
+        run: |
+          if [ -d ci-results/next/Ch09 ]; then
+            cp -a ci-results/next/Ch09/. ci-results/stance/Ch09/
+          fi
+          {
+            echo '## Ch09 posture-only physical simulation audit'
+            echo 'NOT measured: foot contact force, three cold trials, GUI, real hardware.'
+            cat ci-results/stance/Ch09/stance_verdict.json || true
+            cat ci-results/stance/Ch09/result.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch09-posture-${{ github.run_id }}
+          path: ci-results/stance/
+          retention-days: 14
+          if-no-files-found: warn
+
+  ch11-map-save:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'Ch11' }}
+    name: Ch11 original slam_toolbox SaveMap YAML/PGM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch11
+      - name: Record source and base image
+        run: |
+          mkdir -p ci-results/map-save/Ch11
+          git rev-parse HEAD | tee ci-results/map-save/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            | tee ci-results/map-save/image_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull exact previously accepted base image
+        run: docker pull "$(cat ci-results/map-save/image_digest.txt)"
+      - name: Execute actual EKF+SLAM+SaveMap with explicit transient apt addon
+        run: |
+          set -o pipefail
+          mkdir -p ci-results/next/Ch11
+          timeout --signal=TERM --kill-after=15s 320s \
+            docker run --rm --pull=never --shm-size=512m \
+              -e BOOK_LOCALIZATION=1 -e BOOK_MAP_SAVE=1 \
+              -e RUN_SOURCE_SHA="$(cat ci-results/map-save/source_sha.txt)" \
+              -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/map-save/image_digest.txt)" \
+              bash ci/docker/ch11_localization_once.sh \
+              2>&1 | tee ci-results/map-save/Ch11/console.log
+      - name: Preserve map bytes and hashes even on failure
+        if: always()
+        run: |
+          if [ -d ci-results/next/Ch11 ]; then
+            cp -a ci-results/next/Ch11/. ci-results/map-save/Ch11/
+          fi
+          {
+            echo '## Ch11 live map-save contract'
+            echo 'Only original SaveMap service, YAML, PGM, observed pixels; NO map accuracy or loop-closure claim.'
+            cat ci-results/map-save/Ch11/map_save_verdict.json || true
+            cat ci-results/map-save/Ch11/result.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch11-real-map-save-${{ github.run_id }}
+          path: ci-results/map-save/
+          retention-days: 14
+          if-no-files-found: warn
