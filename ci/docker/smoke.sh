@@ -43,11 +43,38 @@ ros2 pkg prefix "$PKG" | tee "$OUT/prefix.txt"
 
 echo 'STAGE=CHAPTER_SPECIFIC' | tee -a "$OUT/stages.log"
 if [[ "$CHAPTER" == Ch04 ]]; then
+  echo 'STAGE=CH04_STATIC_TF_PUBLISHER' | tee -a "$OUT/stages.log"
   ros2 run my_robot_tf static_tf_broadcaster > "$OUT/static_tf.log" 2>&1 &
   TF_PID=$!
-  trap 'kill -INT "$TF_PID" 2>/dev/null || true; wait "$TF_PID" 2>/dev/null || true' EXIT
-  timeout 25s ros2 topic echo /tf_static --once --qos-durability transient_local > "$OUT/tf_echo.txt"
-  grep -q "lidar_sensor_link" "$OUT/tf_echo.txt"
+  stop_ch04_tf() {
+    set +e
+    kill -INT "$TF_PID" 2>/dev/null || true
+    for i in $(seq 1 20); do
+      if ! kill -0 "$TF_PID" 2>/dev/null; then
+        wait "$TF_PID" 2>/dev/null || true
+        return
+      fi
+      sleep 0.1
+    done
+    echo 'CH04_SHUTDOWN_ESCALATED_TERM' | tee -a "$OUT/stages.log"
+    kill -TERM "$TF_PID" 2>/dev/null || true
+    for i in $(seq 1 20); do
+      if ! kill -0 "$TF_PID" 2>/dev/null; then
+        wait "$TF_PID" 2>/dev/null || true
+        return
+      fi
+      sleep 0.1
+    done
+    echo 'CH04_SHUTDOWN_ESCALATED_KILL' | tee -a "$OUT/stages.log"
+    kill -KILL "$TF_PID" 2>/dev/null || true
+    wait "$TF_PID" 2>/dev/null || true
+  }
+  trap stop_ch04_tf EXIT
+  echo 'STAGE=CH04_TRANSIENT_LOCAL_SUBSCRIBER' | tee -a "$OUT/stages.log"
+  timeout --signal=TERM --kill-after=3s 25s python3 "$ROOT/ci/docker/verify_static_tf.py" \
+    2>&1 | tee "$OUT/tf_echo.txt"
+  ros2 topic info -v /tf_static > "$OUT/tf_qos.txt"
+  grep -q 'CH04_TF_STATIC_QOS_RECEIVED_PASS' "$OUT/tf_echo.txt"
   echo 'CH04_TF_STATIC_PASS_GAZEBO_NOT_RUN' | tee "$OUT/verdict.txt"
   exit 0
 fi
