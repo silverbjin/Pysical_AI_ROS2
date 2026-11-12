@@ -21,3 +21,14 @@
 | Ch13 | v53 기본실습 Level2·Level3 1회 PASS 원본 JSON(검사10개·무파지·외부94자산) 보존 및 Owner pending 확인 | 원격 새 환경 전체 재현, 전체 파지·운반·배치 |
 
 선행 스크립트의 FAIL은 FAIL이다. 실패가 Gazebo 카메라 자산·렌더러·브리지·ROS QoS·Lifecycle 어느 구간인지 `stages.log`, 로그, JSON으로 구분한다. Ch10의 알려진 결함을 다른 챕터의 성공 근거로 활용하지 않는다.
+
+
+## 2026-11-12 실제 공개 CI 판정
+
+- Ch11: [실제 CI #43219759351](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43219759351), [증거 Artifact](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43219759351/artifacts/13945461995). `/odom` 105건, `/odom/raw` 100건, `/scan/slam` 5건, odom→base_footprint/map→odom TF, OccupancyGrid 138×137, slam_toolbox active. **헤드리스 EKF·TF·scan·SLAM map 발행 PASS**. 지도 저장·루프폐합·실제 위치 정밀도는 NOT_RUN.
+- Ch06: MoveItPy `urdf/my_robot.urdf` 누락 [Issue #126](https://github.com/silverbjin/Pysical_AI_ROS2/issues/126), 계획·실행 **BLOCKED**.
+- Ch13: v53 문서의 Level2/Level3 기본 실행 1회씩 PASS 역사 기록 보존, 새 현장 실행/Owner 사인오프 미수행.
+- Ch07: `ros2 pkg`/colcon, Xacro, Gazebo entity spawn, `camera_link→camera_optical_frame` TF는 확인. 그러나 [최초 CI #43219759351](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43219759351) 및 [Xvfb 재검 #43220866643](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43220866643)에서 OGRE2 센서 렌더러 `free(): unaligned chunk detected in tcache 2` SIGABRT가 공통 재현됨. 양쪽에서 Image 0개, CameraInfo 0개, TF 1개. **Ch07 카메라 BLOCKED**, [Issue #127](https://github.com/silverbjin/Pysical_AI_ROS2/issues/127)에서 추적한다.
+- renderer 실측이 불가능한 동일 공개 CI에서 세 번째 자동 반복 시도는 하지 않는다. 워크플로의 Ch07 실제 프로브는 수동 `workflow_dispatch`만으로 실행할 수 있게 유지한다. 이를 Ch07 검수 PASS라고 표시하지 않는다.
+- Ch09 12관절 명령과 측정의 과거 성공을 유지하되 몸체 균형·실제 발 접촉은 **NOT_RUN**. Ch10은 사용자의 요청대로 **HOLD**.
+- 최종 Owner WSL2의 실제 Gazebo/RViz 카메라 GUI/렌더러 확인은 별도 인수. 새 엔진/OS 설치나 개발 내용 변경 없이 CI 로그가 가지는 한계를 보존한다.
