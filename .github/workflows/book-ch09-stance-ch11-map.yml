@@ -85,7 +85,7 @@ jobs:
 
   ch11-map-save:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'Ch11' }}
-    name: Ch11 original slam_toolbox SaveMap YAML/PGM
+    name: Ch11 official Nav2 MapSaver CLI from real SLAM /map
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -108,7 +108,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull exact previously accepted base image
         run: docker pull "$(cat ci-results/map-save/image_digest.txt)"
-      - name: Execute actual EKF+SLAM+SaveMap with explicit transient apt addon
+      - name: Execute EKF+SLAM and official MapSaver CLI with real /map
         run: |
           set -o pipefail
           mkdir -p ci-results/next/Ch11
@@ -129,7 +129,7 @@ jobs:
           fi
           {
             echo '## Ch11 live map-save contract'
-            echo 'Only original SaveMap service, YAML, PGM, observed pixels; NO map accuracy or loop-closure claim.'
+            echo 'Nav2 MapSaver CLI: actual SLAM /map -> YAML/PGM observed pixels; slam_toolbox save_map service remains KNOWN_FAIL.'
             cat ci-results/map-save/Ch11/map_save_verdict.json || true
             cat ci-results/map-save/Ch11/result.json || true
           } >> "$GITHUB_STEP_SUMMARY"
