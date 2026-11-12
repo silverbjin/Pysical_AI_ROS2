@@ -119,6 +119,11 @@ stage REAL_ACTION_SERVER
 timeout 10s ros2 action list -t > "$OUT/actions.txt"
 grep -Fq '/arm_group_controller/follow_joint_trajectory [control_msgs/action/FollowJointTrajectory]' \
   "$OUT/actions.txt" || { echo "CH06_FOLLOW_JOINT_TRAJECTORY_ACTION_MISSING"; exit 5; }
+stage REAL_JOINT_STATE_TIMESTAMPS_QOS
+timeout 8s ros2 topic echo /joint_states --once \
+  > "$OUT/joint_state_sample.txt" 2>&1
+timeout 8s ros2 topic info -v /joint_states \
+  > "$OUT/joint_state_qos.txt" 2>&1
 stage REAL_MOVEITPY_NAMED_READY_PLAN_AND_EXECUTE
 timeout --signal=TERM --kill-after=10s 105s \
   ros2 run my_robot_control hello_node --mode named \
