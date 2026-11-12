@@ -67,13 +67,34 @@ WORLD="$WS/src/my_robot_description/worlds/my_world.sdf"
 gz sim -s -r -v 2 "$WORLD" > "$OUT/gz_server.log" 2>&1 &
 GZ_PID=$!
 BRIDGE_PID=""
+stop_owned() {
+  local pid="$1" label="$2"
+  [[ -z "$pid" ]] && return 0
+  kill -INT "$pid" 2>/dev/null || true
+  for i in $(seq 1 20); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      wait "$pid" 2>/dev/null || true
+      return 0
+    fi
+    sleep 0.1
+  done
+  echo "SHUTDOWN_ESCALATED_TERM:$label" | tee -a "$OUT/stages.log"
+  kill -TERM "$pid" 2>/dev/null || true
+  for i in $(seq 1 20); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      wait "$pid" 2>/dev/null || true
+      return 0
+    fi
+    sleep 0.1
+  done
+  echo "SHUTDOWN_ESCALATED_KILL:$label" | tee -a "$OUT/stages.log"
+  kill -KILL "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+}
 cleanup() {
-  if [[ -n "$BRIDGE_PID" ]]; then kill -INT "$BRIDGE_PID" 2>/dev/null || true; fi
-  kill -INT "$GZ_PID" 2>/dev/null || true
-  sleep 2
-  if kill -0 "$GZ_PID" 2>/dev/null; then kill -TERM "$GZ_PID" || true; fi
-  wait "$GZ_PID" 2>/dev/null || true
-  if [[ -n "$BRIDGE_PID" ]]; then wait "$BRIDGE_PID" 2>/dev/null || true; fi
+  set +e
+  stop_owned "$BRIDGE_PID" bridge
+  stop_owned "$GZ_PID" gz
 }
 trap cleanup EXIT
 
