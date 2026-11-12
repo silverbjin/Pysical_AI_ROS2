@@ -39,11 +39,11 @@ def trace(message):
         f.write(line + "\n")
 
 
-def run(args, timeout=25, expected=0):
+def run(args, timeout=25, expected=0, cwd=None):
     trace("RUN " + " ".join(map(str, args)))
     try:
         p = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                           text=True, timeout=timeout, env=os.environ.copy())
+                           text=True, timeout=timeout, env=os.environ.copy(), cwd=cwd)
     except subprocess.TimeoutExpired as exc:
         trace("TIMEOUT after " + str(timeout) + "s")
         raise AssertionError("Command timed out: " + str(args)) from exc
@@ -245,14 +245,19 @@ def ch01_14():
 
 def ch01_15():
     ws = OUT / "fresh_package"
-    (ws / "src").mkdir(parents=True, exist_ok=True)
-    check("ros2 pkg create", lambda: run(["ros2", "pkg", "create", "--build-type", "ament_python",
-           "--license", "Apache-2.0", "--node-name", "simple_controller",
-           "my_robot_controller", "--dependencies", "rclpy", "std_msgs"], timeout=25)
-           if (not (ws / "src/my_robot_controller").exists()) else True)
-    # ros2 pkg create writes into cwd: use a fresh, isolated cwd instead.
+    src = ws / "src"
+    src.mkdir(parents=True, exist_ok=True)
+    if not (src / "my_robot_controller").exists():
+        check("ros2 pkg create", lambda: run(["ros2", "pkg", "create",
+             "--build-type", "ament_python", "--license", "Apache-2.0",
+             "--node-name", "simple_controller", "my_robot_controller",
+             "--dependencies", "rclpy", "std_msgs"], timeout=30, cwd=src))
     for fname in ("package.xml", "setup.py", "setup.cfg"):
-        check("fresh package " + fname, lambda f=fname: required((ws / "src/my_robot_controller" / f).exists(), f + " missing"))
+        check("fresh package " + fname, lambda f=fname: required((src / "my_robot_controller" / f).is_file(), f + " missing"))
+    check("fresh colcon build", lambda: run(["colcon", "build", "--symlink-install"],
+                                           timeout=100, cwd=ws))
+    cmd = "source /opt/ros/jazzy/setup.bash && source '" + str(ws / "install/setup.bash") + "' && ros2 run my_robot_controller simple_controller"
+    check("generated executable", lambda: run(["bash", "-c", cmd], timeout=20))
 
 
 def ch01_16():
@@ -335,7 +340,7 @@ def ch02_27():
 
 def ch02_28():
     _, source = start("qos_pub", ["ros2", "run", "my_robot_system", "qos_test_node"])
-    check("video topic", lambda: eq_contains(topic_once("/video_stream"), "Frame Data"))
+    check("video topic", lambda: eq_contains(run(["ros2", "topic", "echo", "/video_stream", "--once", "--qos-reliability", "best_effort"], timeout=20), "Frame Data"))
     _, bad = start("incompatible", ["ros2", "run", "my_robot_system", "qos_compare_sub",
                                   "--ros-args", "-p", "reliability:=reliable"])
     time.sleep(3)
