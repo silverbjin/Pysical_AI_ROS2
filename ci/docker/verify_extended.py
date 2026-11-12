@@ -17,6 +17,7 @@ from collections import defaultdict
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64
 from nav_msgs.msg import Odometry
@@ -73,7 +74,7 @@ elif mode == "ch11":
         })
 
     subscriptions.append(node.create_subscription(
-        Odometry, "/simulation/odom", lambda m: obs(m, measured), 10))
+        Odometry, "/simulation/odom", lambda m: obs(m, measured), qos_profile_sensor_data))
     subscriptions.append(node.create_subscription(
         Odometry, "/odom/raw", lambda m: obs(m, adapted), 10))
     timeout = 16.0
