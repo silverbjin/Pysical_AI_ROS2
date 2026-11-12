@@ -1,0 +1,69 @@
+name: Book Ch06 MoveItPy 6.4 real plan and fake-controller execution (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch06-moveit-64.yml'
+      - 'ci/ch06_moveit_live_once.sh'
+      - 'ci/ch06_verify_installed_model.py'
+      - 'Ch06/ros2_ws/src/my_robot_control/my_robot_control/hello_moveit.py'
+      - 'Ch06/ros2_ws/src/my_robot_moveit_config/launch/moveit_64_headless.launch.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch06-moveit-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  ch06-moveit:
+    name: Ch06 actual named ready MoveItPy planning and JointTrajectory execution
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch06
+      - name: Pin source and tested GHCR base
+        run: |
+          mkdir -p ci-results/ch06-moveit
+          git rev-parse HEAD > ci-results/ch06-moveit/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/ch06-moveit/base_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse exact registry digest without rebuilding image
+        run: docker pull "$(cat ci-results/ch06-moveit/base_digest.txt)"
+      - name: Install transient MoveIt dependencies and execute real ROS controller
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 670s \
+            docker run --rm --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch06-moveit/checkout_sha.txt)" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch06-moveit/base_digest.txt)" \
+              bash ci/ch06_moveit_live_once.sh \
+              2>&1 | tee ci-results/ch06-moveit/console.log
+      - name: Report stage and avoid promotion of unevaluated pose-IK
+        if: always()
+        run: |
+          {
+            echo '## Ch06 6.4 actual scope'
+            echo 'Gazebo physics/RViz/real hardware and 6DoF pose IK: NOT_RUN.'
+            echo 'Actual MoveItPy goal planning, MoveIt execution status and real mock-controller /joint_states must all pass.'
+            echo 'Published GHCR image untouched; MoveIt packages installed ephemerally with versions recorded.'
+            cat ci-results/ch06-moveit/result.json || true
+            cat ci-results/ch06-moveit/verdict.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch06-moveit64-${{ github.run_id }}
+          path: ci-results/ch06-moveit/
+          retention-days: 14
+          if-no-files-found: warn
