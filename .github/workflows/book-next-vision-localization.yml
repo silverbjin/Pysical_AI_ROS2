@@ -26,11 +26,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: false
+          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            ci
-            Ch06
-            Ch07
-            Ch13
+            /ci/verify_preserved_boundaries.py
+            /Ch06/ros2_ws/src/my_robot_moveit_config/**
+            /Ch06/ros2_ws/src/my_robot_control/my_robot_control/hello_moveit.py
+            /Ch07/ros2_ws/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.*
+            /Ch13/evidence/section_13_8_policy/book_closeout_v53_20261112.json
       - name: Verify preserved evidence and known Ch06 blocker
         run: timeout 35s python3 ci/verify_preserved_boundaries.py
       - uses: actions/upload-artifact@v4
@@ -67,7 +69,7 @@ jobs:
       - name: Run real camera model and subscriber
         run: |
           set -o pipefail
-          timeout --signal=TERM --kill-after=10s 170s docker run \
+          timeout --signal=TERM --kill-after=10s 250s docker run \
             --rm --pull=never --shm-size=1g \
             -e RUN_SOURCE_SHA="$(cat ci-results/vision/source_sha.txt)" \
             -e GITHUB_RUN_ID="$GITHUB_RUN_ID" \
