@@ -1,0 +1,148 @@
+name: Book Lab Acceptance
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-lab-acceptance.yml'
+      - 'ci/**'
+      - 'Ch[0-1][0-9]/**'
+      - 'README.md'
+  workflow_dispatch:
+    inputs:
+      chapter:
+        description: 'Select one chapter or all'
+        required: true
+        type: choice
+        default: all
+        options: [all, Ch01, Ch02, Ch03, Ch04, Ch05, Ch06, Ch07, Ch08, Ch09, Ch10, Ch11, Ch12, Ch13]
+      level:
+        description: 'preflight docs, or pilot Ch02/Ch12 runtime'
+        required: true
+        type: choice
+        default: preflight
+        options: [preflight, pilot]
+permissions:
+  contents: read
+concurrency:
+  group: book-lab-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  document-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /README.md
+            /ci/**
+            /Ch01/README.md
+            /Ch01/docs/**
+            /Ch02/README.md
+            /Ch02/docs/**
+            /Ch03/README.md
+            /Ch03/docs/**
+            /Ch04/README.md
+            /Ch04/docs/**
+            /Ch05/README.md
+            /Ch05/docs/**
+            /Ch06/README.md
+            /Ch06/docs/**
+            /Ch07/README.md
+            /Ch07/docs/**
+            /Ch08/README.md
+            /Ch08/docs/**
+            /Ch09/README.md
+            /Ch09/docs/**
+            /Ch10/README.md
+            /Ch10/docs/**
+            /Ch11/README.md
+            /Ch11/docs/**
+            /Ch12/README.md
+            /Ch12/docs/**
+            /Ch13/README.md
+            /Ch13/docs/**
+      - name: Validator unit tests
+        run: python3 -m unittest discover -s ci/tests -v
+      - name: Validate guide inventory and links
+        env:
+          CHAPTER: "${{ github.event_name == 'pull_request' && 'all' || inputs.chapter }}"
+        run: python3 ci/check_guides.py --chapter "$CHAPTER" --output ci-results/docs
+      - name: Publish document report
+        if: always()
+        run: |
+          if test -f ci-results/docs/SUMMARY.md; then
+            cat ci-results/docs/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload document evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-guide-preflight-${{ github.run_id }}
+          path: ci-results/docs/
+          if-no-files-found: warn
+          retention-days: 14
+  ch02-action-pilot:
+    if: ${{ github.event_name == 'pull_request' || (inputs.level == 'pilot' && (inputs.chapter == 'all' || inputs.chapter == 'Ch02')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch02
+      - name: Set up ROS 2 Jazzy
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
+      - name: Run Ch02 section 2.6
+        run: bash ci/run_lab.sh Ch02 2.6 ci/labs/ch02_2_6.sh
+      - name: Publish runtime report
+        if: always()
+        run: |
+          if test -f ci-results/Ch02/2.6/SUMMARY.md; then
+            cat ci-results/Ch02/2.6/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload ROS runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-Ch02-action-${{ github.run_id }}
+          path: ci-results/Ch02/
+          if-no-files-found: warn
+          retention-days: 14
+  ch12-mujoco-pilot:
+    if: ${{ github.event_name == 'pull_request' || (inputs.level == 'pilot' && (inputs.chapter == 'all' || inputs.chapter == 'Ch12')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch12
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run Ch12 section 12.3
+        env:
+          MUJOCO_GL: egl
+        run: bash ci/run_lab.sh Ch12 12.3 ci/labs/ch12_12_3.sh
+      - name: Publish runtime report
+        if: always()
+        run: |
+          if test -f ci-results/Ch12/12.3/SUMMARY.md; then
+            cat ci-results/Ch12/12.3/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload MuJoCo evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-Ch12-mujoco-${{ github.run_id }}
+          path: ci-results/Ch12/
+          if-no-files-found: warn
+          retention-days: 14
