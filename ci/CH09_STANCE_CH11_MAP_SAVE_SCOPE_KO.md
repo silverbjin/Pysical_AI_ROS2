@@ -26,3 +26,11 @@ PASS 조건: 시뮬레이션 odom 샘플 50개+, 8개 다리 관절을 가진 /j
 - 각 독립 Job이 종료코드·첫 실패 단계·원본 `stance_verdict.json` 및 `map_save_verdict.json`과 생성된 YAML/PGM을 Artifact로 보존한다.
 - 실패하면 이미 PASS한 Ch05·Ch08·Ch09·Ch11 기존 증거를 다시 검증하지 않고, 오류를 유발한 새 경계만 수정한다.
 - 비정상 종료는 PASS 금지. 원인 구분 후 PR 병합 여부 결정한다.
+
+
+## 실제 실패와 지도 저장 방식 변경 기록 (2026-11-12)
+
+- 첫 공개 CI [#43232612091](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43232612091): Ch09는 **기립 자세 FAIL** (최대 roll/pitch 40.7088° > 20°). [Issue #129](https://github.com/silverbjin/Pysical_AI_ROS2/issues/129)에 실측 원본 기록. 반복 검증하지 않음.
+- Ch11 첫 호출은 `slam_toolbox/save_map` 서비스에서 `result=255`, `nav2_map_server` 패키지 누락. 두 번째 호출은 nav2_map_server 일시 설치 후에도 `result=255`, `Failed to spin map subscription`. ROS Jazzy Nav2 MapSaver의 기본 수신 대기 시간은 2초이므로 짧은 timeout이 주요 경계다.
+- 이 후속 검수에서는 기존 `slam_toolbox/save_map` 서비스가 통과했다고 주장하지 않는다. **공식 `ros2 run nav2_map_server map_saver_cli`에 `save_map_timeout:=15.0`, `map_subscribe_transient_local:=true`를 지정**하여 동일한 실제 /map을 저장하는 별도 경로로 검수한다. YAML·PGM·실제 비미확인 지도 픽셀 40개 초과와 SHA256이 확인되기 전까지 지도 저장 PASS 불가.
+- 원본 `slam_toolbox/save_map` 서비스 실패와 Nav2 MapSaver CLI 결과는 독립 판정이며 혼동하지 않는다. Ch11의 기존 EKF / TF / SLAM Lifecycle /map 토픽 발행 PASS는 별도로 보존한다.
