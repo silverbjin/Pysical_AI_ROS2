@@ -43,9 +43,11 @@ report = {
     "sample_clamped_by_solver_length": math.hypot(target[0], target[2]) > reach_ik,
     "sample_ik_angles_rad": [float(x) for x in angles] if angles is not None else None,
     "gait_physics_verdict": "NOT_RUN_UNTIL_GEOMETRY_CONSISTENT",
+    "issue_url": "https://github.com/silverbjin/Pysical_AI_ROS2/issues/123",
 }
 out.write_text(json.dumps(report, indent=2) + "\n")
 if mismatch:
     print("CH10_IK_URDF_GEOMETRY_MISMATCH_FOUND " + json.dumps(report), flush=True)
-    sys.exit(1)
+    # Distinct return code for a *confirmed* known defect. Never a chapter PASS.
+    sys.exit(10)
 print("CH10_IK_URDF_LENGTHS_MATCH " + json.dumps(report), flush=True)
