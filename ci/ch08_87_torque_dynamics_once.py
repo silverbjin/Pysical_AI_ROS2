@@ -46,6 +46,10 @@ def checksum(path):
 
 
 def reset_original(env,seed):
+    # The book's env.reset() sets qpos/qvel but does not zero MuJoCo time
+    # or all integration/actuation state. Explicitly isolate the two trials
+    # in this diagnostic to compare identical seeded initial states.
+    mujoco.mj_resetData(env.model,env.data)
     observation,_=env.reset(seed=seed)
     assert observation.shape==(18,)
     assert env.model.nu==env.model.nv==env.model.nq==6
