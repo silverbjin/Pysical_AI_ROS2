@@ -1,0 +1,68 @@
+name: Book Ch06 6.6 real Gazebo controller and action (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch06-gazebo-66.yml'
+      - 'ci/ch06_66_gazebo_once.sh'
+      - 'ci/ch06_66_gazebo_action_probe.py'
+      - 'Ch06/ros2_ws/src/my_robot_moveit_config/launch/Gazebo_moveit.launch.py'
+      - 'Ch06/docs/LAB_6_6_GUIDE_KO.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch06-66-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  gazebo-action:
+    name: Headless real Gazebo/ros2_control action; MoveIt planning NOT_RUN
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch06
+      - name: Pin actual tested source and reusable GHCR digest
+        run: |
+          mkdir -p ci-results/ch06-gazebo-66
+          git rev-parse HEAD > ci-results/ch06-gazebo-66/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch06-gazebo-66/base_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull existing exact image (never rebuild)
+        run: docker pull "$(cat ci-results/ch06-gazebo-66/base_digest.txt)"
+      - name: Execute actual physics/controller scoped test
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=25s 710s \
+            docker run --rm --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch06-gazebo-66/checkout_sha.txt)" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch06-gazebo-66/base_digest.txt)" \
+              bash ci/ch06_66_gazebo_once.sh \
+              2>&1 | tee ci-results/ch06-gazebo-66/console.log
+      - name: Publish distinct scoped verdict
+        if: always()
+        run: |
+          {
+            echo '## Ch06 6.6: actual Gazebo physics/control only'
+            echo 'This test does not plan with MoveItPy or prove the entire textbook integrated execution.'
+            echo 'RViz GUI, gripper, hardware NOT_RUN; Ch10 HOLD.'
+            echo 'Accepted Ch06 6.4-6.5 are NOT_RERUN.'
+            cat ci-results/ch06-gazebo-66/result.json || true
+            cat ci-results/ch06-gazebo-66/verdict.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch06-gazebo-66-${{ github.run_id }}
+          path: ci-results/ch06-gazebo-66/
+          retention-days: 14
+          if-no-files-found: warn
