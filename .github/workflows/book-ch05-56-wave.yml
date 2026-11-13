@@ -1,0 +1,72 @@
+name: Book Ch05 5.6 measured 3s ramp + original 50Hz wave in Gazebo (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'ci/docker/verify_ch05_wave.py'
+      - 'ci/docker/next_scope.sh'
+      - 'Ch05/ros2_ws/src/manipulation_basics/manipulation_basics/wave_hello_node.py'
+      - '.github/workflows/book-ch05-56-wave.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch05-56-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  real-original-wave:
+    name: Real Gazebo 3s pose transition, original 50Hz wave and measured joint states
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci/docker
+            Ch05/ros2_ws/src/manipulation_basics
+      - name: Pin source and reuse existing Gazebo image digest
+        run: |
+          mkdir -p ci-results/next/Ch05
+          git rev-parse HEAD > ci-results/next/Ch05/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/next/Ch05/image_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse pinned Jazzy Harmonic digest without new build
+        run: docker pull "$(cat ci-results/next/Ch05/image_digest.txt)"
+      - name: Run only original §5.6 wave with actual Gazebo joint feedback
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 320s \
+            docker run --rm --init --pull=never --shm-size=512m \
+              -e BOOK_WAVE=1 \
+              -e RUN_SOURCE_SHA="$(cat ci-results/next/Ch05/source_sha.txt)" \
+              -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/next/Ch05/image_digest.txt)" \
+              bash ci/docker/next_scope.sh Ch05 \
+              2>&1 | tee ci-results/next/Ch05/console.log
+      - name: Report scope and initial target-jump warning
+        if: always()
+        run: |
+          {
+            echo '## Ch05 §5.6 REAL Gazebo original wave'
+            echo 'Only original wave_hello and real /joint_states; accepted simple_controller NOT_RERUN.'
+            echo 'Previous source commanded a 20ms initial posture jump (physical motion PASS but unsafe startup NOT_ACCEPTED). The new version must show one 3s ramp with measured feedback before wave starts.'
+            echo 'No physical robot safety or full long-run tracking PASS.'
+            echo 'GUI, hardware and Ch10 NOT_RUN/HOLD.'
+            cat ci-results/next/Ch05/wave_receipt.json || true
+            cat ci-results/next/Ch05/result.json || true
+            cat ci-results/next/Ch05/verdict.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch05-56-wave-${{ github.run_id }}
+          path: ci-results/next/Ch05/
+          retention-days: 14
+          if-no-files-found: warn

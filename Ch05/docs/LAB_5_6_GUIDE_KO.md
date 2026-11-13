@@ -23,8 +23,8 @@ ros2 pkg executables manipulation_basics
 ## 수학 계약 및 사전 위험 확인
 - joint1 = 0.3 sin(1.0t) rad: 각주파수 ω=1.0 rad/s, 주기≈6.28초, 최대 속도≈0.3 rad/s.
 - joint4 = 0.5 sin(4.0t) rad: ω=4.0 rad/s, 주기≈1.57초, 최대 속도=2.0 rad/s.
-- 고정 자세 joint2=-0.5rad, joint3=0.8rad. 현재 노드는 **첫 명령에서 이 자세로 0.02초 안에 도달하도록 요구**할 수 있다. URDF joint4 velocity limit=2.0rad/s이므로 물리 안정성을 미리 보장할 수 없다.
-- 무부하 가상환경에서만 관찰하고, 불안정하면 즉시 Ctrl+C로 중단한다. 시작 구간의 급격한 목표 변경을 제거하는 수정 전에는 실제 하드웨어에 사용하지 않는다.
+- 고정 자세 joint2=-0.5rad, joint3=0.8rad. **수정 전 노드**는 첫 명령에서 이 자세로 0.02초 안에 도달하도록 요구할 수 있었다. 현재 코드는 먼저 3초짜리 단일 시작 자세 전환 명령을 보내고, 실제 `/joint_states`가 시작 자세에 접근했을 때에만 사인파를 발행한다. URDF joint4 velocity limit=2.0rad/s이므로 물리 안정성을 미리 보장할 수 없다.
+- 무부하 가상환경에서만 관찰하고, 불안정하면 즉시 Ctrl+C로 중단한다. 시작 3초 궤적과 실측 기준 검수는 실물 하드웨어 안전 인증이 아니다.
 
 ## 실습 1 — 시계·컨트롤러 준비
 5.2절 시뮬레이터 실행 후:
@@ -76,3 +76,23 @@ ros2 run rqt_plot rqt_plot
 - 실행에 사용한 ROS/Gazebo 버전, 체크아웃 커밋, 빌드 성공/실패 및 종료코드, 사용 명령을 기록한다.
 - 예상 출력은 체크 조건이지 본 문서 작성자가 실제 관측했다는 뜻이 아니다. 오류 시 로그를 그대로 남기고 우회·추측으로 PASS 처리하지 않는다.
 - 5.6절 대응 리뷰: [SECTION_5_6_REPORT_KO.md](SECTION_5_6_REPORT_KO.md). 원고/구현 차이와 제한을 함께 읽는다.
+
+---
+
+## 2026-11 실제 Gazebo 움직임 검수: 원본 wave_hello 전용
+
+기존 Ch05 `simple_controller` 실측 관절 이동 및 추종 증거는 보존하고 재실행하지 않는다. 이번 공개 GitHub Actions는 **원본 `ros2 run manipulation_basics wave_hello --ros-args -p use_sim_time:=true`를 실행**하여 관절 명령과 실제 Gazebo `/joint_states`를 동시에 관찰한다.
+
+- 고정 이미지: `ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f`. 재빌드 없이 기존 `ci/docker/next_scope.sh`의 Ch05 실제 Controller Manager/arm_controller 준비 경로를 재사용한다.
+- 실행기: `BOOK_WAVE=1 bash ci/docker/next_scope.sh Ch05`. 독립 ROS 구독기: `ci/docker/verify_ch05_wave.py`; 전용 GitHub Actions: `.github/workflows/book-ch05-56-wave.yml`.
+- 12초 동안 네 관절의 명령·실측을 수집한다. 발행 메시지가 최소 160건, 관절 실측 최소 60건, 발행 median 주기가 0.008~0.075초여야 한다. joint1 명령 진폭 span≥0.45rad, joint4≥0.70rad, 실제 관절 movement span이 각 ≥0.15rad이어야 한다.
+- 모든 실제 명령의 `time_from_start`는 정상 파형 구간은 기존의 20ms이고, 시작 자세는 단 한 번 3초 horizon 명령을 내보낸 뒤 실측 허용오차 0.15rad 내 도달할 때만 파형을 시작하도록 개선했다. 이 사실을 물리 안전성 PASS로 해석하지 않는다.
+- 정상 증거는 원본 `wave_receipt.json`, DDS 실제 메시지 수와 관절 이동량, 소스 SHA, GHCR digest, Actions run ID와 원본 Artifact, 종료 상태를 포함한다. 관측 성공을 실물 하드웨어의 안전한 제어, 안정적인 50Hz 추종, 충분한 시작 램프나 장시간 연속 동작 PASS로 승격하지 않는다.
+- 기대 로그: `CH05_56_REAL_GAZEBO_WAVE_COMMAND_AND_JOINT_MOVEMENT_SCOPED_PASS`. 실행하지 못했거나 값이 부족하면 FAIL/BLOCKED를 그대로 둔다. Ch10 Issue #123은 계속 HOLD.
+
+### 실제 CI에서 발견한 시작 자세 과도응답과 최소 수정
+
+- 최초 공개 CI [#43376913727](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43376913727)의 원본 Artifact #14014268057에서 원본 50Hz 사인파 명령 398건, Gazebo 실측 관절 상태 1,153건을 확인했다. joint1·joint4는 실제 움직였으나, 고정 목표 joint2·joint3의 초기 실측 span이 약 **1.3965rad·2.0937rad**로 커서 시작 단계의 물리적 안정성은 승인하지 않았다.
+- **최소 수정:** wave_hello_node는 실제 `/joint_states`를 먼저 기다린다. 처음에 `(0,-0.5,0.8,0)`rad 목표로 `time_from_start=3s`의 한 개 trajectory를 보낸 뒤, 관절 네 개의 실측 오차가 각각 0.15rad 안에 들어올 때 원래의 50Hz 파형을 시작한다. 6초 안에 이 조건을 충족하지 못하면 사인파 명령을 시작하지 않는다. 사인파 자체의 각주파수·진폭은 변경하지 않았다.
+- 후속 공개 CI는 초기 3초 ramp 한 건, 그 뒤의 실제 사인파 명령, Gazebo 실측 joint2/3 과도응답 범위, joint1/4 실측 움직임 및 중복 Goal이 없는지를 확인한다. 결과가 실패하면 기준을 완화하지 말고 실제 첫 실패 경계를 기록한다.
+- 실물 로봇의 토크·가속도·온도 안전은 여전히 NOT_RUN이며, Ch10 HOLD 유지.
