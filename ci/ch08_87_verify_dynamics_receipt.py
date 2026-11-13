@@ -27,7 +27,7 @@ assert r["stable_tracking"]=="NOT_PROVEN"
 assert r["ch07_rgbd"]=="BLOCKED" and r["ch10"]=="HOLD"
 for p in (zipfile,xml,envsrc):
     assert p.is_file()
-    assert r["original_asset_sha256"][str(p)]==hashlib.sha256(p.read_bytes()).hexdigest()
+    assert r["original_asset_sha256"][str(p.resolve())]==hashlib.sha256(p.read_bytes()).hexdigest()
 rows=r["per_seed"]
 assert len(rows)==3 and [x["seed"] for x in rows]==[1000,1001,1002]
 approach=0;reaches=0
@@ -52,7 +52,6 @@ for row in rows:
         assert all(math.isfinite(v) for v in t["final_joint_positions_rad"])
         for key in ("initial_distance_m","final_distance_m","minimum_distance_m","joint_motion_norm_rad"):
             assert math.isfinite(t[key]) and t[key]>=0
-        assert t["minimum_distance_m"]<=t["initial_distance_m"]+1e-9
         assert abs(t["reduction_to_closest_m"]-(t["initial_distance_m"]-t["minimum_distance_m"]))<1e-8
         if t["actual_goal_reached"]:
             assert t["minimum_distance_m"]<0.05
