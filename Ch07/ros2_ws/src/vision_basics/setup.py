@@ -40,6 +40,7 @@ setup(
     entry_points={
         'console_scripts': [
             # 추후 텔레오퍼레이션이나 제어 노드 작성 시 여기에 등록합니다.
+            'vision_processor = vision_basics.vision_processor:main',
             'simple_arm_teleop = vision_basics.simple_arm_teleop:main',  # 텔레오퍼레이션 노드 추가
             'joint_control_cli = vision_basics.joint_control_cli:main',  # 제어 노드 추가
             
