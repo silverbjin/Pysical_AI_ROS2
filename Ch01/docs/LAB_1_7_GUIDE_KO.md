@@ -8,8 +8,8 @@
 # Ubuntu 24.04 / ROS 2 Jazzy 터미널. 이미 clone된 경우 생략
 git clone https://github.com/silverbjin/Pysical_AI_ROS2.git ~/Pysical_AI_ROS2
 cd ~/Pysical_AI_ROS2
-git fetch origin
-git switch --track origin/feat/ch01-section-1-7
+git switch main
+git pull --ff-only origin main
 source /opt/ros/jazzy/setup.bash
 
 mkdir -p ~/ch01_lab_17/src
@@ -74,3 +74,19 @@ ros2 pkg executables my_robot_controller
 `Ch01/ref/my_first_package`는 `geometry_msgs`와 `sensor_msgs`를 선언하지만 이번 1.7 주교재 패키지와 다르다. `geometry_msgs.msg.Twist` 코드는 별도 `cmd_publisher` 예제이며 **원고 1.7의 의존성 관리 본문에 해당하지 않는다**. 기본 소스의 무한 비영 `cmd_vel` 송신 노드를 **실제 로봇에 연결하지 않는다**.
 
 **ACCEPT:** rosdep 해결 완료, 선택 colcon build 0, `test_node` 확인, manifest 설치 파일 확인, rclpy import, 라이선스 TODO와 예시 launch/config 미구현 사실 설명. 실측되지 않은 항목은 NOT_RUN으로 둔다. [코드 리뷰](SECTION_1_7_REPORT_KO.md) 참조.
+
+---
+
+## 후속 검수: data_files 복사본 → 실제 colcon 설치 및 ros2 launch
+
+기존 원본 my_robot_controller에는 launch/와 config/ 디렉터리가 없다. 이번 검수는 원본을 임시 디렉터리로 복사하고, 그 복사본에만 강의용 Launch 및 YAML 파일을 추가한 뒤 data_files 규칙을 검증한다.
+
+- 실행기: ci/ch01_17_package_assets_once.sh
+- 공개 CI: .github/workflows/book-ch01-17-package-assets.yml
+- 기존 고정 Jazzy/Harmonic Docker 이미지를 재사용한다. 원본 setup.py의 SHA256는 시작·종료 값이 동일해야 한다.
+- 실제 colcon build --symlink-install 뒤 package.xml, launch/asset_demo.launch.py, config/lesson.yaml 설치 파일과 복사본의 바이트 일치를 확인한다.
+- ros2 pkg prefix/executables로 설치된 ROS 패키지를 탐색하고 ros2 launch my_robot_controller asset_demo.launch.py를 실제 실행한다.
+- 기대 로그: CH01_17_INSTALLED_MANIFEST_ASSETS_AND_ENTRYPOINT_PASS, CH01_17_ACTUAL_INSTALLED_LAUNCH_DISCOVERED, CH01_17_REAL_COLCON_DATA_FILES_AND_ROS2_LAUNCH_SCOPED_PASS.
+- 기존 Ch01 1.6 Heartbeat 1Hz 및 0.5Hz 검수는 재실행하지 않는다. 고정 이미지에 이미 설치된 의존성만 사용하므로 새로운 rosdep install은 NOT_RUN이다.
+
+결과의 scoped PASS는 실습용 복사본의 파일 배포 계약에만 해당한다. 원본 교재에 Launch/Config가 이미 구현되어 있다고 주장하지 않는다. Ch10 HOLD.

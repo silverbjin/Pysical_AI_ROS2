@@ -1,0 +1,63 @@
+name: Book Ch01 1.7 real package data_files and installed launch (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'ci/ch01_17_package_assets_once.sh'
+      - '.github/workflows/book-ch01-17-package-assets.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  package-assets:
+    name: Actual isolated colcon install, manifest, launch and config
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch01/robot_ws/src/my_robot_controller
+            ci/ch01_17_package_assets_once.sh
+      - name: Record source SHA and reusable Jazzy image digest
+        run: |
+          mkdir -p ci-results/ch01-17
+          git rev-parse HEAD > ci-results/ch01-17/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/ch01-17/image.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull existing exact Jazzy image (do not rebuild)
+        run: docker pull "$(cat ci-results/ch01-17/image.txt)"
+      - name: Run only previously NOT_RUN 1.7 data_files install and launch resolution
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=12s 145s \
+            docker run --rm --init --pull=never --shm-size=256m \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch01-17/source_sha.txt)" \
+              -e ROS_DOMAIN_ID=17 -e ROS_LOCALHOST_ONLY=1 \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch01-17/image.txt)" \
+              bash ci/ch01_17_package_assets_once.sh \
+              2>&1 | tee ci-results/ch01-17/console.log
+      - name: Publish scoped result and exclusions
+        if: always()
+        run: |
+          {
+            echo '## Ch01 1.7 actual installed package assets'
+            echo 'Isolated copy of textbook source, no default 1Hz rerun, no Ch10.'
+            echo 'Existing ROS dependencies already provided by immutable Jazzy image; fresh rosdep install NOT_RUN.'
+            cat ci-results/ch01-17/result.json || true
+            cat ci-results/ch01-17/exit.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch01-17-assets-${{ github.run_id }}
+          path: ci-results/ch01-17/
+          retention-days: 14
+          if-no-files-found: warn
