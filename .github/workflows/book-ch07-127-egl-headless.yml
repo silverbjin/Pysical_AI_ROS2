@@ -1,0 +1,78 @@
+name: Book Ch07 7.2 original RGB-D OGRE2 EGL headless repair (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-127-egl-headless.yml'
+      - 'ci/docker/ch07_camera_once.sh'
+      - 'ci/docker/verify_camera.py'
+      - 'ci/docker/fixtures/ch07_camera_world.sdf'
+      - 'Ch07/ros2_ws/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.*'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-127-egl-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  original-ogre2-egl:
+    name: Actual original RGB-D sensor under official Gazebo EGL headless rendering
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Pin exact source, original SDF/Xacro and existing runtime digest
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/vision/Ch07
+          git rev-parse HEAD > ci-results/vision/Ch07/checkout_sha.txt
+          git hash-object ci/docker/fixtures/ch07_camera_world.sdf > ci-results/vision/Ch07/world_git_blob.txt
+          git hash-object Ch07/ros2_ws/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.xacro \
+            > ci-results/vision/Ch07/camera_git_blob.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/vision/Ch07/image_digest.txt
+          bash -n ci/docker/ch07_camera_once.sh
+          python3 -m py_compile ci/docker/verify_camera.py
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull SAME pinned Jazzy Harmonic image (never rebuild)
+        run: docker pull "$(cat ci-results/vision/Ch07/image_digest.txt)"
+      - name: One changed EGL headless experiment (OGRE2 and original RGB-D preserved)
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 240s \
+            docker run --rm --init --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/vision/Ch07/checkout_sha.txt)" \
+              -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/vision/Ch07/image_digest.txt)" \
+              bash ci/docker/ch07_camera_once.sh \
+              2>&1 | tee ci-results/vision/Ch07/console.log
+      - name: Preserve independent PASS/FAIL and exact exclusions
+        if: always()
+        run: |
+          {
+            echo '## Ch07 #127 — original OGRE2 RGB-D and official EGL headless'
+            echo 'Same original Xacro/world and fixed image digest; Xvfb and old plain -s attempts NOT_RERUN.'
+            echo 'Actual ROS Image>=3, valid CameraInfo>=1, optical TF>=1 required. No invented PASS.'
+            echo 'Depth alignment, PointCloud, GUI, Ch07 whole chapter and Ch10 are NOT_RUN/HOLD.'
+            cat ci-results/vision/Ch07/image_digest.txt || true
+            cat ci-results/vision/Ch07/result.json || true
+            cat ci-results/vision/Ch07/camera_data.json || true
+            cat ci-results/vision/Ch07/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-127-original-ogre2-egl-${{ github.run_id }}
+          path: ci-results/vision/Ch07/
+          retention-days: 30
+          if-no-files-found: warn
