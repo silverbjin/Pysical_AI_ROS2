@@ -1,4 +1,4 @@
-name: Book Ch07 7.6 Gazebo teardown only (preserve action proof)
+name: Book Ch07 7.6 real Gazebo two-finger motion (code changes only)
 on:
   pull_request:
     paths:
@@ -7,6 +7,15 @@ on:
       - 'ci/ch07_76_gripper_once.sh'
       - 'ci/ch07_76_gripper_witness.py'
   workflow_dispatch:
+    inputs:
+      scope:
+        description: 'full=OPEN/CLOSE on changed code; teardown_only=owned-process cleanup diagnosis'
+        required: true
+        type: choice
+        default: full
+        options:
+          - full
+          - teardown_only
 permissions:
   contents: read
   packages: read
@@ -15,7 +24,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   gripper:
-    name: Bounded Gazebo/ROS shutdown only; previous real action proof NOT_RERUN
+    name: Real finger controller full regression on code change; optional teardown-only
     runs-on: ubuntu-24.04
     timeout-minutes: 17
     steps:
@@ -37,13 +46,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull existing digest, never rebuild image
         run: docker pull "$(cat ci-results/ch07-76/base_digest.txt)"
-      - name: Retest only process cleanup after controller readiness (no goals)
+      - name: Run full finger actions on changed code or optional teardown diagnosis
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=15s 100s \
             docker run --rm --init --pull=never --shm-size=1g \
               -e RUN_SOURCE_SHA="$(cat ci-results/ch07-76/checkout_sha.txt)" \
-              -e CH07_76_TEARDOWN_ONLY=1 \
+              -e CH07_76_TEARDOWN_ONLY="${{ github.event_name == 'workflow_dispatch' && inputs.scope == 'teardown_only' && '1' || '0' }}" \
               -v "$PWD":/work -w /work \
               "$(cat ci-results/ch07-76/base_digest.txt)" \
               bash ci/ch07_76_gripper_once.sh \
@@ -52,11 +61,12 @@ jobs:
         if: always()
         run: |
           {
-            echo '## Ch07 7.6: actual Gazebo gripper controller only'
-            echo 'This run checks ONLY bounded ROS/Gazebo process teardown after controller readiness; Docker --init provides PID1 reaping.'
+            echo '## Ch07 7.6: actual Gazebo two-finger control, no physical object'
+            echo 'Pull-request source changes execute full original OPEN/CLOSE. workflow_dispatch can choose teardown_only with no new goal.'
+            echo 'This change restores future regression behavior; initial 2026-11-13 acceptance is preserved as separate prior action and teardown runs.'
             echo 'Inspect teardown_trace.log / teardown_ps_before.txt / teardown_ps_after.txt; never assume SIGTERM clean from a marker alone.'
-            echo 'Previous run #43354355284: open and close real Goal SUCCEEDED and measured feedback PASS, but overall CI FAIL (shutdown timeout).'
-            echo 'Those already successful actions are NOT_RERUN. Do not claim a single-run full PASS.'
+            echo 'Historic action #43354355284: measured goals PASS, old job FAIL (infinite cleanup loop); teardown #43358805356 SUCCESS after scoped fix.'
+            echo 'No same-source successful Goal is rerun for the historical acceptance; full mode applies only to future source changes/manual choice.'
             echo 'Physical object grasp, lift, contact/friction, MoveIt gripper integration NOT_RUN.'
             echo 'Ch07 real RGB-D camera BLOCKED #127, Ch10 HOLD.'
             echo 'Accepted Ch07 7.3/7.4/7.5 not rerun.'

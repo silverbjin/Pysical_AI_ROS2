@@ -88,3 +88,16 @@ CH07_76_INDEPENDENT_REAL_GAZEBO_FINGER_ACTION_AND_FINAL_JOINTS_PASS
 - Ch10 Issue #123: HOLD 유지.
 
 그리퍼 Action이 성공했다고 실제 물체를 잡았다고 보고하지 않는다.
+
+
+## 2026-11-13 공개 CI 실제 인수 기록 및 재검 원칙
+
+> **Ch07 §7.6 실제 Gazebo 그리퍼 제어: 두 CI 증거를 결합한 범위 한정 PASS**. 실제 물체 파지/접촉/리프트는 NOT_RUN.
+> 상세 원인과 SHA는 [SECTION_7_6_REPORT_KO.md](SECTION_7_6_REPORT_KO.md)를 참고한다.
+
+- 실제 OPEN/CLOSE Goal과 관절 피드백을 확인한 [CI #43354355284](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43354355284)에서는 기능이 성공했지만, 종료 스크립트 무한 반복으로 전체 Job이 FAIL이었다. **절대로 해당 Job을 CI 전체 PASS로 표현하지 않는다.**
+- 하위 Bash 함수의 루프 변수 \`i\`가 호출자 \`cleanup()\`의 \`i\`를 덮어쓰는 동적 스코프 오류를 \`local attempt\`로 수정했다.
+- 이후 [종료 전용 CI #43358805356](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43358805356)는 세 소유 프로세스 그룹을 SIGTERM으로 각각 한 번씩 회수했으며 \`result.json\`에서 \`rc=0\`, \`TEARDOWN_SCOPE_PASS\`, \`action_retest=NOT_RUN\`을 확인했다.
+- 두 버전의 \`gripper_controller.py\`는 동일한 blob SHA \`1c104193f29940ba565cc3a32cd35c5bf4e51f38\`이다. 성공한 OPEN/CLOSE는 재실행하지 않았다.
+- **CI 모드:** 향후 그리퍼 소스/로봇 wrapper/검수기가 변경된 PR에서 전체 OPEN/CLOSE를 실행한다. 종료만 다시 분석할 경우 GitHub Actions의 \`Book Ch07 7.6 real Gazebo two-finger motion\`에서 **Run workflow → scope=teardown_only**를 선택한다. \`full\`은 실제 두 Goal 실행이다. 두 모드는 겹치는 증거를 생성하지 않는다.
+- 실습에서 실제 물체가 잡혔는지 확인하려면 손가락 관절 수치 외에 물체 pose, 접촉 및 리프트 증거가 필요하다. 이번 절의 범위 한정 PASS로 물리 파지를 승인하지 않는다.
