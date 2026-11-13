@@ -30,6 +30,25 @@ group_running() {
 }
 stop_owned() {
   local pgid="$1" name="$2" attempt
+  if [[ "$name" == "gzserver" ]] && group_running "$pgid"; then
+    # Harmonic plain gz sim can deadlock in the signal handler while a
+    # Sensors render thread holds gz-transport locks (upstream #4173).
+    # Request an orderly stop from Gazebo's server API BEFORE SIGINT.
+    echo "GAZEBO_SERVER_CONTROL_STOP_REQUESTED pgid=$pgid" >> "$OUT/stages.log"
+    timeout 5s gz service -s /server_control \
+      --reqtype gz.msgs.ServerControl --reptype gz.msgs.Boolean \
+      --timeout 1500 --req 'stop: true' \
+      > "$OUT/server_control_stop.log" 2>&1 || true
+    for attempt in $(seq 1 20); do
+      if ! group_running "$pgid"; then
+        wait "$pgid" 2>/dev/null || true
+        echo "SHUTDOWN_GAZEBO_SERVER_CONTROL_CLEAN name=$name pgid=$pgid" >> "$OUT/stages.log"
+        return 0
+      fi
+      sleep .15
+    done
+    echo "GAZEBO_SERVER_CONTROL_FALLBACK_SIGNAL pgid=$pgid" >> "$OUT/stages.log"
+  fi
   if ! group_running "$pgid"; then
     wait "$pgid" 2>/dev/null || true
     echo "SHUTDOWN_ALREADY_EXITED name=$name pgid=$pgid" >> "$OUT/stages.log"
@@ -54,6 +73,9 @@ stop_owned() {
     fi
     sleep .2
   done
+  # Diagnostics first; never promote an upstream shutdown deadlock to PASS.
+  ps -eo pid=,ppid=,pgid=,stat=,etime=,comm= |
+    awk -v g="$pgid" '$3==g {print}' > "$OUT/shutdown_stuck_${name}.txt" 2>/dev/null || true
   kill -KILL -- "-$pgid" 2>/dev/null || true
   wait "$pgid" 2>/dev/null || true
   echo "SHUTDOWN_ESCALATED_SIGKILL name=$name pgid=$pgid" >> "$OUT/stages.log"
