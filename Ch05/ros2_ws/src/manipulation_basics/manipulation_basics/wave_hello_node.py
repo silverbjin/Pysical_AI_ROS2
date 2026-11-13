@@ -1,5 +1,8 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
+from sensor_msgs.msg import JointState
+import time
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
 import math
@@ -24,6 +27,17 @@ class WaveHelloNode(Node):
         
         # 3. 로봇 관절 설정 (URDF와 일치해야 함)
         self.joint_names = ['joint1', 'joint2', 'joint3', 'joint4']
+        # §5.6: initial joint2/joint3 posture must NOT jump in 20 ms.
+        # Use a single 3s controller trajectory and wait for measured feedback
+        # before the textbook's original 50Hz sinusoidal commands begin.
+        self._pose = [0.0, -0.5, 0.8, 0.0]
+        self._measured = None
+        self._measured_seen_wall = None
+        self._mode = 'WAIT_FOR_JOINT_STATES'
+        self._ramp_sent_ns = None
+        self._wave_started_ns = None
+        self.create_subscription(JointState, '/joint_states', self.on_joint_state, 10)
+
         
         # 4. 모션 파라미터 설정 (튜닝 포인트)
         # Joint 1: 허리 (천천히 크게 움직임)
@@ -36,13 +50,68 @@ class WaveHelloNode(Node):
         self.j4_offset = 0.0   # 중심점: 0도
 
         # 시작 시간 기록
-        self.start_time = self.get_clock().now().nanoseconds / 1e9
+        self.start_time = None  # Begin sine phase only after measured ramp completion.
         
         self.get_logger().info('Hello Robot Node Started! Waving is beginning...')
 
+    def on_joint_state(self, msg):
+        if not all(name in msg.name for name in self.joint_names):
+            return
+        positions = [float(msg.position[msg.name.index(j)])
+                     for j in self.joint_names]
+        if not all(math.isfinite(p) for p in positions):
+            return
+        self._measured = positions
+        self._measured_seen_wall = time.monotonic()
+
     def timer_callback(self):
-        # 현재 시간 계산 (시뮬레이션 시간)
-        current_time = self.get_clock().now().nanoseconds / 1e9
+        # The original 20 ms, four-joint pose jump would request excessive
+        # initial velocities. Preserve original sine amplitudes and rates but
+        # transition to the start pose with one 3s controller trajectory.
+        now_ns = self.get_clock().now().nanoseconds
+        fresh = self._measured is not None and (
+            self._measured_seen_wall is not None
+            and time.monotonic() - self._measured_seen_wall <= 1.0
+        )
+        if self._mode == 'BLOCKED':
+            return
+        if self._mode == 'WAIT_FOR_JOINT_STATES':
+            if not fresh or now_ns <= 0:
+                return
+            msg = JointTrajectory()
+            msg.joint_names = self.joint_names
+            point = JointTrajectoryPoint()
+            point.positions = list(self._pose)
+            point.time_from_start = Duration(sec=3, nanosec=0)
+            msg.points.append(point)
+            self.publisher_.publish(msg)
+            self._ramp_sent_ns = now_ns
+            self._mode = 'RAMP_TO_START'
+            self.get_logger().info('CH05_56_START_RAMP_3S_SENT')
+            return
+        if self._mode == 'RAMP_TO_START':
+            if not fresh:
+                return
+            elapsed = (now_ns - self._ramp_sent_ns) / 1e9
+            if elapsed < 3.0:
+                return
+            errors = [abs(now - goal) for now, goal in zip(self._measured, self._pose)]
+            if max(errors) <= 0.15:
+                self._mode = 'WAVE'
+                self._wave_started_ns = now_ns
+                self.start_time = now_ns / 1e9
+                self.get_logger().info(
+                    f'CH05_56_START_POSE_MEASURED_WITHIN_TOLERANCE errors={errors}'
+                )
+            elif elapsed > 6.0:
+                self.get_logger().error(
+                    f'CH05_56_START_POSE_BLOCKED errors={errors}; '
+                    'no sinusoidal commands will be published'
+                )
+                self._mode = 'BLOCKED'
+            return
+        # WAVE mode: original textbook signal, only after observed startup.
+        current_time = now_ns / 1e9
         elapsed_time = current_time - self.start_time
         
         # --- [핵심 로직: 사인파 생성] ---
@@ -82,12 +151,13 @@ def main(args=None):
     
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         # 안전하게 종료: 노드가 꺼질 때 로봇을 멈추고 싶다면 여기서 0도 명령을 보낼 수도 있다.
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
