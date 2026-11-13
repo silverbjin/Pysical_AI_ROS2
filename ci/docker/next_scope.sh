@@ -327,6 +327,25 @@ grep -E 'joint_state_broadcaster.*active' "$OUT/controllers.txt"
 grep -E 'arm_controller.*active' "$OUT/controllers.txt"
 timeout 12s ros2 topic info -v /arm_controller/joint_trajectory > "$OUT/trajectory_topic.txt"
 grep -Eq 'Subscription count: [1-9]' "$OUT/trajectory_topic.txt"
+if [[ "${BOOK_WAVE:-0}" == "1" ]]; then
+  stage CH05_56_WAVE_PROBE_START_BEFORE_COMMAND
+  timeout --signal=TERM --kill-after=5s 19s \
+    python3 /work/ci/docker/verify_ch05_wave.py "$OUT/wave_receipt.json" \
+    > "$OUT/wave_probe.log" 2>&1 &
+  WAVE_CHECK_PID="$!"
+  BG="$WAVE_CHECK_PID $BG"
+  sleep 1.2
+  stage CH05_56_ORIGINAL_WAVE_HELLO
+  start wave_hello ros2 run manipulation_basics wave_hello --ros-args -p use_sim_time:=true
+  stage CH05_56_CAPTURE_ACTUAL_GAZEBO_WAVE_RESPONSE
+  wait "$WAVE_CHECK_PID"
+  cat "$OUT/wave_probe.log"
+  grep -q CH05_56_REAL_GAZEBO_WAVE_COMMAND_AND_JOINT_MOVEMENT_SCOPED_PASS "$OUT/wave_probe.log"
+  stage CH05_56_WAVE_ACTUAL_GAZEBO_SCOPED_PASS
+  echo CH05_56_WAVE_ACTUAL_JOINT_FEEDBACK_PASS_STARTUP_SAFETY_UNVERIFIED |
+    tee "$OUT/verdict.txt"
+  exit 0
+fi
 stage REAL_GUIDE_TRAJECTORY
 start simple_controller ros2 run manipulation_basics simple_controller
 timeout --signal=TERM --kill-after=5s 35s python3 /work/ci/docker/verify_ch05_motion.py "$OUT/motion.json" 2>&1 | tee "$OUT/motion.log"
