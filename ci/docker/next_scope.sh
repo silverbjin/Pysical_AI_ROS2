@@ -341,6 +341,8 @@ if [[ "${BOOK_WAVE:-0}" == "1" ]]; then
   wait "$WAVE_CHECK_PID"
   cat "$OUT/wave_probe.log"
   grep -q CH05_56_REAL_GAZEBO_WAVE_3S_RAMP_AND_JOINT_MOVEMENT_SCOPED_PASS "$OUT/wave_probe.log"
+  grep -q CH05_56_START_RAMP_3S_SENT "$OUT/wave_hello.log"
+  grep -q CH05_56_START_POSE_MEASURED_WITHIN_TOLERANCE "$OUT/wave_hello.log"
   stage CH05_56_WAVE_ACTUAL_GAZEBO_SCOPED_PASS
   echo CH05_56_WAVE_3S_RAMP_AND_ACTUAL_FEEDBACK_PASS_HARDWARE_NOT_RUN |
     tee "$OUT/verdict.txt"
