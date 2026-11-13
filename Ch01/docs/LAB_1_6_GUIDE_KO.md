@@ -1,3 +1,42 @@
+# Ch01 §1.6 — 기존 노드의 타이머 주기 변경을 실제 ROS 2에서 검수
+
+> 학습용 수정본은 **임시 복사본**에만 적용한다. 현재 교재 기준은 최신 원격 main이며 2026년 10월의 독립 feature 브랜치 체크아웃을 더 이상 요구하지 않는다.
+
+## 실행 가능한 교재 명령
+
+~~~bash
+git clone https://github.com/silverbjin/Pysical_AI_ROS2.git ~/Pysical_AI_ROS2
+cd ~/Pysical_AI_ROS2
+git switch main
+git pull --ff-only origin main
+source /opt/ros/jazzy/setup.bash
+~~~
+
+별도 터미널을 사용하거나 임시 작업 디렉터리로 다음 코드를 복사해 수정한다. 원본 main의 노드는 1초 주기로 정상 실행되고, 반복 검수가 필요한 지점은 **복사한 코드의 timer_period를 0.5초로 변경**했을 때 실제 2Hz가 되는지이다. 이미 통과한 1Hz 시험을 새로운 성공 증거처럼 반복하지 않는다.
+
+~~~bash
+mkdir -p ~/ch01_timer_lab
+cp Ch01/robot_ws/src/my_robot_controller/my_robot_controller/simple_controller.py \
+   ~/ch01_timer_lab/simple_controller.py
+sed -i 's/self.timer_period = 1.0/self.timer_period = 0.5/' \
+   ~/ch01_timer_lab/simple_controller.py
+python3 ~/ch01_timer_lab/simple_controller.py
+~~~
+
+**예상:** my_robot_node 로그에 Heartbeat: 1,2,3,…가 0.5초 간격으로 발생한다. 새 터미널에서 ros2 node list를 확인하고, 실행 터미널에서 Ctrl+C로 종료한 후 해당 노드가 없어져야 한다.
+
+## 공개 CI 검수 범위
+
+- 실행기: ci/ch01_16_half_second_probe.py
+- 워크플로: .github/workflows/book-ch01-16-timer.yml
+- 기존 고정 Jazzy Docker digest를 사용하며, 임시 복사본의 타이머 0.5초에 대해 연속 5건의 실제 로그 시각 차이(0.30~0.85초), 실제 ROS node discovery, Ctrl+C 종료 코드 및 종료 후 그래프 사라짐을 검사한다.
+- 원본 교재 코드가 변경되지 않은 것을 결과 JSON에 명시한다.
+- GUI/OOP 설명/초보자 대화형 실습은 별도 평가로 남긴다. Ch10 HOLD.
+
+---
+
+## 기존 2026-10 정적 설명 및 단계별 실습 원본
+
 # LAB 1.6 — SimpleController: 첫 ROS 2 노드 실습
 
 **원고 정합성:** 1.6.1~1.6.4의 `my_robot_controller/simple_controller.py`가 주 실습이다. 환경은 Ubuntu 24.04 / ROS 2 Jazzy / Python 3.12. ROS 2 런타임 검증은 현재 **NOT_RUN**이다.
