@@ -59,3 +59,18 @@ W를 5회 누르면 명령 목표가 +0.25rad로 증가한다. 실제 `/joint_st
 - 키 입력 사이의 비활동 구간에는 동일 명령 재발행이 없어야 한다. Q 종료 후 프로세스 종료 코드 0, 원래 TTY 속성 복원, ROS 노드 제거를 확인한다.
 - 이 CI는 **실제 Gazebo 관절 위치까지 관찰하지 않는다**. §3.8 물리 시뮬레이션 검수와 분리하고, 실제 물체 움직임 PASS를 주장하지 않는다. Ch10 HOLD.
 - 정상 로그 형식: `CH03_39_REAL_PTY_KEYS_AND_ROS_FLOAT64_TWO_JOINTS_PASS`, `CH03_39_Q_EXIT0_TTY_RESTORED_AND_ROS_NODE_GONE_PASS`, `CH03_39_REAL_INTERACTIVE_TTY_AND_ROS_COMMAND_SCOPED_PASS`. 성공 여부는 실제 Actions 원본 Artifact와 측정 로그로 판단한다.
+
+---
+
+## 후속 검수: 원본 키보드 텔레오퍼레이션의 실제 Gazebo 관절 추종 (2026-11)
+
+앞서 공개 CI에서 Linux 가상 TTY의 W/W/A/D/S/Q 입력과 `/joint1/cmd_pos`·`/joint2/cmd_pos` 실발행 및 TTY 복구까지는 PASS했다. 그러나 당시 Gazebo 물리 관절은 시작하지 않았으므로 실제 팔이 움직였다는 의미는 아니었다.
+
+추가 검수는 원본 `simple_arm_teleop`에 **W 여섯 번 → A 여섯 번 → Q**를 PTY로 전달한다. 0.05rad씩 상승한 joint1과 joint2의 +0.30rad 목표가 실제 ROS Float64 발행되는지, 기존 Ch03 ROS-Gazebo 브리지를 통해 실제 Gazebo `/joint_states`에 각 관절 최소 0.12rad 이상의 변화가 나타나는지를 독립 계측한다.
+
+- 실행기: `ci/ch03_39_gazebo_physical_once.sh` / 측정기: `ci/ch03_39_gazebo_physical_probe.py`
+- 전용 공개 CI: `.github/workflows/book-ch03-39-gazebo-physical.yml`
+- 기존 고정 Jazzy/Harmonic Docker 이미지와 Ch03의 원본 Xacro·world·브리지·제어기 설정만 재사용한다. 이전의 단순 월드 스폰·시계 PASS는 다시 판정하지 않는다.
+- PTY 입력, 실제 ROS 명령, 실제 Gazebo joint1/joint2 관절 상태, 시뮬레이션 `/clock`의 증거를 별도 receipt로 보관한다.
+- 기대 성공 식별자: `CH03_39_REAL_PTY_TO_GAZEBO_TWO_ACTUAL_JOINTS_MOVED_PASS`, `CH03_39_ACTUAL_INTERACTIVE_GAZEBO_FEEDBACK_SCOPED_PASS`.
+- 실제 공개 CI가 확인되기 전에는 **NOT_RUN**이며, 이 검수 이후에도 정착 오차·최적 PID·GUI·실물 하드웨어 안전성은 별개이다. Ch10 Issue #123 HOLD 유지.
