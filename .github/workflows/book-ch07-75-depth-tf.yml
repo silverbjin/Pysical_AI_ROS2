@@ -1,0 +1,66 @@
+name: Book Ch07 7.5 synthetic depth+TF real ROS (camera BLOCKED)
+on:
+  pull_request:
+    paths:
+      - 'Ch07/ros2_ws/src/vision_basics/vision_basics/coord_transformer.py'
+      - 'ci/ch07_75_once.sh'
+      - 'ci/ch07_75_depth_projection_probe.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-75-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  projection:
+    name: Actually run ROS optical pixel+K+depth+TF with invalid-input no-output checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Capture exact tested SHA and pinned image
+        run: |
+          mkdir -p ci-results/ch07-75
+          git rev-parse HEAD > ci-results/ch07-75/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-75/base_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse exact existing image (no rebuild)
+        run: docker pull "$(cat ci-results/ch07-75/base_digest.txt)"
+      - name: Execute real ROS projection against synthetic aligned depth
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 470s \
+            docker run --rm --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch07-75/checkout_sha.txt)" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch07-75/base_digest.txt)" \
+              bash ci/ch07_75_once.sh \
+              2>&1 | tee ci-results/ch07-75/console.log
+      - name: Publish exact scope of verdict
+        if: always()
+        run: |
+          {
+            echo '## Ch07 7.5 synthetic ROS depth+K+TF backprojection only'
+            echo 'No Gazebo RGB-D sensor was run; its OGRE2 blocker #127 remains BLOCKED.'
+            echo 'Moving wrist TF, depth alignment, grasp pose and hardware NOT_RUN; Ch10 HOLD.'
+            echo 'Previously accepted Ch07 7.3/7.4 were NOT_RERUN.'
+            cat ci-results/ch07-75/result.json || true
+            cat ci-results/ch07-75/verdict.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-75-depth-tf-${{ github.run_id }}
+          path: ci-results/ch07-75/
+          retention-days: 14
+          if-no-files-found: warn
