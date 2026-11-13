@@ -1,0 +1,84 @@
+name: Book Ch08 8.7 original frozen PPO EE/target projected velocity (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch08-168-vector-projection.yml'
+      - 'ci/ch08_168_frozen_ppo_vector_once.py'
+      - 'ci/ch08_168_audit_vector_receipt.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: book-ch08-168-vector-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  actual-original-vector:
+    name: Two short original PPO MuJoCo seed traces with actual 3D EE target projection
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch08/ros2_ws/rl_env.py
+            Ch08/ros2_ws/models/ppo_reach_final.zip
+            Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml
+            ci/ch08_168_frozen_ppo_vector_once.py
+            ci/ch08_168_audit_vector_receipt.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pin actual source, scope and syntax
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch08-168-vector
+          git rev-parse HEAD > ci-results/ch08-168-vector/checkout_sha.txt
+          echo 'seeds 1000,1001 x <=120 original steps; 10x300 full evaluation and training NOT_RERUN' > ci-results/ch08-168-vector/scope.txt
+          python -m py_compile ci/ch08_168_frozen_ppo_vector_once.py ci/ch08_168_audit_vector_receipt.py
+      - name: Reuse exact prior CPU MuJoCo/PPO dependencies, no fresh model
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check \
+            --index-url https://download.pytorch.org/whl/cpu 'torch==2.5.1+cpu'
+          python -m pip install --disable-pip-version-check \
+            'mujoco==3.3.7' 'numpy==2.2.6' \
+            'gymnasium==1.1.1' 'stable-baselines3==2.6.0'
+          python -m pip freeze > ci-results/ch08-168-vector/pip_freeze.txt
+      - name: Observe ONLY missing EE XYZ and projected velocity in real original MuJoCo
+        env:
+          RUN_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=8s 100s \
+            python ci/ch08_168_frozen_ppo_vector_once.py \
+            2>&1 | tee ci-results/ch08-168-vector/vector_probe.log
+          grep -q CH08_168_REAL_FROZEN_PPO_EE_VECTOR_MEASUREMENT_SCOPED_PASS ci-results/ch08-168-vector/vector_probe.log
+      - name: Independently verify raw 3D steps and immutable original source hashes
+        run: |
+          set -Eeuo pipefail
+          python ci/ch08_168_audit_vector_receipt.py \
+            ci-results/ch08-168-vector/receipt.json \
+            Ch08/ros2_ws/models/ppo_reach_final.zip \
+            Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml \
+            Ch08/ros2_ws/rl_env.py \
+            2>&1 | tee ci-results/ch08-168-vector/independent_audit.log
+      - name: Report diagnostic boundary, not performance success
+        if: always()
+        run: |
+          {
+            echo '## Ch08 #168 only NEW vector measurement (not a performance PASS)'
+            echo 'Original 0/10 frozen PPO goal success is retained as PERFORMANCE FAIL.'
+            echo 'Previously accepted 3x120 action/reward and 10x300 full evaluation NOT_RERUN.'
+            echo 'No reward tuning, policy retraining, safety or hardware.'
+            echo 'Ch10 #123 HOLD.'
+            cat ci-results/ch08-168-vector/receipt.json || true
+            cat ci-results/ch08-168-vector/independent_audit.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch08-168-frozen-ppo-vector-${{ github.run_id }}
+          path: ci-results/ch08-168-vector/
+          retention-days: 30
+          if-no-files-found: warn
