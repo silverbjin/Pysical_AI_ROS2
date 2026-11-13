@@ -59,12 +59,23 @@ try:
         raise RuntimeError(f"CH05_56_TOO_FEW_REAL_COMMANDS {len(cmd)}")
     if len(meas)<60:
         raise RuntimeError(f"CH05_56_TOO_FEW_REAL_JOINT_STATES {len(meas)}")
-    cmd_dts=[b["t"]-a["t"] for a,b in zip(cmd,cmd[1:])]
+    # A single 3s startup trajectory must precede, and remain distinct
+    # from, the original 50Hz wave stream. No 20ms posture jump is permitted.
+    ramps=[x for x in cmd if x["horizon_ns"]==3_000_000_000]
+    wave=[x for x in cmd if x["horizon_ns"]==20_000_000]
     cmd_horizons=sorted({x["horizon_ns"] for x in cmd})
+    if len(ramps)!=1 or cmd[0] is not ramps[0] or len(wave)<160:
+        raise RuntimeError(f"CH05_56_START_RAMP_MISSING ramps={len(ramps)} wave={len(wave)}")
+    if cmd_horizons!=[20_000_000,3_000_000_000]:
+        raise RuntimeError(f"CH05_56_UNEXPECTED_TRAJECTORY_HORIZONS {cmd_horizons}")
+    startup_interval_s=wave[0]["t"]-ramps[0]["t"]
+    if not 3.0<=startup_interval_s<=6.5:
+        raise RuntimeError(f"CH05_56_NO_MEASURED_STARTUP_WAIT duration={startup_interval_s}")
+    cmd_dts=[b["t"]-a["t"] for a,b in zip(wave,wave[1:])]
     def span(values,index):
         ar=[x["positions"][index] for x in values]
         return max(ar)-min(ar)
-    cmd_spans=[span(cmd,i) for i in range(4)]
+    cmd_spans=[span(wave,i) for i in range(4)]
     meas_spans=[span(meas,i) for i in range(4)]
     n=len(cmd_dts)
     dts=sorted(cmd_dts)
@@ -76,28 +87,51 @@ try:
         raise RuntimeError(f"CH05_56_SINE_WAVE_NOT_PUBLISHED spans={cmd_spans}")
     if meas_spans[0]<.15 or meas_spans[3]<.15:
         raise RuntimeError(f"CH05_56_PHYSICAL_JOINT_FEEDBACK_NO_MOTION spans={meas_spans}")
-    if not all(x==20_000_000 for x in cmd_horizons):
-        raise RuntimeError(f"CH05_56_ORIGINAL_TRAJECTORY_HORIZON_CHANGED {cmd_horizons}")
+    # Inspect physical feedback during the initial ramp, not just
+    # message timing or after-the-fact trajectory 'success' log lines.
+    ramp_feedback=[m["positions"] for m in meas
+                   if ramps[0]["t"]<=m["t"]<=wave[0]["t"]]
+    if len(ramp_feedback)<30:
+        raise RuntimeError("CH05_56_RAMP_JOINT_FEEDBACK_MISSING")
+    r2=[p[1] for p in ramp_feedback]
+    r3=[p[2] for p in ramp_feedback]
+    if min(r2)<-0.75 or max(r2)>.25 or min(r3)<-.25 or max(r3)>1.05:
+        raise RuntimeError(
+            f"CH05_56_START_RAMP_OVERSHOOT joint2=[{min(r2)},{max(r2)}] "
+            f"joint3=[{min(r3)},{max(r3)}]"
+        )
+    steady=[m["positions"] for m in meas
+            if wave[0]["t"]<=m["t"]<=wave[0]["t"]+1.0]
+    if len(steady)<20:
+        raise RuntimeError("CH05_56_NO_STEADY_POSE_FEEDBACK")
+    errors=[max(abs(p[1]+.5),abs(p[2]-.8)) for p in steady]
+    if sorted(errors)[len(errors)//2]>.18:
+        raise RuntimeError("CH05_56_START_POSE_NOT_MEASURED_AFTER_RAMP")
     first=cmd[0]["positions"]
     report={
         "chapter":"Ch05","section":"5.6","status":"SCOPED_PASS",
         "source_sha":os.environ.get("RUN_SOURCE_SHA","UNKNOWN"),
-        "scope":"original_50hz_wave_trajectory_and_real_gazebo_joint_motion",
-        "command_count":len(cmd),"measured_state_count":len(meas),
+        "scope":"measured_3s_start_ramp_then_original_50hz_wave_real_gazebo",
+        "command_count":len(cmd),"wave_command_count":len(wave),
+        "measured_state_count":len(meas),
         "command_median_interval_s":median_dt,
         "observed_command_hz":actual_rate,
         "command_spans_rad":cmd_spans,
         "measured_spans_rad":meas_spans,
         "first_observed_command_rad":first,
+        "startup_ramp_goal_duration_sec":3.0,
+        "startup_to_wave_interval_sec":startup_interval_s,
+        "ramp_joint2_observed_min_max_rad":[min(r2),max(r2)],
+        "ramp_joint3_observed_min_max_rad":[min(r3),max(r3)],
         "original_trajectory_horizons_ns":cmd_horizons,
-        "first_posture_jump_risk":"KNOWN_INITIAL_JOINT2_MINUS_0P5_AND_JOINT3_PLUS_0P8_IN_20MS",
+        "startup_20ms_posture_jump":"REMOVED_VERIFIED_ONE_3S_GOAL",
         "long_run_tracking_error":"NOT_RUN",
-        "safe_start_ramp":"NOT_RUN",
+        "safe_start_ramp":"SCOPED_PASS_GAZEBO_SIM_ONLY",
         "actual_hardware":"NOT_RUN","gui":"NOT_RUN",
         "simple_controller_retest":"NOT_RUN","ch10":"HOLD",
     }
     OUT.write_text(json.dumps(report,ensure_ascii=False,sort_keys=True,indent=2)+"\n")
-    print("CH05_56_REAL_GAZEBO_WAVE_COMMAND_AND_JOINT_MOVEMENT_SCOPED_PASS "
+    print("CH05_56_REAL_GAZEBO_WAVE_3S_RAMP_AND_JOINT_MOVEMENT_SCOPED_PASS "
           f"commands={len(cmd)} states={len(meas)} "
           f"command_spans={cmd_spans} measured_spans={meas_spans} "
           f"median_dt={median_dt:.4f}",flush=True)
