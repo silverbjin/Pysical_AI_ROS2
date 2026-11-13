@@ -1,0 +1,63 @@
+name: Book Ch01 1.6 actual half-second heartbeat and clean exit (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'ci/ch01_16_half_second_probe.py'
+      - '.github/workflows/book-ch01-16-timer.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  timer:
+    name: Isolated original ROS node source copy; 0.5s heartbeat with Ctrl+C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci/ch01_16_half_second_probe.py
+            Ch01/robot_ws/src/my_robot_controller/my_robot_controller/simple_controller.py
+      - name: Record tested code and prebuilt digest
+        run: |
+          mkdir -p ci-results/ch01-16
+          git rev-parse HEAD > ci-results/ch01-16/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/ch01-16/image.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse existing exact Jazzy image
+        run: docker pull "$(cat ci-results/ch01-16/image.txt)"
+      - name: Test only missing 0.5-second timer and shutdown; not original 1Hz
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=12s 100s \
+            docker run --rm --init --pull=never --shm-size=256m \
+              -e CH01_16_OUT=/work/ci-results/ch01-16 \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch01-16/source_sha.txt)" \
+              -e ROS_DOMAIN_ID=16 -e ROS_LOCALHOST_ONLY=1 \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch01-16/image.txt)" \
+              bash -c 'source /opt/ros/jazzy/setup.bash && python3 ci/ch01_16_half_second_probe.py' \
+              2>&1 | tee ci-results/ch01-16/console.log
+      - name: Report scope
+        if: always()
+        run: |
+          {
+            echo '## Ch01 1.6: timer edit exercise on a disposable copy, original source unchanged'
+            echo 'Original 1Hz accepted proof was not rerun; 0.5s actual ROS timer interval and shutdown only.'
+            echo 'GUI/OOP manual explanation NOT_RUN; Ch10 HOLD.'
+            cat ci-results/ch01-16/result.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch01-16-timer-${{ github.run_id }}
+          path: ci-results/ch01-16/
+          retention-days: 14
+          if-no-files-found: warn
