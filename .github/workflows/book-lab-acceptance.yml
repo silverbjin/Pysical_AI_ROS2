@@ -89,7 +89,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
   ch02-action-pilot:
-    if: ${{ github.event_name == 'pull_request' || (inputs.level == 'pilot' && (inputs.chapter == 'all' || inputs.chapter == 'Ch02')) }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.level == 'pilot' && (inputs.chapter == 'all' || inputs.chapter == 'Ch02') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -120,7 +120,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
   ch12-mujoco-pilot:
-    if: ${{ github.event_name == 'pull_request' || (inputs.level == 'pilot' && (inputs.chapter == 'all' || inputs.chapter == 'Ch12')) }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.level == 'pilot' && (inputs.chapter == 'all' || inputs.chapter == 'Ch12') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
