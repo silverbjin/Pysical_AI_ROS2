@@ -93,10 +93,19 @@ Path(sys.argv[2]).write_text(json.dumps({
 print(f"CH04_44_ORIGINAL_TF_LISTENER_REAL_LOOKUP_DISTANCE_PASS count={len(hits)}",flush=True)
 PY
 stage ORIGINAL_ROS_NODES_CTRL_C_SHUTDOWN
+# Collect both exits exactly once, even when one child fails.
+set +e
 stop_group "$LISTEN_PID" LISTENER
+LRC=$?
 LISTEN_PID=
 stop_group "$BROADCAST_PID" BROADCASTER
+BRC=$?
 BROADCAST_PID=
+set -e
+if (( LRC != 0 || BRC != 0 )); then
+  echo "CH04_43_44_ABNORMAL_NODE_EXIT listener=$LRC broadcaster=$BRC" >&2
+  exit 75
+fi
 sleep .5
 ros2 node list > "$OUT/nodes_after.txt"
 ! grep -Eq '^/(tf_listener_node|dynamic_tf_broadcaster_node)$' "$OUT/nodes_after.txt"
