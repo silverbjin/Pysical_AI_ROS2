@@ -44,6 +44,10 @@
       <!-- <topic>camera/image_raw</topic>
       <topic>camera/camera_info</topic> -->
       <topic>/camera</topic>
+      <!-- Harmonic: publish Image/CameraInfo in the existing ROS optical TF.
+           Otherwise Gazebo defaults to my_robot/link_wrist/rgbd_camera,
+           which is not a TF frame, despite real data being present. -->
+      <gz_frame_id>camera_optical_frame</gz_frame_id>
       
       <camera>
         <horizontal_fov>1.047</horizontal_fov>
