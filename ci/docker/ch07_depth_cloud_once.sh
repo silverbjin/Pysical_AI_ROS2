@@ -242,10 +242,9 @@ start bridge ros2 run ros_gz_bridge parameter_bridge \
   '/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image' \
   '/camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked'
 timeout 10s gz topic -l > "$OUT/gz_topics.txt" || true
-grep -q '^/camera/depth_image
- "$OUT/gz_topics.txt"
-grep -q '^/camera/points
- "$OUT/gz_topics.txt"
+# Fixed-string whole-line checks avoid malformed shell quote regexes.
+grep -Fxq '/camera/depth_image' "$OUT/gz_topics.txt"
+grep -Fxq '/camera/points' "$OUT/gz_topics.txt"
 stage MEASURE_REAL_DEPTH_PIXELS_AND_POINTCLOUD_XYZ
 timeout --signal=TERM --kill-after=5s 42s \
   python3 "$ROOT/ci/docker/verify_depth_cloud.py" "$OUT/depth_cloud_data.json" \
