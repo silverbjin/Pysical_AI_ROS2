@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SIMULATION ONLY. Run the book's actual RGBD Xacro in an isolated headless world.
+# Ch07 #127: original RGBD Xacro + OGRE2, official --headless-rendering EGL.
 set -Eeuo pipefail
 set +u; source /opt/ros/jazzy/setup.bash; set -u
 ROOT=/work
@@ -13,37 +13,121 @@ echo "source_sha=${RUN_SOURCE_SHA:-UNKNOWN}" > "$OUT/environment.txt"
 echo "partition=$GZ_PARTITION" >> "$OUT/environment.txt"
 STAGE=INIT
 OWNED=()
+OWNED_NAMES=()
 stage() { STAGE="$1"; echo "STAGE=$STAGE" | tee -a "$OUT/stages.log"; }
 start() {
   local name="$1"; shift
-  "$@" > "$OUT/$name.log" 2>&1 &
+  # Own the entire child group. Docker --init reaps any detached zombies.
+  setsid "$@" > "$OUT/$name.log" 2>&1 &
   OWNED+=("$!")
-  echo "START:$name:pid=$!" | tee -a "$OUT/stages.log"
+  OWNED_NAMES+=("$name")
+  echo "START:$name:pgid=$!" | tee -a "$OUT/stages.log"
+}
+group_running() {
+  local pgid="$1"
+  # Ignore zombie leaders; shell wait() below reaps them.
+  ps -eo pgid=,stat= | awk -v g="$pgid" '$1==g && $2 !~ /^Z/ {active=1} END {exit !active}'
 }
 stop_owned() {
-  local pid="$1"
-  kill -INT "$pid" 2>/dev/null || true
-  for i in $(seq 1 12); do
-    if ! kill -0 "$pid" 2>/dev/null; then wait "$pid" 2>/dev/null || true; return; fi
-    sleep .15
+  local pgid="$1" name="$2" original_rc="$3" attempt exit_code
+  if [[ "$name" == "gzserver" && "$original_rc" -eq 0 ]]; then
+    # Do not deliver SIGINT inside a rendering / gz-transport Publish.
+    # Gazebo Harmonic supports a bounded, finite server run via --iterations;
+    # let it exit under its own event loop, not the upstream signal handler
+    # (gazebosim/gz-sim#4173). This is ONLY a teardown change.
+    echo "GAZEBO_FINITE_ITERATIONS_WAIT_BEGIN pgid=$pgid" >> "$OUT/stages.log"
+    for attempt in $(seq 1 240); do
+      if ! group_running "$pgid"; then
+        exit_code=0
+        wait "$pgid" || exit_code=$?
+        echo "GAZEBO_NATURAL_ITERATIONS_EXIT_RC=$exit_code" >> "$OUT/stages.log"
+        [[ "$exit_code" -eq 0 ]]
+        return $?
+      fi
+      sleep .25
+    done
+    echo "GAZEBO_FINITE_ITERATIONS_TIMEOUT_AFTER_60S pgid=$pgid" >> "$OUT/stages.log"
+  fi
+  if [[ "$name" == "gzserver" ]] && group_running "$pgid"; then
+    # Harmonic plain gz sim can deadlock in the signal handler while a
+    # Sensors render thread holds gz-transport locks (upstream #4173).
+    # Request an orderly stop from Gazebo's server API BEFORE SIGINT.
+    echo "GAZEBO_SERVER_CONTROL_STOP_REQUESTED pgid=$pgid" >> "$OUT/stages.log"
+    timeout 5s gz service -s /server_control \
+      --reqtype gz.msgs.ServerControl --reptype gz.msgs.Boolean \
+      --timeout 1500 --req 'stop: true' \
+      > "$OUT/server_control_stop.log" 2>&1 || true
+    for attempt in $(seq 1 20); do
+      if ! group_running "$pgid"; then
+        wait "$pgid" 2>/dev/null || true
+        echo "SHUTDOWN_GAZEBO_SERVER_CONTROL_CLEAN name=$name pgid=$pgid" >> "$OUT/stages.log"
+        return 0
+      fi
+      sleep .15
+    done
+    echo "GAZEBO_SERVER_CONTROL_FALLBACK_SIGNAL pgid=$pgid" >> "$OUT/stages.log"
+  fi
+  if ! group_running "$pgid"; then
+    wait "$pgid" 2>/dev/null || true
+    echo "SHUTDOWN_ALREADY_EXITED name=$name pgid=$pgid" >> "$OUT/stages.log"
+    return 0
+  fi
+  kill -INT -- "-$pgid" 2>/dev/null || true
+  for attempt in $(seq 1 25); do
+    if ! group_running "$pgid"; then
+      wait "$pgid" 2>/dev/null || true
+      echo "SHUTDOWN_SIGINT_CLEAN name=$name pgid=$pgid" >> "$OUT/stages.log"
+      return 0
+    fi
+    sleep .2
   done
-  echo "SHUTDOWN_ESCALATED_TERM pid=$pid" | tee -a "$OUT/stages.log"
-  kill -TERM "$pid" 2>/dev/null || true
-  for i in $(seq 1 12); do
-    if ! kill -0 "$pid" 2>/dev/null; then wait "$pid" 2>/dev/null || true; return; fi
-    sleep .15
+  kill -TERM -- "-$pgid" 2>/dev/null || true
+  echo "SHUTDOWN_ESCALATED_TERM name=$name pgid=$pgid" >> "$OUT/stages.log"
+  for attempt in $(seq 1 25); do
+    if ! group_running "$pgid"; then
+      wait "$pgid" 2>/dev/null || true
+      echo "SHUTDOWN_SIGTERM_CLEAN name=$name pgid=$pgid" >> "$OUT/stages.log"
+      return 0
+    fi
+    sleep .2
   done
-  kill -KILL "$pid" 2>/dev/null || true
-  wait "$pid" 2>/dev/null || true
+  # Diagnostics first; never promote an upstream shutdown deadlock to PASS.
+  ps -eo pid=,ppid=,pgid=,stat=,etime=,comm= |
+    awk -v g="$pgid" '$3==g {print}' > "$OUT/shutdown_stuck_${name}.txt" 2>/dev/null || true
+  kill -KILL -- "-$pgid" 2>/dev/null || true
+  wait "$pgid" 2>/dev/null || true
+  echo "SHUTDOWN_ESCALATED_SIGKILL name=$name pgid=$pgid" >> "$OUT/stages.log"
+  return 1
 }
 cleanup() {
-  local code="$?"
+  local original_rc="$?"
+  local final_rc="$original_rc" idx shutdown="OWNED_GROUPS_EXITED_NO_SIGKILL"
   trap - EXIT
   set +e
-  printf '{"chapter":"Ch07","scope":"CAMERA_GAZEBO_TO_ROS_HEADLESS","status":"%s","exit_code":%d,"last_stage":"%s","whole_chapter_accepted":false}\n' \
-    "$([[ "$code" -eq 0 ]] && echo PASS || echo FAIL)" "$code" "$STAGE" > "$OUT/result.json"
-  for ((i=${#OWNED[@]}-1;i>=0;i--)); do stop_owned "${OWNED[$i]}"; done
-  exit "$code"
+  # Never use a variable also used inside stop_owned (Bash dynamic scoping).
+  for ((idx=${#OWNED[@]}-1;idx>=0;idx--)); do
+    stop_owned "${OWNED[$idx]}" "${OWNED_NAMES[$idx]}" "$original_rc" || shutdown="SIGKILL_ESCALATION"
+  done
+  if [[ "$shutdown" == "SIGKILL_ESCALATION" && "$final_rc" -eq 0 ]]; then
+    final_rc=75
+  fi
+  if [[ -f "$HOME/.gz/rendering/ogre2.log" ]]; then
+    cp -f "$HOME/.gz/rendering/ogre2.log" "$OUT/ogre2.log" 2>/dev/null || true
+  fi
+  python3 - "$OUT/result.json" "$STAGE" "$original_rc" "$final_rc" "$shutdown" <<'PYRESULT'
+import json,sys
+from pathlib import Path
+out,stage,original,final,shutdown=sys.argv[1:]
+record={"chapter":"Ch07","section":"7.2","scope":"OGRE2_ORIGINAL_RGBD_OFFICIAL_EGL_HEADLESS",
+ "status":"PASS" if int(final)==0 else "FAIL","last_stage":stage,
+ "original_exit_code":int(original),"exit_code":int(final),
+ "shutdown":shutdown,"renderer":"ogre2","rendering_mode":"official_egl_headless",
+ "whole_chapter_accepted":False,"depth_alignment":"NOT_RUN",
+ "gazebo_gui":"NOT_RUN","ch10":"HOLD"}
+Path(out).write_text(json.dumps(record,indent=2,sort_keys=True)+"\n")
+PYRESULT
+  echo "CH07_127_FINAL stage=$STAGE rc=$final_rc shutdown=$shutdown" | tee -a "$OUT/stages.log"
+  exit "$final_rc"
 }
 trap cleanup EXIT
 WS="$ROOT/Ch07/ros2_ws"
@@ -58,22 +142,58 @@ xacro "$WS/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.urdf.xacro" > "$OU
 check_urdf "$OUT/camera.urdf" > "$OUT/check_urdf.txt"
 grep -q 'name="camera_optical_frame"' "$OUT/camera.urdf"
 grep -q 'name="rgbd_camera"' "$OUT/camera.urdf"
-stage RENDERER_XVFB_DISPLAY
-# Retry only the renderer failure boundary: hostless OGRE2 previously crashed in
-# CreateMaterials() before any camera frame was published. Retain raw crash logs.
-if ! command -v Xvfb >/dev/null 2>&1; then
-  export DEBIAN_FRONTEND=noninteractive
-  timeout --signal=TERM --kill-after=5s 60s apt-get update -qq \
-    > "$OUT/apt_update.log" 2>&1
-  timeout --signal=TERM --kill-after=5s 70s \
-    apt-get install -y --no-install-recommends xvfb \
-    > "$OUT/apt_xvfb.log" 2>&1
+stage SINGLE_WORLD_SENSORS_SYSTEM_CONTRACT
+python3 - "$OUT/camera.urdf" "$ROOT/ci/docker/fixtures/ch07_camera_world.sdf" "$OUT/sensors_system_contract.json" <<'PY'
+import json,sys,xml.etree.ElementTree as ET
+from pathlib import Path
+robot=ET.parse(sys.argv[1]).getroot()
+world=ET.parse(sys.argv[2]).getroot()
+def sensor_systems(root):
+    return [p for p in root.findall('.//plugin')
+            if p.attrib.get('name')=='gz::sim::systems::Sensors' and
+            p.attrib.get('filename')=='gz-sim-sensors-system']
+model_systems=sensor_systems(robot)
+world_systems=sensor_systems(world)
+rgbd=robot.findall('.//sensor[@type="rgbd_camera"]')
+assert len(model_systems)==0, f"CH07_127_DUPLICATE_ROBOT_SENSORS count={len(model_systems)}"
+assert len(world_systems)==1, f"CH07_127_WORLD_SENSORS_COUNT={len(world_systems)}"
+assert len(rgbd)==1, f"CH07_127_ORIGINAL_RGBD_COUNT={len(rgbd)}"
+assert world_systems[0].findtext('render_engine')=='ogre2'
+report={"world_sensors_system_count":1,"robot_sensors_system_count":0,
+        "original_rgbd_sensor_count":1,"engine":"ogre2"}
+Path(sys.argv[3]).write_text(json.dumps(report,indent=2,sort_keys=True)+"\n")
+print("CH07_127_SINGLE_WORLD_SENSORS_STATIC_CONTRACT_PASS",flush=True)
+PY
+stage OFFICIAL_EGL_HEADLESS_RENDERER_PREFLIGHT
+# Historical -s/Xvfb variants both SIGABRT. This test changes ONLY the
+# official Gazebo rendering mode, not URDF, OGRE2 engine or base-image digest.
+unset DISPLAY
+export EGL_PLATFORM=surfaceless
+{
+  echo "rendering_mode=OGRE2_OFFICIAL_EGL_HEADLESS"
+  echo "EGL_PLATFORM=$EGL_PLATFORM"
+  echo "LIBGL_ALWAYS_SOFTWARE=$LIBGL_ALWAYS_SOFTWARE"
+  echo "DISPLAY=${DISPLAY-UNSET}"
+  echo "GZ_SIM_RESOURCE_PATH=${GZ_SIM_RESOURCE_PATH-UNSET}"
+  ls -l /dev/dri /dev/dxg 2>&1 || true
+} >> "$OUT/environment.txt"
+timeout 7s gz sim --help > "$OUT/gz_sim_help.txt" 2>&1 || true
+if ! grep -q -- '--iterations' "$OUT/gz_sim_help.txt"; then
+  echo "CH07_127_GAZEBO_FINITE_ITERATIONS_UNSUPPORTED" | tee "$OUT/preflight_error.txt"
+  exit 65
 fi
-export DISPLAY=:98
-unset EGL_PLATFORM
-start xvfb Xvfb :98 -screen 0 1024x768x24 -nolisten tcp
-sleep 1
-kill -0 "${OWNED[${#OWNED[@]}-1]}"
+if ! grep -q -- '--headless-rendering' "$OUT/gz_sim_help.txt"; then
+  echo "CH07_127_OFFICIAL_HEADLESS_FLAG_UNSUPPORTED" | tee "$OUT/preflight_error.txt"
+  exit 64
+fi
+dpkg-query -W -f='${binary:Package}=${Version}\n' \
+  'gz-sim*' 'libgz-rendering*' 'libgz-sensors*' 'libegl*' 'libgl1-mesa*' 'libogre*' \
+  > "$OUT/renderer_packages.txt" 2>&1 || true
+for diagnostic in eglinfo glxinfo; do
+  if command -v "$diagnostic" >/dev/null 2>&1; then
+    timeout 6s "$diagnostic" > "$OUT/${diagnostic}.txt" 2>&1 || true
+  fi
+done
 stage ROBOT_DESCRIPTION_TF
 python3 - "$OUT/camera.urdf" "$OUT/robot_description.yaml" <<'PY'
 import sys
@@ -87,9 +207,12 @@ PY
 start rsp ros2 run robot_state_publisher robot_state_publisher \
   --ros-args --params-file "$OUT/robot_description.yaml"
 stage GAZEBO_WORLD
-start gzserver gz sim -s -r -v 2 "$ROOT/ci/docker/fixtures/ch07_camera_world.sdf"
+# Running a finite number of physics iterations avoids the upstream
+# intermittent SIGINT -> Sensors render-thread shutdown deadlock. 12 seconds
+# of simulated time is safely longer than the original 3-image smoke period.
+start gzserver gz sim -s -r -v 4 --headless-rendering --iterations 12000 "$ROOT/ci/docker/fixtures/ch07_camera_world.sdf"
 READY=0
-for i in $(seq 1 30); do
+for attempt in $(seq 1 30); do
   if timeout 4s gz service -l | grep -Fq /world/book_camera/create; then READY=1; break; fi
   sleep .5
 done
@@ -99,6 +222,21 @@ timeout --signal=TERM --kill-after=5s 40s \
   ros2 run ros_gz_sim create -world book_camera -name my_robot \
   -file "$OUT/camera.urdf" -z 0.15 2>&1 | tee "$OUT/create.log"
 grep -q 'Entity creation successful' "$OUT/create.log"
+stage INDEPENDENT_GAZEBO_SENSORS_LOAD_COUNT
+# Preserve full gzserver.log. The previous crash had 2 Sensors systems and
+# an identical OGRE HLMS Datablock hash; the fixed world must load exactly 1.
+python3 - "$OUT/gzserver.log" "$OUT/sensors_runtime_count.json" <<'PY'
+import json,re,sys
+from pathlib import Path
+text=Path(sys.argv[1]).read_text(errors='replace')
+text=re.sub(r'\x1b\[[0-9;]*[A-Za-z]', '', text)
+count=len(re.findall(r'Loaded system \[gz::sim::systems::Sensors\]',text))
+Path(sys.argv[2]).write_text(json.dumps({"loaded_sensors_systems":count},
+                                          indent=2,sort_keys=True)+"\n")
+if count != 1:
+    raise RuntimeError(f"CH07_127_RUNTIME_SENSORS_DUPLICATED count={count}")
+print("CH07_127_EXACTLY_ONE_RUNTIME_SENSORS_SYSTEM_PASS",flush=True)
+PY
 stage CAMERA_BRIDGE
 start bridge ros2 run ros_gz_bridge parameter_bridge \
   '/camera/image@sensor_msgs/msg/Image[gz.msgs.Image' \
@@ -111,4 +249,4 @@ timeout --signal=TERM --kill-after=5s 35s \
   2>&1 | tee "$OUT/camera_probe.log"
 grep -q BOOK_CH07_CAMERA_PASS "$OUT/camera_probe.log"
 stage CAMERA_PASS
-echo "CH07_CAMERA_IMAGE_INTRINSICS_TF_PASS_GUI_NOT_RUN" | tee "$OUT/verdict.txt"
+echo "CH07_127_ORIGINAL_OGRE2_OFFICIAL_EGL_IMAGE_INTRINSICS_TF_PASS_GUI_NOT_RUN" | tee "$OUT/verdict.txt"

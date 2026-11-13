@@ -1,11 +1,9 @@
 name: Book next camera and localization verification (Ch10 HOLD)
 on:
   pull_request:
+    # Ch07 #127 has its own exclusive EGL-headless workflow. Do not start
+    # the accepted Ch11 Gazebo SLAM regression on camera-only changes.
     paths:
-      - '.github/workflows/book-next-vision-localization.yml'
-      - 'ci/docker/ch07_camera_once.sh'
-      - 'ci/docker/fixtures/ch07_camera_world.sdf'
-      - 'ci/docker/verify_camera.py'
       - 'ci/docker/ch11_localization_once.sh'
       - 'ci/docker/verify_localization.py'
       - 'ci/verify_preserved_boundaries.py'
