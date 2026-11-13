@@ -1,0 +1,79 @@
+name: Book Ch08 8.6 actual short PPO training and save/reload (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'Ch08/ros2_ws/train_reach.py'
+      - 'ci/ch08_86_verify_receipt.py'
+      - '.github/workflows/book-ch08-86-ppo-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: book-ch08-ppo-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  actual-ppo-smoke:
+    name: Original Ch08 train_reach entrypoint: real update ZIP reload and inference
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            Ch08
+            ci/ch08_86_verify_receipt.py
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: Ch08/ros2_ws/train_reach.py
+      - name: Record source and exact runtime scope
+        run: |
+          mkdir -p ci-results/ch08-86
+          git rev-parse HEAD > ci-results/ch08-86/source_sha.txt
+          echo 'Ch08 8.6: actual small gradient update, saved ZIP and deterministic rollout; no long training and no Ch10' > ci-results/ch08-86/scope.txt
+      - name: Install isolated CPU-only MuJoCo/PPO dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            --index-url https://download.pytorch.org/whl/cpu 'torch==2.5.1+cpu'
+          python -m pip install --disable-pip-version-check \
+            'mujoco==3.3.7' 'numpy==2.2.6' \
+            'gymnasium==1.1.1' 'stable-baselines3==2.6.0' 'tensorboard==2.19.0'
+          python -m pip freeze > ci-results/ch08-86/pip_freeze.txt
+      - name: Run original book PPO training entrypoint in safe smoke mode
+        env:
+          CH08_86_CI_SCOPE: '1'
+        run: |
+          set -euo pipefail
+          cd Ch08/ros2_ws
+          mkdir -p ../../ci-results/ch08-86
+          export RUN_SOURCE_SHA="$(cat ../../ci-results/ch08-86/source_sha.txt)"
+          timeout --signal=TERM --kill-after=15s 190s \
+            python train_reach.py --mode smoke --seed 42 \
+            --output-dir ../../ci-results/ch08-86/run \
+            2>&1 | tee ../../ci-results/ch08-86/train.log
+      - name: Independently verify model, gradient and event evidence
+        run: |
+          set -euo pipefail
+          python ci/ch08_86_verify_receipt.py ci-results/ch08-86/run \
+            2>&1 | tee ci-results/ch08-86/audit.log
+      - name: Explicit evidence and exclusions
+        if: always()
+        run: |
+          {
+            echo '## Ch08 §8.6 real PPO tiny training'
+            echo 'Actual gradient update, model ZIP, restored policy action and TensorBoard event files are scope; NOT goal success rate.'
+            echo 'Other accepted Ch08 model physics not rerun; no Ch10 execution.'
+            cat ci-results/ch08-86/source_sha.txt || true
+            cat ci-results/ch08-86/audit.log || true
+            cat ci-results/ch08-86/run/receipt.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch08-86-ppo-${{ github.run_id }}
+          path: ci-results/ch08-86/
+          retention-days: 14
+          if-no-files-found: warn
