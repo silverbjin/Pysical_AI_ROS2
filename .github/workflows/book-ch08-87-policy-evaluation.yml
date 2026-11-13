@@ -1,0 +1,78 @@
+name: Book Ch08 8.7 existing PPO policy true-distance evaluation (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'Ch08/ros2_ws/evaluate_robot.py'
+      - 'Ch08/ros2_ws/rl_env.py'
+      - 'ci/ch08_87_verify_receipt.py'
+      - '.github/workflows/book-ch08-87-policy-evaluation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: book-ch08-87-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  existing-policy-metrics:
+    name: Bounded real saved PPO model load, per-episode distance and success metrics
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch08
+            ci/ch08_87_verify_receipt.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Record exact tested source SHA and data provenance
+        run: |
+          mkdir -p ci-results/ch08-87
+          git rev-parse HEAD > ci-results/ch08-87/source_sha.txt
+          echo 'Existing committed Ch08 PPO ZIP; no retraining or GUI' > ci-results/ch08-87/scope.txt
+      - name: Install exact previous Ch08 CPU-only runtime (no new image)
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            --index-url https://download.pytorch.org/whl/cpu 'torch==2.5.1+cpu'
+          python -m pip install --disable-pip-version-check \
+            'mujoco==3.3.7' 'numpy==2.2.6' \
+            'gymnasium==1.1.1' 'stable-baselines3==2.6.0'
+          python -m pip freeze > ci-results/ch08-87/pip_freeze.txt
+      - name: Run original evaluator with ten fixed independent episode seeds
+        run: |
+          set -euo pipefail
+          cd Ch08/ros2_ws
+          export RUN_SOURCE_SHA="$(cat ../../ci-results/ch08-87/source_sha.txt)"
+          timeout --signal=TERM --kill-after=10s 135s python evaluate_robot.py \
+            --model models/ppo_reach_final.zip \
+            --episodes 10 --max-steps 300 --seed 1000 \
+            --output-json ../../ci-results/ch08-87/evaluation_receipt.json \
+            2>&1 | tee ../../ci-results/ch08-87/evaluate.log
+      - name: Independently audit observed distances against immutable existing ZIP
+        run: |
+          set -euo pipefail
+          python ci/ch08_87_verify_receipt.py \
+            ci-results/ch08-87/evaluation_receipt.json \
+            Ch08/ros2_ws/models/ppo_reach_final.zip \
+            2>&1 | tee ci-results/ch08-87/independent_audit.log
+      - name: Report strictly bounded performance claim
+        if: always()
+        run: |
+          {
+            echo '## Ch08 8.7 real deterministic saved PPO evaluation'
+            echo 'Observed success rate and EE-to-target distance for 10 fixed seeds, max 300 steps/episode.'
+            echo 'No new training, no performance threshold and no quality certification.'
+            echo 'RGB renderer, RecordVideo, TensorBoard browser, hardware NOT_RUN; Ch10 HOLD.'
+            cat ci-results/ch08-87/independent_audit.log || true
+            cat ci-results/ch08-87/evaluation_receipt.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch08-87-policy-${{ github.run_id }}
+          path: ci-results/ch08-87/
+          retention-days: 14
+          if-no-files-found: warn
