@@ -4,6 +4,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import Image
 # 수정됨: Point 대신 PointStamped 사용 (Header 포함)
+from std_msgs.msg import Bool
 from geometry_msgs.msg import PointStamped 
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -33,6 +34,9 @@ class ObjectDetector(Node):
         
         # 수정됨: PointStamped 타입으로 변경
         self.coord_pub = self.create_publisher(PointStamped, '/camera/target_pixel', 10)
+        # Downstream consumers must not reuse a stale pixel after target loss.
+        self.valid_pub = self.create_publisher(Bool, '/camera/target_valid', 10)
+        self.min_area_px2 = float(self.declare_parameter('min_area_px2', 500.0).value)
 
         self.bridge = CvBridge()
         
@@ -63,11 +67,12 @@ class ObjectDetector(Node):
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+        valid = False
         if len(contours) > 0:
             c = max(contours, key=cv2.contourArea)
             area = cv2.contourArea(c)
 
-            if area > 50:
+            if area > self.min_area_px2:
                 M = cv2.moments(c)
                 if M["m00"] != 0:
                     cx = int(M["m10"] / M["m00"])
@@ -87,6 +92,11 @@ class ObjectDetector(Node):
                     point_msg.point.y = float(cy)
                     point_msg.point.z = float(area) 
                     self.coord_pub.publish(point_msg)
+                    valid = True
+
+        # Publish validity on *every* frame, including blank/insufficient area.
+        # PointStamped z remains pixel AREA, never metric depth.
+        self.valid_pub.publish(Bool(data=valid))
 
         # 결과 이미지 Publish
         try:
