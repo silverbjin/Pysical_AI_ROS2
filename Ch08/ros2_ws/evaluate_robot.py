@@ -14,6 +14,7 @@ from pathlib import Path
 import sys
 
 import numpy as np
+import torch
 from stable_baselines3 import PPO
 from rl_env import ReachEnv
 
@@ -118,6 +119,7 @@ def main():
     p.add_argument("--seed",type=int,default=1000)
     p.add_argument("--output-json",type=Path,default=None)
     args=p.parse_args()
+    torch.set_num_threads(2)
     model_file=args.model.resolve()
     if not model_file.is_file():
         raise FileNotFoundError(f"CH08_87_MODEL_MISSING {model_file}")
