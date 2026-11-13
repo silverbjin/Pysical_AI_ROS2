@@ -102,6 +102,28 @@ xacro "$WS/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.urdf.xacro" > "$OU
 check_urdf "$OUT/camera.urdf" > "$OUT/check_urdf.txt"
 grep -q 'name="camera_optical_frame"' "$OUT/camera.urdf"
 grep -q 'name="rgbd_camera"' "$OUT/camera.urdf"
+stage SINGLE_WORLD_SENSORS_SYSTEM_CONTRACT
+python3 - "$OUT/camera.urdf" "$ROOT/ci/docker/fixtures/ch07_camera_world.sdf" "$OUT/sensors_system_contract.json" <<'PY'
+import json,sys,xml.etree.ElementTree as ET
+from pathlib import Path
+robot=ET.parse(sys.argv[1]).getroot()
+world=ET.parse(sys.argv[2]).getroot()
+def sensor_systems(root):
+    return [p for p in root.findall('.//plugin')
+            if p.attrib.get('name')=='gz::sim::systems::Sensors' and
+            p.attrib.get('filename')=='gz-sim-sensors-system']
+model_systems=sensor_systems(robot)
+world_systems=sensor_systems(world)
+rgbd=robot.findall('.//sensor[@type="rgbd_camera"]')
+assert len(model_systems)==0, f"CH07_127_DUPLICATE_ROBOT_SENSORS count={len(model_systems)}"
+assert len(world_systems)==1, f"CH07_127_WORLD_SENSORS_COUNT={len(world_systems)}"
+assert len(rgbd)==1, f"CH07_127_ORIGINAL_RGBD_COUNT={len(rgbd)}"
+assert world_systems[0].findtext('render_engine')=='ogre2'
+report={"world_sensors_system_count":1,"robot_sensors_system_count":0,
+        "original_rgbd_sensor_count":1,"engine":"ogre2"}
+Path(sys.argv[3]).write_text(json.dumps(report,indent=2,sort_keys=True)+"\n")
+print("CH07_127_SINGLE_WORLD_SENSORS_STATIC_CONTRACT_PASS",flush=True)
+PY
 stage OFFICIAL_EGL_HEADLESS_RENDERER_PREFLIGHT
 # Historical -s/Xvfb variants both SIGABRT. This test changes ONLY the
 # official Gazebo rendering mode, not URDF, OGRE2 engine or base-image digest.
@@ -153,6 +175,21 @@ timeout --signal=TERM --kill-after=5s 40s \
   ros2 run ros_gz_sim create -world book_camera -name my_robot \
   -file "$OUT/camera.urdf" -z 0.15 2>&1 | tee "$OUT/create.log"
 grep -q 'Entity creation successful' "$OUT/create.log"
+stage INDEPENDENT_GAZEBO_SENSORS_LOAD_COUNT
+# Preserve full gzserver.log. The previous crash had 2 Sensors systems and
+# an identical OGRE HLMS Datablock hash; the fixed world must load exactly 1.
+python3 - "$OUT/gzserver.log" "$OUT/sensors_runtime_count.json" <<'PY'
+import json,re,sys
+from pathlib import Path
+text=Path(sys.argv[1]).read_text(errors='replace')
+text=re.sub(r'\x1b\[[0-9;]*[A-Za-z]', '', text)
+count=len(re.findall(r'Loaded system \[gz::sim::systems::Sensors\]',text))
+Path(sys.argv[2]).write_text(json.dumps({"loaded_sensors_systems":count},
+                                          indent=2,sort_keys=True)+"\n")
+if count != 1:
+    raise RuntimeError(f"CH07_127_RUNTIME_SENSORS_DUPLICATED count={count}")
+print("CH07_127_EXACTLY_ONE_RUNTIME_SENSORS_SYSTEM_PASS",flush=True)
+PY
 stage CAMERA_BRIDGE
 start bridge ros2 run ros_gz_bridge parameter_bridge \
   '/camera/image@sensor_msgs/msg/Image[gz.msgs.Image' \
