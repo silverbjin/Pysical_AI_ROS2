@@ -1,67 +1,75 @@
-# LAB_7_4_GUIDE_KO — 7.4절 OpenCV 기반 물체 인식 알고리즘 구현
+# Ch07 §7.4 — ROS 2 HSV 빨강 물체 검출: 0/1/2개 테스트
 
-> 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
-> 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 (2026-10-20) · 상태: **BLOCKED — 검출 로직은 존재, 메시지/등록 계약 불일치**
-> 실제 실행 검증: **미수행**. 아래 코드는 교재 실습 절차 및 실행 후 검증 기준이며, 출력 사례를 실측 결과로 제시하지 않는다.
+> ROS 2 Jazzy / OpenCV, synthetic ROS Image 전용 실행 검수. Ch07 §7.2 실제 Gazebo RGB-D camera는 Issue #127 BLOCKED 상태를 유지한다.
 
-## 실습 전 원칙
-- 리포지토리 루트의 **Ch07/ros2_ws**를 작업 공간으로 사용한다. 설치된 패키지명은 **vision_basics**이다(원고의 my_robot_vision과 다름).
-- 터미널마다 /opt/ros/jazzy/setup.bash → Ch07/ros2_ws/install/setup.bash 순서로 source한다. Ch08~Ch13 overlay가 AMENT_PREFIX_PATH에 섞이면 검증 결과가 바뀔 수 있다.
-- 실제 카메라, 액션 서버, Gazebo controller, MoveIt 2 설정은 **존재 확인이 완료된 후** 해당 노드나 미션을 실행한다.
-- ROS 관련 Python 바인딩은 Ubuntu/ROS apt 패키지를 우선한다. 글로벌 pip 설치가 ROS의 NumPy/Qt ABI와 충돌하지 않도록 주의한다.
-- Gazebo에서의 노드 실행, 실제 팔/그리퍼 명령은 사람이나 실물 하드웨어가 없는 독립 시뮬레이션에서만 검증한다.
+## 목표
 
-## 학습 목표
-HSV wrapping과 형태학적 열림/닫힘을 설명하고, 빨간색 영역의 최대 콘투어에서 (u,v)를 계산한다. **PointStamped.point.z는 3D 깊이가 아니라 mask 면적(px²)** 임을 반드시 구분한다.
+한 이미지에서 HSV 빨강 두 구간, Morphology opening/closing 및 최대 contour를 이용하여 물체의 중심 픽셀 (u,v)을 구하고 실제 ROS PointStamped로 발행한다. **PointStamped.point.z는 거리(m)가 아니라 검출된 contour 면적(px²)**이라는 기존 코드 계약을 이해한다.
+
+미검출 시 기존 좌표가 이후 단계로 그대로 재사용되지 않도록 별도의 /camera/target_valid Bool이 매 이미지에 대해 true/false로 발행된다. 하위 단계에서는 이 값이 false이거나 오래되면 이전 좌표를 사용하지 않아야 한다. 실제 깊이와 물리 XYZ는 Ch07 §7.5의 별도 과제이다.
+
+## 터미널 A — 패키지 준비 및 노드 실행
 
 ~~~bash
-# Ubuntu 24.04 / ROS 2 Jazzy 전제. Ch07 단독 overlay에서 실행
 source /opt/ros/jazzy/setup.bash
-cd Pysical_AI_ROS2/Ch07/ros2_ws
-echo "$ROS_DISTRO"
-printenv AMENT_PREFIX_PATH | tr ':' '\n' | head -20
-rosdep install --from-paths src --ignore-src -r -y
-colcon build --symlink-install --event-handlers console_direct+
+cd ~/Pysical_AI_ROS2/Ch07/ros2_ws
+sudo apt-get install -y ros-jazzy-cv-bridge python3-opencv python3-numpy
+colcon build --symlink-install --packages-select vision_basics
 source install/setup.bash
-ros2 pkg prefix vision_basics
+ros2 pkg executables vision_basics | grep object_detector
+ros2 run vision_basics object_detector --ros-args -p min_area_px2:=500.0
 ~~~
+
+**예상:** object_detector가 등록되어 실행되며, /camera/image_raw를 구독한다. 면적 임계값 500 px²는 교재 목표에 맞춘 기본값이다. 실제 Gazebo 카메라가 없더라도 노드는 ROS 입력을 기다린다.
+
+## 터미널 B — 실제 토픽과 합성 영상 검증
+
 ~~~bash
-grep -n 'PointStamped\|area >\|inRange\|morphologyEx' src/vision_basics/vision_basics/object_detector.py
-grep -A15 console_scripts src/vision_basics/setup.py
+source /opt/ros/jazzy/setup.bash
+cd ~/Pysical_AI_ROS2/Ch07/ros2_ws
+source install/setup.bash
+ros2 topic info /camera/target_pixel -v
+ros2 topic info /camera/target_valid -v
+ros2 topic info /camera/detection_result -v
+
+cd ~/Pysical_AI_ROS2
+CH07_74_RECEIPT="$PWD/ch07_74_receipt.json" \
+python3 ci/ch07_74_red_objects_probe.py
+
+echo "exit=$?"
+python3 -m json.tool "$PWD/ch07_74_receipt.json"
 ~~~
 
-## 카메라 없이 빨강 검출 실험
-~~~bash
-python3 - <<'PY'
-import cv2, numpy as np
-im=np.zeros((240,320,3),np.uint8)
-cv2.rectangle(im,(100,70),(180,150),(0,0,255),-1)
-hsv=cv2.cvtColor(im,cv2.COLOR_BGR2HSV)
-m=cv2.bitwise_or(cv2.inRange(hsv,np.array([0,100,100]),np.array([10,255,255])),
-                 cv2.inRange(hsv,np.array([170,100,100]),np.array([179,255,255])))
-k=np.ones((5,5),np.uint8)
-m=cv2.morphologyEx(cv2.morphologyEx(m,cv2.MORPH_OPEN,k),cv2.MORPH_CLOSE,k)
-cs,_=cv2.findContours(m,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-c=max(cs,key=cv2.contourArea)
-M=cv2.moments(c); cx=M['m10']/M['m00']; cy=M['m01']/M['m00']
-assert abs(cx-140)<2 and abs(cy-110)<2
-print('HSV centroid smoke PASS:',round(cx,2),round(cy,2),'area',cv2.contourArea(c))
-PY
+검증기에서 합성 bgr8 이미지 3종을 실제 ROS Publisher로 순서대로 전송한다.
+
+- 빨강 1개: (u,v)=(140,110) 주변 최대 2픽셀 오차, 면적 500 px² 초과, 유효 true.
+- 빨강 2개: 면적이 가장 큰 물체를 선택하여 (u,v)=(225,160) 주변 최대 2픽셀 오차 및 true.
+- 빨강 0개: 현재 프레임의 /camera/target_valid false, 해당 타임스탬프의 새 좌표 메시지 없음.
+- /camera/detection_result 토픽은 입력 header stamp·frame_id를 그대로 보존해야 한다.
+
+**정상 로그 예상:**
+
+~~~text
+CH07_74_CASE_1_RED_VALID_PASS ...
+CH07_74_CASE_2_MAX_CONTOUR_PASS ...
+CH07_74_CASE_3_EMPTY_INVALIDATION_PASS
+CH07_74_REAL_ROS_RED_TARGET_AND_INVALIDATION_SCOPED_PASS
+exit=0
 ~~~
 
-## ROS 검출 실습(노드 등록·영상 복구 이후)
-~~~bash
-ros2 run vision_basics object_detector
-ros2 topic info -v /camera/target_pixel
-ros2 topic echo --once /camera/target_pixel
-ros2 run rqt_image_view rqt_image_view
-~~~
+이 로그는 예상값이다. 실제 공개 CI에서 각 메시지, 결과 JSON 및 종료코드를 모두 검사한 후에만 PASS이다. 컨투어 소스만 존재하거나 ROS 토픽이 0건이면 NOT_RUN/FAIL 경계를 유지한다.
 
-관찰: 영상의 초록색 contour·중심점, 토픽의 header.frame_id/stamp, point.x/y=픽셀 좌표, point.z=면적(px²). 물체를 치웠을 때 이전 검출 좌표를 **유효 목표로 재사용하지 않는지** 하위 단계에서 확인한다.
+종료 시 터미널 A를 Ctrl+C로 닫고 B를 종료한다.
 
-**완료 기준:** 합성 이미지 중심 오차 2px 미만, 색상 경계 두 범위 검증, 실제 목표 0/1/2개 입력의 오검출·미검출 처리 기록. 서버 실행 PASS는 확인되지 않았다.
+## CI 및 증거
 
-## 기록·제출물
-실습자는 git rev-parse HEAD, ros2 doctor --report, colcon build 종료 코드, 실행한 명령, topic/TF/action 확인 결과, 정상 및 실패 사례(스크린샷·로그)를 함께 남긴다. **정적 점검 결과와 실측 결과를 혼동하지 않는다.**
+공개 workflow: .github/workflows/book-ch07-74-detector.yml
+단일 실행기: ci/ch07_74_once.sh
+검증기: ci/ch07_74_red_objects_probe.py
 
-관련 리뷰: [SECTION_7_4_REPORT_KO.md](SECTION_7_4_REPORT_KO.md).
+같은 고정 GHCR digest와 CV Bridge/OpenCV 런타임만 사용한다. 실물·Gazebo 렌더러를 시작하지 않는다. 소스 SHA, 실제 ROS 토픽 발행·구독, 단일/복수/미검출 시나리오와 validity, 픽셀 좌표 및 면적, 원본 JSON/로그, 종료 상태를 보존한다.
+
+- Ch07 §7.4 synthetic ROS Image 기반 빨강 HSV 검출: scoped PASS/FAIL(실측 기준).
+- Ch07 §7.2 Gazebo RGB-D 렌더링: BLOCKED #127.
+- Depth/3D XYZ, 실제 카메라 인식률, GUI, 물체 파지 및 실물 로봇: NOT_RUN.
+- Ch10: HOLD.
