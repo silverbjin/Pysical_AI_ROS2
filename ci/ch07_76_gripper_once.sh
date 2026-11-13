@@ -21,33 +21,62 @@ start(){
  OWNED+=("$!")
  echo "START:$name:pgid=$!" | tee -a "$OUT/stages.log"
 }
+log_shutdown(){
+  # No tee pipeline in teardown: it can retain the Docker stdout pipe.
+  printf '%s\n' "$1" >> "$OUT/teardown_trace.log"
+  printf '%s\n' "$1" >&2
+}
 stop_owned(){
  local pgid="$1"
- # Kill the whole owned ROS/Gazebo process group, not just its wrapper PID.
- # Never call unbounded wait() during EXIT trap.
+ log_shutdown "CH07_76_STOP_START_PGID=$pgid"
+ # Actual descendant process group. Reaping remains delegated to Docker --init.
  kill -TERM -- "-$pgid" 2>/dev/null || true
- for i in $(seq 1 15); do
-   if ! kill -0 -- "-$pgid" 2>/dev/null; then return 0; fi
-   sleep .2
+ for i in $(seq 1 12); do
+   if ! kill -0 -- "-$pgid" 2>/dev/null; then
+     log_shutdown "CH07_76_STOP_TERM_EXIT_PGID=$pgid"
+     return 0
+   fi
+   sleep 0.2
  done
+ log_shutdown "CH07_76_STOP_SIGKILL_ESCALATION_PGID=$pgid"
  kill -KILL -- "-$pgid" 2>/dev/null || true
  return 1
 }
 cleanup(){
- code="$?"; trap - EXIT; set +e
- shutdown=PROCESS_GROUPS_EXITED_AFTER_SIGTERM
+ local code="$?"
+ trap - EXIT
+ set +e
+ log_shutdown "CH07_76_EXIT_TRAP_ENTER code=$code owned_groups=${#OWNED[@]}"
+ # Preserve the real relationship between Docker PID1, Gazebo subprocesses
+ # and each PGID even when an external timeout later kills the container.
+ ps -eo pid,ppid,pgid,sid,stat,comm > "$OUT/teardown_ps_before.txt" 2>&1
+ local shutdown=PROCESS_GROUPS_EXITED_AFTER_SIGTERM
+ local i
  for ((i=${#OWNED[@]}-1;i>=0;i--)); do
-   if ! stop_owned "${OWNED[$i]}"; then shutdown=SIGKILL_ESCALATED; fi
+   log_shutdown "CH07_76_STOP_INDEX=$i PID=${OWNED[$i]}"
+   if ! stop_owned "${OWNED[$i]}"; then
+     shutdown=SIGKILL_ESCALATED
+   fi
+   log_shutdown "CH07_76_STOP_FINISHED_INDEX=$i"
  done
- if [[ "$shutdown" == SIGKILL_ESCALATED && "$code" -eq 0 ]]; then code=75; fi
- scope=SCOPED_PASS
- if [[ "${CH07_76_TEARDOWN_ONLY:-0}" == 1 ]]; then scope=TEARDOWN_SCOPE_PASS; fi
- status=$([[ "$code" == 0 ]] && echo "$scope" || echo FAIL)
+ ps -eo pid,ppid,pgid,sid,stat,comm > "$OUT/teardown_ps_after.txt" 2>&1
+ log_shutdown "CH07_76_TEARDOWN_ALL_GROUPS_PROCESSED status=$shutdown"
+ if [[ "$shutdown" == SIGKILL_ESCALATED && "$code" -eq 0 ]]; then
+   code=75
+ fi
+ local scope=SCOPED_PASS
+ if [[ "${CH07_76_TEARDOWN_ONLY:-0}" == 1 ]]; then
+   scope=TEARDOWN_SCOPE_PASS
+ fi
+ local status=FAIL
+ if [[ "$code" == 0 ]]; then
+   status=$scope
+ fi
  printf '{"status":"%s","rc":%d,"stage":"%s","shutdown":"%s","action_retest":"%s","object_grasp":"NOT_RUN","camera":"BLOCKED_127","ch10":"HOLD"}\n' \
   "$status" "$code" "$STAGE" "$shutdown" \
   "$([[ "${CH07_76_TEARDOWN_ONLY:-0}" == 1 ]] && echo NOT_RUN || echo RUN)" \
   > "$OUT/result.json"
- echo "CH07_76_SHUTDOWN=$shutdown" | tee -a "$OUT/stages.log"
+ log_shutdown "CH07_76_SHUTDOWN=$shutdown rc=$code"
  exit "$code"
 }
 trap cleanup EXIT
@@ -134,7 +163,8 @@ timeout 12s ros2 topic echo /joint_states --once > "$OUT/joints_before.txt"
 if [[ "${CH07_76_TEARDOWN_ONLY:-0}" == 1 ]]; then
   stage CH07_76_TERMINATION_ONLY_NO_ACTION_RETEST
   echo 'CH07_76_GAZEBO_CONTROLLERS_READY_FOR_OWNED_PROCESS_GROUP_SHUTDOWN' | tee "$OUT/verdict.txt"
-  exit 0
+  # Enter cleanup explicitly, before any shell exit bookkeeping.
+  cleanup
 fi
 stage ORIGINAL_GRIPPER_OPEN_RESULT_THEN_CLOSE_RESULT
 timeout --signal=TERM --kill-after=5s 48s ros2 run vision_basics gripper_controller \
