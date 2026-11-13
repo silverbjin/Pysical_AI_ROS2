@@ -1,3 +1,28 @@
+# Ch09 §9.8 — 최신 실행 증거와 미완료 물리 접촉 경계 (2026-11-14)
+
+> 이 구간은 **공개 CI에서 직접 검수된 최신 상태**다. 아래 2026-10-21 정적 보고서는 이력으로 보존한다. ROS 2 Jazzy / Gazebo Harmonic 고정 환경, Ch10 #123 **HOLD**.
+
+## 1. 실제 성공 증거를 구분해서 보존
+
+- **Ch09 §9.6 실제 Gazebo 기립 자세 SCOPED PASS:** [원본 stand_up 수정 PR #132](https://github.com/silverbjin/Pysical_AI_ROS2/pull/132), [CI #43244795784](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43244795784), [원본 Artifact #13955504103](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43244795784/artifacts/13955504103). 직접 내려받아 감사한 22개 파일 ZIP SHA256 `3c08ba5b6bae22eb55849df77461556bbf3a2476f175a4ca92c7c20b2f3ff08a`; 원본 테스트 checkout SHA `d8c4c03998cfce2dc14af5a3952ba86ea77ca408`. `stance_verdict.json`: model odom 492건, 8개 다리 관절 표본 16,161건, 마지막 4초 118표본. min base z=0.423203798m, late-window height spread=0.0000677506m, roll/pitch 최대 절대각=**0.463056°** (20° 상한), base XY displacement=**0.000181034m**. 원본 6초 보간 `STAND_UP_MEASURED_START_RAMP_6S` → `STAND_UP_RAMP_COMPLETE_ORIGINAL_GOALS` 확인.
+- **Ch09 §9.7 단일 다리 명령·실제 관절 응답 SCOPED PASS:** 기존 [CI #43187047823](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43187047823)의 1,376 명령·13,080 관절 상태·약 0.723rad 변화 기존 증거를 **재실행 없이** 보존.
+- **Ch09 §9.8 실제 ROS clock/TF SCOPED PASS:** [PR #147](https://github.com/silverbjin/Pysical_AI_ROS2/pull/147) 병합 SHA `21a96d6c273bbece2776edc5e5be29c538a53474`; [공개 CI #43363095114](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43363095114) SUCCESS, [Artifact #14008269297](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43363095114/artifacts/14008269297) ZIP 직접 감사 (16개 파일; SHA256 `5a50237c3b23e301ac22206648caae820a350486b8ebb69b1ad65391bbeceb59`). `model_contract.json`의 12개 revolute joint, 12개 고유 ROS→GZ cmd 쌍, 양수 질량 17개, 총 12.0000kg. 실제 RSP 및 **합성** `/clock`·`/joint_states`에 따른 **12개 동적 TF와 5개 정적 TF**, sim stamp≥100s, `result.json status=SCOPED_PASS rc0 shutdown=SIGTERM_CLEAN`. 이 TF-only CI는 **Gazebo 물리를 실행하지 않았다**.
+
+## 2. 기존 합격을 전체 챕터 PASS로 확대하지 않는 이유
+
+- 실제 기립 pose PASS는 **발 접촉력 직접 측정이 아니다**. `stance_verdict.json`은 `measured foot-ground contact forces`, 3회 독립 기립, 안정 관절 토크/한계, GUI 및 실기 검증을 명시적으로 `NOT_RUN`으로 기록했다.
+- 다운받은 원본 실행 당시 생성 URDF에는 `fr_foot`, `fl_foot`, `rr_foot`, `rl_foot` 네 collision 링크가 있으나 명시적 `<mu1>`·`<mu2>` friction 태그는 없다. **Gazebo 기본 마찰을 포함한 실효 마찰이 0이라는 결론은 불가능**하다. 실제 gz-SDF 변환과 접촉 센서/힘 관측을 해야 한다.
+- `TF-only` 성공은 실제 시뮬레이터 내부 clock·발 접촉·발 미끄러짐이 검증됐다는 의미가 아니다. GUI와 하드웨어도 `NOT_RUN`.
+- Ch10 [Issue #123](https://github.com/silverbjin/Pysical_AI_ROS2/issues/123)은 별도 **HOLD**. 이번 범위에서는 Ch10 코드·CI·모델에 접근하지 않는다.
+
+## 3. 다음 최소 신규 검수 (기존 성공 Gazebo 시험을 반복하지 않음)
+
+신규 [Issue #165](https://github.com/silverbjin/Pysical_AI_ROS2/issues/165)로 실제 네 발의 지면 접촉력/접촉 여부 및 슬립 증거를 분리한다. 같은 불변 GHCR digest를 사용하되 **시험용 생성 URDF/SDF에만** 명시적 contact 계측 추가, 원본 stand_up·PID·월드는 불변. 한 번의 분리된 실제 Gazebo 물리 시험에서 최종 4초 각 발의 비어 있지 않은 contact 관측·시간·상대 충돌 대상·owned-process 종료를 검사해 새 raw Artifact로만 PASS 판정한다. 계측이 없다면 `NOT_RUN`; 원본 기립 CI와 ROS TF CI를 재실행해 합격 횟수를 늘리지 않는다.
+
+---
+
+## 2026-10-21 과거 정적 검토 보고서 — 변경하지 않고 보존
+
 # 9.8절 코드 리뷰 — 통합 QA·트러블슈팅·다음 장 인계
 
 - 검토일: **2026-10-21 (KST)** · 기준 main `bab76f6ca7df0bda6efd8882c1a698561707e51d`
