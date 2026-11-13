@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'hello_node = my_robot_control.hello_moveit:main',
+            'pose_ik_node = my_robot_control.pose_ik_fk:main',
             'moveit_client = my_robot_control.moveit_client:main',
             'moveit_direct_node = my_robot_control.moveit_direct_node:main',
             'planner_node = my_robot_control.planner_node:main',
