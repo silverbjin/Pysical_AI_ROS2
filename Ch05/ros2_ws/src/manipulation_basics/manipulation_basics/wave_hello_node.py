@@ -6,6 +6,7 @@ import time
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
 import math
+import os
 
 class WaveHelloNode(Node):
     def __init__(self):
@@ -34,6 +35,14 @@ class WaveHelloNode(Node):
         self._measured = None
         self._measured_seen_wall = None
         self._mode = 'WAIT_FOR_JOINT_STATES'
+        # Never fire the one-shot ramp before the actual controller's
+        # trajectory subscriber has matched over DDS. In CI, a second
+        # observer also needs a match to capture the exact first command.
+        self._required_command_subscribers = int(
+            os.environ.get('CH05_WAVE_MIN_SUBSCRIBERS', '1')
+        )
+        if self._required_command_subscribers < 1:
+            raise ValueError('CH05_WAVE_MIN_SUBSCRIBERS must be >= 1')
         self._ramp_sent_ns = None
         self._wave_started_ns = None
         self.create_subscription(JointState, '/joint_states', self.on_joint_state, 10)
@@ -76,7 +85,9 @@ class WaveHelloNode(Node):
         if self._mode == 'BLOCKED':
             return
         if self._mode == 'WAIT_FOR_JOINT_STATES':
-            if not fresh or now_ns <= 0:
+            if (not fresh or now_ns <= 0
+                    or self.publisher_.get_subscription_count()
+                    < self._required_command_subscribers):
                 return
             msg = JointTrajectory()
             msg.joint_names = self.joint_names
