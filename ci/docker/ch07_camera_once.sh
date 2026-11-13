@@ -29,7 +29,25 @@ group_running() {
   ps -eo pgid=,stat= | awk -v g="$pgid" '$1==g && $2 !~ /^Z/ {active=1} END {exit !active}'
 }
 stop_owned() {
-  local pgid="$1" name="$2" attempt
+  local pgid="$1" name="$2" original_rc="$3" attempt exit_code
+  if [[ "$name" == "gzserver" && "$original_rc" -eq 0 ]]; then
+    # Do not deliver SIGINT inside a rendering / gz-transport Publish.
+    # Gazebo Harmonic supports a bounded, finite server run via --iterations;
+    # let it exit under its own event loop, not the upstream signal handler
+    # (gazebosim/gz-sim#4173). This is ONLY a teardown change.
+    echo "GAZEBO_FINITE_ITERATIONS_WAIT_BEGIN pgid=$pgid" >> "$OUT/stages.log"
+    for attempt in $(seq 1 240); do
+      if ! group_running "$pgid"; then
+        exit_code=0
+        wait "$pgid" || exit_code=$?
+        echo "GAZEBO_NATURAL_ITERATIONS_EXIT_RC=$exit_code" >> "$OUT/stages.log"
+        [[ "$exit_code" -eq 0 ]]
+        return $?
+      fi
+      sleep .25
+    done
+    echo "GAZEBO_FINITE_ITERATIONS_TIMEOUT_AFTER_60S pgid=$pgid" >> "$OUT/stages.log"
+  fi
   if [[ "$name" == "gzserver" ]] && group_running "$pgid"; then
     # Harmonic plain gz sim can deadlock in the signal handler while a
     # Sensors render thread holds gz-transport locks (upstream #4173).
@@ -88,7 +106,7 @@ cleanup() {
   set +e
   # Never use a variable also used inside stop_owned (Bash dynamic scoping).
   for ((idx=${#OWNED[@]}-1;idx>=0;idx--)); do
-    stop_owned "${OWNED[$idx]}" "${OWNED_NAMES[$idx]}" || shutdown="SIGKILL_ESCALATION"
+    stop_owned "${OWNED[$idx]}" "${OWNED_NAMES[$idx]}" "$original_rc" || shutdown="SIGKILL_ESCALATION"
   done
   if [[ "$shutdown" == "SIGKILL_ESCALATION" && "$final_rc" -eq 0 ]]; then
     final_rc=75
@@ -160,6 +178,10 @@ export EGL_PLATFORM=surfaceless
   ls -l /dev/dri /dev/dxg 2>&1 || true
 } >> "$OUT/environment.txt"
 timeout 7s gz sim --help > "$OUT/gz_sim_help.txt" 2>&1 || true
+if ! grep -q -- '--iterations' "$OUT/gz_sim_help.txt"; then
+  echo "CH07_127_GAZEBO_FINITE_ITERATIONS_UNSUPPORTED" | tee "$OUT/preflight_error.txt"
+  exit 65
+fi
 if ! grep -q -- '--headless-rendering' "$OUT/gz_sim_help.txt"; then
   echo "CH07_127_OFFICIAL_HEADLESS_FLAG_UNSUPPORTED" | tee "$OUT/preflight_error.txt"
   exit 64
@@ -185,7 +207,10 @@ PY
 start rsp ros2 run robot_state_publisher robot_state_publisher \
   --ros-args --params-file "$OUT/robot_description.yaml"
 stage GAZEBO_WORLD
-start gzserver gz sim -s -r -v 4 --headless-rendering "$ROOT/ci/docker/fixtures/ch07_camera_world.sdf"
+# Running a finite number of physics iterations avoids the upstream
+# intermittent SIGINT -> Sensors render-thread shutdown deadlock. 12 seconds
+# of simulated time is safely longer than the original 3-image smoke period.
+start gzserver gz sim -s -r -v 4 --headless-rendering --iterations 12000 "$ROOT/ci/docker/fixtures/ch07_camera_world.sdf"
 READY=0
 for attempt in $(seq 1 30); do
   if timeout 4s gz service -l | grep -Fq /world/book_camera/create; then READY=1; break; fi
