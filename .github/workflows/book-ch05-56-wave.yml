@@ -1,4 +1,4 @@
-name: Book Ch05 5.6 original 50Hz wave and Gazebo joint feedback (Ch10 HOLD)
+name: Book Ch05 5.6 measured 3s ramp + original 50Hz wave in Gazebo (Ch10 HOLD)
 on:
   pull_request:
     paths:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   real-original-wave:
-    name: Real Gazebo controller, original wave trajectory and independent joint states
+    name: Real Gazebo 3s pose transition, original 50Hz wave and measured joint states
     runs-on: ubuntu-24.04
     timeout-minutes: 13
     steps:
@@ -56,7 +56,8 @@ jobs:
           {
             echo '## Ch05 §5.6 REAL Gazebo original wave'
             echo 'Only original wave_hello and real /joint_states; accepted simple_controller NOT_RERUN.'
-            echo 'First fixed joint2/joint3 command in 20ms can be hazardous; no physical safety or full tracking PASS.'
+            echo 'Previous source commanded a 20ms initial posture jump (physical motion PASS but unsafe startup NOT_ACCEPTED). The new version must show one 3s ramp with measured feedback before wave starts.'
+            echo 'No physical robot safety or full long-run tracking PASS.'
             echo 'GUI, hardware and Ch10 NOT_RUN/HOLD.'
             cat ci-results/next/Ch05/wave_receipt.json || true
             cat ci-results/next/Ch05/result.json || true
