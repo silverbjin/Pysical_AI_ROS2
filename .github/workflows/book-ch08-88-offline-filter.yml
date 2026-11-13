@@ -1,0 +1,52 @@
+name: Book Ch08 8.8 numerical policy guard only (no ROS/hardware; Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'Ch08/ros2_ws/policy_safety_filter.py'
+      - 'ci/ch08_88_guard_once.py'
+      - '.github/workflows/book-ch08-88-offline-filter.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  numeric-guard:
+    name: Offline 6D clip EMA validity age and stop latch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch08/ros2_ws/policy_safety_filter.py
+            ci/ch08_88_guard_once.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact NumPy numerical runtime
+        run: python -m pip install --disable-pip-version-check 'numpy==2.2.6'
+      - name: Run only offline action guard boundary and capture source SHA
+        run: |
+          set -euo pipefail
+          mkdir -p ci-results/ch08-88
+          git rev-parse HEAD > ci-results/ch08-88/source_sha.txt
+          export RUN_SOURCE_SHA="$(cat ci-results/ch08-88/source_sha.txt)"
+          timeout --signal=TERM --kill-after=3s 25s python ci/ch08_88_guard_once.py \
+            2>&1 | tee ci-results/ch08-88/console.log
+      - name: Publish narrow scope
+        if: always()
+        run: |
+          {
+            echo '## Ch08 8.8 offline guard'
+            echo 'Numerical clip+EMA, invalid action/age, and software stop latch only.'
+            echo 'Not a ROS bridge, hardware E-stop, actuator limit or Sim-to-Real approval.'
+            echo 'Accepted PPO train/eval NOT_RERUN. Ch10 HOLD.'
+            cat ci-results/ch08-88/result.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch08-88-guard-${{ github.run_id }}
+          path: ci-results/ch08-88/
+          retention-days: 14
+          if-no-files-found: warn

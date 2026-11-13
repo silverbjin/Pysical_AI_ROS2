@@ -1,3 +1,49 @@
+# Ch08 §8.8 — 오프라인 정책 Action 안전 필터 실제 검수
+
+> 실제 로봇·ROS 2 제어와 무관한 **수치계약 전용** 실습. PPO 6D 정규화 출력을 ROS Float64 위치 명령으로 직접 전달해서는 안 된다.
+
+## 먼저 실행하는 검증된 수치 코드
+
+새 터미널에서 ROS overlay를 섞지 않고 Python 3.12/NumPy만 사용한다.
+
+~~~bash
+cd ~/Pysical_AI_ROS2
+python -m pip install 'numpy==2.2.6'
+python ci/ch08_88_guard_once.py
+python -m json.tool ci-results/ch08-88/result.json
+~~~
+
+이 코드는 Ch08/ros2_ws/policy_safety_filter.py 실제 함수를 호출한다. 첫 행동 [2,-2,0.5,0,0,0]에서 clipping [1,-1,0.5,0,0,0], EMA(alpha=0.2) [0.2,-0.2,0.1,0,0,0]을 검증한다. 두 번째 행동 [-2,2,0,0,0,0]에서 [-0.04,0.04,0.08,0,0,0]을 검증한다.
+
+8개 잘못된 입력(5D/7D, NaN, Inf, 오래된 타임스탬프, 미래 스탬프, 비정상 스탬프, 숫자가 아닌 행동)을 각기 거부하고, 거부 후 이전 필터 출력이 변경되지 않아야 한다. 소프트웨어 stop flag는 latch되며 명시적 해제 없이는 재동작할 수 없어야 한다.
+
+예상 로그 **형식**:
+
+~~~text
+CH08_88_ACTUAL_CLIP_AND_EMA_PASS
+CH08_88_BOUNDED_SECOND_STEP_STATE_PASS
+CH08_88_EIGHT_INVALID_INPUTS_FAIL_CLOSED_PASS
+CH08_88_ESTOP_LATCH_AND_EXPLICIT_CLEAR_PASS
+CH08_88_INDEPENDENT_OFFLINE_ACTION_GUARD_SCOPED_PASS_NO_ROS
+~~~
+
+실제 CLI 수행과 JSON 결과가 모두 존재할 때만 scoped PASS이다. 부정확한 관절 매핑이나 물리 E-stop 대체 기능을 주장하지 않는다.
+
+## 명확히 제외하는 기능
+
+- MuJoCo motor ctrl의 토크/전류 의미와 ROS Float64 position command 간 단위·이득 변환
+- 실제 6관절 mapping, ROS 토픽 발행, QoS/시간 동기화
+- Gazebo 실물리 동작, 로봇 부하/토크 제한, 물리 하드웨어 E-stop 및 인증
+- 원본 6DOF PPO 정책의 ROS 배포와 Ch10 보행
+
+**판정:** 오프라인 clip/EMA/입력 유효성만 scoped PASS 가능. ROS 연결·실제 안전성은 NOT_RUN/BLOCKED.
+
+공개 CI: .github/workflows/book-ch08-88-offline-filter.yml, 단일 테스트 ci/ch08_88_guard_once.py. 성공한 Ch08 §8.6·§8.7의 PPO 학습·평가는 다시 실행하지 않는다.
+
+---
+
+## 기존 원고 심화 실습과 연구 과제 (미검증 항목 포함)
+
 # LAB 8.8 — Sim-to-Real의 제어 계약과 ROS 2 격리 검증
 
 **목표:** 학습 정책을 실제 하드웨어에 곧바로 투입하지 않고, **정규화 action → 단위·관절 매핑 확인 → 안전 차단 → 시뮬레이션**의 순서를 설계한다. 원고의 랜덤화·노이즈·저역통과·E-stop 개념을 구현 현황과 분리한다.
