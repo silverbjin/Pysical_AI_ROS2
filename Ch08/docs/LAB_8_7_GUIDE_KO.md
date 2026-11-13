@@ -62,3 +62,41 @@ tensorboard --logdir smoke_runs --host 127.0.0.1 --port 6006
 - Ch08 §8.6 기존 PPO 학습은 NOT_RERUN, Ch10 HOLD 유지.
 
 [이전 정적 리뷰](SECTION_8_7_REPORT_KO.md)는 결함 기록으로 보존한다.
+
+---
+
+## 후속 검수 — 저장된 PPO의 0/10 도달 실패 원인 분리 (2026-11)
+
+기존 공개 CI [#43361732383](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43361732383)는 원본 PPO를 10개 시드(1000~1009)에 적용했을 때 **성공 0/10, 마지막 EE–target 평균 거리 0.432753m**로 보고했다. 평가 계산은 정상이라는 사실과 정책 성능이 목표에 미달한다는 사실을 구분해야 한다.
+
+성능 개선을 위한 최초 진단은 **실패한 10개 목표 자체가 원본 MuJoCo 로봇의 기구학적 작업공간 안에 있는지** 확인하는 것이다. 이를 확인하지 않고 PPO 학습률이나 보상 가중치를 임의로 바꾸면 원인을 찾기 어렵다.
+
+- 실행기: `ci/ch08_87_kinematic_diagnosis.py`
+- 독립 감사: `ci/ch08_87_verify_kinematic_receipt.py`
+- 공개 CI: `.github/workflows/book-ch08-87-kinematic-feasibility.yml`
+- 의존성: Python 3.12 / MuJoCo 3.3.7 / Gymnasium 1.1.1 / NumPy 2.2.6. ROS 2, PyTorch, SB3 재실행은 이 단계에서 불필요하다.
+
+실행 시 기존 `ReachEnv.reset(seed=1000~1009)`가 만드는 **실제 목표 3D 좌표**를 사용하고, `mujoco.mj_jacSite`의 3×6 위치 Jacobian으로 제한 스텝(≤0.20rad) DLS 역기구학 검색을 수행한다. 관절 제한은 원본 MuJoCo 모델의 `jnt_limited`와 `jnt_range`를 따른다. 각 목표에 8개 서로 다른 초기 관절 상태를 사용하고, 3D 말단 위치 오차 0.05m 미만인 해를 찾았는지 기록한다.
+
+**주의:** 이 검수는 토크 명령이나 동역학 시뮬레이션, 충돌 검사 또는 PPO 추론을 하지 않는다. `IK 해 발견`은 **해당 목표의 위치 기구학적 실현 가능성에 관한 수치 증거**일 뿐, PPO가 그 목표를 학습했다거나 안전하게 움직인다는 의미가 아니다. 반대로 IK 해를 못 찾았다고 물리적으로 도달 불가능하다고 단정해서도 안 된다.
+
+~~~bash
+cd ~/Pysical_AI_ROS2
+python3 -m venv /tmp/ch08-87-geometric
+source /tmp/ch08-87-geometric/bin/activate
+python -m pip install 'mujoco==3.3.7' 'gymnasium==1.1.1' 'numpy==2.2.6'
+python ci/ch08_87_kinematic_diagnosis.py
+python ci/ch08_87_verify_kinematic_receipt.py \
+  ci-results/ch08-87-geometry/receipt.json \
+  Ch08/ros2_ws/models/ppo_reach_final.zip \
+  Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml \
+  Ch08/ros2_ws/rl_env.py
+~~~
+
+검증 성공의 의미는 **원본 목표 생성/기하학적 접근 가능성에 관한 독립 수치 진단**만이다. 기존 정책 ZIP·XML·환경 소스의 SHA256이 실행 전후 일치해야 하며, PPO 성공률 0/10은 이 시험에서 재평가하지 않으므로 이전 결과 그대로 유지한다.
+
+후속 개발 판단: 많은 목표에서 기구학적 해가 실제 발견되면 학습 설정·관측·탐색·보상 및 동역학 제어를 점검한다. 목표 대부분에서 수치 해를 찾지 못하면 작업공간/목표 샘플링과 IK 초기화 방법부터 검토한다. 어느 경우에도 성공률을 인위적으로 승격하지 않는다. Ch10 #123은 HOLD.
+
+### 실제 검수 결과 및 해석
+
+같은 10개 시드의 목표는 기구학적 위치 IK로 **10/10 모두 오차 0.05m 미만**의 해를 찾았다. 공개 CI #43417674577의 독립 receipt 감사 PASS이며, 기존 PPO의 **실제 성공률 0/10은 그대로 유지**한다. 자세한 10개 시드 원본 데이터와 다음 진단 단계는 [§8.7 기구학적 실패 원인 분석 보고서](SECTION_8_7_KINEMATIC_DIAGNOSIS_KO.md)를 참고한다.
