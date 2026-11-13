@@ -16,30 +16,37 @@ OWNED=(); STAGE=INIT
 stage(){ STAGE="$1"; echo "STAGE=$STAGE" | tee -a "$OUT/stages.log"; }
 start(){
  local name="$1"; shift
- "$@" > "$OUT/$name.log" 2>&1 &
+ # Separate process groups: gz sim and ros2 run can spawn grandchildren.
+ setsid "$@" > "$OUT/$name.log" 2>&1 &
  OWNED+=("$!")
- echo "START:$name:pid=$!" | tee -a "$OUT/stages.log"
+ echo "START:$name:pgid=$!" | tee -a "$OUT/stages.log"
 }
 stop_owned(){
- local pid="$1"
- kill -TERM "$pid" 2>/dev/null || true
- for i in $(seq 1 30); do
-   if ! kill -0 "$pid" 2>/dev/null; then wait "$pid" 2>/dev/null || true; return 0; fi
+ local pgid="$1"
+ # Kill the whole owned ROS/Gazebo process group, not just its wrapper PID.
+ # Never call unbounded wait() during EXIT trap.
+ kill -TERM -- "-$pgid" 2>/dev/null || true
+ for i in $(seq 1 15); do
+   if ! kill -0 -- "-$pgid" 2>/dev/null; then return 0; fi
    sleep .2
  done
- kill -KILL "$pid" 2>/dev/null || true
- wait "$pid" 2>/dev/null || true
+ kill -KILL -- "-$pgid" 2>/dev/null || true
  return 1
 }
 cleanup(){
  code="$?"; trap - EXIT; set +e
- shutdown=SIGTERM_CLEAN
+ shutdown=PROCESS_GROUPS_EXITED_AFTER_SIGTERM
  for ((i=${#OWNED[@]}-1;i>=0;i--)); do
-   if ! stop_owned "${OWNED[$i]}"; then shutdown=SIGKILL_REQUIRED; fi
+   if ! stop_owned "${OWNED[$i]}"; then shutdown=SIGKILL_ESCALATED; fi
  done
- if [[ "$shutdown" == SIGKILL_REQUIRED && "$code" -eq 0 ]]; then code=75; fi
- printf '{"status":"%s","rc":%d,"stage":"%s","shutdown":"%s","object_grasp":"NOT_RUN","camera":"BLOCKED_127","ch10":"HOLD"}\n' \
-  "$([[ "$code" == 0 ]] && echo SCOPED_PASS || echo FAIL)" "$code" "$STAGE" "$shutdown" > "$OUT/result.json"
+ if [[ "$shutdown" == SIGKILL_ESCALATED && "$code" -eq 0 ]]; then code=75; fi
+ scope=SCOPED_PASS
+ if [[ "${CH07_76_TEARDOWN_ONLY:-0}" == 1 ]]; then scope=TEARDOWN_SCOPE_PASS; fi
+ status=$([[ "$code" == 0 ]] && echo "$scope" || echo FAIL)
+ printf '{"status":"%s","rc":%d,"stage":"%s","shutdown":"%s","action_retest":"%s","object_grasp":"NOT_RUN","camera":"BLOCKED_127","ch10":"HOLD"}\n' \
+  "$status" "$code" "$STAGE" "$shutdown" \
+  "$([[ "${CH07_76_TEARDOWN_ONLY:-0}" == 1 ]] && echo NOT_RUN || echo RUN)" \
+  > "$OUT/result.json"
  echo "CH07_76_SHUTDOWN=$shutdown" | tee -a "$OUT/stages.log"
  exit "$code"
 }
@@ -124,6 +131,11 @@ grep -q GazeboSimSystem "$OUT/hardware.txt"
 timeout 12s ros2 action list -t > "$OUT/actions.txt"
 grep -Fq '/gripper_group_controller/follow_joint_trajectory [control_msgs/action/FollowJointTrajectory]' "$OUT/actions.txt"
 timeout 12s ros2 topic echo /joint_states --once > "$OUT/joints_before.txt"
+if [[ "${CH07_76_TEARDOWN_ONLY:-0}" == 1 ]]; then
+  stage CH07_76_TERMINATION_ONLY_NO_ACTION_RETEST
+  echo 'CH07_76_GAZEBO_CONTROLLERS_READY_FOR_OWNED_PROCESS_GROUP_SHUTDOWN' | tee "$OUT/verdict.txt"
+  exit 0
+fi
 stage ORIGINAL_GRIPPER_OPEN_RESULT_THEN_CLOSE_RESULT
 timeout --signal=TERM --kill-after=5s 48s ros2 run vision_basics gripper_controller \
  2>&1 | tee "$OUT/gripper_cli.log"
