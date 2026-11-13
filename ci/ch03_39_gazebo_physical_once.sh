@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Ch03 §3.9 physical teleop: CH03's actual ROS->GZ joint2 path and real Gazebo physics.
-# The Ch03 original executable joint_position_cli is absent; don't invent it.
+# Ch03 §3.9: original Linux PTY teleop -> real Gazebo joint1/joint2 feedback.
+# This scenario never starts Ch04's missing joint_position_cli.
 set -Eeuo pipefail
 set +u; source /opt/ros/jazzy/setup.bash; set -u
 ROOT=/work;OUT="$ROOT/ci-results/ch03-39-physical";mkdir -p "$OUT"
-export ROS_DOMAIN_ID=47 ROS_LOCALHOST_ONLY=1 PYTHONUNBUFFERED=1
-export GZ_PARTITION="ch04_47-${GITHUB_RUN_ID:-local}-$$-${RANDOM}"
+export ROS_DOMAIN_ID=39 ROS_LOCALHOST_ONLY=1 PYTHONUNBUFFERED=1
+export GZ_PARTITION="ch03_39-${GITHUB_RUN_ID:-local}-$-${RANDOM}"
 export GZ_IP=127.0.0.1 QT_QPA_PLATFORM=offscreen LIBGL_ALWAYS_SOFTWARE=1
 OWNED=();STAGE=INIT
 stage(){ STAGE="$1";echo "STAGE=$1" | tee -a "$OUT/stages.log"; }
