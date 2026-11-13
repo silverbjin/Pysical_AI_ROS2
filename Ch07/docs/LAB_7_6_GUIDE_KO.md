@@ -1,55 +1,90 @@
-# LAB_7_6_GUIDE_KO — 7.6절 그리퍼 제어와 파라미터 튜닝
+# Ch07 §7.6 — Gazebo 그리퍼 액션: 두 손가락 관절 열기·닫기
 
-> 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
-> 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 (2026-10-20) · 상태: **BLOCKED — 제어 노드 존재, 시뮬레이터 실행·물리 파지 미검증**
-> 실제 실행 검증: **미수행**. 아래 코드는 교재 실습 절차 및 실행 후 검증 기준이며, 출력 사례를 실측 결과로 제시하지 않는다.
+> Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic. 시뮬레이션 전용. 실제 물체 파지 및 리프트는 이번 검수에서 **NOT_RUN**이며, 컨트롤러 동작만 PASS 후보이다.
 
-## 실습 전 원칙
-- 리포지토리 루트의 **Ch07/ros2_ws**를 작업 공간으로 사용한다. 설치된 패키지명은 **vision_basics**이다(원고의 my_robot_vision과 다름).
-- 터미널마다 /opt/ros/jazzy/setup.bash → Ch07/ros2_ws/install/setup.bash 순서로 source한다. Ch08~Ch13 overlay가 AMENT_PREFIX_PATH에 섞이면 검증 결과가 바뀔 수 있다.
-- 실제 카메라, 액션 서버, Gazebo controller, MoveIt 2 설정은 **존재 확인이 완료된 후** 해당 노드나 미션을 실행한다.
-- ROS 관련 Python 바인딩은 Ubuntu/ROS apt 패키지를 우선한다. 글로벌 pip 설치가 ROS의 NumPy/Qt ABI와 충돌하지 않도록 주의한다.
-- Gazebo에서의 노드 실행, 실제 팔/그리퍼 명령은 사람이나 실물 하드웨어가 없는 독립 시뮬레이션에서만 검증한다.
+## 목표
 
-## 제어기 계약부터 확인
+실습의 출발점은 실제 robot 모델의 joint_finger1, joint_finger2 두 **prismatic 관절**이다. 값의 단위는 **m**이며 rad이 아니다. 두 손가락은 서로 반대 축을 따라 움직이고, 각 관절의 URDF 유효 범위는 0.000~0.025m이다.
+
+- 열기(open): 각 관절 0.005m
+- 닫기(close): 각 관절 0.020m
+- Action: /gripper_group_controller/follow_joint_trajectory (control_msgs/action/FollowJointTrajectory)
+- 실제 컨트롤러: gz_ros2_control/GazeboSimSystem 및 vision_basics/config/ros2_controllers.yaml에 정의된 JointTrajectoryController.
+- 기존 my_robot_moveit_config/config/ros2_controllers.yaml의 parallel_gripper_action_controller 타입은 이번 실제 시뮬레이터에 사용하지 않는다. 혼용하지 말 것.
+
+중요: **open Action SUCCEEDED → 실제 /joint_states 목표 위치 도달 → close Action SUCCEEDED → 실제 위치 도달** 순서가 맞아야 한다. 과거 원본처럼 비동기 goal만 보내고 spin 이전에 sleep 후 다음 goal을 보내면 완료가 보장되지 않는다.
+
+## 1. 환경과 가상 모델 — 터미널 A
+
 ~~~bash
-# Ubuntu 24.04 / ROS 2 Jazzy 전제. Ch07 단독 overlay에서 실행
 source /opt/ros/jazzy/setup.bash
-cd Pysical_AI_ROS2/Ch07/ros2_ws
-echo "$ROS_DISTRO"
-printenv AMENT_PREFIX_PATH | tr ':' '\n' | head -20
-rosdep install --from-paths src --ignore-src -r -y
-colcon build --symlink-install --event-handlers console_direct+
+cd ~/Pysical_AI_ROS2/Ch07/ros2_ws
+sudo apt-get install -y ros-jazzy-gz-ros2-control \
+  ros-jazzy-joint-trajectory-controller \
+  ros-jazzy-joint-state-broadcaster
+colcon build --symlink-install --packages-select vision_basics
 source install/setup.bash
-ros2 pkg prefix vision_basics
-~~~
-~~~bash
-grep -n 'joint_finger\|<limit' src/vision_basics/urdf/my_robot.urdf.xacro
-grep -n 'gz_ros2_control\|ros2_control' src/vision_basics/urdf/my_robot.urdf.xacro
-grep -n 'gripper_group_controller' src/vision_basics/config/ros2_controllers.yaml
-grep -n 'gripper_group_controller' src/my_robot_moveit_config/config/ros2_controllers.yaml
-ros2 pkg executables vision_basics
+ros2 pkg executables vision_basics | grep gripper_controller
+xacro "$(ros2 pkg prefix --share vision_basics)/urdf/my_robot.gripper_gazebo.urdf.xacro" \
+  > /tmp/ch07_76_gripper.urdf
+grep -n 'GazeboSimSystem\|joint_finger1\|joint_finger2' /tmp/ch07_76_gripper.urdf
 ~~~
 
-**중요:** 원고에는 gripper_left_finger_link라고 적혀 있으나 실제 URDF의 링크는 finger1/finger2이다. 수정 전 그 이름에 대한 Gazebo 태그는 모델에 반영되지 않을 수 있다.
+독립 wrapper Xacro는 Ch07의 기존 로봇 URDF, 기존 GazeboSimSystem Xacro 및 vision_basics의 그리퍼 JointTrajectoryController 설정을 재사용한다. 이전에 주석 처리된 플러그인 호출을 원본 모델 전체에서 임의로 풀지 않는다.
 
-## 시뮬레이터 제어기 활성화 후에만 실행
+## 2. 실제 Gazebo 헤드리스 검수 — 공개 GitHub Actions
+
+워크플로: .github/workflows/book-ch07-76-gripper.yml
+실행기: ci/ch07_76_gripper_once.sh
+독립 관측기: ci/ch07_76_gripper_witness.py
+
+기존 고정 GHCR Jazzy/Harmonic digest sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f를 그대로 사용하며, 임시 Gazebo control 패키지만 설치한다. 기존 Gazebo empty.sdf에서 Ch07 로봇을 소환하고 실제 GazeboSimSystem 플러그인과 컨트롤러를 확인한다.
+
+이 검수는 새로운 월드, 새 Docker 이미지, 실제 카메라, MoveIt 계획, 장애물 또는 물체 파지를 실행하지 않는다.
+
+### 실습 진단 — ROS/Gazebo가 실행된 터미널 B
+
 ~~~bash
-ros2 control list_controllers
+source /opt/ros/jazzy/setup.bash
+cd ~/Pysical_AI_ROS2/Ch07/ros2_ws && source install/setup.bash
+
+ros2 control list_hardware_components -c /controller_manager
+ros2 control list_controllers -c /controller_manager
 ros2 action list -t | grep gripper
-ros2 topic echo --once /joint_states
-# node entry point 등록 후에만!
+ros2 topic echo /joint_states --once
+~~~
+
+**예상:** GazeboSimSystem이 실제로 존재, broadcaster 및 gripper_group_controller가 active, 그리퍼 FollowJointTrajectory action server와 2개 finger joint state 존재. Mock FakeSystem이면 이번 Gazebo 실물리 컨트롤러 시험으로 인정하지 않는다.
+
+### 실행 명령 — 별도 터미널 C
+
+~~~bash
+source /opt/ros/jazzy/setup.bash
+cd ~/Pysical_AI_ROS2/Ch07/ros2_ws
+source install/setup.bash
 ros2 run vision_basics gripper_controller
 ~~~
 
-관찰: gripper_group_controller가 active, 액션 타입 FollowJointTrajectory, joint_finger1/2가 함께 이동, prismatic 위치의 단위 m. 원본 demo는 비동기 호출 뒤 spin 전 sleep하므로 바로 실행하기보다 먼저 안전하게 Action 완료대기 방식으로 수정한다.
+실제 순서대로 전송하고 Goal accepted, result SUCCEEDED/error_code==0, /joint_states의 각 손가락 목표 오차 0.003m 이내를 모두 확인한다. close에서 실제 관절 변화 0.010m 이상을 요구한다.
 
-## 마찰·파지 실험 설계
-표준 조건의 (1) 손가락 간격, (2) 접촉 후 물체 자세, (3) +10cm 리프트 중 미끄러짐, (4) 3회 반복 성공 횟수를 기록한다. 변경 변수는 마찰·접촉 강성·감쇠 중 하나로 제한한다. 큰 계수를 미리 성공값으로 간주하지 않는다.
+정상 로그 예상(실제 성공 주장 전에는 CI 로그에서 확인):
 
-**완료 기준:** open/close 액션 상태 성공, 관절 이동 확인, 실제 물체 들어올리기 성공, 3회 반복/실패 조건 및 접촉 설정 기록. ROS 2 제어기 및 물리 파지 실측은 미수행이다.
+~~~text
+CH07_76_REAL_JOINT_STATE_STREAM_READY
+CH07_76_OPEN_ACTION_AND_MEASURED_JOINTS_PASS ...
+CH07_76_CLOSE_ACTION_AND_MEASURED_JOINTS_PASS ...
+CH07_76_SEQUENCE_OPEN_RESULT_THEN_CLOSE_REAL_FEEDBACK_PASS
+CH07_76_INDEPENDENT_REAL_GAZEBO_FINGER_ACTION_AND_FINAL_JOINTS_PASS
+~~~
 
-## 기록·제출물
-실습자는 git rev-parse HEAD, ros2 doctor --report, colcon build 종료 코드, 실행한 명령, topic/TF/action 확인 결과, 정상 및 실패 사례(스크린샷·로그)를 함께 남긴다. **정적 점검 결과와 실측 결과를 혼동하지 않는다.**
+실습이 끝나면 터미널 C가 정상 반환한다. Gazebo/RSP/bridge 터미널 A는 별도 종료한다. 공개 CI의 로그·JSON과 종료 상태는 병합 전에 반드시 확인한다.
 
-관련 리뷰: [SECTION_7_6_REPORT_KO.md](SECTION_7_6_REPORT_KO.md).
+## 증거 및 경계
+
+- PASS 후보: 실 GazeboSimSystem, 두 prismatic JointTrajectoryController 활성화, open/close 각 Action SUCCEEDED 및 실측 JointState, 독립 최종 위치 측정, 정상 종료.
+- NOT_RUN: 실제 물체에 대한 접촉, 마찰 파라미터 최적화, 물체 파지·리프트, MoveIt 그리퍼 통합, 실물 로봇, WSLg GUI 영상.
+- Ch07 §7.2 실제 RGB-D renderer Issue #127: BLOCKED 유지.
+- Ch11 SaveMap 서비스 Issue #130: FAIL 유지(대체 Nav2 CLI PASS).
+- Ch10 Issue #123: HOLD 유지.
+
+그리퍼 Action이 성공했다고 실제 물체를 잡았다고 보고하지 않는다.
