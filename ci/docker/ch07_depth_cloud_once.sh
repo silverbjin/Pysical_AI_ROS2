@@ -206,11 +206,34 @@ Path(sys.argv[2]).write_text(yaml.safe_dump(
 PY
 start rsp ros2 run robot_state_publisher robot_state_publisher \
   --ros-args --params-file "$OUT/robot_description.yaml"
+stage DEPTH_ONLY_VISIBLE_TARGET_FIXTURE
+# Unmodified book fixture keeps its original target at z=1 m, below the
+# zero-joint camera's approximate z=2.29 m; all sampled Depth/XYZ invalid.
+# Only this TEST-ONLY temp fixture moves the existing visual target into FOV.
+# The original SDF blob is untouched and preserved in workflow evidence.
+python3 - "$ROOT/ci/docker/fixtures/ch07_camera_world.sdf" "$OUT/depth_probe_world.sdf" "$OUT/depth_fixture_diff.json" <<'PYDEPTHWORLD'
+import json,sys,xml.etree.ElementTree as ET
+from pathlib import Path
+source=Path(sys.argv[1]); dst=Path(sys.argv[2])
+tree=ET.parse(source)
+target=tree.find(".//model[@name='visual_target']/pose")
+if target is None or " ".join((target.text or "").split()) != "1 0 1 0 0 0":
+    raise RuntimeError("CH07_161_ORIGINAL_TEST_TARGET_CHANGED")
+target.text="1 0 2.29 0 0 0"
+tree.write(dst,encoding="unicode",xml_declaration=True)
+record={"fixture":"TEST_ONLY_VISIBLE_TARGET", "original_sdf":str(source),
+        "original_target_pose":"1 0 1 0 0 0",
+        "test_target_pose":"1 0 2.29 0 0 0",
+        "actual_depth_alignment":"NOT_RUN",
+        "book_world_unchanged":True}
+Path(sys.argv[3]).write_text(json.dumps(record,indent=2)+"\n")
+print("CH07_161_TEST_ONLY_TARGET_FOV_SHIFT_RECORDED",flush=True)
+PYDEPTHWORLD
 stage GAZEBO_WORLD
 # Running a finite number of physics iterations avoids the upstream
 # intermittent SIGINT -> Sensors render-thread shutdown deadlock. 12 seconds
 # of simulated time is safely longer than the original 3-image smoke period.
-start gzserver gz sim -s -r -v 4 --headless-rendering --iterations 12000 "$ROOT/ci/docker/fixtures/ch07_camera_world.sdf"
+start gzserver gz sim -s -r -v 4 --headless-rendering --iterations 12000 "$OUT/depth_probe_world.sdf"
 READY=0
 for attempt in $(seq 1 30); do
   if timeout 4s gz service -l | grep -Fq /world/book_camera/create; then READY=1; break; fi
