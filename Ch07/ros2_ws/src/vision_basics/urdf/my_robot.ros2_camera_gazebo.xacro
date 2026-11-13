@@ -61,9 +61,10 @@
         </clip>
       </camera>
 
-      <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
-        <render_engine>ogre2</render_engine>
-      </plugin>
+      <!-- Gazebo Harmonic: world-level Sensors system owns the render scene.
+           Do not instantiate a second Sensors system inside this sensor:
+           duplicate OGRE2 HLMS datablocks abort the render thread.
+           The world fixture configures the OGRE2 engine once. -->
     </sensor>
   </gazebo>
 
