@@ -86,3 +86,17 @@ ros2 topic hz /joint_states
 응용: `joint1`을 제어하려면 Ch03 모델에 이미 존재하는 `/model/my_robot/joint1/cmd_pos` plugin에 맞는 **ROS→Gazebo 브리지와 새로운 명령 발행자**를 구성하고 joint1의 측정 상태를 검증한다. 문서의 예시는 해당 구현을 완료한 것으로 간주하지 않는다.
 
 [코드 리뷰 보고서](SECTION_4_7_REPORT_KO.md)
+
+---
+
+## 후속 실제 Gazebo Headless 정량 검수 (2026-11)
+
+원본 Ch04의 `my_robot_tf joint_position_cli` 실행 파일은 존재하지 않는다. 이번 검수는 **Ch03의 기존 `joint_control_cli`와 `two_dof_arm.urdf.xacro`에 실제 등록된 joint2 Gazebo JointPositionController**를 그대로 재사용한다. 이 차이를 숨기지 않는다.
+
+- 공개 Actions: `.github/workflows/book-ch04-47-gazebo-joint2.yml`
+- 실제 실행기: `ci/ch04_47_joint2_once.sh` / 독립 ROS 계측기: `ci/ch04_47_joint2_probe.py`
+- 기존 고정 Jazzy/Harmonic 이미지로 Ch03 패키지만 빌드하고 `my_first_world`에 실제 이름 `my_robot`으로 스폰한다. 기존 Ch03 스폰·시계 성공 시험을 별도 반복하지 않고 이 실습 준비 단계로만 사용한다.
+- 원본 YAML 브리지의 `/joint2/cmd_pos → /model/my_robot/joint2/cmd_pos`와 원본 `ros2 run my_robot_description joint_control_cli`를 실행하고, ±0.785rad 명령 4건 이상과 실제 Gazebo `/joint_states`의 joint2 변화폭 ≥0.40rad, 양의 방향과 음의 방향 이동을 확인한다. 실제 `robot_state_publisher` `/tf`와 `/clock`도 함께 관측한다.
+- **판정 한계:** 명령에 대응한 관절 이동은 검수하지만 ±0.785rad 정착오차·오버슈트와 PID 안정성은 개별 정량 성능으로 승인하지 않는다. GUI/실물 로봇은 NOT_RUN이고 Ch10은 HOLD다.
+
+예상 로그 `CH04_47_REAL_GAZEBO_JOINT2_COMMAND_TO_MEASURED_REVERSAL_PASS` 및 `CH04_47_REAL_BRIDGED_JOINT2_PHYSICAL_RESPONSE_PASS_GUI_NOT_RUN`. 실제 CI 로그와 Artifact가 없는 경우 PASS로 선언할 수 없다.

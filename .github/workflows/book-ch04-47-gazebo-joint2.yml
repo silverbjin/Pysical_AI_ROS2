@@ -1,0 +1,71 @@
+name: Book Ch04 4.7 real Gazebo joint2 CLI + measured feedback (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'ci/ch04_47_joint2_once.sh'
+      - 'ci/ch04_47_joint2_probe.py'
+      - 'Ch03/ros2_ws/src/my_robot_description/my_robot_description/joint_control_cli.py'
+      - '.github/workflows/book-ch04-47-gazebo-joint2.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch04-47-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  physical-joint2:
+    name: Real Ch03 CLI to Gazebo joint2 plugin and independent measured feedback
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch03/ros2_ws/src/my_robot_description
+            ci/ch04_47_joint2_probe.py
+            ci/ch04_47_joint2_once.sh
+      - name: Pin source SHA and reuse same immutable ROS/Gazebo image
+        run: |
+          mkdir -p ci-results/ch04-47
+          git rev-parse HEAD > ci-results/ch04-47/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/ch04-47/image_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull previously accepted image once, no new Docker build
+        run: docker pull "$(cat ci-results/ch04-47/image_digest.txt)"
+      - name: Test only missing Ch04 4.7 actual ROS to Gazebo joint2 motion
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 255s \
+            docker run --rm --init --pull=never --shm-size=512m \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch04-47/checkout_sha.txt)" \
+              -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch04-47/image_digest.txt)" \
+              bash ci/ch04_47_joint2_once.sh \
+              2>&1 | tee ci-results/ch04-47/console.log
+      - name: Publish bounded numerical result and exclusions
+        if: always()
+        run: |
+          {
+            echo '## Ch04 4.7 actual Gazebo JointPositionController command and measured joint2'
+            echo 'Actual Ch03 joint_control_cli is used; Ch04 joint_position_cli remains unimplemented.'
+            echo 'Previous Ch03 world/spawn/clock not reverified as an independent goal.'
+            echo 'No GUI, no physical robot, no stable PID/tracking certification, no Ch10.'
+            cat ci-results/ch04-47/physical_receipt.json || true
+            cat ci-results/ch04-47/result.json || true
+            cat ci-results/ch04-47/verdict.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch04-47-real-joint2-${{ github.run_id }}
+          path: ci-results/ch04-47/
+          retention-days: 14
+          if-no-files-found: warn

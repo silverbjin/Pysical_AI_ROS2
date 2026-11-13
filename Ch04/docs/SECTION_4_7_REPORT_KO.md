@@ -47,3 +47,13 @@ Gazebo 공식 문서상 JointPositionController의 기본 토픽은 모델/관�
 - 소스 변경: 없음. 검증 PASS 수치 작성하지 않음.
 
 재현 절차는 [LAB_4_7_GUIDE_KO.md](LAB_4_7_GUIDE_KO.md)에 있다. 참고: [Gazebo JointPositionController](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1JointPositionController.html) · [Harmonic ROS 연결](https://gazebosim.org/docs/harmonic/ros2_integration/).
+
+---
+
+## 후속 실제 실행 검수 계획 및 범위 (2026-11)
+
+이 문서 상단은 2026-10-20 당시의 정적 분석 기록이다. 현재의 실행 대상은 Ch03의 실제 `joint_control_cli`이며, 원본 Ch04 `joint_position_cli`는 여전히 구현되지 않았다.
+
+독립 신규 공개 CI `.github/workflows/book-ch04-47-gazebo-joint2.yml`에서 실제 Jazzy/Harmonic Gazebo JointPositionController에 ±0.785rad 명령을 보내고 `/joint_states` joint2 양/음 물리 이동과 `/tf`, `/clock`을 측정한다. `ci/ch04_47_joint2_once.sh` 및 `ci/ch04_47_joint2_probe.py`가 실행 경계다.
+
+이 범위에서 성립하는 PASS는 기존 Ch03 제어 경로의 물리 joint2 응답만이다. Ch04 원본에 없는 실행 파일, PID 성능, RViz GUI와 실물 하드웨어는 NOT_RUN 또는 미구현으로 보존한다. Ch10 HOLD.
