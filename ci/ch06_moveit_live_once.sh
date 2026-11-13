@@ -20,27 +20,36 @@ cleanup() {
   code="$?"
   trap - EXIT
   set +e
-  printf '{"status":"%s","exit_code":%d,"last_stage":"%s","full_chapter_pass":false}\n' \
-    "$([[ "$code" -eq 0 ]] && echo "SCOPED_PASS" || echo "FAIL")" \
-    "$code" "$STAGE" > "$OUT/result.json"
+  shutdown="NOT_STARTED"
   if [[ -n "$LAUNCH_PID" ]]; then
-    kill -INT "$LAUNCH_PID" 2>/dev/null || true
-    for i in $(seq 1 12); do
-      if ! kill -0 "$LAUNCH_PID" 2>/dev/null; then
-        wait "$LAUNCH_PID" 2>/dev/null || true
-        exit "$code"
-      fi
-      sleep 0.3
-    done
-    echo "SHUTDOWN_ESCALATED_TERM" | tee -a "$OUT/stages.log"
+    # Background non-interactive shell jobs may inherit SIGINT ignored.
+    # SIGTERM is handled explicitly by ros2 launch; only escalate if its
+    # process remains alive after a bounded shutdown interval.
+    shutdown="SIGTERM_REQUESTED"
     kill -TERM "$LAUNCH_PID" 2>/dev/null || true
-    sleep 1
-    if kill -0 "$LAUNCH_PID" 2>/dev/null; then
-      echo "SHUTDOWN_ESCALATED_KILL" | tee -a "$OUT/stages.log"
+    stopped=0
+    for i in $(seq 1 30); do
+      if ! kill -0 "$LAUNCH_PID" 2>/dev/null; then
+        stopped=1
+        break
+      fi
+      sleep 0.2
+    done
+    if [[ "$stopped" -eq 1 ]]; then
+      wait "$LAUNCH_PID" 2>/dev/null || true
+      shutdown="ROS_LAUNCH_EXITED_AFTER_SIGTERM"
+    else
+      shutdown="ROS_LAUNCH_REQUIRED_SIGKILL"
+      echo "CH06_SHUTDOWN_ESCALATED_KILL" | tee -a "$OUT/stages.log"
       kill -KILL "$LAUNCH_PID" 2>/dev/null || true
+      wait "$LAUNCH_PID" 2>/dev/null || true
+      if [[ "$code" -eq 0 ]]; then code=75; fi
     fi
-    wait "$LAUNCH_PID" 2>/dev/null || true
   fi
+  printf '{"status":"%s","exit_code":%d,"last_stage":"%s","ros_launch_shutdown":"%s","normal_moveitcpp_destructor":"NOT_RUN_UPSTREAM_MOVEIT2_3721","full_chapter_pass":false}\n' \
+    "$([[ "$code" -eq 0 ]] && echo "SCOPED_PASS" || echo "FAIL")" \
+    "$code" "$STAGE" "$shutdown" > "$OUT/result.json"
+  echo "CH06_SHUTDOWN_VERDICT=$shutdown" | tee -a "$OUT/stages.log"
   exit "$code"
 }
 trap cleanup EXIT
