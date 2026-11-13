@@ -1,0 +1,70 @@
+name: Book Ch07 7.4 real ROS red detector (Gazebo camera BLOCKED)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-74-detector.yml'
+      - 'ci/ch07_74_once.sh'
+      - 'ci/ch07_74_red_objects_probe.py'
+      - 'Ch07/ros2_ws/src/vision_basics/vision_basics/object_detector.py'
+      - 'Ch07/ros2_ws/src/vision_basics/setup.py'
+      - 'Ch07/ros2_ws/src/vision_basics/package.xml'
+      - 'Ch07/docs/LAB_7_4_GUIDE_KO.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-74-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  detector:
+    name: Actual ROS red object detection 1, 2, 0 and no stale target
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Record source and immutable base image digest
+        run: |
+          mkdir -p ci-results/ch07-74
+          git rev-parse HEAD > ci-results/ch07-74/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-74/base_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull exact existing image
+        run: docker pull "$(cat ci-results/ch07-74/base_digest.txt)"
+      - name: Run original red object detector node against synthetic ROS images
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 480s \
+            docker run --rm --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch07-74/checkout_sha.txt)" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch07-74/base_digest.txt)" \
+              bash ci/ch07_74_once.sh \
+              2>&1 | tee ci-results/ch07-74/console.log
+      - name: Explicit scope and failure boundaries
+        if: always()
+        run: |
+          {
+            echo '## Ch07 §7.4 actual HSV red detector'
+            echo 'Synthetic ROS Image with one, two, zero red targets.'
+            echo 'Gazebo RGB-D remains BLOCKED #127; depth/meters, GUI/hardware NOT_RUN.'
+            echo 'PointStamped z is pixel AREA, never depth(m). Ch10 HOLD.'
+            cat ci-results/ch07-74/result.json || true
+            cat ci-results/ch07-74/verdict.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-74-detector-${{ github.run_id }}
+          path: ci-results/ch07-74/
+          retention-days: 14
+          if-no-files-found: warn
