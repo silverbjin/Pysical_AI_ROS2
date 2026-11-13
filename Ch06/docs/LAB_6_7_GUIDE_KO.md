@@ -99,3 +99,5 @@ CH06_67_INDEPENDENT_BOOK_SOURCE_HASH_FAILURE_AND_DLS_RECEIPT_PASS
 - **PASS 가능 범위:** 원본 Jacobian 기반 IK의 특이점/폭발 재현과 실험용 DLS의 유한·제한 스텝 수치 비교, 실제 Ch06 Xacro joint limits.
 - **NOT_RUN:** Matplotlib GUI 슬라이더·롤백 시각화, MoveItPlanningScene 충돌/실행, 실제 ROS 기구학, 실물 로봇, Ch10.
 - Ch07 §7.2 원본 OGRE2 카메라 Image/CameraInfo는 기존 #127 **BLOCKED**, Ch10 #123 **HOLD**를 보존한다.
+
+실제 CI 최종 결과와 수치 영수증은 [§6.7 수치 검수 보고서](SECTION_6_7_NUMERIC_ACCEPTANCE_KO.md)에 기록했다.
