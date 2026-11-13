@@ -38,3 +38,11 @@ B에서 w,w,a,d,s,q를 누르고 ROS 관절 상태 및 TTY 복구(`stty -a`)를 
 
 ## PR 의존성·Acceptance
 3.9 제어 토픽이 실제로 연결되려면 3.6 브리지와 3.8 controller, 3.7 spawn, 3.3 Xacro 수정이 필요. 해당 PR을 병합한 통합 브랜치에서 키 입력→브리지→모터→`/joint_states` 전체를 확인 후 PASS. 현재 `PENDING_RUNTIME_VERIFICATION`.
+
+---
+
+## 후속 실측 검수 범위: Linux PTY와 원본 ROS 명령 (2026-11-13)
+
+위의 2026-10-20 `NOT RUN`은 당시 기록이다. `ci/ch03_39_real_pty_once.sh`의 후속 실행에서 `simple_arm_teleop`이 실제 `ros2 run`으로 시작되고 PTY를 통해 W/W/A/D/S/Q를 전달하며, 독립 ROS 구독자가 `/joint1/cmd_pos`와 `/joint2/cmd_pos`의 Float64 메시지를 관찰한다. 키 1회마다 새로운 두 관절 메시지, 불필요한 idle 중 재전송 금지, Q 종료·TTY 원상복구·ROS 노드 제거를 검수한다.
+
+실제 Gazebo 물리 관절 추종, GUI와 실물 로봇은 이 범위에 포함하지 않는다. Ch10 HOLD. 최종 판정은 공개 Actions run ID, PR 코드 SHA, 실제 ROS 로그 및 JSON receipt를 기준으로 별도 기록한다.

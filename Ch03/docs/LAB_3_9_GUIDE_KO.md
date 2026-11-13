@@ -47,3 +47,15 @@ W를 5회 누르면 명령 목표가 +0.25rad로 증가한다. 실제 `/joint_st
 
 ## 합격·Evidence
 `stty -a` 정상 복귀, 키 입력→명령 목표→관절각 변화의 연속 로그, 정지시 안전 여부, 한계 포화, Ctrl+C/q 종료 화면을 제출. 실습 자체는 실제 로봇 하드웨어 안전성을 입증하지 않는다. [리뷰](SECTION_3_9_REPORT_KO.md).
+
+---
+
+## 실제 Linux Pseudo-TTY + ROS 토픽 실행 검수 (2026-11)
+
+실습의 키보드 입력은 단순히 함수에 문자열을 전달하는 테스트로 대체할 수 없다. CI는 독립 Linux 가상 터미널(PTY)을 생성한 뒤 원본 `ros2 run my_robot_description simple_arm_teleop` 실행 파일에 W/W/A/D/S/Q 문자를 순서대로 전달한다. **실제 ROS 2 구독자**가 두 Float64 위치 명령을 관찰하는지를 검증한다.
+
+- 실행기: `ci/ch03_39_real_pty_once.sh`, 독립 관찰: `ci/ch03_39_real_pty_once.py`, 공개 Actions `.github/workflows/book-ch03-39-pty-teleop.yml`.
+- 예상 명령: W → (joint1=+0.05, joint2=0), W → (+0.10,0), A → (+0.10,+0.05), D → (+0.10,0), S → (+0.05,0). 단위는 rad. 매 단계에서 실제 ROS 두 토픽에 새 메시지가 발생해야 한다.
+- 키 입력 사이의 비활동 구간에는 동일 명령 재발행이 없어야 한다. Q 종료 후 프로세스 종료 코드 0, 원래 TTY 속성 복원, ROS 노드 제거를 확인한다.
+- 이 CI는 **실제 Gazebo 관절 위치까지 관찰하지 않는다**. §3.8 물리 시뮬레이션 검수와 분리하고, 실제 물체 움직임 PASS를 주장하지 않는다. Ch10 HOLD.
+- 정상 로그 형식: `CH03_39_REAL_PTY_KEYS_AND_ROS_FLOAT64_TWO_JOINTS_PASS`, `CH03_39_Q_EXIT0_TTY_RESTORED_AND_ROS_NODE_GONE_PASS`, `CH03_39_REAL_INTERACTIVE_TTY_AND_ROS_COMMAND_SCOPED_PASS`. 성공 여부는 실제 Actions 원본 Artifact와 측정 로그로 판단한다.
