@@ -128,7 +128,7 @@ def main():
             "seed": args.seed,
             "timesteps_requested": steps, "timesteps_observed": model.num_timesteps,
             "max_policy_weight_delta": delta,
-            "model_zip": str(archive.relative_to(Path.cwd())),
+            "model_zip": str(archive),
             "model_zip_sha256": _sha(archive),
             "model_zip_bytes": archive.stat().st_size,
             "xml_sha256": xml_sha,
