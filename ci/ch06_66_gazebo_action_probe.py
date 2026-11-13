@@ -68,9 +68,14 @@ def main():
     rclpy.init()
     probe = GazeboActionProbe()
     try:
+        # A count of 15 messages can arrive in far less than 0.3 simulated
+        # seconds. Readiness is based on observed time progression, not count.
         spin_until(
-            probe, lambda: len(probe.states) >= 15 and len(probe.clocks) >= 15,
-            15., "CLOCK_AND_JOINT_READY",
+            probe,
+            lambda: (len(probe.states) >= 15 and len(probe.clocks) >= 15
+                     and probe.clocks[-1] - probe.clocks[0] >= 0.4
+                     and probe.states[-1][0] - probe.states[0][0] >= 0.3),
+            18., "CLOCK_AND_JOINT_READY",
         )
         before = dict(probe.states[-1][1])
         if probe.clocks[-1] - probe.clocks[0] <= 0.3:
