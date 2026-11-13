@@ -81,3 +81,19 @@ rclpy.shutdown()
 - 이 코드는 교육용 숫자 카운터이다. 물리 로봇의 정지/안전 인터록을 입증하지 않는다.
 
 [코드 리뷰·수정 보고서](SECTION_2_6_REPORT_KO.md).
+
+---
+
+## 서버 부재 시 원본 Action Client의 제한시간 실제 검수 (추가)
+
+기존 정상 Goal/Feedback/Result, Goal 거절 및 취소 검수는 보존하며 다시 실행하지 않는다. 이번 작업은 본문의 **서버가 없는 경우 5초 내외 종료**가 실제 구현에서 성립하는지만 확인한다.
+
+공개 CI .github/workflows/book-ch02-26-no-server.yml 에서 ROS 2 Jazzy와 Ch02의 원본 두 패키지(my_robot_interfaces 및 my_robot_system)를 빌드한다. 먼저 ros2 action list에서 /count_until 서버가 없는지 확인한 후, 다음 교재 명령만 실행한다.
+
+~~~bash
+ros2 run my_robot_system count_until_client
+~~~
+
+예상 로그는 Waiting for action server (up to 5 s)... 다음 Action server unavailable이다. 실제 wall time 4.5~10초, 클라이언트 종료 코드 0, Sending goal 및 Goal accepted 문자열 부재를 확인한다. 실행 후 ros2 action list에서도 /count_until 서버가 없어야 한다.
+
+실행기: ci/ch02_26_no_server_once.sh. 실제 PASS는 Actions run ID, 소스 SHA, result.json의 wall time, 원본 client.log와 종료 코드로 판정한다. 서버 부재 오류는 **예상된 제어 흐름**이지 실기 로봇의 안전 정지나 목표 취소를 보장하지 않는다. GUI 및 Ch10은 실행하지 않는다.
