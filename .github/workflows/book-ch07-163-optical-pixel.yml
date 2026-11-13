@@ -1,0 +1,75 @@
+name: Book Ch07 7.2 exact pixel and stamp optical PointCloud2 diagnostic (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-163-optical-pixel.yml'
+      - 'ci/docker/ch07_163_optical_once.sh'
+      - 'ci/docker/ch07_163_sync_optical_probe.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-163-optical-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  optical-matched:
+    name: Real original OGRE2 same-stamp same-pixel Depth and PointCloud2 geometry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Pin original sources, immutable digest and Python/shell syntax
+        run: |
+          set -Eeuo pipefail
+          OUT=ci-results/vision/Ch07-163
+          mkdir -p "$OUT"
+          git rev-parse HEAD > "$OUT/checkout_sha.txt"
+          git hash-object ci/docker/fixtures/ch07_camera_world.sdf > "$OUT/world_git_blob.txt"
+          git hash-object Ch07/ros2_ws/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.xacro > "$OUT/camera_git_blob.txt"
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > "$OUT/image_digest.txt"
+          bash -n ci/docker/ch07_163_optical_once.sh
+          python3 -m py_compile ci/docker/ch07_163_sync_optical_probe.py
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Use SAME previously accepted GHCR digest, never rebuild
+        run: docker pull "$(cat ci-results/vision/Ch07-163/image_digest.txt)"
+      - name: One new optical pixel/matched-stamp measurement only
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 260s \
+            docker run --rm --init --pull=never --shm-size=1g \
+            -e RUN_SOURCE_SHA="$(cat ci-results/vision/Ch07-163/checkout_sha.txt)" \
+            -e GITHUB_RUN_ID="${{ github.run_id }}" \
+            -v "$PWD":/work -w /work \
+            "$(cat ci-results/vision/Ch07-163/image_digest.txt)" \
+            bash ci/docker/ch07_163_optical_once.sh \
+            2>&1 | tee ci-results/vision/Ch07-163/console.log
+      - name: Print exact numerical result and NOT_RUN exclusions
+        if: always()
+        run: |
+          {
+            echo '## Ch07 #163 original OGRE2 matched stamp/pixel optical geometry'
+            echo 'Accepted camera #127 and depth #161 workflows were NOT_RERUN.'
+            echo 'Generated diagnostic SDF moves ONLY a test-target pose; original world/Xacro unchanged.'
+            echo 'A measured native-axis mismatch must cause this job to FAIL; never infer from frame_id alone.'
+            echo 'GUI, full RGB-depth pixel registration, physical grasp and Ch10 remain NOT_RUN/HOLD.'
+            cat ci-results/vision/Ch07-163/optical_pixel_receipt.json || true
+            cat ci-results/vision/Ch07-163/result.json || true
+            cat ci-results/vision/Ch07-163/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-163-matched-optical-${{ github.run_id }}
+          path: ci-results/vision/Ch07-163/
+          retention-days: 30
+          if-no-files-found: warn
