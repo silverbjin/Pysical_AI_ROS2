@@ -44,6 +44,7 @@ source /opt/ros/jazzy/setup.bash
 cd ~/Pysical_AI_ROS2/Ch06/ros2_ws
 source install/setup.bash
 ros2 control list_controllers -c /controller_manager
+ros2 control list_hardware_components -c /controller_manager
 ros2 action list -t | grep follow_joint_trajectory
 ros2 topic echo /joint_states --once
 ```
@@ -52,9 +53,18 @@ ros2 topic echo /joint_states --once
 
 ## 3. 실제 MoveItPy 계획·실행·검증 (터미널 B)
 
+MoveItPy **Jazzy 2.12.4는 실행 완료 후 객체 소멸 단계에서 SIGSEGV를 일으키는 알려진 상위 결함** ([MoveIt 2 #3721](https://github.com/moveit/moveit2/issues/3721))이 있습니다. 이는 `execute`에서의 궤적 실패와 다른 문제입니다. 정상 소멸자 동작을 검증했다고 주장하지 않습니다.
+
+이 실습은 **반드시 `list_hardware_components` 출력이 `FakeSystem`인 가상 하드웨어에서만**, 검증된 관절 실행이 끝난 후 프로세스를 명시적으로 교체하는 우회를 사용합니다. 실제 로봇에 적용하지 마세요.
+
 ```bash
-ros2 run my_robot_control hello_node --mode named
+# 터미널 B — 위 단계에서 FakeSystem과 active 컨트롤러를 확인한 후에만 실행
+CH06_CI_MOCK_CONTROLLER_VERIFIED=1 \
+CH06_CI_RESULT_RECEIPT="$PWD/ch06_64_verified_mock.json" \
+ros2 run my_robot_control hello_node --mode named --ci-mock-verified-exit
+
 echo "exit=$?"
+python3 -m json.tool "$PWD/ch06_64_verified_mock.json"
 ros2 topic echo /joint_states --once
 ```
 
@@ -67,6 +77,7 @@ CH06_NAMED_READY_PLANNING_PASS
 CH06_MOVEIT_EXECUTION_STATUS=SUCCEEDED
 CH06_NAMED_READY_EXECUTION_AND_JOINT_GOAL_PASS max_error_rad=...
 CH06_64_NAMED_READY_COMPLETE_POSE_IK_NOT_RUN
+CH06_MOVEITPY_UPSTREAM_3721_TEARDOWN_BYPASSED_AFTER_VERIFIED_MOCK_EXECUTION
 exit=0
 ```
 
@@ -78,8 +89,12 @@ exit=0
 
 ## 5. 종료·판정 경계
 
-실습 종료 시 터미널 A의 Launch를 `Ctrl+C`로 종료하고, 터미널 B는 작업을 마친 후 닫는다. 외부 SIGTERM/KILL이나 잔여 프로세스가 있으면 정상 종료 PASS를 별도 선언하지 않는다.
+실습 종료 시 터미널 A의 Launch를 `Ctrl+C`로 종료하고, 터미널 B는 작업을 마친 후 닫는다. 우회 모드는 검증 성공 JSON을 디스크에 먼저 기록한 후 MoveItPy C++ 객체의 문제가 알려진 소멸자 경로를 **실행하지 않는 방식**이며, `exit=0`은 **가상 컨트롤러의 계획·실행·관절 피드백 검수**를 나타낼 뿐 MoveItCpp 정상 종료나 실물 시스템 안전을 보증하지 않는다. 우회 옵션이 없는 기본 실행에서 SIGSEGV가 재현될 수 있으며 이것을 임의의 예외 처리로 숨겨서는 안 된다.
+
+우회 모드에서 계획·실행·관절 도달 어느 하나라도 실패하면 JSON 성공 증거가 기록되지 않으며, 이때는 PASS가 아니다. CI는 로그 세 항목, 실제 컨트롤러 상태, JSON 5관절 오차와 종료 코드를 **독립적으로 교차 확인**한다.
 
 **공개 CI 성공 범위**: 실제 ROS 2 Jazzy·MoveItPy 및 fake ros2_control에서 모델 로드→계획→FollowJointTrajectory→관절 목표값까지 검증한다. Gazebo 물리 시뮬레이션, 실제 로봇 하드웨어, RViz GUI, 물체 파지, 포즈 IK는 **NOT_RUN**이다.
 
 [기존 문제 #126](https://github.com/silverbjin/Pysical_AI_ROS2/issues/126) · [실행 검수 PR #133](https://github.com/silverbjin/Pysical_AI_ROS2/pull/133)
+
+**2026-11-13 공개 CI:** [실제 성공 run #43337790267](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43337790267)에서 named `ready` 계획 및 컨트롤러 `SUCCEEDED`, 최대 관절 오차 **0.005494rad**를 측정했다. 정상 MoveItCpp destructor / Gazebo 물리 / 포즈 IK / WSL2 GUI는 **NOT_RUN**. 최신 재검/셧다운 상태는 해당 PR의 마지막 Actions Artifact를 기준으로 판단한다.
