@@ -61,7 +61,9 @@ def main():
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        # SIGINT may have already shut down rclpy in ROS 2 Jazzy.
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
