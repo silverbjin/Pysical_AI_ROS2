@@ -85,7 +85,11 @@ def audit(depth, cloud, intrinsics):
     matched_stamps = sorted(set(depth) & set(cloud) & set(intrinsics))
     for stamp in matched_stamps:
         d, c, k = depth[stamp], cloud[stamp], intrinsics[stamp]
-        if not (d["frame"] == c["frame"] == k["frame"] == "camera_optical_frame"):
+        # The original sensor packs XYZ in +X-forward camera_link even though
+        # its default Gazebo header says camera_optical_frame. The scoped fix
+        # overrides ONLY the point-cloud bridge's ROS frame to camera_link.
+        if not (d["frame"] == k["frame"] == "camera_optical_frame"
+                and c["frame"] == "camera_link"):
             continue
         for key, value in d["valid_grid_pixels"].items():
             xyz = c["finite_grid_points"].get(key)
@@ -153,15 +157,19 @@ def main():
         if not valid:
             verdict = "INSUFFICIENT_MATCHED_REAL_SENSOR_DATA"
         elif direct[len(direct)//2] < 0.08:
-            verdict = "OPTICAL_DIRECT_NUMERIC_CONSISTENT"
+            verdict = "RAW_OPTICAL_DIRECT_UNEXPECTED"
         elif native[len(native)//2] < 0.08 and direct[len(direct)//2] > 0.25:
-            verdict = "NATIVE_CAMERA_X_FORWARD_UNDER_OPTICAL_HEADER"
+            verdict = "CAMERA_LINK_NATIVE_X_FORWARD_CONFIRMED"
         else:
             verdict = "UNRESOLVED_GEOMETRY_MISMATCH"
-        aligned = verdict == "OPTICAL_DIRECT_NUMERIC_CONSISTENT"
+        aligned = verdict == "CAMERA_LINK_NATIVE_X_FORWARD_CONFIRMED"
         record = {
             "issue": 163, "status": "PASS" if aligned else "FAIL",
             "verdict": verdict, "checked_same_stamp_and_pixel": valid,
+            "cloud_header_expected": "camera_link",
+            "depth_and_camera_info_header_expected": "camera_optical_frame",
+            "source_cloud_coordinates_remain_native_x_forward": True,
+            "optical_coordinates_checked_via_camera_link_to_optical_tf": True,
             "source": "actual Gazebo OGRE2 RGB-D ROS depth/cloud streams",
             "depth_frames": len(depth), "cloud_frames": len(cloud),
             "camera_info_frames": len(intrinsics), "rgb_frames": len(rgb),
@@ -171,7 +179,8 @@ def main():
             "median_direct_optical_error_m": direct[len(direct)//2] if direct else None,
             "median_native_to_optical_error_m": native[len(native)//2] if native else None,
             "samples": records[:15],
-            "not_run": ["physical RGB/depth photometric registration",
+            "not_run": ["pointcloud frame override in real classroom setup outside scoped bridge",
+                        "physical RGB/depth photometric registration",
                         "full-calibration geometric accuracy", "physical grasp",
                         "GUI/WSLg", "hardware", "Ch10"],
         }
