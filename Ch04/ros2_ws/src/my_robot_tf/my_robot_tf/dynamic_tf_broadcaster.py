@@ -74,7 +74,9 @@ def main():
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        # ROS 2 Jazzy SIGINT may already have closed the context.
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
