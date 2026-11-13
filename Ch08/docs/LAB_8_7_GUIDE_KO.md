@@ -167,3 +167,7 @@ python ci/ch08_87_verify_action_diagnostic.py \
 ~~~
 
 이 진단의 프로그램 정상 종료는 **정책 성능 합격**을 뜻하지 않는다. 기존 PPO 성능 0/10은 그대로이며, Ch07 원본 RGB-D #127 BLOCKED, Ch10 #123 HOLD.
+
+### 실행 검수 결과 기록
+
+공개 CI [#43426946500](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43426946500)은 실제 360개 원본 PPO 액션/보상 기록과 독립 감사에서 PASS했다. 모든 여섯 모터의 포화율은 0%였지만, 시드 1000·1001에서는 목표에 가장 가까워진 뒤 다시 멀어졌다. 한 로봇 상태에서 목표만 10개로 바꾸었을 때 가장 큰 두 정책 출력의 L2 차이는 0.124649였다. 자세한 원본 데이터, 보상 분석 및 미검증 조건은 [§8.7 원본 PPO 액션 진단 보고서](SECTION_8_7_FROZEN_PPO_ACTION_DIAGNOSIS_KO.md)를 참고한다. **정책 성능 0/10 실패는 여전히 유지**한다.
