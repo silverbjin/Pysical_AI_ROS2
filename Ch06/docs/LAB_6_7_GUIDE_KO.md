@@ -48,3 +48,56 @@ python3 Ch06/4_divergence.py
 - IK 알고리즘의 수렴과 물리 실행 성공을 같은 용어로 혼용하지 않음.
 
 **핵심 교훈:** 빠르게 푼 IK가 곧 안전한 경로는 아니며, 특이점·케이블·관절 한계는 모델과 제어기의 공동 책임이다. [보고서](SECTION_6_7_REPORT_KO.md).
+
+---
+
+## 2026-11 — 실측 수치 진단: 원본 Planar2DOF 실패를 재현하는 CI
+
+기존 위 가이드는 2026-10 당시 **정적 검토 이력**이다. Ch06 §6.4 Pose IK, §6.5 Pilz LIN, §6.6 MoveIt→Gazebo 실제 인수는 이미 별도로 통과했으므로 이 절에서 중복 실행하지 않는다. 새 검수는 `Ch06/4_divergence.py`에 실제 포함된 **원본 Planar2DOF** 수치 계산만 확인한다.
+
+### 한 번에 실행
+
+~~~bash
+cd ~/Pysical_AI_ROS2
+python3 -m venv /tmp/ch06-67-numeric
+source /tmp/ch06-67-numeric/bin/activate
+pip install 'numpy==2.2.6'
+python ci/ch06_67_numeric_diagnostics_once.py
+python ci/ch06_67_verify_receipt.py \
+  ci-results/ch06-67/receipt.json Ch06/4_divergence.py
+python3 -m json.tool ci-results/ch06-67/receipt.json
+~~~
+
+관찰 파일은 `ci-results/ch06-67/receipt.json`이다. 원본 Python을 GUI로 import하면 Matplotlib 슬라이더/애니메이션이 열릴 수 있어, 이번 독립 수치 검수는 Python AST에서 **원본 Planar2DOF 클래스만 추출해 그대로 실행**한다. 학습자의 원본 `4_divergence.py`를 변경하지 않는다.
+
+### 기대 결과와 논리적인 원인 분리
+
+1. **정확한 특이점**: 1m×2링크가 완전히 펼쳐진 θ=(0,0)에서 J의 det와 최소 특잇값이 0이며, 원본 inverse_kinematics_history가 `Divergence (Singularity!)`를 보고한다.
+2. **특이점 근접 폭발**: θ=(0,0.001)rad의 자코비안 직접 역행렬 업데이트가 과도한 관절 점프를 만들어 `Divergence (Explosion!)`가 발생한다. 실제 joint command는 전송하지 않는다.
+3. **별도의 수치 비교**: 테스트 내부에서만 DLS(damping=0.15, alpha=0.5, 단일 스텝 norm≤0.15rad)를 사용해 목표 (1.8,0.2)m 오차 <0.001m에 수렴하는지 비교한다. **이는 원본 IK 알고리즘이 수정됐다는 뜻이 아니며, 실물 제어에 승인된 solver도 아니다.**
+4. **다중 해와 도달 가능성**: (1,1)m을 만드는 elbow-up/down 두 관절 해를 실제 원본 FK로 비교하고, 최대 도달 거리 2m를 벗어난 (2.2,0.2)m는 목표를 거부한다.
+5. **실제 교재 모델의 한계**: 별개로 Ch06 5축 Xacro의 revolute limit와 velocity 값 5개를 파일에서 검증한다. 2D 1m×2링크 교육 예제와 5축 ROS 로봇 모델을 같은 기구학이라고 해석하지 않는다.
+
+예상 마커(실제 수치·성공 여부는 공개 CI 로그 확인):
+
+~~~text
+CH06_67_ORIGINAL_JACOBIAN_SINGULARITY_REPRODUCED_PASS
+CH06_67_ORIGINAL_INVERSE_EXPLOSION_REPRODUCED_PASS
+CH06_67_DLS_BOUNDED_NUMERIC_RECOVERY_PASS ...
+CH06_67_TWO_DISTINCT_SEEDS_SAME_FORWARD_KINEMATICS_PASS
+CH06_67_UNREACHABLE_GOAL_REJECTED_WITHOUT_ACTUATION_PASS
+CH06_67_ORIGINAL_FIVE_JOINT_LIMITS_IN_SOURCE_XACRO_PASS
+CH06_67_ORIGINAL_IK_FAILURE_AND_TEST_ONLY_RECOVERY_SCOPED_PASS
+CH06_67_INDEPENDENT_BOOK_SOURCE_HASH_FAILURE_AND_DLS_RECEIPT_PASS
+~~~
+
+### 판정 범위와 제외 조건
+
+- 공개 workflow: `.github/workflows/book-ch06-67-ik-diagnosis.yml`
+- 전용 실행기: `ci/ch06_67_numeric_diagnostics_once.py`
+- 독립 원본 SHA·수치 증거 검사: `ci/ch06_67_verify_receipt.py`
+- **PASS 가능 범위:** 원본 Jacobian 기반 IK의 특이점/폭발 재현과 실험용 DLS의 유한·제한 스텝 수치 비교, 실제 Ch06 Xacro joint limits.
+- **NOT_RUN:** Matplotlib GUI 슬라이더·롤백 시각화, MoveItPlanningScene 충돌/실행, 실제 ROS 기구학, 실물 로봇, Ch10.
+- Ch07 §7.2 원본 OGRE2 카메라 Image/CameraInfo는 기존 #127 **BLOCKED**, Ch10 #123 **HOLD**를 보존한다.
+
+실제 CI 최종 결과와 수치 영수증은 [§6.7 수치 검수 보고서](SECTION_6_7_NUMERIC_ACCEPTANCE_KO.md)에 기록했다.

@@ -1,0 +1,70 @@
+name: Book Ch06 6.7 original IK singularity and numeric diagnosis (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'Ch06/4_divergence.py'
+      - 'ci/ch06_67_numeric_diagnostics_once.py'
+      - 'ci/ch06_67_verify_receipt.py'
+      - '.github/workflows/book-ch06-67-ik-diagnosis.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-numerical-ik-diagnostics:
+    name: Original Planar2DOF singularity and explosion vs bounded numeric DLS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch06/4_divergence.py
+            Ch06/ros2_ws/src/my_robot_description/urdf/my_robot.urdf.xacro
+            ci/ch06_67_numeric_diagnostics_once.py
+            ci/ch06_67_verify_receipt.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Keep this check limited to numerical IK and original source
+        run: |
+          mkdir -p ci-results/ch06-67
+          git rev-parse HEAD > ci-results/ch06-67/checkout_sha.txt
+          echo 'No ROS, Gazebo, GUI or actuator commands; Ch10 HOLD.' > ci-results/ch06-67/scope.txt
+          python -m pip install --disable-pip-version-check 'numpy==2.2.6'
+          python -m pip freeze > ci-results/ch06-67/pip_freeze.txt
+      - name: Execute book Planar2DOF numeric pathology and bounded comparison
+        env:
+          RUN_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 25s \
+            python ci/ch06_67_numeric_diagnostics_once.py \
+            2>&1 | tee ci-results/ch06-67/original_numeric.log
+          grep -q CH06_67_ORIGINAL_IK_FAILURE_AND_TEST_ONLY_RECOVERY_SCOPED_PASS \
+            ci-results/ch06-67/original_numeric.log
+      - name: Audit measured receipt and original textbook SHA independently
+        run: |
+          set -euo pipefail
+          python ci/ch06_67_verify_receipt.py \
+            ci-results/ch06-67/receipt.json Ch06/4_divergence.py \
+            2>&1 | tee ci-results/ch06-67/independent_audit.log
+      - name: Preserve actual result, failure classifications and exclusions
+        if: always()
+        run: |
+          {
+            echo '## Ch06 §6.7 actual numerical IK diagnosis'
+            echo 'Original book inverse Jacobian singular/explosive behavior reproduced.'
+            echo 'Bounded damped least-squares is a separate test-only comparison, not source replacement.'
+            echo 'GUI, full ROS MoveIt IK, collision and real robot NOT_RUN.'
+            echo 'Ch06 6.4–6.6 previous passes NOT_RERUN. Ch07 RGBD BLOCKED. Ch10 HOLD.'
+            cat ci-results/ch06-67/receipt.json || true
+            cat ci-results/ch06-67/independent_audit.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch06-67-numeric-${{ github.run_id }}
+          path: ci-results/ch06-67/
+          retention-days: 14
+          if-no-files-found: warn
