@@ -1,70 +1,70 @@
-# LAB_7_3_GUIDE_KO — 7.3절 cv_bridge를 활용한 ROS 2와 OpenCV 통합
+# Ch07 §7.3 — 실제 ROS Image, cv_bridge 및 OpenCV Canny 실습
 
-> 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
-> 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 (2026-10-20) · 상태: **BLOCKED — 변환 코드는 있으나 실습 결선 미완성**
-> 실제 실행 검증: **미수행**. 아래 코드는 교재 실습 절차 및 실행 후 검증 기준이며, 출력 사례를 실측 결과로 제시하지 않는다.
+> ROS 2 Jazzy / Ubuntu 24.04. Ch07 §7.2 RGB-D 카메라는 OGRE2 SIGABRT 두 번으로 Issue #127 BLOCKED. 이번 절은 카메라 대신 **합성 ROS Image**를 사용하며, 카메라 기능 성공을 주장하지 않는다.
 
-## 실습 전 원칙
-- 리포지토리 루트의 **Ch07/ros2_ws**를 작업 공간으로 사용한다. 설치된 패키지명은 **vision_basics**이다(원고의 my_robot_vision과 다름).
-- 터미널마다 /opt/ros/jazzy/setup.bash → Ch07/ros2_ws/install/setup.bash 순서로 source한다. Ch08~Ch13 overlay가 AMENT_PREFIX_PATH에 섞이면 검증 결과가 바뀔 수 있다.
-- 실제 카메라, 액션 서버, Gazebo controller, MoveIt 2 설정은 **존재 확인이 완료된 후** 해당 노드나 미션을 실행한다.
-- ROS 관련 Python 바인딩은 Ubuntu/ROS apt 패키지를 우선한다. 글로벌 pip 설치가 ROS의 NumPy/Qt ABI와 충돌하지 않도록 주의한다.
-- Gazebo에서의 노드 실행, 실제 팔/그리퍼 명령은 사람이나 실물 하드웨어가 없는 독립 시뮬레이션에서만 검증한다.
+## 학습 목표
 
-## 실행 전 패키지 환경
+실제 ROS 2 Image 입력 → CvBridge의 BGR 변환 → OpenCV Grayscale/GaussianBlur/Canny → CvBridge mono8 출력 → 실제 ROS 2 Image 구독까지 검수한다. 토픽이 있다는 사실과 실제 픽셀/헤더까지 맞는지를 구별한다.
+
+## 1. 환경과 빌드 — 터미널 A
+
 ~~~bash
-# Ubuntu 24.04 / ROS 2 Jazzy 전제. Ch07 단독 overlay에서 실행
 source /opt/ros/jazzy/setup.bash
-cd Pysical_AI_ROS2/Ch07/ros2_ws
-echo "$ROS_DISTRO"
-printenv AMENT_PREFIX_PATH | tr ':' '\n' | head -20
-rosdep install --from-paths src --ignore-src -r -y
-colcon build --symlink-install --event-handlers console_direct+
+cd ~/Pysical_AI_ROS2/Ch07/ros2_ws
+sudo apt-get install -y ros-jazzy-cv-bridge python3-opencv python3-numpy
+rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy
+colcon build --symlink-install --packages-select vision_basics
 source install/setup.bash
 ros2 pkg prefix vision_basics
-~~~
-~~~bash
-sudo apt install ros-jazzy-cv-bridge python3-opencv
-python3 -c 'import cv2, numpy, cv_bridge; print(cv2.__version__)'
-ros2 pkg executables vision_basics
+ros2 pkg executables vision_basics | grep vision_processor
 ~~~
 
-이 저장소의 setup.py에는 vision_processor 엔트리가 등록되지 않았다. **수정하지 않고 ros2 run vision_basics vision_processor를 실행하면 실패할 수 있다.** 설치된 Python 모듈 경로를 검증한 뒤 임시로 python3 -m vision_basics.vision_processor를 사용하거나 엔트리를 등록한다.
+**예상:** Ch07 install 경로와 vision_basics vision_processor 실행 항목이 표시된다. setup.py 엔트리와 package.xml 직접 의존성을 보완했다.
 
-## 카메라 없이 검증하는 최소 변환 스모크 테스트
+## 2. 원본 이미지 처리 노드 — 터미널 A 유지
+
 ~~~bash
-python3 - <<'PY'
-import numpy as np, cv2
-from cv_bridge import CvBridge
-bridge = CvBridge()
-src = np.zeros((48,64,3), np.uint8)
-src[10:35,15:47] = (0,0,255)
-msg = bridge.cv2_to_imgmsg(src, encoding='bgr8')
-dst = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-assert np.array_equal(src, dst)
-gray = cv2.cvtColor(dst,cv2.COLOR_BGR2GRAY)
-edges = cv2.Canny(cv2.GaussianBlur(gray,(5,5),0),50,150)
-assert edges.shape == (48,64) and edges.any()
-print('cv_bridge round-trip + Canny PASS')
-PY
+ros2 run vision_basics vision_processor --ros-args -p show_gui:=false
 ~~~
 
-## 실제 토픽 연결(7.2 센서 검증 이후)
+기본 show_gui:=true는 원본 강의 시연의 두 OpenCV 창을 유지한다. CI/GUI 없는 세션에서는 false로 ROS Image 처리만 검증한다. GUI가 보이는지 여부와 토픽 처리는 독립 상태이다.
+
+## 3. 합성 이미지 발행과 실제 ROS 토픽 검수 — 새 터미널 B
+
 ~~~bash
+source /opt/ros/jazzy/setup.bash
+cd ~/Pysical_AI_ROS2/Ch07/ros2_ws
+source install/setup.bash
 ros2 topic info -v /camera/image_raw
-# 엔트리 수정 후 사용
-ros2 run vision_basics vision_processor
-# 별도 터미널
-ros2 topic echo --once /camera/processed_image --field encoding
-ros2 topic hz /camera/processed_image
-ros2 run rqt_image_view rqt_image_view
+ros2 topic info -v /camera/processed_image
 ~~~
 
-GUI가 없는 세션에서는 기존 cv2.imshow가 실패할 수 있다. RQt는 GUI 터미널에서 실행하고 노드의 GUI 호출을 비활성화하는 수정이 선행되어야 한다.
+기존 노드를 유지한 채, 저장소 루트에서 실제 독립 ROS Image 발행기 및 구독기를 실행한다.
 
-**완료 기준:** 위 독립 변환 테스트 통과, 입력/출력 토픽 모두 존재, mono8·header.stamp 유지, no-display 처리 확인. 실제 ROS 런타임 결과는 아직 미확인이다.
+~~~bash
+cd ~/Pysical_AI_ROS2
+CH07_73_RECEIPT="$PWD/ch07_73_receipt.json" \
+python3 ci/ch07_73_image_roundtrip.py
 
-## 기록·제출물
-실습자는 git rev-parse HEAD, ros2 doctor --report, colcon build 종료 코드, 실행한 명령, topic/TF/action 확인 결과, 정상 및 실패 사례(스크린샷·로그)를 함께 남긴다. **정적 점검 결과와 실측 결과를 혼동하지 않는다.**
+echo "exit=$?"
+python3 -m json.tool "$PWD/ch07_73_receipt.json"
+~~~
 
-관련 리뷰: [SECTION_7_3_REPORT_KO.md](SECTION_7_3_REPORT_KO.md).
+**정상 로그 예상:**
+
+~~~text
+CH07_73_ACTUAL_ROS_IMAGE_CVBRIDGE_CANNY_MONO8_AND_STAMP_PASS processed_samples=3 edges=...
+exit=0
+~~~
+
+검증기가 64×48 BGR 색상 사각형을 실제 DDS Publisher로 전송하고, 실제 vision_processor의 Image Subscriber→CvBridge→Canny→Publisher를 거친 3개 메시지를 구독한다. 출력 이미지 mono8 인코딩과 픽셀 크기, 입력과 정확히 일치하는 header.stamp와 camera_optical_frame, 독립 계산한 Canny 픽셀 배열 전체가 동일한지 검사한다. 로봇 카메라를 실행했다고 주장하지 않는다.
+
+## 종료 및 범위
+
+터미널 A Ctrl+C로 노드를 정리하고 터미널 B를 닫는다. 예상 로그만 있고 JSON/실제 메시지가 없으면 미완료다. GUI 창과 실제 Gazebo 렌더링은 검수하지 않는다.
+
+공개 CI: .github/workflows/book-ch07-73-cvbridge.yml. 고정 Jazzy/Harmonic GHCR digest를 재사용하며 CvBridge/OpenCV만 임시 설치한다. 실제 CI 실행 후 SHA/원본 Artifact로 판정한다.
+
+- Ch07 §7.3 synthetic ROS Image→cv_bridge→OpenCV→ROS Image: scoped PASS 또는 실제 결과에 따른 FAIL.
+- Ch07 §7.2 Gazebo RGB-D Image 및 CameraInfo: BLOCKED (Issue #127), 이전 오류 재실행하지 않음.
+- Depth 정렬, 실제 물체 인식, GUI, 실기: NOT_RUN. Ch10: HOLD.
