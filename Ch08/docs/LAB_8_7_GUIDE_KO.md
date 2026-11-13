@@ -1,64 +1,64 @@
-# LAB 8.7 — TensorBoard, 평가 메트릭, RGB 녹화 사전점검
+# Ch08 §8.7 — PPO 평가 지표의 결측 오류 제거와 실제 목표 거리 측정
 
-**학습 목표:** PPO 학습 로그를 읽고 무효 수치를 걸러내며, 영상 제작에 필요한 RGB 렌더 계약을 테스트한다. Ch12와 같이 **실행 증거/실패 증거/한계**를 구분해 제출한다.
+> 이 절의 공개 CI는 기존 Git에 저장된 6DOF 정책 모델 ZIP을 로드해 **10개의 고정 시드**에서 실제 MuJoCo rollout을 수행한다. 256-step 신규 훈련은 §8.6에서 이미 별도 검증했고 재실행하지 않는다.
 
-## 준비
-```bash
+## 원본 코드에서 확인한 오류
+
+과거 evaluate_robot.py는 env.step()의 info에 distance가 없을 경우 평균 정착 오차를 0.0mm로 출력했다. 하지만 이 0은 거리가 0이었다는 측정이 아니라 **결측값**이었다.
+
+이번 교정에서 ReachEnv.calculate_reward()가 이미 계산한 실제 EE와 target 간 유클리드 거리(m)를 info.distance에 추가한다. 평가기는 이를 관측 배열의 EE [12:15] 및 목표 [15:18] 좌표로 다시 계산한 값과 비교하며, 누락·비유한·불일치 시 FAIL 처리한다.
+
+## 준비 — ROS 2가 아닌 Python 3.12 환경
+
+~~~bash
 cd ~/Pysical_AI_ROS2/Ch08/ros2_ws
 source .venv/bin/activate
-python -m pip install tensorboard moviepy imageio imageio-ffmpeg numpy
-```
-학습 환경 의존성은 8.6절과 동일. TensorBoard 서버를 외부 전체 네트워크에 노출하지 않고 로컬에서 사용한다.
+python -m pip install mujoco gymnasium numpy stable-baselines3
+~~~
 
-## 1. TensorBoard 시연
-```bash
-tensorboard --logdir logs/tb --host 127.0.0.1 --port 6006
-```
-브라우저: http://localhost:6006/ . **기존 `logs/tb/PPO_*` 이벤트는 이전 실행의 결과**이므로 새 실험의 성능으로 인용하지 않는다. 그래프가 비어 있다면 해당 지표가 저장되지 않았거나 이력이 부족한지 먼저 확인한다.
+CI에서는 앞 절과 같은 호환 패키지 및 PyTorch CPU를 재사용한다. 저장된 models/ppo_reach_final.zip은 **절대 덮어쓰지 않는다**.
 
-## 2. 원리 분석
-- `rollout/ep_rew_mean`: 수집된 episode 평균 return. 에피소드 종료가 드물면 비거나 왜곡된다.
-- `train/value_loss`: 가치함수 손실. 무조건 0에 수렴해야 하는 지표가 아니다.
-- `train/entropy_loss`: 이름에 loss가 있어 부호가 정책 엔트로피와 다르다. 학습/평가 지표와 함께 읽는다.
-- `train/approx_kl`: PPO 업데이트 진단값, 성공률 자체는 아니다.
+## 원본 평가 스크립트 실행
 
-## 3. 정량 평가(현 코드의 결측을 관찰)
-```bash
-python evaluate_robot.py
-```
-저장된 `models/ppo_reach_final.zip`을 사용한다. ZIP이 현재 6DOF 환경과 호환되지 않으면 **정상 실패 증거**로 남기고 차원/버전을 조사한다. 출력에 '정착 오차 0.0 mm'가 있더라도 실제 `info`에 `distance`가 없어 결측 처리된 것일 수 있으므로 **성능 입증에 사용하지 않는다.**
+~~~bash
+python evaluate_robot.py \
+  --model models/ppo_reach_final.zip \
+  --episodes 10 \
+  --max-steps 300 \
+  --seed 1000 \
+  --output-json evaluation_8_7.json
+python -m json.tool evaluation_8_7.json
+~~~
 
-```bash
-python - <<'PY'
-from rl_env import ReachEnv
-env=ReachEnv(render_mode=None)
-try:
-    env.reset(seed=3)
-    _,_,_,_,info=env.step(env.action_space.sample())
-    print("info keys", sorted(info))
-    print("distance available?", "distance" in info)
-finally: env.close()
-PY
-```
+실제 평가에서는 정책 observation 18개/action 6개 계약이 일치해야 한다. 모델 ZIP이 다른 차원으로 학습된 것이라면 변경 없이 **INCOMPATIBLE FAIL**을 보존하고, 임의로 모델을 변환하지 않는다.
 
-## 4. 녹화: 차단 조건 먼저 재현
-```bash
-python - <<'PY'
-import numpy as np
-from rl_env import ReachEnv
-env=ReachEnv(render_mode="rgb_array")
-try:
-    env.reset(seed=3)
-    frame=env.render()
-    print("frame type",type(frame),"shape",getattr(frame,"shape",None))
-    if not (isinstance(frame,np.ndarray) and frame.ndim==3 and frame.shape[-1]==3):
-        print("BLOCKED: RGB 렌더러가 없으므로 RecordVideo를 실행하지 않음")
-finally: env.close()
-PY
-```
-현재 소스에서는 `render()`가 None을 반환하므로 비디오 성공을 기대할 수 없다. 구현 수정 후 `H×W×3 uint8` 보장, 모의 1 episode `RecordVideo`, MP4 파일 크기·프레임 재생 검사를 순서대로 수행한다. **이 브랜치는 소스 수정 없이 문제를 기록한 문서다.**
+평가기는 각 에피소드에 seed=1000~1009를 적용한다. 종료 상태는 SUCCESS, TRUNCATED, TERMINATED 또는 STEP_LIMIT로 기록하고, 후자의 경우 성공으로 세지 않는다. 각 episode의 실제 최종거리, 총보상, 스텝수, 평균 액션 변화량을 JSON에 기록한다.
 
-## 5. 평가 과제·인수 조건
-학습 곡선 3개 해석(보상/손실/정책 업데이트)과 시드별 성공률·최종 거리·action delta의 차이를 논한다. 로그 주소·실험 run ID·모델 해시·결측 항목을 함께 제출한다. '실행 실패'와 '학습 실패'는 구분한다.
+정상 출력 형식(실제 수치는 CI에서 검증한 후 보고):
 
-[리뷰 보고서](SECTION_8_7_REPORT_KO.md)
+~~~text
+CH08_87_ACTUAL_POLICY_EVALUATION_PASS episodes=10 success_count=... mean_final_distance_m=... success_rate_pct=...
+CH08_87_REAL_EE_DISTANCE_AND_BOUNDED_METRICS_SCOPED_PASS
+~~~
+
+정책의 성공률이 낮더라도 **평가 파이프라인은 PASS일 수 있다**. 10개 에피소드 실측 수치를 장기학습 품질 인증이나 실기 배포 판단으로 해석하지 않는다.
+
+## TensorBoard와 RGB 녹화의 분리된 판정
+
+§8.6에서 TensorBoard 이벤트 파일 생성은 실제 PASS했으나, 서버 브라우저 렌더링은 이번 CI에서 수행하지 않는다. 확인하려면 별도 로컬 GUI 셸에서 다음을 실행한다.
+
+~~~bash
+tensorboard --logdir smoke_runs --host 127.0.0.1 --port 6006
+~~~
+
+현재 ReachEnv.render_mode="rgb_array"에서 RGB uint8 프레임 반환이 구현되어 있지 않으므로, 실제 RGB 녹화는 **BLOCKED/NOT_RUN**으로 구분한다. 이번 평가 CI에서는 GPU, 화면, RecordVideo를 실행하지 않으며 성능 성공으로 승격하지 않는다.
+
+## 공개 CI와 증거
+
+- 워크플로: .github/workflows/book-ch08-87-policy-evaluation.yml
+- 원본 실행: python evaluate_robot.py
+- 독립 감사: ci/ch08_87_verify_receipt.py
+- 증거: 기존 모델 ZIP SHA256, source SHA, Actions run ID, 10개 시드별 실제 거리·보상·상태, 300-step 상한 및 결과 JSON.
+- Ch08 §8.6 기존 PPO 학습은 NOT_RERUN, Ch10 HOLD 유지.
+
+[이전 정적 리뷰](SECTION_8_7_REPORT_KO.md)는 결함 기록으로 보존한다.
