@@ -21,8 +21,7 @@ ET.SubElement(world, "plugin", {"filename": "gz-sim-contact-system",
                                 "name": "gz::sim::systems::Contact"})
 sensor = ET.SubElement(ground, "sensor",
                        {"name": "book_ch09_ground_contact", "type": "contact"})
-for k,v in (("always_on","true"), ("update_rate","10"),
-            ("topic","/book_ch09/ground_contacts")):
+for k,v in (("always_on","true"), ("update_rate","10")):
     ET.SubElement(sensor,k).text=v
 ET.SubElement(ET.SubElement(sensor,"contact"),"collision").text="collision"
 destination.write_bytes(ET.tostring(root, encoding="utf-8", xml_declaration=True))
@@ -30,7 +29,7 @@ manifest.write_text(json.dumps({
     "original_world_sha256": hashlib.sha256(original).hexdigest(),
     "world_fixture": "TEST_ONLY_SENSOR_ADDED",
     "original_source_modified": False,
-    "contact_topic": "/book_ch09/ground_contacts",
+    "native_contact_topic_expected": "/world/my_empty_world/model/ground_plane/link/link/sensor/book_ch09_ground_contact/contact",
     "source_ground_mu1": 1.0, "source_ground_mu2": 1.0,
     "friction_coefficient_dynamically_measured": False,
     "ch10": "HOLD"},indent=2)+"\n")
