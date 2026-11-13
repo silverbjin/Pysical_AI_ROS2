@@ -260,13 +260,19 @@ if count != 1:
     raise RuntimeError(f"CH07_163_RUNTIME_SENSORS_DUPLICATED count={count}")
 print("CH07_163_EXACTLY_ONE_RUNTIME_SENSORS_SYSTEM_PASS",flush=True)
 PY
-stage ORIGINAL_RGB_DEPTH_INFO_AND_CLOUD_BRIDGE
-start bridge ros2 run ros_gz_bridge parameter_bridge \
+stage SPLIT_BRIDGES_OPTICAL_IMAGE_NATIVE_CAMERA_LINK_POINTS
+# Images / CameraInfo / depth retain their validated optical frame header.
+start bridge_images ros2 run ros_gz_bridge parameter_bridge \
   '/camera/image@sensor_msgs/msg/Image[gz.msgs.Image' \
   '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo' \
   '/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image' \
-  '/camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked' \
   --ros-args -r /camera/image:=/camera/image_raw
+# Gazebo PointCloudPacked XYZ is native +X forward. Relabel only this
+# GZ->ROS point-cloud bridge to camera_link; DO NOT modify XYZ bytes.
+# camera_link -> camera_optical_frame static TF already exists.
+start bridge_points ros2 run ros_gz_bridge parameter_bridge \
+  '/camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked' \
+  --ros-args -p override_frame_id:=camera_link
 timeout 10s gz topic -l > "$OUT/gz_topics.txt" || true
 for topic in /camera/image /camera/camera_info /camera/depth_image /camera/points; do
   grep -Fxq "$topic" "$OUT/gz_topics.txt" || { echo "CH07_163_GZ_TOPIC_MISSING:$topic"; exit 62; }
@@ -275,6 +281,6 @@ stage MATCHED_STAMP_PIXEL_OPTICAL_VALIDATION
 timeout --signal=TERM --kill-after=5s 42s \
   python3 "$ROOT/ci/docker/ch07_163_sync_optical_probe.py" "$OUT/optical_pixel_receipt.json" \
   2>&1 | tee "$OUT/optical_pixel_probe.log"
-grep -q CH07_163_MATCHED_PIXEL_OPTICAL_DIRECT_NUMERIC_CONSISTENT "$OUT/optical_pixel_probe.log"
-stage CH07_163_OPTICAL_NUMERIC_SCOPED_PASS
-echo "CH07_163_ACTUAL_MATCHED_DEPTH_CLOUD_OPTICAL_NUMERIC_PASS_GUI_NOT_RUN" | tee "$OUT/verdict.txt"
+grep -q CH07_163_MATCHED_PIXEL_CAMERA_LINK_NATIVE_X_FORWARD_CONFIRMED "$OUT/optical_pixel_probe.log"
+stage CH07_163_POINTCLOUD_FRAME_CONTRACT_SCOPED_PASS
+echo "CH07_163_GAZEBO_NATIVE_POINTS_CAMERA_LINK_AND_OPTICAL_DEPTH_TF_MATCH_PASS" | tee "$OUT/verdict.txt"
