@@ -125,12 +125,36 @@ timeout 8s ros2 topic echo /joint_states --once \
 timeout 8s ros2 topic info -v /joint_states \
   > "$OUT/joint_state_qos.txt" 2>&1
 stage REAL_MOVEITPY_NAMED_READY_PLAN_AND_EXECUTE
+# All preceding stages have proved this is mock_components/GenericSystem
+# with a live controller and action. The verified-exit flag is permitted ONLY
+# after the real execution result and joint feedback pass; the upstream Jazzy
+# 2.12.4 teardown SIGSEGV remains an explicit NOT_RUN boundary.
+export CH06_CI_MOCK_CONTROLLER_VERIFIED=1
+export CH06_CI_RESULT_RECEIPT="$OUT/verified_motion_receipt.json"
 timeout --signal=TERM --kill-after=10s 105s \
-  ros2 run my_robot_control hello_node --mode named \
+  ros2 run my_robot_control hello_node --mode named --ci-mock-verified-exit \
   2>&1 | tee "$OUT/hello_moveit.log"
 grep -q CH06_NAMED_READY_PLANNING_PASS "$OUT/hello_moveit.log"
 grep -q CH06_MOVEIT_EXECUTION_STATUS=SUCCEEDED "$OUT/hello_moveit.log"
 grep -q CH06_NAMED_READY_EXECUTION_AND_JOINT_GOAL_PASS "$OUT/hello_moveit.log"
-stage NAMED_READY_SCOPED_PASS
-echo "CH06_MOVEITPY_PLAN_EXECUTE_JOINT_FEEDBACK_PASS_POSE_IK_NOT_RUN" \
+grep -q CH06_MOVEITPY_UPSTREAM_3721_TEARDOWN_BYPASSED_AFTER_VERIFIED_MOCK_EXECUTION \
+  "$OUT/hello_moveit.log"
+stage INDEPENDENT_ACCEPTANCE_RECEIPT_VERIFICATION
+python3 - "$CH06_CI_RESULT_RECEIPT" <<'PY'
+import json
+import sys
+from pathlib import Path
+receipt = json.loads(Path(sys.argv[1]).read_text())
+assert receipt["planning"] == "PASS"
+assert receipt["execution"] == "SUCCEEDED"
+assert receipt["joint_goal"] == "PASS"
+assert len(receipt["per_joint_error_rad"]) == 5
+assert max(receipt["per_joint_error_rad"].values()) <= 0.06
+assert receipt["max_joint_error_rad"] <= 0.06
+assert receipt["normal_moveitcpp_destructor"] == "NOT_RUN_UPSTREAM_MOVEIT2_3721"
+assert receipt["pose_ik"] == "NOT_RUN"
+print("CH06_INDEPENDENT_MOCK_EXECUTION_RECEIPT_PASS")
+PY
+stage NAMED_READY_SCOPED_PASS_UPSTREAM_TEARDOWN_NOT_RUN
+echo "CH06_MOVEITPY_PLAN_EXECUTE_JOINT_FEEDBACK_PASS_MOCK_ONLY_UPSTREAM_3721_TEARDOWN_NOT_RUN" \
   | tee "$OUT/verdict.txt"
