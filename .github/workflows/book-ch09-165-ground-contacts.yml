@@ -1,0 +1,76 @@
+name: Book Ch09 9.8 actual 4-foot ground contacts on original stand (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch09-165-ground-contacts.yml'
+      - 'ci/docker/ch09_165_contacts_once.sh'
+      - 'ci/docker/ch09_165_instrument_ground_contacts.py'
+      - 'ci/docker/ch09_165_verify_ground_contacts.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch09-165-contact-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  actual-per-foot-contact:
+    name: Real Gazebo 4 original foot-ground collision/force messages, only test sensor added
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch09
+      - name: Pin original source, model/world hashes and unchanged GHCR digest
+        run: |
+          set -Eeuo pipefail
+          OUT=ci-results/ch09-165-contact
+          mkdir -p "$OUT"
+          git rev-parse HEAD > "$OUT/checkout_sha.txt"
+          git hash-object Ch09/ros2_ws/src/my_quadruped_bot/urdf/robot.urdf.xacro > "$OUT/original_xacro_blob.txt"
+          git hash-object Ch09/ros2_ws/src/my_quadruped_bot/worlds/empty_world.sdf > "$OUT/original_world_blob.txt"
+          git hash-object Ch09/ros2_ws/src/my_quadruped_bot/my_quadruped_bot/stand_up.py > "$OUT/original_stand_blob.txt"
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > "$OUT/image_digest.txt"
+          bash -n ci/docker/ch09_165_contacts_once.sh
+          python3 -m py_compile ci/docker/ch09_165_instrument_ground_contacts.py ci/docker/ch09_165_verify_ground_contacts.py
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull existing immutable Jazzy/Harmonic runtime
+        run: docker pull "$(cat ci-results/ch09-165-contact/image_digest.txt)"
+      - name: One new native Gazebo ground-contact experiment only
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 260s \
+            docker run --rm --init --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch09-165-contact/checkout_sha.txt)" \
+              -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch09-165-contact/image_digest.txt)" \
+              bash ci/docker/ch09_165_contacts_once.sh \
+              2>&1 | tee ci-results/ch09-165-contact/console.log
+      - name: Preserve actual contact or failure evidence, never mark accepted stand retrial
+        if: always()
+        run: |
+          {
+            echo '## Ch09 #165 new real per-foot contact evidence, not repeat of accepted stand acceptance'
+            echo 'Source URDF, original stand_up, PID and world physics unchanged. Only test sensor added.'
+            echo 'One 6s original stand required as a contact-measurement prerequisite, NOT a rerun of old posture verdict.'
+            echo 'True friction coefficient and full slip velocity, GUI/hardware, Ch10 NOT_RUN/HOLD.'
+            cat ci-results/ch09-165-contact/contacts_receipt.json || true
+            cat ci-results/ch09-165-contact/result.json || true
+            cat ci-results/ch09-165-contact/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch09-165-ground-contacts-${{ github.run_id }}
+          path: ci-results/ch09-165-contact/
+          retention-days: 30
+          if-no-files-found: warn
