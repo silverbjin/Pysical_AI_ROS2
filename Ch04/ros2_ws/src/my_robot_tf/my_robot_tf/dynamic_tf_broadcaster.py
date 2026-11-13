@@ -1,6 +1,7 @@
 import math
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster
 
@@ -70,7 +71,8 @@ def main():
     node = DynamicFramePublisher()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
+        # Jazzy can signal context shutdown through the executor on SIGINT.
         pass
     finally:
         node.destroy_node()
