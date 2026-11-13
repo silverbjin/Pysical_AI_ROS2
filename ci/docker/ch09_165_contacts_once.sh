@@ -52,7 +52,8 @@ stop_group(){
   return 1
 }
 cleanup(){
-  local rc="$?" idx final="$rc" status=OWNED_GROUPS_EXITED_NO_SIGKILL
+  local rc="$?"
+  local idx final="$rc" status=OWNED_GROUPS_EXITED_NO_SIGKILL
   trap - EXIT
   set +e
   for ((idx=${#OWNED[@]}-1;idx>=0;idx--)); do
@@ -125,13 +126,27 @@ grep -q 'Entity creation successful' "$OUT/spawn.log"
 stage ORIGINAL_JOINT_BRIDGE_AND_CONTACT_TOPIC
 start original_joint_bridge ros2 run ros_gz_bridge parameter_bridge \
   --ros-args -p config_file:="$WS/src/my_quadruped_bot/config/ros_gz_bridge.yaml"
-timeout 15s ros2 topic echo /joint_states --once > "$OUT/joint_ready.txt"
+JOINT_READY=0
+for attempt in $(seq 1 35); do
+  # Explicit msg type avoids "Could not determine the type" before discovery.
+  if timeout 4s ros2 topic echo /joint_states sensor_msgs/msg/JointState --once \
+      > "$OUT/joint_ready.txt" 2> "$OUT/joint_ready_last_error.txt"; then
+    JOINT_READY=1
+    break
+  fi
+  sleep .2
+done
+[[ "$JOINT_READY" == 1 ]] || { echo "CH09_165_JOINT_STATES_NOT_READY"; exit 66; }
+# Gazebo Contact system advertises its canonical per-sensor topic, not the
+# optional <topic> hint in our test-only sensor XML. This was observed raw.
+CONTACT_TOPIC=/world/my_empty_world/model/ground_plane/link/link/sensor/book_ch09_ground_contact/contact
+echo "$CONTACT_TOPIC" > "$OUT/contact_native_topic.txt"
 CONTACT_READY=0
 for attempt in $(seq 1 35); do
-  if timeout 4s gz topic -l | grep -Fxq /book_ch09/ground_contacts; then CONTACT_READY=1; break; fi
+  if timeout 4s gz topic -l | grep -Fxq "$CONTACT_TOPIC"; then CONTACT_READY=1; break; fi
   sleep .3
 done
-timeout 5s gz topic -i -t /book_ch09/ground_contacts > "$OUT/contact_topic_info.txt" 2>&1 || true
+timeout 5s gz topic -i -t "$CONTACT_TOPIC" > "$OUT/contact_topic_info.txt" 2>&1 || true
 [[ "$CONTACT_READY" == 1 ]] || { echo "CH09_165_CONTACT_TOPIC_NOT_CREATED"; exit 62; }
 
 stage ORIGINAL_STAND_RAMP_PREREQUISITE_NOT_EXISTING_ACCEPTANCE_RETEST
@@ -147,7 +162,7 @@ grep -q STAND_UP_MEASURED_START_RAMP_6S "$OUT/stand_up.log"
 stage CAPTURE_REAL_GROUND_CONTACTS_AFTER_RAMP
 set +e
 timeout --signal=TERM --kill-after=3s 7s \
-  stdbuf -oL gz topic -e -t /book_ch09/ground_contacts \
+  stdbuf -oL gz topic -e -t "$CONTACT_TOPIC" \
   > "$OUT/ground_contacts_raw.txt" 2> "$OUT/ground_contacts_stderr.log"
 CONTACT_CAPTURE_RC="$?"
 set -e
