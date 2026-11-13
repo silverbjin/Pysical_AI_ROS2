@@ -1,0 +1,85 @@
+name: Book Ch08 8.7 real finite-torque MuJoCo dynamics diagnostic (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch08-87-torque-dynamics.yml'
+      - 'ci/ch08_87_torque_dynamics_once.py'
+      - 'ci/ch08_87_verify_dynamics_receipt.py'
+      - 'ci/ch08_87_kinematic_diagnosis.py'
+      - 'Ch08/ros2_ws/rl_env.py'
+      - 'Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: book-ch08-87-dynamics-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  original-torque-physics:
+    name: Real MuJoCo dynamics original 6 motors, zero vs bounded PD to IK targets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch08/ros2_ws/rl_env.py
+            Ch08/ros2_ws/models/ppo_reach_final.zip
+            Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml
+            ci/ch08_87_kinematic_diagnosis.py
+            ci/ch08_87_torque_dynamics_once.py
+            ci/ch08_87_verify_dynamics_receipt.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fix tested SHA and no-PPO scope
+        run: |
+          mkdir -p ci-results/ch08-87-dynamics
+          git rev-parse HEAD > ci-results/ch08-87-dynamics/checkout_sha.txt
+          echo 'Actual MuJoCo env.step for seeds 1000,1001,1002; test-only finite torque, no original PPO.' \
+            > ci-results/ch08-87-dynamics/scope.txt
+      - name: Reuse only existing MuJoCo NumPy Gymnasium versions
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            'mujoco==3.3.7' 'numpy==2.2.6' 'gymnasium==1.1.1'
+          python -m pip freeze > ci-results/ch08-87-dynamics/pip_freeze.txt
+      - name: Isolate actual zero torque versus bounded-PD control on original robot
+        env:
+          RUN_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=8s 100s \
+            python ci/ch08_87_torque_dynamics_once.py \
+            2>&1 | tee ci-results/ch08-87-dynamics/dynamics.log
+          grep -q CH08_87_REAL_MUJOCO_FINITE_TORQUE_DYNAMICS_SCOPED_PASS \
+            ci-results/ch08-87-dynamics/dynamics.log
+      - name: Independent original asset-hash / physics receipt audit
+        run: |
+          set -euo pipefail
+          python ci/ch08_87_verify_dynamics_receipt.py \
+            ci-results/ch08-87-dynamics/receipt.json \
+            Ch08/ros2_ws/models/ppo_reach_final.zip \
+            Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml \
+            Ch08/ros2_ws/rl_env.py \
+            2>&1 | tee ci-results/ch08-87-dynamics/audit.log
+      - name: Publish physical, performance and safety scopes separately
+        if: always()
+        run: |
+          {
+            echo '## Ch08 8.7 original MuJoCo finite torque dynamics vs zero control'
+            echo 'Three original seeds only; original PPO prior 0/10, preserved and NOT_RERUN.'
+            echo 'Test-only PD + actual model bias; original six actuator ctrlrange[-1,1].'
+            echo 'Bounded torque movement/approach does not mean stable/optimal PPO or real hardware safety.'
+            echo 'Ch07 RGBD BLOCKED; Ch10 HOLD.'
+            cat ci-results/ch08-87-dynamics/receipt.json || true
+            cat ci-results/ch08-87-dynamics/audit.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch08-87-dynamics-${{ github.run_id }}
+          path: ci-results/ch08-87-dynamics/
+          retention-days: 14
+          if-no-files-found: warn
