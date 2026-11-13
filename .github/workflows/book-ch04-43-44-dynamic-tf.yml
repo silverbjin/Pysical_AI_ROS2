@@ -1,0 +1,70 @@
+name: Book Ch04 4.3-4.4 real dynamic circular TF and listener (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'Ch04/ros2_ws/src/my_robot_tf/my_robot_tf/dynamic_tf_broadcaster.py'
+      - 'Ch04/ros2_ws/src/my_robot_tf/my_robot_tf/tf_listener.py'
+      - 'ci/ch04_43_44_tf_probe.py'
+      - 'ci/ch04_43_44_tf_once.sh'
+      - '.github/workflows/book-ch04-43-44-dynamic-tf.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch04-43-44-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  actual-dynamic-tf:
+    name: Real ROS TF 2m arc, listener 2m distance and clean Ctrl+C
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch04/ros2_ws/src/my_robot_tf
+            ci/ch04_43_44_tf_once.sh
+            ci/ch04_43_44_tf_probe.py
+      - name: Record exact source and pinned Jazzy runtime
+        run: |
+          mkdir -p ci-results/ch04-43-44
+          git rev-parse HEAD > ci-results/ch04-43-44/source_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' \
+            > ci-results/ch04-43-44/base_image.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse known-good ROS image digest
+        run: docker pull "$(cat ci-results/ch04-43-44/base_image.txt)"
+      - name: Run only original §4.3/4.4 dynamic ROS TF and listener
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 110s \
+            docker run --rm --init --pull=never --shm-size=256m \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch04-43-44/source_sha.txt)" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch04-43-44/base_image.txt)" \
+              bash ci/ch04_43_44_tf_once.sh \
+              2>&1 | tee ci-results/ch04-43-44/console.log
+      - name: Record exact achieved and excluded scopes
+        if: always()
+        run: |
+          {
+            echo '## Ch04 4.3–4.4 true ROS dynamic 2m TF'
+            echo 'Original static TF accepted earlier, NOT_RERUN. Real ROS listener, no Gazebo.'
+            echo 'GUI, MoveIt, hardware, Ch10 NOT_RUN/HOLD.'
+            cat ci-results/ch04-43-44/transform_receipt.json || true
+            cat ci-results/ch04-43-44/listener_receipt.json || true
+            cat ci-results/ch04-43-44/result.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch04-43-44-tf-${{ github.run_id }}
+          path: ci-results/ch04-43-44/
+          retention-days: 14
+          if-no-files-found: warn
