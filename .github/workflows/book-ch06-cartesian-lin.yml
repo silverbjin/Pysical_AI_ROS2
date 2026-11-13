@@ -1,0 +1,68 @@
+name: Book Ch06 6.5 Pilz LIN actual path only (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch06-cartesian-lin.yml'
+      - 'ci/ch06_cartesian_lin_once.sh'
+      - 'Ch06/ros2_ws/src/my_robot_control/my_robot_control/cartesian_path.py'
+      - 'Ch06/ros2_ws/src/my_robot_moveit_config/config/pilz_industrial_motion_planner_planning.yaml'
+      - 'Ch06/docs/LAB_6_5_GUIDE_KO.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch06-lin-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  cartesian-only:
+    name: Ch06 Pilz PTP init plus four LIN segments with planned and observed straightness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch06
+      - name: Pin source SHA and existing immutable image
+        run: |
+          mkdir -p ci-results/ch06-lin-65
+          git rev-parse HEAD > ci-results/ch06-lin-65/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch06-lin-65/base_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse exact digest without rebuilding
+        run: docker pull "$(cat ci-results/ch06-lin-65/base_digest.txt)"
+      - name: Execute only Ch06 6.5 original textbook entrypoint
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 670s \
+            docker run --rm --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch06-lin-65/checkout_sha.txt)" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch06-lin-65/base_digest.txt)" \
+              bash ci/ch06_cartesian_lin_once.sh \
+              2>&1 | tee ci-results/ch06-lin-65/console.log
+      - name: Explicit limitations and scoped verdict
+        if: always()
+        run: |
+          {
+            echo '## Ch06 6.5: Pilz LIN Cartesian motion'
+            echo 'Accepted Ch06 6.4 named/Pose IK: PRESERVED and NOT_RERUN.'
+            echo 'Only measured 4x 4cm X-Z Pilz LIN; NOT original misleading 40cm example.'
+            echo 'Gazebo physics, RViz GUI, hardware, MoveItPy destructor: NOT_RUN. Ch10 HOLD.'
+            cat ci-results/ch06-lin-65/result.json || true
+            cat ci-results/ch06-lin-65/verdict.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch06-lin-65-${{ github.run_id }}
+          path: ci-results/ch06-lin-65/
+          retention-days: 14
+          if-no-files-found: warn
