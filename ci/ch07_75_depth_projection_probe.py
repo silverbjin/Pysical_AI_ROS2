@@ -3,6 +3,7 @@
 
 No Gazebo sensor or depth alignment implied: the actual camera is BLOCKED #127.
 """
+import copy
 import json
 import math
 import os
@@ -50,7 +51,7 @@ class Probe(Node):
         if invalid_k:
             info.k[0] = 0.0
         image = Image()
-        image.header = info.header
+        image.header = copy.deepcopy(info.header)
         image.width, image.height = 80, 60
         image.encoding = encoding
         image.is_bigendian = 0
