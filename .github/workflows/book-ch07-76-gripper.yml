@@ -40,8 +40,8 @@ jobs:
       - name: Retest only process cleanup after controller readiness (no goals)
         run: |
           set -o pipefail
-          timeout --signal=TERM --kill-after=20s 175s \
-            docker run --rm --pull=never --shm-size=1g \
+          timeout --signal=TERM --kill-after=15s 100s \
+            docker run --rm --init --pull=never --shm-size=1g \
               -e RUN_SOURCE_SHA="$(cat ci-results/ch07-76/checkout_sha.txt)" \
               -e CH07_76_TEARDOWN_ONLY=1 \
               -v "$PWD":/work -w /work \
@@ -53,7 +53,8 @@ jobs:
         run: |
           {
             echo '## Ch07 7.6: actual Gazebo gripper controller only'
-            echo 'This run checks ONLY bounded ROS/Gazebo process teardown after controller readiness.'
+            echo 'This run checks ONLY bounded ROS/Gazebo process teardown after controller readiness; Docker --init provides PID1 reaping.'
+            echo 'Inspect teardown_trace.log / teardown_ps_before.txt / teardown_ps_after.txt; never assume SIGTERM clean from a marker alone.'
             echo 'Previous run #43354355284: open and close real Goal SUCCEEDED and measured feedback PASS, but overall CI FAIL (shutdown timeout).'
             echo 'Those already successful actions are NOT_RERUN. Do not claim a single-run full PASS.'
             echo 'Physical object grasp, lift, contact/friction, MoveIt gripper integration NOT_RUN.'
@@ -61,6 +62,7 @@ jobs:
             echo 'Accepted Ch07 7.3/7.4/7.5 not rerun.'
             cat ci-results/ch07-76/result.json || true
             cat ci-results/ch07-76/verdict.txt || true
+            cat ci-results/ch07-76/teardown_trace.log || true
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
