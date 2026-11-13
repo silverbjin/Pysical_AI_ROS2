@@ -140,7 +140,8 @@ def distance_to_segment(point, start, end):
 
 
 def params(robot, planner_id):
-    req = PlanRequestParameters(robot)
+    # Jazzy binding requires explicit namespace argument, even for defaults.
+    req = PlanRequestParameters(robot, "")
     req.planning_pipeline = "pilz_industrial_motion_planner"
     req.planner_id = planner_id
     req.planning_attempts = 1
