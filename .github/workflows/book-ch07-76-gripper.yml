@@ -1,4 +1,4 @@
-name: Book Ch07 7.6 real Gazebo two-finger controller (no grasp)
+name: Book Ch07 7.6 Gazebo teardown only (preserve action proof)
 on:
   pull_request:
     paths:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   gripper:
-    name: Real GazeboSimSystem two-finger action and measured positions, no physical grasp
+    name: Bounded Gazebo/ROS shutdown only; previous real action proof NOT_RERUN
     runs-on: ubuntu-24.04
     timeout-minutes: 17
     steps:
@@ -37,12 +37,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull existing digest, never rebuild image
         run: docker pull "$(cat ci-results/ch07-76/base_digest.txt)"
-      - name: Run Ch07 original gripper open/result then close/result in Gazebo
+      - name: Retest only process cleanup after controller readiness (no goals)
         run: |
           set -o pipefail
-          timeout --signal=TERM --kill-after=25s 680s \
+          timeout --signal=TERM --kill-after=20s 175s \
             docker run --rm --pull=never --shm-size=1g \
               -e RUN_SOURCE_SHA="$(cat ci-results/ch07-76/checkout_sha.txt)" \
+              -e CH07_76_TEARDOWN_ONLY=1 \
               -v "$PWD":/work -w /work \
               "$(cat ci-results/ch07-76/base_digest.txt)" \
               bash ci/ch07_76_gripper_once.sh \
@@ -52,7 +53,9 @@ jobs:
         run: |
           {
             echo '## Ch07 7.6: actual Gazebo gripper controller only'
-            echo 'Two prismatic joints open and close with real FollowJointTrajectory result and joint feedback.'
+            echo 'This run checks ONLY bounded ROS/Gazebo process teardown after controller readiness.'
+            echo 'Previous run #43354355284: open and close real Goal SUCCEEDED and measured feedback PASS, but overall CI FAIL (shutdown timeout).'
+            echo 'Those already successful actions are NOT_RERUN. Do not claim a single-run full PASS.'
             echo 'Physical object grasp, lift, contact/friction, MoveIt gripper integration NOT_RUN.'
             echo 'Ch07 real RGB-D camera BLOCKED #127, Ch10 HOLD.'
             echo 'Accepted Ch07 7.3/7.4/7.5 not rerun.'
