@@ -1,0 +1,58 @@
+name: Book Ch02 2.6 original action client no-server bound (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - 'ci/ch02_26_no_server_once.sh'
+      - '.github/workflows/book-ch02-26-no-server.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-server:
+    name: Original CountUntil client returns after real 5s absent-server wait
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch02/ros2_ws/src
+            ci/ch02_26_no_server_once.sh
+      - uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
+      - name: Install the already accepted Ch02 ROS interface/build prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            python3-colcon-common-extensions \
+            ros-jazzy-rosidl-default-generators \
+            ros-jazzy-example-interfaces \
+            ros-jazzy-action-msgs
+      - name: Reuse original action client only; no ActionServer and no Goal
+        run: |
+          set -euo pipefail
+          mkdir -p ci-results/ch02-26-no-server
+          git rev-parse HEAD > ci-results/ch02-26-no-server/source_sha.txt
+          export RUN_SOURCE_SHA="$(cat ci-results/ch02-26-no-server/source_sha.txt)"
+          timeout --signal=TERM --kill-after=10s 225s \
+            bash ci/ch02_26_no_server_once.sh \
+            2>&1 | tee ci-results/ch02-26-no-server/console.log
+      - name: Publish scope and incomplete manual steps
+        if: always()
+        run: |
+          {
+            echo '## Ch02 2.6 original client, no server'
+            echo 'Real five-second wait with observed failure log but clean expected exit.'
+            echo 'Previously accepted normal Goal, reject and cancel not rerun.'
+            echo 'GUI and hardware NOT_RUN; Ch10 HOLD.'
+            cat ci-results/ch02-26-no-server/result.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch02-26-no-server-${{ github.run_id }}
+          path: ci-results/ch02-26-no-server/
+          retention-days: 14
+          if-no-files-found: warn
