@@ -137,3 +137,37 @@ python ci/ch08_87_verify_dynamics_receipt.py \
 이것은 **시험용 피드백 제어기의 결과**이지, 저장된 원본 PPO의 성공을 나타내지 않는다. 최초 PPO 정책은 여전히 10회 중 0회 성공이다. 또한 시험용 제어기는 토크 포화에 도달했고 실제 관절 이동이 빨랐으므로 실물 안전성·속도·가속도 성능은 승인하지 않았다.
 
 시드별 실제 상태, 종료 거리, 대조 실험, 소스 SHA, 다음 개선 순서는 [§8.7 유한 토크 동역학 검수 보고서](SECTION_8_7_TORQUE_DYNAMICS_DIAGNOSIS_KO.md)를 참고한다.
+
+---
+
+## 2026-11 후속 검수: 저장된 PPO의 실제 행동 출력·목표 조건 민감도
+
+이미 검수한 원본 PPO의 0/10 성공률, 위치 IK 10/10과 시험용 PD 동역학 3/3은 서로 다른 실험으로, 합산하거나 재실행하지 않는다.
+
+- 공개 CI: `.github/workflows/book-ch08-87-frozen-action-diagnostics.yml`
+- 실행기: `ci/ch08_87_frozen_ppo_actions_once.py`, 독립 감사: `ci/ch08_87_verify_action_diagnostic.py`
+- 기존 `models/ppo_reach_final.zip`을 CPU에서 변경 없이 로드한다. 시드 1000~1002만 원본 `ReachEnv.step()`으로 각각 최대 120스텝 관찰한다. 기존 10×300 스텝 성능 평가를 반복하지 않는다.
+- 여섯 모터별 원본 액션의 평균·표준편차·포화율(abs(action)>=0.98)·거의 0인 비율(abs(action)<=0.02), 시간 변화량, 실제 motor ctrl 입력 일치를 기록한다.
+- 실제 거리·원본 보상 구성 요소(거리/제어/부드러움/접촉/보너스) 합의 일치 여부를 측정한다.
+- 원래 로봇 관절과 EE 관측을 고정한 채 시드 1000~1009의 원본 목표 좌표만 바꾸어 정책 출력 민감도를 비교한다. 변화량이 적다고 그것만으로 목표를 완전히 무시한다고 단정하지 않는다.
+- 실제 CI에서 결과가 확인되면 `receipt.json`, `trace_seed_1000.json` 등 원본 추적 파일과 원본 ZIP·환경·XML SHA256을 증거로 보존한다.
+
+### 학생용 재현
+
+~~~bash
+cd ~/Pysical_AI_ROS2
+python -m pip install --index-url https://download.pytorch.org/whl/cpu 'torch==2.5.1+cpu'
+python -m pip install 'mujoco==3.3.7' 'gymnasium==1.1.1' 'numpy==2.2.6' 'stable-baselines3==2.6.0'
+python ci/ch08_87_frozen_ppo_actions_once.py
+python ci/ch08_87_verify_action_diagnostic.py \
+  ci-results/ch08-87-actions/receipt.json \
+  Ch08/ros2_ws/models/ppo_reach_final.zip \
+  Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml \
+  Ch08/ros2_ws/rl_env.py
+~~~
+
+이 진단의 프로그램 정상 종료는 **정책 성능 합격**을 뜻하지 않는다. 기존 PPO 성능 0/10은 그대로이며, Ch07 원본 RGB-D #127 BLOCKED, Ch10 #123 HOLD.
+
+### 실행 검수 결과 기록
+
+공개 CI [#43426946500](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43426946500)은 실제 360개 원본 PPO 액션/보상 기록과 독립 감사에서 PASS했다. 모든 여섯 모터의 포화율은 0%였지만, 시드 1000·1001에서는 목표에 가장 가까워진 뒤 다시 멀어졌다. 한 로봇 상태에서 목표만 10개로 바꾸었을 때 가장 큰 두 정책 출력의 L2 차이는 0.124649였다. 자세한 원본 데이터, 보상 분석 및 미검증 조건은 [§8.7 원본 PPO 액션 진단 보고서](SECTION_8_7_FROZEN_PPO_ACTION_DIAGNOSIS_KO.md)를 참고한다. **정책 성능 0/10 실패는 여전히 유지**한다.

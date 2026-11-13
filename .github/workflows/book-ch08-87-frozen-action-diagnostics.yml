@@ -1,0 +1,87 @@
+name: Book Ch08 8.7 frozen PPO action/reward cause diagnosis (Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch08-87-frozen-action-diagnostics.yml'
+      - 'ci/ch08_87_frozen_ppo_actions_once.py'
+      - 'ci/ch08_87_verify_action_diagnostic.py'
+      - 'Ch08/ros2_ws/evaluate_robot.py'
+      - 'Ch08/ros2_ws/rl_env.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: book-ch08-87-frozen-actions-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  action-reward-diagnostic:
+    name: Actual frozen PPO action and reward trace on 3 brief seeded episodes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch08/ros2_ws/rl_env.py
+            Ch08/ros2_ws/models/ppo_reach_final.zip
+            Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml
+            ci/ch08_87_frozen_ppo_actions_once.py
+            ci/ch08_87_verify_action_diagnostic.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pin source SHA and avoid any full PPO eval/training
+        run: |
+          mkdir -p ci-results/ch08-87-actions
+          git rev-parse HEAD > ci-results/ch08-87-actions/checkout_sha.txt
+          echo '3 seeds x 120 steps only; all ten 300-step original policy evaluations NOT_RERUN.' \
+            > ci-results/ch08-87-actions/scope.txt
+      - name: Reuse CPU-only runtime of accepted original PPO evaluation
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check \
+            --index-url https://download.pytorch.org/whl/cpu 'torch==2.5.1+cpu'
+          python -m pip install --disable-pip-version-check \
+            'mujoco==3.3.7' 'numpy==2.2.6' \
+            'gymnasium==1.1.1' 'stable-baselines3==2.6.0'
+          python -m pip freeze > ci-results/ch08-87-actions/pip_freeze.txt
+      - name: Observe short actual frozen PPO motor action and reward trajectories
+        env:
+          RUN_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=8s 110s \
+            python ci/ch08_87_frozen_ppo_actions_once.py \
+            2>&1 | tee ci-results/ch08-87-actions/frozen_actions.log
+          grep -q CH08_87_REAL_FROZEN_PPO_ACTION_AND_REWARD_DIAGNOSTIC_SCOPED_PASS \
+            ci-results/ch08-87-actions/frozen_actions.log
+      - name: Independently audit raw step trajectories and original asset hashes
+        run: |
+          set -euo pipefail
+          python ci/ch08_87_verify_action_diagnostic.py \
+            ci-results/ch08-87-actions/receipt.json \
+            Ch08/ros2_ws/models/ppo_reach_final.zip \
+            Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml \
+            Ch08/ros2_ws/rl_env.py \
+            2>&1 | tee ci-results/ch08-87-actions/independent_audit.log
+      - name: Report target sensitivity vs motor saturation (not policy performance acceptance)
+        if: always()
+        run: |
+          {
+            echo '## Ch08 §8.7 frozen PPO short diagnostics'
+            echo 'Saved ZIP loaded unchanged; true MuJoCo env.step() for max 120 steps x 3 seeds.'
+            echo 'Motor action per-channel mean/std/saturation, action delta, reward components,'
+            echo 'and target-only variation with identical arm observation.'
+            echo 'Prior full frozen policy result remains 0/10; test-only PD success 3/3 remains separate.'
+            echo 'No retraining, no full 10x300 retest, no real robot. Ch07 RGBD BLOCKED, Ch10 HOLD.'
+            cat ci-results/ch08-87-actions/receipt.json || true
+            cat ci-results/ch08-87-actions/independent_audit.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch08-87-action-diagnostic-${{ github.run_id }}
+          path: ci-results/ch08-87-actions/
+          retention-days: 14
+          if-no-files-found: warn
