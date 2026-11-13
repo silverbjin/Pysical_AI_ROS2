@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!-- Ch07 §7.6 existing model and existing GazeboSimSystem controller, no camera -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="my_robot">
+  <xacro:include filename="$(find vision_basics)/urdf/my_robot.urdf.xacro"/>
+  <xacro:include filename="$(find vision_basics)/urdf/my_robot.ros2_control.xacro"/>
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find vision_basics)/config/ros2_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+</robot>
