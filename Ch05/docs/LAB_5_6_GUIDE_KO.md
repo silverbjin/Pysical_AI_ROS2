@@ -76,3 +76,16 @@ ros2 run rqt_plot rqt_plot
 - 실행에 사용한 ROS/Gazebo 버전, 체크아웃 커밋, 빌드 성공/실패 및 종료코드, 사용 명령을 기록한다.
 - 예상 출력은 체크 조건이지 본 문서 작성자가 실제 관측했다는 뜻이 아니다. 오류 시 로그를 그대로 남기고 우회·추측으로 PASS 처리하지 않는다.
 - 5.6절 대응 리뷰: [SECTION_5_6_REPORT_KO.md](SECTION_5_6_REPORT_KO.md). 원고/구현 차이와 제한을 함께 읽는다.
+
+---
+
+## 2026-11 실제 Gazebo 움직임 검수: 원본 wave_hello 전용
+
+기존 Ch05 `simple_controller` 실측 관절 이동 및 추종 증거는 보존하고 재실행하지 않는다. 이번 공개 GitHub Actions는 **원본 `ros2 run manipulation_basics wave_hello --ros-args -p use_sim_time:=true`를 실행**하여 관절 명령과 실제 Gazebo `/joint_states`를 동시에 관찰한다.
+
+- 고정 이미지: `ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f`. 재빌드 없이 기존 `ci/docker/next_scope.sh`의 Ch05 실제 Controller Manager/arm_controller 준비 경로를 재사용한다.
+- 실행기: `BOOK_WAVE=1 bash ci/docker/next_scope.sh Ch05`. 독립 ROS 구독기: `ci/docker/verify_ch05_wave.py`; 전용 GitHub Actions: `.github/workflows/book-ch05-56-wave.yml`.
+- 12초 동안 네 관절의 명령·실측을 수집한다. 발행 메시지가 최소 160건, 관절 실측 최소 60건, 발행 median 주기가 0.008~0.075초여야 한다. joint1 명령 진폭 span≥0.45rad, joint4≥0.70rad, 실제 관절 movement span이 각 ≥0.15rad이어야 한다.
+- 모든 실제 명령의 `time_from_start`는 원본의 20ms이고, 코드에서 요구하는 시작 joint2=-0.5rad, joint3=0.8rad의 갑작스러운 목표 변경 가능성을 **위험 경계**로 별도 기록한다. 이 사실을 물리 안전성 PASS로 해석하지 않는다.
+- 정상 증거는 원본 `wave_receipt.json`, DDS 실제 메시지 수와 관절 이동량, 소스 SHA, GHCR digest, Actions run ID와 원본 Artifact, 종료 상태를 포함한다. 관측 성공을 실물 하드웨어의 안전한 제어, 안정적인 50Hz 추종, 충분한 시작 램프나 장시간 연속 동작 PASS로 승격하지 않는다.
+- 기대 로그: `CH05_56_REAL_GAZEBO_WAVE_COMMAND_AND_JOINT_MOVEMENT_SCOPED_PASS`. 실행하지 못했거나 값이 부족하면 FAIL/BLOCKED를 그대로 둔다. Ch10 Issue #123은 계속 HOLD.
