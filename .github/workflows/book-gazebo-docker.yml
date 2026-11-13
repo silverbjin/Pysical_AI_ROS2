@@ -2,17 +2,18 @@ name: Book Gazebo common Docker
 on:
   pull_request:
     paths:
-      - '.github/workflows/book-gazebo-docker.yml'
+      # The immutable image/smoke must not rebuild for chapter docs or
+      # separate dynamic-TF / controller probes. Use workflow_dispatch if needed.
       - 'ci/docker/Dockerfile'
       - 'ci/docker/smoke.sh'
       - 'ci/docker/verify_static_tf.py'
-      - 'Ch03/**'
-      - 'Ch04/**'
-      - 'Ch05/**'
+      - 'Ch03/ros2_ws/src/**'
+      - 'Ch04/ros2_ws/src/my_robot_tf/my_robot_tf/static_tf_broadcaster.py'
+      - 'Ch04/ros2_ws/src/my_robot_tf/setup.py'
+      - 'Ch05/ros2_ws/src/manipulation_basics/urdf/**'
   push:
     branches: [main]
     paths:
-      - '.github/workflows/book-gazebo-docker.yml'
       - 'ci/docker/Dockerfile'
       - 'ci/docker/smoke.sh'
       - 'ci/docker/verify_static_tf.py'

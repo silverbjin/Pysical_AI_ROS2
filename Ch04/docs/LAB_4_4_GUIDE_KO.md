@@ -76,3 +76,13 @@ ros2 run tf2_ros tf2_echo police_bot turtle_frame
 | 종료 | 두 Python 노드와 static CLI를 Ctrl+C로 정리 |
 
 실행 OS/명령/`tf2_echo` 출력/대표 로그 5개/실패 로그를 남긴다. [4.4절 리뷰 보고서](SECTION_4_4_REPORT_KO.md).
+
+---
+
+## 4.4 실제 TF2 Listener의 원운동 관측 및 종료 검수
+
+원본 tf_listener를 broadcaster와 독립 프로세스로 실행하고, 실제 TF2 버퍼의 lookup_transform 결과를 반영한 `Detected: Turtle is at (x, y), Distance: 2.00m` 로그가 적어도 3건 이상 존재해야 한다. 같은 CI에서 SIGINT 이후 두 노드 종료코드가 0이고 ROS 그래프에서 두 노드가 제거되는지도 확인한다.
+
+원본 Python 두 파일은 ROS Jazzy의 Ctrl+C 처리 후 `rclpy.shutdown()` 중복 호출을 피하도록 `if rclpy.ok()`를 사용한다. 원운동/타이머/프레임/거리 계산은 변경하지 않았다.
+
+공개 워크플로: .github/workflows/book-ch04-43-44-dynamic-tf.yml. 기대 성공 마커: CH04_44_ORIGINAL_TF_LISTENER_REAL_LOOKUP_DISTANCE_PASS, CH04_43_44_ACTUAL_ROS_DYNAMIC_TF_LISTENER_CLEAN_EXIT_SCOPED_PASS. 독립 원본 로그/receipt를 확인하기 전까지 PASS로 표시하지 않는다. RViz GUI는 현장 WSL2 별도; Ch10 HOLD.

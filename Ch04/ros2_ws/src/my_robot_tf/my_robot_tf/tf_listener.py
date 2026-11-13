@@ -1,6 +1,7 @@
 import math
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from rclpy.duration import Duration
 
 # TF2 Listener 관련 모듈 임포트 (필수)
@@ -57,11 +58,14 @@ def main():
     node = FrameListener()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
+        # Jazzy can signal context shutdown through the executor on SIGINT.
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        # SIGINT may have already shut down rclpy in ROS 2 Jazzy.
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

@@ -62,3 +62,13 @@ Global Options → Fixed Frame `world`, Add → TF, Show Axes/Names 활성화. `
 | 역방향 값이 기대와 다름 | `tf2_echo world turtle_frame`과 `tf2_echo turtle_frame world`은 서로 역변환 |
 
 결과물은 실행 OS, ROS 버전, 주파수 측정값, 대표 `tf2_echo` 출력, RViz 화면 및 실패 로그다. 보고서 [SECTION_4_3_REPORT_KO.md](SECTION_4_3_REPORT_KO.md)에 근거를 반영한다.
+
+---
+
+## 4.3 실제 ROS /tf의 원운동 검수 (공개 CI)
+
+기존 Ch04 4.2 정적 TF의 PASS는 보존하고 반복 실행하지 않는다. 이번 검수는 원본 dynamic_tf_broadcaster를 직접 실행하여 world→turtle_frame의 실제 메시지 35개 이상에서 다음을 확인한다: 원운동 반경 2.0m±0.02m, 좌표 x/y 변화폭 각각 0.5m 이상, quaternion 정규화 오차 <=0.001, yaw가 궤적 접선 방향과 0.015rad 이내, 중복되지 않는 nonzero stamp 35개 이상.
+
+실행기: ci/ch04_43_44_tf_once.sh / 관찰기: ci/ch04_43_44_tf_probe.py / 공개 워크플로: .github/workflows/book-ch04-43-44-dynamic-tf.yml.
+
+실제 CI 로그에 CH04_43_REAL_2M_CIRCULAR_TF_AND_TANGENT_YAW_PASS가 표시되고, 독립 receipt와 종료코드가 모두 통과한 경우에만 scoped PASS다. CI에서 GUI, 실제 로봇, Gazebo, 정적 TF 재시험은 수행하지 않는다. Ch10 HOLD.
