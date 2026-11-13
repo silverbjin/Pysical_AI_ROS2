@@ -107,9 +107,32 @@ timeout --signal=TERM --kill-after=5s 40s \
  -name my_robot -file "$OUT/robot.urdf" -z 0.1 \
  2>&1 | tee "$OUT/spawn.log"
 grep -q 'Entity creation successful' "$OUT/spawn.log"
-stage REAL_SIM_CLOCK_AND_JOINT_STATE_CHANNELS
-timeout 15s ros2 topic info -v /joint2/cmd_pos > "$OUT/command_topic.txt"
-timeout 15s ros2 topic info -v /joint_states > "$OUT/state_topic.txt"
+stage WAIT_REAL_ROS_GAZEBO_BRIDGE_READY
+# The bridge starts asynchronously after spawn: first topic-info call can
+# legitimately return code 1 before its DDS subscription is registered.
+BRIDGE_READY=0
+for attempt in $(seq 1 30); do
+  if timeout 4s ros2 topic info -v /joint2/cmd_pos > "$OUT/command_topic.txt" 2>&1 &&
+      grep -Eq 'Subscription count: [1-9]' "$OUT/command_topic.txt"; then
+    BRIDGE_READY=1; break
+  fi
+  sleep .25
+done
+[[ "$BRIDGE_READY" == 1 ]] || {
+  echo CH04_47_JOINT2_BRIDGE_NOT_READY >&2; cat "$OUT/bridge.log"; exit 4;
+}
+stage WAIT_REAL_GAZEBO_JOINT_STATES_AND_CLOCK
+STATE_READY=0
+for attempt in $(seq 1 25); do
+  if timeout 4s ros2 topic info -v /joint_states > "$OUT/state_topic.txt" 2>&1 &&
+      grep -Eq 'Publisher count: [1-9]' "$OUT/state_topic.txt"; then
+    STATE_READY=1; break
+  fi
+  sleep .25
+done
+[[ "$STATE_READY" == 1 ]] || {
+  echo CH04_47_JOINT_STATES_BRIDGE_NOT_READY >&2;cat "$OUT/bridge.log";exit 5;
+}
 timeout 18s ros2 topic echo /clock --once > "$OUT/clock.txt" 2>&1
 grep -q 'sec:' "$OUT/clock.txt"
 stage START_ORIGINAL_CH03_JOINT_CONTROL_CLI
