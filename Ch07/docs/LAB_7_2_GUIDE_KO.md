@@ -1,3 +1,62 @@
+# Ch07 §7.2 — 실제 OGRE2 RGB-D Image / CameraInfo 발행 실습 (2026-11-13 인수판)
+
+> 기준: ROS 2 Jazzy, Gazebo Harmonic, `vision_basics`의 **실제 원본 RGB-D 모델**. 2026-11-13 공개 CI에서 이미지·CameraInfo·Optical TF·정상 종료를 검증했다. 이 가이드는 **Headless 실측 재현**을 다루며, 아래 2026-10-20 미수행·BLOCKED 기록은 원문 역사로 남겨둔다.
+
+## 문제를 해결한 이유
+
+- 최초 카메라 내부 `gz-sim-sensors-system`과 월드의 `Sensors`가 **동시에 로드**돼 OGRE2의 동일 HLMS 재질 블록을 생성하면서 Gazebo가 SIGABRT했다.
+- 카메라 Xacro에서는 **중복 Sensors 플러그인만 제거**, 월드 SDF에는 하나만 유지한다. 원본 RGB-D sensor와 OGRE2는 그대로다.
+- `<gz_frame_id>camera_optical_frame</gz_frame_id>`가 실제 Image/CameraInfo에 부착되므로 고정 optical TF의 이름과 일치한다.
+- Gazebo는 공식 `--headless-rendering` 옵션을 사용한다. 센서 렌더러의 간헐적 SIGINT 교착을 피하기 위해 `--iterations 12000`으로 자연 종료한다.
+- 관련 원인 분석과 원본 실측: [§7.2 보고서](SECTION_7_2_REPORT_KO.md), [최종 CI #43441463628](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43441463628), [Artifact #14045524144](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43441463628/artifacts/14045524144).
+
+## 방법 A — 원격 공개 CI의 실제 검증 결과 확인
+
+- 전용 workflow: `.github/workflows/book-ch07-127-egl-headless.yml`. `book-next-vision-localization.yml`의 **Ch11 기존 통과 시험은 이 카메라 변경 때문에 다시 실행하지 않는다**.
+- 실행기: `ci/docker/ch07_camera_once.sh`, 독립 ROS 관측기: `ci/docker/verify_camera.py`.
+- 실제 성공 문자열:
+  - `CH07_127_SINGLE_WORLD_SENSORS_STATIC_CONTRACT_PASS`
+  - `CH07_127_EXACTLY_ONE_RUNTIME_SENSORS_SYSTEM_PASS`
+  - `BOOK_CH07_CAMERA_PASS`
+  - `GAZEBO_NATURAL_ITERATIONS_EXIT_RC=0`
+  - `CH07_127_FINAL stage=CAMERA_PASS rc=0 shutdown=OWNED_GROUPS_EXITED_NO_SIGKILL`
+- 실제 관찰: RGB `640×480 rgb8`, 921600바이트, 유효 Image 3개, CameraInfo 3개, Optical TF 1개, `frame_id=camera_optical_frame`, K의 `fx=fy≈554.3827`.
+
+## 방법 B — 강사 WSL2에서 동일 Headless Docker로 선택적 재현
+
+**이 명령은 사용자가 직접 실행하는 선택적 로컬 검수다.** 2026-11-13 원격 공개 CI에서 PASS했으나 이 가이드 자체가 강사 WSL2 현장 PASS를 증명하는 것은 아니다.
+
+~~~bash
+# Windows WSL2 Ubuntu 24.04 / ROS 2 Jazzy 환경
+cd ~/Pysical_AI_ROS2
+git switch main
+git pull --ff-only origin main
+mkdir -p ci-results/vision/Ch07
+
+IMAGE='ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f'
+docker pull "$IMAGE"
+docker run --rm --init --pull=never --shm-size=1g \
+  -e RUN_SOURCE_SHA="$(git rev-parse HEAD)" \
+  -e GITHUB_RUN_ID="owner_$(date +%s)" \
+  -v "$PWD":/work -w /work "$IMAGE" \
+  bash ci/docker/ch07_camera_once.sh
+
+python3 -m json.tool ci-results/vision/Ch07/camera_data.json
+python3 -m json.tool ci-results/vision/Ch07/result.json
+~~~
+
+임의의 GPU, Xvfb, 새로운 Docker 태그, 다른 Gazebo 월드를 **섞지 않는다**. 원격과 동일 이미지 digest를 재사용한다. `camera_data.json`의 **Image·Info 개수 및 frame_id, 결과의 종료 코드**가 모두 맞아야 Owner scoped PASS다. 실패하면 `gzserver.log`, `ogre2.log`, `stages.log` 원본을 보존한다.
+
+## 예제 데이터 발행과 실제 Depth 인수의 차이
+
+실제 `gz topic -l`에는 `/camera/image`, `/camera/camera_info`, `/camera/depth_image`, `/camera/points`가 존재한다. 다만 **이 검수는 ROS RGB Image와 CameraInfo만 수신해 확인했다**. Depth의 실제 값과 RGB-Depth 일치 여부, PointCloud 좌표 투영, GUI/RViz, 카메라를 이용한 물리 파지는 **별도의 다음 실습**이다.
+
+ROS Topic 확인 명령은 `ros2 topic list -t`, `ros2 topic echo /camera/camera_info --once`, `ros2 topic hz /camera/image_raw`을 사용하되, **시뮬레이터가 실행 중인 별도 ROS 세션**에서 확인한다. 위 원샷은 자연 종료 후 컨테이너까지 정리하므로 종료 후 호스트에서 토픽이 보이지 않는 것이 정상이다.
+
+---
+
+## 과거 2026-10-20 사전 검토와 초기 실습 가이드 (원문 보존)
+
 # LAB_7_2_GUIDE_KO — 7.2절 Gazebo Harmonic 카메라 센서 설정 및 데이터 수신
 
 > 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
