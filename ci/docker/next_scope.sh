@@ -336,7 +336,9 @@ if [[ "${BOOK_WAVE:-0}" == "1" ]]; then
   BG="$WAVE_CHECK_PID $BG"
   sleep 1.2
   stage CH05_56_ORIGINAL_WAVE_HELLO
-  start wave_hello ros2 run manipulation_basics wave_hello --ros-args -p use_sim_time:=true
+  # ROS DDS one-shot ramp is auditable only after controller + independent
+  # probe have both matched; classroom deployment defaults to one controller.
+  start wave_hello env CH05_WAVE_MIN_SUBSCRIBERS=2 ros2 run manipulation_basics wave_hello --ros-args -p use_sim_time:=true
   stage CH05_56_CAPTURE_ACTUAL_GAZEBO_WAVE_RESPONSE
   wait "$WAVE_CHECK_PID"
   cat "$OUT/wave_probe.log"
