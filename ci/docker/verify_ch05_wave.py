@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Ch05 §5.6: original wave_hello publisher + REAL Gazebo joint feedback.
+"""Ch05 §5.6: measured startup + original wave in REAL Gazebo.
 
 Do not rerun the already accepted simple_controller tests. The 50Hz/20ms
 trajectory behavior is measured, not certified as smooth tracking or safe
-on actual hardware. Explicitly report aggressive initial posture jump.
+on actual hardware. Observe a single 3s startup plan in ROS simulation time.
 """
 import json
 import math
@@ -15,6 +15,7 @@ import time
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
+from rosgraph_msgs.msg import Clock
 from trajectory_msgs.msg import JointTrajectory
 
 OUT=Path(sys.argv[1])
@@ -24,6 +25,10 @@ rclpy.init()
 node=Node("ch05_56_real_wave_feedback_probe")
 cmd=[]
 meas=[]
+last_clock_ns=[None]
+
+def on_clock(msg):
+    last_clock_ns[0]=msg.clock.sec*1_000_000_000+msg.clock.nanosec
 
 def on_cmd(msg):
     if list(msg.joint_names)!=list(JOINTS) or len(msg.points)!=1:
@@ -32,7 +37,8 @@ def on_cmd(msg):
     if len(point.positions)!=4 or not all(math.isfinite(x) for x in point.positions):
         raise RuntimeError("CH05_56_INVALID_COMMAND")
     cmd.append({
-        "t":time.monotonic(),"positions":[float(x) for x in point.positions],
+        "t":time.monotonic(),"sim_ns":last_clock_ns[0],
+        "positions":[float(x) for x in point.positions],
         "horizon_ns":int(point.time_from_start.sec*1e9+point.time_from_start.nanosec),
     })
 
@@ -50,6 +56,7 @@ def on_joint(msg):
 subs=[
     node.create_subscription(JointTrajectory,"/arm_controller/joint_trajectory",on_cmd,25),
     node.create_subscription(JointState,"/joint_states",on_joint,25),
+    node.create_subscription(Clock,"/clock",on_clock,25),
 ]
 start=time.monotonic()
 try:
@@ -68,9 +75,17 @@ try:
         raise RuntimeError(f"CH05_56_START_RAMP_MISSING ramps={len(ramps)} wave={len(wave)}")
     if cmd_horizons!=[20_000_000,3_000_000_000]:
         raise RuntimeError(f"CH05_56_UNEXPECTED_TRAJECTORY_HORIZONS {cmd_horizons}")
-    startup_interval_s=wave[0]["t"]-ramps[0]["t"]
-    if not 3.0<=startup_interval_s<=6.5:
-        raise RuntimeError(f"CH05_56_NO_MEASURED_STARTUP_WAIT duration={startup_interval_s}")
+    startup_interval_wall_s=wave[0]["t"]-ramps[0]["t"]
+    if ramps[0]["sim_ns"] is None or wave[0]["sim_ns"] is None:
+        raise RuntimeError("CH05_56_CLOCK_MISSING_FOR_STARTUP_INTERVAL")
+    startup_interval_sim_s=(wave[0]["sim_ns"]-ramps[0]["sim_ns"])/1e9
+    # The 3s trajectory horizon is ROS /clock, NOT host wall-clock.
+    # Under headless Gazebo, the real-time factor is not guaranteed to be 1.
+    if not 2.8<=startup_interval_sim_s<=6.5:
+        raise RuntimeError(
+            f"CH05_56_SIM_STARTUP_INTERVAL_FAIL sim={startup_interval_sim_s:.3f} "
+            f"wall={startup_interval_wall_s:.3f}"
+        )
     cmd_dts=[b["t"]-a["t"] for a,b in zip(wave,wave[1:])]
     def span(values,index):
         ar=[x["positions"][index] for x in values]
@@ -120,7 +135,8 @@ try:
         "measured_spans_rad":meas_spans,
         "first_observed_command_rad":first,
         "startup_ramp_goal_duration_sec":3.0,
-        "startup_to_wave_interval_sec":startup_interval_s,
+        "startup_to_wave_sim_time_sec":startup_interval_sim_s,
+        "startup_to_wave_wall_time_sec":startup_interval_wall_s,
         "ramp_joint2_observed_min_max_rad":[min(r2),max(r2)],
         "ramp_joint3_observed_min_max_rad":[min(r3),max(r3)],
         "original_trajectory_horizons_ns":cmd_horizons,
