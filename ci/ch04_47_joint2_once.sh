@@ -58,7 +58,25 @@ grep -q 'my_robot_description joint_control_cli' "$OUT/executables.txt"
 stage PARSE_ORIGINAL_GAZEBO_ARM_MODEL
 xacro "$WS/src/my_robot_description/urdf/two_dof_arm.urdf.xacro" > "$OUT/robot.urdf"
 check_urdf "$OUT/robot.urdf" > "$OUT/urdf_check.txt"
-grep -q 'joint2' "$OUT/urdf_check.txt"
+# check_urdf prints a LINK tree, not joint names. Inspect the parsed
+# model itself instead of grep'ing the human-readable tree output.
+python3 - "$OUT/robot.urdf" <<'PY'
+import sys,xml.etree.ElementTree as ET
+root=ET.parse(sys.argv[1]).getroot()
+joints={x.attrib["name"]:x for x in root.findall("joint")}
+assert {"joint1","joint2"}.issubset(joints)
+assert joints["joint2"].attrib["type"]=="revolute"
+plugins=root.findall(".//gazebo/plugin")
+control=[p for p in plugins
+         if p.attrib.get("filename")=="gz-sim-joint-position-controller-system"
+         and p.findtext("joint_name")=="joint2"]
+assert len(control)==1
+assert control[0].findtext("topic")=="/model/my_robot/joint2/cmd_pos"
+state=[p for p in plugins if p.attrib.get("filename")==
+       "gz-sim-joint-state-publisher-system"]
+assert len(state)==1 and "joint2" in [x.text for x in state[0].findall("joint_name")]
+print("CH04_47_GENERATED_URDF_JOINT2_PLUGIN_CONTRACT_PASS")
+PY
 python3 - "$OUT/robot.urdf" "$OUT/rsp.yaml" <<'PY'
 from pathlib import Path
 import sys,yaml
