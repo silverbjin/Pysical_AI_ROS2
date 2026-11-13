@@ -56,12 +56,16 @@ def main(args=None):
     
     except KeyboardInterrupt:
         # Ctrl+C가 입력되면 조용히 종료
-        node.get_logger().info("종료 신호를 받았습니다.")
+        # Jazzy may have shut down the default context in its SIGINT handler.
+        if rclpy.ok():
+            node.get_logger().info("종료 신호를 받았습니다.")
     
     finally:
         # 4. 자원 해제 및 종료
         node.destroy_node() # 노드 소멸
-        rclpy.shutdown()    # ROS 2 통신 종료
+        # Avoid RCLError: rcl_shutdown already called on the given context.
+        if rclpy.ok():
+            rclpy.shutdown()    # ROS 2 통신 종료
 
 if __name__ == '__main__':
     main()
