@@ -120,7 +120,7 @@ if ! grep -q -- '--headless-rendering' "$OUT/gz_sim_help.txt"; then
   echo "CH07_127_OFFICIAL_HEADLESS_FLAG_UNSUPPORTED" | tee "$OUT/preflight_error.txt"
   exit 64
 fi
-dpkg-query -W -f='${binary:Package}=\${Version}\n' \
+dpkg-query -W -f='${binary:Package}=${Version}\n' \
   'gz-sim*' 'libgz-rendering*' 'libgz-sensors*' 'libegl*' 'libgl1-mesa*' 'libogre*' \
   > "$OUT/renderer_packages.txt" 2>&1 || true
 for diagnostic in eglinfo glxinfo; do
