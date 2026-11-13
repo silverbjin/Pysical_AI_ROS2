@@ -124,7 +124,8 @@ def main():
                 env.data.qpos[:6]=original_q
                 env.data.qvel[:6]=original_v
                 mujoco.mj_forward(m,env.data)
-            winner=min(options,key=lambda a:a["final_error_m"])
+            feasible=[attempt for attempt in options if attempt["converged"]]
+            winner=min(feasible or options,key=lambda a:a["final_error_m"])
             # Save independently observed geometric goal, not a rewritten target.
             rows.append({
                 "seed":seed,"sampled_target_xyz_m":target.tolist(),
