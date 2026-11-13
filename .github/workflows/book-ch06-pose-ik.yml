@@ -1,0 +1,66 @@
+name: Book Ch06 Pose IK + FK only (issue 134; Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch06-pose-ik.yml'
+      - 'ci/ch06_pose_ik_once.sh'
+      - 'Ch06/ros2_ws/src/my_robot_control/my_robot_control/pose_ik_fk.py'
+      - 'Ch06/ros2_ws/src/my_robot_control/setup.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch06-pose-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  pose-only:
+    name: Real FK-derived pose goal, MoveItPy plan, fake controller execution and observed FK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch06
+      - name: Record source and immutable base digest
+        run: |
+          mkdir -p ci-results/ch06-pose-ik
+          git rev-parse HEAD > ci-results/ch06-pose-ik/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch06-pose-ik/base_digest.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull already verified digest (no rebuild)
+        run: docker pull "$(cat ci-results/ch06-pose-ik/base_digest.txt)"
+      - name: Test ONLY pose goal and independent FK feedback
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 670s \
+            docker run --rm --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch06-pose-ik/checkout_sha.txt)" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch06-pose-ik/base_digest.txt)" \
+              bash ci/ch06_pose_ik_once.sh \
+              2>&1 | tee ci-results/ch06-pose-ik/console.log
+      - name: Explicit scoped verdict
+        if: always()
+        run: |
+          {
+            echo '## Ch06 §6.4 Pose IK only'
+            echo 'Preexisting named ready = PRESERVED PASS #43338734506; NOT_RERUN.'
+            echo 'Physics, GUI, destructor, hardware and general 6DoF pose IK = NOT_RUN.'
+            cat ci-results/ch06-pose-ik/result.json || true
+            cat ci-results/ch06-pose-ik/verdict.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch06-pose-ik-${{ github.run_id }}
+          path: ci-results/ch06-pose-ik/
+          retention-days: 14
+          if-no-files-found: warn

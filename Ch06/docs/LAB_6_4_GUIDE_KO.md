@@ -98,3 +98,58 @@ exit=0
 [기존 문제 #126](https://github.com/silverbjin/Pysical_AI_ROS2/issues/126) · [실행 검수 PR #133](https://github.com/silverbjin/Pysical_AI_ROS2/pull/133)
 
 **2026-11-13 공개 CI:** [실제 성공 run #43337790267](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43337790267)에서 named `ready` 계획 및 컨트롤러 `SUCCEEDED`, 최대 관절 오차 **0.005494rad**를 측정했다. 정상 MoveItCpp destructor / Gazebo 물리 / 포즈 IK / WSL2 GUI는 **NOT_RUN**. 최신 재검/셧다운 상태는 해당 PR의 마지막 Actions Artifact를 기준으로 판단한다.
+
+
+## 6. Pose IK 추가 검수 — FK에서 생성한 도달 가능한 단일 목표 (Issue #134)
+
+**기존 1~5절의 named `ready` 성공 결과는 다시 실행하지 않는다.** 별도 CLI `pose_ik_node`는 임의의 6차원 목표를 추측하지 않고, 설치된 MoveIt `RobotState`에 다음 유효한 5관절 각도를 넣어 `link_wrist`의 FK Pose를 만든다.
+
+- FK seed: `joint1=0.25`, `joint2=-0.25`, `joint3=0.95`, `joint4=0.20`, `joint_wrist=-0.15` rad. 각도는 현재 URDF의 한계 안이며, 절대 Cartesian 목표를 임의로 하드코딩하지 않는다.
+- `world` 좌표계의 `PoseStamped`를 `arm_group.set_goal_state(pose_stamped_msg=..., pose_link="link_wrist")`로 전달한다.
+- 실제 MoveItPy OMPL `plan()`과 가상 `FollowJointTrajectory` `SUCCEEDED`를 요구한다.
+- 실행 후 **새로 관측한** `/joint_states`를 다시 MoveIt `RobotState`에 넣어 FK를 독립 계산한다. Position 오차 `<=0.03m`, quaternion 각도 오차 `<=0.10rad`, 초기 대비 실제 관절 이동 `>=0.10rad`, 초기 Pose와 목표 위치 차 `>=0.08m`를 모두 요구한다.
+- 이 목표에서 성공하더라도 **5축 로봇에 대한 임의의 6D Pose IK 일반 성공은 주장하지 않는다.**
+
+### 실행 절차
+
+터미널 A에서 기존 2절의 `moveit_64_headless.launch.py`를 실행하고 유지한다. 이 터미널은 **반드시 가상 `FakeSystem`**이어야 하며 Gazebo 또는 실물 로봇은 허용하지 않는다. 새 터미널 B에서는 환경을 source하고 먼저 컨트롤러 및 가상 하드웨어를 확인한다.
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd ~/Pysical_AI_ROS2/Ch06/ros2_ws
+source install/setup.bash
+
+ros2 control list_hardware_components -c /controller_manager # FakeSystem 확인
+ros2 control list_controllers -c /controller_manager # 2개 active 확인
+ros2 action list -t | grep follow_joint_trajectory
+ros2 pkg executables my_robot_control | grep pose_ik_node
+```
+
+위 실제 출력으로 `FakeSystem`을 확인하지 못했다면 다음 코드를 **실행하지 않는다**. 확인이 끝난 터미널 B에서만:
+
+```bash
+CH06_CI_MOCK_CONTROLLER_VERIFIED=1 \
+CH06_CI_RESULT_RECEIPT="$PWD/ch06_64_pose_receipt.json" \
+ros2 run my_robot_control pose_ik_node --ci-mock-verified-exit
+
+echo "exit=$?"
+python3 -m json.tool "$PWD/ch06_64_pose_receipt.json"
+```
+
+기대하는 주요 로그 순서(실제 PASS 여부는 로그와 JSON/관절 데이터를 교차 확인):
+
+```text
+CH06_POSE_JOINT_STREAM_READY ...
+CH06_POSE_FK_TARGET_CREATED ...
+CH06_POSE_IK_GOAL_ACCEPTED
+CH06_POSE_IK_PLANNING_PASS
+CH06_POSE_IK_EXECUTION_STATUS=SUCCEEDED
+CH06_POSE_IK_EXECUTION_FK_FEEDBACK_PASS ...
+CH06_POSE_IK_SCOPED_PASS_MOCK_ONLY
+CH06_POSE_UPSTREAM_3721_TEARDOWN_BYPASSED_AFTER_FK_PASS
+exit=0
+```
+
+`Planning PASS`만 나오거나, 실행 상태가 `SUCCEEDED`이더라도 **실측 FK 위치·방향 잔차가 기준 초과**라면 Pose IK는 FAIL이다. JSON 증거 없이 종료코드만 0이라면 성공으로 처리하지 않는다. `--ci-mock-verified-exit`는 기존 [MoveIt 2 #3721](https://github.com/moveit/moveit2/issues/3721) 소멸자 문제를 피하기 위한 **가상 컨트롤러 전용 우회**이며 정상 destructor 종료는 **NOT_RUN**이다.
+
+[Issue #134](https://github.com/silverbjin/Pysical_AI_ROS2/issues/134) · 공개 CI `.github/workflows/book-ch06-pose-ik.yml`. 이 절의 실제 CI PASS/FAIL 판정은 해당 PR의 **실행 로그 및 Artifact**를 기준으로 하며, 이전 named-ready run #43338734506의 성공을 재사용하여 Pose IK까지 PASS로 승격하지 않는다. GUI/물리/실물 하드웨어는 계속 NOT_RUN이다.
