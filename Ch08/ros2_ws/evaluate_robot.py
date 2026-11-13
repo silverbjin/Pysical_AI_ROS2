@@ -1,94 +1,166 @@
+#!/usr/bin/env python3
+"""Ch08 §8.7: bounded deterministic PPO policy evaluation with true distances.
+
+No claim of policy quality from a short smoke training run. This evaluates
+the exact supplied ZIP, reports actual success/timeout, and NEVER reports
+missing final distance as a 0mm "perfect" steady-state error.
+"""
+import argparse
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import sys
+
 import numpy as np
-import gymnasium as gym
+import torch
 from stable_baselines3 import PPO
 from rl_env import ReachEnv
-from tqdm import tqdm
 
-def evaluate_policy_robotics(model, env, n_eval_episodes=100):
-    """
-    물리 AI 및 로봇 매니퓰레이션 시스템 특화 정량 성능 평가 함수
-    """
-    success_count = 0
-    episode_rewards = []
-    episode_lengths = []
-    action_smoothness_scores = []
-    final_steady_state_errors = []  # [추가] 정착 오차 (최종 남은 거리) 추적
 
-    print(f"\n==================================================")
-    print(f"[평가 개시] 총 {n_eval_episodes}회의 독립 에피소드 테스트를 진행합니다.")
-    print(f"==================================================")
-    
-    for i in tqdm(range(n_eval_episodes), desc="로봇 에이전트 평가 중"):
-        obs, info = env.reset()  # Gymnasium 최신 스펙 적용 (info 수신)
-        done = False
-        total_reward = 0
-        steps = 0
-        
-        last_action = None  # [교정] 첫 스텝 거칠기 왜곡 방지를 위해 None으로 초기화
-        episode_action_diff = 0
-        
-        while not done:
-            # Deterministic=True: 결정론적 최적 제어 명령 추출
-            action, _ = model.predict(obs, deterministic=True)
-            obs, reward, terminated, truncated, info = env.step(action)
-            
-            total_reward += reward
-            steps += 1
-            
-            # [교정] 부드러움 측정: 두 번째 스텝부터 연속적인 변화량만 순수 측정
-            if last_action is not None:
-                episode_action_diff += np.linalg.norm(action - last_action)
-            last_action = action.copy()
+def _hash(path):
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for buf in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(buf)
+    return h.hexdigest()
 
-            # [교정] Gymnasium 표준 종료 조건 연산 및 타임아웃 강제 방어
-            done = terminated or truncated or steps >= 500
-            
-            # [보안] 에피소드가 종료(done)되었을 때 성공 조건 확인
-            if done:
-                # 환경의 info 내 'is_success' 표준 플래그 혹은 terminated 기반 판단
-                if info.get('is_success', False) or (terminated and not truncated):
-                    success_count += 1
-                
-                # [추가] 정착 오차 데이터 수집 (마지막 순간 목표물과의 거리)
-                if 'distance' in info:
-                    final_steady_state_errors.append(info['distance'])
-        
-        episode_rewards.append(total_reward)
-        episode_lengths.append(steps)
-        
-        # 스텝당 평균 액션 변화량 계산 (최소 1스텝 이상일 때만 분모 연산)
-        denom = max(1, steps - 1)
-        action_smoothness_scores.append(episode_action_diff / denom)
 
-    # 정량 통계 지표 산출
-    success_rate = (success_count / n_eval_episodes) * 100
-    mean_reward = np.mean(episode_rewards)
-    std_reward = np.std(episode_rewards)
-    mean_steps = np.mean(episode_lengths)
-    mean_smoothness = np.mean(action_smoothness_scores)
-    mean_sse = np.mean(final_steady_state_errors) if final_steady_state_errors else 0.0
+def evaluate_policy_robotics(model, env, n_eval_episodes=10,
+                              max_steps=300, seed=1000):
+    """Return explicit per-episode measurements; never infer missing distance."""
+    if n_eval_episodes < 1 or max_steps < 1:
+        raise ValueError("episodes/steps must be positive")
+    if (tuple(model.observation_space.shape)!=(18,)
+            or tuple(model.action_space.shape)!=(6,)):
+        raise RuntimeError(
+            f"CH08_87_MODEL_SHAPE_MISMATCH expected=18/6 "
+            f"observed={model.observation_space.shape}/{model.action_space.shape}"
+        )
 
-    print("\n==================================================")
-    print("📊 6-DOF 매니퓰레이터 정량적 성능 평가 결과 보고서")
-    print("==================================================")
-    print(f"1. 태스크 도달 성공률 (Success Rate)       : {success_rate:.2f}%")
-    print(f"2. 평균 정착 오차 (Steady-State Error)    : {mean_sse*1000:.1f} mm (실패 포함)")
-    print(f"3. 평균 제어 소요 시간 (Mean Time Steps)   : {mean_steps:.1f} Steps")
-    print(f"4. 제어 신호 거칠기 (Action Jerk Score)   : {mean_smoothness:.4f} (낮을수록 소모전력 최적화됨)")
-    print(f"5. 에피소드 평균 보상 (Mean Return)        : {mean_reward:.2f} +/- {std_reward:.2f}")
-    print("==================================================\n")
-    
-    return success_rate, mean_reward
+    episodes = []
+    for i in range(n_eval_episodes):
+        observation, _ = env.reset(seed=seed+i)
+        rewards = 0.0
+        changes = []
+        previous_action = None
+        success = False
+        reason = "STEP_LIMIT"
+        last_distance = None
+        for step in range(max_steps):
+            action, _ = model.predict(observation, deterministic=True)
+            action = np.asarray(action, dtype=np.float32)
+            if action.shape != (6,) or not np.isfinite(action).all():
+                raise RuntimeError("CH08_87_POLICY_ACTION_INVALID")
+            if previous_action is not None:
+                changes.append(float(np.linalg.norm(action-previous_action)))
+            previous_action=action.copy()
+            observation, reward, terminated, truncated, info = env.step(action)
+            rewards+=float(reward)
+            if observation.shape != (18,) or not np.isfinite(observation).all():
+                raise RuntimeError("CH08_87_INVALID_STEP_OBSERVATION")
+            distance=float(info.get("distance", float("nan")))
+            # Independently measure real EE-target geometry rather than trust
+            # a default 0.0 or an unrelated reward component.
+            geometry=float(np.linalg.norm(observation[12:15]-observation[15:18]))
+            if not (math.isfinite(distance) and math.isfinite(geometry)
+                    and abs(distance-geometry)<1e-4):
+                raise RuntimeError(
+                    f"CH08_87_DISTANCE_MISSING_OR_INCONSISTENT distance={distance} geometry={geometry}"
+                )
+            last_distance=distance
+            if not math.isfinite(rewards):
+                raise RuntimeError("CH08_87_REWARD_NONFINITE")
+            if bool(terminated) or bool(truncated):
+                success=bool(info["is_success"]) and distance<0.05
+                reason="SUCCESS" if success else ("TRUNCATED" if truncated else "TERMINATED")
+                break
+        if last_distance is None:
+            raise RuntimeError("CH08_87_NO_STEP_DISTANCE")
+        episodes.append({
+            "episode":i, "seed":seed+i, "steps":step+1,
+            "reason":reason, "success":success,
+            "final_distance_m":last_distance,
+            "episode_return":rewards,
+            "mean_action_delta":float(np.mean(changes)) if changes else 0.0,
+        })
 
-if __name__ == "__main__":
-    env = ReachEnv(render_mode=None)
-    model_path = "./models/ppo_reach_final"
-    
+    success_count=sum(e["success"] for e in episodes)
+    mean_return=float(np.mean([e["episode_return"] for e in episodes]))
+    final_distances=[e["final_distance_m"] for e in episodes]
+    metrics={
+        "episode_count":len(episodes),
+        "success_count":success_count,
+        "success_rate_pct":100.0*success_count/len(episodes),
+        "mean_return":mean_return,
+        "mean_final_distance_m":float(np.mean(final_distances)),
+        "std_final_distance_m":float(np.std(final_distances)),
+        "mean_episode_steps":float(np.mean([e["steps"] for e in episodes])),
+        "mean_action_delta":float(np.mean([e["mean_action_delta"] for e in episodes])),
+        "seed_start":seed, "max_steps":max_steps,
+        "individual_episodes":episodes,
+    }
+    print(
+        f"CH08_87_ACTUAL_POLICY_EVALUATION_PASS episodes={len(episodes)} "
+        f"success_count={success_count} "
+        f"mean_final_distance_m={metrics['mean_final_distance_m']:.6f} "
+        f"success_rate_pct={metrics['success_rate_pct']:.1f}",
+        flush=True,
+    )
+    return metrics
+
+
+def main():
+    p=argparse.ArgumentParser()
+    p.add_argument("--model",type=Path,default=Path("models/ppo_reach_final.zip"))
+    p.add_argument("--episodes",type=int,default=10)
+    p.add_argument("--max-steps",type=int,default=300)
+    p.add_argument("--seed",type=int,default=1000)
+    p.add_argument("--output-json",type=Path,default=None)
+    args=p.parse_args()
+    torch.set_num_threads(2)
+    model_file=args.model.resolve()
+    if not model_file.is_file():
+        raise FileNotFoundError(f"CH08_87_MODEL_MISSING {model_file}")
+    env=ReachEnv(render_mode=None)
     try:
-        model = PPO.load(model_path)
-        print(f"[시스템] 최적화된 학습 완료 정책 모델 로드 완료: {model_path}")
-        evaluate_policy_robotics(model, env, n_eval_episodes=100)
-    except FileNotFoundError:
-        print(f"[오류] 지정한 경로({model_path})에 가중치 파일 파일이 없습니다. 학습을 먼저 완료하세요.")
+        model=PPO.load(str(model_file),device="cpu")
+        if model.observation_space.shape!=(18,) or model.action_space.shape!=(6,):
+            raise RuntimeError("CH08_87_SAVED_MODEL_NOT_COMPATIBLE_WITH_6DOF")
+        metrics=evaluate_policy_robotics(
+            model,env,n_eval_episodes=args.episodes,
+            max_steps=args.max_steps,seed=args.seed,
+        )
+        result={
+            "chapter":"Ch08","section":"8.7","status":"SCOPED_PASS",
+            "scope":"deterministic_existing_policy_true_distance_metrics",
+            "model_zip_sha256":_hash(model_file),
+            "source_sha":os.environ.get("RUN_SOURCE_SHA","LOCAL_UNPINNED"),
+            "metrics":metrics,
+            "training_history_claim":"NOT_RUN",
+            "real_robot":"NOT_RUN","rgb_video":"NOT_RUN",
+            "ch10":"HOLD",
+        }
+        if args.output_json:
+            path=args.output_json.resolve()
+            path.parent.mkdir(parents=True,exist_ok=True)
+            if path.exists():
+                raise FileExistsError("CH08_87_REFUSING_OVERWRITE_RECEIPT")
+            tmp=path.with_suffix(".tmp")
+            with tmp.open("w",encoding="utf-8") as f:
+                json.dump(result,f,ensure_ascii=False,sort_keys=True,indent=2)
+                f.write("\n");f.flush();os.fsync(f.fileno())
+            os.replace(tmp,path)
+        print("CH08_87_REAL_EE_DISTANCE_AND_BOUNDED_METRICS_SCOPED_PASS",flush=True)
+        return 0
     finally:
         env.close()
+
+
+if __name__=="__main__":
+    try:
+        sys.exit(main())
+    except Exception as exc:
+        print(f"CH08_87_FAIL type={type(exc).__name__} reason={exc}",file=sys.stderr,flush=True)
+        sys.exit(1)

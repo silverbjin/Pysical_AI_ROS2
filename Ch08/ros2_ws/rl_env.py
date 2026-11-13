@@ -228,7 +228,9 @@ class ReachEnv(gym.Env):
             "reward_smooth": r_smooth * w_smooth, # 모니터링용 데이터 추가
             "reward_contact": r_contact * w_contact,
             "reward_bonus": r_bonus,
-            "is_success": distance < threshold
+            "is_success": distance < threshold,
+            # Real geometric distance in metres, never a fabricated 0.0.
+            "distance": float(distance)
         }
         
         return total_reward, reward_info
