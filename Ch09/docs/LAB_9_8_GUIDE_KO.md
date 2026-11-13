@@ -1,3 +1,42 @@
+# Ch09 §9.8 — ROS 2 시뮬레이션 시각과 관절 TF의 실제 검수
+
+> 이전에 성공한 Ch09 §9.6 실측 Gazebo 기립 및 §9.7 단일 다리 사인파는 보존하며 반복하지 않는다. 이번 검수는 12관절 모델과 ROS-Gazebo 브리지 설정, 실제 robot_state_publisher의 시뮬레이션 시각 기준 TF 발행만 대상으로 한다.
+
+## 원인과 최소 변경
+
+교재의 simulation.launch.py는 Gazebo /clock을 사용하지만 robot_state_publisher에 use_sim_time을 설정하지 않았다. 이번 최소 교정은 실제 런치에 use_sim_time=True를 전달하는 것이다. 기존 로봇 URDF, 관절 목표, PID, Gazebo world 및 브리지 매핑은 변경하지 않는다.
+
+## 공개 CI의 검수 순서
+
+1. Ch09 패키지만 빌드, 원본 Xacro 변환과 URDF 및 12개 revolute joint 확인.
+2. inertial mass 양수 및 정확히 12개의 ROS-to-Gazebo 명령 브리지 토픽과 고유 매핑을 검사.
+3. 실제 robot_state_publisher를 실행하고 합성 /clock 및 합성 /joint_states 열두 관절 값을 발행.
+4. 실제 /tf에서 12개 동적 링크의 프레임 부모 및 시뮬레이션 시간 stamp를 검증. /tf_static에서 base_footprint와 네 발 고정 TF 관계 확인.
+5. SIGTERM 뒤 ROS 노드 회수와 결과 JSON, 소스 SHA, Actions run ID 및 원본 Artifact 확인.
+
+시험에 쓰는 실행기는 ci/ch09_98_simtime_tf_once.sh이고, 독립 ROS 관측기는 ci/ch09_98_tf_probe.py이다. 고정 GHCR Jazzy/Harmonic 이미지를 재빌드하지 않고 재사용한다. Gazebo 물리 엔진은 이번 시험에서 실행하지 않는다.
+
+정상 출력이 나올 경우 다음 식별자가 순서대로 나타난다.
+
+~~~text
+CH09_98_REAL_GENERATED_URDF_AND_12_BRIDGE_PAIRS_PASS
+CH09_98_ACTUAL_SIMTIME_TF_STATIC_AND_12_DYNAMIC_FRAMES_PASS
+CH09_98_INDEPENDENT_ROS_SIM_CLOCK_TF_RECEIPT_PASS
+CH09_98_SHUTDOWN=SIGTERM_CLEAN
+~~~
+
+이는 예상 출력이다. 공개 Actions 결과가 실제 성공할 때만 scoped PASS로 기록한다.
+
+## 이미 보존된 실제 물리 검수
+
+Ch09 §9.6 기립 자세는 공개 CI https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43244795784 에서 최대 roll/pitch 약 0.463°로 PASS했다. §9.7 단일 다리 사인파는 공개 CI https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43187047823 에서 1,376 명령과 13,080 관절 상태, 약 0.723rad 관절 변화로 관찰했다.
+
+**제외:** 이 TF 검수에서 실제 Gazebo 기립, 단일 다리 사인파, 실제 발 접촉력, 장시간 균형, GUI 및 하드웨어는 NOT_RUN. Ch10 Issue #123은 HOLD 유지.
+
+---
+
+## 과거 정적 QA 가이드 (기록 보존)
+
 # 9.8절 실습 가이드 — 통합 QA·트러블슈팅·다음 장 인계
 
 > 이 문서는 첨부 원고의 학습 단계와 실제 저장소 코드를 맞춘 **재현 가이드**다. 권장: ROS 2 Jazzy, Gazebo Harmonic, Ubuntu 24.04/WSL2. 실행 예시는 현재 세션에서 물리 시뮬레이터로 성공 검증된 명령이 아니다.
