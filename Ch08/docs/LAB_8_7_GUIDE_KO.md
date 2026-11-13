@@ -100,3 +100,31 @@ python ci/ch08_87_verify_kinematic_receipt.py \
 ### 실제 검수 결과 및 해석
 
 같은 10개 시드의 목표는 기구학적 위치 IK로 **10/10 모두 오차 0.05m 미만**의 해를 찾았다. 공개 CI #43417674577의 독립 receipt 감사 PASS이며, 기존 PPO의 **실제 성공률 0/10은 그대로 유지**한다. 자세한 10개 시드 원본 데이터와 다음 진단 단계는 [§8.7 기구학적 실패 원인 분석 보고서](SECTION_8_7_KINEMATIC_DIAGNOSIS_KO.md)를 참고한다.
+
+---
+
+## 다음 검수 — 실제 MuJoCo 토크 제어와 원본 목표 거리 변화 (2026-11-13)
+
+앞선 [위치 IK 검수 #43417674577](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43417674577)에서 같은 10개 시드의 목표 중 **10/10**에서 위치 기구학 해를 발견했다. 이는 저장된 PPO의 기존 **0/10 성능 실패**를 해결한 것이 아니다. 남은 문제는 실제 6개 모터 토크의 동적 실행과 학습된 정책의 차이를 분리하는 일이다.
+
+### 새 시험의 제한 범위
+
+- **실제 원본 환경:** `Ch08/ros2_ws/rl_env.py`의 `ReachEnv`, 원본 `simple_arm_6dof.xml`, 실제 `env.step(action)`과 MuJoCo `mj_step`. PPO 모델 ZIP은 SHA256만 확인하고 추론·재훈련하지 않는다.
+- **시드:** 우선 1000,1001,1002 세 목표만 별도 비교한다. 각 시드에서 **원본 모터 토크 0**과 **진단용 관절 PD+중력 보상**을 동일한 초기 상태에서 각각 실행한다. 초기 조건은 MuJoCo `mj_resetData`로 분리한다. 이는 원본 `ReachEnv.reset`가 MuJoCo 시간·구동 상태까지 모두 초기화한다는 의미가 아니다.
+- **토크 제한:** 여섯 원본 모터 `ctrlrange[-1,1]`과 XML의 `gear`를 그대로 따른다. 진단용 제어 입력은 `clip((40*(q_goal-q)-5*qvel+qfrc_bias)/gear,-1,1)`. 이는 **교재 기본 PPO가 아닌 시험용 대조 제어기**이다.
+- **시간·종료:** 각 시드별 최대 원본 `env.step` 300회, 스텝당 MuJoCo 5×0.002초 → 최대 3초. 초기/최소/종료 시점 EE–목표 거리(m), 실제 관절 움직임(rad), 최대/평균 모터 명령, 목표 반경 0.05m 도달 여부를 분리 기록한다.
+- **PASS 경계:** 실제 `env.step`에서 유한한 관절 운동과 토크 제한 준수를 확인하고, 세 목표 중 최소 하나에서 초기 거리 대비 0.10m 이상의 접근을 관찰한다. **최소 거리 개선 ≠ 최종 목표 도달 또는 안정적 추종**이다. 결과가 부족하면 FAIL과 원본 로그를 남긴다.
+- **실행기:** `ci/ch08_87_torque_dynamics_once.py`, 독립 감사 `ci/ch08_87_verify_dynamics_receipt.py`, 공개 CI `.github/workflows/book-ch08-87-torque-dynamics.yml`. 기존 §8.6 PPO 학습과 §8.7 저장 ZIP 평가를 재실행하지 않는다.
+
+~~~bash
+cd ~/Pysical_AI_ROS2
+python -m pip install 'mujoco==3.3.7' 'gymnasium==1.1.1' 'numpy==2.2.6'
+python ci/ch08_87_torque_dynamics_once.py
+python ci/ch08_87_verify_dynamics_receipt.py \
+  ci-results/ch08-87-dynamics/receipt.json \
+  Ch08/ros2_ws/models/ppo_reach_final.zip \
+  Ch08/ros2_ws/src/my_robot_description/assets/simple_arm_6dof.xml \
+  Ch08/ros2_ws/rl_env.py
+~~~
+
+이 실험을 성공하더라도 기존 PPO의 0/10 목표 성능은 그대로다. 동적 접근과 별개로 정책의 보상·탐색·학습·홀드아웃 평가 검수는 다음 단계에서 진행한다. 충돌 안전성·모터 과열·물리 하드웨어·GUI는 NOT_RUN, Ch07 RGB-D BLOCKED, Ch10 HOLD.
