@@ -6,7 +6,9 @@ can be added only after its reachable goal and orientation are validated.
 SIMULATION ONLY: this is not a physical robot safety controller.
 """
 import argparse
+import json
 import math
+import os
 from pathlib import Path
 import sys
 import time
@@ -160,7 +162,27 @@ def main(args=None):
         "--mode", choices=("named",), default="named",
         help="Only measured named ready is accepted; pose-IK is a separate unverified exercise.",
     )
+    parser.add_argument(
+        "--ci-mock-verified-exit",
+        action="store_true",
+        help=(
+            "CI/mock-hardware only: after verified MoveIt execution and joint "
+            "feedback, replace the process to avoid upstream MoveItPy Jazzy "
+            "2.12.4 destructor SIGSEGV (moveit2#3721); does NOT test normal "
+            "MoveItCpp teardown. Never use on physical hardware."
+        ),
+    )
     known, ros_args = parser.parse_known_args(args)
+    if known.ci_mock_verified_exit and (
+        os.environ.get("CH06_CI_MOCK_CONTROLLER_VERIFIED") != "1"
+        or not os.environ.get("CH06_CI_RESULT_RECEIPT")
+    ):
+        print(
+            "CH06_CI_MOCK_EXIT_FORBIDDEN: requires verified mock controller "
+            "and explicit receipt path",
+            file=sys.stderr, flush=True,
+        )
+        return 2
     robot = None
     observer = None
     rclpy.init(args=ros_args)
@@ -176,8 +198,49 @@ def main(args=None):
         observer.wait_for(lambda _: True, timeout_sec=15.0)
         robot = MoveItPy(node_name="ch06_hello_moveit", config_dict=config)
         if known.mode == "named":
-            run_named_ready(robot, observer)
+            errors = run_named_ready(robot, observer)
         print("CH06_64_NAMED_READY_COMPLETE_POSE_IK_NOT_RUN", flush=True)
+        if known.ci_mock_verified_exit:
+            # Upstream Jazzy MoveItPy 2.12.4 issue moveit2#3721:
+            # the detached executor thread and destructor shutdown ordering
+            # can SIGSEGV after *successful* plan and execution. This option
+            # is explicit and only for an externally verified mock controller.
+            # A normal MoveItCpp destructor/shutdown is NOT claimed here.
+            assert max(errors.values()) <= JOINT_TOLERANCE_RAD
+            receipt = Path(os.environ["CH06_CI_RESULT_RECEIPT"])
+            receipt.parent.mkdir(parents=True, exist_ok=True)
+            data = {
+                "chapter": "Ch06", "section": "6.4",
+                "scenario": "named_ready_mock_controller_only",
+                "planning": "PASS", "execution": "SUCCEEDED",
+                "joint_goal": "PASS", "max_joint_error_rad": max(errors.values()),
+                "per_joint_error_rad": errors,
+                "normal_moveitcpp_destructor": "NOT_RUN_UPSTREAM_MOVEIT2_3721",
+                "pose_ik": "NOT_RUN", "gazebo_physics": "NOT_RUN",
+                "real_hardware": "NOT_RUN",
+            }
+            temp = receipt.with_suffix(".tmp")
+            with temp.open("w", encoding="utf-8") as handle:
+                json.dump(data, handle, sort_keys=True, indent=2)
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp, receipt)
+            print(
+                "CH06_MOVEITPY_UPSTREAM_3721_TEARDOWN_BYPASSED_"
+                "AFTER_VERIFIED_MOCK_EXECUTION", flush=True,
+            )
+            # Release the *Python* ROS node. Do not destroy the MoveItPy C++
+            # object affected by upstream bug; process replacement replaces
+            # the entire address space after all acceptance evidence exists.
+            observer.destroy_node()
+            observer = None
+            if rclpy.ok():
+                rclpy.shutdown()
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os.execv("/usr/bin/true", ["true"])
+            raise AssertionError("execv never returned")
         return 0
     except (Exception, KeyboardInterrupt) as exc:
         print(f"CH06_64_FAIL type={type(exc).__name__} reason={exc}",
