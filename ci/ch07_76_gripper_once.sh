@@ -28,10 +28,12 @@ log_shutdown(){
 }
 stop_owned(){
  local pgid="$1"
+ # Bash functions have dynamic scope: never reuse cleanup()'s loop index.
+ local attempt
  log_shutdown "CH07_76_STOP_START_PGID=$pgid"
  # Actual descendant process group. Reaping remains delegated to Docker --init.
  kill -TERM -- "-$pgid" 2>/dev/null || true
- for i in $(seq 1 12); do
+ for attempt in $(seq 1 12); do
    if ! kill -0 -- "-$pgid" 2>/dev/null; then
      log_shutdown "CH07_76_STOP_TERM_EXIT_PGID=$pgid"
      return 0
