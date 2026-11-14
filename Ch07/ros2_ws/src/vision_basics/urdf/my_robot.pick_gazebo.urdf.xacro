@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!-- Ch07 #173 G00: ONLY test-only compositional wrapper.
+     Combines original 7.2 RGB-D + 7.6 5-arm/2-finger GazeboSimSystem.
+     Gazebo Sensors is owned by world; exactly one control plugin.
+     This source is NOT a physical pick/place PASS. -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="my_robot">
+  <xacro:include filename="$(find vision_basics)/urdf/my_robot.urdf.xacro"/>
+  <xacro:include filename="$(find vision_basics)/urdf/my_robot.ros2_camera_gazebo.xacro"/>
+  <xacro:include filename="$(find vision_basics)/urdf/my_robot.ros2_control.xacro"/>
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find vision_basics)/config/ros2_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+</robot>
