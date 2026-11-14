@@ -497,7 +497,23 @@ def main():
         # A 24mm diameter rod first contacts at q=(.045-.024)/2=.0105m.
         # Command .012m so the simulation must exhibit contact force,
         # never count joint success alone as a grasp.
-        report["finger_results"].append(w.grip_goal("contact_close",.012))
+        # The same rotated arm in free space passed seven independent
+        # FJT trials in CI #43573273969, including the stagger sequence:
+        # command finger1 first, then finger2 while holding finger1.
+        # The simultaneous command at the real rod had alternately frozen
+        # one finger. Use EXACTLY the measured-successful stagger order;
+        # both original physical prismatic joints still provide real
+        # contact force. No fake attached body or controller change.
+        first=w.grip_goal("contact_close_stage1",.012,0.0,diagnostic=True)
+        report["finger_results"].append(first)
+        report["finger_goal_count"]+=1
+        report["pose_snapshots"]["stagger_stage1"]=rod_pose()
+        assert first["actual_m"]["joint_finger1"]>=.008,(
+            "G04B_STAGE1_FINGER1_DID_NOT_MOVE_TO_ROD")
+        assert math.dist(report["pose_snapshots"]["stagger_stage1"],
+                         report["pose_snapshots"]["initial"])<=.018,(
+            "G04B_STAGE1_KNOCKED_ROD_OFF_SUPPORT")
+        report["finger_results"].append(w.grip_goal("contact_close",.012,.012))
         report["finger_goal_count"]+=1
         w.spin_for(.65)
         report["pose_snapshots"]["closed"]=rod_pose()
