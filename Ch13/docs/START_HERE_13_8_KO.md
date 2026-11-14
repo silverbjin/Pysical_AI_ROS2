@@ -2,12 +2,15 @@
 
 이 패키지의 교재 목표는 **이동·관측·상태 확인·안전 종료와 실패 판독**이다. 학생 실행은 아래 `--exercise basic`을 사용한다. 관측 후 파지하지 않고 종료하며 MoveIt 계획 서버를 기동하지 않고 팔/gripper 동작 명령을 발행하지 않는다. 원래 보행·native hold·센서·안전 감시는 유지한다. Level2 운반·놓기는 [과거 시연 해설](DEMO_13_8_LEVEL2_ARCHIVE_KO.md), 연속 임무 개발은 [향후 과제](FUTURE_13_8_TASKS_KO.md)로 구분한다.
 
+
+> **배포 소스와 과거 인수의 구분 (2026-11-14):** 위 다운로드는 현재 원격 `main` 기준입니다. 기존 Ch13 v53/R5/M4 인수 JSON은 당시 동결 소스·자산의 성공이며, 새 clone의 HEAD에 동일한 합격을 자동 전파하지 않습니다. `git rev-parse HEAD`·94개 외부 자산 해시·설치/실행 로그가 대응되는지 검수해야 합니다. 실제 새 WSL2 설치·GUI·실기 현장 인수는 `MANUAL_REQUIRED`입니다. Ch10 #123은 HOLD이며 재검하지 않습니다.
+
 ## 1. 다운로드·의존성·분리 build
 
 새 WSL Ubuntu24.04 폴더에 받는 예시다. 기존 작업 폴더를 덮어쓰지 않는다. 이미 이13.8 작업본이 있다면 clone 대신 그 루트에서 `export ROOT="$PWD"`부터 실행한다.
 
 ```bash
-git clone --filter=blob:none --sparse --single-branch --branch feat/ch13-section-13-8 \
+git clone --filter=blob:none --sparse --single-branch --branch main \
   https://github.com/silverbjin/Pysical_AI_ROS2.git Pysical_AI_ROS2_13_8
 cd Pysical_AI_ROS2_13_8
 git sparse-checkout set Ch13
@@ -15,7 +18,7 @@ export ROOT="$PWD"
 git rev-parse HEAD
 ```
 
-OS/ROS2 Jazzy/Nav2·원본94자산·시뮬레이터venv는 [13.5 준비1·3·4](LAB_13_5_REUSE_GUIDE_KO.md)를, MoveIt/TRAC-IK 등 기존 패키지 build 의존성은 [13.6 준비](LAB_13_6_REUSE_GUIDE_KO.md)를 따른다. 소스는 위13.8 branch를 유지하고 그 문서의옛branch나build를사용하지않는다. 기본 모드에서는 MoveIt 서버를 실행하지 않지만 기존 통합 패키지의 build 의존성은 남아 있다. 외부 자산은 `$ROOT/../upstream-iit-locomanipulation-d010212`에 두며 모델·정책 가중치를 저장소가 재배포하지 않는다.
+OS/ROS2 Jazzy/Nav2·원본94자산·시뮬레이터venv는 [13.5 준비1·3·4](LAB_13_5_REUSE_GUIDE_KO.md)를, MoveIt/TRAC-IK 등 기존 패키지 build 의존성은 [13.6 준비](LAB_13_6_REUSE_GUIDE_KO.md)를 따른다. **최신 원격 main**에 병합된 13.8 코드를 사용합니다. 13.5/13.6 가이드가 과거 feat 브랜치를 예시로 들더라도 이 작업 트리에서는 체크아웃하지 않습니다. 기본 모드에서는 MoveIt 서버를 실행하지 않지만 기존 통합 패키지의 build 의존성은 남아 있다. 외부 자산은 `$ROOT/../upstream-iit-locomanipulation-d010212`에 두며 모델·정책 가중치를 저장소가 재배포하지 않는다.
 
 BT 공식 deb 준비와 전체8개 패키지 build는 다음 명령으로 한다. 모든 터미널에서 같은 값을 사용한다. 기존13.6/13.7 build를 덮지 않는다. 이 작업은 기존 환경에서 검증하며 새 OS/원격 clone부터의 전 과정 재현 검증과는 구분한다.
 
