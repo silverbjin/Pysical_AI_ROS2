@@ -28,7 +28,14 @@ def main():
     assert "robot_description" in params and "robot_description_semantic" in params
     assert "robot_description_kinematics" in params
     assert "planning_pipelines" in params
-    assert urdf.strip()==params["robot_description"].strip(), "MOVEIT_GAZEBO_DESCRIPTION_MISMATCH"
+    # MoveItConfigsBuilder may pick the package's legacy fake/RViz
+    # my_robot.urdf.xacro instead of the explicit G00 Gazebo composition.
+    # Override ONLY the planner's robot_description with the exact expanded
+    # bytes already passed to RSP and Gazebo, not a second Xacro expansion.
+    builder_uses_same_urdf=(urdf.strip()==params["robot_description"].strip())
+    params["robot_description"]=urdf
+    assert "mock_components/GenericSystem" not in params["robot_description"]
+    assert "gz_ros2_control/GazeboSimSystem" in params["robot_description"]
     params["use_sim_time"]=True
     args.out.parent.mkdir(parents=True,exist_ok=True)
     args.out.write_text(yaml.safe_dump({"move_group":{"ros__parameters":params}},
@@ -36,6 +43,8 @@ def main():
     receipt={"status":"STATIC_PASS",
              "scope":"G03_SAME_EXPANDED_GAZEBO_ROBOT_IN_RSP_AND_MOVE_GROUP",
              "gazebo_urdf_exact_bytes":True,
+             "builder_original_model_matches":builder_uses_same_urdf,
+             "builder_description_overridden_from_gazebo_urdf":not builder_uses_same_urdf,
              "semantic_srdf":True,
              "kinematics_configured":True,
              "planning_pipeline":"ompl",
