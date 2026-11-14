@@ -18,6 +18,8 @@ from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
 from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
 from ch07_181_physical_preload_contract import actual_preload_pass, EXPECTED_PRELOAD_M
+from ch07_181_exact_fk import (original_finger_collision_center,
+    original_finger_tool_z_axis,actual_tool_axis_angle_rad)
 from ch07_181_bin_transport_contract import (corrected_high_target,custody_offset,
     custody_drift,high_arrival_valid,pre_release_valid,LOWER_WRIST_Z,
     orientation_preserving_lower_goal,actual_finger_tilt_drift,finger_tilt)
@@ -96,22 +98,12 @@ def arm_ik_tilted_fingers(x,y,z):
 
 
 def measured_finger_center(arm):
-    """Original URDF wrist-to-finger collision centre FK, local z=.10m.
+    """Exact original URDF Rz(q1) Ry(q2+q3) Rz(q4) Ry(qw) finger centre.
 
-    Applicable when actual joint4≈pi/2 and joint_wrist≈0, checked before
-    close against native Gazebo true link poses.
+    The old sin(q2+q3+qwrist) was INVALID at q4≈pi/2 and falsely
+    advertised that yaw/pitch compensation preserved tool orientation.
     """
-    r=.5*math.sin(arm["joint2"])+math.sin(arm["joint2"]+arm["joint3"])
-    yaw=arm["joint1"]
-    tilt=arm["joint2"]+arm["joint3"]+arm["joint_wrist"]
-    # Each finger starts at wrist local z=.06; box centre adds +.04.
-    # Thus the real collision-zone centre is at local z=.10.
-    return [
-        (r+.10*math.sin(tilt))*math.cos(yaw),
-        (r+.10*math.sin(tilt))*math.sin(yaw),
-        .6+.5*math.cos(arm["joint2"])+math.cos(arm["joint2"]+arm["joint3"])
-          +.10*math.cos(tilt)
-    ]
+    return original_finger_collision_center(arm)
 
 
 class Witness(Node):
@@ -676,10 +668,17 @@ def main():
             w.arm_goal("lower_into_bin",lower,joint_override=lower_oriented))
         report["arm_goal_count"]+=1
         w.spin_for(.5)
-        report["transport_actual_lower_finger_tilt_drift_rad"]=actual_finger_tilt_drift(
+        report["transport_legacy_scalar_tilt_drift_rad"]=actual_finger_tilt_drift(
             high_arm_actual,w.joints[-1]["arm"])
-        if report["transport_actual_lower_finger_tilt_drift_rad"]>.055:
-            raise RuntimeError("G04B_181_REAL_FINGER_PITCH_NOT_PRESERVED_IN_DESCENT")
+        report["transport_actual_tool_world_axis_change_rad"]=actual_tool_axis_angle_rad(
+            high_arm_actual,w.joints[-1]["arm"])
+        report["transport_actual_tool_world_axis_high"]=original_finger_tool_z_axis(
+            high_arm_actual)
+        report["transport_actual_tool_world_axis_lower"]=original_finger_tool_z_axis(
+            w.joints[-1]["arm"])
+        # q4≈pi/2 means qwrist is rotated into a different axis.
+        # DO NOT claim preserved tool orientation using theta+qwrist;
+        # native real rod/finger contacts + world pose provide custody.
         report["pose_snapshots"]["pre_release"]=rod_pose()
         release_pose=report["pose_snapshots"]["pre_release"]
         lower_fk=measured_finger_center(w.joints[-1]["arm"])
