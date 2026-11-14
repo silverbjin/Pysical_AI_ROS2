@@ -42,33 +42,41 @@ def build(source, output, audit):
     # the rod while keeping its detected centre at z=1.94 requires
     # raising only the new TEST-ONLY support top to z=1.90.
     shelf.find("pose").text=".70 0 1.80 0 0 0"
-    # Original open finger collision inner-face gap is 45mm.
-    # CI #43569095346 with 30mm pedestal proved that both fingers are
-    # stopped by pedestal CONTACT at q≈(45-30)/2=7.5mm, BEFORE rod grasp:
-    # q1=7.913mm, q2=7.087mm, rod stayed static, native finger/rod=0.
-    # A 24mm-diameter rod begins two-sided contact at
-    # q=(45-24)/2=10.5mm. Thus the support must be narrower than the
-    # closure gap at COMMAND q=12mm, i.e. <=45-2*12=21mm.
-    # Use a real 18mm-wide solid top pedestal: its center physically
-    # supports the 24mm rod (3mm overhang each side), while the fingers
-    # can close fully before entering support collision. This is a
-    # test-only peg, NOT kinematic attachment or ignored collision.
+    # CI #43571761460's PASSIVE native contact sensors found the
+    # previously missing physical obstruction: wrist-vs-support contact
+    # ~8,591 blocks starting sim time 34.437s at support's LEFT wall
+    # x≈0.6910m, z≈1.873m. This PRECEDED finger2-vs-rod contact, and
+    # finger1 stayed at q≈0 although the FJT result was SUCCEEDED.
+    # Simply reducing the support from 30mm to 18mm was insufficient:
+    # 18mm support occupies [0.691,0.709] in X.
+    #
+    # Change only new test-only REAL support cross-section from 18mm to
+    # 10mm, centered under the 24mm rod. The left wall moves to x=.695,
+    # at least 3.9mm beyond the measured wrist contact x=.691.
+    # The solid top still physically supports the rod about its centre
+    # (7mm overhang per side). Nothing is force-attached or teleported.
+    # One focused real Gazebo test will measure whether the wrist now
+    # remains clear and BOTH fingers can contact the real cylinder.
     for shape in ("collision","visual"):
         node=shelf.find("./link/"+shape+"/geometry/box/size")
         assert node is not None and node.text.strip()=="0.50 0.50 0.20"
-        node.text="0.018 0.018 0.20"
+        node.text="0.010 0.010 0.20"
     # A source-derived fail-closed geometry contract: the support
     # must NOT enter the original 45mm fully-open closing gap, and must
     # physically support the 24mm rod on a true collision surface.
-    pedestal_side=.018
+    pedestal_side=.010
     original_open_face_gap=.06-.015
     rod_diameter=2*radius
     commanded_close=.012
     rod_first_two_sided_contact_q=(original_open_face_gap-rod_diameter)/2
     pedestal_first_interference_q=(original_open_face_gap-pedestal_side)/2
-    assert .015<=pedestal_side<rod_diameter
+    assert .009<=pedestal_side<rod_diameter
     assert rod_first_two_sided_contact_q<commanded_close<pedestal_first_interference_q
-    assert (rod_diameter-pedestal_side)/2<=.00301  # supported narrow peg
+    assert (rod_diameter-pedestal_side)/2<=.00701  # physically centred support
+    measured_wrist_support_contact_x_m=.6910121
+    support_left_x=.70-pedestal_side/2
+    assert support_left_x-measured_wrist_support_contact_x_m>=.0039,(
+        "G04B_WRIST_SUPPORT_SIDE_INTERFERENCE_NOT_CLEARED")
     # A SECOND independent ground-truth contact stream: the pedestal's
     # collision sensor reveals whether finger2 is physically stopped by
     # support (or not). Source material, friction and shape stay identical.
@@ -146,6 +154,11 @@ def build(source, output, audit):
       "pedestal_first_interference_closure_m":pedestal_first_interference_q,
       "previous_30mm_pedestal_finger_joint_stalls_m":[.0079133,.0070870],
       "previous_30mm_pedestal_rod_contact_count":0,
+      "measured_18mm_native_wrist_support_contact_blocks":8591,
+      "measured_18mm_wrist_support_contact_x_max_m":.6910121,
+      "new_support_left_x_m":support_left_x,
+      "source_hypothesis":"WRIST_SUPPORT_SIDE_CONTACT_LOCKS_GRIPPER",
+      "g04b_no_wrist_support_contact":"NOT_RUN",
       "prior_real_finger2_joint_stuck_at_zero":True,
       "shelf_shrink_reason":"REMOVE_ORIGINAL_WIDE_DISPLAY_SHELF_FROM_ARM_APPROACH_PATH",
       "first_actual_G04B_red_ci":"43557077475",
