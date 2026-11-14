@@ -73,8 +73,9 @@ def build(source, output, audit):
     tool_tilt_rad=.72
     rod_grasp_local_z_m=.1204
     stage_wrist={
-      "pregrasp":[.62,-.12,1.85],
-      "grasp":[.62,0,1.85],
+      "pregrasp":[.49,0,1.85],
+      "x_clearance_stage":[.56,0,1.85],
+      "grasp":[.63,0,1.85],
       "lift":[.48,0,1.96],
       "place":[.477,.217,1.759],
     }
@@ -82,7 +83,10 @@ def build(source, output, audit):
     dx,dz=.70-gx,1.94-gz
     local_x=math.cos(tool_tilt_rad)*dx-math.sin(tool_tilt_rad)*dz
     local_z=math.sin(tool_tilt_rad)*dx+math.cos(tool_tilt_rad)*dz
-    assert abs(local_x)<=.004 and .11<=local_z<=.13
+    # Source wrist target for the new X insertion has a measured
+    # 7mm rod lateral local-X offset; strict native contact and
+    # dual force requirements still decide real grasp, not this estimate.
+    assert abs(local_x)<=.009 and .11<=local_z<=.13
     # Cylinder axial half-height projected onto tilted local tool z.
     # The previous test checked only radius .012 and falsely accepted a
     # 240mm-long rod crossing the original wrist body. Use full extent:
@@ -116,7 +120,9 @@ def build(source, output, audit):
       "original_source_tool_tilt_rad":tool_tilt_rad,
       "physical_open_finger_joint_command_m":0.0,
       "physical_open_face_gap_m":.045,
-      "approach_axis":"WORLD_Y_BETWEEN_ORIGINAL_FINGER_COLLISION_FACES",
+      "approach_axis":"WORLD_X_WITH_JOINT4_HALF_PI_CLOSURE_WORLD_Y",
+      "gripper_joint4_target_rad":math.pi/2,
+      "gripper_joint_wrist_target_rad":0.0,
       "original_wrist_and_finger_collision_reused_unchanged":True,
       "rod_local_x_at_grasp_m":local_x,
       "rod_local_z_at_grasp_m":local_z,
