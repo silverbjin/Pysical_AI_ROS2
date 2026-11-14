@@ -52,6 +52,9 @@ bash "$BOOK_REPO/Ch11/scripts/save_slam_map.sh" "$HOME/Pysical_AI_maps/section_1
 실제 검증됐던 CLI 옵션을 사용하는 **검증 기준 명령**은 다음과 같습니다. 먼저 Gazebo+SLAM이 실행 중이고 `/map` 발행을 확인해야 합니다. 별도 모니터링 터미널에서 Jazzy와 Ch11 overlay를 동일하게 source합니다.
 
 ~~~bash
+# 별도 터미널에서는 이전 터미널의 BOOK_REPO 환경변수가 자동 전달되지 않음
+export BOOK_REPO="${BOOK_REPO:-$HOME/Pysical_AI_book}"  # 실제 checkout 위치에 맞춰 변경
+test -d "$BOOK_REPO/Ch11/ros2_ws"
 source /opt/ros/jazzy/setup.bash
 source "$BOOK_REPO/Ch11/ros2_ws/install/setup.bash"
 ros2 topic info -v /map
