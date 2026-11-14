@@ -77,7 +77,7 @@ conditions={
          result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
          "aligned_pregrasp" in p and
          all(v.get("name","").startswith(("pregrasp","x_approach_",
-                                         "lift","transfer","grasp"))
+                                         "fine_x_alignment_","lift","transfer","grasp"))
              for v in result.get("arm_results",[])) and
          result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
          "x_clearance_stage" in p and
