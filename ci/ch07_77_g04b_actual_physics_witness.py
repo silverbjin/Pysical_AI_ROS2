@@ -18,6 +18,8 @@ from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
 from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
 from ch07_181_physical_preload_contract import actual_preload_pass, EXPECTED_PRELOAD_M
+from ch07_181_bin_transport_contract import (corrected_high_target,custody_offset,
+    custody_drift,high_arrival_valid,pre_release_valid,LOWER_WRIST_Z)
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -625,9 +627,53 @@ def main():
                        report["pose_snapshots"]["lift"])
         report["object_pose_drift_during_hold_m"]=hold
         assert hold<=.025,"G04B_OBJECT_SLIPPED_WHILE_HELD"
-        report["arm_results"].append(w.arm_goal("transfer",[.477,.217,1.759]))
+        # Original physical CI #43597860243: gripping, lift 13.032cm,
+        # 1.3s stable hold PASS; old transfer [.477,.217,1.759] moved
+        # real rod to (.643,.088,1.839), outside bin, with 75 native
+        # wrist↔rod collisions at sim 64.873-64.964. Do NOT open there.
+        # Transport actual dynamic rod into BIN_XY while HIGH above it,
+        # then lower without lateral sweep and only release if the
+        # independent rod world pose and gripper custody both pass.
+        held_world=report["pose_snapshots"]["held"]
+        held_fk=measured_finger_center(w.joints[-1]["arm"])
+        held_offset=custody_offset(held_world,held_fk)
+        report["physical_held_rod_offset_from_finger_center"]=held_offset
+        high_target=corrected_high_target(held_world)
+        report["transport_high_wrist_goal"]=high_target
+        report["arm_results"].append(
+            w.arm_goal("transfer_high_above_bin",high_target))
         report["arm_goal_count"]+=1
+        w.spin_for(.5)
+        above=rod_pose()
+        report["pose_snapshots"]["transfer_high"]=above
+        high_fk=measured_finger_center(w.joints[-1]["arm"])
+        report["transport_high_custody_drift_m"]=custody_drift(
+            above,high_fk,held_offset)
+        report["transport_high_bin_xy_error_m"]=math.hypot(
+            above[0]-.55,above[1]-.25)
+        if not high_arrival_valid(above,report["transport_high_custody_drift_m"]):
+            raise RuntimeError("G04B_181_REAL_ROD_NOT_ABOVE_BIN_WITH_SECURE_GRASP")
+        lower=[high_target[0],high_target[1],LOWER_WRIST_Z]
+        report["transport_lower_wrist_goal"]=lower
+        report["arm_results"].append(
+            w.arm_goal("lower_into_bin",lower))
+        report["arm_goal_count"]+=1
+        w.spin_for(.5)
         report["pose_snapshots"]["pre_release"]=rod_pose()
+        release_pose=report["pose_snapshots"]["pre_release"]
+        lower_fk=measured_finger_center(w.joints[-1]["arm"])
+        report["pre_release_custody_drift_m"]=custody_drift(
+            release_pose,lower_fk,held_offset)
+        report["pre_release_bin_xy_error_m"]=math.hypot(
+            release_pose[0]-.55,release_pose[1]-.25)
+        report["pre_release_gripper_actual_jointstate"]=dict(
+            w.joints[-1]["fingers"])
+        if not all(abs(v-.011)<=.003 for v in
+                   report["pre_release_gripper_actual_jointstate"].values()):
+            raise RuntimeError("G04B_181_ACTUAL_GRIPPER_OPENED_DURING_CARRY")
+        if not pre_release_valid(
+                release_pose,report["pre_release_custody_drift_m"]):
+            raise RuntimeError("G04B_181_REAL_ROD_OUTSIDE_SAFE_BIN_RELEASE_ENVELOPE")
         report["finger_results"].append(w.grip_goal("release",0.0))
         report["finger_goal_count"]+=1
         w.spin_for(2.0)
