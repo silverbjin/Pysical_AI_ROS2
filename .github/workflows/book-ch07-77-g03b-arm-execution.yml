@@ -1,0 +1,74 @@
+name: Book Ch07 7.7 G03B one real GazeboSimSystem simulated MoveIt arm Goal
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-77-g03b-arm-execution.yml'
+      - 'ci/ch07_77_g03b_simulated_arm_once.sh'
+      - 'ci/ch07_77_g03b_simulated_arm_witness.py'
+      - 'ci/docker/fixtures/ch07_77_g03b_frozen_validated_joint_goal.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-77-g03b-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  original-gazebo-simulated-arm-only:
+    name: One GazeboSimSystem arm Goal with measured 5DOF JointState and FK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Pin exact source SHA, frozen accepted target, and immutable image
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch07-77-g03b
+          git rev-parse HEAD > ci-results/ch07-77-g03b/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-77-g03b/image_digest.txt
+          sha256sum ci/docker/fixtures/ch07_77_g03b_frozen_validated_joint_goal.json             Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro             > ci-results/ch07-77-g03b/inputs_sha256.txt
+          bash -n ci/ch07_77_g03b_simulated_arm_once.sh
+          python3 -m py_compile ci/ch07_77_g03b_simulated_arm_witness.py
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse identical accepted Jazzy/Harmonic digest, never rebuild
+        run: docker pull "$(cat ci-results/ch07-77-g03b/image_digest.txt)"
+      - name: Execute ONE physical Gazebo robot arm Goal — simulation only
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 780s \
+            docker run --rm --init --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch07-77-g03b/checkout_sha.txt)" \
+              -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch07-77-g03b/image_digest.txt)" \
+              bash ci/ch07_77_g03b_simulated_arm_once.sh \
+              2>&1 | tee ci-results/ch07-77-g03b/console.log
+      - name: Publish exact scoped result, not pick/place
+        if: always()
+        run: |
+          {
+            echo '## Ch07 #173 G03B: ONE actual Gazebo ARM move, NO gripper or physical object'
+            echo 'Frozen original G03A plan-only and G02 camera results reused, not rerun.'
+            echo 'No real hardware; original 6D Pose IK -31 remains FAIL.'
+            echo 'G04 physical real dynamic grasp/lift/place NOT_RUN; Ch10 #123 HOLD.'
+            cat ci-results/ch07-77-g03b/g03b_actual_arm_receipt.json || true
+            cat ci-results/ch07-77-g03b/g03_params.json || true
+            cat ci-results/ch07-77-g03b/result.json || true
+            cat ci-results/ch07-77-g03b/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-77-g03b-arm-execution-${{ github.run_id }}
+          path: ci-results/ch07-77-g03b/
+          retention-days: 30
+          if-no-files-found: warn
