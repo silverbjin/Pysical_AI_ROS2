@@ -335,8 +335,27 @@ def main():
         report["native_open_finger_separation_world_m"]=real_sep
         assert real_sep["dy"]>=.054 and real_sep["dx"]<=.010 and real_sep["dz"]<=.010,(
             "G04B_REAL_OPPOSING_FINGERS_NOT_ALIGNED_WORLD_Y_NO_CLOSE")
-        assert abs(n1[2]-1.94)<=.045 and abs(n2[2]-1.94)<=.045,(
-            "G04B_NATIVE_FINGER_Z_OUTSIDE_ROD_RANGE_NO_CLOSE")
+        # A Gazebo link origin is NOT its collision box centre.
+        # Original finger collision extends local z=[0,.08] from each
+        # link origin. Native links at z≈1.894m are correct: their rotated
+        # collision volumes run upward to z≈1.954m and overlap the actual
+        # rod span [1.90,1.98] by ~54mm. The prior centre-only guard
+        # incorrectly rejected genuine overlap before a finger Goal.
+        rod_z_low=report["pose_snapshots"]["approach"][2]-meta["height_m"]/2
+        rod_z_high=report["pose_snapshots"]["approach"][2]+meta["height_m"]/2
+        collision_z_overlaps={}
+        for link in ("finger1","finger2"):
+            info=report["native_before_close"][link]
+            link_z=info["world_xyz_m"][2]
+            roll,pitch,yaw=info["world_rpy_rad"]
+            upward_world_z=math.cos(roll)*math.cos(pitch)
+            end_z=link_z+.08*upward_world_z
+            zlo,zhi=sorted((link_z,end_z))
+            overlap=max(0.0,min(zhi,rod_z_high)-max(zlo,rod_z_low))
+            collision_z_overlaps[link]=overlap
+        report["native_finger_collision_box_vertical_overlap_m"]=collision_z_overlaps
+        assert min(collision_z_overlaps.values())>=.020,(
+            "G04B_REAL_FINGER_COLLISION_VOLUME_DOES_NOT_REACH_ROD_NO_CLOSE")
         # Original finger collision is 15mm wide along the closing X axis.
         # At OPEN q=0 each face is .0225m from center: 45mm gap.
         # A 24mm diameter rod first contacts at q=(.045-.024)/2=.0105m.
