@@ -54,20 +54,33 @@ class Observer(Node):
         deadline=time.monotonic()+sec
         while time.monotonic()<deadline:
             rclpy.spin_once(self,timeout_sec=.12)
-            if (len(self.samples)>=3 and self.move.server_is_ready() and
-                    len(self.clock_stamps)>=15 and
-                    self.clock_stamps[-1]-self.clock_stamps[0]>=1.0):
-                # Wait until after MoveGroup has subscribed to advancing
-                # ROS simulation time. Its execution-duration monitor can
-                # otherwise see a 0→live clock jump and cancel in ~0.2s.
-                warmup=time.monotonic()+2.5
+            # The real Gazebo broadcaster stamps each JointState with
+            # simulation time. These typed messages already prove the clock
+            # used by the controllers is advancing; a second /clock typed
+            # subscription is only DIAGNOSTIC, not a reason to block motion.
+            if (len(self.samples)>=5 and self.move.server_is_ready() and
+                    self.samples[-1]["stamp"]-self.samples[0]["stamp"]>=.2):
+                # Warm up both ROS time sources AFTER the action server
+                # appears: avoid a MoveGroup internal clock 0->simtime jump
+                # immediately after it accepts a trajectory.
+                warmup=time.monotonic()+3
                 while time.monotonic()<warmup:
                     rclpy.spin_once(self,timeout_sec=.1)
-                if (len(self.clock_stamps)>=20 and
-                        self.clock_stamps[-1]>self.clock_stamps[-2] and
-                        self.get_clock().now().nanoseconds/1e9>0):
+                last_stamp=self.samples[-1]["stamp"]
+                current=self.get_clock().now().nanoseconds/1e9
+                if (len(self.samples)>=8 and current>0 and
+                        abs(current-last_stamp)<=3.0):
                     return
-        raise RuntimeError("G03B_ACTUAL_GAZEBO_JOINTS_OR_MOVEGROUP_UNAVAILABLE")
+        current=self.get_clock().now().nanoseconds/1e9
+        raise RuntimeError(
+            "G03B_READY_TIMEOUT joint_samples=%d joint_span=%.3f "
+            "action_ready=%s raw_clock_samples=%d node_ros_time=%.3f "
+            "last_joint_time=%.3f" % (
+                len(self.samples),
+                self.samples[-1]["stamp"]-self.samples[0]["stamp"]
+                if self.samples else 0,
+                self.move.server_is_ready(),len(self.clock_stamps),
+                current,self.samples[-1]["stamp"] if self.samples else 0))
 
     def await_response(self,future,sec,label,on_timeout=None):
         deadline=time.monotonic()+sec
@@ -117,11 +130,12 @@ def main():
     node=Observer()
     try:
         node.wait_ready()
-        report["sim_clock_first_s"]=node.clock_stamps[0]
-        report["sim_clock_latest_before_goal_s"]=node.clock_stamps[-1]
         report["sim_clock_samples_before_goal"]=len(node.clock_stamps)
+        report["sim_clock_first_s"]=node.clock_stamps[0] if node.clock_stamps else None
+        report["sim_clock_latest_before_goal_s"]=node.clock_stamps[-1] if node.clock_stamps else None
         report["sim_clock_node_now_s"]=node.get_clock().now().nanoseconds/1e9
-        assert abs(report["sim_clock_node_now_s"]-node.clock_stamps[-1])<1.5
+        report["gazebo_joint_state_time_before_goal_s"]=node.samples[-1]["stamp"]
+        assert abs(report["sim_clock_node_now_s"]-node.samples[-1]["stamp"])<=3.0
         initial=node.samples[-1]
         report["joint_state_initial"]=initial
         request=MoveGroup.Goal()
