@@ -86,10 +86,10 @@ conditions={
  "real_both_fingers_positive_force":all(v["positive_contact_force_count"]>=1 for v in summary.values()),
  # Original controller Action must NOT substitute for real measured 2mm
  # lower-limit release held after MoveGroup and right before physical close.
- "real_finger2_2mm_before_and_after_movegroup":actual_preload_pass(
-     result.get("lower_stop_release_finger2_pre_movegroup"),
-     result.get("lower_stop_release_after_pregrasp_m"),
-     result.get("lower_stop_release_before_contact_m")) and
+ "real_bilateral_2mm_before_and_after_movegroup":actual_preload_pass(
+     result.get("lower_stop_release_both_fingers_pre_movegroup"),
+     result.get("lower_stop_release_after_pregrasp_actual_m"),
+     result.get("lower_stop_release_before_contact_actual_m")) and
      result.get("lower_stop_release_real_actual_pass") is True,
  "real_dynamic_world_lift_at_least_0_05m":result.get("lift_m",-1)>=.05,
  "1_3s_hold_pose_drift_le_0_025m":result.get("object_pose_drift_during_hold_m",1) <=.025,
@@ -107,7 +107,7 @@ conditions={
              "NOT_RERUN_PRIOR_PUBLIC_SCOPED_EVIDENCE" and
          result.get("finger_clearance_preflight")==[] and
          [g.get("name") for g in result.get("finger_results",[])] ==
-             ["open","lower_stop_release_finger2_2mm","contact_close","release"] and
+             ["open","lower_stop_release_both_fingers_2mm","contact_close","release"] and
          result.get("preclose_object_shift_m",1)<=.018 and
          result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
          "aligned_pregrasp" in p and
