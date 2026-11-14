@@ -1,4 +1,4 @@
-name: Ch07 Issue 181 one cold-start free-space actuator witness
+name: Ch07 Issue 181 controlled-world pregrasp-only actuator contrast
 on:
   pull_request:
     paths:
@@ -15,7 +15,7 @@ concurrency:
   group: book-ch07-181-free-space-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  one-cold-start-no-rod-no-support:
+  one-cold-start-rod-present-but-no-approach:
     runs-on: ubuntu-24.04
     timeout-minutes: 16
     steps:
@@ -51,7 +51,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull frozen Jazzy Harmonic image digest
         run: docker pull "$(cat ci-results/ch07-181-free-space/image_digest.txt)"
-      - name: ONE empty-world q4 pi/2 actual GazeboSimSystem bilateral finger test
+      - name: ONE physical-fixture-world q4 pi/2 staged finger test NO APPROACH
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=20s 780s \
@@ -67,7 +67,7 @@ jobs:
         run: |
           {
             echo '## Ch07 #181 one cold-start actuator diagnostic'
-            echo 'Empty-world q4≈pi/2, G00-G04A NOT_RERUN; G04B/G05 NOT_RUN.'
+            echo 'G04B physical rod/pedestal present, NO APPROACH; one q4≈pi/2 staged finger test. Prior empty-world #43580533046 accepted and NOT_RERUN; G04B/G05 physical goals NOT_RUN.'
             cat ci-results/ch07-181-free-space/receipt.json || true
             cat ci-results/ch07-181-free-space/result.json || true
             cat ci-results/ch07-181-free-space/stages.log || true

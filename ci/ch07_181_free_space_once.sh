@@ -138,7 +138,7 @@ PY
 stage START_ORIGINAL_REAL_GAZEBO_WITH_GAZEBO_SIM_SYSTEM
 start rsp ros2 run robot_state_publisher robot_state_publisher \
  --ros-args --params-file "$OUT/rsp.yaml"
-start gazebo gz sim -s -r -v 3 --headless-rendering "$OUT/free_world.sdf"
+start gazebo gz sim -s -r -v 3 --headless-rendering "$OUT/g04b_contact_world.sdf"
 READY=0
 for attempt in $(seq 1 55);do
  if timeout 4s gz service -l 2>/dev/null |grep -Fq '/world/book_camera/create';then
@@ -161,10 +161,21 @@ echo 'G04B_ROBOT_BASE_WORLD_SPAWN_Z_M=0.0' > "$OUT/base_world_alignment.txt"
 timeout 10s gz model --model my_robot --link link_wrist --pose \
  >"$OUT/gz_wrist_native_preflight.log" 2>&1 || true
 
-stage CHECK_EMPTY_WORLD_AND_NATIVE_FREE_SPACE_CONTACT_TOPICS
+stage CHECK_UNMODIFIED_G04B_TEST_ONLY_ROD_SUPPORT_BEFORE_APPROACH
 timeout 12s gz model --list > "$OUT/gz_models.txt" 2>&1
 grep -q my_robot "$OUT/gz_models.txt"
-! grep -Eq 'g04_grasp_cylinder|g04_support|g04_bin_support' "$OUT/gz_models.txt"
+for expected_model in g04_grasp_cylinder g04_support g04_bin_support;do
+ grep -q "$expected_model" "$OUT/gz_models.txt"
+done
+timeout 12s gz model --model g04_grasp_cylinder --pose >"$OUT/rod_before_pregrasp.txt" 2>&1
+cat > "$OUT/physical_world_comparison_contract.json" <<'JSON'
+{"comparison":"same real robot and arm FJT q4=pi/2 and 3 isolated finger FJT goals",
+ "changed_factor":"GENERATED_GAZEBO_WORLD_ONLY",
+ "old_world":"ground_only_CI_43580533046",
+ "new_world":"original_unmodified_G04B_test_only_rod_support_bin",
+ "rod_or_support_approach":false,"G00_G04A":"NOT_RERUN",
+ "G04B_PHYSICAL_GRASP":"NOT_RUN","G05":"NOT_RUN","Ch10":"HOLD"}
+JSON
 for finger in finger1 finger2;do
  topic="/world/book_camera/model/my_robot/link/$finger/sensor/g04b_$finger""_contacts/contact"
  echo "$topic" > "$OUT/native_$finger.topic"
@@ -208,12 +219,28 @@ for finger in joint_finger1 joint_finger2;do
  grep -Eq "$finger/position.*claimed" "$OUT/hardware_interfaces.log"
 done
 
-stage ONE_EMPTY_WORLD_COLD_START_ISOLATED_FINGER_ORDER
+stage ONE_PHYSICAL_WORLD_PREGRASP_COLD_START_ISOLATED_FINGER_ORDER_NO_APPROACH
 export CH07_181_GAZEBO_ONLY=YES
 export CH07_181_COMMAND_SEQUENCE=ISOLATED
 timeout --signal=TERM --kill-after=10s 95s \
  python3 "$ROOT/ci/ch07_181_free_space_witness.py" >"$OUT/witness.log" 2>&1
 grep -q CH07_181_FREE_SPACE_ISOLATED_SEQUENCE_SCOPED_PASS_NO_GRASP "$OUT/witness.log"
+timeout 12s gz model --model g04_grasp_cylinder --pose >"$OUT/rod_after_pregrasp.txt" 2>&1
+python3 - "$OUT/rod_before_pregrasp.txt" "$OUT/rod_after_pregrasp.txt" "$OUT/rod_static_motion_audit.json" <<'PY'
+import math,json,re,sys
+from pathlib import Path
+pat=re.compile(r"Pose \[ XYZ \(m\) \] \[ RPY \(rad\) \]:\s*\n\s*\[\s*([-+0-9.]+)\s+([-+0-9.]+)\s+([-+0-9.]+)\s*\]")
+def xyz(p):
+ s=Path(p).read_text()
+ m=pat.search(s)
+ if m is None:raise RuntimeError("G04B_181_ROD_POSE_UNPARSEABLE")
+ return tuple(float(v) for v in m.groups())
+before,after=xyz(sys.argv[1]),xyz(sys.argv[2])
+delta=math.dist(before,after)
+Path(sys.argv[3]).write_text(json.dumps({"before":before,"after":after,"displacement_m":delta,
+ "no_contact_motion_pass":delta<=.008},indent=2)+"\n")
+if delta>.008:raise RuntimeError("G04B_181_ROD_DISTURBED_DURING_PREGRASP")
+PY
 stage VERIFY_NO_NATIVE_FINGER_CONTACT
 for finger in finger1 finger2;do
  if grep -q 'collision1:' "$OUT/native_$finger.log";then
@@ -221,5 +248,5 @@ for finger in finger1 finger2;do
   exit 7
  fi
 done
-stage ISSUE_181_FREE_SPACE_ACTUATION_SCOPED_PASS_NOT_GRASP
-echo CH07_181_FREE_SPACE_SCOPED_PASS_NO_G04B_NO_G05 > "$OUT/verdict.txt"
+stage ISSUE_181_PHYSICAL_WORLD_PREGRASP_ACTUATION_ONLY_NOT_GRASP
+echo CH07_181_PHYSICAL_WORLD_PREGRASP_SCOPED_PASS_NO_G04B_NO_G05 > "$OUT/verdict.txt"
