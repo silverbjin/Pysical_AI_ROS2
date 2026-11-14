@@ -90,7 +90,10 @@ def build(source, output, audit):
     pedestal_side=.006
     original_open_face_gap=.06-.015
     rod_diameter=2*radius
-    commanded_close=.012
+    # Actual test-only physical cylinder needs centered simultaneous closing.
+    # Source original open collision-face gap=.045, rod diameter=.024,
+    # nominal contact q=.0105; command 0.5mm additional compression.
+    commanded_close=.011
     rod_first_two_sided_contact_q=(original_open_face_gap-rod_diameter)/2
     pedestal_first_interference_q=(original_open_face_gap-pedestal_side)/2
     assert .005<=pedestal_side<rod_diameter
