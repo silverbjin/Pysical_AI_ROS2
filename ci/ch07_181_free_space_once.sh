@@ -224,11 +224,14 @@ for finger in joint_finger1 joint_finger2;do
  grep -Eq "$finger/position.*claimed" "$OUT/hardware_interfaces.log"
 done
 
-stage ONE_FINAL_CONTACT_POSE_NO_OBJECT_SINGLE_FINGER2_FJT
+stage START_REAL_MOVEGROUP_FOR_SINGLE_FINAL_GRASP_POSE_ONLY
+start move_group ros2 run moveit_ros_move_group move_group \
+ --ros-args --params-file "$OUT/move_group.yaml"
+stage ONE_FINAL_CONTACT_POSE_NO_OBJECT_SINGLE_FINGER2_AFTER_MOVEGROUP
 export CH07_181_GAZEBO_ONLY=YES
 export CH07_181_COMMAND_SEQUENCE=SINGLE_FINGER2
 export CH07_181_PREOPEN=NO
-export CH07_181_ARM_SETUP=DIRECT_FJT
+export CH07_181_ARM_SETUP=MOVEGROUP
 export CH07_181_ARM_FJT_SETTLE=NO
 timeout --signal=TERM --kill-after=10s 95s \
  python3 "$ROOT/ci/ch07_181_free_space_witness.py" >"$OUT/witness.log" 2>&1
