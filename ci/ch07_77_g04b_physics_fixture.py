@@ -42,29 +42,33 @@ def build(source, output, audit):
     # the rod while keeping its detected centre at z=1.94 requires
     # raising only the new TEST-ONLY support top to z=1.90.
     shelf.find("pose").text=".70 0 1.80 0 0 0"
-    # Ground-truth FJT + link pose at CI #43568477938: finger1 reached
-    # q≈.012m, but finger2 remained at q=0 although BOTH were commanded.
-    # The previous pedestal was 60mm wide (Y=-.03..+.03) and the open
-    # opposing finger collision boxes have 45mm inner-face gap. Their
-    # bases extend from Z≈1.89 to 1.95, overlapping the support Z≤1.90.
-    # Hence the pedestal sits INSIDE both finger closing swept volumes
-    # and can physically lock one side. A genuine support 30mm wide
-    # leaves 7.5mm clearance on each side of the *open* finger faces,
-    # while still supporting the whole Ø24mm rod with 3mm margin/side.
-    # No Gazebo collisions are disabled; no forced joint/teleport/attach.
+    # Original open finger collision inner-face gap is 45mm.
+    # CI #43569095346 with 30mm pedestal proved that both fingers are
+    # stopped by pedestal CONTACT at q≈(45-30)/2=7.5mm, BEFORE rod grasp:
+    # q1=7.913mm, q2=7.087mm, rod stayed static, native finger/rod=0.
+    # A 24mm-diameter rod begins two-sided contact at
+    # q=(45-24)/2=10.5mm. Thus the support must be narrower than the
+    # closure gap at COMMAND q=12mm, i.e. <=45-2*12=21mm.
+    # Use a real 18mm-wide solid top pedestal: its center physically
+    # supports the 24mm rod (3mm overhang each side), while the fingers
+    # can close fully before entering support collision. This is a
+    # test-only peg, NOT kinematic attachment or ignored collision.
     for shape in ("collision","visual"):
         node=shelf.find("./link/"+shape+"/geometry/box/size")
         assert node is not None and node.text.strip()=="0.50 0.50 0.20"
-        node.text="0.03 0.03 0.20"
+        node.text="0.018 0.018 0.20"
     # A source-derived fail-closed geometry contract: the support
     # must NOT enter the original 45mm fully-open closing gap, and must
     # physically support the 24mm rod on a true collision surface.
-    pedestal_side=.03
+    pedestal_side=.018
     original_open_face_gap=.06-.015
     rod_diameter=2*radius
-    assert rod_diameter<pedestal_side<original_open_face_gap
-    assert (original_open_face_gap-pedestal_side)/2>=.007
-    assert (pedestal_side-rod_diameter)/2>=.003-1e-10
+    commanded_close=.012
+    rod_first_two_sided_contact_q=(original_open_face_gap-rod_diameter)/2
+    pedestal_first_interference_q=(original_open_face_gap-pedestal_side)/2
+    assert .015<=pedestal_side<rod_diameter
+    assert rod_first_two_sided_contact_q<commanded_close<pedestal_first_interference_q
+    assert (rod_diameter-pedestal_side)/2<=.00301  # supported narrow peg
     assert rod.findtext("static")=="false"
     ET.SubElement(world,"plugin",{"filename":"gz-sim-contact-system",
         "name":"gz::sim::systems::Contact"})
@@ -125,7 +129,12 @@ def build(source, output, audit):
       "shelf_top_m":1.90,"shelf_planar_side_m":pedestal_side,
       "original_open_finger_gap_m":original_open_face_gap,
       "pedestal_to_open_finger_face_clearance_per_side_m":(original_open_face_gap-pedestal_side)/2,
-      "pedestal_rod_support_margin_per_side_m":(pedestal_side-rod_diameter)/2,
+      "pedestal_rod_overhang_per_side_m":(rod_diameter-pedestal_side)/2,
+      "commanded_close_m":commanded_close,
+      "rod_first_contact_closure_m":rod_first_two_sided_contact_q,
+      "pedestal_first_interference_closure_m":pedestal_first_interference_q,
+      "previous_30mm_pedestal_finger_joint_stalls_m":[.0079133,.0070870],
+      "previous_30mm_pedestal_rod_contact_count":0,
       "prior_real_finger2_joint_stuck_at_zero":True,
       "shelf_shrink_reason":"REMOVE_ORIGINAL_WIDE_DISPLAY_SHELF_FROM_ARM_APPROACH_PATH",
       "first_actual_G04B_red_ci":"43557077475",
