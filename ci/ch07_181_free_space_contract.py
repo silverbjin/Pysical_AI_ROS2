@@ -30,6 +30,16 @@ def arm_result_accepted(mode,status,error_code,planned_trajectory_points=None):
         return error_code==1 and int(planned_trajectory_points or 0)>0
     return error_code==0
 
+# Fixed 2mm bounded actuation candidate, not a tunable gate or physics reset.
+# The observed frozen finger2 was at the exact physical lower limit 0m;
+# test a positive, controlled, measured displacement BEFORE arm MoveGroup.
+LIMIT_RELEASE_TARGET_M=0.002
+
+def validate_limit_release(value):
+    if value not in ("NO","0.002"):
+        raise ValueError("G04B_181_LOWER_STOP_RELEASE_ONLY_2MM")
+    return LIMIT_RELEASE_TARGET_M if value=="0.002" else 0.0
+
 def validate_preopen_mode(mode):
     if mode not in ("YES","NO"):
         raise ValueError("G04B_181_PREOPEN_MODE_INVALID")

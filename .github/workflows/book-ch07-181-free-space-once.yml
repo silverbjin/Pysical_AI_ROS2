@@ -1,4 +1,4 @@
-name: Ch07 Issue 181 one read-only Gazebo ECS JointVelocityCmd causal trace
+name: Ch07 Issue 181 physics lower-limit 2mm release causal test
 on:
   pull_request:
     paths:
@@ -68,7 +68,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull frozen Jazzy Harmonic image digest
         run: docker pull "$(cat ci-results/ch07-181-free-space/image_digest.txt)"
-      - name: "ONE original MoveGroup goal + single finger2: JTC, hardware, Gazebo ECS velocity trace"
+      - name: "ONE bounded 2mm finger2 preposition, real MoveGroup, then 11mm finger2 goal + ECS"
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=20s 780s \
@@ -84,7 +84,7 @@ jobs:
         run: |
           {
             echo '## Ch07 #181 one cold-start actuator diagnostic'
-            echo 'Only arm-control-path factor changed from previous real free-space CI #43587221825: DIRECT_FJT to actual MoveGroup. Same ground-only world, exact final failure pose, one finger2 11mm Goal, G04B/G05 NOT_RUN, Ch10 HOLD.'
+            echo 'Compared with original ECS RED #43594760576: same empty world, exact final failed pose, real MoveGroup and finger2 11mm target; ONLY additional physical action is bounded 2mm finger2 FJT prior to MoveGroup. Strict JointState and ECS still required; G04B/G05 NOT_RUN, Ch10 HOLD.'
             cat ci-results/ch07-181-free-space/receipt.json || true
             cat ci-results/ch07-181-free-space/result.json || true
             cat ci-results/ch07-181-free-space/stages.log || true

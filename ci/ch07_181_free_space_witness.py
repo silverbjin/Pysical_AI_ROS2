@@ -21,7 +21,7 @@ from ch07_181_hardware_native_contract import (relevant_introspection_pairs,expl
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,FINAL_CONTACT_ARM_POSE,SINGLE_FINGER2_GOAL,TOLERANCE_M,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,ARM_SETTLE_FJT_TOL_RAD,validate_settle_mode,validate_arm_mode,arm_result_accepted,validate_preopen_mode,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,FINAL_CONTACT_ARM_POSE,SINGLE_FINGER2_GOAL,validate_limit_release,LIMIT_RELEASE_TARGET_M,TOLERANCE_M,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,ARM_SETTLE_FJT_TOL_RAD,validate_settle_mode,validate_arm_mode,arm_result_accepted,validate_preopen_mode,controller_sample,accept_real_finger_state)
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 # Exact prior G04B pregrasp arm goal from independently audited #43574030542.
@@ -173,6 +173,27 @@ def main():
           report["extra_preopen_result"]=pre
           if pre["independent_joint_state_verdict"]!="FREE_SPACE_ACTUATION_SCOPED_PASS":
              raise RuntimeError("G04B_181_PREOPEN_CONTROL_FAILED")
+       release=validate_limit_release(os.environ.get("CH07_181_LOWER_STOP_RELEASE","NO"))
+       report["pre_movegroup_lower_stop_release_target_m"]=release
+       if release:
+          if any(abs(mon.joint_samples[-1]["fingers"][n])>.0005 for n in FINGERS):
+             raise RuntimeError("G04B_181_PRE_RELEASE_INITIAL_FINGERS_NOT_ZERO")
+          report["finger_goal_count"]+=1
+          start_ctl=len(mon.controller_samples)
+          pre=mon.send(mon.grip,FINGERS,(0.0,release),2,TOLERANCE_M,
+                       "bounded_finger2_2mm_before_arm")
+          actual=mon.joint_samples[-1]["fingers"]
+          trace=[x for x in mon.controller_samples[start_ctl:]
+                 if x["stamp"]>=pre["before_stamp"]]
+          pre["joint_state_after"]=actual
+          pre["controller_trace"]=trace
+          pre["verdict"]=accept_real_finger_state(
+               pre["action_status"],pre["result_error_code"],actual,
+               {"joint_finger1":0.0,"joint_finger2":release},
+               trace,pre["after_stamp"],pre["before_stamp"])
+          report["lower_stop_release_pre_arm"]=pre
+          if pre["verdict"]!="FREE_SPACE_ACTUATION_SCOPED_PASS" or abs(actual["joint_finger2"]-release)>.0005:
+             raise RuntimeError("G04B_181_2MM_REAL_LOWER_STOP_RELEASE_FAILED")
        arm_mode=validate_arm_mode(os.environ.get("CH07_181_ARM_SETUP","DIRECT_FJT"))
        report["arm_setup_mode"]=arm_mode
        if arm_mode=="MOVEGROUP":
@@ -218,6 +239,11 @@ def main():
           arm=mon.send(mon.arm,ARM,ARM_TARGET,5,.05,"q4_pregrasp_setup")
        report["arm_setup"]=arm
        report["arm_setup_goal_count"]=1
+       if release:
+          after_movegroup=mon.joint_samples[-1]["fingers"]["joint_finger2"]
+          report["lower_stop_release_after_arm_actual_m"]=after_movegroup
+          if abs(after_movegroup-release)>.0005:
+             raise RuntimeError("G04B_181_2MM_RELEASE_NOT_HELD_AFTER_MOVEGROUP")
        a=mon.joint_samples[-1]["arm"]
        report["arm_actual"]=a
        if not arm_result_accepted(arm_mode,arm["action_status"],arm["result_error_code"],arm.get("planned_trajectory_points")):
