@@ -2,6 +2,8 @@
 
 > 이 절의 공개 CI는 기존 Git에 저장된 6DOF 정책 모델 ZIP을 로드해 **10개의 고정 시드**에서 실제 MuJoCo rollout을 수행한다. 256-step 신규 훈련은 §8.6에서 이미 별도 검증했고 재실행하지 않는다.
 
+> **2026-11-14 최종 실측 주의:** 원본 `ppo_reach_final.zip`은 평가 로직이 정상 동작하더라도 실제 목표 성공이 **0/10(성능 FAIL)**입니다. 10회 평균 최종 EE–목표 거리는 **0.432753m**([실제 CI #43361732383](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43361732383)). 이 실습의 수락 범위는 **평가·저장·로그 해석**이고, 학습된 성공적인 로봇팔 정책을 제공하는 실습으로 소개하거나 출력값 `0.0mm`을 달성 성능으로 표기하면 안 됩니다. 원본 ZIP은 그대로 보존하고 학생들은 실패 궤적을 분석합니다.
+
 ## 원본 코드에서 확인한 오류
 
 과거 evaluate_robot.py는 env.step()의 info에 distance가 없을 경우 평균 정착 오차를 0.0mm로 출력했다. 하지만 이 0은 거리가 0이었다는 측정이 아니라 **결측값**이었다.
@@ -37,11 +39,19 @@ python -m json.tool evaluation_8_7.json
 정상 출력 형식(실제 수치는 CI에서 검증한 후 보고):
 
 ~~~text
-CH08_87_ACTUAL_POLICY_EVALUATION_PASS episodes=10 success_count=... mean_final_distance_m=... success_rate_pct=...
+CH08_87_ACTUAL_POLICY_EVALUATION_PASS episodes=10 success_count=0 mean_final_distance_m=0.432753 success_rate_pct=0.0
 CH08_87_REAL_EE_DISTANCE_AND_BOUNDED_METRICS_SCOPED_PASS
 ~~~
 
 정책의 성공률이 낮더라도 **평가 파이프라인은 PASS일 수 있다**. 10개 에피소드 실측 수치를 장기학습 품질 인증이나 실기 배포 판단으로 해석하지 않는다.
+
+## 실제 판정과 증거 검증 (2026-11-14)
+
+- **평가 파이프라인:** 10개 고정 시드의 실제 거리·보상·종료를 올바르게 저장하는 기능은 `SCOPED_PASS`. 위 출력의 숫자는 [실제 CI #43361732383](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43361732383)에 기록된 원본 동결 모델 결과를 읽기 쉽게 정리한 것입니다. 콘솔의 형식과 필드 순서는 로컬 실행 버전에 따라 달라질 수 있으므로 각 `evaluation_8_7.json`의 수치를 기준으로 확인하십시오.
+- **정책 품질:** 원본 PPO 실제 목표 성공은 `0/10`이고 `PERFORMANCE_FAIL`. 성공한 정책·실제 로봇 제어 능력을 주장하지 않습니다.
+- **왜 실패하는가:** [CI #43475456577](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43475456577), [Artifact #14062646338](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43475456577/artifacts/14062646338)에서 원본 MuJoCo 시드 1000과 1001의 실제 EE 3D 좌표와 목표 방향 속도를 계측했습니다. 최소 거리 이후 목표 방향 속도의 평균이 각각 **−0.431889m/s**, **−0.161559m/s**로 역전했습니다. 이 현상은 관측된 실패 경계이며 보상함수·토크 등의 단일 근본 원인이 확정된 것은 아닙니다.
+- **테스트 전용 PD+중력보상 성공** ([CI #43422430577](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43422430577)에서 3/3)은 원본 PPO 정책의 성공과 별개입니다. 해당 제어를 로봇 실기에서 안전하게 사용할 수 있다는 뜻도 아닙니다.
+- **독자 과제:** 원본 PPO ZIP을 덮지 않고, 시드별 최소거리와 마지막 거리·목표 방향 속도를 분석하여 진단 가설과 실제 관측 사실을 구분합니다. 정책 성능 개선이나 새 PPO 훈련·홀드아웃 검증을 하지 않았다면 여전히 `NOT_RUN`입니다.
 
 ## TensorBoard와 RGB 녹화의 분리된 판정
 
