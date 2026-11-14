@@ -37,7 +37,7 @@ class Probe(Node):
 
     def valid(self,flag):
         self.v.publish(Bool(data=flag))
-        self.spin_for(.12)
+        self.spin_for(.08)
 
     def point(self,xyz=(.6,.1,.5),frame="base_link",age=0):
         m=PointStamped()
@@ -45,7 +45,7 @@ class Probe(Node):
         m.header.stamp=self.stamp_now(add=age)
         m.point.x,m.point.y,m.point.z=xyz
         self.p.publish(m)
-        self.spin_for(.19)
+        self.spin_for(.14)
         return m
 
 
