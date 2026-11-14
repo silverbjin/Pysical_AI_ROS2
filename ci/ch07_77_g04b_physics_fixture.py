@@ -10,6 +10,20 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from ch07_77_g04a_graspable_fixture import build as g04a_build
 
+def validate_thin_physical_support(side_m,thickness_m,center_z_m,
+                                   rod_center_z_m,rod_height_m,prior_wrist_z_m):
+    """Keep the real rod collision support top, remove its obstructing column."""
+    if not (0.0<side_m<.024 and 0.0<thickness_m<.02):
+        raise ValueError("G04B_THIN_SUPPORT_NONPHYSICAL_DIMENSION")
+    bottom=center_z_m-thickness_m/2
+    top=center_z_m+thickness_m/2
+    if abs(top-(rod_center_z_m-rod_height_m/2))>1e-9:
+        raise ValueError("G04B_ROD_NOT_PHYSICALLY_SUPPORTED")
+    if bottom-prior_wrist_z_m<.015:
+        raise ValueError("G04B_WRIST_INTERFERENCE_NOT_CLEARED")
+    return {"support_top_world_z_m":top,"support_bottom_world_z_m":bottom,
+            "prior_wrist_contact_clearance_z_m":bottom-prior_wrist_z_m}
+
 def build(source, output, audit):
     original=source.read_bytes()
     intermediate=output.with_suffix(".intermediate.sdf")
@@ -41,7 +55,15 @@ def build(source, output, audit):
     # Preserve original physical bottom-on-support contact. Shortening
     # the rod while keeping its detected centre at z=1.94 requires
     # raising only the new TEST-ONLY support top to z=1.90.
-    shelf.find("pose").text=".70 0 1.80 0 0 0"
+    # Original 20cm-tall G04B test-only post actually blocked the wrist
+    # at world x≈.697,z≈1.871 in real CI #43584676926 (667 preclose
+    # collisions). Its top must remain z=1.90 to hold the dynamic rod.
+    # This changes only test-only collision support THICKNESS, not top.
+    shelf_thickness=.006
+    shelf_center_z=1.897
+    support_geometry=validate_thin_physical_support(
+        .006,shelf_thickness,shelf_center_z,1.94,physical_height,1.8703095)
+    shelf.find("pose").text=".70 0 1.897 0 0 0"
     # CI #43573273969 ALSO found 1878 wrist-support contacts at x=.695, z≈1.872.
     # CI #43571761460's PASSIVE native contact sensors found the
     # previously missing physical obstruction: wrist-vs-support contact
@@ -61,7 +83,7 @@ def build(source, output, audit):
     for shape in ("collision","visual"):
         node=shelf.find("./link/"+shape+"/geometry/box/size")
         assert node is not None and node.text.strip()=="0.50 0.50 0.20"
-        node.text="0.006 0.006 0.20"
+        node.text="0.006 0.006 0.006"
     # A source-derived fail-closed geometry contract: the support
     # must NOT enter the original 45mm fully-open closing gap, and must
     # physically support the 24mm rod on a true collision surface.
@@ -147,6 +169,10 @@ def build(source, output, audit):
       "rod_static":False,"radius_m":radius,"height_m":physical_height,
       "mass_kg":.05,"rod_center_initial_world_m":[.70,0,1.94],
       "shelf_top_m":1.90,"shelf_planar_side_m":pedestal_side,
+      "shelf_thickness_m":shelf_thickness,
+      "shelf_physical_contact_geometry":support_geometry,
+      "previous_wrist_support_contact_ci":"43584676926",
+      "previous_wrist_support_contact_z_m":1.8703095,
       "original_open_finger_gap_m":original_open_face_gap,
       "pedestal_to_open_finger_face_clearance_per_side_m":(original_open_face_gap-pedestal_side)/2,
       "pedestal_rod_overhang_per_side_m":(rod_diameter-pedestal_side)/2,
@@ -161,7 +187,7 @@ def build(source, output, audit):
       "source_hypothesis":"WRIST_SUPPORT_SIDE_CONTACT_LOCKS_GRIPPER",
       "g04b_no_wrist_support_contact":"NOT_RUN",
       "prior_real_finger2_joint_stuck_at_zero":True,
-      "shelf_shrink_reason":"REMOVE_ORIGINAL_WIDE_DISPLAY_SHELF_FROM_ARM_APPROACH_PATH",
+      "shelf_shrink_reason":"CLEAR_WRIST_COLLISION_BELOW_ROD_SUPPORT_TOP_WITH_REAL_THIN_COLLISION_SHELF",
       "first_actual_G04B_red_ci":"43557077475",
       "first_actual_G04B_red_no_finger_contacts":True,
       "original_gripper_open_face_gap_m":.035,
