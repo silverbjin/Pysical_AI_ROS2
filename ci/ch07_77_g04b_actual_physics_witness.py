@@ -15,6 +15,7 @@ from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTrajectoryControllerState, JointTolerance
 from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
+from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -562,28 +563,20 @@ def main():
         report["native_finger_collision_box_vertical_overlap_m"]=collision_z_overlaps
         assert min(collision_z_overlaps.values())>=.020,(
             "G04B_REAL_FINGER_COLLISION_VOLUME_DOES_NOT_REACH_ROD_NO_CLOSE")
-        # Original finger collision is 15mm wide along the closing X axis.
-        # At OPEN q=0 each face is .0225m from center: 45mm gap.
-        # A 24mm diameter rod first contacts at q=(.045-.024)/2=.0105m.
-        # Command .012m so the simulation must exhibit contact force,
-        # never count joint success alone as a grasp.
-        # The same rotated arm in free space passed seven independent
-        # FJT trials in CI #43573273969, including the stagger sequence:
-        # command finger1 first, then finger2 while holding finger1.
-        # The simultaneous command at the real rod had alternately frozen
-        # one finger. Use EXACTLY the measured-successful stagger order;
-        # both original physical prismatic joints still provide real
-        # contact force. No fake attached body or controller change.
-        first=w.grip_goal("contact_close_stage1",.012,0.0,diagnostic=True)
-        report["finger_results"].append(first)
-        report["finger_goal_count"]+=1
-        report["pose_snapshots"]["stagger_stage1"]=rod_pose()
-        assert first["actual_m"]["joint_finger1"]>=.008,(
-            "G04B_STAGE1_FINGER1_DID_NOT_MOVE_TO_ROD")
-        assert math.dist(report["pose_snapshots"]["stagger_stage1"],
-                         report["pose_snapshots"]["initial"])<=.018,(
-            "G04B_STAGE1_KNOCKED_ROD_OFF_SUPPORT")
-        report["finger_results"].append(w.grip_goal("contact_close",.012,.012))
+        # New physical evidence CI #43585645201: the previously staged
+        # finger1=12mm goal pushed the real rod 4.48mm toward finger2;
+        # finger2 collided at q≈0, FJT correctly ABORTED(-5).
+        # Original collision faces open 45mm; physical cylinder Ø24mm;
+        # nominal two-sided first contact q=(.045-.024)/2=.0105m.
+        # Symmetric q=.011m adds 0.5mm per-side contact compression.
+        # Do not move the rod, change controller tolerances, fake attach,
+        # teleport, or claim success without native bilateral forces.
+        physical_q=symmetric_close_joint_target(
+            meta["original_open_finger_gap_m"],2*meta["radius_m"])
+        report["physical_symmetric_close_target_per_joint_m"]=physical_q
+        report["physical_close_strategy"]="ONE_SIMULTANEOUS_BILATERAL_FJT"
+        report["finger_results"].append(
+            w.grip_goal("contact_close",physical_q,physical_q))
         report["finger_goal_count"]+=1
         w.spin_for(.65)
         report["pose_snapshots"]["closed"]=rod_pose()
