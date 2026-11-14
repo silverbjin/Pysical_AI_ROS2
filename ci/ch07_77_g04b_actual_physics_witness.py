@@ -44,10 +44,12 @@ def native_robot_link_pose(link):
     section=result.stdout.split("  - Link [",1)
     if len(section)!=2:
         raise RuntimeError("G04B_GAZEBO_LINK_POSE_MISSING_"+link)
+    # Reuse the already-proven native Gazebo XYZ parser, then read the
+    # immediately following RPY line. The matched second pose is the
+    # link's WORLD pose (the first is its inertial-local offset).
     pattern=re.compile(
-        r"Pose \\[ XYZ \\(m\\) \\] \\[ RPY \\(rad\\) \\]:\\s*\\n"
-        r"\\s*\\[\\s*([-+0-9.]+)\\s+([-+0-9.]+)\\s+([-+0-9.]+)\\s*\\]"
-        r"\\s*\\n\\s*\\[\\s*([-+0-9.]+)\\s+([-+0-9.]+)\\s+([-+0-9.]+)\\s*\\]"
+        POSE_RE.pattern +
+        r"\s*\n\s*\[\s*([-+0-9.]+)\s+([-+0-9.]+)\s+([-+0-9.]+)\s*\]"
     )
     poses=pattern.findall(section[1])
     # Each link lists its inertial relative pose first, then actual world.
