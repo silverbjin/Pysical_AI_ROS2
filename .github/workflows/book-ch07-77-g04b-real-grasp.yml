@@ -1,0 +1,79 @@
+name: Book Ch07 7.7 G04B physical contact/lift/place with real Gazebo world pose
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-77-g04b-real-grasp.yml'
+      - 'ci/ch07_77_g04b_physics_fixture.py'
+      - 'ci/ch07_77_g04b_actual_physics_witness.py'
+      - 'ci/ch07_77_g04b_verify_contacts.py'
+      - 'ci/ch07_77_g04b_physical_once.sh'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-77-g04b-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  dynamic-physics-grasp-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Pin source + accepted inputs + prior immutable GHCR digest
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch07-77-g04b
+          git rev-parse HEAD > ci-results/ch07-77-g04b/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-77-g04b/image_digest.txt
+          sha256sum ci/ch07_77_g04a_graspable_fixture.py \
+            ci/ch07_77_g04b_physics_fixture.py \
+            ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf \
+            Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro \
+            > ci-results/ch07-77-g04b/input_hashes.txt
+          bash -n ci/ch07_77_g04b_physical_once.sh
+          python3 -m py_compile ci/ch07_77_g04b_physics_fixture.py \
+            ci/ch07_77_g04b_actual_physics_witness.py \
+            ci/ch07_77_g04b_verify_contacts.py
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse previous accepted container digest
+        run: docker pull "$(cat ci-results/ch07-77-g04b/image_digest.txt)"
+      - name: ONE real physical grasp/lift/place sim trial; no hardware
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 780s \
+            docker run --rm --init --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch07-77-g04b/checkout_sha.txt)" \
+              -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch07-77-g04b/image_digest.txt)" \
+              bash ci/ch07_77_g04b_physical_once.sh \
+              2>&1 | tee ci-results/ch07-77-g04b/console.log
+      - name: Display independent physical evidence or exact failing boundary
+        if: always()
+        run: |
+          {
+            echo '## Ch07 #173 G04B true dynamic rod + fingers + arm in Gazebo'
+            echo 'G02/G03A/G03B/G04A earlier successes NOT_RERUN. No current live RGB-D.'
+            echo 'No static attach, no kinematic teleport, no hardware. Ch10 #123 HOLD.'
+            cat ci-results/ch07-77-g04b/g04b_physical_receipt.json || true
+            cat ci-results/ch07-77-g04b/g04b_contact_audit.json || true
+            cat ci-results/ch07-77-g04b/result.json || true
+            cat ci-results/ch07-77-g04b/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-77-g04b-actual-contact-${{ github.run_id }}
+          path: ci-results/ch07-77-g04b/
+          retention-days: 30
+          if-no-files-found: warn
