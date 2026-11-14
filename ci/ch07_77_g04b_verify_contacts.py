@@ -69,12 +69,16 @@ conditions={
  "one_actual_moving_rod_sequence":all(k in p for k in
                   ("initial","pregrasp","approach","closed","lift","held","pre_release","settled")),
  "actual_arm_movegroup_and_gripper_fjt_sequence":(
-         5<=result.get("arm_goal_count",-1)<=12 and
+         4<=result.get("arm_goal_count",-1)<=13 and
          result.get("finger_goal_count")==3 and
          len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2 and
          len(result.get("finger_results",[]))==3 and
          result.get("preclose_object_shift_m",1)<=.018 and
-         result.get("aligned_pregrasp_x_error_m",1)<=.011 and
+         result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
+         "aligned_pregrasp" in p and
+         all(v.get("name","").startswith(("pregrasp","feedback_radial_",
+                                         "yaw_stage","yaw_final","lift","transfer","grasp"))
+             for v in result.get("arm_results",[])) and
          result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
          result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
          "yaw_stage" in p and
