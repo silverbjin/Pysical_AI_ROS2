@@ -36,7 +36,20 @@ def main():
     params["robot_description"]=urdf
     assert "mock_components/GenericSystem" not in params["robot_description"]
     assert "gz_ros2_control/GazeboSimSystem" in params["robot_description"]
+    # ROS 2 Jazzy / MoveIt issue #2940: a late /clock QoS parameter
+    # declaration can be rejected by MoveGroup's dynamic-parameter callback,
+    # aborting after the planner loads. Make the read-only ClockQoS defaults
+    # startup overrides, not a post-start parameter change. The values below
+    # match the standard clock subscriber profile; no QoS is relaxed.
+    clock_qos = {
+        "qos_overrides./clock.subscription.depth": 1,
+        "qos_overrides./clock.subscription.durability": "volatile",
+        "qos_overrides./clock.subscription.history": "keep_last",
+        "qos_overrides./clock.subscription.reliability": "best_effort",
+    }
+    params.update(clock_qos)
     params["use_sim_time"]=True
+    assert all(params[k] == v for k,v in clock_qos.items())
     args.out.parent.mkdir(parents=True,exist_ok=True)
     args.out.write_text(yaml.safe_dump({"move_group":{"ros__parameters":params}},
                                         sort_keys=False,allow_unicode=True))
@@ -48,6 +61,8 @@ def main():
              "semantic_srdf":True,
              "kinematics_configured":True,
              "planning_pipeline":"ompl",
+             "clock_qos_startup_overrides":clock_qos,
+             "moveit_2940_workaround":"STARTUP_ONLY_NOT_RUNTIME_MUTATION",
              "actual_moveit_planning":"NOT_RUN",
              "actual_motor_commands":0,
              "Ch10":"HOLD"}
