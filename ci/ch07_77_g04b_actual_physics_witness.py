@@ -57,6 +57,21 @@ def arm_ik_tilted_fingers(x,y,z):
     return target
 
 
+def measured_finger_center(arm):
+    """Original URDF FK of the centre of the upper two-finger contact zone."""
+    r=.5*math.sin(arm["joint2"])+math.sin(arm["joint2"]+arm["joint3"])
+    yaw=arm["joint1"]
+    tilt=arm["joint2"]+arm["joint3"]+arm["joint_wrist"]
+    # The original finger collisions run local z=.06..14, so local .1204
+    # lies at the actual rod insertion depth for this test-only geometry.
+    return [
+        (r+.1204*math.sin(tilt))*math.cos(yaw),
+        (r+.1204*math.sin(tilt))*math.sin(yaw),
+        .6+.5*math.cos(arm["joint2"])+math.cos(arm["joint2"]+arm["joint3"])
+          +.1204*math.cos(tilt)
+    ]
+
+
 class Witness(Node):
     def __init__(self):
         super().__init__("ch07_77_g04b_actual_gazebo_contact_witness")
@@ -190,18 +205,49 @@ def main():
                          meta["rod_center_initial_world_m"])<.045
         # First check that pre-grasp and grasp posture are genuine MoveIt
         # collision-free planner goals. The robot has not moved yet.
-        for name,pose in (("pregrasp",[.50,0,1.85]),
+        for name,pose in (("pregrasp",[.62,-.12,1.85]),
                           ("grasp",[.62,0,1.85])):
             data=w.arm_goal(name+"_plan_only",pose,plan_only=True)
             report["arm_results"].append(data)
-        report["finger_results"].append(w.grip_goal("open",.005))
+        report["finger_results"].append(w.grip_goal("open",0.0))
         report["finger_goal_count"]+=1
-        report["arm_results"].append(w.arm_goal("pregrasp",[.50,0,1.85]))
+        report["arm_results"].append(w.arm_goal("pregrasp",[.62,-.12,1.85]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["pregrasp"]=rod_pose()
-        report["arm_results"].append(w.arm_goal("approach",[.62,0,1.85]))
+        # Critical original G04B RED: lateral approach with a mere 35mm
+        # gap knocked the rod from support via finger2 (124 contacts).
+        # Open fully (45mm face gap) and approach ALONG WORLD Y, i.e. the
+        # neutral axis between the original fingers. Before moving toward
+        # the rod, calibrate x using ACTUAL /joint_states, never nominal q.
+        aligned_x=.62
+        report["precontact_alignment"]=[]
+        for idx in range(2):
+            actual=measured_finger_center(w.joints[-1]["arm"])
+            miss=.70-actual[0]
+            report["precontact_alignment"].append({
+                "step":idx,"actual_tip_xyz":actual,"x_miss_m":miss})
+            if abs(miss)<=.008:
+                break
+            assert abs(miss)<.045,"G04B_PREGRASP_UNEXPECTED_LARGE_FK_MISS"
+            aligned_x+=max(-.028,min(.028,miss))
+            assert .56<=aligned_x<=.68
+            report["arm_results"].append(
+                w.arm_goal("align_x_"+str(idx),[aligned_x,-.12,1.85]))
+            report["arm_goal_count"]+=1
+        final_pre=measured_finger_center(w.joints[-1]["arm"])
+        report["aligned_pregrasp_tip_xyz"]=final_pre
+        report["aligned_pregrasp_x_error_m"]=abs(final_pre[0]-.70)
+        assert report["aligned_pregrasp_x_error_m"]<=.011,(
+            "G04B_PREGRASP_NOT_LATERALLY_ALIGNED_NO_APPROACH")
+        # Only a gripper already centred in X is allowed to approach the
+        # object along Y. Fail before closing if the dynamic rod moves.
+        report["arm_results"].append(w.arm_goal("approach",[aligned_x,0,1.85]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["approach"]=rod_pose()
+        report["preclose_object_shift_m"]=math.dist(
+            report["pose_snapshots"]["approach"],report["pose_snapshots"]["initial"])
+        if report["preclose_object_shift_m"]>.018:
+            raise RuntimeError("G04B_ROD_DISTURBED_DURING_OPEN_Y_APPROACH_NO_CLOSE")
         # Independent actual robot JointState -> original source FK, not
         # commanded joint targets or MoveGroup result pose. Preserve this
         # observation on failures to diagnose millimetre-scale grasp error.
@@ -219,6 +265,11 @@ def main():
         report["actual_fingertip_center_before_grip_m"]=fingers_center
         report["actual_rod_lateral_offset_before_grip_m"]=math.hypot(
             fingers_center[0]-rod[0],fingers_center[1]-rod[1])
+        # At fully opened q=0 the original collision-face gap is .045m;
+        # Ø24mm rod requires lateral centroid error <=(.045-.024)/2.
+        # This is a strict geometric prerequisite, not a PASS on contact.
+        if abs(fingers_center[0]-rod[0])>.0105:
+            raise RuntimeError("G04B_FINGER_GAP_NOT_CENTRED_NO_CLOSE")
         # Close just past the Ø24mm rod's two ideal contact faces. No
         # trajectory feedback/physics bypass. FJT may reject collision.
         report["finger_results"].append(w.grip_goal("contact_close",.011))
@@ -239,7 +290,7 @@ def main():
         report["arm_results"].append(w.arm_goal("transfer",[.477,.217,1.759]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["pre_release"]=rod_pose()
-        report["finger_results"].append(w.grip_goal("release",.005))
+        report["finger_results"].append(w.grip_goal("release",0.0))
         report["finger_goal_count"]+=1
         w.spin_for(2.0)
         report["pose_snapshots"]["settled"]=rod_pose()
