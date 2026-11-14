@@ -60,10 +60,11 @@ def native_robot_link_pose(link):
 
 
 def arm_ik_tilted_fingers(x,y,z):
-    """Exact original source 2R POSITION IK; wrist q5 preserves 0.72rad tilted finger direction.
+    """Original 2R position IK, with opposing fingers along world Y.
 
-    Does NOT claim 6D Pose IK success or MoveIt collision-free grasp pose.
-    Actual collision feasibility is validated separately by real Gazebo.
+    Original joint4 turns about link3 local Z. q4=pi/2 rotates original
+    prismatic closure axis into world Y while preserving the tool's
+    forward-projecting length direction; q5=0. No 6D IK success claimed.
     """
     radius=math.hypot(x,y);dz=z-.6;a=.5;b=1.
     c=(radius**2+dz**2-a*a-b*b)/(2*a*b)
@@ -73,7 +74,7 @@ def arm_ik_tilted_fingers(x,y,z):
     # Source collision wrist extends local z<=.06, fingers local z=.06..14.
     # The dynamic rod must enter between fingers at local z≈.12, never
     # into the wrist box. Tool tilt is the G04B geometry receipt .72rad.
-    target=dict(zip(ARM,[math.atan2(y,x),q2,q3,0.,.72-(q2+q3)]))
+    target=dict(zip(ARM,[math.atan2(y,x),q2,q3,math.pi/2,0.]))
     limits={"joint1":(-3.14159,3.14159),"joint2":(-1.57079,1.57079),
             "joint3":(-2.0944,2.0944),"joint4":(-3.14159,3.14159),
             "joint_wrist":(-1.5708,1.5708)}
@@ -87,17 +88,21 @@ def arm_ik_tilted_fingers(x,y,z):
 
 
 def measured_finger_center(arm):
-    """Original URDF FK of the centre of the upper two-finger contact zone."""
+    """Original URDF wrist-to-finger collision centre FK, local z=.10m.
+
+    Applicable when actual joint4≈pi/2 and joint_wrist≈0, checked before
+    close against native Gazebo true link poses.
+    """
     r=.5*math.sin(arm["joint2"])+math.sin(arm["joint2"]+arm["joint3"])
     yaw=arm["joint1"]
     tilt=arm["joint2"]+arm["joint3"]+arm["joint_wrist"]
-    # The original finger collisions run local z=.06..14, so local .1204
-    # lies at the actual rod insertion depth for this test-only geometry.
+    # Each finger starts at wrist local z=.06; box centre adds +.04.
+    # Thus the real collision-zone centre is at local z=.10.
     return [
-        (r+.1204*math.sin(tilt))*math.cos(yaw),
-        (r+.1204*math.sin(tilt))*math.sin(yaw),
+        (r+.10*math.sin(tilt))*math.cos(yaw),
+        (r+.10*math.sin(tilt))*math.sin(yaw),
         .6+.5*math.cos(arm["joint2"])+math.cos(arm["joint2"]+arm["joint3"])
-          +.1204*math.cos(tilt)
+          +.10*math.cos(tilt)
     ]
 
 
@@ -243,123 +248,75 @@ def main():
                          meta["rod_center_initial_world_m"])<.045
         assert meta["height_m"]==.08 and meta["rod_min_local_z_m"]>=.065,(
             "G04B_SOURCE_GEOMETRY_WRIST_CLEARANCE_PREFLIGHT_FAILED")
-        # First check that pre-grasp and grasp posture are genuine MoveIt
-        # collision-free planner goals. The robot has not moved yet.
-        for name,pose in (("pregrasp",[.62,-.12,1.85]),
-                          ("grasp",[.62,0,1.85])):
-            data=w.arm_goal(name+"_plan_only",pose,plan_only=True)
-            report["arm_results"].append(data)
+        # G04B corrected axial grasp: original q4 controls finger
+        # separation (NOT the wrist pitch). At q4=+pi/2, the two finger
+        # collision faces oppose one another along world Y at equal Z.
+        # Approach the rod along X, not by sweeping a finger across Y.
+        pregrasp=(.49,0.,1.85)
+        stage=(.56,0.,1.85)
+        grasp=(.63,0.,1.85)
+        for name,xyz in (("pregrasp",pregrasp),("grasp",grasp)):
+            report["arm_results"].append(
+                w.arm_goal(name+"_plan_only",xyz,plan_only=True))
         report["finger_results"].append(w.grip_goal("open",0.0))
         report["finger_goal_count"]+=1
-        report["arm_results"].append(w.arm_goal("pregrasp",[.62,-.12,1.85]))
+        report["arm_results"].append(
+            w.arm_goal("pregrasp",pregrasp,
+                       joint_override=arm_ik_tilted_fingers(*pregrasp)))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["pregrasp"]=rod_pose()
-        # Prior G04B RED: MoveGroup accepts a coarse 35-mrad joint target,
-        # but measured fingertips drift by up to 5.6cm across x-only IK
-        # retries. A `SUCCEEDED` Action is NOT a grasp-centre measurement.
-        # Hold the original grasp tool tilt constant and correct the REAL
-        # fingertip radius using the observed joint values. Correct ONLY
-        # q2 and compensating q5 (same original URDF); all corrections
-        # happen at y≈-0.12m, away from the rod. No feedback ⇒ no approach.
+        assert math.dist(report["pose_snapshots"]["pregrasp"],
+                         report["pose_snapshots"]["initial"])<=.008,(
+            "G04B_ROD_DISTURBED_BEFORE_APPROACH")
         report["precontact_alignment"]=[]
         report["radial_refinements"]=[]
-        for idx in range(8):
-            state=dict(w.joints[-1]["arm"])
-            tip=measured_finger_center(state)
-            current_r=math.hypot(tip[0],tip[1])
-            miss_r=.70-current_r
-            report["precontact_alignment"].append({
-                "step":idx,"actual_tip_xyz":tip,
-                "radius_m":current_r,"radius_error_m":miss_r})
-            if abs(miss_r)<=.0035:
-                break
-            # This is safe precontact motion only. If the initial model
-            # misses by more than 90mm, diagnose Xacro/FK before any Goal.
-            assert abs(miss_r)<=.09, "G04B_UNEXPECTED_FK_MODEL_MISS_NO_GOAL"
-            assert tip[1]<-.055, "G04B_PRECONTACT_CLEARANCE_LOST_NO_GOAL"
-            q2,q3=state["joint2"],state["joint3"]
-            radial_derivative=.5*math.cos(q2)+math.cos(q2+q3)
-            assert radial_derivative>.25, "G04B_RADIAL_JACOBIAN_SINGULAR"
-            delta=max(-.035,min(.035,miss_r/radial_derivative))
-            corrected=dict(state)
-            corrected["joint2"]=q2+delta
-            corrected["joint_wrist"]=state["joint_wrist"]-delta
-            assert -1.57079<corrected["joint2"]<1.57079
-            assert -1.5708<corrected["joint_wrist"]<1.5708
-            report["radial_refinements"].append({
-                "step":idx,"delta_q2_rad":delta,
-                "joint_target_from_actual_state":corrected})
-            report["arm_results"].append(w.arm_goal(
-                "feedback_radial_"+str(idx),None,joint_override=corrected))
-            report["arm_goal_count"]+=1
-            w.spin_for(.30)
-        final_pre=measured_finger_center(w.joints[-1]["arm"])
-        report["aligned_pregrasp_tip_xyz"]=final_pre
-        report["aligned_pregrasp_radius_error_m"]=abs(
-            math.hypot(final_pre[0],final_pre[1])-.70)
-        report["aligned_pregrasp_x_error_m"]=abs(final_pre[0]-.70)
-        assert report["aligned_pregrasp_radius_error_m"]<=.005,(
-            "G04B_MEASURED_RADIAL_TARGET_UNMET_NO_APPROACH")
-        assert final_pre[1]<-.055, "G04B_PRECONTACT_CLEARANCE_LOST"
-        report["pose_snapshots"]["aligned_pregrasp"]=rod_pose()
-        assert math.dist(report["pose_snapshots"]["aligned_pregrasp"],
-                         report["pose_snapshots"]["initial"])<=.008,(
-            "G04B_ROD_MOVED_DURING_RADIAL_ALIGNMENT_NO_APPROACH")
-        # Only a gripper already centred in X is allowed to approach the
-        # object along Y. Fail before closing if the dynamic rod moves.
-        # Previous G04B RED #43558555414 re-solved 2R IK at y=0 and
-        # changed actual tip X from 0.694 to 0.660m. This physically
-        # knocked the rod to y=+0.074m with ONLY finger2 contact.
-        # Instead, first rotate JUST base yaw to -0.07 (~5cm side
-        # clearance), retaining measured arm shape. Then sweep yaw to 0.
-        yaw_start=w.joints[-1]["arm"]
-        assert yaw_start["joint1"]<-.12
-        yaw_staged=dict(yaw_start);yaw_staged["joint1"]=-.07
+        start_tip=measured_finger_center(w.joints[-1]["arm"])
+        report["precontact_alignment"].append({
+            "name":"pregrasp","actual_collision_center_xyz":start_tip})
+        assert .49<=start_tip[0]<=.62 and abs(start_tip[1])<=.02,(
+            "G04B_PREGRASP_NOT_BEHIND_ROD_NO_APPROACH")
         report["arm_results"].append(w.arm_goal(
-            "yaw_stage_clear_of_rod",None,joint_override=yaw_staged))
+            "x_approach_clearance_stage",stage,
+            joint_override=arm_ik_tilted_fingers(*stage)))
         report["arm_goal_count"]+=1
-        report["pose_snapshots"]["yaw_stage"]=rod_pose()
-        staged_shift=math.dist(report["pose_snapshots"]["yaw_stage"],
-                               report["pose_snapshots"]["initial"])
-        report["rod_shift_before_close_at_yaw_stage_m"]=staged_shift
-        if staged_shift>.012:
-            raise RuntimeError("G04B_ROD_DISTURBED_AT_CLEARANCE_STAGE_NO_CLOSE")
-        measured_stage=measured_finger_center(w.joints[-1]["arm"])
-        report["yaw_stage_measured_finger_tip_xyz"]=measured_stage
-        assert measured_stage[1]<-.027, "G04B_YAW_STAGE_NOT_CLEAR_OF_ROD"
-        assert abs(math.hypot(*measured_stage[:2])-.70)<=.009,(
-            "G04B_YAW_STAGE_RADIAL_ERROR_NO_CLOSE")
-        yaw_final=dict(w.joints[-1]["arm"]);yaw_final["joint1"]=0.
+        report["pose_snapshots"]["x_clearance_stage"]=rod_pose()
+        assert math.dist(report["pose_snapshots"]["x_clearance_stage"],
+                         report["pose_snapshots"]["initial"])<=.012,(
+            "G04B_ROD_MOVED_BEFORE_X_INSERTION_NO_CLOSE")
+        stage_tip=measured_finger_center(w.joints[-1]["arm"])
+        report["precontact_alignment"].append({
+            "name":"x_approach_clearance_stage","actual_collision_center_xyz":stage_tip})
+        assert stage_tip[0]<.665 and abs(stage_tip[1])<=.016,(
+            "G04B_STAGE_NOT_CLEAR_OF_ROD_NO_CLOSE")
         report["arm_results"].append(w.arm_goal(
-            "yaw_final_insertion",None,joint_override=yaw_final))
+            "x_approach_insertion",grasp,
+            joint_override=arm_ik_tilted_fingers(*grasp)))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["approach"]=rod_pose()
         report["preclose_object_shift_m"]=math.dist(
-            report["pose_snapshots"]["approach"],report["pose_snapshots"]["initial"])
+            report["pose_snapshots"]["approach"],
+            report["pose_snapshots"]["initial"])
         if report["preclose_object_shift_m"]>.018:
-            raise RuntimeError("G04B_ROD_DISTURBED_DURING_OPEN_Y_APPROACH_NO_CLOSE")
-        # Independent actual robot JointState -> original source FK, not
-        # commanded joint targets or MoveGroup result pose. Preserve this
-        # observation on failures to diagnose millimetre-scale grasp error.
+            raise RuntimeError("G04B_ROD_DISTURBED_DURING_X_INSERTION_NO_CLOSE")
         q=w.joints[-1]["arm"]
-        rad=.5*math.sin(q["joint2"])+math.sin(q["joint2"]+q["joint3"])
-        yaw=q["joint1"];tilt=q["joint2"]+q["joint3"]+q["joint_wrist"]
-        wrist=[rad*math.cos(yaw),rad*math.sin(yaw),
-               .6+.5*math.cos(q["joint2"])+math.cos(q["joint2"]+q["joint3"])]
-        fingers_center=[
-            wrist[0]+.1204*math.sin(tilt)*math.cos(yaw),
-            wrist[1]+.1204*math.sin(tilt)*math.sin(yaw),
-            wrist[2]+.1204*math.cos(tilt)]
-        rod=report["pose_snapshots"]["approach"]
-        report["actual_wrist_xyz_before_grip_m"]=wrist
-        report["actual_fingertip_center_before_grip_m"]=fingers_center
-        report["actual_rod_lateral_offset_before_grip_m"]=math.hypot(
-            fingers_center[0]-rod[0],fingers_center[1]-rod[1])
-        # At fully opened q=0 the original collision-face gap is .045m;
-        # Ø24mm rod requires lateral centroid error <=(.045-.024)/2.
-        # This is a strict geometric prerequisite, not a PASS on contact.
-        if abs(fingers_center[0]-rod[0])>.0105:
-            raise RuntimeError("G04B_FINGER_GAP_NOT_CENTRED_NO_CLOSE")
+        collision_center=measured_finger_center(q)
+        report["actual_fingertip_center_before_grip_m"]=collision_center
+        report["aligned_pregrasp_tip_xyz"]=collision_center
+        report["aligned_pregrasp_radius_error_m"]=abs(collision_center[0]-.70)
+        report["aligned_pregrasp_x_error_m"]=abs(collision_center[0]-.70)
+        report["radial_refinements"].append({
+            "method":"PREVALIDATED_DIRECT_MOVEGROUP_PRECISE_JOINT_TARGET",
+            "actual_collision_center_xyz":collision_center})
+        assert abs(collision_center[0]-.70)<=.008 and abs(collision_center[1])<=.01,(
+            "G04B_CONTACT_CENTRE_NOT_ALIGNED_NO_CLOSE")
+        assert abs(q["joint4"]-math.pi/2)<=.005 and abs(q["joint_wrist"])<=.005,(
+            "G04B_OPPOSING_FINGER_AXIS_NOT_WORLD_Y_NO_CLOSE")
+        report["pose_snapshots"]["yaw_stage"]=report["pose_snapshots"]["x_clearance_stage"]
+        report["rod_shift_before_close_at_yaw_stage_m"]=math.dist(
+            report["pose_snapshots"]["yaw_stage"],
+            report["pose_snapshots"]["initial"])
+        report["pose_snapshots"]["aligned_pregrasp"]=report["pose_snapshots"]["pregrasp"]
+        report["approach_axis"]="WORLD_X_INSERTION_FINGER_SEPARATION_WORLD_Y"
         # Do NOT lift based on a successful Gripper FJT alone.
         # Previous CI #43563447828: FJT SUCCEEDED q≈.01067m, yet no
         # native Gazebo contact with either finger and rod did not lift.
@@ -371,7 +328,16 @@ def main():
         report["native_before_close"]={
             link:native_robot_link_pose(link)
             for link in ("link_wrist","finger1","finger2")}
-        report["finger_results"].append(w.grip_goal("contact_close",.011))
+        n1=report["native_before_close"]["finger1"]["world_xyz_m"]
+        n2=report["native_before_close"]["finger2"]["world_xyz_m"]
+        real_sep={"dx":abs(n2[0]-n1[0]),"dy":abs(n2[1]-n1[1]),
+                  "dz":abs(n2[2]-n1[2])}
+        report["native_open_finger_separation_world_m"]=real_sep
+        assert real_sep["dy"]>=.054 and real_sep["dx"]<=.010 and real_sep["dz"]<=.010,(
+            "G04B_REAL_OPPOSING_FINGERS_NOT_ALIGNED_WORLD_Y_NO_CLOSE")
+        assert abs(n1[2]-1.94)<=.045 and abs(n2[2]-1.94)<=.045,(
+            "G04B_NATIVE_FINGER_Z_OUTSIDE_ROD_RANGE_NO_CLOSE")
+        report["finger_results"].append(w.grip_goal("contact_close",.004))
         report["finger_goal_count"]+=1
         w.spin_for(.65)
         report["pose_snapshots"]["closed"]=rod_pose()
