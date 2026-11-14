@@ -99,6 +99,7 @@ conditions={
      and result.get("pose_snapshots",{}).get("transfer_high_precise",[0,0,0])[2]>=1.98),
  "dynamic_object_released_in_safe_bin_envelope":(
      result.get("pre_release_bin_xy_error_m",1)<=.06
+     and result.get("pre_release_custody_drift_m",1)<=.04
      and 1.78<=result.get("pose_snapshots",{}).get("pre_release",[0,0,0])[2]<=1.92
      and result.get("pre_release_recent_native_contact",{}).get(
          "both_native_fresh_positive_force") is True),
