@@ -10,6 +10,7 @@ export GZ_PARTITION="ch07_77_g04b_${GITHUB_RUN_ID:-local}_$$_$RANDOM"
 export DEBIAN_FRONTEND=noninteractive
 export CH07_77_G04B_RECEIPT="$OUT/g04b_physical_receipt.json"
 export CH07_77_G04B_FIXTURE_RECEIPT="$OUT/g04b_fixture_receipt.json"
+export CH07_77_G04B_NATIVE_RAW="$OUT/native_contacts.log"
 export CH07_77_G04B_SIMULATION_ONLY_VERIFIED=NO
 STAGE=INIT; OWNED=();NAMES=()
 stage(){ STAGE="$1";echo "STAGE=$STAGE" |tee -a "$OUT/stages.log"; }
