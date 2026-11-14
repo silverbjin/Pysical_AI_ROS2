@@ -24,6 +24,16 @@ def build(source, output, audit):
     # Shift with an explicit derivative fixture, avoiding accepted G04A edits.
     rod.find("pose").text=".70 0 1.94 0 0 0"
     shelf.find("pose").text=".70 0 1.72 0 0 0"
+    # The G04A 0.50m-wide optical display shelf occupies the approaching
+    # arm link4 swept volume. In the first real physics RED (CI #43557077475)
+    # the arm succeeded within loose joint goal tolerances but its actual
+    # fingertip centre missed the rod by 4cm; no finger contact events
+    # occurred. Reduce ONLY this new test-only support to a 0.06m pedestal.
+    # Its upper surface stays z=1.82m and supports the full 0.024m rod.
+    for shape in ("collision","visual"):
+        node=shelf.find("./link/"+shape+"/geometry/box/size")
+        assert node is not None and node.text.strip()=="0.50 0.50 0.20"
+        node.text="0.06 0.06 0.20"
     assert rod.findtext("static")=="false"
     ET.SubElement(world,"plugin",{"filename":"gz-sim-contact-system",
         "name":"gz::sim::systems::Contact"})
@@ -55,7 +65,11 @@ def build(source, output, audit):
       "g04a_live_xyz_reused_as_current_measurement":False,
       "rod_static":False,"radius_m":.012,"height_m":.24,
       "mass_kg":.05,"rod_center_initial_world_m":[.70,0,1.94],
-      "shelf_top_m":1.82,"original_gripper_open_face_gap_m":.035,
+      "shelf_top_m":1.82,"shelf_planar_side_m":.06,
+      "shelf_shrink_reason":"REMOVE_ORIGINAL_WIDE_DISPLAY_SHELF_FROM_ARM_APPROACH_PATH",
+      "first_actual_G04B_red_ci":"43557077475",
+      "first_actual_G04B_red_no_finger_contacts":True,
+      "original_gripper_open_face_gap_m":.035,
       "expected_contact_topic":
         "/world/book_camera/model/g04_grasp_cylinder/link/cylinder_link/sensor/book_ch07_77_rod_contact/contact",
       "target_wrist_position_only_base_link_m":stage_wrist,
