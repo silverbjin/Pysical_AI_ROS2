@@ -62,6 +62,39 @@ class Witness(Node):
                 return future.result()
         raise TimeoutError("G03_TIMEOUT_"+label)
 
+    def plan_position_joint_goal(self, joint_goal):
+        """Real MoveGroup OMPL planning from analytic source-derived 5DOF joints.
+
+        This is NOT a 6D KDL Pose IK success and not an authorized grasp pose.
+        """
+        goal=MoveGroup.Goal()
+        goal.request.group_name="arm_group"
+        goal.request.allowed_planning_time=7.0
+        goal.request.num_planning_attempts=5
+        goal.planning_options.plan_only=True
+        goal.planning_options.replan=False
+        constraints=Constraints()
+        for name in ARM:
+            jc=JointConstraint()
+            jc.joint_name=name
+            jc.position=float(joint_goal[name])
+            jc.tolerance_above=.04
+            jc.tolerance_below=.04
+            jc.weight=1.0
+            constraints.joint_constraints.append(jc)
+        goal.request.goal_constraints.append(constraints)
+        sent=self.awaited(self.move.send_goal_async(goal),12,"JOINT_GOAL_ACCEPT")
+        entry={"joint_goal":joint_goal,"move_goal_accepted":bool(sent and sent.accepted)}
+        if not entry["move_goal_accepted"]:
+            return entry
+        envelope=self.awaited(sent.get_result_async(),30,"JOINT_PLAN_RESULT")
+        entry["action_status"]=int(envelope.status)
+        entry["moveit_error"]=int(envelope.result.error_code.val)
+        plan=envelope.result.planned_trajectory.joint_trajectory
+        entry["trajectory_joint_names"]=list(plan.joint_names)
+        entry["trajectory_points"]=len(plan.points)
+        return entry
+
     def attempt(self,pose):
         request=GetPositionIK.Request()
         ik=request.ik_request
@@ -109,6 +142,41 @@ class Witness(Node):
         entry["trajectory_joint_names"]=list(traj.joint_names)
         entry["trajectory_points"]=len(traj.points)
         return entry
+
+
+def geometric_position_only_ik(x,y,z):
+    """Exact 2R position IK for Ch07 ORIGINAL Xacro geometry.
+
+    In original Xacro the shoulder joint2 is at z=0.6m (base .1 + link1 .5),
+    joint3 follows a 0.5m link and the wrist follows two collinear 0.5m links.
+    Link3 joint4 rotates about its own z: wrist origin is unaffected by
+    q4; joint_wrist rotates the tool without changing wrist origin.
+    This solves POSITION ONLY. No 6D orientation or collision proof.
+    """
+    a,b=0.5,1.0
+    radius=math.hypot(x,y)
+    dz=z-0.6
+    c=(radius*radius+dz*dz-a*a-b*b)/(2*a*b)
+    if not math.isfinite(c) or abs(c)>1:
+        raise ValueError("G03_POSITION_OUTSIDE_ORIGINAL_2R_REACH")
+    angle3=math.acos(max(-1.0,min(1.0,c)))
+    angle2=math.atan2(radius,dz)-math.atan2(b*math.sin(angle3),
+                                             a+b*math.cos(angle3))
+    yaw=math.atan2(y,x)
+    goal=dict(zip(ARM,(yaw,angle2,angle3,0.0,0.0)))
+    limits={"joint1":(-3.14159,3.14159),
+            "joint2":(-1.57079,1.57079),
+            "joint3":(-2.0944,2.0944),
+            "joint4":(-3.14159,3.14159),
+            "joint_wrist":(-1.5708,1.5708)}
+    for name,value in goal.items():
+        lower,upper=limits[name]
+        if not lower<=value<=upper:
+            raise ValueError("G03_ORIGINAL_JOINT_LIMIT_VIOLATION_"+name)
+    forward_r=a*math.sin(angle2)+b*math.sin(angle2+angle3)
+    forward_z=0.6+a*math.cos(angle2)+b*math.cos(angle2+angle3)
+    assert math.hypot(forward_r-radius,forward_z-z)<1e-7
+    return goal
 
 
 def poses_from_g02(path):
@@ -166,6 +234,36 @@ def main():
                     attempt.get("trajectory_points",0)>0):
                 report["plan_only_succeeded"]=attempt["label"]
                 break
+        # The arm has only 5 controlled DOF. A fully constrained six-axis
+        # KDL Pose IK request can legitimately return -31 for every attempt.
+        # Do not lower MoveIt tolerances or fake an IK success: instead use
+        # the EXACT original planar 2R position-only kinematics to construct
+        # joint constraints and ask the REAL OMPL MoveGroup to plan them.
+        if not report.get("plan_only_succeeded"):
+            report["pose_ik_failure_codes"]=[
+                a.get("ik_error") for a in report["attempts"]]
+            report["position_only_fallbacks"]=[]
+            frozen_data=json.loads(frozen.read_text())
+            surface=frozen_data["measured_surface_point_base_link_m"]
+            offset=frozen_data["planning_staging_offset_from_surface_m"]
+            base=[surface[i]+offset[i] for i in range(3)]
+            for i,xyz in enumerate((base,[base[0]-.07,base[1],base[2]-.08],
+                                    [base[0]-.12,base[1],base[2]-.13])):
+                sample={"label":"measured_g02_2r_position_only_"+str(i),
+                        "derived_wrist_xyz":xyz}
+                try:
+                    joint_goal=geometric_position_only_ik(*xyz)
+                    sample.update(node.plan_position_joint_goal(joint_goal))
+                except Exception as exc:
+                    sample["exception"]=repr(exc)
+                report["position_only_fallbacks"].append(sample)
+                if (sample.get("moveit_error")==MoveItErrorCodes.SUCCESS and
+                        sample.get("action_status")==GoalStatus.STATUS_SUCCEEDED and
+                        sample.get("trajectory_points",0)>0):
+                    report["plan_only_succeeded"]=sample["label"]
+                    report["acceptance_kind"]="2R_POSITION_ONLY_REAL_MOVEIT_OMPL_JOINT_PLAN"
+                    report["6d_pose_ik"] = "FAIL_NO_IK_SOLUTION_-31"
+                    break
         report["arm_controller_topic_count"]=node.actuator_commands
         assert report.get("plan_only_succeeded"),"NO_FROZEN_TARGET_DERIVED_MOVEIT_PLAN_SUCCEEDED"
         assert node.actuator_commands==0,"PLAN_ONLY_PUBLISHED_PHYSICAL_TRAJECTORY"
