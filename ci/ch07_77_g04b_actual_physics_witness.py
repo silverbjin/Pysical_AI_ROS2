@@ -337,7 +337,12 @@ def main():
             "G04B_REAL_OPPOSING_FINGERS_NOT_ALIGNED_WORLD_Y_NO_CLOSE")
         assert abs(n1[2]-1.94)<=.045 and abs(n2[2]-1.94)<=.045,(
             "G04B_NATIVE_FINGER_Z_OUTSIDE_ROD_RANGE_NO_CLOSE")
-        report["finger_results"].append(w.grip_goal("contact_close",.004))
+        # Original finger collision is 15mm wide along the closing X axis.
+        # At OPEN q=0 each face is .0225m from center: 45mm gap.
+        # A 24mm diameter rod first contacts at q=(.045-.024)/2=.0105m.
+        # Command .012m so the simulation must exhibit contact force,
+        # never count joint success alone as a grasp.
+        report["finger_results"].append(w.grip_goal("contact_close",.012))
         report["finger_goal_count"]+=1
         w.spin_for(.65)
         report["pose_snapshots"]["closed"]=rod_pose()
