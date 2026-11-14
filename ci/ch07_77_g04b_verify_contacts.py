@@ -38,6 +38,11 @@ def nfield(text,key):
     return float(m.group(1)) if m else None
 
 contacts={"finger1":[], "finger2":[]}
+recent_bilateral={"finger1":0,"finger2":0}
+recent_bilateral_peak_force={"finger1":0.0,"finger2":0.0}
+release_stamp=result.get("pre_release_sim_stamp")
+release_stamp=(float(release_stamp) if isinstance(release_stamp,(int,float))
+               and math.isfinite(release_stamp) else None)
 wrist_rod_collision_events=0
 total=0
 for b in blocks(raw,"contact"):
@@ -59,7 +64,17 @@ for b in blocks(raw,"contact"):
             forces.append(math.sqrt(sum(v*v for v in xyz)))
     for f in contacts:
         if any("my_robot" in x and f in x for x in names):
-            contacts[f].append({"pair":names,"max_force_N":max(forces) if forces else None})
+            force=max(forces) if forces else None
+            contacts[f].append({"pair":names,"max_force_N":force})
+            # Independent posthoc evidence must show current real contact,
+            # not stale positive forces from the initial grasp stage.
+            ts=re.search(r'\\bstamp\\s*\\{\\s*sec:\\s*(\\d+)\\s+nsec:\\s*(\\d+)',b)
+            if ts is not None and release_stamp is not None and force is not None:
+                t=float(ts.group(1))+float(ts.group(2))*1e-9
+                if 0<=release_stamp-t<=.4 and force>.05:
+                    recent_bilateral[f]+=1
+                    recent_bilateral_peak_force[f]=max(
+                        recent_bilateral_peak_force[f],force)
 summary={k:{
     "contact_events":len(v),
     "positive_contact_force_count":sum(x["max_force_N"] is not None and
@@ -78,15 +93,23 @@ conditions={
      result.get("transport_high_bin_xy_error_m",1)<=.07
      and result.get("transport_high_custody_drift_m",1)<=.04
      and result.get("pose_snapshots",{}).get("transfer_high",[0,0,0])[2]>=1.98),
+ "dynamic_rod_physically_recentered_high_before_descent":(
+     result.get("transport_high_precise_bin_xy_error_m",1)<=.025
+     and result.get("transport_high_precise_custody_drift_m",1)<=.04
+     and result.get("pose_snapshots",{}).get("transfer_high_precise",[0,0,0])[2]>=1.98),
  "dynamic_object_released_in_safe_bin_envelope":(
      result.get("pre_release_bin_xy_error_m",1)<=.06
-     and result.get("pre_release_custody_drift_m",1)<=.04
-     and 1.78<=result.get("pose_snapshots",{}).get("pre_release",[0,0,0])[2]<=1.92),
- "real_world_finger_pitch_preserved_during_bin_descent":(
-     result.get("transport_actual_lower_finger_tilt_drift_rad",1)<=.055
-     and isinstance(result.get("transport_lower_joint_target_with_pitch_compensation"),dict)
-     and abs(result.get("transport_lower_joint_target_with_pitch_compensation",{}).get(
-         "joint_wrist",0))>=.10),
+     and 1.78<=result.get("pose_snapshots",{}).get("pre_release",[0,0,0])[2]<=1.92
+     and result.get("pre_release_recent_native_contact",{}).get(
+         "both_native_fresh_positive_force") is True),
+ "independent_native_both_fingers_positive_force_immediately_before_release":(
+     release_stamp is not None
+     and all(recent_bilateral[f]>=3 for f in ("finger1","finger2"))
+     and all(recent_bilateral_peak_force[f]>.05 for f in ("finger1","finger2"))),
+ "original_5dof_tool_orientation_drift_recorded_not_fake_preserved":(
+     isinstance(result.get("transport_actual_tool_world_axis_change_rad"),(int,float))
+     and math.isfinite(result["transport_actual_tool_world_axis_change_rad"])
+     and 0<=result["transport_actual_tool_world_axis_change_rad"]<=math.pi),
  "real_both_fingers_at_least_three_contacts":all(v["contact_events"]>=3 for v in summary.values()),
  "real_both_fingers_positive_force":all(v["positive_contact_force_count"]>=1 for v in summary.values()),
  # Original controller Action must NOT substitute for real measured 2mm
@@ -102,7 +125,7 @@ conditions={
  "placement_height_error_le_0_055m":result.get("placement_center_height_error_m",1)<=.055,
  "one_actual_moving_rod_sequence":all(k in p for k in
                   ("initial","pregrasp","approach","closed","lift","held",
-                   "transfer_high","pre_release","settled")),
+                   "transfer_high","transfer_high_precise","pre_release","settled")),
  "actual_arm_movegroup_and_gripper_fjt_sequence":(
          4<=result.get("arm_goal_count",-1)<=13 and
          result.get("finger_goal_count")==4 and
@@ -123,6 +146,7 @@ conditions={
          result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
          "x_clearance_stage" in p and
          "transfer_high_above_bin" in [a.get("name") for a in result.get("arm_results",[])] and
+         "transfer_high_world_feedback_recenter" in [a.get("name") for a in result.get("arm_results",[])] and
          "lower_into_bin" in [a.get("name") for a in result.get("arm_results",[])] and
          "x_approach_insertion" in [a.get("name") for a in result.get("arm_results",[])] and
          result.get("approach_axis")=="WORLD_X_INSERTION_FINGER_SEPARATION_WORLD_Y" and
@@ -145,6 +169,9 @@ receipt={"scope":"G04B_NATIVE_GZ_MSGS_CONTACTS_PLUS_REAL_GZ_MODEL_POSE",
          "native_support_rod_mentions":support_rod_mentions,
          "native_support_wrist_collision_mentions":support_wrist_mentions,
          "native_wrist_rod_contact_events":wrist_rod_collision_events,
+         "native_recent_bilateral_contact_count":recent_bilateral,
+         "native_recent_bilateral_peak_force_N":recent_bilateral_peak_force,
+         "pre_release_sim_stamp":release_stamp,
          "total_contact_blocks":total,
          "per_finger":summary,"checks":conditions,
          "original_goal_provenance":"NEW_G04B_PHYSICS_FIXTURE_NOT_G04A_SENSOR_REPLAY",
