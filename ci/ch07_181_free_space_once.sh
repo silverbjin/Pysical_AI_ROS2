@@ -43,6 +43,11 @@ cleanup(){
    fi
    wait "$pg" 2>/dev/null || true
  done
+ # Audit ECS even on original expected FJT RED, never upgrade failed physics.
+ python3 "$ROOT/ci/ch07_181_ecs_trace_audit.py" \
+  "$OUT/gazebo_ecs_joint_finger2.csv" \
+  "$OUT/g04b_physical_receipt.json" \
+  "$OUT/ecs_causal_audit.json" >"$OUT/ecs_causal_audit.log" 2>&1
  python3 - "$OUT/result.json" "$STAGE" "$rc" "$shutdown" <<'PY'
 from pathlib import Path
 import json,sys
