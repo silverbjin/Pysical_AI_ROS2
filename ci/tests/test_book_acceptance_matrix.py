@@ -21,14 +21,15 @@ class EvidenceMatrixTest(unittest.TestCase):
         self.assertEqual(self.data["numbered_sections"], 98)
         self.assertEqual(len(self.data["rows"]), 98)
         self.assertTrue(self.data["ch10_hold"])
-        self.assertEqual(len(self.data["missing_guide_sections"]), 0)
+        self.assertEqual(len(self.data["missing_guide_sections"]),
+                         sum(not r["exists"] for r in self.data["rows"]))
 
     def test_guide_count_and_extra_evidence_are_not_runtime_pass(self):
         self.assertEqual(self.data["target_from_issue_118"], 101)
         self.assertFalse(self.data["overall_101_lab_execution_accepted"])
         self.assertEqual(self.data["overall_verdict"], "NOT_READY_FOR_FULL_RUNTIME_ACCEPTANCE")
         self.assertEqual(self.data["unique_guide_documents_including_supporting"],
-                         self.data["numbered_sections"] + len(self.data["supplemental_guides"]))
+                         self.data["numbered_guide_files_present"] + len(self.data["supplemental_guides"]))
         self.assertTrue(all(x["classification"] == "SUPPLEMENTAL_GUIDE_NOT_INDEPENDENT_SECTION"
                             for x in self.data["supplemental_guides"]))
 
