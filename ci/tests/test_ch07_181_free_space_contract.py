@@ -4,7 +4,7 @@ import pathlib,sys,unittest
 from types import SimpleNamespace
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,FINAL_CONTACT_ARM_POSE,SINGLE_FINGER2_GOAL,validate_preopen_mode,validate_arm_mode,arm_result_accepted,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,ARM_SETTLE_FJT_TOL_RAD,validate_settle_mode,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,FINAL_CONTACT_ARM_POSE,SINGLE_FINGER2_GOAL,validate_limit_release,LIMIT_RELEASE_TARGET_M,validate_preopen_mode,validate_arm_mode,arm_result_accepted,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,ARM_SETTLE_FJT_TOL_RAD,validate_settle_mode,controller_sample,accept_real_finger_state)
 
 def msg(ref=(.012,.012),feedback=(.0115,.0116),error=(.0005,.0004)):
   return SimpleNamespace(
@@ -15,6 +15,12 @@ def msg(ref=(.012,.012),feedback=(.0115,.0116),error=(.0005,.0004)):
     error=SimpleNamespace(positions=list(error)))
 
 class FreeSpaceContract(unittest.TestCase):
+ def test_lower_stop_candidate_is_2mm_only_not_gate_relaxation(self):
+  self.assertAlmostEqual(validate_limit_release("0.002"),.002)
+  self.assertEqual(validate_limit_release("NO"),0.)
+  self.assertEqual(LIMIT_RELEASE_TARGET_M,.002)
+  with self.assertRaises(ValueError):validate_limit_release("0.01")
+  with self.assertRaises(ValueError):validate_limit_release("YES")
  def test_post_movegroup_settle_is_explicit_and_strict(self):
   self.assertTrue(validate_settle_mode("YES"))
   self.assertFalse(validate_settle_mode("NO"))
