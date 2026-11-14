@@ -221,11 +221,12 @@ done
 
 stage START_REAL_MOVEIT_MOVEGROUP_FOR_ONE_PREGRASP_ARM_GOAL
 start move_group ros2 run moveit_ros_move_group move_group  --ros-args --params-file "$OUT/move_group.yaml"
-stage ONE_ORIGINAL_MOVEGROUP_ARM_PREGRASP_THEN_SAME_FINGER_SEQUENCE_NO_APPROACH
+stage ONE_POST_MOVEGROUP_DIRECT_FJT_ARM_SETTLE_THEN_SINGLE_ISOLATED_FINGER_GOAL
 export CH07_181_GAZEBO_ONLY=YES
 export CH07_181_COMMAND_SEQUENCE=ISOLATED
 export CH07_181_PREOPEN=YES
 export CH07_181_ARM_SETUP=MOVEGROUP
+export CH07_181_ARM_FJT_SETTLE=YES
 timeout --signal=TERM --kill-after=10s 160s \
  python3 "$ROOT/ci/ch07_181_free_space_witness.py" >"$OUT/witness.log" 2>&1
 grep -q CH07_181_FREE_SPACE_ISOLATED_SEQUENCE_SCOPED_PASS_NO_GRASP "$OUT/witness.log"

@@ -31,6 +31,13 @@ GOAL_M=0.012
 TOLERANCE_M=0.001
 # Original G04B precision MoveGroup override uses 2 mrad, not coarse 35 mrad.
 MOVEGROUP_PREGRASP_JOINT_TOL_RAD=0.002
+# One additional DIRECT arm FJT settlement (narrow post-MoveGroup hypothesis).
+ARM_SETTLE_FJT_TOL_RAD=0.01
+
+def validate_settle_mode(mode):
+    if mode not in ("YES","NO"):
+        raise ValueError("G04B_181_ARM_SETTLE_MODE_INVALID")
+    return mode=="YES"
 
 def controller_sample(msg):
     names=list(msg.joint_names)

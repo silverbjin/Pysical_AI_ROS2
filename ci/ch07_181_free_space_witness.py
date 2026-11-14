@@ -18,7 +18,7 @@ from sensor_msgs.msg import JointState
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,validate_arm_mode,arm_result_accepted,validate_preopen_mode,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,ARM_SETTLE_FJT_TOL_RAD,validate_settle_mode,validate_arm_mode,arm_result_accepted,validate_preopen_mode,controller_sample,accept_real_finger_state)
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 # Exact prior G04B pregrasp arm goal from independently audited #43574030542.
@@ -203,6 +203,24 @@ def main():
           raise RuntimeError("G04B_181_Q4_PREGRASP_NOT_REACHED")
        if max(abs(a[n]-ARM_TARGET[i]) for i,n in enumerate(ARM))>.075:
           raise RuntimeError("G04B_181_ARM_SETUP_NOT_TRACKED")
+       settle=validate_settle_mode(os.environ.get("CH07_181_ARM_FJT_SETTLE","NO"))
+       report["post_movegroup_arm_fjt_settle_requested"]=settle
+       if settle:
+          if arm_mode!="MOVEGROUP":
+             raise RuntimeError("G04B_181_SETTLE_REQUIRES_MOVEGROUP_FIRST")
+          report["gz_before_settle"]=gz_snapshot("before_settle")
+          settled=mon.send(mon.arm,ARM,ARM_TARGET,3,ARM_SETTLE_FJT_TOL_RAD,
+                           "one_post_movegroup_direct_fjt_settle")
+          report["post_movegroup_arm_fjt_settle"]=settled
+          report["arm_setup_goal_count"]+=1
+          if not arm_result_accepted("DIRECT_FJT",settled["action_status"],settled["result_error_code"]):
+             raise RuntimeError("G04B_181_POST_MOVEGROUP_DIRECT_FJT_FAILED")
+          actual=mon.joint_samples[-1]["arm"]
+          error={name:abs(actual[name]-ARM_TARGET[i]) for i,name in enumerate(ARM)}
+          report["post_settle_actual_arm"]=actual
+          report["post_settle_joint_errors_rad"]=error
+          if max(error.values())>ARM_SETTLE_FJT_TOL_RAD:
+             raise RuntimeError("G04B_181_POST_SETTLE_REAL_ARM_ERROR")
        report["gz_before_finger"]=gz_snapshot("before_finger")
        mode=os.environ.get("CH07_181_COMMAND_SEQUENCE","BILATERAL")
        if mode not in ("BILATERAL","ISOLATED"):raise RuntimeError("G04B_181_BAD_MODE")

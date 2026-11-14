@@ -1,4 +1,4 @@
-name: Ch07 Issue 181 actual MoveGroup versus direct arm FJT pregrasp contrast
+name: Ch07 Issue 181 precise post-MoveGroup arm settle single contrast
 on:
   pull_request:
     paths:
@@ -51,7 +51,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull frozen Jazzy Harmonic image digest
         run: docker pull "$(cat ci-results/ch07-181-free-space/image_digest.txt)"
-      - name: ONE G04B original MoveGroup pregrasp before same isolated finger sequence NO APPROACH
+      - name: ONE post-MoveGroup direct arm FJT settle then staged fingers NO APPROACH
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=20s 780s \
@@ -67,7 +67,7 @@ jobs:
         run: |
           {
             echo '## Ch07 #181 one cold-start actuator diagnostic'
-            echo 'Compared with #43581398334: same physical world, initial preopen, 3 isolated finger Goals; only arm setup changes DIRECT_FJT -> real MoveGroup Goal. No object approach, G04B grasp/G05 NOT_RUN.'
+            echo 'Compared with original post-MoveGroup stuck finger1 #43583477227: same world, initial open, MoveGroup pregrasp, then ONE direct arm FJT precise settle before finger Goal; no rod approach/G04B/G05.'
             cat ci-results/ch07-181-free-space/receipt.json || true
             cat ci-results/ch07-181-free-space/result.json || true
             cat ci-results/ch07-181-free-space/stages.log || true
