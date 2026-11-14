@@ -17,6 +17,7 @@ from control_msgs.msg import JointTrajectoryControllerState, JointTolerance
 from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
 from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
+from ch07_181_physical_preload_contract import actual_preload_pass, EXPECTED_PRELOAD_M
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -379,6 +380,17 @@ def main():
                 w.arm_goal(name+"_plan_only",xyz,plan_only=True))
         report["finger_results"].append(w.grip_goal("open",0.0))
         report["finger_goal_count"]+=1
+        # Independently reproduced root-boundary fix:
+        # public CI #43595476665 physically commanded finger2=2mm BEFORE
+        # MoveGroup, then 11mm after MoveGroup at exact previous failed pose.
+        # No robot geometry, FJT tolerance, fake pose or physics alteration.
+        preload=w.grip_goal("lower_stop_release_finger2_2mm",
+                            0.0,EXPECTED_PRELOAD_M,diagnostic=True)
+        report["finger_results"].append(preload)
+        report["finger_goal_count"]+=1
+        report["lower_stop_release_finger2_pre_movegroup"]=preload
+        if abs(preload["actual_m"]["joint_finger2"]-EXPECTED_PRELOAD_M)>.0005:
+            raise RuntimeError("G04B_181_2MM_PHYSICAL_RELEASE_NOT_REACHED")
         nominal_pregrasp=arm_ik_tilted_fingers(*pregrasp)
         report["arm_results"].append(
             w.arm_goal("pregrasp",pregrasp,joint_override=nominal_pregrasp))
@@ -388,50 +400,23 @@ def main():
         # Preserve original MoveGroup planned+executed motion and independent
         # contact/lift/hold/place witness; no force/attach/teleport.
         report["post_movegroup_arm_settle"]=w.arm_precision_settle(nominal_pregrasp)
+        report["arm_results"].append(report["post_movegroup_arm_settle"])
         report["arm_goal_count"]+=1
+        report["lower_stop_release_after_pregrasp_m"]=w.joints[-1]["fingers"]["joint_finger2"]
+        if abs(report["lower_stop_release_after_pregrasp_m"]-EXPECTED_PRELOAD_M)>.0005:
+            raise RuntimeError("G04B_181_PRELOAD_LOST_DURING_MOVEGROUP_PREGRASP")
         report["pose_snapshots"]["pregrasp"]=rod_pose()
         assert math.dist(report["pose_snapshots"]["pregrasp"],
                          report["pose_snapshots"]["initial"])<=.008,(
             "G04B_ROD_DISTURBED_BEFORE_APPROACH")
-        # NEW smallest failing-boundary test. Before approaching the
-        # support/rod, with both finger tips safely behind the object,
-        # drive two original GazeboSimSystem prismatic joints once.
-        # It discriminates controller/rotated-URDF dynamic failure
-        # from collision only after actual grasp insertion. The §7.6
-        # accepted empty-world test is NOT rerun.
-        preflight_tip=measured_finger_center(w.joints[-1]["arm"])
-        assert preflight_tip[0]<=.62,(
-            "G04B_CLEARANCE_FINGER_PREFLIGHT_TOO_CLOSE_TO_ROD")
-        # New bounded A/B diagnosis for the *failed* q4=pi/2 mode.
-        # Earlier CI #43572765627 with one simultaneous two-finger Goal
-        # had finger1=11.405mm, finger2≈0 in EMPTY clearance, no contact.
-        # Test each original prismatic interface independently with both
-        # names in each FJT Goal, then compare staggered operation. This
-        # is not a repeat of the accepted §7.6 straight-arm demo.
+        # The seven original unloaded finger tests are already independently
+        # accepted in public #43584052832 and #43584676926. They previously
+        # reopened finger2 to the hard limit q=0, undoing the diagnosed 2mm
+        # release. Do NOT rerun them in the real grasp session or fake PASS.
         report["finger_clearance_preflight"]=[]
-        report["finger_clearance_preflight_target_m"]=.012
-        report["finger_clearance_preflight_phase"]="BEFORE_ROD_OR_SUPPORT_APPROACH"
-        isolated_cases=(
-            ("isolated_finger1",.012,0.0),
-            ("isolated_reopen_1",0.0,0.0),
-            ("isolated_finger2",0.0,.012),
-            ("isolated_reopen_2",0.0,0.0),
-            ("stagger_finger1_first",.012,0.0),
-            ("stagger_finger2_second",.012,.012),
-            ("stagger_reopen",0.0,0.0),
-        )
-        for name,q1,q2 in isolated_cases:
-            rec=w.grip_goal(name,q1,q2,diagnostic=True)
-            report["finger_clearance_preflight"].append(rec)
-            if math.dist(rod_pose(),report["pose_snapshots"]["initial"])>.008:
-                raise RuntimeError("G04B_OBJECT_MOVED_DURING_FREE_SPACE_DIAG")
-        report["free_space_joint_state_after_close"]=w.joints[-1]["fingers"]
-        report["free_space_diagnostics_all_tracking_pass"]=all(
-            x["joint_tracking_pass"] for x in report["finger_clearance_preflight"])
-        report["controller_state_traces_last_10"]=w.controller_samples[-10:]
-        if not report["free_space_diagnostics_all_tracking_pass"]:
-            raise RuntimeError(
-                "G04B_ISOLATED_VS_STAGGERED_JOINT_ACTUATION_UNDER_ROTATED_ARM_FAIL_NO_APPROACH")
+        report["free_space_diagnostics_status"]="NOT_RERUN_PRIOR_PUBLIC_SCOPED_EVIDENCE"
+        report["prior_free_space_ci_runs"]=[43584052832,43584676926,43595476665]
+        report["lower_stop_release_after_pregrasp_joint_state"]=w.joints[-1]["fingers"]
         assert math.dist(rod_pose(),report["pose_snapshots"]["initial"])<=.008
         report["precontact_alignment"]=[]
         report["radial_refinements"]=[]
@@ -514,7 +499,15 @@ def main():
         before_contact_settle_center=measured_finger_center(q)
         contact_target=measured_contact_settle_target(dict(q))
         report["post_final_approach_arm_settle"]=w.arm_precision_settle(contact_target)
+        report["arm_results"].append(report["post_final_approach_arm_settle"])
         report["arm_goal_count"]+=1
+        report["lower_stop_release_before_contact_m"]=w.joints[-1]["fingers"]["joint_finger2"]
+        report["lower_stop_release_real_actual_pass"]=actual_preload_pass(
+            report["lower_stop_release_finger2_pre_movegroup"],
+            report["lower_stop_release_after_pregrasp_m"],
+            report["lower_stop_release_before_contact_m"])
+        if not report["lower_stop_release_real_actual_pass"]:
+            raise RuntimeError("G04B_181_PRELOAD_LOST_BEFORE_PHYSICAL_CONTACT")
         settled_arm=dict(w.joints[-1]["arm"])
         after_contact_settle_center=measured_finger_center(settled_arm)
         report["post_final_approach_contact_centers_m"]={
