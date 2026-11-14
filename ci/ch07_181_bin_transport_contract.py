@@ -27,16 +27,44 @@ def high_arrival_valid(rod,drift):
     return (math.hypot(rod[0]-.55,rod[1]-.25)<=.07
             and rod[2]>=1.98 and math.isfinite(drift) and drift<=.04)
 
-def pre_release_valid(rod,drift):
-    # Actual bin top is 1.73m, real rod is 80mm tall (centre offset 40mm).
+def feedback_centered_high_target(previous_wrist_target,actual_rod_world):
+    """One bounded real MoveGroup correction derived from current GZ rod pose."""
+    if (len(previous_wrist_target)!=3 or len(actual_rod_world)!=3 or
+        not all(math.isfinite(float(x)) for x in
+                (*previous_wrist_target,*actual_rod_world))):
+        raise ValueError("G04B_181_HIGH_FEEDBACK_INVALID")
+    if actual_rod_world[2]<1.98:
+        raise ValueError("G04B_181_HIGH_ROD_NOT_HELD")
+    dx=BIN_XY[0]-actual_rod_world[0]
+    dy=BIN_XY[1]-actual_rod_world[1]
+    if math.hypot(dx,dy)>.09:
+        raise ValueError("G04B_181_HIGH_CORRECTION_TOO_LARGE")
+    return [previous_wrist_target[0]+dx,
+            previous_wrist_target[1]+dy,previous_wrist_target[2]]
+
+def precise_high_arrival_valid(rod,drift):
+    return (math.hypot(rod[0]-.55,rod[1]-.25)<=.025 and
+            rod[2]>=1.98 and math.isfinite(drift) and drift<=.04)
+
+def pre_release_valid(rod,recent_native_contact):
+    """Fail closed using recent actual native Gazebo bilateral force, not
+    the earlier invalid q2+q3+qwrist pseudo-FK metric. Physical final
+    settled ROI/height, lift and hold gates remain independent.
+    """
+    if len(rod)!=3 or not all(math.isfinite(float(x)) for x in rod):
+        return False
     return (math.hypot(rod[0]-.55,rod[1]-.25)<=.06
             and 1.78<=rod[2]<=1.92
-            and math.isfinite(drift) and drift<=.04)
+            and isinstance(recent_native_contact,dict)
+            and recent_native_contact.get("both_native_fresh_positive_force") is True
+            and all(recent_native_contact.get("per_finger",{}).get(n,{}).get(
+                "recent_contact_events",0)>=3 for n in ("finger1","finger2")))
 
-# Original G04B lower step CI #43599620070: held q2+q3+qwrist tilt
-# changed by ~0.31rad despite correct gripper FJT, the dynamic cylinder
-# drifted 0.108m along the jaws. Preserve measured WORLD finger tilt via
-# original wrist joint (no change to original robot, torque or friction).
+
+# Historical 5DOF wrist command kept FOR CONTROLLED COMPARISON only:
+# q2+q3+qwrist is not the world tool orientation when q4≈pi/2.
+# Exact orientation is now measured with ch07_181_exact_fk; this helper
+# does not prove real orientation preservation and must never mark PASS.
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 WRIST_LIMIT_RAD=1.5708
 
@@ -45,14 +73,14 @@ def finger_tilt(arm):
         raise ValueError("G04B_181_INVALID_REAL_ARM_JOINTSTATE")
     return float(arm["joint2"])+float(arm["joint3"])+float(arm["joint_wrist"])
 
-def orientation_preserving_lower_goal(held_actual_arm,lower_nominal_arm):
+def historical_wrist_bias_lower_goal(held_actual_arm,lower_nominal_arm):
     reference=finger_tilt(held_actual_arm)
     result={n:float(lower_nominal_arm[n]) for n in ARM}
     result["joint_wrist"]=reference-(result["joint2"]+result["joint3"])
     if abs(result["joint_wrist"])>WRIST_LIMIT_RAD:
         raise ValueError("G04B_181_WRIST_PITCH_COMPENSATION_LIMIT")
     if abs(finger_tilt(result)-reference)>1e-8:
-        raise ValueError("G04B_181_PRESERVED_TOOL_TILT_NOT_SATISFIED")
+        raise ValueError("G04B_181_HISTORICAL_WRIST_BIAS_CONSISTENCY")
     return result
 
 def actual_finger_tilt_drift(held_arm,lower_arm):
