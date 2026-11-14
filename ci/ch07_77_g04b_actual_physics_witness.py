@@ -113,6 +113,7 @@ class Witness(Node):
         self.grip=ActionClient(self,FollowJointTrajectory,
                                "/gripper_group_controller/follow_joint_trajectory")
         self.joints=[]
+        self.last_grip_data=None
         self.create_subscription(JointState,"/joint_states",self.on_state,10)
 
     def on_state(self,m):
@@ -226,14 +227,20 @@ class Witness(Node):
         # a physical grip. Open/release still require exact joint reach.
         data["contact_close_position_not_success_criterion"]=(
             label=="contact_close")
+        self.last_grip_data=data
         if data["status"]!=GoalStatus.STATUS_SUCCEEDED or data["result_error"]!=0:
             raise RuntimeError("G04B_GRIP_"+label+"_RESULT_FAILURE_"+str(data))
         if label!="contact_close" and max(abs(
                 data["actual_m"][n]-q) for n in FINGERS)>.003:
             raise RuntimeError("G04B_GRIP_"+label+"_ACTUAL_FINGER_ERROR")
         if label=="contact_close":
-            assert all(0<=data["actual_m"][n]<=.025 for n in FINGERS),(
-                "G04B_CONTACT_ACTUAL_JOINT_LIMIT_VIOLATED")
+            # Floating-point mechanical-zero readouts can be tiny
+            # negative (e.g., -8.5e-22m). Accept ONLY ±1µm numerical
+            # epsilon at original [0,.025]m URDF joint bounds; never
+            # weaken bilateral native contact / force / lift gates.
+            assert all(-1e-6<=data["actual_m"][n]<=.025001
+                       for n in FINGERS),(
+                "G04B_CONTACT_ACTUAL_JOINT_LIMIT_VIOLATED_"+str(data))
         return data
 
 
@@ -463,6 +470,21 @@ def main():
         print("CH07_77_G04B_FAIL "+repr(exc),flush=True)
         raise
     finally:
+        # Preserve exact joint and native rod pose on every unsuccessful
+        # contact-close attempt. FJT status SUCCESS is not a physics PASS.
+        if w.last_grip_data is not None:
+            report["last_gripper_result_even_on_failure"]=w.last_grip_data
+            if w.last_grip_data["name"]=="contact_close":
+                try:
+                    report["pose_snapshots"]["closed_after_failure"]=rod_pose()
+                    report["rod_shift_after_close_even_on_failure_m"]=math.dist(
+                        report["pose_snapshots"]["closed_after_failure"],
+                        report["pose_snapshots"].get("initial",[0,0,0]))
+                    report["native_after_failure"]={
+                        link:native_robot_link_pose(link)
+                        for link in ("finger1","finger2")}
+                except Exception as snapshot_error:
+                    report["failure_snapshot_error"]=repr(snapshot_error)
         report["joint_state_samples"]=len(w.joints)
         out.parent.mkdir(parents=True,exist_ok=True)
         out.write_text(json.dumps(report,indent=2,allow_nan=False)+"\n")
