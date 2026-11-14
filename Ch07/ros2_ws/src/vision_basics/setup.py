@@ -44,6 +44,7 @@ setup(
             'object_detector = vision_basics.object_detector:main',
             'coord_transformer = vision_basics.coord_transformer:main',
             'gripper_controller = vision_basics.gripper_controller:main',
+            'mission_controller = vision_basics.mission_controller:main',
             'simple_arm_teleop = vision_basics.simple_arm_teleop:main',  # 텔레오퍼레이션 노드 추가
             'joint_control_cli = vision_basics.joint_control_cli:main',  # 제어 노드 추가
             
