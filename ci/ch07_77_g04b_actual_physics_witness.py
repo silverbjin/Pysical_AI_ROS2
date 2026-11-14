@@ -30,8 +30,8 @@ def rod_pose():
     return [float(x) for x in m.groups()]
 
 
-def arm_ik_vertical_wrist(x,y,z):
-    """Exact source 2R POSITION IK; q_wrist restores vertical finger direction.
+def arm_ik_tilted_fingers(x,y,z):
+    """Exact original source 2R POSITION IK; wrist q5 preserves 0.72rad tilted finger direction.
 
     Does NOT claim 6D Pose IK success or MoveIt collision-free grasp pose.
     Actual collision feasibility is validated separately by real Gazebo.
@@ -41,7 +41,10 @@ def arm_ik_vertical_wrist(x,y,z):
     if not math.isfinite(c) or abs(c)>1:raise ValueError("G04B_UNREACHABLE_WRIST")
     q3=math.acos(c)
     q2=math.atan2(radius,dz)-math.atan2(b*math.sin(q3),a+b*math.cos(q3))
-    target=dict(zip(ARM,[math.atan2(y,x),q2,q3,0.,-(q2+q3)]))
+    # Source collision wrist extends local z<=.06, fingers local z=.06..14.
+    # The dynamic rod must enter between fingers at local z≈.12, never
+    # into the wrist box. Tool tilt is the G04B geometry receipt .72rad.
+    target=dict(zip(ARM,[math.atan2(y,x),q2,q3,0.,.72-(q2+q3)]))
     limits={"joint1":(-3.14159,3.14159),"joint2":(-1.57079,1.57079),
             "joint3":(-2.0944,2.0944),"joint4":(-3.14159,3.14159),
             "joint_wrist":(-1.5708,1.5708)}
@@ -100,7 +103,7 @@ class Witness(Node):
         raise TimeoutError("G04B_TIMEOUT_"+label)
 
     def arm_goal(self,label,xyz,plan_only=False):
-        target=arm_ik_vertical_wrist(*xyz)
+        target=arm_ik_tilted_fingers(*xyz)
         goal=MoveGroup.Goal()
         goal.request.group_name="arm_group"
         goal.request.allowed_planning_time=6.
@@ -187,16 +190,16 @@ def main():
                          meta["rod_center_initial_world_m"])<.045
         # First check that pre-grasp and grasp posture are genuine MoveIt
         # collision-free planner goals. The robot has not moved yet.
-        for name,pose in (("pregrasp",[.57,0,1.90]),
-                          ("grasp",[.70,0,1.90])):
+        for name,pose in (("pregrasp",[.50,0,1.85]),
+                          ("grasp",[.62,0,1.85])):
             data=w.arm_goal(name+"_plan_only",pose,plan_only=True)
             report["arm_results"].append(data)
         report["finger_results"].append(w.grip_goal("open",.005))
         report["finger_goal_count"]+=1
-        report["arm_results"].append(w.arm_goal("pregrasp",[.57,0,1.90]))
+        report["arm_results"].append(w.arm_goal("pregrasp",[.50,0,1.85]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["pregrasp"]=rod_pose()
-        report["arm_results"].append(w.arm_goal("approach",[.70,0,1.90]))
+        report["arm_results"].append(w.arm_goal("approach",[.62,0,1.85]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["approach"]=rod_pose()
         # Independent actual robot JointState -> original source FK, not
@@ -208,9 +211,9 @@ def main():
         wrist=[rad*math.cos(yaw),rad*math.sin(yaw),
                .6+.5*math.cos(q["joint2"])+math.cos(q["joint2"]+q["joint3"])]
         fingers_center=[
-            wrist[0]+.10*math.sin(tilt)*math.cos(yaw),
-            wrist[1]+.10*math.sin(tilt)*math.sin(yaw),
-            wrist[2]+.10*math.cos(tilt)]
+            wrist[0]+.1204*math.sin(tilt)*math.cos(yaw),
+            wrist[1]+.1204*math.sin(tilt)*math.sin(yaw),
+            wrist[2]+.1204*math.cos(tilt)]
         rod=report["pose_snapshots"]["approach"]
         report["actual_wrist_xyz_before_grip_m"]=wrist
         report["actual_fingertip_center_before_grip_m"]=fingers_center
@@ -222,7 +225,7 @@ def main():
         report["finger_goal_count"]+=1
         w.spin_for(.65)
         report["pose_snapshots"]["closed"]=rod_pose()
-        report["arm_results"].append(w.arm_goal("lift",[.54,0,1.965]))
+        report["arm_results"].append(w.arm_goal("lift",[.48,0,1.96]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["lift"]=rod_pose()
         report["lift_m"]=report["pose_snapshots"]["lift"][2]-report["pose_snapshots"]["initial"][2]
@@ -233,7 +236,7 @@ def main():
                        report["pose_snapshots"]["lift"])
         report["object_pose_drift_during_hold_m"]=hold
         assert hold<=.025,"G04B_OBJECT_SLIPPED_WHILE_HELD"
-        report["arm_results"].append(w.arm_goal("transfer",[.55,.25,1.81]))
+        report["arm_results"].append(w.arm_goal("transfer",[.477,.217,1.759]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["pre_release"]=rod_pose()
         report["finger_results"].append(w.grip_goal("release",.005))
