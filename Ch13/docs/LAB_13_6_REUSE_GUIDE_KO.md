@@ -2,13 +2,16 @@
 
 최신 실행 소스는 v14다. 입력 손실은 수정된 정식 판정기로 새 실행 PASS를 확인했다. 정상 pick과 다른15개 대표 인수는 v13 이력이며 v14 전체 matrix를 반복한 것으로 해석하지 않는다. [정식 수정 결과](SECTION_13_6_RAW_LOSS_FORMAL_FIX_REPORT_KO.md)를 함께 확인한다. 실제 인수 판정·대표 UUID·제한은 [최종 보고서](SECTION_13_6_REUSE_REPORT_KO.md)를 함께 확인한다.
 
+
+> **배포 소스와 과거 인수의 구분 (2026-11-14):** 위 다운로드는 현재 원격 `main` 기준입니다. 기존 Ch13 v53/R5/M4 인수 JSON은 당시 동결 소스·자산의 성공이며, 새 clone의 HEAD에 동일한 합격을 자동 전파하지 않습니다. `git rev-parse HEAD`·94개 외부 자산 해시·설치/실행 로그가 대응되는지 검수해야 합니다. 실제 새 WSL2 설치·GUI·실기 현장 인수는 `MANUAL_REQUIRED`입니다. Ch10 #123은 HOLD이며 재검하지 않습니다.
+
 설치 후 핵심 재현은 **pick 실행→verify_pick 결과 확인**이다. 한 mission이 접근·정착·계획·파지·들기를 연결하며 앞선 시험의 PASS 파일을 요구하지 않는다. 소절별로 분리해서 배우려면 hold→arm_normal→moveit→pick을 수행한다. 각 명령의 검증 도구가 실제 결과와 종료를 자동 판독한다. 전체 부품 시험과 아래 실패 주입·13.5 회귀는 개발/선택 심화 과정이며 매 실습마다 전부 반복할 필요가 없다. [게이트·검증 비용 점검](SECTION_13_6_REUSE_GATE_REVIEW_KO.md)에 유지/제거 이유를 정리했다.
 
 ## 준비
 
 이 실습은 Ubuntu 24.04/WSL2, ROS 2 Jazzy, MuJoCo 3.13.0, 원본 IIT-DLSLab 정책과 94개 고정 자산을 사용한다. 원본 모델·mesh·가중치는 Git 저장소에 재배포하지 않는다. [13.5 준비 가이드](LAB_13_5_REUSE_GUIDE_KO.md)의 준비1(OS/Nav2), 준비3(94자산), 준비4(venv)를 참조하되 **소스는 아래13.6 브랜치**를 받는다.13.5의 준비2 브랜치나114파일 동결을 새13.6 소스에 적용하지 않는다. 다른 로봇의 MoveIt 설정이나 과거 Task8 checkout을 사용하지 않는다.
 
-13.6 소스 branch는 `feat/ch13-section-13-6-manipulation`이다. main에 병합된 것으로 가정하지 않는다. 저장소 루트가 현재 위치인지 확인한다. 아래 Linux 명령의 작업 위치는 모두 그 저장소 루트다. 이미 실행 중인 엔진이 있으면 소유 mission에서 정상 회수한 다음 진행한다.
+기존 인수 보고서의 개발 소스는 `feat/ch13-section-13-6-manipulation`에서 출발했지만, **독자용 최신 코드의 기준은 main**이다. 과거 v13/v14 합격 기록을 현재 main의 새 실행 PASS로 확대하지 않는다. 저장소 루트가 현재 위치인지 확인한다. 아래 Linux 명령의 작업 위치는 모두 그 저장소 루트다. 이미 실행 중인 엔진이 있으면 소유 mission에서 정상 회수한 다음 진행한다.
 
 기존 작업 폴더를 덮지 않는 새 위치에서 다운로드한다. 아래 sparse 범위는6개 패키지·도구·계약·문서와 부품 시험이 읽는 실제 TOTG fixture를 포함한다.
 
@@ -16,7 +19,7 @@
 mkdir -p "$HOME/physicalai_13_6"
 cd "$HOME/physicalai_13_6"
 git clone --filter=blob:none --sparse --depth 1 --single-branch \
-  --branch feat/ch13-section-13-6-manipulation \
+  --branch main \
   https://github.com/silverbjin/Pysical_AI_ROS2.git Pysical_AI_ROS2
 cd Pysical_AI_ROS2
 git sparse-checkout set Ch13/docs Ch13/dependencies Ch13/config Ch13/verification/reuse_13_6 \
