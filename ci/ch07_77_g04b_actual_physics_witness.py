@@ -382,17 +382,19 @@ def main():
                 w.arm_goal(name+"_plan_only",xyz,plan_only=True))
         report["finger_results"].append(w.grip_goal("open",0.0))
         report["finger_goal_count"]+=1
-        # Independently reproduced root-boundary fix:
-        # public CI #43595476665 physically commanded finger2=2mm BEFORE
-        # MoveGroup, then 11mm after MoveGroup at exact previous failed pose.
-        # No robot geometry, FJT tolerance, fake pose or physics alteration.
-        preload=w.grip_goal("lower_stop_release_finger2_2mm",
-                            0.0,EXPECTED_PRELOAD_M,diagnostic=True)
+        # Original real CI #43599142218: finger2 at physical 2mm then
+        # 11mm PASS, but finger1 left at q0 FROZE (0mm for 11mm Goal,
+        # FJT ABORTED). Thus BOTH original prismatic joints need one
+        # real measured 2mm release before the same MoveGroup arm motion.
+        # No fake attach/teleport, increased effort or tolerance relaxation.
+        preload=w.grip_goal("lower_stop_release_both_fingers_2mm",
+                            EXPECTED_PRELOAD_M,EXPECTED_PRELOAD_M,diagnostic=True)
         report["finger_results"].append(preload)
         report["finger_goal_count"]+=1
-        report["lower_stop_release_finger2_pre_movegroup"]=preload
-        if abs(preload["actual_m"]["joint_finger2"]-EXPECTED_PRELOAD_M)>.0005:
-            raise RuntimeError("G04B_181_2MM_PHYSICAL_RELEASE_NOT_REACHED")
+        report["lower_stop_release_both_fingers_pre_movegroup"]=preload
+        if any(abs(preload["actual_m"][name]-EXPECTED_PRELOAD_M)>.0005
+               for name in FINGERS):
+            raise RuntimeError("G04B_181_BOTH_REAL_FINGERS_2MM_NOT_REACHED")
         nominal_pregrasp=arm_ik_tilted_fingers(*pregrasp)
         report["arm_results"].append(
             w.arm_goal("pregrasp",pregrasp,joint_override=nominal_pregrasp))
@@ -404,9 +406,11 @@ def main():
         report["post_movegroup_arm_settle"]=w.arm_precision_settle(nominal_pregrasp)
         report["arm_results"].append(report["post_movegroup_arm_settle"])
         report["arm_goal_count"]+=1
-        report["lower_stop_release_after_pregrasp_m"]=w.joints[-1]["fingers"]["joint_finger2"]
-        if abs(report["lower_stop_release_after_pregrasp_m"]-EXPECTED_PRELOAD_M)>.0005:
-            raise RuntimeError("G04B_181_PRELOAD_LOST_DURING_MOVEGROUP_PREGRASP")
+        report["lower_stop_release_after_pregrasp_actual_m"]=dict(
+            w.joints[-1]["fingers"])
+        if any(abs(report["lower_stop_release_after_pregrasp_actual_m"][name]
+                   -EXPECTED_PRELOAD_M)>.0005 for name in FINGERS):
+            raise RuntimeError("G04B_181_BILATERAL_PRELOAD_LOST_AFTER_PREGRASP")
         report["pose_snapshots"]["pregrasp"]=rod_pose()
         assert math.dist(report["pose_snapshots"]["pregrasp"],
                          report["pose_snapshots"]["initial"])<=.008,(
@@ -503,11 +507,12 @@ def main():
         report["post_final_approach_arm_settle"]=w.arm_precision_settle(contact_target)
         report["arm_results"].append(report["post_final_approach_arm_settle"])
         report["arm_goal_count"]+=1
-        report["lower_stop_release_before_contact_m"]=w.joints[-1]["fingers"]["joint_finger2"]
+        report["lower_stop_release_before_contact_actual_m"]=dict(
+            w.joints[-1]["fingers"])
         report["lower_stop_release_real_actual_pass"]=actual_preload_pass(
-            report["lower_stop_release_finger2_pre_movegroup"],
-            report["lower_stop_release_after_pregrasp_m"],
-            report["lower_stop_release_before_contact_m"])
+            report["lower_stop_release_both_fingers_pre_movegroup"],
+            report["lower_stop_release_after_pregrasp_actual_m"],
+            report["lower_stop_release_before_contact_actual_m"])
         if not report["lower_stop_release_real_actual_pass"]:
             raise RuntimeError("G04B_181_PRELOAD_LOST_BEFORE_PHYSICAL_CONTACT")
         settled_arm=dict(w.joints[-1]["arm"])
