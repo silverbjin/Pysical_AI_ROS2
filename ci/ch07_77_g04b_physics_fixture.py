@@ -46,12 +46,26 @@ def build(source, output, audit):
     ET.SubElement(ET.SubElement(sensor,"contact"),"collision").text="cylinder_collision"
     # Explicit nominal wrist solutions are checked in full G04B MoveGroup,
     # not presumed safe by this geometry-only contract.
+    # The first physical RED placed the wrist INSIDE the long cylinder:
+    # local wrist collision occupies z=[0,.06] and the rod extended across
+    # it. 153 actual wrist-vs-rod collision records shoved the rod off
+    # its pedestal. Finger collision occupies local z=[.06,.14]; therefore
+    # choose a real source-derived tool tilt with rod local z≈.12 and local
+    # x≈0 at grasp, physically clear of the 0..0.06 wrist collision.
+    tool_tilt_rad=.72
+    rod_grasp_local_z_m=.1204
     stage_wrist={
-      "pregrasp":[.57,0,1.90],
-      "grasp":[.70,0,1.90],
-      "lift":[.54,0,1.965],
-      "place":[.55,.25,1.75],
+      "pregrasp":[.50,0,1.85],
+      "grasp":[.62,0,1.85],
+      "lift":[.48,0,1.96],
+      "place":[.477,.217,1.759],
     }
+    gx,gy,gz=stage_wrist["grasp"]
+    dx,dz=.70-gx,1.94-gz
+    local_x=math.cos(tool_tilt_rad)*dx-math.sin(tool_tilt_rad)*dz
+    local_z=math.sin(tool_tilt_rad)*dx+math.cos(tool_tilt_rad)*dz
+    assert abs(local_x)<=.004 and .11<=local_z<=.13
+    assert local_z-.012>.06, "ROD_COLLIDES_WITH_ORIGINAL_WRIST_BODY"
     for name,(x,y,z) in stage_wrist.items():
         assert math.hypot(math.hypot(x,y),z-.6)<1.5,(name,x,y,z)
     assert math.isclose(1.94-.24/2,1.82,abs_tol=1e-9)
@@ -73,6 +87,13 @@ def build(source, output, audit):
       "expected_contact_topic":
         "/world/book_camera/model/g04_grasp_cylinder/link/cylinder_link/sensor/book_ch07_77_rod_contact/contact",
       "target_wrist_position_only_base_link_m":stage_wrist,
+      "original_source_tool_tilt_rad":tool_tilt_rad,
+      "rod_local_x_at_grasp_m":local_x,
+      "rod_local_z_at_grasp_m":local_z,
+      "original_wrist_body_local_z_max_m":.06,
+      "original_finger_collision_local_z_range_m":[.06,.14],
+      "previous_G04B_RED_wrist_collided_with_rod_events":153,
+      "previous_G04B_RED_rod_knocked_off_support":True,
       "robot_hardware":"GAZEBO_SIMULATION_ONLY","no_forced_attachment":True,
       "no_set_pose_or_teleport":True,
       "real_contact":"NOT_RUN","lift":"NOT_RUN","place":"NOT_RUN","Ch10":"HOLD"
