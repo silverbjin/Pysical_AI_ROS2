@@ -14,6 +14,14 @@ import sys
 
 CHAPTER_SECTIONS = {1: 7, 2: 8, 3: 9, 4: 7, 5: 6, 6: 7,
                     7: 7, 8: 8, 9: 8, 10: 8, 11: 7, 12: 8, 13: 8}
+# The book has 98 numbered sections, but several Ch13 main guides use
+# descriptive suffixes rather than the original generic LAB_13_N_GUIDE name.
+# These are ALIASES for numbered sections, not additional runtime labs.
+CH13_MAIN_GUIDE_ALIASES = {
+    6: "LAB_13_6_REUSE_GUIDE_KO.md",
+    7: "LAB_13_7_BT_GUIDE_KO.md",
+    8: "START_HERE_13_8_KO.md",
+}
 ALLOWED = {"SCOPED_PASS", "FAIL", "BLOCKED", "HOLD",
            "EVIDENCE_REVIEW_REQUIRED", "FILE_MISSING"}
 COLUMNS = ("chapter", "section", "primary_guide", "exists", "status",
@@ -33,7 +41,10 @@ def section_records(root, registry):
         chapter_dir = root / f"Ch{chapter:02d}"
         for section in range(1, n + 1):
             key = f"Ch{chapter:02d}/{chapter}.{section}"
-            doc = chapter_dir / "docs" / f"LAB_{chapter}_{section}_GUIDE_KO.md"
+            name = (CH13_MAIN_GUIDE_ALIASES.get(section)
+                    if chapter == 13 and section in CH13_MAIN_GUIDE_ALIASES
+                    else f"LAB_{chapter}_{section}_GUIDE_KO.md")
+            doc = chapter_dir / "docs" / name
             evidence = records.get(key, {})
             status = evidence.get("status", "EVIDENCE_REVIEW_REQUIRED")
             if status not in ALLOWED:
