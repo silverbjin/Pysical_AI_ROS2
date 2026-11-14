@@ -227,7 +227,7 @@ done
 stage VERIFY_REAL_GAZEBO_NATIVE_FINGER2_AXIS_AND_COMMAND_OBSERVER
 timeout 12s gz model --model my_robot --joint joint_finger2 >"$OUT/gz_native_finger2_joint_before_goal.log" 2>&1
 grep -q 'Name: joint_finger2' "$OUT/gz_native_finger2_joint_before_goal.log"
-grep -A 1 'Axis unit vector' "$OUT/gz_native_finger2_joint_before_goal.log" | grep -Eq '\\[-1 0 0\\]'
+grep -A 1 'Axis unit vector' "$OUT/gz_native_finger2_joint_before_goal.log" | grep -Fq '[-1 0 0]'
 ros2 interface show pal_statistics_msgs/msg/Statistics >"$OUT/hardware_introspection_message_type.txt"
 # The topic is inspected by a typed subscriber in the witness; command names
 # and values must be present in raw evidence before attributing cause.
