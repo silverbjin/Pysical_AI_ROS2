@@ -7,8 +7,13 @@ plus independent real Gazebo rod poses showing lift, 1.3s hold and release.
 """
 import hashlib,json,math,re,sys
 from pathlib import Path
-raw_path,physical_path,out_path=map(Path,sys.argv[1:])
+raw_path,physical_path,out_path,support_path=map(Path,sys.argv[1:5])
 raw=raw_path.read_text(errors="replace")
+support_native=support_path.read_bytes()
+support_wrist_mentions=support_native.count(
+    b"my_robot::link_wrist::link_wrist_collision")
+support_rod_mentions=support_native.count(
+    b"g04_grasp_cylinder::cylinder_link::cylinder_collision")
 result=json.loads(physical_path.read_text())
 
 def blocks(text,tag):
@@ -60,6 +65,8 @@ summary={k:{
 p=result.get("pose_snapshots",{})
 conditions={
  "native_raw_contact_blocks":total>0,
+ "new_native_support_sensor_stream_present":len(support_native)>1000 and support_rod_mentions>=3,
+ "no_wrist_support_collision_in_entire_trajectory":support_wrist_mentions==0,
  "real_both_fingers_at_least_three_contacts":all(v["contact_events"]>=3 for v in summary.values()),
  "real_both_fingers_positive_force":all(v["positive_contact_force_count"]>=1 for v in summary.values()),
  "real_dynamic_world_lift_at_least_0_05m":result.get("lift_m",-1)>=.05,
@@ -97,6 +104,10 @@ receipt={"scope":"G04B_NATIVE_GZ_MSGS_CONTACTS_PLUS_REAL_GZ_MODEL_POSE",
          "status":"PASS" if passed else "FAIL",
          "native_raw_sha256":hashlib.sha256(raw_path.read_bytes()).hexdigest(),
          "native_raw_bytes":raw_path.stat().st_size,
+         "native_support_raw_sha256":hashlib.sha256(support_native).hexdigest(),
+         "native_support_raw_bytes":len(support_native),
+         "native_support_rod_mentions":support_rod_mentions,
+         "native_support_wrist_collision_mentions":support_wrist_mentions,
          "total_contact_blocks":total,
          "per_finger":summary,"checks":conditions,
          "original_goal_provenance":"NEW_G04B_PHYSICS_FIXTURE_NOT_G04A_SENSOR_REPLAY",
