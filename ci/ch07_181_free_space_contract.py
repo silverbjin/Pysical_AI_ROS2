@@ -10,6 +10,11 @@ import math
 FINGERS=("joint_finger1","joint_finger2")
 ISOLATED_SEQUENCE=(("isolated_finger1",(.012,0.)),("isolated_reopen",(0.,0.)),("isolated_finger2",(0.,.012)))
 
+def validate_arm_mode(mode):
+    if mode not in ("DIRECT_FJT","MOVEGROUP"):
+        raise ValueError("G04B_181_ARM_SETUP_MODE_INVALID")
+    return mode
+
 def validate_preopen_mode(mode):
     if mode not in ("YES","NO"):
         raise ValueError("G04B_181_PREOPEN_MODE_INVALID")

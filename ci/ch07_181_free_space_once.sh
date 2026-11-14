@@ -219,11 +219,14 @@ for finger in joint_finger1 joint_finger2;do
  grep -Eq "$finger/position.*claimed" "$OUT/hardware_interfaces.log"
 done
 
-stage ONE_G04B_INITIAL_PREOPEN_BEFORE_DIRECT_ARM_FJT_COMPARISON_NO_APPROACH
+stage START_REAL_MOVEIT_MOVEGROUP_FOR_ONE_PREGRASP_ARM_GOAL
+start move_group ros2 run moveit_ros_move_group move_group  --ros-args --params-file "$OUT/move_group.yaml"
+stage ONE_ORIGINAL_MOVEGROUP_ARM_PREGRASP_THEN_SAME_FINGER_SEQUENCE_NO_APPROACH
 export CH07_181_GAZEBO_ONLY=YES
 export CH07_181_COMMAND_SEQUENCE=ISOLATED
 export CH07_181_PREOPEN=YES
-timeout --signal=TERM --kill-after=10s 95s \
+export CH07_181_ARM_SETUP=MOVEGROUP
+timeout --signal=TERM --kill-after=10s 160s \
  python3 "$ROOT/ci/ch07_181_free_space_witness.py" >"$OUT/witness.log" 2>&1
 grep -q CH07_181_FREE_SPACE_ISOLATED_SEQUENCE_SCOPED_PASS_NO_GRASP "$OUT/witness.log"
 timeout 12s gz model --model g04_grasp_cylinder --pose >"$OUT/rod_after_pregrasp.txt" 2>&1

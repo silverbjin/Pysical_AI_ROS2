@@ -15,8 +15,10 @@ from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTolerance,JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
+from moveit_msgs.action import MoveGroup
+from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,validate_preopen_mode,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,validate_arm_mode,validate_preopen_mode,controller_sample,accept_real_finger_state)
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 # Exact prior G04B pregrasp arm goal from independently audited #43574030542.
@@ -41,6 +43,7 @@ class Monitor(Node):
     super().__init__("ch07_181_one_cold_start_free_space_witness")
     self.arm=ActionClient(self,FollowJointTrajectory,
                           "/arm_group_controller/follow_joint_trajectory")
+    self.move=ActionClient(self,MoveGroup,"/move_action")
     self.grip=ActionClient(self,FollowJointTrajectory,
                            "/gripper_group_controller/follow_joint_trajectory")
     self.joint_samples=[]
@@ -147,7 +150,49 @@ def main():
           report["extra_preopen_result"]=pre
           if pre["independent_joint_state_verdict"]!="FREE_SPACE_ACTUATION_SCOPED_PASS":
              raise RuntimeError("G04B_181_PREOPEN_CONTROL_FAILED")
-       arm=mon.send(mon.arm,ARM,ARM_TARGET,5,.05,"q4_pregrasp_setup")
+       arm_mode=validate_arm_mode(os.environ.get("CH07_181_ARM_SETUP","DIRECT_FJT"))
+       report["arm_setup_mode"]=arm_mode
+       if arm_mode=="MOVEGROUP":
+          end=time.monotonic()+45
+          while not mon.move.server_is_ready() and time.monotonic()<end:
+             rclpy.spin_once(mon,timeout_sec=.1)
+          if not mon.move.server_is_ready():
+             raise RuntimeError("G04B_181_MOVEGROUP_SERVER_NOT_READY")
+          goal=MoveGroup.Goal()
+          goal.request.group_name="arm_group"
+          goal.request.allowed_planning_time=6.
+          goal.request.num_planning_attempts=3
+          goal.request.max_velocity_scaling_factor=.17
+          goal.request.max_acceleration_scaling_factor=.17
+          goal.planning_options.plan_only=False
+          goal.planning_options.replan=False
+          constraints=Constraints()
+          for name,value in zip(ARM,ARM_TARGET):
+             joint=JointConstraint()
+             joint.joint_name=name
+             joint.position=float(value)
+             joint.tolerance_above=.035
+             joint.tolerance_below=.035
+             joint.weight=1.
+             constraints.joint_constraints.append(joint)
+          goal.request.goal_constraints.append(constraints)
+          sent=mon.joint_samples[-1]["stamp"]
+          handle=mon.await_future(mon.move.send_goal_async(goal),15,"movegroup_pregrasp_accept")
+          if not handle or not handle.accepted:
+             raise RuntimeError("G04B_181_MOVEGROUP_PREGRASP_REJECTED")
+          outcome=mon.await_future(handle.get_result_async(),100,"movegroup_pregrasp_result",handle.cancel_goal_async)
+          mon.spin_for(.4)
+          arm={"label":"q4_pregrasp_setup","goal_joints":list(ARM),
+               "goal_positions_m_or_rad":list(ARM_TARGET),
+               "action_status":int(outcome.status),
+               "result_error_code":int(outcome.result.error_code.val),
+               "planned_trajectory_points":len(outcome.result.planned_trajectory.joint_trajectory.points),
+               "before_stamp":sent,"after_stamp":mon.joint_samples[-1]["stamp"],
+               "path":"MOVEGROUP_ACTUAL_GAZEBO_ARM"}
+          if arm["action_status"]!=GoalStatus.STATUS_SUCCEEDED or arm["result_error_code"]!=MoveItErrorCodes.SUCCESS or arm["planned_trajectory_points"]<=0:
+             raise RuntimeError("G04B_181_MOVEGROUP_PREGRASP_FAILED")
+       else:
+          arm=mon.send(mon.arm,ARM,ARM_TARGET,5,.05,"q4_pregrasp_setup")
        report["arm_setup"]=arm
        report["arm_setup_goal_count"]=1
        a=mon.joint_samples[-1]["arm"]
