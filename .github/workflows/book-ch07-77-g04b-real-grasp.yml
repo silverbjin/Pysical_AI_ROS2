@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/book-ch07-77-g04b-real-grasp.yml'
       - 'ci/ch07_77_g04b_physics_fixture.py'
+      - 'ci/tests/test_ch07_181_thin_support_contract.py'
       - 'ci/ch07_77_g04b_instrument_finger_contacts.py'
       - 'ci/ch07_77_g04b_actual_physics_witness.py'
       - 'ci/ch07_181_arm_settle_contract.py'
@@ -41,6 +42,7 @@ jobs:
             > ci-results/ch07-77-g04b/input_hashes.txt
           bash -n ci/ch07_77_g04b_physical_once.sh
           python3 -m unittest discover -s ci/tests -p test_ch07_181_arm_settle_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_thin_support_contract.py -v
           python3 -m py_compile ci/ch07_77_g04b_physics_fixture.py \
             ci/ch07_77_g04b_instrument_finger_contacts.py \
             ci/ch07_77_g04b_actual_physics_witness.py \
