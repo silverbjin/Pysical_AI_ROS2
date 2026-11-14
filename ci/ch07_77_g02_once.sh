@@ -131,6 +131,10 @@ timeout --signal=TERM --kill-after=5s 48s ros2 run ros_gz_sim create \
  -world book_camera -name my_robot -file "$OUT/robot.urdf" -z 0.05 \
  > "$OUT/create.log" 2>&1
 grep -q 'Entity creation successful' "$OUT/create.log"
+stage CAPTURE_LIVE_NATIVE_GZ_MODEL_LIST_AND_DYNAMIC_POSE
+timeout 12s gz model --list > "$OUT/gz_models.txt" 2>&1
+grep -q g02_red_cylinder "$OUT/gz_models.txt"
+timeout 12s gz model --model g02_red_cylinder --pose > "$OUT/gz_red_pose.txt" 2>&1
 stage BRIDGE_REAL_CLOCK_RGB_DEPTH_K
 start bridge ros2 run ros_gz_bridge parameter_bridge \
   '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock' \
@@ -176,7 +180,9 @@ WITNESS_PID="${OWNED[4]}"
 wait "$WITNESS_PID"
 grep -q CH07_77_G02_REAL_OGRE2_RGBD_RED_DETECTOR_3D_TARGET_NO_GOAL_SCOPED_PASS "$OUT/witness.log"
 stage REVIEW_REAL_NATIVE_OBJECT_EXISTS_AND_NO_MOTION
-timeout 8s gz model -l -w book_camera > "$OUT/gz_models.txt" 2>&1 || true
+# Harmonic 'gz model -l' means LINK, not list; --list queries real Gazebo.
+# A live world can finish its finite iterations before the ROS witness ends.
+# Thus this evidence must be captured immediately after spawn, not now.
 grep -q 'g02_red_cylinder' "$OUT/gz_models.txt" || {
   echo "CH07_77_G02_GZ_MODEL_LIST_MISSING_RED_CYLINDER"; exit 7;
 }
