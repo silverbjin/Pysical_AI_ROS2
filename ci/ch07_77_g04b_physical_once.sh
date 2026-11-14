@@ -11,6 +11,7 @@ export DEBIAN_FRONTEND=noninteractive
 export CH07_77_G04B_RECEIPT="$OUT/g04b_physical_receipt.json"
 export CH07_77_G04B_FIXTURE_RECEIPT="$OUT/g04b_fixture_receipt.json"
 export CH07_77_G04B_NATIVE_RAW="$OUT/native_contacts.log"
+export CH07_77_G04B_SUPPORT_RAW="$OUT/diag_support_contacts.log"
 export CH07_77_G04B_SIMULATION_ONLY_VERIFIED=NO
 STAGE=INIT; OWNED=();NAMES=()
 stage(){ STAGE="$1";echo "STAGE=$STAGE" |tee -a "$OUT/stages.log"; }
@@ -230,7 +231,8 @@ wait "${OWNED[$contact_index]}" 2>/dev/null || true
 # Independent parser is always strict; geometry-only success is insufficient.
 python3 "$ROOT/ci/ch07_77_g04b_verify_contacts.py" \
  "$OUT/native_contacts.log" "$OUT/g04b_physical_receipt.json" \
- "$OUT/g04b_contact_audit.json" > "$OUT/g04b_contact_audit.log" 2>&1
+ "$OUT/g04b_contact_audit.json" "$OUT/diag_support_contacts.log" \
+ > "$OUT/g04b_contact_audit.log" 2>&1
 grep -q CH07_77_G04B_ACTUAL_BILATERAL_ROD_CONTACT_AND_WORLD_POSE_PASS "$OUT/g04b_contact_audit.log"
 stage G04B_REAL_GAZEBO_BILATERAL_CONTACT_LIFT_AND_PLACE_SCOPED_PASS
 echo CH07_77_G04B_DYNAMIC_ROD_ACTUAL_CONTACT_LIFT_PLACE_SCOPED_PASS > "$OUT/verdict.txt"
