@@ -15,3 +15,5 @@
 | 7.7 | [LAB_7_7_GUIDE_KO — 7.7절 인식 기반 pick-and-place 전체 파이프라인 구축](docs/LAB_7_7_GUIDE_KO.md) |
 
 실습 성공 여부와 제한 사항은 각 가이드와 연결된 결과 보고서를 기준으로 판단합니다. 명령이나 예제의 존재만으로 실제 동작·실기 검증이 완료됐다고 해석하지 않습니다.
+
+**§7.7 BLOCKED 해소 실행 계획:** [기존 §7.2~§7.6 성공 증거를 재사용하는 최소 실제 RGB-D→MoveIt→물리 파지 통합 인수](docs/SECTION_7_7_BLOCKER_RESOLUTION_PLAN_20261114_KO.md) · [Issue #173](https://github.com/silverbjin/Pysical_AI_ROS2/issues/173). 계획 수립은 런타임 PASS가 아니며 Ch10 #123 HOLD를 유지합니다.
