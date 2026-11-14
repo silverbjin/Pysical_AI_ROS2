@@ -23,7 +23,25 @@ def build(source, output, audit):
     assert rod is not None and shelf is not None
     # Shift with an explicit derivative fixture, avoiding accepted G04A edits.
     rod.find("pose").text=".70 0 1.94 0 0 0"
-    shelf.find("pose").text=".70 0 1.72 0 0 0"
+    # The accepted G04A rod is 240mm high. Native G04B logs proved
+    # 34 actual WRIST-vs-rod impacts before finger2 contact; radial target
+    # correction alone cannot solve an axial 240mm rod crossing the
+    # original wrist z=[0,.06] collision volume.
+    # A NEW 80mm-high, 24mm-diameter rod fits original finger-local
+    # collision z=[.06,.14] without intersecting original wrist geometry.
+    physical_height=.08
+    for node in rod.findall(".//geometry/cylinder/length"):
+        node.text=str(physical_height)
+    inertia=rod.find(".//inertial/inertia")
+    mass=.05;radius=.012
+    ixx=mass*(3*radius**2+physical_height**2)/12
+    izz=mass*radius**2/2
+    for axis,value in (("ixx",ixx),("iyy",ixx),("izz",izz)):
+        inertia.find(axis).text=str(value)
+    # Preserve original physical bottom-on-support contact. Shortening
+    # the rod while keeping its detected centre at z=1.94 requires
+    # raising only the new TEST-ONLY support top to z=1.90.
+    shelf.find("pose").text=".70 0 1.80 0 0 0"
     # The G04A 0.50m-wide optical display shelf occupies the approaching
     # arm link4 swept volume. In the first real physics RED (CI #43557077475)
     # the arm succeeded within loose joint goal tolerances but its actual
@@ -65,10 +83,18 @@ def build(source, output, audit):
     local_x=math.cos(tool_tilt_rad)*dx-math.sin(tool_tilt_rad)*dz
     local_z=math.sin(tool_tilt_rad)*dx+math.cos(tool_tilt_rad)*dz
     assert abs(local_x)<=.004 and .11<=local_z<=.13
-    assert local_z-.012>.06, "ROD_COLLIDES_WITH_ORIGINAL_WRIST_BODY"
+    # Cylinder axial half-height projected onto tilted local tool z.
+    # The previous test checked only radius .012 and falsely accepted a
+    # 240mm-long rod crossing the original wrist body. Use full extent:
+    projected_half_z=(physical_height/2)*abs(math.cos(tool_tilt_rad)) + radius*abs(math.sin(tool_tilt_rad))
+    wrist_rod_min_local_z=local_z-projected_half_z
+    assert wrist_rod_min_local_z>=.065,(
+        "ROD_AXIAL_EXTENT_INTRUDES_WRIST_COLLISION")
+    assert local_z-projected_half_z<.14,(
+        "ROD_DOES_NOT_OVERLAP_FINGER_CONTACT_ZONE")
     for name,(x,y,z) in stage_wrist.items():
         assert math.hypot(math.hypot(x,y),z-.6)<1.5,(name,x,y,z)
-    assert math.isclose(1.94-.24/2,1.82,abs_tol=1e-9)
+    assert math.isclose(1.94-physical_height/2,1.90,abs_tol=1e-9)
     assert .024<.035
     output.parent.mkdir(parents=True,exist_ok=True)
     tree.write(output,encoding="unicode",xml_declaration=True)
@@ -77,9 +103,9 @@ def build(source, output, audit):
       "original_g02_world_sha256":hashlib.sha256(original).hexdigest(),
       "g04a_accepted_fixture_unchanged":True,
       "g04a_live_xyz_reused_as_current_measurement":False,
-      "rod_static":False,"radius_m":.012,"height_m":.24,
+      "rod_static":False,"radius_m":radius,"height_m":physical_height,
       "mass_kg":.05,"rod_center_initial_world_m":[.70,0,1.94],
-      "shelf_top_m":1.82,"shelf_planar_side_m":.06,
+      "shelf_top_m":1.90,"shelf_planar_side_m":.06,
       "shelf_shrink_reason":"REMOVE_ORIGINAL_WIDE_DISPLAY_SHELF_FROM_ARM_APPROACH_PATH",
       "first_actual_G04B_red_ci":"43557077475",
       "first_actual_G04B_red_no_finger_contacts":True,
@@ -95,6 +121,11 @@ def build(source, output, audit):
       "rod_local_x_at_grasp_m":local_x,
       "rod_local_z_at_grasp_m":local_z,
       "original_wrist_body_local_z_max_m":.06,
+      "rod_axial_projection_half_z_m":projected_half_z,
+      "rod_min_local_z_m":wrist_rod_min_local_z,
+      "prior_real_rod_wrist_contact_count":34,
+      "prior_real_rod_single_finger_contact_count":85,
+      "source_failure":"G04B_LONG_ROD_WRIST_COLLISION_WITH_REAL_CONTACT",
       "original_finger_collision_local_z_range_m":[.06,.14],
       "previous_G04B_RED_wrist_collided_with_rod_events":153,
       "previous_G04B_RED_rod_knocked_off_support":True,
