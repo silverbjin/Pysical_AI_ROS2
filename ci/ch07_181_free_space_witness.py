@@ -16,7 +16,7 @@ from control_msgs.msg import JointTolerance,JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,validate_preopen_mode,controller_sample,accept_real_finger_state)
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 # Exact prior G04B pregrasp arm goal from independently audited #43574030542.
@@ -129,6 +129,24 @@ def main():
        mon.wait_ready()
        report["start_state"]=mon.joint_samples[-1]
        report["gz_before_arm"]=gz_snapshot("before_arm")
+       preopen=validate_preopen_mode(os.environ.get("CH07_181_PREOPEN","NO"))
+       report["extra_preopen_before_arm"]=preopen
+       if preopen:
+          report["finger_goal_count"]=1
+          pre_start=len(mon.controller_samples)
+          pre=mon.send(mon.grip,FINGERS,(0.,0.),2,TOLERANCE_M,
+                       "one_zero_open_before_arm")
+          actual=mon.joint_samples[-1]["fingers"]
+          ctl=[x for x in mon.controller_samples[pre_start:]
+               if x["stamp"]>=pre["before_stamp"]]
+          pre["independent_measured_fingers"]=actual
+          pre["controller_reference_feedback_error_trace"]=ctl
+          pre["independent_joint_state_verdict"]=accept_real_finger_state(
+             pre["action_status"],pre["result_error_code"],actual,
+             dict.fromkeys(FINGERS,0.),ctl,pre["after_stamp"],pre["before_stamp"])
+          report["extra_preopen_result"]=pre
+          if pre["independent_joint_state_verdict"]!="FREE_SPACE_ACTUATION_SCOPED_PASS":
+             raise RuntimeError("G04B_181_PREOPEN_CONTROL_FAILED")
        arm=mon.send(mon.arm,ARM,ARM_TARGET,5,.05,"q4_pregrasp_setup")
        report["arm_setup"]=arm
        report["arm_setup_goal_count"]=1

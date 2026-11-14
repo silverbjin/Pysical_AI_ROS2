@@ -1,4 +1,4 @@
-name: Ch07 Issue 181 controlled-world pregrasp-only actuator contrast
+name: Ch07 Issue 181 preopen-goal contrast at physical pregrasp
 on:
   pull_request:
     paths:
@@ -51,7 +51,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull frozen Jazzy Harmonic image digest
         run: docker pull "$(cat ci-results/ch07-181-free-space/image_digest.txt)"
-      - name: ONE physical-fixture-world q4 pi/2 staged finger test NO APPROACH
+      - name: ONE physical-fixture-world preopen before q4 arm and staged finger test NO APPROACH
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=20s 780s \
@@ -67,7 +67,7 @@ jobs:
         run: |
           {
             echo '## Ch07 #181 one cold-start actuator diagnostic'
-            echo 'G04B physical rod/pedestal present, NO APPROACH; one q4≈pi/2 staged finger test. Prior empty-world #43580533046 accepted and NOT_RERUN; G04B/G05 physical goals NOT_RUN.'
+            echo 'Same G04B physical rod/pedestal, q4≈pi/2, same direct arm FJT and finger sequence as #43580998856; ONLY extra factor is one zero-position open Goal BEFORE arm motion. No approach/grasp/G05.'
             cat ci-results/ch07-181-free-space/receipt.json || true
             cat ci-results/ch07-181-free-space/result.json || true
             cat ci-results/ch07-181-free-space/stages.log || true
