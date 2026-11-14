@@ -1,0 +1,64 @@
+name: Book Ch07 7.7 G02 actual OGRE2 dynamic red-object RGB-D target (NO Goals)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-77-g02-real-rgbd.yml'
+      - 'ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf'
+      - 'ci/ch07_77_g02_once.sh'
+      - 'ci/ch07_77_g02_live_rgbd_witness.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-77-g02-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  real-sensor-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Freeze original already accepted 7.2–7.6 sources
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch07-77-g02
+          git rev-parse HEAD > ci-results/ch07-77-g02/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-77-g02/image_digest.txt
+          sha256sum Ch07/ros2_ws/src/vision_basics/vision_basics/{object_detector,coord_transformer,gripper_controller}.py             Ch07/ros2_ws/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.xacro             ci/docker/fixtures/ch07_camera_world.sdf > ci-results/ch07-77-g02/original_source_shas.txt
+          bash -n ci/ch07_77_g02_once.sh
+          python3 -m py_compile ci/ch07_77_g02_live_rgbd_witness.py
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull SAME pinned book ROS Jazzy/Harmonic image
+        run: docker pull "$(cat ci-results/ch07-77-g02/image_digest.txt)"
+      - name: Run only G02 new combined physical sensor/3D target path
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 540s             docker run --rm --init --pull=never --shm-size=1g               -e RUN_SOURCE_SHA="$(cat ci-results/ch07-77-g02/checkout_sha.txt)"               -e GITHUB_RUN_ID="${{ github.run_id }}"               -v "$PWD":/work -w /work               "$(cat ci-results/ch07-77-g02/image_digest.txt)"               bash ci/ch07_77_g02_once.sh               2>&1 | tee ci-results/ch07-77-g02/console.log
+      - name: Exact scope; success cannot imply physical grasp
+        if: always()
+        run: |
+          {
+            echo '## Ch07 7.7 G02 new integrated real OGRE2 RGB-D detector + 3D target'
+            echo 'No physical motion. Accepted §7.2–7.6 tests never rerun; G03/G04 NOT_RUN.'
+            echo 'Ch10 #123 HOLD.'
+            cat ci-results/ch07-77-g02/g02_live_receipt.json || true
+            cat ci-results/ch07-77-g02/result.json || true
+            cat ci-results/ch07-77-g02/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-77-g02-actual-rgbd-${{ github.run_id }}
+          path: ci-results/ch07-77-g02/
+          retention-days: 30
+          if-no-files-found: warn
