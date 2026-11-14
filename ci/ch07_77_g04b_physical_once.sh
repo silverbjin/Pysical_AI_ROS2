@@ -50,7 +50,7 @@ Path(p).write_text(json.dumps({
  "status":"SCOPED_PASS" if int(rc)==0 else "FAIL",
  "rc":int(rc),"stage":stage,"shutdown":shutdown,
  "G02":"REPLAY_ACCEPTED_ARTIFACT_NOT_RERUN",
- "G04B_execution":"SCOPED_PASS_IF_RC0","G04_grasp":"NOT_RUN","Ch10":"HOLD"
+ "G04B_execution":"SCOPED_PASS_ONLY_AFTER_NATIVE_CONTACT_AUDIT","G04_grasp":"PASS_IF_RC0_ELSE_FAIL","Ch10":"HOLD"
 },indent=2)+"\n")
 PY
  echo "CH07_77_G04B_FINAL rc=$rc stage=$STAGE shutdown=$shutdown"
@@ -119,8 +119,18 @@ done
 [[ "$READY" -eq 1 ]] || { echo G04B_REAL_WORLD_NOT_READY;exit 3; }
 stage SPAWN_IDENTICAL_GAZEBO_URDF
 timeout --signal=TERM --kill-after=5s 50s ros2 run ros_gz_sim create \
- -world book_camera -name my_robot -file "$OUT/robot.urdf" -z .05 >"$OUT/create.log" 2>&1
+ -world book_camera -name my_robot -file "$OUT/robot.urdf" -z 0.0 >"$OUT/create.log" 2>&1
 grep -q 'Entity creation successful' "$OUT/create.log"
+# The source-URDF FK used to admit the grasp point is relative to base_link.
+# Prior G04B spawned the WORLD robot 50mm above that nominal origin but
+# compared this BASE_LINK FK directly to WORLD rod/shelf pose. For the short
+# 80mm rod the real finger collision volume then sat ABOVE the cylinder;
+# raw sensor showed shelf-only 32975 contact events and zero finger contacts.
+# Test-only world spawn now uses exactly base_link==world z=0; the original
+# robot Xacro and both accepted G03/G04A upstream fixtures stay unchanged.
+echo 'G04B_ROBOT_BASE_WORLD_SPAWN_Z_M=0.0' > "$OUT/base_world_alignment.txt"
+timeout 10s gz model --model my_robot --link link_wrist --pose \
+ >"$OUT/gz_wrist_native_preflight.log" 2>&1 || true
 stage VERIFY_ACTUAL_DYNAMICAL_ROD_AND_NATIVE_CONTACT_TOPIC
 timeout 12s gz model --list >"$OUT/gz_models.txt" 2>&1
 grep -q g04_grasp_cylinder "$OUT/gz_models.txt"
