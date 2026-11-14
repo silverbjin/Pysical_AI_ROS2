@@ -129,7 +129,11 @@ def build(source, output, audit):
       "original_finger_collision_local_z_range_m":[.06,.14],
       "previous_G04B_RED_wrist_collided_with_rod_events":153,
       "previous_G04B_RED_rod_knocked_off_support":True,
-      "robot_hardware":"GAZEBO_SIMULATION_ONLY","no_forced_attachment":True,
+      "robot_hardware":"GAZEBO_SIMULATION_ONLY",
+      "world_spawn_robot_base_z_m":0.0,
+      "world_target_robot_fk_frame_alignment":"BASE_LINK_Z_EQUALS_WORLD_Z_TEST_ONLY",
+      "previous_50mm_spawn_mismatch":"FINGER_CONTACT_ZERO_WITH_80MM_ROD",
+      "no_forced_attachment":True,
       "no_set_pose_or_teleport":True,
       "real_contact":"NOT_RUN","lift":"NOT_RUN","place":"NOT_RUN","Ch10":"HOLD"
     }
