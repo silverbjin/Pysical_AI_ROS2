@@ -38,6 +38,7 @@ def nfield(text,key):
     return float(m.group(1)) if m else None
 
 contacts={"finger1":[], "finger2":[]}
+wrist_rod_collision_events=0
 total=0
 for b in blocks(raw,"contact"):
     total+=1
@@ -47,6 +48,10 @@ for b in blocks(raw,"contact"):
         m=re.search(r'\bname\s*:\s*"([^"]+)"',sub)
         names.append(m.group(1) if m else "")
     if not any("g04_grasp_cylinder" in x for x in names):continue
+    # Raw native physics for CI #43597860243: wrist→rod starts 64.873s,
+    # before bin/ground impact. This must be zero in the corrected carry.
+    if any("my_robot::link_wrist::link_wrist_collision" in x for x in names):
+        wrist_rod_collision_events+=1
     forces=[]
     for part in blocks(b,"force"):
         xyz=[nfield(part,d) for d in ("x","y","z")]
@@ -68,6 +73,15 @@ conditions={
  "native_raw_contact_blocks":total>0,
  "new_native_support_sensor_stream_present":len(support_native)>1000 and support_rod_mentions>=3,
  "no_wrist_support_collision_in_entire_trajectory":support_wrist_mentions==0,
+ "no_wrist_rod_collision_in_entire_physical_sequence":wrist_rod_collision_events==0,
+ "dynamic_object_transferred_above_bin_xy":(
+     result.get("transport_high_bin_xy_error_m",1)<=.07
+     and result.get("transport_high_custody_drift_m",1)<=.04
+     and result.get("pose_snapshots",{}).get("transfer_high",[0,0,0])[2]>=1.98),
+ "dynamic_object_released_in_safe_bin_envelope":(
+     result.get("pre_release_bin_xy_error_m",1)<=.06
+     and result.get("pre_release_custody_drift_m",1)<=.04
+     and 1.78<=result.get("pose_snapshots",{}).get("pre_release",[0,0,0])[2]<=1.92),
  "real_both_fingers_at_least_three_contacts":all(v["contact_events"]>=3 for v in summary.values()),
  "real_both_fingers_positive_force":all(v["positive_contact_force_count"]>=1 for v in summary.values()),
  # Original controller Action must NOT substitute for real measured 2mm
@@ -82,7 +96,8 @@ conditions={
  "placement_xy_error_le_0_09m":result.get("placement_xy_error_m",1)<=.09,
  "placement_height_error_le_0_055m":result.get("placement_center_height_error_m",1)<=.055,
  "one_actual_moving_rod_sequence":all(k in p for k in
-                  ("initial","pregrasp","approach","closed","lift","held","pre_release","settled")),
+                  ("initial","pregrasp","approach","closed","lift","held",
+                   "transfer_high","pre_release","settled")),
  "actual_arm_movegroup_and_gripper_fjt_sequence":(
          4<=result.get("arm_goal_count",-1)<=13 and
          result.get("finger_goal_count")==4 and
@@ -98,10 +113,12 @@ conditions={
          "aligned_pregrasp" in p and
          all(v.get("name","").startswith(("pregrasp","x_approach_",
                                          "fine_x_alignment_","lift","transfer","grasp",
-                                         "post_movegroup_direct_fjt_arm_settle"))
+                                         "post_movegroup_direct_fjt_arm_settle","lower_into_bin"))
              for v in result.get("arm_results",[])) and
          result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
          "x_clearance_stage" in p and
+         "transfer_high_above_bin" in [a.get("name") for a in result.get("arm_results",[])] and
+         "lower_into_bin" in [a.get("name") for a in result.get("arm_results",[])] and
          "x_approach_insertion" in [a.get("name") for a in result.get("arm_results",[])] and
          result.get("approach_axis")=="WORLD_X_INSERTION_FINGER_SEPARATION_WORLD_Y" and
          result.get("native_open_finger_separation_world_m",{}).get("dy",0)>=.054 and
@@ -122,6 +139,7 @@ receipt={"scope":"G04B_NATIVE_GZ_MSGS_CONTACTS_PLUS_REAL_GZ_MODEL_POSE",
          "native_support_raw_bytes":len(support_native),
          "native_support_rod_mentions":support_rod_mentions,
          "native_support_wrist_collision_mentions":support_wrist_mentions,
+         "native_wrist_rod_contact_events":wrist_rod_collision_events,
          "total_contact_blocks":total,
          "per_finger":summary,"checks":conditions,
          "original_goal_provenance":"NEW_G04B_PHYSICS_FIXTURE_NOT_G04A_SENSOR_REPLAY",
