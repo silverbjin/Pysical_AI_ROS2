@@ -69,6 +69,17 @@ def build(source, output, audit):
     assert .015<=pedestal_side<rod_diameter
     assert rod_first_two_sided_contact_q<commanded_close<pedestal_first_interference_q
     assert (rod_diameter-pedestal_side)/2<=.00301  # supported narrow peg
+    # A SECOND independent ground-truth contact stream: the pedestal's
+    # collision sensor reveals whether finger2 is physically stopped by
+    # support (or not). Source material, friction and shape stay identical.
+    support_link=shelf.find("./link[@name='shelf_link']")
+    assert support_link is not None
+    support_sensor=ET.SubElement(support_link,"sensor",{
+        "name":"g04b_support_contacts","type":"contact"})
+    ET.SubElement(support_sensor,"always_on").text="true"
+    ET.SubElement(support_sensor,"update_rate").text="100"
+    ET.SubElement(ET.SubElement(support_sensor,"contact"),
+                  "collision").text="support_collision"
     assert rod.findtext("static")=="false"
     ET.SubElement(world,"plugin",{"filename":"gz-sim-contact-system",
         "name":"gz::sim::systems::Contact"})
@@ -165,6 +176,10 @@ def build(source, output, audit):
       "world_spawn_robot_base_z_m":0.0,
       "world_target_robot_fk_frame_alignment":"BASE_LINK_Z_EQUALS_WORLD_Z_TEST_ONLY",
       "previous_50mm_spawn_mismatch":"FINGER_CONTACT_ZERO_WITH_80MM_ROD",
+      "support_sensor_topic":"/world/book_camera/model/g04_support/link/shelf_link/sensor/g04b_support_contacts/contact",
+      "finger1_sensor_topic":"/world/book_camera/model/my_robot/link/finger1/sensor/g04b_finger1_contacts/contact",
+      "finger2_sensor_topic":"/world/book_camera/model/my_robot/link/finger2/sensor/g04b_finger2_contacts/contact",
+      "native_finger2_blocker":"UNDETERMINED_PENDING_RAW_CONTACTS",
       "no_forced_attachment":True,
       "no_set_pose_or_teleport":True,
       "real_contact":"NOT_RUN","lift":"NOT_RUN","place":"NOT_RUN","Ch10":"HOLD"
