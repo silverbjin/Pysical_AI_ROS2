@@ -13,6 +13,7 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
+from control_msgs.msg import JointTrajectoryControllerState
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -114,7 +115,26 @@ class Witness(Node):
                                "/gripper_group_controller/follow_joint_trajectory")
         self.joints=[]
         self.last_grip_data=None
+        self.controller_samples=[]
+        self.create_subscription(JointTrajectoryControllerState,
+            "/gripper_group_controller/controller_state",
+            self.on_controller_state,10)
         self.create_subscription(JointState,"/joint_states",self.on_state,10)
+
+    def on_controller_state(self,m):
+        # control_msgs Jazzy exposes the desired command and actual
+        # controller-tracked positions; save independent of FJT status.
+        names=list(m.joint_names)
+        desired=getattr(m,"desired",None)
+        actual=getattr(m,"actual",None)
+        err=getattr(m,"error",None)
+        self.controller_samples.append({
+            "names":names,
+            "desired":list(getattr(desired,"positions",[])),
+            "actual":list(getattr(actual,"positions",[])),
+            "error":list(getattr(err,"positions",[]))
+        })
+        self.controller_samples=self.controller_samples[-100:]
 
     def on_state(self,m):
         d=dict(zip(m.name,m.position))
@@ -205,43 +225,56 @@ class Witness(Node):
                 raise RuntimeError("G04B_ARM_"+label+"_JOINT_ERROR_EXCESS_"+str(errors))
         return row
 
-    def grip_goal(self,label,q):
-        if not (0.0<=q<=.025):raise ValueError("G04B_GRIPPER_LIMIT")
+    def grip_goal(self,label,q,q2=None,diagnostic=False):
+        # Both original ROS 2 joints must always be present. A diagnostic
+        # may set asymmetric desired positions to isolate real actuation,
+        # but cannot bypass original joint limits or success provenance.
+        if q2 is None:
+            q2=q
+        desired=dict(zip(FINGERS,(float(q),float(q2))))
+        if not all(0.0<=value<=.025 for value in desired.values()):
+            raise ValueError("G04B_GRIPPER_LIMIT")
         goal=FollowJointTrajectory.Goal()
         goal.trajectory.joint_names=list(FINGERS)
         pt=JointTrajectoryPoint()
-        pt.positions=[q,q];pt.time_from_start.sec=2
+        pt.positions=[float(q),float(q2)]
+        pt.time_from_start.sec=2
         goal.trajectory.points=[pt]
         h=self.await_future(self.grip.send_goal_async(goal),label+"_ACCEPT",15)
-        if not h or not h.accepted:raise RuntimeError("G04B_GRIP_"+label+"_REJECTED")
+        if not h or not h.accepted:
+            raise RuntimeError("G04B_GRIP_"+label+"_REJECTED")
         outcome=self.await_future(h.get_result_async(),label+"_RESULT",20,
                                   h.cancel_goal_async)
-        data={"name":label,"command_m":q,"status":int(outcome.status),
+        actual=dict(self.joints[-1]["fingers"])
+        delta={n:float(actual[n]-desired[n]) for n in FINGERS}
+        data={"name":label,"command_m":q,
+              "command_by_joint_m":desired,
+              "status":int(outcome.status),
               "result_error":int(outcome.result.error_code),
-              "actual_m":self.joints[-1]["fingers"]}
-        data["per_finger_position_error_m"]={
-            n:float(self.joints[-1]["fingers"][n]-q) for n in FINGERS}
-        # For a real collision, q may stop SHORT of the nominal command;
-        # that deviation is evidence, not a reason to suppress actual
-        # contact/rod pose. The independent native force gate alone decides
-        # a physical grip. Open/release still require exact joint reach.
-        data["contact_close_position_not_success_criterion"]=(
-            label=="contact_close")
+              "actual_m":actual,
+              "per_finger_position_error_m":delta,
+              "tracking_error_max_m":max(abs(v) for v in delta.values()),
+              "joint_tracking_pass":max(abs(v) for v in delta.values())<=.003,
+              "controller_state_last":(
+                  self.controller_samples[-1] if self.controller_samples else None
+              ),
+              "controller_state_sample_count":len(self.controller_samples),
+              "diagnostic_free_space":bool(diagnostic),
+              "contact_close_position_not_success_criterion":(
+                  label=="contact_close")}
         self.last_grip_data=data
         if data["status"]!=GoalStatus.STATUS_SUCCEEDED or data["result_error"]!=0:
             raise RuntimeError("G04B_GRIP_"+label+"_RESULT_FAILURE_"+str(data))
-        if label!="contact_close" and max(abs(
-                data["actual_m"][n]-q) for n in FINGERS)>.003:
+        # The pre-contact diagnostic records both commanded and measured
+        # joints even if a finger freezes; don't approach the physical rod
+        # until the independent post-diagnostic acceptance below.
+        if not diagnostic and label!="contact_close" and not data["joint_tracking_pass"]:
             raise RuntimeError("G04B_GRIP_"+label+"_ACTUAL_FINGER_ERROR")
         if label=="contact_close":
-            # Floating-point mechanical-zero readouts can be tiny
-            # negative (e.g., -8.5e-22m). Accept ONLY ±1µm numerical
-            # epsilon at original [0,.025]m URDF joint bounds; never
-            # weaken bilateral native contact / force / lift gates.
-            assert all(-1e-6<=data["actual_m"][n]<=.025001
-                       for n in FINGERS),(
+            assert all(-1e-6<=actual[n]<=.025001 for n in FINGERS),(
                 "G04B_CONTACT_ACTUAL_JOINT_LIMIT_VIOLATED_"+str(data))
         return data
+
 
 
 def main():
@@ -297,21 +330,36 @@ def main():
         preflight_tip=measured_finger_center(w.joints[-1]["arm"])
         assert preflight_tip[0]<=.62,(
             "G04B_CLEARANCE_FINGER_PREFLIGHT_TOO_CLOSE_TO_ROD")
+        # New bounded A/B diagnosis for the *failed* q4=pi/2 mode.
+        # Earlier CI #43572765627 with one simultaneous two-finger Goal
+        # had finger1=11.405mm, finger2≈0 in EMPTY clearance, no contact.
+        # Test each original prismatic interface independently with both
+        # names in each FJT Goal, then compare staggered operation. This
+        # is not a repeat of the accepted §7.6 straight-arm demo.
         report["finger_clearance_preflight"]=[]
         report["finger_clearance_preflight_target_m"]=.012
         report["finger_clearance_preflight_phase"]="BEFORE_ROD_OR_SUPPORT_APPROACH"
-        try:
-            report["finger_clearance_preflight"].append(
-                w.grip_goal("free_space_close",.012))
-        finally:
-            # Even if FJT reports success with a frozen finger, do not
-            # move toward the rod. Preserve raw q and collision partners.
-            report["free_space_joint_state_after_close"]=w.joints[-1]["fingers"]
-        assert all(abs(w.joints[-1]["fingers"][n]-.012)<=.003
-                   for n in FINGERS),(
-            "G04B_TWO_FINGERS_NOT_ACTUATED_IN_FREE_SPACE_NO_APPROACH")
-        report["finger_clearance_preflight"].append(
-            w.grip_goal("free_space_reopen",0.0))
+        isolated_cases=(
+            ("isolated_finger1",.012,0.0),
+            ("isolated_reopen_1",0.0,0.0),
+            ("isolated_finger2",0.0,.012),
+            ("isolated_reopen_2",0.0,0.0),
+            ("stagger_finger1_first",.012,0.0),
+            ("stagger_finger2_second",.012,.012),
+            ("stagger_reopen",0.0,0.0),
+        )
+        for name,q1,q2 in isolated_cases:
+            rec=w.grip_goal(name,q1,q2,diagnostic=True)
+            report["finger_clearance_preflight"].append(rec)
+            if math.dist(rod_pose(),report["pose_snapshots"]["initial"])>.008:
+                raise RuntimeError("G04B_OBJECT_MOVED_DURING_FREE_SPACE_DIAG")
+        report["free_space_joint_state_after_close"]=w.joints[-1]["fingers"]
+        report["free_space_diagnostics_all_tracking_pass"]=all(
+            x["joint_tracking_pass"] for x in report["finger_clearance_preflight"])
+        report["controller_state_traces_last_10"]=w.controller_samples[-10:]
+        if not report["free_space_diagnostics_all_tracking_pass"]:
+            raise RuntimeError(
+                "G04B_ISOLATED_VS_STAGGERED_JOINT_ACTUATION_UNDER_ROTATED_ARM_FAIL_NO_APPROACH")
         assert math.dist(rod_pose(),report["pose_snapshots"]["initial"])<=.008
         report["precontact_alignment"]=[]
         report["radial_refinements"]=[]
