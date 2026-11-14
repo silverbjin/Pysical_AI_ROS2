@@ -19,7 +19,8 @@ from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
 from ch07_181_physical_preload_contract import actual_preload_pass, EXPECTED_PRELOAD_M
 from ch07_181_bin_transport_contract import (corrected_high_target,custody_offset,
-    custody_drift,high_arrival_valid,pre_release_valid,LOWER_WRIST_Z)
+    custody_drift,high_arrival_valid,pre_release_valid,LOWER_WRIST_Z,
+    orientation_preserving_lower_goal,actual_finger_tilt_drift,finger_tilt)
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -658,12 +659,27 @@ def main():
             above[0]-.55,above[1]-.25)
         if not high_arrival_valid(above,report["transport_high_custody_drift_m"]):
             raise RuntimeError("G04B_181_REAL_ROD_NOT_ABOVE_BIN_WITH_SECURE_GRASP")
+        # CI #43599620070: high transfer had only 4.85mm grasp custody
+        # drift, but uncorrected lower step changed world finger pitch
+        # ~0.31rad, leading to 108mm real rod slip despite both contacts.
+        # Use original wrist joint to preserve measured WORLD finger tilt,
+        # not fake attachment or altered friction/force.
+        high_arm_actual=dict(w.joints[-1]["arm"])
         lower=[high_target[0],high_target[1],LOWER_WRIST_Z]
+        lower_nominal=arm_ik_tilted_fingers(*lower)
+        lower_oriented=orientation_preserving_lower_goal(
+            high_arm_actual,lower_nominal)
+        report["transport_high_measured_finger_tilt_rad"]=finger_tilt(high_arm_actual)
         report["transport_lower_wrist_goal"]=lower
+        report["transport_lower_joint_target_with_pitch_compensation"]=lower_oriented
         report["arm_results"].append(
-            w.arm_goal("lower_into_bin",lower))
+            w.arm_goal("lower_into_bin",lower,joint_override=lower_oriented))
         report["arm_goal_count"]+=1
         w.spin_for(.5)
+        report["transport_actual_lower_finger_tilt_drift_rad"]=actual_finger_tilt_drift(
+            high_arm_actual,w.joints[-1]["arm"])
+        if report["transport_actual_lower_finger_tilt_drift_rad"]>.055:
+            raise RuntimeError("G04B_181_REAL_FINGER_PITCH_NOT_PRESERVED_IN_DESCENT")
         report["pose_snapshots"]["pre_release"]=rod_pose()
         release_pose=report["pose_snapshots"]["pre_release"]
         lower_fk=measured_finger_center(w.joints[-1]["arm"])
