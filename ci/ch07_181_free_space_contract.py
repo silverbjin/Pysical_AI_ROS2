@@ -29,6 +29,8 @@ def validate_preopen_mode(mode):
     return mode=="YES"
 GOAL_M=0.012
 TOLERANCE_M=0.001
+# Original G04B precision MoveGroup override uses 2 mrad, not coarse 35 mrad.
+MOVEGROUP_PREGRASP_JOINT_TOL_RAD=0.002
 
 def controller_sample(msg):
     names=list(msg.joint_names)

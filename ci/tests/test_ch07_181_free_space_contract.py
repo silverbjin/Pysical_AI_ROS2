@@ -4,7 +4,7 @@ import pathlib,sys,unittest
 from types import SimpleNamespace
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,validate_preopen_mode,validate_arm_mode,arm_result_accepted,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,validate_preopen_mode,validate_arm_mode,arm_result_accepted,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,controller_sample,accept_real_finger_state)
 
 def msg(ref=(.012,.012),feedback=(.0115,.0116),error=(.0005,.0004)):
   return SimpleNamespace(
@@ -15,6 +15,9 @@ def msg(ref=(.012,.012),feedback=(.0115,.0116),error=(.0005,.0004)):
     error=SimpleNamespace(positions=list(error)))
 
 class FreeSpaceContract(unittest.TestCase):
+ def test_movegroup_pregrasp_uses_original_precision_tolerance(self):
+  self.assertAlmostEqual(MOVEGROUP_PREGRASP_JOINT_TOL_RAD,0.002)
+  self.assertLess(MOVEGROUP_PREGRASP_JOINT_TOL_RAD,0.025)
  def test_movegroup_success_code_is_one_not_fjt_zero(self):
   self.assertTrue(arm_result_accepted("MOVEGROUP",4,1,52))
   self.assertFalse(arm_result_accepted("MOVEGROUP",4,0,52))

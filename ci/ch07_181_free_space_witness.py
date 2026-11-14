@@ -18,7 +18,7 @@ from sensor_msgs.msg import JointState
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,validate_arm_mode,arm_result_accepted,validate_preopen_mode,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,validate_arm_mode,arm_result_accepted,validate_preopen_mode,controller_sample,accept_real_finger_state)
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 # Exact prior G04B pregrasp arm goal from independently audited #43574030542.
@@ -171,8 +171,8 @@ def main():
              joint=JointConstraint()
              joint.joint_name=name
              joint.position=float(value)
-             joint.tolerance_above=.035
-             joint.tolerance_below=.035
+             joint.tolerance_above=MOVEGROUP_PREGRASP_JOINT_TOL_RAD
+             joint.tolerance_below=MOVEGROUP_PREGRASP_JOINT_TOL_RAD
              joint.weight=1.
              constraints.joint_constraints.append(joint)
           goal.request.goal_constraints.append(constraints)
