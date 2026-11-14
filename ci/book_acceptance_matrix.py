@@ -83,7 +83,7 @@ def supporting_guides(root, rows):
         {"path": rel, "exists": path.is_file(), "classification": "SUPPLEMENTAL_GUIDE_NOT_INDEPENDENT_SECTION",
          "section_covered": ("13.5" if "13_5_REUSE" in rel else
                              "13.6" if "13_6_REUSE" in rel else
-                             "13.8" if "START_HERE_13_8" in rel else "UNMAPPED")}
+                             "13.8" if "START_HERE_13_8" in rel or "13_8_SYSTEM_VALIDATION" in rel else "UNMAPPED")}
         for rel, path in unique if rel not in primary
     ]
     return len(unique), extra
