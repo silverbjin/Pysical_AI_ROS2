@@ -37,3 +37,20 @@
 5. 이어서만 동일 실제 Gazebo 세션에서 양손가락 접촉과 **실제 원통 Z ≥0.05m 상승**, ≥1.3초 홀드 중 위치 안정, 배치 및 릴리스, 소유 프로세스 정상 종료까지 검증한다. 그 후 G05의 실시간 RGB-D→집기 연결을 새 경계로 다룬다.
 
 **STOP RULE:** 독립적으로 확인된 관절 구동 오류가 해결되기 전 전체 G04B 왕복 주행의 반복 금지. 전 단계의 PASS 임의 승격 금지. Ch10 HOLD 유지.
+
+## 2026-11-14 추가 진단 — MoveGroup 후 직접 FJT 정밀 보정 (G04B 미인수)
+
+다음 실험은 모두 **새로운 실패 경계에서만 진행한 공개 CI**이다. G00~G04A는 재실행하지 않았다.
+
+| 공개 CI | 조건과 독립 실측 | 판정 |
+|---|---|---|
+| [#43579545607](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43579545607) | 빈 월드, q4≈π/2, 양 손가락 동시 12mm: 실제 각 ≈11.985mm | 자유공간 한정 PASS |
+| [#43580533046](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43580533046) | 빈 월드, 순차 단독 finger1→reopen→finger2: 모두 실제 위치 PASS | 자유공간 한정 PASS |
+| [#43580998856](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43580998856) | G04B 물리 월드 존재, 접근 전 동일 순차 제어: 모두 PASS | 접근 전 진단 PASS |
+| [#43581398334](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43581398334) | 동일 물리 월드, 팔 이동 전 open=0 Goal 추가: PASS | 접근 전 진단 PASS |
+| [#43583477227](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43583477227) | MoveGroup 실제 사전접근 SUCCESS, 정밀 허용오차 2mrad, 실제 q4 목표 도달. 그러나 손가락1 FJT reference 12mm, feedback≈0, 독립 JointState≈0, native finger contact 0, Goal ABORTED(-5) | **RED** |
+| [#43584052832](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43584052832) | 같은 G04B 물리 월드·MoveGroup 사전접근 뒤 **직접 arm FJT 정밀 보정 1회**, finger1 11.98496mm / finger2 11.98497mm, 독립 관절+명시 tolerance 충족, 원통 위치 변화 0, 접촉 0, 종료 정상 | **접근 전 SCOPED PASS** |
+
+마지막 GREEN [Artifact #14109637762](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43584052832/artifacts/14109637762)의 ZIP SHA256은 `88adbdb7d2f439754a4824cb41a7f3e7229ccfba69dcd43204ee18d891cdc65e`이다. 컨트롤러는 기존 ROS 2 Jazzy `reference/feedback/error`를 올바르게 읽고, Action 결과와 독립 `/joint_states`를 동시에 검사한다.
+
+**근본 원인은 미확정.** 반증 없이 MoveGroup·Gazebo 솔버·SDF 매핑 중 하나를 범인으로 단정하지 않는다. 단, `MoveGroup -> direct arm FJT precision settle -> gripper FJT` 순서가 정상 작동하는 **하나의 최소 물리 시뮬레이션 후보**로 관측됐다. 현재 Draft PR #180에는 이 후처리만 시험 전용으로 반영했으며, 실제 원통 접촉·들기·유지·놓기 **G04B 성공 증거는 아직 없다**. G05 동일 세션 RGB-D 기반 물리 배치도 NOT_RUN, Ch10 #123 HOLD이다.
