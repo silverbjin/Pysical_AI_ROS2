@@ -76,13 +76,15 @@ conditions={
          result.get("preclose_object_shift_m",1)<=.018 and
          result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
          "aligned_pregrasp" in p and
-         all(v.get("name","").startswith(("pregrasp","feedback_radial_",
-                                         "yaw_stage","yaw_final","lift","transfer","grasp"))
+         all(v.get("name","").startswith(("pregrasp","x_approach_",
+                                         "lift","transfer","grasp"))
              for v in result.get("arm_results",[])) and
-         result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
          result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
-         "yaw_stage" in p and
-         "yaw_final_insertion" in [a.get("name") for a in result.get("arm_results",[])]),
+         "x_clearance_stage" in p and
+         "x_approach_insertion" in [a.get("name") for a in result.get("arm_results",[])] and
+         result.get("approach_axis")=="WORLD_X_INSERTION_FINGER_SEPARATION_WORLD_Y" and
+         result.get("native_open_finger_separation_world_m",{}).get("dy",0)>=.054 and
+         result.get("native_open_finger_separation_world_m",{}).get("dz",1)<=.010),
  "original_g04a_visual_stage_not_replayed":(
          result.get("g04a_old_live_xyz_replayed_as_current") is False
          and result.get("G05_integrated_live_perception")=="NOT_RUN"),
