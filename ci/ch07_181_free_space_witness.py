@@ -15,6 +15,8 @@ from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTolerance,JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
+from pal_statistics_msgs.msg import Statistics
+from ch07_181_hardware_native_contract import (relevant_introspection_pairs,explicit_command_peaks,native_link_xyz,classify_chain)
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from ch07_181_free_space_contract import (
@@ -31,7 +33,7 @@ def gz_snapshot(label):
         cmd=["gz","model","--model","my_robot","--link",link,"--pose"]
         try:
             run=subprocess.run(cmd,text=True,capture_output=True,timeout=10)
-            result[link]={"returncode":run.returncode,"stdout":run.stdout[-4000:],
+            result[link]={"returncode":run.returncode,"stdout":run.stdout[-16000:],
                           "stderr":run.stderr[-1000:]}
         except Exception as exc:
             result[link]={"error":repr(exc)}
@@ -48,9 +50,27 @@ class Monitor(Node):
     self.joint_samples=[]
     self.controller_samples=[]
     self.controller_errors=[]
+    # Read-only controller_manager introspection provides HARDWARE command
+    # interface values, distinct from JTC controller_state.reference.
+    self.hardware_introspection_samples=[]
+    self.hardware_introspection_names=set()
+    self.create_subscription(Statistics,
+      "/controller_manager/introspection_data/full",self.on_hardware_introspection,10)
     self.create_subscription(JointState,"/joint_states",self.on_joint,10)
     self.create_subscription(JointTrajectoryControllerState,
       "/gripper_group_controller/controller_state",self.on_controller,10)
+ def on_hardware_introspection(self,msg):
+    try:
+       values=relevant_introspection_pairs(msg.statistics)
+       if values:
+          now=self.get_clock().now().nanoseconds*1e-9
+          stamp=msg.header.stamp.sec+msg.header.stamp.nanosec*1e-9
+          self.hardware_introspection_samples.append(
+              {"sim_observed_s":now,"source_stamp":stamp,"values":values})
+          self.hardware_introspection_samples=self.hardware_introspection_samples[-4500:]
+          self.hardware_introspection_names.update(values)
+    except Exception as exc:
+       self.controller_errors.append("HW_INTROSPECTION_SCHEMA_"+repr(exc))
  def on_joint(self,msg):
     d=dict(zip(msg.name,msg.position))
     if all(n in d and math.isfinite(d[n]) for n in ARM+FINGERS):
@@ -230,6 +250,8 @@ def main():
        report["per_goal_results"]=[]
        for label,values in cases:
           before_ctl=len(mon.controller_samples)
+          before_hw=len(mon.hardware_introspection_samples)
+          before_native=gz_snapshot("before_"+label)
           report["finger_goal_count"]+=1
           result=mon.send(mon.grip,FINGERS,values,2,TOLERANCE_M,label)
           measured=mon.joint_samples[-1]["fingers"]
@@ -238,6 +260,33 @@ def main():
           goal={n:float(v) for n,v in zip(FINGERS,values)}
           result["measured_fingers"]=measured
           result["jtc_reference_feedback_error_trace"]=relevant
+          after_native=gz_snapshot("after_"+label)
+          result["native_gazebo_links_before_goal"]=before_native
+          result["native_gazebo_links_after_goal"]=after_native
+          getxyz=lambda snap,name: native_link_xyz(
+              snap["links"][name].get("stdout",""),name)
+          f1=getxyz(before_native,"finger2")
+          f2=getxyz(after_native,"finger2")
+          w1=getxyz(before_native,"link_wrist")
+          w2=getxyz(after_native,"link_wrist")
+          world_delta=(math.dist(f1,f2) if f1 and f2 else None)
+          relative_delta=(math.dist(
+              tuple(f2[i]-w2[i] for i in range(3)),
+              tuple(f1[i]-w1[i] for i in range(3)))
+              if all(x is not None for x in (f1,f2,w1,w2)) else None)
+          result["native_finger2_world_displacement_m"]=world_delta
+          result["native_finger2_wrist_relative_displacement_m"]=relative_delta
+          hw=mon.hardware_introspection_samples[before_hw:]
+          result["hardware_command_introspection_during_goal"]=hw
+          peaks=explicit_command_peaks(hw)
+          result["hardware_command_peak_candidates"]=peaks
+          if relevant:
+              refmax=max(r["reference"]["joint_finger2"] for r in relevant)
+              fbmax=max(r["feedback"]["joint_finger2"] for r in relevant)
+              result["causal_chain_first_gap"]=classify_chain(
+                  refmax,fbmax,peaks,relative_delta,goal=values[1])
+          else:
+              result["causal_chain_first_gap"]="NO_JTC_TRACE"
           result["joint_states_during_goal"]=[
              row for row in mon.joint_samples if row["stamp"]>=result["before_stamp"]]
           verdict=accept_real_finger_state(
@@ -268,6 +317,11 @@ def main():
        raise
     finally:
        report["all_controller_samples"]=mon.controller_samples[-3000:]
+       report["all_hardware_introspection_samples"]=mon.hardware_introspection_samples
+       report["hardware_introspection_variable_names"]=sorted(mon.hardware_introspection_names)
+       report["hardware_introspection_topic"]="/controller_manager/introspection_data/full"
+       if report.get("per_goal_results"):
+          report["causal_chain_first_gap"]=report["per_goal_results"][-1].get("causal_chain_first_gap")
        report["joint_state_sample_count"]=len(mon.joint_samples)
        report["all_controller_schema_errors"]=mon.controller_errors
        out.parent.mkdir(parents=True,exist_ok=True)
