@@ -55,7 +55,7 @@ def build(source, output, audit):
     tool_tilt_rad=.72
     rod_grasp_local_z_m=.1204
     stage_wrist={
-      "pregrasp":[.50,0,1.85],
+      "pregrasp":[.62,-.12,1.85],
       "grasp":[.62,0,1.85],
       "lift":[.48,0,1.96],
       "place":[.477,.217,1.759],
@@ -88,6 +88,10 @@ def build(source, output, audit):
         "/world/book_camera/model/g04_grasp_cylinder/link/cylinder_link/sensor/book_ch07_77_rod_contact/contact",
       "target_wrist_position_only_base_link_m":stage_wrist,
       "original_source_tool_tilt_rad":tool_tilt_rad,
+      "physical_open_finger_joint_command_m":0.0,
+      "physical_open_face_gap_m":.045,
+      "approach_axis":"WORLD_Y_BETWEEN_ORIGINAL_FINGER_COLLISION_FACES",
+      "original_wrist_and_finger_collision_reused_unchanged":True,
       "rod_local_x_at_grasp_m":local_x,
       "rod_local_z_at_grasp_m":local_z,
       "original_wrist_body_local_z_max_m":.06,
