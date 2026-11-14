@@ -9,6 +9,7 @@ import json,math,os,subprocess,time,traceback
 from pathlib import Path
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
@@ -54,8 +55,11 @@ class Monitor(Node):
     # interface values, distinct from JTC controller_state.reference.
     self.hardware_introspection_samples=[]
     self.hardware_introspection_names=set()
+    # CI #43591101353 actual publisher offers BEST_EFFORT; RELIABLE
+    # receives ZERO samples (DDS incompatible QoS). Match publisher QoS.
     self.create_subscription(Statistics,
-      "/controller_manager/introspection_data/full",self.on_hardware_introspection,10)
+      "/controller_manager/introspection_data/full",self.on_hardware_introspection,
+      QoSProfile(depth=10,reliability=ReliabilityPolicy.BEST_EFFORT))
     self.create_subscription(JointState,"/joint_states",self.on_joint,10)
     self.create_subscription(JointTrajectoryControllerState,
       "/gripper_group_controller/controller_state",self.on_controller,10)
