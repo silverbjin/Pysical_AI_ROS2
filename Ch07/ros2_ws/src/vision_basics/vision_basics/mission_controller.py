@@ -10,6 +10,7 @@ import math
 import rclpy
 from geometry_msgs.msg import PointStamped, PoseStamped
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Bool
 
 from .mission_target_gate import TargetGate, candidate_pregrasp
@@ -72,7 +73,9 @@ def main(args=None):
     node = MissionController()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
+        # Jazzy SIGTERM may shut the rcl context down while executor waits.
+        # This is a normal owned-process teardown, not an unhandled crash.
         pass
     finally:
         node.destroy_node()
