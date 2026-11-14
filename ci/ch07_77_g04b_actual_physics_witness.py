@@ -218,10 +218,22 @@ class Witness(Node):
         data={"name":label,"command_m":q,"status":int(outcome.status),
               "result_error":int(outcome.result.error_code),
               "actual_m":self.joints[-1]["fingers"]}
+        data["per_finger_position_error_m"]={
+            n:float(self.joints[-1]["fingers"][n]-q) for n in FINGERS}
+        # For a real collision, q may stop SHORT of the nominal command;
+        # that deviation is evidence, not a reason to suppress actual
+        # contact/rod pose. The independent native force gate alone decides
+        # a physical grip. Open/release still require exact joint reach.
+        data["contact_close_position_not_success_criterion"]=(
+            label=="contact_close")
         if data["status"]!=GoalStatus.STATUS_SUCCEEDED or data["result_error"]!=0:
             raise RuntimeError("G04B_GRIP_"+label+"_RESULT_FAILURE_"+str(data))
-        if max(abs(data["actual_m"][n]-q) for n in FINGERS)>.003:
+        if label!="contact_close" and max(abs(
+                data["actual_m"][n]-q) for n in FINGERS)>.003:
             raise RuntimeError("G04B_GRIP_"+label+"_ACTUAL_FINGER_ERROR")
+        if label=="contact_close":
+            assert all(0<=data["actual_m"][n]<=.025 for n in FINGERS),(
+                "G04B_CONTACT_ACTUAL_JOINT_LIMIT_VIOLATED")
         return data
 
 
@@ -394,6 +406,9 @@ def main():
         report["finger_goal_count"]+=1
         w.spin_for(.65)
         report["pose_snapshots"]["closed"]=rod_pose()
+        report["actual_finger_joints_after_close"]=w.joints[-1]["fingers"]
+        report["rod_displacement_after_close_m"]=math.dist(
+            report["pose_snapshots"]["closed"],report["pose_snapshots"]["initial"])
         report["native_after_close"]={
             link:native_robot_link_pose(link)
             for link in ("link_wrist","finger1","finger2")}
