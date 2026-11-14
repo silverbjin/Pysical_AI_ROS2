@@ -1,0 +1,66 @@
+name: Book Ch07 7.7 G03A actual 5DOF MoveIt IK and OMPL plan_only (zero Goals)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-77-g03-plan-only.yml'
+      - 'ci/ch07_77_g03_plan_only_once.sh'
+      - 'ci/ch07_77_g03_plan_only_probe.py'
+      - 'ci/ch07_77_g03_moveit_params.py'
+      - 'ci/docker/fixtures/ch07_77_g03_frozen_g02_target.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-77-g03a-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  actual-5dof-moveit-plan-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Capture exact tested source and immutable accepted base image
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch07-77-g03a
+          git rev-parse HEAD > ci-results/ch07-77-g03a/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-77-g03a/image_digest.txt
+          bash -n ci/ch07_77_g03_plan_only_once.sh
+          python3 -m py_compile ci/ch07_77_g03_plan_only_probe.py ci/ch07_77_g03_moveit_params.py
+          sha256sum ci/docker/fixtures/ch07_77_g03_frozen_g02_target.json             Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro             > ci-results/ch07-77-g03a/input_sha256.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse exact previously accepted GHCR image digest (no rebuild)
+        run: docker pull "$(cat ci-results/ch07-77-g03a/image_digest.txt)"
+      - name: G03A live Jazzy MoveIt and real Gazebo controllers — plan ONLY
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 780s             docker run --rm --init --pull=never --shm-size=1g               -e RUN_SOURCE_SHA="$(cat ci-results/ch07-77-g03a/checkout_sha.txt)"               -e GITHUB_RUN_ID="${{ github.run_id }}"               -v "$PWD":/work -w /work               "$(cat ci-results/ch07-77-g03a/image_digest.txt)"               bash ci/ch07_77_g03_plan_only_once.sh               2>&1 | tee ci-results/ch07-77-g03a/console.log
+      - name: Publish bounded plan_only evidence, not execution or grasp
+        if: always()
+        run: |
+          {
+            echo '## Ch07 #173 G03A 5DOF IK/OMPL plan_only only; no motor Goals'
+            echo 'Real G02 is frozen as measured target replay, NOT_RERUN.'
+            echo 'Accepted G00/G01/G02 and 7.2–7.6 NOT_RERUN. G03B/G04 NOT_RUN; Ch10 HOLD.'
+            cat ci-results/ch07-77-g03a/g03_plan_receipt.json || true
+            cat ci-results/ch07-77-g03a/g03_params.json || true
+            cat ci-results/ch07-77-g03a/result.json || true
+            cat ci-results/ch07-77-g03a/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-77-g03a-moveit-plan-only-${{ github.run_id }}
+          path: ci-results/ch07-77-g03a/
+          retention-days: 30
+          if-no-files-found: warn
