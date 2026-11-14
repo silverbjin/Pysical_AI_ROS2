@@ -92,3 +92,5 @@ TF가 없는 경우 무작정 static transform으로 target_object를 만들어 
 **완료 기준:** 7.2~7.6 전 단계가 검증되고, 특정 물체 ID를 실제 집어 배치지로 이동한 사실과 재현 가능성이 입증될 때만 PASS로 변경한다. 원본 Ch07 상태에서는 BLOCKED이다.
 
 관련 리뷰: [SECTION_7_7_REPORT_KO.md](SECTION_7_7_REPORT_KO.md).
+
+**BLOCKED 해소를 위한 단계별 개발·검수 계획:** [SECTION_7_7_BLOCKER_RESOLUTION_PLAN_20261114_KO.md](SECTION_7_7_BLOCKER_RESOLUTION_PLAN_20261114_KO.md) / [Issue #173](https://github.com/silverbjin/Pysical_AI_ROS2/issues/173). 이 계획은 구현/성공 증거가 아니며, §7.7은 실제 원본 물리 통합 인수가 끝날 때까지 BLOCKED다.
