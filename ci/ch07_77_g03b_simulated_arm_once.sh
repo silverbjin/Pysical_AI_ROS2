@@ -133,7 +133,13 @@ timeout 12s ros2 control list_controllers -c /controller_manager >"$OUT/controll
 grep -q 'arm_group_controller.*active' "$OUT/controllers.log"
 grep -q 'gripper_group_controller.*active' "$OUT/controllers.log"
 grep -q 'joint_state_broadcaster.*active' "$OUT/controllers.log"
-timeout 12s ros2 topic echo /joint_states --once >"$OUT/joints_before.log"
+# ros2cli type auto-discovery can race a newly active broadcaster.
+# This optional CLI snapshot is NOT the admission gate: the new typed
+# rclpy witness requires >=3 real joint_states before it sends any Goal.
+timeout 15s ros2 topic echo /joint_states sensor_msgs/msg/JointState --once \
+ >"$OUT/joints_before.log" 2>&1 || \
+ echo 'CH07_77_G03B_CLI_JOINT_ECHO_OPTIONAL; TYPED_WITNESS_IS_AUTHORITATIVE' \
+ >>"$OUT/joints_before.log"
 stage START_REAL_MOVEIT_MOVE_GROUP_FROM_IDENTICAL_GAZEBO_DESCRIPTION
 start move_group ros2 run moveit_ros_move_group move_group \
  --ros-args --params-file "$OUT/move_group.yaml"
