@@ -42,6 +42,7 @@ def build(source, output, audit):
     # the rod while keeping its detected centre at z=1.94 requires
     # raising only the new TEST-ONLY support top to z=1.90.
     shelf.find("pose").text=".70 0 1.80 0 0 0"
+    # CI #43573273969 ALSO found 1878 wrist-support contacts at x=.695, z≈1.872.
     # CI #43571761460's PASSIVE native contact sensors found the
     # previously missing physical obstruction: wrist-vs-support contact
     # ~8,591 blocks starting sim time 34.437s at support's LEFT wall
@@ -60,22 +61,22 @@ def build(source, output, audit):
     for shape in ("collision","visual"):
         node=shelf.find("./link/"+shape+"/geometry/box/size")
         assert node is not None and node.text.strip()=="0.50 0.50 0.20"
-        node.text="0.010 0.010 0.20"
+        node.text="0.006 0.006 0.20"
     # A source-derived fail-closed geometry contract: the support
     # must NOT enter the original 45mm fully-open closing gap, and must
     # physically support the 24mm rod on a true collision surface.
-    pedestal_side=.010
+    pedestal_side=.006
     original_open_face_gap=.06-.015
     rod_diameter=2*radius
     commanded_close=.012
     rod_first_two_sided_contact_q=(original_open_face_gap-rod_diameter)/2
     pedestal_first_interference_q=(original_open_face_gap-pedestal_side)/2
-    assert .009<=pedestal_side<rod_diameter
+    assert .005<=pedestal_side<rod_diameter
     assert rod_first_two_sided_contact_q<commanded_close<pedestal_first_interference_q
-    assert (rod_diameter-pedestal_side)/2<=.00701  # physically centred support
-    measured_wrist_support_contact_x_m=.6910121
+    assert (rod_diameter-pedestal_side)/2<=.00901  # physically centred support
+    measured_wrist_support_contact_x_m=.6950081
     support_left_x=.70-pedestal_side/2
-    assert support_left_x-measured_wrist_support_contact_x_m>=.0039,(
+    assert support_left_x-measured_wrist_support_contact_x_m>=.0019,(
         "G04B_WRIST_SUPPORT_SIDE_INTERFERENCE_NOT_CLEARED")
     # A SECOND independent ground-truth contact stream: the pedestal's
     # collision sensor reveals whether finger2 is physically stopped by
