@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Ch07 #173 G03B: REAL GazeboSimSystem single simulated arm Goal + real JointState/FK.
-# Reuses G03B success receipt. ACTUATES SIMULATION-ONLY ARM; no gripper/camera/physical object.
+# Reuses G03A success receipt. ACTUATES SIMULATION-ONLY ARM; no gripper/camera/physical object.
 set -Eeuo pipefail
 set +u; source /opt/ros/jazzy/setup.bash;set -u
 ROOT=/work;OUT="$ROOT/ci-results/ch07-77-g03b"
@@ -159,7 +159,7 @@ assert max(d["finger_deltas_m"].values())<.004
 assert d["G02"]=="NOT_RERUN" and d["G04_physical_grasp"]=="NOT_RUN"
 assert d["hardware"]=="SIMULATION_ONLY" and d["ch10"]=="HOLD"
 assert p["gazebo_urdf_exact_bytes"] and p["clock_qos_startup_overrides"]
-print("CH07_77_G03B_ACTUAL_GAZEBO_ARM_GOAL_JOINT_STATE_AND_WIRST_FK_RECEIPT_PASS")
+print("CH07_77_G03B_ACTUAL_GAZEBO_ARM_GOAL_JOINT_STATE_AND_WRIST_FK_RECEIPT_PASS")
 PY
 stage G03B_REAL_GAZEBO_ARM_EXECUTION_SCOPED_PASS_G04_NOT_RUN
 echo CH07_77_G03B_ONE_SIMULATION_ARM_GOAL_ACTUAL_JOINT_STATE_SCOPED_PASS > "$OUT/verdict.txt"
