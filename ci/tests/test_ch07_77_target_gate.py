@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 import unittest
 
-PKG = Path(__file__).resolve().parents[1] / "Ch07/ros2_ws/src/vision_basics"
+PKG = Path(__file__).resolve().parents[2] / "Ch07/ros2_ws/src/vision_basics"
 sys.path.insert(0, str(PKG))
 from vision_basics.mission_target_gate import TargetGate, candidate_pregrasp
 
