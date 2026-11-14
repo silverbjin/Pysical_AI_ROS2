@@ -4,7 +4,7 @@ import pathlib,sys,unittest
 from types import SimpleNamespace
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,validate_preopen_mode,validate_arm_mode,arm_result_accepted,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,ARM_SETTLE_FJT_TOL_RAD,validate_settle_mode,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,FINAL_CONTACT_ARM_POSE,SINGLE_FINGER2_GOAL,validate_preopen_mode,validate_arm_mode,arm_result_accepted,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,ARM_SETTLE_FJT_TOL_RAD,validate_settle_mode,controller_sample,accept_real_finger_state)
 
 def msg(ref=(.012,.012),feedback=(.0115,.0116),error=(.0005,.0004)):
   return SimpleNamespace(
@@ -30,6 +30,12 @@ class FreeSpaceContract(unittest.TestCase):
   self.assertFalse(arm_result_accepted("MOVEGROUP",4,1,0))
   self.assertTrue(arm_result_accepted("DIRECT_FJT",4,0,None))
   self.assertFalse(arm_result_accepted("DIRECT_FJT",4,1,None))
+ def test_exact_original_final_contact_pose_single_finger2(self):
+  self.assertEqual(len(FINAL_CONTACT_ARM_POSE),5)
+  self.assertAlmostEqual(FINAL_CONTACT_ARM_POSE[1],-.06369211846948007)
+  self.assertAlmostEqual(FINAL_CONTACT_ARM_POSE[2],.7902071898034883)
+  self.assertAlmostEqual(FINAL_CONTACT_ARM_POSE[3],1.5694273344965841)
+  self.assertEqual(SINGLE_FINGER2_GOAL[1],(0.0,0.011))
  def test_arm_setup_control_path_is_single_explicit_factor(self):
   self.assertEqual(validate_arm_mode("DIRECT_FJT"),"DIRECT_FJT")
   self.assertEqual(validate_arm_mode("MOVEGROUP"),"MOVEGROUP")
