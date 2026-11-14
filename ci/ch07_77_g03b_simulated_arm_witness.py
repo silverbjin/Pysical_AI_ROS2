@@ -19,6 +19,8 @@ from moveit_msgs.msg import Constraints, JointConstraint, MoveItErrorCodes
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
+from rosgraph_msgs.msg import Clock
+from rclpy.qos import qos_profile_sensor_data
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 FINGERS=("joint_finger1","joint_finger2")
@@ -29,7 +31,15 @@ class Observer(Node):
         super().__init__("ch07_77_g03b_simulated_arm_execution_witness")
         self.move=ActionClient(self,MoveGroup,"/move_action")
         self.samples=[]
+        self.clock_stamps=[]
+        self.create_subscription(Clock,"/clock",self.on_clock,qos_profile_sensor_data)
         self.create_subscription(JointState,"/joint_states",self.on_joints,10)
+
+    def on_clock(self,m):
+        t=m.clock.sec+m.clock.nanosec*1e-9
+        if t>0 and math.isfinite(t):
+            self.clock_stamps.append(t)
+            self.clock_stamps=self.clock_stamps[-500:]
 
     def on_joints(self,m):
         d=dict(zip(m.name,m.position))
@@ -44,8 +54,19 @@ class Observer(Node):
         deadline=time.monotonic()+sec
         while time.monotonic()<deadline:
             rclpy.spin_once(self,timeout_sec=.12)
-            if len(self.samples)>=3 and self.move.server_is_ready():
-                return
+            if (len(self.samples)>=3 and self.move.server_is_ready() and
+                    len(self.clock_stamps)>=15 and
+                    self.clock_stamps[-1]-self.clock_stamps[0]>=1.0):
+                # Wait until after MoveGroup has subscribed to advancing
+                # ROS simulation time. Its execution-duration monitor can
+                # otherwise see a 0→live clock jump and cancel in ~0.2s.
+                warmup=time.monotonic()+2.5
+                while time.monotonic()<warmup:
+                    rclpy.spin_once(self,timeout_sec=.1)
+                if (len(self.clock_stamps)>=20 and
+                        self.clock_stamps[-1]>self.clock_stamps[-2] and
+                        self.get_clock().now().nanoseconds/1e9>0):
+                    return
         raise RuntimeError("G03B_ACTUAL_GAZEBO_JOINTS_OR_MOVEGROUP_UNAVAILABLE")
 
     def await_response(self,future,sec,label,on_timeout=None):
@@ -96,6 +117,11 @@ def main():
     node=Observer()
     try:
         node.wait_ready()
+        report["sim_clock_first_s"]=node.clock_stamps[0]
+        report["sim_clock_latest_before_goal_s"]=node.clock_stamps[-1]
+        report["sim_clock_samples_before_goal"]=len(node.clock_stamps)
+        report["sim_clock_node_now_s"]=node.get_clock().now().nanoseconds/1e9
+        assert abs(report["sim_clock_node_now_s"]-node.clock_stamps[-1])<1.5
         initial=node.samples[-1]
         report["joint_state_initial"]=initial
         request=MoveGroup.Goal()
@@ -127,6 +153,7 @@ def main():
         report["moveit_error"]=int(result.result.error_code.val)
         report["planned_points"]=len(result.result.planned_trajectory.joint_trajectory.points)
         report["joint_samples"]=len(node.samples)
+        report["sim_clock_latest_after_goal_s"]=node.clock_stamps[-1] if node.clock_stamps else None
         report["joint_state_final"]=node.samples[-1]
         assert report["action_status"]==GoalStatus.STATUS_SUCCEEDED
         assert report["moveit_error"]==MoveItErrorCodes.SUCCESS
