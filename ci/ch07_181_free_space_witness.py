@@ -18,7 +18,7 @@ from sensor_msgs.msg import JointState
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,validate_arm_mode,validate_preopen_mode,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,validate_arm_mode,arm_result_accepted,validate_preopen_mode,controller_sample,accept_real_finger_state)
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 # Exact prior G04B pregrasp arm goal from independently audited #43574030542.
@@ -197,7 +197,7 @@ def main():
        report["arm_setup_goal_count"]=1
        a=mon.joint_samples[-1]["arm"]
        report["arm_actual"]=a
-       if arm["action_status"]!=GoalStatus.STATUS_SUCCEEDED or arm["result_error_code"]!=0:
+       if not arm_result_accepted(arm_mode,arm["action_status"],arm["result_error_code"],arm.get("planned_trajectory_points")):
           raise RuntimeError("G04B_181_ARM_SETUP_ACTION_FAILED")
        if abs(a["joint4"]-math.pi/2)>.025:
           raise RuntimeError("G04B_181_Q4_PREGRASP_NOT_REACHED")

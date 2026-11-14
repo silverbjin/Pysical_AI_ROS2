@@ -15,6 +15,14 @@ def validate_arm_mode(mode):
         raise ValueError("G04B_181_ARM_SETUP_MODE_INVALID")
     return mode
 
+def arm_result_accepted(mode,status,error_code,planned_trajectory_points=None):
+    """MoveGroup error_code SUCCESS=1, but FollowJointTrajectory SUCCESS=0."""
+    validate_arm_mode(mode)
+    if status!=4:return False
+    if mode=="MOVEGROUP":
+        return error_code==1 and int(planned_trajectory_points or 0)>0
+    return error_code==0
+
 def validate_preopen_mode(mode):
     if mode not in ("YES","NO"):
         raise ValueError("G04B_181_PREOPEN_MODE_INVALID")
