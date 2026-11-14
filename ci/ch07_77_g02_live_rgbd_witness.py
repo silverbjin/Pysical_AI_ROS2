@@ -72,8 +72,18 @@ def run():
             "status":"FAIL"}
     try:
         stop=time.monotonic()+float(os.environ.get("CH07_77_G02_TIMEOUT","54"))
+        readiness=Path(os.environ.get("CH07_77_G02_WITNESS_READY_FILE",
+                                      "/tmp/ch07_77_g02_witness_ready"))
+        discovered=False
         while time.monotonic()<stop:
             rclpy.spin_once(w,timeout_sec=.1)
+            if not discovered and w.count_publishers("/ch07_77/target_ready")>=1:
+                # This node's subscription exists before the producing
+                # detector is started. A local flag avoids slow repeated
+                # ros2cli daemon startup / stale graph cache on CI.
+                readiness.parent.mkdir(parents=True,exist_ok=True)
+                readiness.write_text("G02_WITNESS_DDS_PUBLISHER_DISCOVERED\n")
+                discovered=True
             if len(w.images)>=3 and len(w.depth)>=3 and len(w.info)>=3 and len(w.pixels)>=2 and len(w.targets)>=2 and len(w.ready)>=1 and w.joints>=2:
                 break
         report.update(actual_image_count=len(w.images),
