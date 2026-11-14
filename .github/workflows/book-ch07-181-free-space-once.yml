@@ -1,0 +1,81 @@
+name: Ch07 Issue 181 one cold-start free-space actuator witness
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-181-free-space-once.yml'
+      - 'ci/ch07_181_free_space_contract.py'
+      - 'ci/tests/test_ch07_181_free_space_contract.py'
+      - 'ci/ch07_181_free_space_witness.py'
+      - 'ci/ch07_181_free_space_once.sh'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-181-free-space-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  one-cold-start-no-rod-no-support:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Static TDD and original input hash, no ROS or Goal
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch07-181-free-space
+          git rev-parse HEAD > ci-results/ch07-181-free-space/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-181-free-space/image_digest.txt
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_free_space_contract.py -v \
+            2>&1 | tee ci-results/ch07-181-free-space/contract_unit.log
+          bash -n ci/ch07_181_free_space_once.sh
+          python3 -m py_compile ci/ch07_181_free_space_contract.py \
+            ci/ch07_181_free_space_witness.py
+          sha256sum \
+            ci/ch07_181_free_space_contract.py \
+            ci/ch07_181_free_space_witness.py \
+            ci/ch07_181_free_space_once.sh \
+            ci/ch07_77_g04b_instrument_finger_contacts.py \
+            ci/ch07_77_g04b_physics_fixture.py \
+            Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro \
+            > ci-results/ch07-181-free-space/input_hashes.txt
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull frozen Jazzy Harmonic image digest
+        run: docker pull "$(cat ci-results/ch07-181-free-space/image_digest.txt)"
+      - name: ONE empty-world q4 pi/2 actual GazeboSimSystem bilateral finger test
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 780s \
+            docker run --rm --init --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch07-181-free-space/checkout_sha.txt)" \
+              -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch07-181-free-space/image_digest.txt)" \
+              bash ci/ch07_181_free_space_once.sh \
+              2>&1 | tee ci-results/ch07-181-free-space/console.log
+      - name: Show first failure boundary, never claim G04B grasp
+        if: always()
+        run: |
+          {
+            echo '## Ch07 #181 one cold-start actuator diagnostic'
+            echo 'Empty-world q4≈pi/2, G00-G04A NOT_RERUN; G04B/G05 NOT_RUN.'
+            cat ci-results/ch07-181-free-space/receipt.json || true
+            cat ci-results/ch07-181-free-space/result.json || true
+            cat ci-results/ch07-181-free-space/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-181-free-space-${{ github.run_id }}
+          path: ci-results/ch07-181-free-space/
+          retention-days: 30
+          if-no-files-found: warn
