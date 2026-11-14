@@ -13,7 +13,7 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
-from control_msgs.msg import JointTrajectoryControllerState
+from control_msgs.msg import JointTrajectoryControllerState, JointTolerance
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -125,15 +125,23 @@ class Witness(Node):
         # control_msgs Jazzy exposes the desired command and actual
         # controller-tracked positions; save independent of FJT status.
         names=list(m.joint_names)
-        desired=getattr(m,"desired",None)
-        actual=getattr(m,"actual",None)
+        # Jazzy JointTrajectoryControllerState names are reference/feedback/error.
+        # G04B original #43574030542 stored [] for obsolete desired/actual.
+        reference=getattr(m,"reference",None)
+        feedback=getattr(m,"feedback",None)
         err=getattr(m,"error",None)
-        self.controller_samples.append({
-            "names":names,
-            "desired":list(getattr(desired,"positions",[])),
-            "actual":list(getattr(actual,"positions",[])),
+        stamp=m.header.stamp.sec+m.header.stamp.nanosec*1e-9
+        record={
+            "stamp":stamp, "names":names,
+            "reference":list(getattr(reference,"positions",[])),
+            "feedback":list(getattr(feedback,"positions",[])),
             "error":list(getattr(err,"positions",[]))
-        })
+        }
+        if (names!=list(FINGERS) or
+            any(len(record[key])!=2 or not all(math.isfinite(v) for v in record[key])
+                for key in ("reference","feedback","error"))):
+            raise RuntimeError("G04B_JAZZY_JTC_REFERENCE_FEEDBACK_ERROR_MISSING")
+        self.controller_samples.append(record)
         self.controller_samples=self.controller_samples[-100:]
 
     def on_state(self,m):
@@ -240,6 +248,18 @@ class Witness(Node):
         pt.positions=[float(q),float(q2)]
         pt.time_from_start.sec=2
         goal.trajectory.points=[pt]
+        # A FollowJointTrajectory SUCCEEDED without explicit goal tolerance
+        # concealed a 12 mm finger2 error in the original CI #43574030542.
+        # Contact closure is allowed 2.5 mm of *physical* stopping margin;
+        # true grasp still requires independent bilateral native forces,
+        # real Gazebo world-Z lift, hold, release and pose witness.
+        tolerance_m=.0025 if label=="contact_close" else .001
+        for name in FINGERS:
+            tol=JointTolerance()
+            tol.name=name
+            tol.position=tolerance_m
+            goal.goal_tolerance.append(tol)
+        goal.goal_time_tolerance.sec=2
         h=self.await_future(self.grip.send_goal_async(goal),label+"_ACCEPT",15)
         if not h or not h.accepted:
             raise RuntimeError("G04B_GRIP_"+label+"_REJECTED")
@@ -251,10 +271,12 @@ class Witness(Node):
               "command_by_joint_m":desired,
               "status":int(outcome.status),
               "result_error":int(outcome.result.error_code),
+              "explicit_fjt_goal_tolerance_m":tolerance_m,
+              "explicit_fjt_goal_time_tolerance_sec":2,
               "actual_m":actual,
               "per_finger_position_error_m":delta,
               "tracking_error_max_m":max(abs(v) for v in delta.values()),
-              "joint_tracking_pass":max(abs(v) for v in delta.values())<=.003,
+              "joint_tracking_pass":max(abs(v) for v in delta.values())<=.001,
               "controller_state_last":(
                   self.controller_samples[-1] if self.controller_samples else None
               ),
