@@ -1,0 +1,77 @@
+name: Book Ch07 7.7 G04A real graspable dynamic rod RGB-D target (NO Goals)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-77-g04a-graspable-target.yml'
+      - 'ci/ch07_77_g04a_graspable_fixture.py'
+      - 'ci/ch07_77_g04a_live_small_target_witness.py'
+      - 'ci/ch07_77_g04a_graspable_rgbd_once.sh'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-77-g04a-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  physically-graspable-visual-target:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Record old successful sources and NEW graspable fixture generation
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch07-77-g04a
+          git rev-parse HEAD > ci-results/ch07-77-g04a/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-77-g04a/image_digest.txt
+          sha256sum ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf \
+            ci/ch07_77_g04a_graspable_fixture.py \
+            Ch07/ros2_ws/src/vision_basics/vision_basics/{object_detector,coord_transformer,gripper_controller}.py \
+            Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro \
+            > ci-results/ch07-77-g04a/source_sha256.txt
+          bash -n ci/ch07_77_g04a_graspable_rgbd_once.sh
+          python3 -m py_compile ci/ch07_77_g04a_graspable_fixture.py ci/ch07_77_g04a_live_small_target_witness.py
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse original Jazzy/Harmonic digest (no image rebuild)
+        run: docker pull "$(cat ci-results/ch07-77-g04a/image_digest.txt)"
+      - name: Only NEW small graspable rod OGRE2 RGB-D/TF camera geometry
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 540s \
+            docker run --rm --init --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch07-77-g04a/checkout_sha.txt)" \
+              -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch07-77-g04a/image_digest.txt)" \
+              bash ci/ch07_77_g04a_graspable_rgbd_once.sh \
+              2>&1 | tee ci-results/ch07-77-g04a/console.log
+      - name: Publish exact scope — geometry/perception only, no lift claim
+        if: always()
+        run: |
+          {
+            echo '## Ch07 #173 G04A new 24mm graspable dynamic red rod'
+            echo 'Original accepted large-cylinder G02 and G03 arm action never rerun.'
+            echo 'G04B actual finger contact, lift and place NOT_RUN. No motor Goal.'
+            echo 'Ch10 #123 HOLD.'
+            cat ci-results/ch07-77-g04a/fixture_receipt.json || true
+            cat ci-results/ch07-77-g04a/g04a_live_receipt.json || true
+            cat ci-results/ch07-77-g04a/result.json || true
+            cat ci-results/ch07-77-g04a/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-77-g04a-graspable-rod-${{ github.run_id }}
+          path: ci-results/ch07-77-g04a/
+          retention-days: 30
+          if-no-files-found: warn
