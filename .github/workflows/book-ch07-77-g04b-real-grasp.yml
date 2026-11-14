@@ -13,6 +13,8 @@ on:
       - 'ci/ch07_77_g04b_actual_physics_witness.py'
       - 'ci/ch07_181_arm_settle_contract.py'
       - 'ci/ch07_181_physical_preload_contract.py'
+      - 'ci/ch07_181_bin_transport_contract.py'
+      - 'ci/tests/test_ch07_181_bin_transport_contract.py'
       - 'ci/tests/test_ch07_181_physical_preload_contract.py'
       - 'ci/tests/test_ch07_181_arm_settle_contract.py'
       - 'ci/ch07_77_g04b_verify_contacts.py'
@@ -45,6 +47,8 @@ jobs:
             ci/ch07_77_g04b_physics_fixture.py \
             ci/ch07_181_physical_preload_contract.py \
             ci/tests/test_ch07_181_physical_preload_contract.py \
+            ci/ch07_181_bin_transport_contract.py \
+            ci/tests/test_ch07_181_bin_transport_contract.py \
             ci/ch07_77_g04b_actual_physics_witness.py \
             ci/ch07_77_g04b_verify_contacts.py \
             ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf \
@@ -56,6 +60,7 @@ jobs:
           python3 -m unittest discover -s ci/tests -p test_ch07_181_symmetric_grasp_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_post_approach_settle_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_physical_preload_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_transport_contract.py -v
           python3 -m py_compile ci/ch07_77_g04b_physics_fixture.py \
             ci/ch07_77_g04b_instrument_finger_contacts.py \
             ci/ch07_77_g04b_actual_physics_witness.py \
@@ -63,6 +68,7 @@ jobs:
             ci/ch07_181_symmetric_grasp_contract.py \
             ci/ch07_181_post_approach_settle_contract.py \
             ci/ch07_181_physical_preload_contract.py \
+            ci/ch07_181_bin_transport_contract.py \
             ci/ch07_77_g04b_verify_contacts.py
       - uses: docker/login-action@v3
         with:

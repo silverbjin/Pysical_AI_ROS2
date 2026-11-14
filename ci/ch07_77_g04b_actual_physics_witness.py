@@ -18,6 +18,9 @@ from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
 from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
 from ch07_181_physical_preload_contract import actual_preload_pass, EXPECTED_PRELOAD_M
+from ch07_181_bin_transport_contract import (corrected_high_target,custody_offset,
+    custody_drift,high_arrival_valid,pre_release_valid,LOWER_WRIST_Z,
+    orientation_preserving_lower_goal,actual_finger_tilt_drift,finger_tilt)
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -380,17 +383,19 @@ def main():
                 w.arm_goal(name+"_plan_only",xyz,plan_only=True))
         report["finger_results"].append(w.grip_goal("open",0.0))
         report["finger_goal_count"]+=1
-        # Independently reproduced root-boundary fix:
-        # public CI #43595476665 physically commanded finger2=2mm BEFORE
-        # MoveGroup, then 11mm after MoveGroup at exact previous failed pose.
-        # No robot geometry, FJT tolerance, fake pose or physics alteration.
-        preload=w.grip_goal("lower_stop_release_finger2_2mm",
-                            0.0,EXPECTED_PRELOAD_M,diagnostic=True)
+        # Original real CI #43599142218: finger2 at physical 2mm then
+        # 11mm PASS, but finger1 left at q0 FROZE (0mm for 11mm Goal,
+        # FJT ABORTED). Thus BOTH original prismatic joints need one
+        # real measured 2mm release before the same MoveGroup arm motion.
+        # No fake attach/teleport, increased effort or tolerance relaxation.
+        preload=w.grip_goal("lower_stop_release_both_fingers_2mm",
+                            EXPECTED_PRELOAD_M,EXPECTED_PRELOAD_M,diagnostic=True)
         report["finger_results"].append(preload)
         report["finger_goal_count"]+=1
-        report["lower_stop_release_finger2_pre_movegroup"]=preload
-        if abs(preload["actual_m"]["joint_finger2"]-EXPECTED_PRELOAD_M)>.0005:
-            raise RuntimeError("G04B_181_2MM_PHYSICAL_RELEASE_NOT_REACHED")
+        report["lower_stop_release_both_fingers_pre_movegroup"]=preload
+        if any(abs(preload["actual_m"][name]-EXPECTED_PRELOAD_M)>.0005
+               for name in FINGERS):
+            raise RuntimeError("G04B_181_BOTH_REAL_FINGERS_2MM_NOT_REACHED")
         nominal_pregrasp=arm_ik_tilted_fingers(*pregrasp)
         report["arm_results"].append(
             w.arm_goal("pregrasp",pregrasp,joint_override=nominal_pregrasp))
@@ -402,9 +407,11 @@ def main():
         report["post_movegroup_arm_settle"]=w.arm_precision_settle(nominal_pregrasp)
         report["arm_results"].append(report["post_movegroup_arm_settle"])
         report["arm_goal_count"]+=1
-        report["lower_stop_release_after_pregrasp_m"]=w.joints[-1]["fingers"]["joint_finger2"]
-        if abs(report["lower_stop_release_after_pregrasp_m"]-EXPECTED_PRELOAD_M)>.0005:
-            raise RuntimeError("G04B_181_PRELOAD_LOST_DURING_MOVEGROUP_PREGRASP")
+        report["lower_stop_release_after_pregrasp_actual_m"]=dict(
+            w.joints[-1]["fingers"])
+        if any(abs(report["lower_stop_release_after_pregrasp_actual_m"][name]
+                   -EXPECTED_PRELOAD_M)>.0005 for name in FINGERS):
+            raise RuntimeError("G04B_181_BILATERAL_PRELOAD_LOST_AFTER_PREGRASP")
         report["pose_snapshots"]["pregrasp"]=rod_pose()
         assert math.dist(report["pose_snapshots"]["pregrasp"],
                          report["pose_snapshots"]["initial"])<=.008,(
@@ -501,11 +508,12 @@ def main():
         report["post_final_approach_arm_settle"]=w.arm_precision_settle(contact_target)
         report["arm_results"].append(report["post_final_approach_arm_settle"])
         report["arm_goal_count"]+=1
-        report["lower_stop_release_before_contact_m"]=w.joints[-1]["fingers"]["joint_finger2"]
+        report["lower_stop_release_before_contact_actual_m"]=dict(
+            w.joints[-1]["fingers"])
         report["lower_stop_release_real_actual_pass"]=actual_preload_pass(
-            report["lower_stop_release_finger2_pre_movegroup"],
-            report["lower_stop_release_after_pregrasp_m"],
-            report["lower_stop_release_before_contact_m"])
+            report["lower_stop_release_both_fingers_pre_movegroup"],
+            report["lower_stop_release_after_pregrasp_actual_m"],
+            report["lower_stop_release_before_contact_actual_m"])
         if not report["lower_stop_release_real_actual_pass"]:
             raise RuntimeError("G04B_181_PRELOAD_LOST_BEFORE_PHYSICAL_CONTACT")
         settled_arm=dict(w.joints[-1]["arm"])
@@ -625,9 +633,68 @@ def main():
                        report["pose_snapshots"]["lift"])
         report["object_pose_drift_during_hold_m"]=hold
         assert hold<=.025,"G04B_OBJECT_SLIPPED_WHILE_HELD"
-        report["arm_results"].append(w.arm_goal("transfer",[.477,.217,1.759]))
+        # Original physical CI #43597860243: gripping, lift 13.032cm,
+        # 1.3s stable hold PASS; old transfer [.477,.217,1.759] moved
+        # real rod to (.643,.088,1.839), outside bin, with 75 native
+        # wrist↔rod collisions at sim 64.873-64.964. Do NOT open there.
+        # Transport actual dynamic rod into BIN_XY while HIGH above it,
+        # then lower without lateral sweep and only release if the
+        # independent rod world pose and gripper custody both pass.
+        held_world=report["pose_snapshots"]["held"]
+        held_fk=measured_finger_center(w.joints[-1]["arm"])
+        held_offset=custody_offset(held_world,held_fk)
+        report["physical_held_rod_offset_from_finger_center"]=held_offset
+        high_target=corrected_high_target(held_world)
+        report["transport_high_wrist_goal"]=high_target
+        report["arm_results"].append(
+            w.arm_goal("transfer_high_above_bin",high_target))
         report["arm_goal_count"]+=1
+        w.spin_for(.5)
+        above=rod_pose()
+        report["pose_snapshots"]["transfer_high"]=above
+        high_fk=measured_finger_center(w.joints[-1]["arm"])
+        report["transport_high_custody_drift_m"]=custody_drift(
+            above,high_fk,held_offset)
+        report["transport_high_bin_xy_error_m"]=math.hypot(
+            above[0]-.55,above[1]-.25)
+        if not high_arrival_valid(above,report["transport_high_custody_drift_m"]):
+            raise RuntimeError("G04B_181_REAL_ROD_NOT_ABOVE_BIN_WITH_SECURE_GRASP")
+        # CI #43599620070: high transfer had only 4.85mm grasp custody
+        # drift, but uncorrected lower step changed world finger pitch
+        # ~0.31rad, leading to 108mm real rod slip despite both contacts.
+        # Use original wrist joint to preserve measured WORLD finger tilt,
+        # not fake attachment or altered friction/force.
+        high_arm_actual=dict(w.joints[-1]["arm"])
+        lower=[high_target[0],high_target[1],LOWER_WRIST_Z]
+        lower_nominal=arm_ik_tilted_fingers(*lower)
+        lower_oriented=orientation_preserving_lower_goal(
+            high_arm_actual,lower_nominal)
+        report["transport_high_measured_finger_tilt_rad"]=finger_tilt(high_arm_actual)
+        report["transport_lower_wrist_goal"]=lower
+        report["transport_lower_joint_target_with_pitch_compensation"]=lower_oriented
+        report["arm_results"].append(
+            w.arm_goal("lower_into_bin",lower,joint_override=lower_oriented))
+        report["arm_goal_count"]+=1
+        w.spin_for(.5)
+        report["transport_actual_lower_finger_tilt_drift_rad"]=actual_finger_tilt_drift(
+            high_arm_actual,w.joints[-1]["arm"])
+        if report["transport_actual_lower_finger_tilt_drift_rad"]>.055:
+            raise RuntimeError("G04B_181_REAL_FINGER_PITCH_NOT_PRESERVED_IN_DESCENT")
         report["pose_snapshots"]["pre_release"]=rod_pose()
+        release_pose=report["pose_snapshots"]["pre_release"]
+        lower_fk=measured_finger_center(w.joints[-1]["arm"])
+        report["pre_release_custody_drift_m"]=custody_drift(
+            release_pose,lower_fk,held_offset)
+        report["pre_release_bin_xy_error_m"]=math.hypot(
+            release_pose[0]-.55,release_pose[1]-.25)
+        report["pre_release_gripper_actual_jointstate"]=dict(
+            w.joints[-1]["fingers"])
+        if not all(abs(v-.011)<=.003 for v in
+                   report["pre_release_gripper_actual_jointstate"].values()):
+            raise RuntimeError("G04B_181_ACTUAL_GRIPPER_OPENED_DURING_CARRY")
+        if not pre_release_valid(
+                release_pose,report["pre_release_custody_drift_m"]):
+            raise RuntimeError("G04B_181_REAL_ROD_OUTSIDE_SAFE_BIN_RELEASE_ENVELOPE")
         report["finger_results"].append(w.grip_goal("release",0.0))
         report["finger_goal_count"]+=1
         w.spin_for(2.0)
