@@ -572,7 +572,7 @@ def main():
         # Do not move the rod, change controller tolerances, fake attach,
         # teleport, or claim success without native bilateral forces.
         physical_q=symmetric_close_joint_target(
-            meta["original_open_finger_gap_m"],2*meta["radius_m"])
+            meta["physical_open_face_gap_m"],2*meta["radius_m"])
         report["physical_symmetric_close_target_per_joint_m"]=physical_q
         report["physical_close_strategy"]="ONE_SIMULTANEOUS_BILATERAL_FJT"
         report["finger_results"].append(
