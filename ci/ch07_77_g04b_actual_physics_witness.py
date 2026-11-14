@@ -300,6 +300,35 @@ def main():
             raise RuntimeError("G04B_ROD_DISTURBED_DURING_X_INSERTION_NO_CLOSE")
         q=w.joints[-1]["arm"]
         collision_center=measured_finger_center(q)
+        report["precision_contact_center_feedback"]=[]
+        # Actual Gazebo arm final state can differ by 5-7mm from the
+        # declared MoveGroup goal despite a SUCCEEDED Action. Correct
+        # only a few milliradians, with both fingers OPEN and already
+        # correctly opposed in Y. Do not relax 5mm independent audit.
+        for refinement in range(2):
+            error_x=.70-collision_center[0]
+            report["precision_contact_center_feedback"].append({
+                "step":refinement,"observed_xyz":collision_center,
+                "error_x_m":error_x})
+            if abs(error_x)<=.004:break
+            assert abs(error_x)<=.015, "G04B_FINE_ALIGNMENT_TOO_LARGE_NO_CLOSE"
+            theta=q["joint2"]+q["joint3"]
+            dx_dq2=.5*math.cos(q["joint2"])+math.cos(theta)+.10*math.cos(theta)
+            assert dx_dq2>.6,"G04B_FINE_ALIGNMENT_JACOBIAN_INVALID"
+            delta=max(-.010,min(.010,error_x/dx_dq2))
+            fine=dict(q)
+            fine["joint2"]+=delta
+            assert -1.57079<fine["joint2"]<1.57079
+            report["arm_results"].append(w.arm_goal(
+                "fine_x_alignment_"+str(refinement),None,joint_override=fine))
+            report["arm_goal_count"]+=1
+            w.spin_for(.3)
+            q=dict(w.joints[-1]["arm"])
+            collision_center=measured_finger_center(q)
+            current_pose=rod_pose()
+            assert math.dist(current_pose,report["pose_snapshots"]["initial"])<=.018,(
+                "G04B_ROD_MOVED_DURING_FINE_ALIGNMENT_NO_CLOSE")
+            report["pose_snapshots"]["approach"]=current_pose
         report["actual_fingertip_center_before_grip_m"]=collision_center
         report["aligned_pregrasp_tip_xyz"]=collision_center
         report["aligned_pregrasp_radius_error_m"]=abs(collision_center[0]-.70)
