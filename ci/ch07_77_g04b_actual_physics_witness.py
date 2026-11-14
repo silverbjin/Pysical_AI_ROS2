@@ -117,8 +117,13 @@ class Witness(Node):
             except Exception:pass
         raise TimeoutError("G04B_TIMEOUT_"+label)
 
-    def arm_goal(self,label,xyz,plan_only=False):
-        target=arm_ik_tilted_fingers(*xyz)
+    def arm_goal(self,label,xyz,plan_only=False,joint_override=None):
+        # Avoid reconstructing a different elbow/wrist posture when moving
+        # laterally toward the rod. For a yaw-only sweep, retain the ACTUAL
+        # observed radial geometry, rather than re-solving approximate IK.
+        target=({n:float(joint_override[n]) for n in ARM}
+                if joint_override is not None else arm_ik_tilted_fingers(*xyz))
+        assert set(target)==set(ARM) and all(math.isfinite(v) for v in target.values())
         goal=MoveGroup.Goal()
         goal.request.group_name="arm_group"
         goal.request.allowed_planning_time=6.
@@ -132,8 +137,12 @@ class Witness(Node):
             jc=JointConstraint()
             jc.joint_name=name
             jc.position=target[name]
-            jc.tolerance_above=.035
-            jc.tolerance_below=.035
+            # A 35 mrad goal tolerance is > 10mm rod/finger radial clearance.
+            # Keep the broad tolerance for already validated coarse moves,
+            # use 2 mrad only for precise yaw or contact alignment.
+            tolerance=.002 if joint_override is not None else .035
+            jc.tolerance_above=tolerance
+            jc.tolerance_below=tolerance
             jc.weight=1.
             c.joint_constraints.append(jc)
         goal.request.goal_constraints.append(c)
@@ -234,14 +243,60 @@ def main():
             report["arm_results"].append(
                 w.arm_goal("align_x_"+str(idx),[aligned_x,-.12,1.85]))
             report["arm_goal_count"]+=1
+        # Before sweeping around the base, align RADIAL distance (not
+        # global x). The existing x-only alignment at yaw=-0.19 gave
+        # tip (0.694,-0.138), radius 0.708m; on a yaw sweep that becomes
+        # x=0.708 and leaves only 2.5mm of grasp clearance.
+        report["radial_refinements"]=[]
+        for idx in range(4):
+            tip=measured_finger_center(w.joints[-1]["arm"])
+            current_r=math.hypot(tip[0],tip[1])
+            miss_r=.70-current_r
+            report["radial_refinements"].append({
+                "step":idx,"current_radius_m":current_r,"miss_radius_m":miss_r})
+            if abs(miss_r)<=.0035:break
+            assert abs(miss_r)<.035, "G04B_PREAPPROACH_RADIUS_BAD_NO_GOAL"
+            aligned_x+=max(-.025,min(.025,miss_r))
+            assert .55<=aligned_x<=.70
+            report["arm_results"].append(
+                w.arm_goal("refine_radius_"+str(idx),[aligned_x,-.12,1.85]))
+            report["arm_goal_count"]+=1
         final_pre=measured_finger_center(w.joints[-1]["arm"])
+        report["aligned_pregrasp_radius_error_m"]=abs(
+            math.hypot(final_pre[0],final_pre[1])-.70)
+        assert report["aligned_pregrasp_radius_error_m"]<=.005,(
+            "G04B_RADIAL_TIP_ALIGNMENT_NOT_ACCURATE_NO_APPROACH")
         report["aligned_pregrasp_tip_xyz"]=final_pre
         report["aligned_pregrasp_x_error_m"]=abs(final_pre[0]-.70)
         assert report["aligned_pregrasp_x_error_m"]<=.011,(
             "G04B_PREGRASP_NOT_LATERALLY_ALIGNED_NO_APPROACH")
         # Only a gripper already centred in X is allowed to approach the
         # object along Y. Fail before closing if the dynamic rod moves.
-        report["arm_results"].append(w.arm_goal("approach",[aligned_x,0,1.85]))
+        # Previous G04B RED #43558555414 re-solved 2R IK at y=0 and
+        # changed actual tip X from 0.694 to 0.660m. This physically
+        # knocked the rod to y=+0.074m with ONLY finger2 contact.
+        # Instead, first rotate JUST base yaw to -0.07 (~5cm side
+        # clearance), retaining measured arm shape. Then sweep yaw to 0.
+        yaw_start=w.joints[-1]["arm"]
+        assert yaw_start["joint1"]<-.12
+        yaw_staged=dict(yaw_start);yaw_staged["joint1"]=-.07
+        report["arm_results"].append(w.arm_goal(
+            "yaw_stage_clear_of_rod",None,joint_override=yaw_staged))
+        report["arm_goal_count"]+=1
+        report["pose_snapshots"]["yaw_stage"]=rod_pose()
+        staged_shift=math.dist(report["pose_snapshots"]["yaw_stage"],
+                               report["pose_snapshots"]["initial"])
+        report["rod_shift_before_close_at_yaw_stage_m"]=staged_shift
+        if staged_shift>.012:
+            raise RuntimeError("G04B_ROD_DISTURBED_AT_CLEARANCE_STAGE_NO_CLOSE")
+        measured_stage=measured_finger_center(w.joints[-1]["arm"])
+        report["yaw_stage_measured_finger_tip_xyz"]=measured_stage
+        assert measured_stage[1]<-.027, "G04B_YAW_STAGE_NOT_CLEAR_OF_ROD"
+        assert abs(math.hypot(*measured_stage[:2])-.70)<=.009,(
+            "G04B_YAW_STAGE_RADIAL_ERROR_NO_CLOSE")
+        yaw_final=dict(w.joints[-1]["arm"]);yaw_final["joint1"]=0.
+        report["arm_results"].append(w.arm_goal(
+            "yaw_final_insertion",None,joint_override=yaw_final))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["approach"]=rod_pose()
         report["preclose_object_shift_m"]=math.dist(
