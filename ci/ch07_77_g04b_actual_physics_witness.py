@@ -16,6 +16,7 @@ from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTrajectoryControllerState, JointTolerance
 from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
 from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
+from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -504,6 +505,25 @@ def main():
             "G04B_CONTACT_CENTRE_NOT_ALIGNED_NO_CLOSE")
         assert abs(q["joint4"]-math.pi/2)<=.005 and abs(q["joint_wrist"])<=.005,(
             "G04B_OPPOSING_FINGER_AXIS_NOT_WORLD_Y_NO_CLOSE")
+        # CI #43586210350: after MoveGroup precise approach, finger2 11mm
+        # reference did not produce any real displacement or native contact.
+        # The earlier post-MoveGroup DIRECT FJT arm settle fixed an identical
+        # motor freeze at PREGRASP. Apply the SAME single bounded controller
+        # transition after FINAL MoveGroup alignment, with the ACTUAL arm
+        # state as target. This must not change robot/grasp geometry.
+        before_contact_settle_center=measured_finger_center(q)
+        contact_target=measured_contact_settle_target(dict(q))
+        report["post_final_approach_arm_settle"]=w.arm_precision_settle(contact_target)
+        report["arm_goal_count"]+=1
+        settled_arm=dict(w.joints[-1]["arm"])
+        after_contact_settle_center=measured_finger_center(settled_arm)
+        report["post_final_approach_contact_centers_m"]={
+            "before":before_contact_settle_center,"after":after_contact_settle_center}
+        assert unchanged_collision_center(before_contact_settle_center,
+                                          after_contact_settle_center),(
+            "G04B_181_POST_APPROACH_SETTLE_UNINTENDED_TOOL_MOTION")
+        assert math.dist(rod_pose(),report["pose_snapshots"]["initial"])<=.018,(
+            "G04B_181_POST_APPROACH_SETTLE_ROD_MOVED_BEFORE_CLOSE")
         report["pose_snapshots"]["yaw_stage"]=report["pose_snapshots"]["x_clearance_stage"]
         report["rod_shift_before_close_at_yaw_stage_m"]=math.dist(
             report["pose_snapshots"]["yaw_stage"],
