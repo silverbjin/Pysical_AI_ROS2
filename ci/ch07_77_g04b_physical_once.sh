@@ -87,6 +87,11 @@ timeout --signal=TERM --kill-after=8s 130s colcon build --symlink-install \
 set +u;source "$PWD/install/setup.bash";set -u
 stage EXPAND_SAME_ORIGINAL_ROBOT_5_ARM_2_FINGER_GAZEBO_URDF
 xacro "$(ros2 pkg prefix --share vision_basics)/urdf/my_robot.pick_gazebo.urdf.xacro" > "$OUT/robot.urdf"
+# Test-only additional sensors: exactly the same original physical robot
+# collision shapes, joint axes and controller. Diagnose finger2 blocking.
+python3 "$ROOT/ci/ch07_77_g04b_instrument_finger_contacts.py" \
+ "$OUT/robot.urdf" "$OUT/g04b_contact_sensors_receipt.json" \
+ > "$OUT/instrumentation.log"
 check_urdf "$OUT/robot.urdf" >"$OUT/check_urdf.log"
 python3 "$ROOT/ci/ch07_77_g00_preflight.py" --expanded "$OUT/robot.urdf" \
   --out "$OUT/g00_expanded.json" > "$OUT/g00.log"
@@ -148,6 +153,34 @@ done
 [[ "$CONTACT_READY" -eq 1 ]] || { echo G04B_NATIVE_CONTACT_SENSOR_TOPIC_NOT_AVAILABLE;exit 9; }
 timeout 6s gz topic -i -t "$CONTACT_TOPIC" >"$OUT/contact_topic_info.txt" 2>&1 || true
 start native_contacts stdbuf -oL gz topic -e -t "$CONTACT_TOPIC"
+# Record independent finger and pedestal collision partners. This does
+# not modify contact physics: all are passive native Gazebo sensors.
+# All failures retain logs and keep G04B FAIL, never infer success from
+# the presence/absence of this diagnostic signal alone.
+DIAG_NAMES=(finger1 finger2 support)
+DIAG_TOPICS=(
+ '/world/book_camera/model/my_robot/link/finger1/sensor/g04b_finger1_contacts/contact'
+ '/world/book_camera/model/my_robot/link/finger2/sensor/g04b_finger2_contacts/contact'
+ '/world/book_camera/model/g04_support/link/shelf_link/sensor/g04b_support_contacts/contact'
+)
+for idx in "${!DIAG_NAMES[@]}";do
+  name="${DIAG_NAMES[$idx]}"
+  topic="${DIAG_TOPICS[$idx]}"
+  echo "$topic" > "$OUT/diag_${name}_topic.txt"
+  ready=0
+  for attempt in $(seq 1 30);do
+    if timeout 5s gz topic -l | grep -Fxq "$topic";then
+      ready=1;break
+    fi
+    sleep .2
+  done
+  if [[ "$ready" == 1 ]];then
+    start "diag_${name}_contacts" stdbuf -oL gz topic -e -t "$topic"
+    echo "G04B_DIAGNOSTIC_SENSOR_READY_${name}" >>"$OUT/stages.log"
+  else
+    echo "G04B_DIAGNOSTIC_SENSOR_UNAVAILABLE_${name}" >>"$OUT/stages.log"
+  fi
+done
 # Gazebo actual pose and contact data are independent ground truth.
 stage REAL_ROS_CLOCK_AND_JOINT_STATE
 start bridge ros2 run ros_gz_bridge parameter_bridge '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'
