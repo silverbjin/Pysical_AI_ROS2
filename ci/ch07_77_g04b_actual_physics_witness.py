@@ -20,7 +20,8 @@ from ch07_181_post_approach_settle_contract import measured_contact_settle_targe
 from ch07_181_physical_preload_contract import actual_preload_pass, EXPECTED_PRELOAD_M
 from ch07_181_exact_fk import (original_finger_collision_center,
     original_finger_tool_z_axis,actual_tool_axis_angle_rad)
-from ch07_181_bin_transport_contract import (corrected_high_target,custody_offset,
+from ch07_181_bin_transport_contract import (corrected_high_target,
+    exact_fk_high_bin_wrist_target,custody_offset,
     custody_drift,high_arrival_valid,feedback_centered_high_target,
     precise_high_arrival_valid,pre_release_valid,LOWER_WRIST_Z,
     historical_wrist_bias_lower_goal,actual_finger_tilt_drift,finger_tilt)
@@ -638,7 +639,13 @@ def main():
         held_fk=measured_finger_center(w.joints[-1]["arm"])
         held_offset=custody_offset(held_world,held_fk)
         report["physical_held_rod_offset_from_finger_center"]=held_offset
-        high_target=corrected_high_target(held_world)
+        # Original #43604397028: nominal frozen lift-wrist subtraction
+        # produced a HIGH goal that missed actual cylinder XY by 0.150m,
+        # and true 5DOF geometric custody by 0.213m.
+        # Compute initial high goal from actual measured original arm
+        # JointState and original 100mm wrist-to-finger FK instead.
+        high_target=exact_fk_high_bin_wrist_target(
+            dict(w.joints[-1]["arm"]),held_world)
         report["transport_high_wrist_goal"]=high_target
         report["arm_results"].append(
             w.arm_goal("transfer_high_above_bin",high_target))
@@ -725,7 +732,8 @@ def main():
         # are stronger custody proof. Object XY/Z, closed JointState
         # and later physically settled ROI/height remain mandatory.
         if not pre_release_valid(
-                release_pose,report["pre_release_recent_native_contact"]):
+                release_pose,report["pre_release_custody_drift_m"],
+                report["pre_release_recent_native_contact"]):
             raise RuntimeError("G04B_181_REAL_ROD_OUTSIDE_SAFE_BIN_RELEASE_ENVELOPE_OR_LOST_NATIVE_GRIP")
         report["finger_results"].append(w.grip_goal("release",0.0))
         report["finger_goal_count"]+=1
