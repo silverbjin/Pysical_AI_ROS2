@@ -253,6 +253,7 @@ def main():
             "status":"FAIL","source_sha":os.environ.get("RUN_SOURCE_SHA","UNKNOWN"),
             "fixture":meta,"g04a_old_live_xyz_replayed_as_current":False,
             "arm_goal_count":0,"finger_goal_count":0,
+            "finger_clearance_preflight":"NOT_RUN",
             "pose_snapshots":{},"arm_results":[],"finger_results":[],
             "contact_native_raw":"RECORDED_SEPARATELY_IN_ARTIFACT",
             "G05_integrated_live_perception":"NOT_RUN",
@@ -287,6 +288,31 @@ def main():
         assert math.dist(report["pose_snapshots"]["pregrasp"],
                          report["pose_snapshots"]["initial"])<=.008,(
             "G04B_ROD_DISTURBED_BEFORE_APPROACH")
+        # NEW smallest failing-boundary test. Before approaching the
+        # support/rod, with both finger tips safely behind the object,
+        # drive two original GazeboSimSystem prismatic joints once.
+        # It discriminates controller/rotated-URDF dynamic failure
+        # from collision only after actual grasp insertion. The §7.6
+        # accepted empty-world test is NOT rerun.
+        preflight_tip=measured_finger_center(w.joints[-1]["arm"])
+        assert preflight_tip[0]<=.62,(
+            "G04B_CLEARANCE_FINGER_PREFLIGHT_TOO_CLOSE_TO_ROD")
+        report["finger_clearance_preflight"]=[]
+        report["finger_clearance_preflight_target_m"]=.012
+        report["finger_clearance_preflight_phase"]="BEFORE_ROD_OR_SUPPORT_APPROACH"
+        try:
+            report["finger_clearance_preflight"].append(
+                w.grip_goal("free_space_close",.012))
+        finally:
+            # Even if FJT reports success with a frozen finger, do not
+            # move toward the rod. Preserve raw q and collision partners.
+            report["free_space_joint_state_after_close"]=w.joints[-1]["fingers"]
+        assert all(abs(w.joints[-1]["fingers"][n]-.012)<=.003
+                   for n in FINGERS),(
+            "G04B_TWO_FINGERS_NOT_ACTUATED_IN_FREE_SPACE_NO_APPROACH")
+        report["finger_clearance_preflight"].append(
+            w.grip_goal("free_space_reopen",0.0))
+        assert math.dist(rod_pose(),report["pose_snapshots"]["initial"])<=.008
         report["precontact_alignment"]=[]
         report["radial_refinements"]=[]
         start_tip=measured_finger_center(w.joints[-1]["arm"])
@@ -488,6 +514,8 @@ def main():
         # contact-close attempt. FJT status SUCCESS is not a physics PASS.
         if w.last_grip_data is not None:
             report["last_gripper_result_even_on_failure"]=w.last_grip_data
+            if w.last_grip_data["name"]=="free_space_close":
+                report["free_space_actual_finger_joints_on_failure"] = w.joints[-1]["fingers"]
             if w.last_grip_data["name"]=="contact_close":
                 try:
                     report["pose_snapshots"]["closed_after_failure"]=rod_pose()
