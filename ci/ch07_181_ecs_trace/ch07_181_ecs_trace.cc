@@ -2,6 +2,10 @@
 #include <gz/sim/System.hh>
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/components/Joint.hh>
+#include <gz/sim/components/JointVelocityCmd.hh>
+#include <gz/sim/components/JointPosition.hh>
+#include <gz/sim/components/JointVelocity.hh>
+#include <gz/sim/components/JointForceCmd.hh>
 #include <gz/sim/components/Name.hh>
 #include <gz/plugin/Register.hh>
 #include <chrono>
@@ -63,7 +67,7 @@ private:
       <<','<<(force!=nullptr)
       <<','<<(force?scalar(force->Data()):std::numeric_limits<double>::quiet_NaN())
       <<'\n';
-  if(++lines_%250==0)out_.flush();
+  if(++lines_%25==0)out_.flush();
  }
  std::ofstream out_; std::mutex mutex_;
  double lastPre_=-1.0,lastPost_=-1.0;
