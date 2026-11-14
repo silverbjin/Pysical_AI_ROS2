@@ -1,0 +1,70 @@
+name: Book Ch07 7.7 G00/G01 real ROS target gate (NO GOALS, Ch10 HOLD)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-77-g00-g01.yml'
+      - 'ci/ch07_77_g00_preflight.py'
+      - 'ci/ch07_77_g01_ros_probe.py'
+      - 'ci/ch07_77_g00_g01_once.sh'
+      - 'ci/tests/test_ch07_77_target_gate.py'
+      - 'Ch07/ros2_ws/src/vision_basics/vision_basics/mission_controller.py'
+      - 'Ch07/ros2_ws/src/vision_basics/vision_basics/mission_target_gate.py'
+      - 'Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro'
+      - 'Ch07/ros2_ws/src/vision_basics/setup.py'
+      - 'Ch07/ros2_ws/src/my_robot_moveit_config/config/moveit_controllers.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-77-g01-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  real-ros-goal-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Freeze actual source and immutable existing Jazzy/Harmonic image
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch07-77-g01
+          git rev-parse HEAD > ci-results/ch07-77-g01/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-77-g01/image_digest.txt
+          sha256sum Ch07/ros2_ws/src/vision_basics/urdf/my_robot.ros2_camera_gazebo.xacro             Ch07/ros2_ws/src/vision_basics/vision_basics/object_detector.py             Ch07/ros2_ws/src/vision_basics/vision_basics/coord_transformer.py             Ch07/ros2_ws/src/vision_basics/vision_basics/gripper_controller.py             > ci-results/ch07-77-g01/preserved_source_hashes.txt
+          bash -n ci/ch07_77_g00_g01_once.sh
+          python3 -m py_compile ci/ch07_77_g00_preflight.py ci/ch07_77_g01_ros_probe.py
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse existing GHCR image digest (never rebuild)
+        run: docker pull "$(cat ci-results/ch07-77-g01/image_digest.txt)"
+      - name: G00 static + xacro and G01 actual ROS DDS zero-Goal only
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=15s 220s             docker run --rm --init --pull=never --shm-size=1g             -e RUN_SOURCE_SHA="$(cat ci-results/ch07-77-g01/checkout_sha.txt)"             -v "$PWD":/work -w /work             "$(cat ci-results/ch07-77-g01/image_digest.txt)"             bash ci/ch07_77_g00_g01_once.sh             2>&1 | tee ci-results/ch07-77-g01/console.log
+      - name: Publish new gate scope, not 7.7 physical PASS
+        if: always()
+        run: |
+          {
+            echo '## Ch07 #173 G00/G01 only: NO Motor Action, no robot physics'
+            echo 'Reuses accepted §7.2–§7.6 without rerun. Ch10 #123 HOLD.'
+            echo 'G02 RGB-D integrated target / G03 MoveIt / G04 physical pick/place: NOT_RUN.'
+            cat ci-results/ch07-77-g01/g00_expanded.json || true
+            cat ci-results/ch07-77-g01/g01_ros_receipt.json || true
+            cat ci-results/ch07-77-g01/result.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-77-g00-g01-${{ github.run_id }}
+          path: ci-results/ch07-77-g01/
+          retention-days: 30
+          if-no-files-found: warn
