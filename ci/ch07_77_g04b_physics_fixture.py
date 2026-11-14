@@ -42,16 +42,29 @@ def build(source, output, audit):
     # the rod while keeping its detected centre at z=1.94 requires
     # raising only the new TEST-ONLY support top to z=1.90.
     shelf.find("pose").text=".70 0 1.80 0 0 0"
-    # The G04A 0.50m-wide optical display shelf occupies the approaching
-    # arm link4 swept volume. In the first real physics RED (CI #43557077475)
-    # the arm succeeded within loose joint goal tolerances but its actual
-    # fingertip centre missed the rod by 4cm; no finger contact events
-    # occurred. Reduce ONLY this new test-only support to a 0.06m pedestal.
-    # Its upper surface stays z=1.82m and supports the full 0.024m rod.
+    # Ground-truth FJT + link pose at CI #43568477938: finger1 reached
+    # q≈.012m, but finger2 remained at q=0 although BOTH were commanded.
+    # The previous pedestal was 60mm wide (Y=-.03..+.03) and the open
+    # opposing finger collision boxes have 45mm inner-face gap. Their
+    # bases extend from Z≈1.89 to 1.95, overlapping the support Z≤1.90.
+    # Hence the pedestal sits INSIDE both finger closing swept volumes
+    # and can physically lock one side. A genuine support 30mm wide
+    # leaves 7.5mm clearance on each side of the *open* finger faces,
+    # while still supporting the whole Ø24mm rod with 3mm margin/side.
+    # No Gazebo collisions are disabled; no forced joint/teleport/attach.
     for shape in ("collision","visual"):
         node=shelf.find("./link/"+shape+"/geometry/box/size")
         assert node is not None and node.text.strip()=="0.50 0.50 0.20"
-        node.text="0.06 0.06 0.20"
+        node.text="0.03 0.03 0.20"
+    # A source-derived fail-closed geometry contract: the support
+    # must NOT enter the original 45mm fully-open closing gap, and must
+    # physically support the 24mm rod on a true collision surface.
+    pedestal_side=.03
+    original_open_face_gap=.06-.015
+    rod_diameter=2*radius
+    assert rod_diameter<pedestal_side<original_open_face_gap
+    assert (original_open_face_gap-pedestal_side)/2>=.007
+    assert (pedestal_side-rod_diameter)/2>=.003-1e-10
     assert rod.findtext("static")=="false"
     ET.SubElement(world,"plugin",{"filename":"gz-sim-contact-system",
         "name":"gz::sim::systems::Contact"})
@@ -109,7 +122,11 @@ def build(source, output, audit):
       "g04a_live_xyz_reused_as_current_measurement":False,
       "rod_static":False,"radius_m":radius,"height_m":physical_height,
       "mass_kg":.05,"rod_center_initial_world_m":[.70,0,1.94],
-      "shelf_top_m":1.90,"shelf_planar_side_m":.06,
+      "shelf_top_m":1.90,"shelf_planar_side_m":pedestal_side,
+      "original_open_finger_gap_m":original_open_face_gap,
+      "pedestal_to_open_finger_face_clearance_per_side_m":(original_open_face_gap-pedestal_side)/2,
+      "pedestal_rod_support_margin_per_side_m":(pedestal_side-rod_diameter)/2,
+      "prior_real_finger2_joint_stuck_at_zero":True,
       "shelf_shrink_reason":"REMOVE_ORIGINAL_WIDE_DISPLAY_SHELF_FROM_ARM_APPROACH_PATH",
       "first_actual_G04B_red_ci":"43557077475",
       "first_actual_G04B_red_no_finger_contacts":True,
