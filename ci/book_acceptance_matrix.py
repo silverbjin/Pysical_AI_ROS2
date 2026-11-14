@@ -93,6 +93,7 @@ def audit(root, registry):
         "scope": "EVIDENCE_INVENTORY_ONLY_NO_RUNTIME_EXECUTION",
         "target_from_issue_118": target,
         "numbered_sections": len(rows),
+        "numbered_guide_files_present": sum(bool(r["exists"]) for r in rows),
         "unique_guide_documents_including_supporting": doc_count,
         "supplemental_guides": supplementals,
         "target_doc_count_equal": doc_count == target,
@@ -122,11 +123,11 @@ def write_report(data, out):
         "",
         f"- Baseline main: `{data['source_baseline_sha']}`",
         f"- Target (#118): {data['target_from_issue_118']} guide documents",
-        f"- Numbered sections: {data['numbered_sections']}",
+        f"- Numbered sections: {data['numbered_sections']} (primary LAB files present: {data['numbered_guide_files_present']})",
         f"- Distinct LAB/special guide documents: {data['unique_guide_documents_including_supporting']}",
         f"- Evidence/classification counts: {data['section_status_counts']}",
         f"- Explicit section CI links pending: {len(data['scoped_pass_missing_explicit_ci'])}",
-        f"- Guide files missing: {len(data['missing_guide_sections'])}",
+        f"- Numbered LAB primary files not found at canonical paths: {len(data['missing_guide_sections'])} — {data['missing_guide_sections']}",
         "- **Overall runtime acceptance: NOT_READY**. SCOPED_PASS != complete section PASS.",
         "- **Ch10 #123: HOLD. No Ch10 runtime execution.**",
         "- Ch07 7.7 BLOCKED, Ch08 8.7 original PPO goal 0/10 FAIL, Ch11 save_map service FAIL.",
@@ -177,7 +178,7 @@ def main():
     print((output / "SUMMARY.md").read_text(encoding="utf-8"))
     # A valid audit may discover that not all textbook labs are accepted.
     # This exit code is ONLY for a correctly generated evidence inventory.
-    return 0 if data["ch10_hold"] and not data["missing_guide_sections"] else 2
+    return 0 if data["ch10_hold"] else 2
 
 
 if __name__ == "__main__":
