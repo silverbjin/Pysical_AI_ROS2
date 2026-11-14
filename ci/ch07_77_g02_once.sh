@@ -148,19 +148,31 @@ grep -q GazeboSimSystem "$OUT/hardware.log"
 ! grep -q FakeSystem "$OUT/hardware.log"
 timeout 12s ros2 control list_controllers -c /controller_manager > "$OUT/controllers.log"
 grep -q 'joint_state_broadcaster.*active' "$OUT/controllers.log"
-stage PROBE_FIRST_BEFORE_DETECTION_ONE_SHOT
+stage START_SAFE_ADMISSION_BEFORE_ANY_DETECTOR_3D_INPUT
+start admission ros2 run vision_basics mission_controller --ros-args -p use_sim_time:=true
+stage START_INDEPENDENT_WITNESS_BEFORE_ONE_SHOT_PUBLICATION
 start witness python3 "$ROOT/ci/ch07_77_g02_live_rgbd_witness.py"
-sleep .7
-stage ORIGINAL_ROS_DETECTOR_COORD_TRANSFORM_MISSION_NO_GOALS
+# A one-shot volatile PointStamped published before DDS discovery is lost.
+# This is a witness setup race, NOT an image/Depth/TF failure. Start the
+# producers only after the observer's actual topic subscription is visible.
+stage WAIT_FOR_DDS_ONE_SHOT_SUBSCRIBER_DISCOVERY
+DISCOVERED=0
+for attempt in $(seq 1 30);do
+  if timeout 3s ros2 topic info -v /ch07_77/target_ready 2>/dev/null \
+      | grep -Eq 'Subscription count:[[:space:]]*[1-9]'; then
+    DISCOVERED=1;break
+  fi
+  sleep .25
+done
+[[ "$DISCOVERED" -eq 1 ]] || { echo 'G02_WITNESS_NOT_SUBSCRIBED_BEFORE_TARGET';exit 8; }
+stage ORIGINAL_ROS_DETECTOR_COORD_TRANSFORM_NO_GOALS
 start detector ros2 run vision_basics object_detector --ros-args -p use_sim_time:=true
 start coord ros2 run vision_basics coord_transformer --ros-args -p use_sim_time:=true
-start admission ros2 run vision_basics mission_controller --ros-args -p use_sim_time:=true
 stage OBSERVE_REAL_RGBD_TO_3D_AND_ONE_SHOT
 # Full detector and coordinate conversion are new *integration* behavior;
 # standalone §7.2/7.4/7.5/7.6 original accepted tests are NOT_RERUN.
+# Owned sequence: rsp=0,gazebo=1,bridge=2,admission=3,witness=4,detector=5,coord=6.
 WITNESS_PID="${OWNED[4]}"
-# The process sequence is rsp,gazebo,bridge,witness,detector,coord,admission.
-WITNESS_PID="${OWNED[3]}"
 wait "$WITNESS_PID"
 grep -q CH07_77_G02_REAL_OGRE2_RGBD_RED_DETECTOR_3D_TARGET_NO_GOAL_SCOPED_PASS "$OUT/witness.log"
 stage REVIEW_REAL_NATIVE_OBJECT_EXISTS_AND_NO_MOTION
