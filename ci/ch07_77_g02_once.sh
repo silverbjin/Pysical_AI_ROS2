@@ -11,6 +11,7 @@ export GZ_PARTITION="book_ch07_77_g02_${GITHUB_RUN_ID:-local}_$$_$RANDOM"
 export QT_QPA_PLATFORM=offscreen EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=1
 export ROS_LOCALHOST_ONLY=1 DEBIAN_FRONTEND=noninteractive
 export CH07_77_G02_RECEIPT="$OUT/g02_live_receipt.json"
+export CH07_77_G02_WITNESS_READY_FILE="$OUT/witness_dds_ready.flag"
 STAGE=INIT; OWNED=(); NAMES=(); GZ_PGID=
 stage(){ STAGE="$1"; echo "STAGE=$STAGE" | tee -a "$OUT/stages.log"; }
 start(){
@@ -159,16 +160,18 @@ start witness python3 "$ROOT/ci/ch07_77_g02_live_rgbd_witness.py"
 # A one-shot volatile PointStamped published before DDS discovery is lost.
 # This is a witness setup race, NOT an image/Depth/TF failure. Start the
 # producers only after the observer's actual topic subscription is visible.
-stage WAIT_FOR_DDS_ONE_SHOT_SUBSCRIBER_DISCOVERY
+stage WAIT_FOR_INDEPENDENT_WITNESS_DDS_DISCOVERY
 DISCOVERED=0
-for attempt in $(seq 1 30);do
-  if timeout 3s ros2 topic info -v /ch07_77/target_ready 2>/dev/null \
-      | grep -Eq 'Subscription count:[[:space:]]*[1-9]'; then
+for attempt in $(seq 1 80);do
+  if [[ -s "$CH07_77_G02_WITNESS_READY_FILE" ]];then
     DISCOVERED=1;break
   fi
-  sleep .25
+  sleep .2
 done
-[[ "$DISCOVERED" -eq 1 ]] || { echo 'G02_WITNESS_NOT_SUBSCRIBED_BEFORE_TARGET';exit 8; }
+[[ "$DISCOVERED" -eq 1 ]] || { echo 'G02_WITNESS_DDS_PUBLISHER_NOT_DISCOVERED';exit 8; }
+# Allow DDS reliable subscription matching to settle before the first
+# one-shot target. No motor or camera algorithm is modified by this wait.
+sleep 1
 stage ORIGINAL_ROS_DETECTOR_COORD_TRANSFORM_NO_GOALS
 start detector ros2 run vision_basics object_detector --ros-args -p use_sim_time:=true
 start coord ros2 run vision_basics coord_transformer --ros-args -p use_sim_time:=true
