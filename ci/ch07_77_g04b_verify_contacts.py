@@ -69,12 +69,16 @@ conditions={
  "one_actual_moving_rod_sequence":all(k in p for k in
                   ("initial","pregrasp","approach","closed","lift","held","pre_release","settled")),
  "actual_arm_movegroup_and_gripper_fjt_sequence":(
-         4<=result.get("arm_goal_count",-1)<=6 and
+         5<=result.get("arm_goal_count",-1)<=12 and
          result.get("finger_goal_count")==3 and
          len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2 and
          len(result.get("finger_results",[]))==3 and
          result.get("preclose_object_shift_m",1)<=.018 and
-         result.get("aligned_pregrasp_x_error_m",1)<=.011),
+         result.get("aligned_pregrasp_x_error_m",1)<=.011 and
+         result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
+         result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
+         "yaw_stage" in p and
+         "yaw_final_insertion" in [a.get("name") for a in result.get("arm_results",[])]),
  "original_g04a_visual_stage_not_replayed":(
          result.get("g04a_old_live_xyz_replayed_as_current") is False
          and result.get("G05_integrated_live_perception")=="NOT_RUN"),
