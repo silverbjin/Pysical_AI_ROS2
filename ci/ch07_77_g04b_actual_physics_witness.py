@@ -212,6 +212,8 @@ def main():
         report["pose_snapshots"]["initial"]=rod_pose()
         assert math.dist(report["pose_snapshots"]["initial"],
                          meta["rod_center_initial_world_m"])<.045
+        assert meta["height_m"]==.08 and meta["rod_min_local_z_m"]>=.065,(
+            "G04B_SOURCE_GEOMETRY_WRIST_CLEARANCE_PREFLIGHT_FAILED")
         # First check that pre-grasp and grasp posture are genuine MoveIt
         # collision-free planner goals. The robot has not moved yet.
         for name,pose in (("pregrasp",[.62,-.12,1.85]),
@@ -355,7 +357,12 @@ def main():
         report["pose_snapshots"]["settled"]=rod_pose()
         obj=report["pose_snapshots"]["settled"]
         report["placement_xy_error_m"]=math.hypot(obj[0]-.55,obj[1]-.25)
-        report["placement_center_height_error_m"]=abs(obj[2]-1.85)
+        # G04B's new 80mm rod settles on destination bin top z=1.73;
+        # the centre must settle at 1.73+0.08/2=1.77m. Same ±55mm
+        # allowed error as before; do not claim an 80mm rod is 240mm.
+        expected_settled_center_z=1.73+meta["height_m"]/2
+        report["placement_center_expected_z_m"]=expected_settled_center_z
+        report["placement_center_height_error_m"]=abs(obj[2]-expected_settled_center_z)
         assert report["placement_xy_error_m"]<=.09,"G04B_NOT_IN_DESTINATION_ROI"
         assert report["placement_center_height_error_m"]<=.055,"G04B_NOT_SETTLED_ON_BIN_SUPPORT"
         report["actual_joint_state_final"]=w.joints[-1]
