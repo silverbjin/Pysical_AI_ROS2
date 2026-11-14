@@ -9,6 +9,13 @@ import math
 
 FINGERS=("joint_finger1","joint_finger2")
 ISOLATED_SEQUENCE=(("isolated_finger1",(.012,0.)),("isolated_reopen",(0.,0.)),("isolated_finger2",(0.,.012)))
+# Actual independent JointState at the FINAL no-contact grasp approach
+# from failed CI #43586568591; NOT an invented pose or the accepted pregrasp.
+FINAL_CONTACT_ARM_POSE=(-0.0009909730618859918,-0.06369211846948007,
+                        0.7902071898034883,1.5694273344965841,
+                        -0.0005144713775007642)
+SINGLE_FINGER2_GOAL=("single_finger2_at_actual_contact_pose",(0.0,0.011))
+
 
 def validate_arm_mode(mode):
     if mode not in ("DIRECT_FJT","MOVEGROUP"):

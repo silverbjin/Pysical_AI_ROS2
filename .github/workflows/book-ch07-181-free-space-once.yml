@@ -1,4 +1,4 @@
-name: Ch07 Issue 181 precise post-MoveGroup arm settle single contrast
+name: Ch07 Issue 181 MoveGroup-only contrast at failed grasp pose empty Gazebo
 on:
   pull_request:
     paths:
@@ -15,7 +15,7 @@ concurrency:
   group: book-ch07-181-free-space-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  one-cold-start-rod-present-but-no-approach:
+  one-final-contact-pose-empty-cold-start:
     runs-on: ubuntu-24.04
     timeout-minutes: 16
     steps:
@@ -51,7 +51,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull frozen Jazzy Harmonic image digest
         run: docker pull "$(cat ci-results/ch07-181-free-space/image_digest.txt)"
-      - name: ONE post-MoveGroup direct arm FJT settle then staged fingers NO APPROACH
+      - name: ONE MoveGroup arm Goal then finger2 11mm at actual failed pose, NO ROD SUPPORT
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=20s 780s \
@@ -67,7 +67,7 @@ jobs:
         run: |
           {
             echo '## Ch07 #181 one cold-start actuator diagnostic'
-            echo 'Compared with original post-MoveGroup stuck finger1 #43583477227: same world, initial open, MoveGroup pregrasp, then ONE direct arm FJT precise settle before finger Goal; no rod approach/G04B/G05.'
+            echo 'Only arm-control-path factor changed from previous real free-space CI #43587221825: DIRECT_FJT to actual MoveGroup. Same ground-only world, exact final failure pose, one finger2 11mm Goal, G04B/G05 NOT_RUN, Ch10 HOLD.'
             cat ci-results/ch07-181-free-space/receipt.json || true
             cat ci-results/ch07-181-free-space/result.json || true
             cat ci-results/ch07-181-free-space/stages.log || true

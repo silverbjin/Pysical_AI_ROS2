@@ -18,12 +18,11 @@ from sensor_msgs.msg import JointState
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from ch07_181_free_space_contract import (
- FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,ARM_SETTLE_FJT_TOL_RAD,validate_settle_mode,validate_arm_mode,arm_result_accepted,validate_preopen_mode,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,FINAL_CONTACT_ARM_POSE,SINGLE_FINGER2_GOAL,TOLERANCE_M,MOVEGROUP_PREGRASP_JOINT_TOL_RAD,ARM_SETTLE_FJT_TOL_RAD,validate_settle_mode,validate_arm_mode,arm_result_accepted,validate_preopen_mode,controller_sample,accept_real_finger_state)
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 # Exact prior G04B pregrasp arm goal from independently audited #43574030542.
-ARM_TARGET=(0.,-0.29612883318787947,0.9853157274797393,
-            1.5707963267948966,0.)
+ARM_TARGET=FINAL_CONTACT_ARM_POSE
 FINGER_TARGET={n:.012 for n in FINGERS}
 
 def gz_snapshot(label):
@@ -223,9 +222,10 @@ def main():
              raise RuntimeError("G04B_181_POST_SETTLE_REAL_ARM_ERROR")
        report["gz_before_finger"]=gz_snapshot("before_finger")
        mode=os.environ.get("CH07_181_COMMAND_SEQUENCE","BILATERAL")
-       if mode not in ("BILATERAL","ISOLATED"):raise RuntimeError("G04B_181_BAD_MODE")
+       if mode not in ("BILATERAL","ISOLATED","SINGLE_FINGER2"):raise RuntimeError("G04B_181_BAD_MODE")
        report["command_sequence_mode"]=mode
        cases=(ISOLATED_SEQUENCE if mode=="ISOLATED"
+              else (SINGLE_FINGER2_GOAL,) if mode=="SINGLE_FINGER2"
               else (("bilateral_free_space_12mm",(.012,.012)),))
        report["per_goal_results"]=[]
        for label,values in cases:
@@ -252,10 +252,13 @@ def main():
        report["independent_joint_state_after"]=mon.joint_samples[-1]
        report["controller_state_schema_errors"]=mon.controller_errors
        report["verdict"]=("ISOLATED_SEQUENCE_SCOPED_PASS" if mode=="ISOLATED"
+                          else "SINGLE_FINGER2_FINAL_POSE_SCOPED_PASS" if mode=="SINGLE_FINGER2"
                           else "FREE_SPACE_ACTUATION_SCOPED_PASS")
        report["status"]="SCOPED_PASS_FREE_SPACE_ONLY"
        if mode=="ISOLATED":
           print("CH07_181_FREE_SPACE_ISOLATED_SEQUENCE_SCOPED_PASS_NO_GRASP",flush=True)
+       elif mode=="SINGLE_FINGER2":
+          print("CH07_181_FINAL_CONTACT_POSE_FREE_SPACE_FINGER2_SCOPED_PASS",flush=True)
        else:
           print("CH07_181_FREE_SPACE_ACTUATION_SCOPED_PASS_NO_PHYSICAL_GRASP",flush=True)
     except Exception as exc:
