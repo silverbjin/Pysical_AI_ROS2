@@ -77,9 +77,12 @@ conditions={
                   ("initial","pregrasp","approach","closed","lift","held","pre_release","settled")),
  "actual_arm_movegroup_and_gripper_fjt_sequence":(
          4<=result.get("arm_goal_count",-1)<=13 and
-         result.get("finger_goal_count")==3 and
+         result.get("finger_goal_count")==4 and
          len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2 and
-         len(result.get("finger_results",[]))==3 and
+         len(result.get("finger_results",[]))==4 and
+         result.get("free_space_diagnostics_all_tracking_pass") is True and
+         len(result.get("finger_clearance_preflight",[]))==7 and
+         "contact_close_stage1" in [g.get("name") for g in result.get("finger_results",[])] and
          result.get("preclose_object_shift_m",1)<=.018 and
          result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
          "aligned_pregrasp" in p and
