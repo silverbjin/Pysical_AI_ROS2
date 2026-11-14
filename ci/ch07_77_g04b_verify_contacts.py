@@ -68,7 +68,7 @@ for b in blocks(raw,"contact"):
             contacts[f].append({"pair":names,"max_force_N":force})
             # Independent posthoc evidence must show current real contact,
             # not stale positive forces from the initial grasp stage.
-            ts=re.search(r'\\bstamp\\s*\\{\\s*sec:\\s*(\\d+)\\s+nsec:\\s*(\\d+)',b)
+            ts=re.search(r'\bstamp\s*\{\s*sec:\s*(\d+)\s+nsec:\s*(\d+)',b)
             if ts is not None and release_stamp is not None and force is not None:
                 t=float(ts.group(1))+float(ts.group(2))*1e-9
                 if 0<=release_stamp-t<=.4 and force>.05:
