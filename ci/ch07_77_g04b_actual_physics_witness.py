@@ -17,6 +17,7 @@ from control_msgs.msg import JointTrajectoryControllerState, JointTolerance
 from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
 from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
+from ch07_181_moveit_fjt_contract import validate_moveit_plan_for_direct_fjt, DIRECT_FJT_ARM_GOAL_TOLERANCE_RAD
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -198,7 +199,12 @@ class Witness(Node):
         goal.request.num_planning_attempts=3
         goal.request.max_velocity_scaling_factor=.17
         goal.request.max_acceleration_scaling_factor=.17
-        goal.planning_options.plan_only=bool(plan_only)
+        # Issue #181 actual public empty-world A/B:
+        # #43587221825 direct arm FJT -> finger2 physically 10.986mm PASS
+        # #43587538228 MoveGroup actual execution -> finger2≈0, no contact,
+        # same arm goal/world/finger command. Keep REAL MoveIt OMPL collision
+        # planning but route EXECUTION directly to GazeboSimSystem arm FJT.
+        goal.planning_options.plan_only=True
         goal.planning_options.replan=False
         c=Constraints()
         for name in ARM:
@@ -231,7 +237,39 @@ class Witness(Node):
             row["moveit_error"]!=MoveItErrorCodes.SUCCESS or
             row["planned_points"]==0):
             raise RuntimeError("G04B_ARM_"+label+"_NOT_SUCCEEDED_"+str(row))
+        row["moveit_plan_only_even_for_execution"]=True
+        row["arm_execution_protocol"]=("PLAN_ONLY" if plan_only else
+                                        "MOVEIT_PLANNED_TRAJECTORY_VIA_DIRECT_ARM_FJT")
         if not plan_only:
+            planned=outcome.result.planned_trajectory.joint_trajectory
+            row["direct_fjt_plan_contract"]=validate_moveit_plan_for_direct_fjt(planned,target)
+            if not self.arm_direct.wait_for_server(timeout_sec=8.0):
+                raise RuntimeError("G04B_181_REAL_ARM_FJT_SERVER_NOT_READY_"+label)
+            execute=FollowJointTrajectory.Goal()
+            execute.trajectory=planned
+            # Controller executes immediately; stale MoveIt planning timestamps
+            # must not become time-in-the-past trajectory rejections.
+            execute.trajectory.header.stamp.sec=0
+            execute.trajectory.header.stamp.nanosec=0
+            for name in ARM:
+                jt=JointTolerance()
+                jt.name=name
+                jt.position=DIRECT_FJT_ARM_GOAL_TOLERANCE_RAD
+                execute.goal_tolerance.append(jt)
+            execute.goal_time_tolerance.sec=3
+            ahandle=self.await_future(self.arm_direct.send_goal_async(execute),
+                                      label+"_FJT_ACCEPT",15)
+            if not ahandle or not ahandle.accepted:
+                raise RuntimeError("G04B_181_DIRECT_PLANNED_ARM_FJT_REJECTED_"+label)
+            answer=self.await_future(ahandle.get_result_async(),
+                                     label+"_FJT_RESULT",100,ahandle.cancel_goal_async)
+            row["direct_fjt_status"]=int(answer.status)
+            row["direct_fjt_result_error"]=int(answer.result.error_code)
+            row["direct_fjt_goal_tolerance_rad"]=DIRECT_FJT_ARM_GOAL_TOLERANCE_RAD
+            row["direct_fjt_goal_time_tolerance_s"]=3
+            row["final_joint_state"]=self.joints[-1] if self.joints else None
+            if row["direct_fjt_status"]!=GoalStatus.STATUS_SUCCEEDED or row["direct_fjt_result_error"]!=0:
+                raise RuntimeError("G04B_181_DIRECT_PLANNED_ARM_FJT_FAILED_"+label+"_"+str(row))
             errors={n:abs(self.joints[-1]["arm"][n]-target[n]) for n in ARM}
             row["measured_joint_errors_rad"]=errors
             if max(errors.values())>.075:
