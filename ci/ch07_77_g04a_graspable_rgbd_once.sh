@@ -139,8 +139,8 @@ timeout --signal=TERM --kill-after=5s 48s ros2 run ros_gz_sim create \
 grep -q 'Entity creation successful' "$OUT/create.log"
 stage CAPTURE_LIVE_NATIVE_GZ_MODEL_LIST_AND_DYNAMIC_POSE
 timeout 12s gz model --list > "$OUT/gz_models.txt" 2>&1
-grep -q g04a_red_cylinder "$OUT/gz_models.txt"
-timeout 12s gz model --model g04a_red_cylinder --pose > "$OUT/gz_red_pose.txt" 2>&1
+grep -q g04_grasp_cylinder "$OUT/gz_models.txt"
+timeout 12s gz model --model g04_grasp_cylinder --pose > "$OUT/gz_red_pose.txt" 2>&1
 stage BRIDGE_REAL_CLOCK_RGB_DEPTH_K
 start bridge ros2 run ros_gz_bridge parameter_bridge \
   '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock' \
@@ -161,7 +161,7 @@ grep -q 'joint_state_broadcaster.*active' "$OUT/controllers.log"
 stage START_SAFE_ADMISSION_BEFORE_ANY_DETECTOR_3D_INPUT
 start admission ros2 run vision_basics mission_controller --ros-args -p use_sim_time:=true
 stage START_INDEPENDENT_WITNESS_BEFORE_ONE_SHOT_PUBLICATION
-start witness python3 "$ROOT/ci/ch07_77_g04a_live_rgbd_witness.py"
+start witness python3 "$ROOT/ci/ch07_77_g04a_live_small_target_witness.py"
 # A one-shot volatile PointStamped published before DDS discovery is lost.
 # This is a witness setup race, NOT an image/Depth/TF failure. Start the
 # producers only after the observer's actual topic subscription is visible.
@@ -191,16 +191,18 @@ stage REVIEW_REAL_NATIVE_OBJECT_EXISTS_AND_NO_MOTION
 # Harmonic 'gz model -l' means LINK, not list; --list queries real Gazebo.
 # A live world can finish its finite iterations before the ROS witness ends.
 # Thus this evidence must be captured immediately after spawn, not now.
-grep -q 'g04a_red_cylinder' "$OUT/gz_models.txt" || {
+grep -q 'g04_grasp_cylinder' "$OUT/gz_models.txt" || {
   echo "CH07_77_G04A_GZ_MODEL_LIST_MISSING_RED_CYLINDER"; exit 7;
 }
-python3 - "$OUT/g04a_live_receipt.json" <<'PY'
+python3 - "$OUT/g04a_live_receipt.json" "$OUT/fixture_receipt.json" <<'PY'
 import json,sys
 from pathlib import Path
 r=json.loads(Path(sys.argv[1]).read_text())
 assert r["status"]=="SCOPED_PASS" and r["actual_ready_count"]==1
 assert r["G03_MoveIt"]==r["G04B_physical_grasp"]=="NOT_RUN"
-fixture=json.loads(Path("$OUT/fixture_receipt.json").read_text())
+fixture=json.loads(Path(sys.argv[2]).read_text())
+assert fixture["geometric_diameter_clearance"]=="PASS"
+assert fixture["geometric_2R_wrist_reach"]=="PASS"
 assert r["Ch10"]=="HOLD"
 print("CH07_77_G04A_INDEPENDENT_ACTUAL_ROS_SENSOR_RECEIPT_PASS")
 PY
