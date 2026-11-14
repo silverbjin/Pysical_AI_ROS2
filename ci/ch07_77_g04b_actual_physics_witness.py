@@ -223,53 +223,57 @@ def main():
         report["arm_results"].append(w.arm_goal("pregrasp",[.62,-.12,1.85]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["pregrasp"]=rod_pose()
-        # Critical original G04B RED: lateral approach with a mere 35mm
-        # gap knocked the rod from support via finger2 (124 contacts).
-        # Open fully (45mm face gap) and approach ALONG WORLD Y, i.e. the
-        # neutral axis between the original fingers. Before moving toward
-        # the rod, calibrate x using ACTUAL /joint_states, never nominal q.
-        aligned_x=.62
+        # Prior G04B RED: MoveGroup accepts a coarse 35-mrad joint target,
+        # but measured fingertips drift by up to 5.6cm across x-only IK
+        # retries. A `SUCCEEDED` Action is NOT a grasp-centre measurement.
+        # Hold the original grasp tool tilt constant and correct the REAL
+        # fingertip radius using the observed joint values. Correct ONLY
+        # q2 and compensating q5 (same original URDF); all corrections
+        # happen at y≈-0.12m, away from the rod. No feedback ⇒ no approach.
         report["precontact_alignment"]=[]
-        for idx in range(2):
-            actual=measured_finger_center(w.joints[-1]["arm"])
-            miss=.70-actual[0]
-            report["precontact_alignment"].append({
-                "step":idx,"actual_tip_xyz":actual,"x_miss_m":miss})
-            if abs(miss)<=.008:
-                break
-            assert abs(miss)<.045,"G04B_PREGRASP_UNEXPECTED_LARGE_FK_MISS"
-            aligned_x+=max(-.028,min(.028,miss))
-            assert .56<=aligned_x<=.68
-            report["arm_results"].append(
-                w.arm_goal("align_x_"+str(idx),[aligned_x,-.12,1.85]))
-            report["arm_goal_count"]+=1
-        # Before sweeping around the base, align RADIAL distance (not
-        # global x). The existing x-only alignment at yaw=-0.19 gave
-        # tip (0.694,-0.138), radius 0.708m; on a yaw sweep that becomes
-        # x=0.708 and leaves only 2.5mm of grasp clearance.
         report["radial_refinements"]=[]
-        for idx in range(4):
-            tip=measured_finger_center(w.joints[-1]["arm"])
+        for idx in range(8):
+            state=dict(w.joints[-1]["arm"])
+            tip=measured_finger_center(state)
             current_r=math.hypot(tip[0],tip[1])
             miss_r=.70-current_r
+            report["precontact_alignment"].append({
+                "step":idx,"actual_tip_xyz":tip,
+                "radius_m":current_r,"radius_error_m":miss_r})
+            if abs(miss_r)<=.0035:
+                break
+            # This is safe precontact motion only. If the initial model
+            # misses by more than 90mm, diagnose Xacro/FK before any Goal.
+            assert abs(miss_r)<=.09, "G04B_UNEXPECTED_FK_MODEL_MISS_NO_GOAL"
+            assert tip[1]<-.055, "G04B_PRECONTACT_CLEARANCE_LOST_NO_GOAL"
+            q2,q3=state["joint2"],state["joint3"]
+            radial_derivative=.5*math.cos(q2)+math.cos(q2+q3)
+            assert radial_derivative>.25, "G04B_RADIAL_JACOBIAN_SINGULAR"
+            delta=max(-.035,min(.035,miss_r/radial_derivative))
+            corrected=dict(state)
+            corrected["joint2"]=q2+delta
+            corrected["joint_wrist"]=state["joint_wrist"]-delta
+            assert -1.57079<corrected["joint2"]<1.57079
+            assert -1.5708<corrected["joint_wrist"]<1.5708
             report["radial_refinements"].append({
-                "step":idx,"current_radius_m":current_r,"miss_radius_m":miss_r})
-            if abs(miss_r)<=.0035:break
-            assert abs(miss_r)<.035, "G04B_PREAPPROACH_RADIUS_BAD_NO_GOAL"
-            aligned_x+=max(-.025,min(.025,miss_r))
-            assert .55<=aligned_x<=.70
-            report["arm_results"].append(
-                w.arm_goal("refine_radius_"+str(idx),[aligned_x,-.12,1.85]))
+                "step":idx,"delta_q2_rad":delta,
+                "joint_target_from_actual_state":corrected})
+            report["arm_results"].append(w.arm_goal(
+                "feedback_radial_"+str(idx),None,joint_override=corrected))
             report["arm_goal_count"]+=1
+            w.spin_for(.30)
         final_pre=measured_finger_center(w.joints[-1]["arm"])
+        report["aligned_pregrasp_tip_xyz"]=final_pre
         report["aligned_pregrasp_radius_error_m"]=abs(
             math.hypot(final_pre[0],final_pre[1])-.70)
-        assert report["aligned_pregrasp_radius_error_m"]<=.005,(
-            "G04B_RADIAL_TIP_ALIGNMENT_NOT_ACCURATE_NO_APPROACH")
-        report["aligned_pregrasp_tip_xyz"]=final_pre
         report["aligned_pregrasp_x_error_m"]=abs(final_pre[0]-.70)
-        assert report["aligned_pregrasp_x_error_m"]<=.011,(
-            "G04B_PREGRASP_NOT_LATERALLY_ALIGNED_NO_APPROACH")
+        assert report["aligned_pregrasp_radius_error_m"]<=.005,(
+            "G04B_MEASURED_RADIAL_TARGET_UNMET_NO_APPROACH")
+        assert final_pre[1]<-.055, "G04B_PRECONTACT_CLEARANCE_LOST"
+        report["pose_snapshots"]["aligned_pregrasp"]=rod_pose()
+        assert math.dist(report["pose_snapshots"]["aligned_pregrasp"],
+                         report["pose_snapshots"]["initial"])<=.008,(
+            "G04B_ROD_MOVED_DURING_RADIAL_ALIGNMENT_NO_APPROACH")
         # Only a gripper already centred in X is allowed to approach the
         # object along Y. Fail before closing if the dynamic rod moves.
         # Previous G04B RED #43558555414 re-solved 2R IK at y=0 and
