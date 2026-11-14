@@ -373,6 +373,20 @@ def main():
         native_raw=Path(os.environ["CH07_77_G04B_NATIVE_RAW"])
         assert native_raw.is_file(), "G04B_NATIVE_CONTACT_RECORDER_ABSENT"
         before_close_bytes=native_raw.stat().st_size
+        # NEW native physics admission gate based on CI #43571761460:
+        # wrist contacted the 18mm support wall at x=.691 z≈1.873 before
+        # one finger stopped at q=0. A successful arm Action is NOT enough.
+        # Read the passive support collision sensor generated only in G04B.
+        support_raw=Path(os.environ["CH07_77_G04B_SUPPORT_RAW"])
+        assert support_raw.is_file() and support_raw.stat().st_size>0,(
+            "G04B_NATIVE_SUPPORT_CONTACT_OBSERVER_MISSING_NO_CLOSE")
+        wrist_support_hits=support_raw.read_bytes().count(
+            b"my_robot::link_wrist::link_wrist_collision")
+        report["wrist_support_contact_mentions_preclose"]=wrist_support_hits
+        if wrist_support_hits:
+            raise RuntimeError(
+                "G04B_WRIST_SUPPORT_PHYSICAL_INTERFERENCE_NO_GRIPPER_GOAL "+
+                str(wrist_support_hits))
         report["native_before_close"]={
             link:native_robot_link_pose(link)
             for link in ("link_wrist","finger1","finger2")}
