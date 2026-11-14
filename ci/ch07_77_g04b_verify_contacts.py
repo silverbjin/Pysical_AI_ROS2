@@ -7,6 +7,7 @@ plus independent real Gazebo rod poses showing lift, 1.3s hold and release.
 """
 import hashlib,json,math,re,sys
 from pathlib import Path
+from ch07_181_physical_preload_contract import actual_preload_pass
 raw_path,physical_path,out_path,support_path=map(Path,sys.argv[1:5])
 raw=raw_path.read_text(errors="replace")
 support_native=support_path.read_bytes()
@@ -69,6 +70,13 @@ conditions={
  "no_wrist_support_collision_in_entire_trajectory":support_wrist_mentions==0,
  "real_both_fingers_at_least_three_contacts":all(v["contact_events"]>=3 for v in summary.values()),
  "real_both_fingers_positive_force":all(v["positive_contact_force_count"]>=1 for v in summary.values()),
+ # Original controller Action must NOT substitute for real measured 2mm
+ # lower-limit release held after MoveGroup and right before physical close.
+ "real_finger2_2mm_before_and_after_movegroup":actual_preload_pass(
+     result.get("lower_stop_release_finger2_pre_movegroup"),
+     result.get("lower_stop_release_after_pregrasp_m"),
+     result.get("lower_stop_release_before_contact_m")) and
+     result.get("lower_stop_release_real_actual_pass") is True,
  "real_dynamic_world_lift_at_least_0_05m":result.get("lift_m",-1)>=.05,
  "1_3s_hold_pose_drift_le_0_025m":result.get("object_pose_drift_during_hold_m",1) <=.025,
  "placement_xy_error_le_0_09m":result.get("placement_xy_error_m",1)<=.09,
@@ -80,14 +88,17 @@ conditions={
          result.get("finger_goal_count")==4 and
          len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2 and
          len(result.get("finger_results",[]))==4 and
-         result.get("free_space_diagnostics_all_tracking_pass") is True and
-         len(result.get("finger_clearance_preflight",[]))==7 and
-         "contact_close_stage1" in [g.get("name") for g in result.get("finger_results",[])] and
+         result.get("free_space_diagnostics_status")==
+             "NOT_RERUN_PRIOR_PUBLIC_SCOPED_EVIDENCE" and
+         result.get("finger_clearance_preflight")==[] and
+         [g.get("name") for g in result.get("finger_results",[])] ==
+             ["open","lower_stop_release_finger2_2mm","contact_close","release"] and
          result.get("preclose_object_shift_m",1)<=.018 and
          result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
          "aligned_pregrasp" in p and
          all(v.get("name","").startswith(("pregrasp","x_approach_",
-                                         "fine_x_alignment_","lift","transfer","grasp"))
+                                         "fine_x_alignment_","lift","transfer","grasp",
+                                         "post_movegroup_direct_fjt_arm_settle"))
              for v in result.get("arm_results",[])) and
          result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
          "x_clearance_stage" in p and
