@@ -1,9 +1,28 @@
 # LAB_7_7_GUIDE_KO — 7.7절 인식 기반 pick-and-place 전체 파이프라인 구축
 
 > 대상: Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, Ch07 단독 실습
-> 기준 commit: a318c04a69a003e5c5d5998f077f2b8a8f36a1a5 (2026-10-20)
-> 판정: **BLOCKED — 인식·좌표변환·미션 간 계약 단절**
+> **현재 main 기준 재점검:** 이전 2026-10-20 원본 코드 리뷰 결과를 이력으로 유지하면서 2026-11-14의 기통과 CI·Artifact를 연결함. 원본 7.7의 미션 입력 결손은 아직 해결되지 않음.
+> 판정: **BLOCKED — 인식·좌표변환·미션 간 계약 단절 (7.2~7.6의 개별 SCOPED PASS와 별개)**
 > 실제 ROS 2/Gazebo/MoveIt 실행 검증: **미수행**. 아래 절차는 수정 후 점검을 위한 실습 가이드이며 실측 성공 증거가 아니다.
+
+## 출판 전 필독 — 무엇이 실제 통과했고 무엇이 아직 실행 불가능한가
+
+| 구성 요소 | 실제 검수 증거 | 정확한 수락 범위 |
+|---|---|---|
+| 7.2 Gazebo RGB·Depth·CameraInfo·TF | [#43442224511](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43442224511), [#43457034068](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43457034068), [#43473755483](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43473755483) | OGRE2 실제 RGB/Depth/Cloud 숫자, PointCloud 좌표축 구별 및 투영 1.06mm 중앙값, **시야 내 시험용 표적만** |
+| 7.3 실제 ROS CvBridge | [#43349103331](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43349103331) | Synthetic 이미지의 OpenCV 엣지 처리 |
+| 7.4 물체 감지 | [#43350043334](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43350043334) | Synthetic 빨간 물체 중심과 invalid 처리 |
+| 7.5 2D→3D 변환 | [#43352872591](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43352872591) | Synthetic Depth/K/TF와 invalid 차단 |
+| 7.6 그리퍼 | [실제 동작 #43354355284](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43354355284)와 [종료 전용 #43358805356](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43358805356) | 실제 Gazebo 두 손가락 개폐 및 별도 종료 검증; **실물체 물리 파지 없음** |
+| **7.7 전체 미션** | **없음** | **BLOCKED**: 감지→3D 목표→MoveIt→물체 실제 파지/운반/배치 연결 미구현 |
+
+현재 `setup.py`에는 `object_detector`, `coord_transformer`, `gripper_controller` 엔트리만 있고 **`mission_controller` console_script는 등록돼 있지 않습니다**. `mission_controller.py`는 `/camera/target_pixel`이나 유효한 3D 목표를 구독하지 않고 `target_object` TF를 기다립니다. 이어서 미션 함수에 전달된 목표 `(t_x,t_y,t_z)`를 쓰지 않고 `move_arm(1.0,0.0,...)` 등의 **고정 좌표로 명령**합니다.
+
+**따라서 원본 `mission_controller.py`를 실행하거나 임의로 정적 `target_object` TF를 만들어 MoveIt Goal을 승인해도 이를 '인식 기반 집기' 실습 성공으로 간주하지 않습니다.** 교육용 출판 기본 실습은 7.2~7.6의 독립 부분 시연까지입니다. §7.7은 지금 단계에서 후속 종합 프로젝트 과제로 표시하고, 이 가이드의 아래 단계는 **구현·검증 체크리스트이지 합격한 일괄 실행 명령이 아닙니다**.
+
+### §7.7 정식 PASS로 변경하기 전에 필요한 하나의 증거 체인
+
+`target_pixel / target_valid` → 동일 시각 Depth+K+TF를 이용한 `target_position(base_link, m)` → 해당 목표가 실제 pre-grasp/approach/retreat 계획에 사용됨 → 실제 FollowJointTrajectory Goal/Result → **Gazebo 대상 물체의 동적 world pose가 집기·상승·배치까지 이동**. 여기에 invalid depth/stale TF/IK failure에서 **Goal을 보내지 않는 차단**과 종료·회수 로그가 필요합니다. 동일 프로세스에서 모두 확인하기 전에는 성공한 부분을 합산하여 전체 PASS로 승격하지 않습니다.
 
 ## 1. 목표와 선행 조건
 이 절은 검출된 객체의 3D 위치를 로봇 TCP의 grasp pose로 변환하고, 계획→접근→파지→확인→이동→배치를 반복 가능한 상태 머신으로 구현하는 종합 프로젝트다.
@@ -25,7 +44,7 @@ grep -n 'target_pixel\|PointStamped' src/vision_basics/vision_basics/object_dete
 grep -A15 console_scripts src/vision_basics/setup.py
 ~~~
 
-점검해야 할 사실: vision_basics라는 패키지명, mission_controller와 object_detector console entry 누락, target_object TF의 공급자가 누구인지, 하드코딩된 이동 좌표 존재 여부, 실제 ros2_control controller 종류. Ch08~Ch13의 오버레이 설치물을 Ch07과 섞지 않는다.
+점검해야 할 사실: vision_basics라는 패키지명, mission_controller 엔트리 누락(반면 object_detector 엔트리는 현재 등록됨), target_object TF의 공급자가 누구인지, 하드코딩된 이동 좌표 존재 여부, 실제 ros2_control controller 종류. Ch08~Ch13의 오버레이 설치물을 Ch07과 섞지 않는다.
 
 ## 3. 수정 및 단계별 실습 순서
 1. **카메라 입출력(7.2):** RGB·깊이·CameraInfo 브리지, TF optical frame, encoding·주파수를 확인한다.

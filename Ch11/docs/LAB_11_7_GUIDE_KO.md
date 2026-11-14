@@ -12,6 +12,7 @@
 
 ~~~bash
 cd ~/Pysical_AI_book
+export BOOK_REPO="$(pwd)"    # 저장소 루트. 이후 cd Ch11/ros2_ws에서도 유지
 source /opt/ros/jazzy/setup.bash
 cd Ch11/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy
@@ -36,10 +37,37 @@ ros2 launch my_quadruped_bot mapping_total.launch.py start_explorer:=true durati
 # 상태 모니터링
 ros2 topic echo /exploration/status
 # 수동 지도 저장 테스트가 필요한 경우
-bash Ch11/scripts/save_slam_map.sh "$HOME/Pysical_AI_maps/section_11_7"
+# 저장소 루트가 아닌 Ch11/ros2_ws에서도 유효한 경로로 호출
+bash "$BOOK_REPO/Ch11/scripts/save_slam_map.sh" "$HOME/Pysical_AI_maps/section_11_7_$(date +%Y%m%d_%H%M%S)"
 ~~~
 
 프로세스는 각기 다른 터미널에서 실행한다. 시뮬레이션·EKF·SLAM을 중복 실행하지 않는다. 움직이는 데모는 정지 명령과 터미널 종료 방법을 미리 확보하고 안전한 시뮬레이션에서만 수행한다.
+
+## 검수 판정 및 재현 명령의 실제 경계 (2026-11-14)
+
+**원본 `/slam_toolbox/save_map` 서비스의 결과는 `255`로 FAIL**이며, 해당 경로를 교재의 정상 지도 저장 예제로 간주하지 않습니다([Issue #130](https://github.com/silverbjin/Pysical_AI_ROS2/issues/130)). 반대로 실제 통과한 경로는 **공식 Nav2 Map Saver CLI**입니다. [공개 CI #43234887218](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43234887218)에서 실제 `/map`을 저장한 YAML·PGM과 138×137 셀, 비미확인 셀 1,500개를 확인했습니다. 이는 map 품질/loop closure, 전체 탐사나 GUI 합격을 의미하지 않습니다.
+
+최종 헤드 증거 [Artifact #13951847984](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43234887218/artifacts/13951847984)의 YAML SHA256은 `58089d42ea176340c80506158411c6a1cbd9ab6fddb9d87076822183aa877d94`, PGM SHA256은 `475efa95609f26bad9df07a77baf97f4174560c7da0e007ee303f73412888304`입니다. **이전 #43234487169의 YAML SHA를 최신 HEAD 증거에 혼용하지 않습니다.**
+
+실제 검증됐던 CLI 옵션을 사용하는 **검증 기준 명령**은 다음과 같습니다. 먼저 Gazebo+SLAM이 실행 중이고 `/map` 발행을 확인해야 합니다. 별도 모니터링 터미널에서 Jazzy와 Ch11 overlay를 동일하게 source합니다.
+
+~~~bash
+# 별도 터미널에서는 이전 터미널의 BOOK_REPO 환경변수가 자동 전달되지 않음
+export BOOK_REPO="${BOOK_REPO:-$HOME/Pysical_AI_book}"  # 실제 checkout 위치에 맞춰 변경
+test -d "$BOOK_REPO/Ch11/ros2_ws"
+source /opt/ros/jazzy/setup.bash
+source "$BOOK_REPO/Ch11/ros2_ws/install/setup.bash"
+ros2 topic info -v /map
+mkdir -p "$HOME/Pysical_AI_maps"
+MAP_PREFIX="$HOME/Pysical_AI_maps/book_map_$(date +%Y%m%d_%H%M%S)"
+ros2 run nav2_map_server map_saver_cli -f "$MAP_PREFIX" --ros-args \
+  -p save_map_timeout:=15.0 -p map_subscribe_transient_local:=true
+test -s "$MAP_PREFIX.yaml" && test -s "$MAP_PREFIX.pgm"
+~~~
+
+기존 `Ch11/scripts/save_slam_map.sh`는 이름 중복을 거부하는 편의용 래퍼이고 자체 timeout은 **10초**입니다. 이 스크립트의 모든 경로를 새로 실측한 것은 아니므로, 위의 **15초 CLI 실측 PASS와 스크립트 자체 PASS를 혼동하지 않습니다**. 지도 정확도, 5분 자동 탐사 3회, 지도 재로딩 및 실제 Nav2 주행은 여전히 `NOT_RUN`입니다.
+
+실습을 끝낼 때는 원본 `mapping_total.launch.py` 터미널에서 Ctrl+C로 종료하고, 토픽/TF/프로세스가 해제됐는지 확인합니다. 첫 번째 launch를 종료하지 않은 채 두 번째 launch를 중복 실행하면 안 됩니다.
 
 ## 4. 관찰 항목
 준비 완료 이전에는 /cmd_vel 탐사 명령이 나오지 않아야 한다. 탐사가 진행되면 전방 장애물에서 회전 및 정지 판단을 하고, 제한 시간이 지났거나 BLOCKED이면 명령이 0으로 돌아가야 한다. 지도는 partial일 수 있고 저장 파일의 실재·내용 검사까지 수행해야 한다.

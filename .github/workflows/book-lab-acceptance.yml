@@ -5,6 +5,8 @@ on:
       - '.github/workflows/book-lab-acceptance.yml'
       - 'ci/manifest.json'
       - 'ci/check_guides.py'
+      - 'ci/book_acceptance_matrix.py'
+      - 'ci/book_acceptance_evidence.json'
       - 'ci/tests/**'
       - 'ci/run_lab.sh'
       - 'ci/labs/**'
@@ -74,18 +76,25 @@ jobs:
         env:
           CHAPTER: "${{ github.event_name == 'pull_request' && 'all' || inputs.chapter }}"
         run: python3 ci/check_guides.py --chapter "$CHAPTER" --output ci-results/docs
+      - name: Reconcile 101-guide evidence without ROS / Gazebo execution
+        run: python3 ci/book_acceptance_matrix.py --output ci-results/book-101-matrix
       - name: Publish document report
         if: always()
         run: |
           if test -f ci-results/docs/SUMMARY.md; then
             cat ci-results/docs/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
           fi
+          if test -f ci-results/book-101-matrix/SUMMARY.md; then
+            cat ci-results/book-101-matrix/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Upload document evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: book-guide-preflight-${{ github.run_id }}
-          path: ci-results/docs/
+          path: |
+            ci-results/docs/
+            ci-results/book-101-matrix/
           if-no-files-found: warn
           retention-days: 14
   ch02-action-pilot:

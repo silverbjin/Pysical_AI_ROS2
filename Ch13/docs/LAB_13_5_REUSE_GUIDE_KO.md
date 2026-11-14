@@ -2,6 +2,9 @@
 
 이 가이드는 **소스 다운로드 → 고정 자산 준비 → 빌드 → 여섯 시나리오 → 결과 판독**을 직접 수행하는 실습이다. 각 절의 “구현 위치”에서 코드를 읽고, 바로 아래 명령으로 동작을 확인한다. 제공된 구현을 먼저 재현한 다음 부록의 수정 실습으로 진행한다.
 
+
+> **배포 소스와 과거 인수의 구분 (2026-11-14):** 위 다운로드는 현재 원격 `main` 기준입니다. 기존 Ch13 v53/R5/M4 인수 JSON은 당시 동결 소스·자산의 성공이며, 새 clone의 HEAD에 동일한 합격을 자동 전파하지 않습니다. `git rev-parse HEAD`·94개 외부 자산 해시·설치/실행 로그가 대응되는지 검수해야 합니다. 실제 새 WSL2 설치·GUI·실기 현장 인수는 `MANUAL_REQUIRED`입니다. Ch10 #123은 HOLD이며 재검하지 않습니다.
+
 **실행 환경:** Ubuntu 24.04 또는 WSL2의 Ubuntu 24.04, bash, ROS2 Jazzy. Windows 사용자는 Ubuntu 터미널을 연다. 아래 Linux 명령을 PowerShell에 붙여 넣지 않는다. 검증한 조합은 Python3.12.3·MuJoCo3.13.0·Nav2 1.3.13·CPU 추론이다. 비전 실습은 검증된 **15Hz 처리 선택**을 명시한다.
 
 **실습 결과:** 지도 목표 도착, 장애물 우회, 도달 불가 판정, 이동 중 취소, 실제 RGB-D에서 계산한 작업 위치 접근, 입력 손실 시 정지. 팔 파지는 다음 절의 과제다. 13.1~13.4는 보존하고, 여기부터 공개 Go2+Piper 통합 플랫폼으로 전환한다.
@@ -40,7 +43,7 @@ dpkg-query -W ros-jazzy-nav2-bringup ros-jazzy-nav2-controller \
 mkdir -p "$HOME/physicalai_13_5"
 cd "$HOME/physicalai_13_5"
 git clone --filter=blob:none --sparse --depth 1 --single-branch \
-  --branch feat/ch13-section-13-5-reuse-r2-20261102 \
+  --branch main \
   https://github.com/silverbjin/Pysical_AI_ROS2.git Pysical_AI_ROS2
 cd Pysical_AI_ROS2
 git sparse-checkout set Ch13/docs Ch13/dependencies Ch13/scripts/reuse_13_5 \
