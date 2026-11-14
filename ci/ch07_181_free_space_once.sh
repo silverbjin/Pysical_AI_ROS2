@@ -43,6 +43,11 @@ cleanup(){
    fi
    wait "$pg" 2>/dev/null || true
  done
+ # Audit ECS even on original expected FJT RED, never upgrade failed physics.
+ python3 "$ROOT/ci/ch07_181_ecs_trace_audit.py" \
+  "$OUT/gazebo_ecs_joint_finger2.csv" \
+  "$OUT/g04b_physical_receipt.json" \
+  "$OUT/ecs_causal_audit.json" >"$OUT/ecs_causal_audit.log" 2>&1
  python3 - "$OUT/result.json" "$STAGE" "$rc" "$shutdown" <<'PY'
 from pathlib import Path
 import json,sys
@@ -60,6 +65,22 @@ PY
 }
 trap cleanup EXIT
 
+stage PREPARE_OFFICIAL_GAZEBO_HARMONIC_DEV_APT_SOURCE_ONLY_IF_MISSING
+# The frozen runtime digest lacks the optional *development* APT source.
+# Add the official OSRF Gazebo apt feed ONLY in this disposable CI container.
+# Never change the pinned runtime image, original robot URDF or acceptance.
+if ! apt-cache show libgz-sim8-dev >/dev/null 2>&1;then
+ timeout 15s curl -fsSL https://packages.osrfoundation.org/gazebo.gpg \
+   -o /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+ codename="$(. /etc/os-release;printf '%s' "$VERSION_CODENAME")"
+ test "$codename" = noble
+ printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable %s main\n' "$codename" \
+   > /etc/apt/sources.list.d/gazebo-stable.list
+ timeout --signal=TERM --kill-after=10s 100s apt-get update -qq \
+   >"$OUT/apt_osrf_update.log" 2>&1
+fi
+apt-cache policy libgz-sim8-dev libgz-plugin2-dev >"$OUT/apt_gazebo_dev_policy.log"
+grep -Eq 'Candidate: [^ ]+' "$OUT/apt_gazebo_dev_policy.log"
 stage INSTALL_ONLY_MISSING_MOVEIT_JAZZY_DEPENDENCIES
 packages=(
   ros-jazzy-moveit-configs-utils
@@ -73,6 +94,7 @@ packages=(
   ros-jazzy-joint-trajectory-controller ros-jazzy-joint-state-broadcaster
   ros-jazzy-ros2-control ros-jazzy-robot-state-publisher
   ros-jazzy-xacro ros-jazzy-control-msgs ros-jazzy-pal-statistics-msgs
+  libgz-sim8-dev libgz-plugin2-dev cmake g++ pkg-config
 )
 missing=()
 for p in "${packages[@]}";do dpkg -s "$p" >/dev/null 2>&1||missing+=("$p");done
@@ -135,6 +157,34 @@ r.write_text(json.dumps({"original_fixture_models":names,"remaining_models":["gr
 "G00_G04A":"NOT_RERUN","Ch10":"HOLD"},indent=2)+"\n")
 PY
 
+stage BUILD_READONLY_GAZEBO_ECS_SYSTEM_PLUGIN
+timeout --signal=TERM --kill-after=5s 90s cmake \
+ -S "$ROOT/ci/ch07_181_ecs_trace" -B "$OUT/ecs_build" \
+ -DCMAKE_BUILD_TYPE=Release >"$OUT/ecs_configure.log" 2>&1
+timeout --signal=TERM --kill-after=5s 95s cmake \
+ --build "$OUT/ecs_build" --parallel 2 >"$OUT/ecs_compile.log" 2>&1
+test -s "$OUT/ecs_build/libch07_181_ecs_trace.so"
+export GZ_SIM_SYSTEM_PLUGIN_PATH="$OUT/ecs_build:${GZ_SIM_SYSTEM_PLUGIN_PATH:-}"
+export CH07_181_ECS_CSV="$OUT/gazebo_ecs_joint_finger2.csv"
+python3 - "$OUT/free_world.sdf" "$OUT/ecs_world_instrumentation_contract.json" <<'PY'
+from pathlib import Path
+import json,sys,xml.etree.ElementTree as ET
+file,receipt=map(Path,sys.argv[1:])
+tree=ET.parse(file)
+world=tree.getroot().find("./world[@name='book_camera']")
+assert world is not None
+assert [m.get("name") for m in world.findall("model")]==["ground"]
+assert not any(p.get("name")=="ch07_181::JointEcsTrace" for p in world.findall("plugin"))
+ET.SubElement(world,"plugin",{
+ "filename":"libch07_181_ecs_trace.so",
+ "name":"ch07_181::JointEcsTrace"})
+tree.write(file,encoding="unicode",xml_declaration=True)
+receipt.write_text(json.dumps({"world_model_names":["ground"],
+"plugin":"READ_ONLY_GZ_SIM_ECS","joint":"joint_finger2",
+"sample_phases":["pre","post"],"goal_count":1,
+"changes_physics_state":False,
+"g00_g04a":"NOT_RERUN","g04b":"NOT_RUN","g05":"NOT_RUN"},indent=2)+"\n")
+PY
 stage START_ORIGINAL_REAL_GAZEBO_WITH_GAZEBO_SIM_SYSTEM
 start rsp ros2 run robot_state_publisher robot_state_publisher \
  --ros-args --params-file "$OUT/rsp.yaml"
