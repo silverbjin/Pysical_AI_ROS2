@@ -30,6 +30,33 @@ def rod_pose():
     return [float(x) for x in m.groups()]
 
 
+def native_robot_link_pose(link):
+    """Independent Gazebo WORLD link pose, not reconstructed from JointState.
+
+    gz model --link returns model, inertial-local link pose, and ACTUAL
+    world link pose. Preserve world XYZ+RPY for collision geometry analysis.
+    """
+    if link not in ("finger1","finger2","link_wrist"):
+        raise ValueError("G04B_UNEXPECTED_NATIVE_LINK")
+    result=subprocess.run(["gz","model","--model","my_robot",
+                           "--link",link,"--pose"],
+                          capture_output=True,text=True,timeout=12,check=True)
+    section=result.stdout.split("  - Link [",1)
+    if len(section)!=2:
+        raise RuntimeError("G04B_GAZEBO_LINK_POSE_MISSING_"+link)
+    pattern=re.compile(
+        r"Pose \\[ XYZ \\(m\\) \\] \\[ RPY \\(rad\\) \\]:\\s*\\n"
+        r"\\s*\\[\\s*([-+0-9.]+)\\s+([-+0-9.]+)\\s+([-+0-9.]+)\\s*\\]"
+        r"\\s*\\n\\s*\\[\\s*([-+0-9.]+)\\s+([-+0-9.]+)\\s+([-+0-9.]+)\\s*\\]"
+    )
+    poses=pattern.findall(section[1])
+    # Each link lists its inertial relative pose first, then actual world.
+    if len(poses)<2:raise RuntimeError("G04B_NATIVE_LINK_WORLD_POSE_UNPARSEABLE_"+link)
+    values=list(map(float,poses[1]))
+    return {"world_xyz_m":values[:3],"world_rpy_rad":values[3:],
+            "raw_link_name":link}
+
+
 def arm_ik_tilted_fingers(x,y,z):
     """Exact original source 2R POSITION IK; wrist q5 preserves 0.72rad tilted finger direction.
 
@@ -331,12 +358,39 @@ def main():
         # This is a strict geometric prerequisite, not a PASS on contact.
         if abs(fingers_center[0]-rod[0])>.0105:
             raise RuntimeError("G04B_FINGER_GAP_NOT_CENTRED_NO_CLOSE")
-        # Close just past the Ø24mm rod's two ideal contact faces. No
-        # trajectory feedback/physics bypass. FJT may reject collision.
+        # Do NOT lift based on a successful Gripper FJT alone.
+        # Previous CI #43563447828: FJT SUCCEEDED q≈.01067m, yet no
+        # native Gazebo contact with either finger and rod did not lift.
+        # Capture native WORLD pose of BOTH links, preserving independent
+        # evidence of any mismatch with the original URDF/JointState FK.
+        native_raw=Path(os.environ["CH07_77_G04B_NATIVE_RAW"])
+        assert native_raw.is_file(), "G04B_NATIVE_CONTACT_RECORDER_ABSENT"
+        before_close_bytes=native_raw.stat().st_size
+        report["native_before_close"]={
+            link:native_robot_link_pose(link)
+            for link in ("link_wrist","finger1","finger2")}
         report["finger_results"].append(w.grip_goal("contact_close",.011))
         report["finger_goal_count"]+=1
         w.spin_for(.65)
         report["pose_snapshots"]["closed"]=rod_pose()
+        report["native_after_close"]={
+            link:native_robot_link_pose(link)
+            for link in ("link_wrist","finger1","finger2")}
+        with native_raw.open("rb") as src:
+            src.seek(before_close_bytes)
+            new_contact_bytes=src.read(40_000_000)
+        report["new_native_contact_bytes_after_close"]=len(new_contact_bytes)
+        report["native_per_finger_contact_mentions_after_close"]={
+            finger:new_contact_bytes.count((
+                "my_robot::"+finger+"::"+finger+"_collision").encode())
+            for finger in ("finger1","finger2")}
+        if not all(n>=3 for n in report[
+                "native_per_finger_contact_mentions_after_close"].values()):
+            raise RuntimeError(
+                "G04B_NO_NATIVE_BILATERAL_FINGER_CONTACT_BEFORE_LIFT")
+        # Final after-run audit still requires positive actual contact force
+        # and dynamic world pose lift+hold+release; this is merely a gate.
+
         report["arm_results"].append(w.arm_goal("lift",[.48,0,1.96]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["lift"]=rod_pose()
