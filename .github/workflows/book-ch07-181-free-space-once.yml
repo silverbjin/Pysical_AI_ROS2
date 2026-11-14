@@ -1,4 +1,4 @@
-name: Ch07 Issue 181 one hardware-command versus native-Gazebo causal trace
+name: Ch07 Issue 181 one read-only Gazebo ECS JointVelocityCmd causal trace
 on:
   pull_request:
     paths:
@@ -7,6 +7,9 @@ on:
       - 'ci/tests/test_ch07_181_free_space_contract.py'
       - 'ci/ch07_181_free_space_witness.py'
       - 'ci/ch07_181_hardware_native_contract.py'
+      - 'ci/ch07_181_ecs_trace/**'
+      - 'ci/ch07_181_ecs_trace_audit.py'
+      - 'ci/tests/test_ch07_181_ecs_trace_audit.py'
       - 'ci/tests/test_ch07_181_hardware_native_contract.py'
       - 'ci/ch07_181_free_space_once.sh'
   workflow_dispatch:
@@ -37,15 +40,22 @@ jobs:
             2>&1 | tee ci-results/ch07-181-free-space/contract_unit.log
           python3 -m unittest discover -s ci/tests -p test_ch07_181_hardware_native_contract.py -v \
             2>&1 | tee ci-results/ch07-181-free-space/hardware_native_contract_unit.log
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_ecs_trace_audit.py -v \
+            2>&1 | tee ci-results/ch07-181-free-space/ecs_audit_unit.log
           bash -n ci/ch07_181_free_space_once.sh
           python3 -m py_compile ci/ch07_181_free_space_contract.py \
             ci/ch07_181_free_space_witness.py \
-            ci/ch07_181_hardware_native_contract.py
+            ci/ch07_181_hardware_native_contract.py \
+            ci/ch07_181_ecs_trace_audit.py
           sha256sum \
             ci/ch07_181_free_space_contract.py \
             ci/ch07_181_free_space_witness.py \
             ci/ch07_181_hardware_native_contract.py \
             ci/tests/test_ch07_181_hardware_native_contract.py \
+            ci/ch07_181_ecs_trace_audit.py \
+            ci/tests/test_ch07_181_ecs_trace_audit.py \
+            ci/ch07_181_ecs_trace/ch07_181_ecs_trace.cc \
+            ci/ch07_181_ecs_trace/CMakeLists.txt \
             ci/ch07_181_free_space_once.sh \
             ci/ch07_77_g04b_instrument_finger_contacts.py \
             ci/ch07_77_g04b_physics_fixture.py \
@@ -58,7 +68,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull frozen Jazzy Harmonic image digest
         run: docker pull "$(cat ci-results/ch07-181-free-space/image_digest.txt)"
-      - name: "ONE original MoveGroup goal + single finger2: JTC reference, hardware command, Gazebo native pose"
+      - name: "ONE original MoveGroup goal + single finger2: JTC, hardware, Gazebo ECS velocity trace"
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=20s 780s \
