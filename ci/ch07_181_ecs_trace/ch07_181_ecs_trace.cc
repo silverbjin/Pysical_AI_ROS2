@@ -18,8 +18,14 @@
 #include <vector>
 namespace ch07_181 {
 class JointEcsTrace final: public gz::sim::System,
+  public gz::sim::ISystemConfigurePriority,
   public gz::sim::ISystemPreUpdate, public gz::sim::ISystemPostUpdate {
 public:
+ // The world plugin is loaded BEFORE robot-spawn gz_ros2_control.
+ // Observe AFTER its default-priority(0) PreUpdate, BEFORE physics Update.
+ // Without this, a pre-physics observer sees only the command reset to 0
+ // by the previous physics tick and may wrongly accuse the hardware bridge.
+ gz::sim::System::PriorityType ConfigurePriority() override {return 100;}
  JointEcsTrace() {
   const char *filename=std::getenv("CH07_181_ECS_CSV");
   out_.open(filename?filename:"/tmp/ch07_181_ecs_trace.csv",std::ios::out|std::ios::trunc);
@@ -75,6 +81,7 @@ private:
 };
 }
 GZ_ADD_PLUGIN(ch07_181::JointEcsTrace,gz::sim::System,
+ ch07_181::JointEcsTrace::ISystemConfigurePriority,
  ch07_181::JointEcsTrace::ISystemPreUpdate,
  ch07_181::JointEcsTrace::ISystemPostUpdate)
 GZ_ADD_PLUGIN_ALIAS(ch07_181::JointEcsTrace,"ch07_181::JointEcsTrace")
