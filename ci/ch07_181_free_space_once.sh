@@ -65,6 +65,22 @@ PY
 }
 trap cleanup EXIT
 
+stage PREPARE_OFFICIAL_GAZEBO_HARMONIC_DEV_APT_SOURCE_ONLY_IF_MISSING
+# The frozen runtime digest lacks the optional *development* APT source.
+# Add the official OSRF Gazebo apt feed ONLY in this disposable CI container.
+# Never change the pinned runtime image, original robot URDF or acceptance.
+if ! apt-cache show libgz-sim8-dev >/dev/null 2>&1;then
+ timeout 15s curl -fsSL https://packages.osrfoundation.org/gazebo.gpg \
+   -o /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+ codename="$(. /etc/os-release;printf '%s' "$VERSION_CODENAME")"
+ test "$codename" = noble
+ printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable %s main\n' "$codename" \
+   > /etc/apt/sources.list.d/gazebo-stable.list
+ timeout --signal=TERM --kill-after=10s 100s apt-get update -qq \
+   >"$OUT/apt_osrf_update.log" 2>&1
+fi
+apt-cache policy libgz-sim8-dev libgz-plugin2-dev >"$OUT/apt_gazebo_dev_policy.log"
+grep -Eq 'Candidate: [^ ]+' "$OUT/apt_gazebo_dev_policy.log"
 stage INSTALL_ONLY_MISSING_MOVEIT_JAZZY_DEPENDENCIES
 packages=(
   ros-jazzy-moveit-configs-utils
