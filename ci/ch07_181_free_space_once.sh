@@ -208,11 +208,12 @@ for finger in joint_finger1 joint_finger2;do
  grep -Eq "$finger/position.*claimed" "$OUT/hardware_interfaces.log"
 done
 
-stage ONE_FREE_SPACE_COLD_START_Q4_SETUP_AND_TWO_FINGER_FJT
+stage ONE_EMPTY_WORLD_COLD_START_ISOLATED_FINGER_ORDER
 export CH07_181_GAZEBO_ONLY=YES
+export CH07_181_COMMAND_SEQUENCE=ISOLATED
 timeout --signal=TERM --kill-after=10s 95s \
  python3 "$ROOT/ci/ch07_181_free_space_witness.py" >"$OUT/witness.log" 2>&1
-grep -q CH07_181_FREE_SPACE_ACTUATION_SCOPED_PASS_NO_PHYSICAL_GRASP "$OUT/witness.log"
+grep -q CH07_181_FREE_SPACE_ISOLATED_SEQUENCE_SCOPED_PASS_NO_GRASP "$OUT/witness.log"
 stage VERIFY_NO_NATIVE_FINGER_CONTACT
 for finger in finger1 finger2;do
  if grep -q 'collision1:' "$OUT/native_$finger.log";then

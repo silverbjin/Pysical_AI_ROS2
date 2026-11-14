@@ -4,7 +4,7 @@ import pathlib,sys,unittest
 from types import SimpleNamespace
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
 from ch07_181_free_space_contract import (
- FINGERS,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,controller_sample,accept_real_finger_state)
 
 def msg(ref=(.012,.012),feedback=(.0115,.0116),error=(.0005,.0004)):
   return SimpleNamespace(
@@ -15,6 +15,9 @@ def msg(ref=(.012,.012),feedback=(.0115,.0116),error=(.0005,.0004)):
     error=SimpleNamespace(positions=list(error)))
 
 class FreeSpaceContract(unittest.TestCase):
+ def test_original_isolated_order_is_one_controlled_candidate(self):
+  self.assertEqual([v[0] for v in ISOLATED_SEQUENCE],["isolated_finger1","isolated_reopen","isolated_finger2"])
+  self.assertEqual(ISOLATED_SEQUENCE[-1][1],(0.,.012))
  def test_jazzy_reference_feedback_not_legacy_desired_actual(self):
   s=controller_sample(msg())
   self.assertEqual(s["reference"]["joint_finger2"],.012)

@@ -16,7 +16,7 @@ from control_msgs.msg import JointTolerance,JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 from ch07_181_free_space_contract import (
- FINGERS,TOLERANCE_M,controller_sample,accept_real_finger_state)
+ FINGERS,ISOLATED_SEQUENCE,TOLERANCE_M,controller_sample,accept_real_finger_state)
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 # Exact prior G04B pregrasp arm goal from independently audited #43574030542.
@@ -141,29 +141,42 @@ def main():
        if max(abs(a[n]-ARM_TARGET[i]) for i,n in enumerate(ARM))>.075:
           raise RuntimeError("G04B_181_ARM_SETUP_NOT_TRACKED")
        report["gz_before_finger"]=gz_snapshot("before_finger")
-       before_ctl=len(mon.controller_samples)
-       report["finger_goal_count"]=1
-       finger=mon.send(mon.grip,FINGERS,(.012,.012),2,TOLERANCE_M,
-                       "bilateral_free_space_12mm")
-       report["finger_result"]=finger
+       mode=os.environ.get("CH07_181_COMMAND_SEQUENCE","BILATERAL")
+       if mode not in ("BILATERAL","ISOLATED"):raise RuntimeError("G04B_181_BAD_MODE")
+       report["command_sequence_mode"]=mode
+       cases=(ISOLATED_SEQUENCE if mode=="ISOLATED"
+              else (("bilateral_free_space_12mm",(.012,.012)),))
+       report["per_goal_results"]=[]
+       for label,values in cases:
+          before_ctl=len(mon.controller_samples)
+          report["finger_goal_count"]+=1
+          result=mon.send(mon.grip,FINGERS,values,2,TOLERANCE_M,label)
+          measured=mon.joint_samples[-1]["fingers"]
+          relevant=[row for row in mon.controller_samples[before_ctl:]
+                    if row["stamp"]>=result["before_stamp"]]
+          goal={n:float(v) for n,v in zip(FINGERS,values)}
+          result["measured_fingers"]=measured
+          result["jtc_reference_feedback_error_trace"]=relevant
+          result["joint_states_during_goal"]=[
+             row for row in mon.joint_samples if row["stamp"]>=result["before_stamp"]]
+          verdict=accept_real_finger_state(
+             result["action_status"],result["result_error_code"],measured,
+             goal,relevant,result["after_stamp"],result["before_stamp"])
+          if mon.controller_errors:verdict="JTC_SCHEMA_INVALID"
+          result["independent_joint_state_verdict"]=verdict
+          report["per_goal_results"].append(result)
+          if verdict!="FREE_SPACE_ACTUATION_SCOPED_PASS":
+             raise RuntimeError("G04B_181_"+label+"_"+verdict)
        report["gz_after_finger"]=gz_snapshot("after_finger")
-       measured=mon.joint_samples[-1]["fingers"]
        report["independent_joint_state_after"]=mon.joint_samples[-1]
-       relevant=[row for row in mon.controller_samples[before_ctl:]
-                    if row["stamp"]>=finger["before_stamp"]]
-       report["controller_state_during_goal"]=relevant
        report["controller_state_schema_errors"]=mon.controller_errors
-       report["joint_state_during_goal"]=[
-          row for row in mon.joint_samples if row["stamp"]>=finger["before_stamp"]]
-       verdict=accept_real_finger_state(
-          finger["action_status"],finger["result_error_code"],measured,
-          FINGER_TARGET,relevant,finger["after_stamp"],finger["before_stamp"])
-       if mon.controller_errors:verdict="JTC_SCHEMA_INVALID"
-       report["verdict"]=verdict
-       if verdict!="FREE_SPACE_ACTUATION_SCOPED_PASS":
-          raise RuntimeError("G04B_181_"+verdict)
+       report["verdict"]=("ISOLATED_SEQUENCE_SCOPED_PASS" if mode=="ISOLATED"
+                          else "FREE_SPACE_ACTUATION_SCOPED_PASS")
        report["status"]="SCOPED_PASS_FREE_SPACE_ONLY"
-       print("CH07_181_FREE_SPACE_ACTUATION_SCOPED_PASS_NO_PHYSICAL_GRASP",flush=True)
+       if mode=="ISOLATED":
+          print("CH07_181_FREE_SPACE_ISOLATED_SEQUENCE_SCOPED_PASS_NO_GRASP",flush=True)
+       else:
+          print("CH07_181_FREE_SPACE_ACTUATION_SCOPED_PASS_NO_PHYSICAL_GRASP",flush=True)
     except Exception as exc:
        report["reason"]=repr(exc)
        report["status"]="FAIL"

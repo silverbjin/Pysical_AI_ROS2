@@ -8,6 +8,7 @@ This module never infers physical movement from FJT Action success alone.
 import math
 
 FINGERS=("joint_finger1","joint_finger2")
+ISOLATED_SEQUENCE=(("isolated_finger1",(.012,0.)),("isolated_reopen",(0.,0.)),("isolated_finger2",(0.,.012)))
 GOAL_M=0.012
 TOLERANCE_M=0.001
 
