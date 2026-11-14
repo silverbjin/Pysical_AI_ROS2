@@ -199,6 +199,23 @@ def main():
         report["arm_results"].append(w.arm_goal("approach",[.70,0,1.90]))
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["approach"]=rod_pose()
+        # Independent actual robot JointState -> original source FK, not
+        # commanded joint targets or MoveGroup result pose. Preserve this
+        # observation on failures to diagnose millimetre-scale grasp error.
+        q=w.joints[-1]["arm"]
+        rad=.5*math.sin(q["joint2"])+math.sin(q["joint2"]+q["joint3"])
+        yaw=q["joint1"];tilt=q["joint2"]+q["joint3"]+q["joint_wrist"]
+        wrist=[rad*math.cos(yaw),rad*math.sin(yaw),
+               .6+.5*math.cos(q["joint2"])+math.cos(q["joint2"]+q["joint3"])]
+        fingers_center=[
+            wrist[0]+.10*math.sin(tilt)*math.cos(yaw),
+            wrist[1]+.10*math.sin(tilt)*math.sin(yaw),
+            wrist[2]+.10*math.cos(tilt)]
+        rod=report["pose_snapshots"]["approach"]
+        report["actual_wrist_xyz_before_grip_m"]=wrist
+        report["actual_fingertip_center_before_grip_m"]=fingers_center
+        report["actual_rod_lateral_offset_before_grip_m"]=math.hypot(
+            fingers_center[0]-rod[0],fingers_center[1]-rod[1])
         # Close just past the Ø24mm rod's two ideal contact faces. No
         # trajectory feedback/physics bypass. FJT may reject collision.
         report["finger_results"].append(w.grip_goal("contact_close",.011))
