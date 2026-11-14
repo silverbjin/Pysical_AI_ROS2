@@ -1,4 +1,4 @@
-name: Ch07 Issue 181 MoveGroup-only contrast at failed grasp pose empty Gazebo
+name: Ch07 Issue 181 one hardware-command versus native-Gazebo causal trace
 on:
   pull_request:
     paths:
@@ -6,6 +6,8 @@ on:
       - 'ci/ch07_181_free_space_contract.py'
       - 'ci/tests/test_ch07_181_free_space_contract.py'
       - 'ci/ch07_181_free_space_witness.py'
+      - 'ci/ch07_181_hardware_native_contract.py'
+      - 'ci/tests/test_ch07_181_hardware_native_contract.py'
       - 'ci/ch07_181_free_space_once.sh'
   workflow_dispatch:
 permissions:
@@ -33,12 +35,17 @@ jobs:
           echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-181-free-space/image_digest.txt
           python3 -m unittest discover -s ci/tests -p test_ch07_181_free_space_contract.py -v \
             2>&1 | tee ci-results/ch07-181-free-space/contract_unit.log
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_hardware_native_contract.py -v \
+            2>&1 | tee ci-results/ch07-181-free-space/hardware_native_contract_unit.log
           bash -n ci/ch07_181_free_space_once.sh
           python3 -m py_compile ci/ch07_181_free_space_contract.py \
-            ci/ch07_181_free_space_witness.py
+            ci/ch07_181_free_space_witness.py \
+            ci/ch07_181_hardware_native_contract.py
           sha256sum \
             ci/ch07_181_free_space_contract.py \
             ci/ch07_181_free_space_witness.py \
+            ci/ch07_181_hardware_native_contract.py \
+            ci/tests/test_ch07_181_hardware_native_contract.py \
             ci/ch07_181_free_space_once.sh \
             ci/ch07_77_g04b_instrument_finger_contacts.py \
             ci/ch07_77_g04b_physics_fixture.py \
@@ -51,7 +58,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull frozen Jazzy Harmonic image digest
         run: docker pull "$(cat ci-results/ch07-181-free-space/image_digest.txt)"
-      - name: ONE MoveGroup arm Goal then finger2 11mm at actual failed pose, NO ROD SUPPORT
+      - name: "ONE original MoveGroup goal + single finger2: JTC reference, hardware command, Gazebo native pose"
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=20s 780s \

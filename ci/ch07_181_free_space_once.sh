@@ -72,7 +72,7 @@ packages=(
   ros-jazzy-controller-manager ros-jazzy-ros2controlcli
   ros-jazzy-joint-trajectory-controller ros-jazzy-joint-state-broadcaster
   ros-jazzy-ros2-control ros-jazzy-robot-state-publisher
-  ros-jazzy-xacro ros-jazzy-control-msgs
+  ros-jazzy-xacro ros-jazzy-control-msgs ros-jazzy-pal-statistics-msgs
 )
 missing=()
 for p in "${packages[@]}";do dpkg -s "$p" >/dev/null 2>&1||missing+=("$p");done
@@ -224,6 +224,14 @@ for finger in joint_finger1 joint_finger2;do
  grep -Eq "$finger/position.*claimed" "$OUT/hardware_interfaces.log"
 done
 
+stage VERIFY_REAL_GAZEBO_NATIVE_FINGER2_AXIS_AND_COMMAND_OBSERVER
+timeout 12s gz model --model my_robot --joint joint_finger2 >"$OUT/gz_native_finger2_joint_before_goal.log" 2>&1
+grep -q 'Name: joint_finger2' "$OUT/gz_native_finger2_joint_before_goal.log"
+grep -A 1 'Axis unit vector' "$OUT/gz_native_finger2_joint_before_goal.log" | grep -Fq '[-1 0 0]'
+ros2 interface show pal_statistics_msgs/msg/Statistics >"$OUT/hardware_introspection_message_type.txt"
+# The topic is inspected by a typed subscriber in the witness; command names
+# and values must be present in raw evidence before attributing cause.
+timeout 12s ros2 topic info /controller_manager/introspection_data/full  >"$OUT/hardware_introspection_topic_info.log" 2>&1 || true
 stage START_REAL_MOVEGROUP_FOR_SINGLE_FINAL_GRASP_POSE_ONLY
 start move_group ros2 run moveit_ros_move_group move_group \
  --ros-args --params-file "$OUT/move_group.yaml"
