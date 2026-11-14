@@ -6,6 +6,8 @@ on:
       - 'ci/ch07_77_g04b_physics_fixture.py'
       - 'ci/ch07_77_g04b_instrument_finger_contacts.py'
       - 'ci/ch07_77_g04b_actual_physics_witness.py'
+      - 'ci/ch07_181_arm_settle_contract.py'
+      - 'ci/tests/test_ch07_181_arm_settle_contract.py'
       - 'ci/ch07_77_g04b_verify_contacts.py'
       - 'ci/ch07_77_g04b_physical_once.sh'
   workflow_dispatch:
@@ -38,9 +40,11 @@ jobs:
             Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro \
             > ci-results/ch07-77-g04b/input_hashes.txt
           bash -n ci/ch07_77_g04b_physical_once.sh
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_arm_settle_contract.py -v
           python3 -m py_compile ci/ch07_77_g04b_physics_fixture.py \
             ci/ch07_77_g04b_instrument_finger_contacts.py \
             ci/ch07_77_g04b_actual_physics_witness.py \
+            ci/ch07_181_arm_settle_contract.py \
             ci/ch07_77_g04b_verify_contacts.py
       - uses: docker/login-action@v3
         with:

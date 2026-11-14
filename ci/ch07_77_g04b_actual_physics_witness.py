@@ -14,6 +14,7 @@ from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTrajectoryControllerState, JointTolerance
+from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -111,6 +112,8 @@ class Witness(Node):
     def __init__(self):
         super().__init__("ch07_77_g04b_actual_gazebo_contact_witness")
         self.move=ActionClient(self,MoveGroup,"/move_action")
+        self.arm_direct=ActionClient(self,FollowJointTrajectory,
+                                     "/arm_group_controller/follow_joint_trajectory")
         self.grip=ActionClient(self,FollowJointTrajectory,
                                "/gripper_group_controller/follow_joint_trajectory")
         self.joints=[]
@@ -233,6 +236,45 @@ class Witness(Node):
                 raise RuntimeError("G04B_ARM_"+label+"_JOINT_ERROR_EXCESS_"+str(errors))
         return row
 
+    def arm_precision_settle(self,target):
+        """One direct FJT after successful REAL MoveGroup; Issue #181 bounded remedy."""
+        if set(target)!=set(ARM) or not all(math.isfinite(v) for v in target.values()):
+            raise ValueError("G04B_181_ARM_SETTLE_INVALID_TARGET")
+        if not self.arm_direct.wait_for_server(timeout_sec=8.):
+            raise RuntimeError("G04B_181_ARM_FJT_SERVER_NOT_READY")
+        goal=FollowJointTrajectory.Goal()
+        goal.trajectory.joint_names=list(ARM)
+        point=JointTrajectoryPoint()
+        point.positions=[float(target[n]) for n in ARM]
+        point.time_from_start.sec=3
+        goal.trajectory.points=[point]
+        for n in ARM:
+            jt=JointTolerance()
+            jt.name=n
+            jt.position=JOINT_GOAL_TOL_RAD
+            goal.goal_tolerance.append(jt)
+        goal.goal_time_tolerance.sec=2
+        handle=self.await_future(self.arm_direct.send_goal_async(goal),
+                                 "post_movegroup_settle_ACCEPT",12)
+        if not handle or not handle.accepted:
+            raise RuntimeError("G04B_181_ARM_FJT_SETTLE_REJECTED")
+        outcome=self.await_future(handle.get_result_async(),
+                                  "post_movegroup_settle_RESULT",15,
+                                  handle.cancel_goal_async)
+        observed=dict(self.joints[-1]["arm"])
+        verdict,errors=assess_arm_settle(int(outcome.status),
+                                         int(outcome.result.error_code),
+                                         target,observed)
+        row={"name":"post_movegroup_direct_fjt_arm_settle",
+             "desired":target,"actual":observed,"error_rad":errors,
+             "action_status":int(outcome.status),
+             "result_error":int(outcome.result.error_code),
+             "goal_tolerance_rad":JOINT_GOAL_TOL_RAD,
+             "goal_time_tolerance_s":2,"verdict":verdict}
+        if verdict!="ARM_SETTLE_SCOPED_PASS":
+            raise RuntimeError("G04B_181_ARM_SETTLE_FAILED_"+str(row))
+        return row
+
     def grip_goal(self,label,q,q2=None,diagnostic=False):
         # Both original ROS 2 joints must always be present. A diagnostic
         # may set asymmetric desired positions to isolate real actuation,
@@ -335,9 +377,15 @@ def main():
                 w.arm_goal(name+"_plan_only",xyz,plan_only=True))
         report["finger_results"].append(w.grip_goal("open",0.0))
         report["finger_goal_count"]+=1
+        nominal_pregrasp=arm_ik_tilted_fingers(*pregrasp)
         report["arm_results"].append(
-            w.arm_goal("pregrasp",pregrasp,
-                       joint_override=arm_ik_tilted_fingers(*pregrasp)))
+            w.arm_goal("pregrasp",pregrasp,joint_override=nominal_pregrasp))
+        report["arm_goal_count"]+=1
+        # CI #43584052832: MoveGroup-only led to frozen finger with reference
+        # 12mm; one DIRECT arm FJT settle restored actual bilateral control.
+        # Preserve original MoveGroup planned+executed motion and independent
+        # contact/lift/hold/place witness; no force/attach/teleport.
+        report["post_movegroup_arm_settle"]=w.arm_precision_settle(nominal_pregrasp)
         report["arm_goal_count"]+=1
         report["pose_snapshots"]["pregrasp"]=rod_pose()
         assert math.dist(report["pose_snapshots"]["pregrasp"],
