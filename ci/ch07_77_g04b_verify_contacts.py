@@ -82,6 +82,11 @@ conditions={
      result.get("pre_release_bin_xy_error_m",1)<=.06
      and result.get("pre_release_custody_drift_m",1)<=.04
      and 1.78<=result.get("pose_snapshots",{}).get("pre_release",[0,0,0])[2]<=1.92),
+ "real_world_finger_pitch_preserved_during_bin_descent":(
+     result.get("transport_actual_lower_finger_tilt_drift_rad",1)<=.055
+     and isinstance(result.get("transport_lower_joint_target_with_pitch_compensation"),dict)
+     and abs(result.get("transport_lower_joint_target_with_pitch_compensation",{}).get(
+         "joint_wrist",0))>=.10),
  "real_both_fingers_at_least_three_contacts":all(v["contact_events"]>=3 for v in summary.values()),
  "real_both_fingers_positive_force":all(v["positive_contact_force_count"]>=1 for v in summary.values()),
  # Original controller Action must NOT substitute for real measured 2mm
