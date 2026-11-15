@@ -33,6 +33,7 @@ from ch07_181_jaw_axis_carry import (
     high_carry_jaw_compensation,real_jaw_world_axis_change,
     real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD,
     exact_world_jaw_lower_plan)
+from ch07_181_reachable_release_waypoint import reachable_release_waypoint
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -896,7 +897,15 @@ def main():
         # Preserve previous lower wrist command as a CONTROLLED candidate.
         # It does NOT preserve true physical tool orientation at q4=pi/2;
         # exact 5DOF tool axis is recorded independently below.
-        if os.environ.get("G04B_CYCLE05_PGS_JAW_GOAL")=="YES":
+        if os.environ.get("G04B_CYCLE06_REACHABLE_RELEASE")=="YES":
+            # One new waypoint, no FJT/tolerance/gain change: avoid the
+            # independently observed native q3 stall at ~1.132 rad.
+            lower_plan=reachable_release_waypoint(
+                high_arm_actual,lower_nominal,held_offset)
+            lower_oriented=lower_plan["target"]
+            report["lower_reachable_release_plan"]=lower_plan
+            report["lower_exact_world_jaw_plan"]="CYCLE06_REACHABLE_SHORT_DROP"
+        elif os.environ.get("G04B_CYCLE05_PGS_JAW_GOAL")=="YES":
             lower_plan=exact_world_jaw_lower_plan(
                 high_arm_actual,lower_nominal,held_offset)
             lower_oriented=lower_plan["target"]
@@ -913,6 +922,17 @@ def main():
             defer_lower_fjt_recovery=True)
         report["arm_results"].append(lower_movegroup)
         report["arm_goal_count"]+=1
+        if os.environ.get("G04B_CYCLE06_REACHABLE_RELEASE")=="YES":
+            # Fail closed: MoveGroup SUCCEEDED does NOT prove real q.
+            # Do not re-send the same blocked q3 Goal via FJT.
+            w.spin_for(.3)
+            actual=dict(w.joints[-1]["arm"])
+            errors={name:abs(actual[name]-lower_oriented[name]) for name in ARM}
+            report["lower_reachable_release_actual_joint_errors_rad"]=errors
+            report["lower_reachable_release_actual_jointstate"]=actual
+            if (lower_movegroup.get("strict_joint_feedback_deferred_to_fjt")
+                    or max(errors.values())>JOINT_GOAL_TOL_RAD):
+                raise RuntimeError("G04B_CYCLE06_ACTUAL_LOWER_JOINT_TRACKING_FAILED")
         if lower_movegroup.get("strict_joint_feedback_deferred_to_fjt"):
             # Native dynamic object remains above the bin while the arm
             # joint3 trails the MoveGroup goal. Do not issue another motion
