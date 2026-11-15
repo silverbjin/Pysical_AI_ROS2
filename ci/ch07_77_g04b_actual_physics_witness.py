@@ -128,6 +128,9 @@ class Witness(Node):
         self.joints=[]
         self.last_grip_data=None
         self.controller_samples=[]
+        self.arm_joint2_controller_samples=[]
+        self.arm_joint2_observer_errors=[]
+        self.last_arm_settle_data=None
         self.hardware_introspection_samples=[]
         self.hardware_introspection_errors=[]
         # Existing Jazzy publisher is BEST_EFFORT (Issue #181 CI #43591101353).
@@ -139,6 +142,9 @@ class Witness(Node):
         self.create_subscription(JointTrajectoryControllerState,
             "/gripper_group_controller/controller_state",
             self.on_controller_state,10)
+        self.create_subscription(JointTrajectoryControllerState,
+            "/arm_group_controller/controller_state",
+            self.on_arm_joint2_controller_state,10)
         self.create_subscription(JointState,"/joint_states",self.on_state,10)
 
     def on_hardware_introspection(self,msg):
@@ -146,7 +152,7 @@ class Witness(Node):
             values={}
             for stat in msg.statistics:
                 name=str(getattr(stat,'name',''))
-                if not any(n in name for n in FINGERS):
+                if not any(n in name for n in (*FINGERS,"joint2")):
                     continue
                 value=float(getattr(stat,'value'))
                 if math.isfinite(value):values[name]=value
@@ -185,6 +191,23 @@ class Witness(Node):
         # Preserve the WHOLE 2s FJT+2s tolerance window. The previous 100
         # samples showed only the post-ABORT reference reset to actual.
         self.controller_samples=self.controller_samples[-1500:]
+
+    def on_arm_joint2_controller_state(self,m):
+        # Read-only per-sim-step Jazzy arm JTC actual feedback, NOT a Goal.
+        try:
+            names=list(m.joint_names)
+            if set(names)!=set(ARM):return
+            k=names.index("joint2")
+            record={"stamp":m.header.stamp.sec+m.header.stamp.nanosec*1e-9}
+            for field in ("reference","feedback","error"):
+                values=list(getattr(getattr(m,field,None),"positions",[]))
+                if len(values)!=len(names) or not all(math.isfinite(v) for v in values):
+                    raise ValueError("ARM_JTC_"+field+"_INVALID")
+                record[field+"_joint2_rad"]=float(values[k])
+            self.arm_joint2_controller_samples.append(record)
+            self.arm_joint2_controller_samples=self.arm_joint2_controller_samples[-1600:]
+        except Exception as exc:
+            self.arm_joint2_observer_errors.append(repr(exc))
 
     def on_state(self,m):
         d=dict(zip(m.name,m.position))
@@ -304,6 +327,7 @@ class Witness(Node):
             jt.position=JOINT_GOAL_TOL_RAD
             goal.goal_tolerance.append(jt)
         goal.goal_time_tolerance.sec=2
+        arm_fjt_start_sim=self.joints[-1]["stamp"] if self.joints else 0.
         handle=self.await_future(self.arm_direct.send_goal_async(goal),
                                  "post_movegroup_settle_ACCEPT",12)
         if not handle or not handle.accepted:
@@ -315,12 +339,30 @@ class Witness(Node):
         verdict,errors=assess_arm_settle(int(outcome.status),
                                          int(outcome.result.error_code),
                                          target,observed)
+        arm_fjt_end_sim=self.joints[-1]["stamp"] if self.joints else arm_fjt_start_sim
+        arm_jtc_window=[s for s in self.arm_joint2_controller_samples
+                        if arm_fjt_start_sim<=s["stamp"]<=arm_fjt_end_sim]
+        hw_window=[s for s in self.hardware_introspection_samples
+                   if arm_fjt_start_sim<=s["sim_observed_s"]<=arm_fjt_end_sim
+                   and "command_interface.joint2/position" in s["values"]]
         row={"name":"post_movegroup_direct_fjt_arm_settle",
              "desired":target,"actual":observed,"error_rad":errors,
              "action_status":int(outcome.status),
              "result_error":int(outcome.result.error_code),
              "goal_tolerance_rad":JOINT_GOAL_TOL_RAD,
-             "goal_time_tolerance_s":2,"verdict":verdict}
+             "goal_time_tolerance_s":2,"verdict":verdict,
+             "joint2_observation_window":{
+                 "start_sim_s":arm_fjt_start_sim,
+                 "end_sim_s":arm_fjt_end_sim,
+                 "jtc_reference_feedback_error":arm_jtc_window,
+                 "hardware_command_position":[
+                    {"stamp":s["sim_observed_s"],
+                     "value_rad":s["values"]["command_interface.joint2/position"]}
+                    for s in hw_window],
+                 "observer_errors":self.arm_joint2_observer_errors[-10:],
+                 "native_trace_csv":"gazebo_finger_ecs_pre_post_command.csv",
+                 "status":"READ_ONLY_NOT_PHYSICAL_PASS"}}
+        self.last_arm_settle_data=row
         if verdict!="ARM_SETTLE_SCOPED_PASS":
             raise RuntimeError("G04B_181_ARM_SETTLE_FAILED_"+str(row))
         return row
@@ -885,6 +927,9 @@ def main():
                         for link in ("finger1","finger2")}
                 except Exception as snapshot_error:
                     report["failure_snapshot_error"]=repr(snapshot_error)
+        # Read-only FJT evidence survives a real action ABORTED exception.
+        if w.last_arm_settle_data is not None:
+            report["last_arm_settle_even_on_failure"]=w.last_arm_settle_data
         report["joint_state_samples"]=len(w.joints)
         out.parent.mkdir(parents=True,exist_ok=True)
         out.write_text(json.dumps(report,indent=2,allow_nan=False)+"\n")
