@@ -130,6 +130,16 @@ conditions={
      and 0<=result["transport_actual_tool_world_axis_change_rad"]<=math.pi),
  "real_both_fingers_at_least_three_contacts":all(v["contact_events"]>=3 for v in summary.values()),
  "real_both_fingers_positive_force":all(v["positive_contact_force_count"]>=1 for v in summary.values()),
+ # The exact first-contact geometry is q=(45-24)/2=10.5mm.
+ # Dynamic high yaw #43684696292 detached with only 0.5mm desired
+ # squeeze per side; the strictly bounded new candidate asks 1mm
+ # within existing contract. This is only a COMMAND, not force proof.
+ "bounded_real_bilateral_1mm_compression_target":(
+     result.get("physical_symmetric_close_compression_per_finger_m")==.001
+     and abs(result.get("physical_symmetric_close_target_per_joint_m",0)-.0115)<1e-9
+     and all(v.get("command_by_joint_m",{}).get("joint_finger1")==.0115 and
+             v.get("command_by_joint_m",{}).get("joint_finger2")==.0115
+             for v in result.get("finger_results",[]) if v.get("name")=="contact_close")),
  # Original controller Action must NOT substitute for real measured 2mm
  # lower-limit release held after MoveGroup and right before physical close.
  "real_bilateral_2mm_before_and_after_movegroup":actual_preload_pass(
