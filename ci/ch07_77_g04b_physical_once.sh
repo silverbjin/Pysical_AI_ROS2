@@ -238,9 +238,28 @@ python3 "$ROOT/ci/ch07_181_fixed_world_base_anchor.py" \
 timeout 20s gz sdf -k "$OUT/robot_sdf_world_anchored.sdf" \
  > "$OUT/world_base_anchor_sdf_validate.log" 2>&1
 test -s "$OUT/robot_sdf_world_anchored.sdf"
-stage SPAWN_SAME_ORIGINAL_ROBOT_WITH_ONE_WORLD_BASE_ANCHOR
+# Upstream gz-sim #1684: DART 6.13.2 velocity servo can lock at q=0
+# despite nonzero native JointVelocityCmd. One factor: extend ONLY the
+# SDF lower bound by 1mm, WITHOUT changing original URDF, cmd range,
+# all robot links/joint axes, physics solver, contacts or ROI verdict.
+stage G04B_TEST_ONLY_DART_6_13_2_LOWER_LIMIT_MARGIN
+DART_VERSION="$(dpkg-query -W -f='${Version}' 'libdart-core+collisions+odelcpsolver6.13')"
+printf '%s\n' "$DART_VERSION" > "$OUT/dart_engine_package_version.txt"
+case "$DART_VERSION" in
+  6.13.2*) ;;
+  *) echo "G04B_UNKNOWN_DART_ENGINE_VERSION_NO_UNAPPROVED_SDF_PATCH=$DART_VERSION";exit 30 ;;
+esac
+python3 "$ROOT/ci/ch07_181_g04b_dart_limit_margin.py" \
+ --input "$OUT/robot_sdf_world_anchored.sdf" \
+ --output "$OUT/robot_sdf_dart_margin.sdf" \
+ --receipt "$OUT/dart_margin_single_factor_receipt.json" \
+ >"$OUT/dart_margin_test_only.log"
+timeout 20s gz sdf -k "$OUT/robot_sdf_dart_margin.sdf" \
+ > "$OUT/dart_margin_sdf_validate.log" 2>&1
+test -s "$OUT/robot_sdf_dart_margin.sdf"
+stage SPAWN_SAME_ORIGINAL_ROBOT_WITH_WORLD_BASE_AND_TEST_ONLY_DART_LIMIT_MARGIN
 timeout --signal=TERM --kill-after=5s 50s ros2 run ros_gz_sim create \
- -world book_camera -name my_robot -file "$OUT/robot_sdf_world_anchored.sdf" -z 0.0 >"$OUT/create.log" 2>&1
+ -world book_camera -name my_robot -file "$OUT/robot_sdf_dart_margin.sdf" -z 0.0 >"$OUT/create.log" 2>&1
 grep -q 'Entity creation successful' "$OUT/create.log"
 # Issue #181 raw CI #43683958215: both Gazebo finger contact sensors
 # continued to report ~13N even after actual rod moved >=0.15m away
