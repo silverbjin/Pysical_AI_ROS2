@@ -140,6 +140,13 @@ python3 "$ROOT/ci/ch07_77_g04b_physics_fixture.py" \
   --source "$ROOT/ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf" \
   --output "$OUT/g04b_contact_world.sdf" \
   --receipt "$OUT/g04b_fixture_receipt.json" >"$OUT/fixture.log"
+# Cycle03: strictly ONE new test-world DART contact solver factor, no
+# robot, rod, MoveIt/FJT goal, real native physics gate or tolerance changes.
+stage G04B_CYCLE03_TEST_ONLY_DART_CONTACT_PGS_ONE_FACTOR
+python3 "$ROOT/ci/ch07_181_dart_solver_single_factor.py" \
+ --world "$OUT/g04b_contact_world.sdf" \
+ --receipt "$OUT/g04b_cycle03_pgs_solver_receipt.json" \
+ >"$OUT/g04b_cycle03_pgs_solver.log"
 stage BUILD_READ_ONLY_GAZEBO_DYNAMIC_ROD_ECS_WITNESS
 timeout --signal=TERM --kill-after=5s 90s cmake \
  -S "$ROOT/ci/ch07_181_rod_trace" -B "$OUT/rod_ecs_build" \
