@@ -18,6 +18,10 @@ on:
       - 'ci/ch07_181_high_goal_precision_contract.py'
       - 'ci/ch07_181_jaw_axis_carry.py'
       - 'ci/ch07_181_rod_trace/**'
+      - 'ci/ch07_181_g04b_first_goal_causal_contract.py'
+      - 'ci/tests/test_ch07_181_g04b_first_goal_causal_contract.py'
+      - 'ci/ch07_181_g04b_first_goal_ecs_audit.py'
+      - 'ci/tests/test_ch07_181_g04b_first_goal_ecs_audit.py'
       - 'ci/ch07_181_ecm_contact_boundary.py'
       - 'ci/tests/test_ch07_181_ecm_contact_boundary.py'
       - 'ci/ch07_181_worldpose_source_contract.py'
@@ -75,6 +79,11 @@ jobs:
             ci/ch07_181_jaw_axis_carry.py \
             ci/tests/test_ch07_181_jaw_axis_carry.py \
             ci/ch07_181_rod_trace/rod_trace.cc \
+            ci/ch07_181_rod_trace/finger_ecs_trace.cc \
+            ci/ch07_181_g04b_first_goal_causal_contract.py \
+            ci/tests/test_ch07_181_g04b_first_goal_causal_contract.py \
+            ci/ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/tests/test_ch07_181_g04b_first_goal_ecs_audit.py \
             ci/ch07_181_rod_trace/CMakeLists.txt \
             ci/ch07_181_ecm_contact_boundary.py \
             ci/tests/test_ch07_181_ecm_contact_boundary.py \
@@ -93,6 +102,8 @@ jobs:
             Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro \
             > ci-results/ch07-77-g04b/input_hashes.txt
           bash -n ci/ch07_77_g04b_physical_once.sh
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_first_goal_causal_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_first_goal_ecs_audit.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_ecm_contact_boundary.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_worldpose_source_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_fixed_world_base_anchor.py -v
@@ -107,7 +118,9 @@ jobs:
           python3 -m unittest discover -s ci/tests -p test_ch07_181_grasp_compression_tdd.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_exact_fk.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_native_recent_contact.py -v
-          python3 -m py_compile ci/ch07_181_fixed_world_base_anchor.py \
+          python3 -m py_compile ci/ch07_181_g04b_first_goal_causal_contract.py \
+            ci/ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/ch07_181_fixed_world_base_anchor.py \
             ci/ch07_181_worldpose_source_contract.py \
             ci/ch07_181_ecm_contact_boundary.py \
             ci/ch07_77_g04b_physics_fixture.py \
@@ -162,6 +175,11 @@ jobs:
             ci/ch07_181_jaw_axis_carry.py \
             ci/tests/test_ch07_181_jaw_axis_carry.py \
             ci/ch07_181_rod_trace/rod_trace.cc \
+            ci/ch07_181_rod_trace/finger_ecs_trace.cc \
+            ci/ch07_181_g04b_first_goal_causal_contract.py \
+            ci/tests/test_ch07_181_g04b_first_goal_causal_contract.py \
+            ci/ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/tests/test_ch07_181_g04b_first_goal_ecs_audit.py \
             ci/ch07_181_rod_trace/CMakeLists.txt \
             ci/ch07_181_ecm_contact_boundary.py \
             ci/tests/test_ch07_181_ecm_contact_boundary.py \
@@ -180,6 +198,8 @@ jobs:
             Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro \
             > ci-results/ch07-77-g04b/input_hashes.txt
           bash -n ci/ch07_77_g04b_physical_once.sh
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_first_goal_causal_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_first_goal_ecs_audit.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_ecm_contact_boundary.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_worldpose_source_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_fixed_world_base_anchor.py -v
@@ -194,7 +214,9 @@ jobs:
           python3 -m unittest discover -s ci/tests -p test_ch07_181_grasp_compression_tdd.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_exact_fk.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_native_recent_contact.py -v
-          python3 -m py_compile ci/ch07_181_fixed_world_base_anchor.py \
+          python3 -m py_compile ci/ch07_181_g04b_first_goal_causal_contract.py \
+            ci/ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/ch07_181_fixed_world_base_anchor.py \
             ci/ch07_181_worldpose_source_contract.py \
             ci/ch07_181_ecm_contact_boundary.py \
             ci/ch07_77_g04b_physics_fixture.py \
