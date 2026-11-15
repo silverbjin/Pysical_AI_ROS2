@@ -125,6 +125,16 @@ python3 "$ROOT/ci/ch07_77_g04b_physics_fixture.py" \
   --source "$ROOT/ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf" \
   --output "$OUT/g04b_contact_world.sdf" \
   --receipt "$OUT/g04b_fixture_receipt.json" >"$OUT/fixture.log"
+stage ONE_TEST_ONLY_DART_CONTACT_DETECTOR_FACTOR
+# Original native contact manifold reports ~13N for geometrically
+# impossible finger/rod collisions, while independent original
+# Static=false, world g=-9.8, worldPose derivative≈0. Only the DART
+# contact detector is changed to FCL, not solver/robot/friction/force.
+# This is a single bounded physical hypothesis, NOT a G04B PASS.
+python3 "$ROOT/ci/ch07_181_dart_detector_single_factor.py" \
+ --world "$OUT/g04b_contact_world.sdf" \
+ --receipt "$OUT/dart_detector_factor_receipt.json" \
+ >"$OUT/dart_detector_factor.log" 2>&1
 stage BUILD_READ_ONLY_GAZEBO_DYNAMIC_ROD_ECS_WITNESS
 timeout --signal=TERM --kill-after=5s 90s cmake \
  -S "$ROOT/ci/ch07_181_rod_trace" -B "$OUT/rod_ecs_build" \
