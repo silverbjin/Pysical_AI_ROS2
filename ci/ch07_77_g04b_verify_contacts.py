@@ -147,6 +147,13 @@ conditions={
      result.get("lower_stop_release_after_pregrasp_actual_m"),
      result.get("lower_stop_release_before_contact_actual_m")) and
      result.get("lower_stop_release_real_actual_pass") is True,
+ "lower_into_bin_real_arm_feedback_resolved_before_release":(
+      result.get("lower_into_bin_feedback_resolved") is True and
+      (not result.get("lower_into_bin_direct_fjt_settle") or
+       (result["lower_into_bin_direct_fjt_settle"].get("verdict")==
+           "ARM_SETTLE_SCOPED_PASS" and
+        result["lower_into_bin_direct_fjt_settle"].get("action_status")==4 and
+        result["lower_into_bin_direct_fjt_settle"].get("result_error")==0))),
  "real_dynamic_world_lift_at_least_0_05m":result.get("lift_m",-1)>=.05,
  "1_3s_hold_pose_drift_le_0_025m":result.get("object_pose_drift_during_hold_m",1) <=.025,
  "placement_xy_error_le_0_09m":result.get("placement_xy_error_m",1)<=.09,
@@ -157,7 +164,8 @@ conditions={
  "actual_arm_movegroup_and_gripper_fjt_sequence":(
          4<=result.get("arm_goal_count",-1)<=13 and
          result.get("finger_goal_count")==4 and
-         len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2 and
+         len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2+
+             (1 if result.get("lower_into_bin_direct_fjt_settle") else 0) and
          len(result.get("finger_results",[]))==4 and
          result.get("free_space_diagnostics_status")==
              "NOT_RERUN_PRIOR_PUBLIC_SCOPED_EVIDENCE" and
