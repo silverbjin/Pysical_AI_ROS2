@@ -1,5 +1,7 @@
 # 도서 코드 검수 Fast Loop 표준 — Architecture-First + 선택적 TDD + 가설 기반 Gazebo
-_2026-11-15 / Issue #118, #173, #181 / 승인 전 프로세스 제안_
+_2026-11-15 / Issue #118, #173, #181 / **사용자 승인 반영: 시행 중**_
+
+> **우선 적용 문서:** [ROS 2 도서 실습 개발·디버깅·CI 실행 표준 (승인본)](BOOK_ROS2_DEVELOPMENT_DEBUG_CI_EXECUTION_STANDARD_20261115_KO.md). 이 문서는 기존 Fast Loop의 간략 운영판이며, 충돌 시 승인본의 단계별 승인·증거 기준을 우선한다.
 
 ## 목표 및 불변식
 
