@@ -125,6 +125,16 @@ python3 "$ROOT/ci/ch07_77_g04b_physics_fixture.py" \
   --source "$ROOT/ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf" \
   --output "$OUT/g04b_contact_world.sdf" \
   --receipt "$OUT/g04b_fixture_receipt.json" >"$OUT/fixture.log"
+stage ONE_TEST_ONLY_DART_CONTACT_CONSTRAINT_SOLVER_FACTOR
+# Raw native scene #43689418982: real dynamic rod Static=false, g=-9.8,
+# physically impossible stale finger contact points after detachment.
+# Original ODE detector and FCL comparison #43690057020 both FAILED;
+# isolate original Dantzig vs PGS *solver only* without changing robot,
+# sensor, friction, effort, mass, thresholds or collision detector.
+python3 "$ROOT/ci/ch07_181_dart_solver_single_factor.py" \
+  --world "$OUT/g04b_contact_world.sdf" \
+  --receipt "$OUT/dart_solver_factor_receipt.json" \
+  >"$OUT/dart_solver_factor.log" 2>&1
 stage BUILD_READ_ONLY_GAZEBO_DYNAMIC_ROD_ECS_WITNESS
 timeout --signal=TERM --kill-after=5s 90s cmake \
  -S "$ROOT/ci/ch07_181_rod_trace" -B "$OUT/rod_ecs_build" \
