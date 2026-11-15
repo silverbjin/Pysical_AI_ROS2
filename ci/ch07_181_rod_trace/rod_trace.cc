@@ -50,6 +50,19 @@ class RodTrace final : public gz::sim::System,
           "f2_collision_present,f2_contact_ecs_present,f2_rod_pair_count,"
           "f2_latest_contact_stamp_s\n";
   sync_.flush();
+  // A second read-only source-provenance stream: helper worldPose() vs
+  // actual components::WorldPose vs components::Pose in the SAME frame.
+  const auto *v=std::getenv("CH07_181_POSE_SOURCE_CSV");
+  poseSource_.open(v?v:"/tmp/ch07_181_pose_component_source.csv",
+                   std::ios::out|std::ios::trunc);
+  poseSource_<<"sim_time_s,entity_name,entity_id,"
+                "helper_x,helper_y,helper_z,"
+                "worldpose_component_present,worldpose_x,worldpose_y,worldpose_z,"
+                "pose_component_present,local_x,local_y,local_z\n";
+  poseSource_.flush();
+  std::cerr<<"CH07_181_POSE_SOURCE_CONSTRUCTOR path="
+           <<(v?v:"/tmp/ch07_181_pose_component_source.csv")
+           <<" open="<<poseSource_.good()<<std::endl;
   std::cerr<<"CH07_181_ECS_CONTACT_SYNC_CONSTRUCTOR path="
            <<(c?c:"/tmp/ch07_181_ecs_contact_sync.csv")
            <<" open="<<sync_.good()<<std::endl;
@@ -118,9 +131,40 @@ class RodTrace final : public gz::sim::System,
     LogFinger(ecm,"finger2","finger2_collision");
     sync_<<'\n';
   }
-  if(++count_%100==0) { out_.flush();sync_.flush(); }
+  if(poseSource_.good()) {
+    LogPoseSource(ecm,"g04_grasp_cylinder",m,t);
+    LogPoseSource(ecm,"finger1",ecm.EntityByComponents(
+      gz::sim::components::Link(),gz::sim::components::Name("finger1")),t);
+    LogPoseSource(ecm,"finger2",ecm.EntityByComponents(
+      gz::sim::components::Link(),gz::sim::components::Name("finger2")),t);
+  }
+  if(++count_%100==0) {
+    out_.flush();sync_.flush();poseSource_.flush();
+  }
  }
  private:
+ void LogPoseSource(const gz::sim::EntityComponentManager &ecm,
+                    const std::string &name,gz::sim::Entity entity,double t) {
+   const auto nan=std::numeric_limits<double>::quiet_NaN();
+   if(entity==gz::sim::kNullEntity) {
+     poseSource_<<std::setprecision(15)<<t<<','<<name<<','<<0;
+     for(int i=0;i<11;++i)poseSource_<<','<<nan;
+     poseSource_<<'\n';return;
+   }
+   const auto helper=gz::sim::worldPose(entity,ecm).Pos();
+   const auto worldComp=ecm.Component<gz::sim::components::WorldPose>(entity);
+   const auto localComp=ecm.Component<gz::sim::components::Pose>(entity);
+   poseSource_<<std::setprecision(15)<<t<<','<<name<<','<<entity<<','
+              <<helper.X()<<','<<helper.Y()<<','<<helper.Z()<<','
+              <<(worldComp!=nullptr)<<','
+              <<(worldComp?worldComp->Data().Pos().X():nan)<<','
+              <<(worldComp?worldComp->Data().Pos().Y():nan)<<','
+              <<(worldComp?worldComp->Data().Pos().Z():nan)<<','
+              <<(localComp!=nullptr)<<','
+              <<(localComp?localComp->Data().Pos().X():nan)<<','
+              <<(localComp?localComp->Data().Pos().Y():nan)<<','
+              <<(localComp?localComp->Data().Pos().Z():nan)<<'\n';
+ }
  // READ ONLY: all Gazebo ECS components and native collision-pair stamps
  // are sampled in the same PostUpdate call; neither ECM nor physics is
  // changed. A missing component is recorded as unavailable, NEVER zero force.
@@ -166,6 +210,7 @@ class RodTrace final : public gz::sim::System,
  }
  std::ofstream out_;
  std::ofstream sync_;
+ std::ofstream poseSource_;
  double last_=-1.0;
  double previousWorldZ_=std::numeric_limits<double>::quiet_NaN();
  double previousWorldT_=-1.0;

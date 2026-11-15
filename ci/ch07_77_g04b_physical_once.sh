@@ -135,6 +135,7 @@ test -s "$OUT/rod_ecs_build/libch07_181_rod_trace.so"
 export GZ_SIM_SYSTEM_PLUGIN_PATH="$OUT/rod_ecs_build:${GZ_SIM_SYSTEM_PLUGIN_PATH:-}"
 export CH07_181_ROD_ECS_CSV="$OUT/gazebo_rod_real_static_gravity_velocity.csv"
 export CH07_181_SYNC_CONTACT_CSV="$OUT/gazebo_rod_finger_contact_same_ecs_frame.csv"
+export CH07_181_POSE_SOURCE_CSV="$OUT/gazebo_link_pose_component_provenance.csv"
 python3 - "$OUT/g04b_contact_world.sdf" "$OUT/rod_ecs_scope.json" <<'PY'
 import xml.etree.ElementTree as ET,json,sys
 from pathlib import Path
@@ -193,6 +194,11 @@ test -s "$CH07_181_SYNC_CONTACT_CSV" || {
 }
 head -1 "$CH07_181_SYNC_CONTACT_CSV" >"$OUT/rod_contact_sync_schema.txt"
 echo CH07_181_ECS_CONTACT_SYNC_INITIALIZED >>"$OUT/stages.log"
+test -s "$CH07_181_POSE_SOURCE_CSV" || {
+ echo CH07_181_POSE_COMPONENT_SOURCE_MISSING;exit 26;
+}
+head -1 "$CH07_181_POSE_SOURCE_CSV" >"$OUT/rod_link_pose_provenance_schema.txt"
+echo CH07_181_POSE_COMPONENT_PROVENANCE_INITIALIZED >>"$OUT/stages.log"
 echo CH07_181_ROD_ECS_PLUGIN_INITIALIZED >>"$OUT/stages.log"
 stage SPAWN_IDENTICAL_GAZEBO_URDF
 timeout --signal=TERM --kill-after=5s 50s ros2 run ros_gz_sim create \
