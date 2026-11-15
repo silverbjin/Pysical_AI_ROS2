@@ -31,7 +31,13 @@ cleanup(){
  # Always keep the first failed FJT's causal report, including rc!=0.
  # This is read-only audit; no retry, joint motion or verdict promotion.
  if [[ -f "$CH07_77_G04B_RECEIPT" ]];then
-   python3 "$ROOT/ci/ch07_181_g04b_first_goal_ecs_audit.py" \
+   python3 "$ROOT/ci/ch07_181_high_joint2_native_audit.py" \
+     "$CH07_77_G04B_RECEIPT" "$CH07_181_FINGER_ECS_CSV" \
+     "$OUT/high_joint2_causal_native_audit.json" \
+     >"$OUT/high_joint2_causal_native_audit.log" 2>&1 || \
+     echo G04B_181_HIGH_JOINT2_AUDIT_READONLY_FAILED >>"$OUT/stages.log"
+ fi
+ if [[ -f "$CH07_77_G04B_RECEIPT" ]];then   python3 "$ROOT/ci/ch07_181_g04b_first_goal_ecs_audit.py" \
      "$CH07_77_G04B_RECEIPT" "$CH07_181_FINGER_ECS_CSV" \
      "$OUT/first_finger_native_command_audit.json" \
      >"$OUT/first_finger_native_command_audit.log" 2>&1 || \

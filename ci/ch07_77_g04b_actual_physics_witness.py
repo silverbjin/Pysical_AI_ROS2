@@ -131,6 +131,7 @@ class Witness(Node):
         self.arm_joint2_controller_samples=[]
         self.arm_joint2_observer_errors=[]
         self.last_arm_settle_data=None
+        self.last_high_joint2_causal=None
         self.hardware_introspection_samples=[]
         self.hardware_introspection_errors=[]
         # Existing Jazzy publisher is BEST_EFFORT (Issue #181 CI #43591101353).
@@ -205,7 +206,7 @@ class Witness(Node):
                     raise ValueError("ARM_JTC_"+field+"_INVALID")
                 record[field+"_joint2_rad"]=float(values[k])
             self.arm_joint2_controller_samples.append(record)
-            self.arm_joint2_controller_samples=self.arm_joint2_controller_samples[-1600:]
+            self.arm_joint2_controller_samples=self.arm_joint2_controller_samples[-3000:]
         except Exception as exc:
             self.arm_joint2_observer_errors.append(repr(exc))
 
@@ -276,6 +277,7 @@ class Witness(Node):
             c.joint_constraints.append(jc)
         goal.request.goal_constraints.append(c)
         before=self.joints[-1] if self.joints else {}
+        high_first_sim_s=(before.get("stamp",0.) if label=="transfer_high_above_bin" else None)
         handle=self.await_future(self.move.send_goal_async(goal),
                                  label+"_ACCEPT",15)
         if not handle or not handle.accepted:
@@ -288,6 +290,30 @@ class Witness(Node):
              "planned_points":len(outcome.result.planned_trajectory.joint_trajectory.points),
              "initial_joint_state":before,
              "final_joint_state":self.joints[-1] if self.joints else None}
+        if label=="transfer_high_above_bin":
+            # Preserve real high MoveGroup JTC/HW evidence before any later
+            # acceptance exception. Command interface names are not guessed:
+            # record actual introspection names and timed samples.
+            high_end_s=self.joints[-1]["stamp"] if self.joints else high_first_sim_s
+            a=[s for s in self.arm_joint2_controller_samples
+               if high_first_sim_s<=s["stamp"]<=high_end_s]
+            h=[s for s in self.hardware_introspection_samples
+               if high_first_sim_s<=s["sim_observed_s"]<=high_end_s]
+            named=[{"stamp":s["sim_observed_s"],"name":name,"position_rad":float(value)}
+                   for s in h for name,value in s["values"].items()
+                   if "joint2" in name and "command" in name.lower()
+                   and "position" in name.lower()]
+            causal={"start_sim_s":high_first_sim_s,"end_sim_s":high_end_s,
+                    "joint":"joint2",
+                    "jtc_reference_feedback_error":a,
+                    "hardware_command_position":named,
+                    "introspection_joint2_names":sorted(set(
+                        name for s in h for name in s["values"] if "joint2" in name)),
+                    "observer_errors":self.arm_joint2_observer_errors[-10:],
+                    "trace_csv":"gazebo_finger_ecs_pre_post_command.csv",
+                    "scope":"HIGH_MOVEGROUP_READ_ONLY_NOT_PHYSICAL_PASS"}
+            row["high_joint2_causal_evidence"]=causal
+            self.last_high_joint2_causal=causal
         if (row["action_status"]!=GoalStatus.STATUS_SUCCEEDED or
             row["moveit_error"]!=MoveItErrorCodes.SUCCESS or
             row["planned_points"]==0):
@@ -930,6 +956,8 @@ def main():
         # Read-only FJT evidence survives a real action ABORTED exception.
         if w.last_arm_settle_data is not None:
             report["last_arm_settle_even_on_failure"]=w.last_arm_settle_data
+        if w.last_high_joint2_causal is not None:
+            report["last_high_joint2_causal_even_on_failure"]=w.last_high_joint2_causal
         report["joint_state_samples"]=len(w.joints)
         out.parent.mkdir(parents=True,exist_ok=True)
         out.write_text(json.dumps(report,indent=2,allow_nan=False)+"\n")
