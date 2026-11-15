@@ -96,7 +96,14 @@ conditions={
  "dynamic_rod_physically_recentered_high_before_descent":(
      result.get("transport_high_precise_bin_xy_error_m",1)<=.025
      and result.get("transport_high_precise_custody_drift_m",1)<=.04
-     and result.get("pose_snapshots",{}).get("transfer_high_precise",[0,0,0])[2]>=1.98),
+     and result.get("pose_snapshots",{}).get("transfer_high_precise",[0,0,0])[2]>=1.98
+     and result.get("transport_second_lateral_goal")==
+       "NOT_RUN_UNSTABLE_RAW_43605465669"
+     and result.get("transport_high_movegroup_joint_constraint_rad")==.002
+     and result.get("transport_high_jointstate_target_audit",{}).get(
+          "real_arm_tracking_scoped_pass") is True
+     and result.get("transport_high_jointstate_target_audit",{}).get(
+          "max_joint_error_rad",1)<=.01),
  "dynamic_object_released_in_safe_bin_envelope":(
      result.get("pre_release_bin_xy_error_m",1)<=.06
      and result.get("pre_release_custody_drift_m",1)<=.04
@@ -147,7 +154,10 @@ conditions={
          result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
          "x_clearance_stage" in p and
          "transfer_high_above_bin" in [a.get("name") for a in result.get("arm_results",[])] and
-         "transfer_high_world_feedback_recenter" in [a.get("name") for a in result.get("arm_results",[])] and
+         "transfer_high_world_feedback_recenter" not in
+          [a.get("name") for a in result.get("arm_results",[])] and
+         [a.get("name") for a in result.get("arm_results",[])].count(
+             "transfer_high_above_bin")==1 and
          "lower_into_bin" in [a.get("name") for a in result.get("arm_results",[])] and
          "x_approach_insertion" in [a.get("name") for a in result.get("arm_results",[])] and
          result.get("approach_axis")=="WORLD_X_INSERTION_FINGER_SEPARATION_WORLD_Y" and
