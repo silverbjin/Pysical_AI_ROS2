@@ -1,0 +1,49 @@
+name: Book G04B prepared-image source contract (no Docker)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-g04b-prepared-image-l0.yml'
+      - 'ci/docker/Dockerfile.book-g04b-prepared'
+      - 'ci/docker/check_book_g04b_prepared_runtime.sh'
+      - 'ci/docker/build_book_g04b_prepared_runtime.sh'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: book-g04b-image-l0-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  prepared-runtime-static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci/docker
+      - name: Check build/publish scripts without Docker or Gazebo
+        run: |
+          set -Eeuo pipefail
+          bash -n ci/docker/check_book_g04b_prepared_runtime.sh
+          bash -n ci/docker/build_book_g04b_prepared_runtime.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          d=Path('ci/docker/Dockerfile.book-g04b-prepared').read_text()
+          b=Path('ci/docker/build_book_g04b_prepared_runtime.sh').read_text()
+          c=Path('ci/docker/check_book_g04b_prepared_runtime.sh').read_text()
+          assert d.startswith('# Prepared, non-default G04B runtime.')
+          assert 'FROM ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' in d
+          assert 'ros-jazzy-moveit-ros-move-group' in d
+          assert 'libgz-sim8-dev' in d
+          assert 'COPY ci/docker/check_book_g04b_prepared_runtime.sh' in d
+          assert 'G04B_PUBLISH_PREPARED_IMAGE:-NO' in b
+          assert 'G04B_DIGEST_NOT_VERIFIED' in b
+          assert 'G04B_PREPARED_IMAGE_DEPENDENCIES_VERIFIED_NO_GAZEBO' in c
+          print('G04B_IMAGE_SOURCE_L0_PASS_DOCKER_NOT_BUILT_GAZEBO_NOT_RUN')
+          PY
+      - name: Declare status (not a physical acceptance)
+        if: always()
+        run: |
+          echo 'Prepared-image source static check ONLY. No image built, pushed or digest accepted.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'G00-G04A NOT_RERUN; G04B BLOCKED; G05 NOT_RUN; Ch10 HOLD.' >> "$GITHUB_STEP_SUMMARY"
