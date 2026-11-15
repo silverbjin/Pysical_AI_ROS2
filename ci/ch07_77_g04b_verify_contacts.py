@@ -147,11 +147,6 @@ conditions={
      result.get("lower_stop_release_after_pregrasp_actual_m"),
      result.get("lower_stop_release_before_contact_actual_m")) and
      result.get("lower_stop_release_real_actual_pass") is True,
- "transport_high_strict_fjt_real_feedback_if_used":(
-     not result.get("transport_high_direct_fjt_settle") or
-     (result["transport_high_direct_fjt_settle"].get("verdict")=="ARM_SETTLE_SCOPED_PASS"
-       and result["transport_high_direct_fjt_settle"].get("action_status")==4
-       and result["transport_high_direct_fjt_settle"].get("result_error")==0)),
  "lower_into_bin_real_arm_feedback_resolved_before_release":(
       result.get("lower_into_bin_feedback_resolved") is True and
       (not result.get("lower_into_bin_direct_fjt_settle") or
@@ -170,7 +165,6 @@ conditions={
          4<=result.get("arm_goal_count",-1)<=13 and
          result.get("finger_goal_count")==4 and
          len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2+
-             (1 if result.get("transport_high_direct_fjt_settle") else 0)+
              (1 if result.get("lower_into_bin_direct_fjt_settle") else 0) and
          len(result.get("finger_results",[]))==4 and
          result.get("free_space_diagnostics_status")==
