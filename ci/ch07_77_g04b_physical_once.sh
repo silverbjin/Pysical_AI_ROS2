@@ -67,7 +67,7 @@ if ! apt-cache show libgz-sim8-dev >/dev/null 2>&1;then
     -o /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
   codename="$(. /etc/os-release;printf '%s' "$VERSION_CODENAME")"
   test "$codename" = noble
-  printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable %s main\\n' "$codename" \
+  printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable %s main\n' "$codename" \
     > /etc/apt/sources.list.d/gazebo-stable.list
 fi
 stage INSTALL_ONLY_MISSING_MOVEIT_JAZZY_DEPENDENCIES
@@ -155,7 +155,7 @@ receipt.write_text(json.dumps({"world_gravity":"0 0 -9.8",
 "observations":["Static","GravityEnabled","WorldPose","WorldLinearVelocity"],
 "physics_mutated":False,"G00_G04A":"NOT_RERUN",
 "G04B":"BLOCKED_PENDING_FULL_PHYSICS","G05":"NOT_RUN",
-"Ch10":"HOLD"},indent=2)+"\\n")
+"Ch10":"HOLD"},indent=2)+"\n")
 PY
 stage START_ORIGINAL_REAL_GAZEBO_WITH_GAZEBO_SIM_SYSTEM
 start rsp ros2 run robot_state_publisher robot_state_publisher \
