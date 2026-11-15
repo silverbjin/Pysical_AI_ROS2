@@ -33,9 +33,9 @@
 - **L0 RED:** [#43725218239](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43725218239)에서 기존 구조 테스트 1건 FAIL. 기존 ECS 객체 이름이 finger1+finger2+joint2로만 한정돼 새 read-only joint3 계측을 허용하지 않는 **오래된 테스트 전제**가 원인.
 - **수정:** 기존 `test_ch07_181_arm_joint2_readonly_boundary.py`에서 요청 관측 joint3 추가를 허용. 기존 ECS mutation 금지 및 물리 인수 게이트는 변함없음.
 - **L0 GREEN:** PENDING
-- L2: NOT_RUN
-- raw artifact/ZIP SHA256: NOT_RUN
-- 최초 실패/가설 채택 여부: PENDING
+- **L2 FAIL** [#43725514319](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43725514319) — 하강 단계에 도달하지 못함.
+- **raw Artifact #14166535736, ZIP SHA256** `19cc19c1dff5a2fc42837b9ffe53ac6d059a12326912dbfb768b9dd8ac53a628`. GitHub PR merge checkout `2dbc6c916e62eb1ffd19084a5b86b06d5af51bde` (parents `1aadc...`, source `637e2dac...`), tree 동일함을 기록.
+- 최초 실패/가설: `G04B_181_HIGH_MOVEGROUP_ACTUAL_JOINT_TRACKING_FAILED` at `transfer_high_above_bin`, high 실제 joint2 오차 `0.010442392497322692rad` > `0.010rad`. **lower_into_bin NOT_RUN**, joint3 인과 가설 미검증.
 
 ## 5. 교육용 회고 항목
 
@@ -45,3 +45,17 @@
 - 독립 실제 동적 물체 release·settled ROI가 없으면 완료 판정이 불가능한 이유
 
 **G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
+
+## 6. Cycle 04 종료 — L2 실행 경로 미도달의 의미
+
+동일 물리 기준선(DART default solver)에서 lift **0.130040m**, 1.3초 hold drift **0.001026679m**까지는 실제 Gazebo로 확인했다. 그러나 고위치 MoveGroup은 `joint2` actual 목표 오차 **0.0104423925rad**, 즉 엄격한 `0.010rad` 기준보다 **0.0004423925rad** 초과. 목적지 하강, 직접 FJT, release, settled ROI 미실행이며 `lower_joint3_native_first_boundary.json`의 결론은 **`UNKNOWN_NO_LOWER_GOAL`**이다. 해당 값을 물리 관절3 고착/해결 증거로 바꿔 쓰면 안 된다.
+
+기존 PGS 시험 [#43721071561](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43721071561)은 high 실제 오차 `0.0085488rad`로 high 인수는 통과, 이후 lower joint3 실제 0.126236rad 미도달. **서로 다른 실제 원본의 PASS를 혼합해 가상의 전체 G04B 성공을 만들 수 없다**.
+
+### 종료 판단
+
+- **계측기 개발 및 L0** 완료, 실제 관절3의 native causal info는 아직 얻지 못했으므로 구체적 physics 원인은 **UNKNOWN**.
+- Dantzig 조건에서 고위치 관절2 오차 0.01rad 부근에 있는 실행 간 변동이 하강 단계 재현을 가로막는다. 근거 없는 재실행 금지.
+- 다음 Cycle 05는 **이전에 실제 고위치를 통과한 PGS world의 동일 단일 조건**에 Cycle 04의 read-only joint3 관측기만 적용하여 하강의 첫 실패를 계측하는 것으로 제한한다. PGS가 정식 물리 해결책이라는 주장이나 신규 motion 목표 변경은 없다. 이 실행 역시 실패 시 G04B BLOCKED.
+
+**Cycle 04 CLOSED** / G00–G04A NOT_RERUN / **G04B BLOCKED** / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.
