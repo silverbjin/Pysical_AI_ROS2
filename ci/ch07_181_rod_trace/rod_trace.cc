@@ -5,9 +5,10 @@
 #include <gz/sim/components/Link.hh>
 #include <gz/sim/components/Name.hh>
 #include <gz/sim/components/Static.hh>
-#include <gz/sim/components/GravityEnabled.hh>
-#include <gz/sim/components/WorldPose.hh>
-#include <gz/sim/components/WorldLinearVelocity.hh>
+// Gazebo Sim8 component declarations: GravityEnabled in Gravity.hh,
+// WorldPose in Pose.hh, WorldLinearVelocity in LinearVelocity.hh.
+#include <gz/sim/components/Gravity.hh>
+#include <gz/sim/components/Pose.hh>
 #include <gz/sim/components/LinearVelocity.hh>
 #include <gz/plugin/Register.hh>
 #include <chrono>
