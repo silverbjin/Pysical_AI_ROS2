@@ -591,8 +591,18 @@ def main():
         # Symmetric q=.011m adds 0.5mm per-side contact compression.
         # Do not move the rod, change controller tolerances, fake attach,
         # teleport, or claim success without native bilateral forces.
+        # Raw synchronized native scene/contact CI #43684696292:
+        # physical cylinder left first finger's collision box by ~60.323s
+        # while both finger FJT values stayed ~10.5mm and the 24mm rod
+        # exactly matched the 45mm opening minus 2*10.5mm. Existing
+        # contract allows <=1.0mm PER finger compression; use that maximum
+        # (goal 11.5mm) to test true contact normal force margin, no robot
+        # friction/effort/tolerance changes, no fake attachment.
+        compression=.001
         physical_q=symmetric_close_joint_target(
-            meta["physical_open_face_gap_m"],2*meta["radius_m"])
+            meta["physical_open_face_gap_m"],2*meta["radius_m"],
+            compression_per_finger_m=compression)
+        report["physical_symmetric_close_compression_per_finger_m"]=compression
         report["physical_symmetric_close_target_per_joint_m"]=physical_q
         report["physical_close_strategy"]="ONE_SIMULTANEOUS_BILATERAL_FJT"
         report["finger_results"].append(

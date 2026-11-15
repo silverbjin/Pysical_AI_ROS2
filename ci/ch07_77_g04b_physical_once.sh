@@ -128,6 +128,23 @@ stage SPAWN_IDENTICAL_GAZEBO_URDF
 timeout --signal=TERM --kill-after=5s 50s ros2 run ros_gz_sim create \
  -world book_camera -name my_robot -file "$OUT/robot.urdf" -z 0.0 >"$OUT/create.log" 2>&1
 grep -q 'Entity creation successful' "$OUT/create.log"
+# Issue #181 raw CI #43683958215: both Gazebo finger contact sensors
+# continued to report ~13N even after actual rod moved >=0.15m away
+# from measured physical collision centres. A contact topic alone cannot
+# prove current grasp. Observe simultaneous native WORLD link/model poses
+# using the EXISTING read-only SceneBroadcaster; do not touch physics.
+POSE_TOPIC=/world/book_camera/dynamic_pose/info
+pose_ready=0
+for attempt in $(seq 1 20);do
+  if timeout 4s gz topic -l |grep -Fxq "$POSE_TOPIC";then
+    pose_ready=1;break;fi
+  sleep .2
+done
+[[ "$pose_ready" == 1 ]] || { echo G04B_181_NATIVE_DYNAMIC_POSE_UNAVAILABLE;exit 23; }
+echo "$POSE_TOPIC" >"$OUT/dynamic_pose_topic.txt"
+timeout 8s gz topic -i -t "$POSE_TOPIC" >"$OUT/dynamic_pose_topic_info.log" 2>&1 || true
+start dynamic_pose stdbuf -oL gz topic -e -t "$POSE_TOPIC"
+echo G04B_181_READ_ONLY_GAZEBO_WORLD_POSE_WITNESS_START >> "$OUT/stages.log"
 # The source-URDF FK used to admit the grasp point is relative to base_link.
 # Prior G04B spawned the WORLD robot 50mm above that nominal origin but
 # compared this BASE_LINK FK directly to WORLD rod/shelf pose. For the short
