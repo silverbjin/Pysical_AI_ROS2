@@ -150,6 +150,16 @@ python3 "$ROOT/ci/ch07_77_g04b_physics_fixture.py" \
 # Cycle03 PGS one-factor comparison FAILED in real CI #43721071561.
 # Reverted the *application*, retaining optional source and archived evidence.
 # Do not silently carry solver=pgs into unrelated future diagnostic cycles.
+# Cycle05: selected ONLY in approved physical GitHub CI. Comparator is the
+# earlier original PGS trial #43721071561; the sole *new* control variable
+# relative to that trial is exact-world lower jaw orientation.
+if [[ "${G04B_CYCLE05_PGS_JAW_GOAL:-NO}" == "YES" ]];then
+ stage G04B_CYCLE05_PRIOR_PGS_BASELINE_EXACT_WORLD_JAW_COMPARISON
+ python3 "$ROOT/ci/ch07_181_dart_solver_single_factor.py" \
+  --world "$OUT/g04b_contact_world.sdf" \
+  --receipt "$OUT/g04b_cycle05_pgs_comparator_receipt.json" \
+  >"$OUT/g04b_cycle05_pgs_comparator.log"
+fi
 stage BUILD_READ_ONLY_GAZEBO_DYNAMIC_ROD_ECS_WITNESS
 timeout --signal=TERM --kill-after=5s 90s cmake \
  -S "$ROOT/ci/ch07_181_rod_trace" -B "$OUT/rod_ecs_build" \

@@ -31,7 +31,8 @@ from ch07_181_native_recent_contact import require_bilateral_pre_release_contact
 from ch07_181_high_goal_precision_contract import assess_precise_high_arrival
 from ch07_181_jaw_axis_carry import (
     high_carry_jaw_compensation,real_jaw_world_axis_change,
-    real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD)
+    real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD,
+    exact_world_jaw_lower_plan)
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -895,8 +896,15 @@ def main():
         # Preserve previous lower wrist command as a CONTROLLED candidate.
         # It does NOT preserve true physical tool orientation at q4=pi/2;
         # exact 5DOF tool axis is recorded independently below.
-        lower_oriented=historical_wrist_bias_lower_goal(
-            high_arm_actual,lower_nominal)
+        if os.environ.get("G04B_CYCLE05_PGS_JAW_GOAL")=="YES":
+            lower_plan=exact_world_jaw_lower_plan(
+                high_arm_actual,lower_nominal,held_offset)
+            lower_oriented=lower_plan["target"]
+            report["lower_exact_world_jaw_plan"]=lower_plan
+        else:
+            lower_oriented=historical_wrist_bias_lower_goal(
+                high_arm_actual,lower_nominal)
+            report["lower_exact_world_jaw_plan"]="NOT_RUN_DEFAULT"
         report["transport_high_measured_finger_tilt_rad"]=finger_tilt(high_arm_actual)
         report["transport_lower_wrist_goal"]=lower
         report["transport_lower_joint_target_with_pitch_compensation"]=lower_oriented
