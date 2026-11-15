@@ -15,7 +15,8 @@ from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTrajectoryControllerState, JointTolerance
-from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
+from ch07_181_arm_settle_contract import (
+    assess_arm_settle, JOINT_GOAL_TOL_RAD, lower_bin_settle_recovery_eligible)
 from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
 from ch07_181_physical_preload_contract import actual_preload_pass, EXPECTED_PRELOAD_M
@@ -221,7 +222,8 @@ class Witness(Node):
             except Exception:pass
         raise TimeoutError("G04B_TIMEOUT_"+label)
 
-    def arm_goal(self,label,xyz,plan_only=False,joint_override=None):
+    def arm_goal(self,label,xyz,plan_only=False,joint_override=None,
+                 defer_lower_fjt_recovery=False):
         # Avoid reconstructing a different elbow/wrist posture when moving
         # laterally toward the rod. For a yaw-only sweep, retain the ACTUAL
         # observed radial geometry, rather than re-solving approximate IK.
@@ -271,7 +273,17 @@ class Witness(Node):
             errors={n:abs(self.joints[-1]["arm"][n]-target[n]) for n in ARM}
             row["measured_joint_errors_rad"]=errors
             if max(errors.values())>.075:
-                raise RuntimeError("G04B_ARM_"+label+"_JOINT_ERROR_EXCESS_"+str(errors))
+                # The lower_into_bin MoveGroup can falsely report SUCCEEDED
+                # while real q3 is 135mrad behind (#43712237998). For that
+                # ONE stage only, return an explicitly pending strict FJT
+                # request; NEVER mark this as joint tracking PASS. The
+                # caller must perform the independent <=10mrad real feedback
+                # gate before release; huge errors still raise immediately.
+                if (defer_lower_fjt_recovery and
+                        lower_bin_settle_recovery_eligible(label,errors)):
+                    row["strict_joint_feedback_deferred_to_fjt"]=True
+                else:
+                    raise RuntimeError("G04B_ARM_"+label+"_JOINT_ERROR_EXCESS_"+str(errors))
         return row
 
     def arm_precision_settle(self,target):
@@ -778,9 +790,26 @@ def main():
         report["transport_high_measured_finger_tilt_rad"]=finger_tilt(high_arm_actual)
         report["transport_lower_wrist_goal"]=lower
         report["transport_lower_joint_target_with_pitch_compensation"]=lower_oriented
-        report["arm_results"].append(
-            w.arm_goal("lower_into_bin",lower,joint_override=lower_oriented))
+        lower_movegroup=w.arm_goal(
+            "lower_into_bin",lower,joint_override=lower_oriented,
+            defer_lower_fjt_recovery=True)
+        report["arm_results"].append(lower_movegroup)
         report["arm_goal_count"]+=1
+        if lower_movegroup.get("strict_joint_feedback_deferred_to_fjt"):
+            # Native dynamic object remains above the bin while the arm
+            # joint3 trails the MoveGroup goal. Do not issue another motion
+            # if the object is outside the ORIGINAL 9cm bin XY envelope.
+            lower_mid_rod=rod_pose()
+            report["lower_midway_native_dynamic_rod_pose"]=lower_mid_rod
+            lower_mid_xy=math.hypot(lower_mid_rod[0]-.55,
+                                    lower_mid_rod[1]-.25)
+            report["lower_midway_bin_xy_error_m"]=lower_mid_xy
+            if lower_mid_xy>.09:
+                raise RuntimeError("G04B_181_LOWER_FJT_OBJECT_OUTSIDE_BIN_XY_STOP")
+            strict_settle=w.arm_precision_settle(lower_oriented)
+            report["lower_into_bin_direct_fjt_settle"]=strict_settle
+            report["arm_results"].append(strict_settle)
+        report["lower_into_bin_feedback_resolved"]=True
         w.spin_for(.5)
         report["transport_legacy_scalar_tilt_drift_rad"]=actual_finger_tilt_drift(
             high_arm_actual,w.joints[-1]["arm"])
