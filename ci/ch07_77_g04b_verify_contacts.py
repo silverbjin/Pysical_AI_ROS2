@@ -93,6 +93,16 @@ conditions={
      result.get("transport_high_bin_xy_error_m",1)<=.07
      and result.get("transport_high_custody_drift_m",1)<=.04
      and result.get("pose_snapshots",{}).get("transfer_high",[0,0,0])[2]>=1.98),
+ "real_jaw_world_direction_stable_through_high_yaw_carry":(
+     result.get("transport_high_measured_jaw_axis_change_rad",1)<=.25
+     and result.get("transport_high_jaw_axis_plan",{}).get(
+           "compensated_predicted_jaw_change_rad",1)<=.25
+     and result.get("transport_high_jaw_axis_plan",{}).get(
+           "physical_rod_position_target_unchanged") is True
+     and result.get("transport_high_jaw_axis_plan",{}).get(
+           "original_predicted_jaw_change_rad",0)-
+         result.get("transport_high_jaw_axis_plan",{}).get(
+           "compensated_predicted_jaw_change_rad",1)>=.10),
  "dynamic_rod_physically_recentered_high_before_descent":(
      result.get("transport_high_precise_bin_xy_error_m",1)<=.025
      and result.get("transport_high_precise_custody_drift_m",1)<=.04
