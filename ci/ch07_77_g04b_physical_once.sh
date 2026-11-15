@@ -31,6 +31,13 @@ cleanup(){
  # Always keep the first failed FJT's causal report, including rc!=0.
  # This is read-only audit; no retry, joint motion or verdict promotion.
  if [[ -f "$CH07_77_G04B_RECEIPT" ]];then
+   python3 "$ROOT/ci/ch07_181_lower_joint3_native_audit.py" \
+     "$CH07_77_G04B_RECEIPT" "$CH07_181_FINGER_ECS_CSV" \
+     "$OUT/lower_joint3_native_first_boundary.json" \
+     >"$OUT/lower_joint3_native_first_boundary.log" 2>&1 || \
+     echo G04B_CYCLE04_LOWER_JOINT3_AUDIT_FAILED >>"$OUT/stages.log"
+ fi
+ if [[ -f "$CH07_77_G04B_RECEIPT" ]];then
    python3 "$ROOT/ci/ch07_181_high_joint2_native_audit.py" \
      "$CH07_77_G04B_RECEIPT" "$CH07_181_FINGER_ECS_CSV" \
      "$OUT/high_joint2_causal_native_audit.json" \

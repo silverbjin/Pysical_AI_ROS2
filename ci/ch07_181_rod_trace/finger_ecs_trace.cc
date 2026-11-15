@@ -55,7 +55,7 @@ class FingerEcsTrace final : public gz::sim::System,
     };
     std::lock_guard<std::mutex> lock(mutex_);
     if(!out_.good())return;
-    for(const char *name : {"joint_finger1","joint_finger2","joint2"}) {
+    for(const char *name : {"joint_finger1","joint_finger2","joint2","joint3"}) {
       const auto entity=ecm.EntityByComponents(
         gz::sim::components::Joint(),gz::sim::components::Name(name));
       if(entity==gz::sim::kNullEntity)continue;

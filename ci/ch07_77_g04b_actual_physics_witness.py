@@ -132,6 +132,7 @@ class Witness(Node):
         self.arm_joint2_observer_errors=[]
         self.last_arm_settle_data=None
         self.last_high_joint2_causal=None
+        self.last_lower_joint3_causal=None
         self.hardware_introspection_samples=[]
         self.hardware_introspection_errors=[]
         # Existing Jazzy publisher is BEST_EFFORT (Issue #181 CI #43591101353).
@@ -153,7 +154,7 @@ class Witness(Node):
             values={}
             for stat in msg.statistics:
                 name=str(getattr(stat,'name',''))
-                if not any(n in name for n in (*FINGERS,"joint2")):
+                if not any(n in name for n in (*FINGERS,"joint2","joint3")):
                     continue
                 value=float(getattr(stat,'value'))
                 if math.isfinite(value):values[name]=value
@@ -198,13 +199,14 @@ class Witness(Node):
         try:
             names=list(m.joint_names)
             if set(names)!=set(ARM):return
-            k=names.index("joint2")
+            indices={"joint2":names.index("joint2"),"joint3":names.index("joint3")}
             record={"stamp":m.header.stamp.sec+m.header.stamp.nanosec*1e-9}
             for field in ("reference","feedback","error"):
                 values=list(getattr(getattr(m,field,None),"positions",[]))
                 if len(values)!=len(names) or not all(math.isfinite(v) for v in values):
                     raise ValueError("ARM_JTC_"+field+"_INVALID")
-                record[field+"_joint2_rad"]=float(values[k])
+                for joint,idx in indices.items():
+                    record[field+"_"+joint+"_rad"]=float(values[idx])
             self.arm_joint2_controller_samples.append(record)
             self.arm_joint2_controller_samples=self.arm_joint2_controller_samples[-3000:]
         except Exception as exc:
@@ -278,6 +280,7 @@ class Witness(Node):
         goal.request.goal_constraints.append(c)
         before=self.joints[-1] if self.joints else {}
         high_first_sim_s=(before.get("stamp",0.) if label=="transfer_high_above_bin" else None)
+        lower_first_sim_s=(before.get("stamp",0.) if label=="lower_into_bin" else None)
         handle=self.await_future(self.move.send_goal_async(goal),
                                  label+"_ACCEPT",15)
         if not handle or not handle.accepted:
@@ -314,6 +317,28 @@ class Witness(Node):
                     "scope":"HIGH_MOVEGROUP_READ_ONLY_NOT_PHYSICAL_PASS"}
             row["high_joint2_causal_evidence"]=causal
             self.last_high_joint2_causal=causal
+        if label=="lower_into_bin":
+            # Cycle 04: preserve native lower-stage provenance BEFORE FJT
+            # recovery and BEFORE any error can short-circuit the receipt.
+            lower_end_s=self.joints[-1]["stamp"] if self.joints else lower_first_sim_s
+            jtc=[v for v in self.arm_joint2_controller_samples
+                 if lower_first_sim_s<=v["stamp"]<=lower_end_s]
+            hw=[{"stamp":v["sim_observed_s"],"name":"command_interface.joint3/position",
+                 "position_rad":v["values"]["command_interface.joint3/position"]}
+                for v in self.hardware_introspection_samples
+                if lower_first_sim_s<=v["sim_observed_s"]<=lower_end_s
+                and "command_interface.joint3/position" in v["values"]]
+            self.last_lower_joint3_causal={
+                "stage":"lower_into_bin_MoveGroup",
+                "start_sim_s":lower_first_sim_s,"end_sim_s":lower_end_s,
+                "goal_joint3_rad":target["joint3"],
+                "actual_joint3_rad":self.joints[-1]["arm"]["joint3"],
+                "jtc_reference_feedback_error":jtc,
+                "hardware_command_position":hw,
+                "observer_errors":self.arm_joint2_observer_errors[-10:],
+                "native_trace_csv":"gazebo_finger_ecs_pre_post_command.csv",
+                "scope":"READ_ONLY_G04B_BLOCKED"}
+            row["lower_joint3_causal_evidence"]=self.last_lower_joint3_causal
         if (row["action_status"]!=GoalStatus.STATUS_SUCCEEDED or
             row["moveit_error"]!=MoveItErrorCodes.SUCCESS or
             row["planned_points"]==0):
@@ -371,12 +396,29 @@ class Witness(Node):
         hw_window=[s for s in self.hardware_introspection_samples
                    if arm_fjt_start_sim<=s["sim_observed_s"]<=arm_fjt_end_sim
                    and "command_interface.joint2/position" in s["values"]]
+        arm_jtc3=[v for v in self.arm_joint2_controller_samples
+                  if arm_fjt_start_sim<=v["stamp"]<=arm_fjt_end_sim]
+        hw3=[{"stamp":v["sim_observed_s"],"name":"command_interface.joint3/position",
+              "position_rad":v["values"]["command_interface.joint3/position"]}
+             for v in self.hardware_introspection_samples
+             if arm_fjt_start_sim<=v["sim_observed_s"]<=arm_fjt_end_sim
+             and "command_interface.joint3/position" in v["values"]]
         row={"name":"post_movegroup_direct_fjt_arm_settle",
              "desired":target,"actual":observed,"error_rad":errors,
              "action_status":int(outcome.status),
              "result_error":int(outcome.result.error_code),
              "goal_tolerance_rad":JOINT_GOAL_TOL_RAD,
              "goal_time_tolerance_s":2,"verdict":verdict,
+             "joint3_observation_window":{
+                 "stage":"lower_into_bin_direct_FJT_if_called",
+                 "start_sim_s":arm_fjt_start_sim,"end_sim_s":arm_fjt_end_sim,
+                 "goal_joint3_rad":target["joint3"],
+                 "actual_joint3_rad":observed["joint3"],
+                 "jtc_reference_feedback_error":arm_jtc3,
+                 "hardware_command_position":hw3,
+                 "observer_errors":self.arm_joint2_observer_errors[-10:],
+                 "native_trace_csv":"gazebo_finger_ecs_pre_post_command.csv",
+                 "scope":"READ_ONLY_G04B_BLOCKED"},
              "joint2_observation_window":{
                  "start_sim_s":arm_fjt_start_sim,
                  "end_sim_s":arm_fjt_end_sim,
@@ -958,6 +1000,8 @@ def main():
             report["last_arm_settle_even_on_failure"]=w.last_arm_settle_data
         if w.last_high_joint2_causal is not None:
             report["last_high_joint2_causal_even_on_failure"]=w.last_high_joint2_causal
+        if w.last_lower_joint3_causal is not None:
+            report["last_lower_joint3_causal_even_on_failure"]=w.last_lower_joint3_causal
         report["joint_state_samples"]=len(w.joints)
         out.parent.mkdir(parents=True,exist_ok=True)
         out.write_text(json.dumps(report,indent=2,allow_nan=False)+"\n")
