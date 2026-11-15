@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <limits>
 namespace ch07_181 {
 class RodTrace final : public gz::sim::System,
@@ -27,6 +28,9 @@ class RodTrace final : public gz::sim::System,
          "gravity_present,gravity_enabled,pose_present,x_m,y_m,z_m,"
          "velocity_present,vx_mps,vy_mps,vz_mps,local_velocity_present\n";
   out_.flush();
+  std::cerr << "CH07_181_ROD_ECS_PLUGIN_CONSTRUCTOR path="
+            << (n?n:"/tmp/ch07_181_rod_ecs.csv")
+            << " open=" << out_.good() << std::endl;
  }
  void PostUpdate(const gz::sim::UpdateInfo &info,
                  const gz::sim::EntityComponentManager &ecm) override {
