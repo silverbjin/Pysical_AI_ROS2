@@ -10,6 +10,7 @@ import json,math,os,re,subprocess,time
 from pathlib import Path
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
@@ -34,6 +35,8 @@ from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
+from pal_statistics_msgs.msg import Statistics
+from ch07_181_g04b_first_goal_causal_contract import first_goal_evidence
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 FINGERS=("joint_finger1","joint_finger2")
@@ -124,10 +127,38 @@ class Witness(Node):
         self.joints=[]
         self.last_grip_data=None
         self.controller_samples=[]
+        self.hardware_introspection_samples=[]
+        self.hardware_introspection_errors=[]
+        # Existing Jazzy publisher is BEST_EFFORT (Issue #181 CI #43591101353).
+        # This is a read-only diagnostic subscriber; no command path changes.
+        self.create_subscription(Statistics,
+            '/controller_manager/introspection_data/full',
+            self.on_hardware_introspection,
+            QoSProfile(depth=10,reliability=ReliabilityPolicy.BEST_EFFORT))
         self.create_subscription(JointTrajectoryControllerState,
             "/gripper_group_controller/controller_state",
             self.on_controller_state,10)
         self.create_subscription(JointState,"/joint_states",self.on_state,10)
+
+    def on_hardware_introspection(self,msg):
+        try:
+            values={}
+            for stat in msg.statistics:
+                name=str(getattr(stat,'name',''))
+                if not any(n in name for n in FINGERS):
+                    continue
+                value=float(getattr(stat,'value'))
+                if math.isfinite(value):values[name]=value
+            if values:
+                sim_now=self.get_clock().now().nanoseconds/1e9
+                self.hardware_introspection_samples.append({
+                    'sim_observed_s':sim_now,
+                    'source_stamp':msg.header.stamp.sec+
+                                   msg.header.stamp.nanosec*1e-9,
+                    'values':values})
+                self.hardware_introspection_samples=self.hardware_introspection_samples[-4500:]
+        except Exception as exc:
+            self.hardware_introspection_errors.append(repr(exc))
 
     def on_controller_state(self,m):
         # control_msgs Jazzy exposes the desired command and actual
@@ -150,7 +181,9 @@ class Witness(Node):
                 for key in ("reference","feedback","error"))):
             raise RuntimeError("G04B_JAZZY_JTC_REFERENCE_FEEDBACK_ERROR_MISSING")
         self.controller_samples.append(record)
-        self.controller_samples=self.controller_samples[-100:]
+        # Preserve the WHOLE 2s FJT+2s tolerance window. The previous 100
+        # samples showed only the post-ABORT reference reset to actual.
+        self.controller_samples=self.controller_samples[-1500:]
 
     def on_state(self,m):
         d=dict(zip(m.name,m.position))
@@ -307,6 +340,7 @@ class Witness(Node):
             tol.position=tolerance_m
             goal.goal_tolerance.append(tol)
         goal.goal_time_tolerance.sec=2
+        goal_start_sim=self.joints[-1]['stamp'] if self.joints else 0.0
         h=self.await_future(self.grip.send_goal_async(goal),label+"_ACCEPT",15)
         if not h or not h.accepted:
             raise RuntimeError("G04B_GRIP_"+label+"_REJECTED")
@@ -331,6 +365,14 @@ class Witness(Node):
               "diagnostic_free_space":bool(diagnostic),
               "contact_close_position_not_success_criterion":(
                   label=="contact_close")}
+        if label=='lower_stop_release_both_fingers_2mm':
+            goal_end_sim=self.joints[-1]['stamp'] if self.joints else goal_start_sim
+            data['first_goal_causal_receipt']=first_goal_evidence(
+                self.controller_samples,self.hardware_introspection_samples,
+                actual,goal_start_sim,goal_end_sim,
+                target_m=EXPECTED_PRELOAD_M)
+            data['introspection_schema_errors']=self.hardware_introspection_errors[-15:]
+            data['causal_receipt_is_not_physical_acceptance']=True
         self.last_grip_data=data
         if data["status"]!=GoalStatus.STATUS_SUCCEEDED or data["result_error"]!=0:
             raise RuntimeError("G04B_GRIP_"+label+"_RESULT_FAILURE_"+str(data))
