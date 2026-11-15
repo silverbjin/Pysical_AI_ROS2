@@ -30,6 +30,8 @@ from ch07_181_high_goal_precision_contract import assess_precise_high_arrival
 from ch07_181_jaw_axis_carry import (
     high_carry_jaw_compensation,real_jaw_world_axis_change,
     real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD)
+from ch07_181_high_carry_motion_contract import (
+    velocity_scaling_for_arm_goal, ARM_ACCELERATION_SCALING)
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -199,8 +201,8 @@ class Witness(Node):
         goal.request.group_name="arm_group"
         goal.request.allowed_planning_time=6.
         goal.request.num_planning_attempts=3
-        goal.request.max_velocity_scaling_factor=.17
-        goal.request.max_acceleration_scaling_factor=.17
+        goal.request.max_velocity_scaling_factor=velocity_scaling_for_arm_goal(label)
+        goal.request.max_acceleration_scaling_factor=ARM_ACCELERATION_SCALING
         goal.planning_options.plan_only=bool(plan_only)
         goal.planning_options.replan=False
         c=Constraints()
@@ -228,6 +230,8 @@ class Witness(Node):
              "action_status":int(outcome.status),
              "moveit_error":int(outcome.result.error_code.val),
              "planned_points":len(outcome.result.planned_trajectory.joint_trajectory.points),
+             "max_velocity_scaling_factor":goal.request.max_velocity_scaling_factor,
+             "max_acceleration_scaling_factor":goal.request.max_acceleration_scaling_factor,
              "initial_joint_state":before,
              "final_joint_state":self.joints[-1] if self.joints else None}
         if (row["action_status"]!=GoalStatus.STATUS_SUCCEEDED or
