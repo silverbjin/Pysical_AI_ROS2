@@ -160,6 +160,13 @@ if [[ "${G04B_CYCLE05_PGS_JAW_GOAL:-NO}" == "YES" ]];then
   --receipt "$OUT/g04b_cycle05_pgs_comparator_receipt.json" \
   >"$OUT/g04b_cycle05_pgs_comparator.log"
 fi
+if [[ "${G04B_CYCLE07_BIN_CONTACT_PROBE:-NO}" == "YES" ]];then
+  stage G04B_CYCLE07_ADD_READONLY_BIN_CONTACT_SENSOR
+  python3 "$ROOT/ci/ch07_181_bin_contacts_readonly.py" \
+    --world "$OUT/g04b_contact_world.sdf" \
+    --receipt "$OUT/cycle07_bin_sensor_receipt.json" \
+    > "$OUT/cycle07_bin_sensor_instrument.log"
+fi
 stage BUILD_READ_ONLY_GAZEBO_DYNAMIC_ROD_ECS_WITNESS
 timeout --signal=TERM --kill-after=5s 90s cmake \
  -S "$ROOT/ci/ch07_181_rod_trace" -B "$OUT/rod_ecs_build" \
@@ -318,6 +325,20 @@ stage VERIFY_ACTUAL_DYNAMICAL_ROD_AND_NATIVE_CONTACT_TOPIC
 timeout 12s gz model --list >"$OUT/gz_models.txt" 2>&1
 grep -q g04_grasp_cylinder "$OUT/gz_models.txt"
 timeout 12s gz model --model g04_grasp_cylinder --pose >"$OUT/gz_rod_initial.txt" 2>&1
+if [[ "${G04B_CYCLE07_BIN_CONTACT_PROBE:-NO}" == "YES" ]];then
+ BIN_TOPIC=/world/book_camera/model/g04_bin_support/link/bin_support/sensor/g04b_cycle07_bin_contacts/contact
+ echo "$BIN_TOPIC" > "$OUT/cycle07_bin_contact_topic.txt"
+ bin_ready=0
+ for attempt in $(seq 1 30);do
+  if timeout 4s gz topic -l |grep -Fxq "$BIN_TOPIC";then
+   bin_ready=1;break
+  fi
+  sleep .2
+ done
+ [[ "$bin_ready" == 1 ]] || { echo G04B_CYCLE07_BIN_CONTACT_TOPIC_MISSING;exit 34; }
+ start diag_bin_contacts stdbuf -oL gz topic -e -t "$BIN_TOPIC"
+ echo G04B_CYCLE07_BIN_CONTACT_SENSOR_READY >>"$OUT/stages.log"
+fi
 CONTACT_TOPIC=/world/book_camera/model/g04_grasp_cylinder/link/cylinder_link/sensor/book_ch07_77_rod_contact/contact
 echo "$CONTACT_TOPIC" > "$OUT/contact_native_topic.txt"
 CONTACT_READY=0
