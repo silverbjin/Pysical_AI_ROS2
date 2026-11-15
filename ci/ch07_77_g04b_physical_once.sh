@@ -82,7 +82,7 @@ packages=(
   ros-jazzy-controller-manager ros-jazzy-ros2controlcli
   ros-jazzy-joint-trajectory-controller ros-jazzy-joint-state-broadcaster
   ros-jazzy-ros2-control ros-jazzy-robot-state-publisher
-  ros-jazzy-xacro ros-jazzy-control-msgs
+  ros-jazzy-xacro ros-jazzy-control-msgs ros-jazzy-pal-statistics-msgs
   libgz-sim8-dev libgz-plugin2-dev cmake g++ pkg-config
 )
 missing=()
@@ -132,10 +132,12 @@ timeout --signal=TERM --kill-after=5s 90s cmake \
 timeout --signal=TERM --kill-after=5s 90s cmake \
  --build "$OUT/rod_ecs_build" --parallel 2 >"$OUT/rod_ecs_compile.log" 2>&1
 test -s "$OUT/rod_ecs_build/libch07_181_rod_trace.so"
+test -s "$OUT/rod_ecs_build/libch07_181_finger_ecs_trace.so"
 export GZ_SIM_SYSTEM_PLUGIN_PATH="$OUT/rod_ecs_build:${GZ_SIM_SYSTEM_PLUGIN_PATH:-}"
 export CH07_181_ROD_ECS_CSV="$OUT/gazebo_rod_real_static_gravity_velocity.csv"
 export CH07_181_SYNC_CONTACT_CSV="$OUT/gazebo_rod_finger_contact_same_ecs_frame.csv"
 export CH07_181_POSE_SOURCE_CSV="$OUT/gazebo_link_pose_component_provenance.csv"
+export CH07_181_FINGER_ECS_CSV="$OUT/gazebo_finger_ecs_pre_post_command.csv"
 python3 - "$OUT/g04b_contact_world.sdf" "$OUT/rod_ecs_scope.json" <<'PY'
 import xml.etree.ElementTree as ET,json,sys
 from pathlib import Path
@@ -150,6 +152,12 @@ assert rod.find("./link[@name='cylinder_link']/inertial/mass").text=="0.05"
 ET.SubElement(world,"plugin",{
  "filename":"libch07_181_rod_trace.so",
  "name":"ch07_181::RodTrace"})
+# Proven read-only Gazebo Sim8 PreUpdate(priority100)/PostUpdate observer:
+# native velocity CMD and true position for BOTH fingers, one sim timestamp.
+# No physics/URDF/controller/Goal changes. Commit only original raw custody.
+ET.SubElement(world,"plugin",{
+ "filename":"libch07_181_finger_ecs_trace.so",
+ "name":"ch07_181::FingerEcsTrace"})
 tree.write(file,encoding="unicode",xml_declaration=True)
 receipt.write_text(json.dumps({"world_gravity":"0 0 -9.8",
 "rod_static_original":False,"rod_mass_original_kg":.05,
@@ -200,6 +208,11 @@ test -s "$CH07_181_POSE_SOURCE_CSV" || {
 head -1 "$CH07_181_POSE_SOURCE_CSV" >"$OUT/rod_link_pose_provenance_schema.txt"
 echo CH07_181_POSE_COMPONENT_PROVENANCE_INITIALIZED >>"$OUT/stages.log"
 echo CH07_181_ROD_ECS_PLUGIN_INITIALIZED >>"$OUT/stages.log"
+test -s "$CH07_181_FINGER_ECS_CSV" || {
+ echo CH07_181_FINGER_ECS_PLUGIN_NOT_INITIALIZED;exit 27;
+}
+head -1 "$CH07_181_FINGER_ECS_CSV" > "$OUT/gazebo_finger_ecs_schema.txt"
+echo CH07_181_FINGER_NATIVE_CMD_ECS_PRE_POST_INITIALIZED >>"$OUT/stages.log"
 stage PREPARE_ONE_TEST_ONLY_WORLD_FIXED_BASE_SDF
 # Original URDF (same RSP/MoveIt/ros2_control) remains byte-identical.
 # Physically anchor ONLY the base_link to world in the Gazebo-spawned SDF.
