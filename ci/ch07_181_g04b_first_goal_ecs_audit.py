@@ -85,7 +85,8 @@ def main(receipt_path,ecs_path,out_path):
     if Path(receipt_path).is_file() and Path(ecs_path).is_file():
         source=json.loads(Path(receipt_path).read_text())
         goal=source.get("last_gripper_result_even_on_failure")
-        if goal and goal.get("name")=="lower_stop_release_both_fingers_2mm":
+        if goal and goal.get("name") in ("lower_stop_release_finger1_only_2mm",
+                                           "lower_stop_release_both_fingers_2mm"):
             with open(ecs_path,newline="") as fh:
                 output=audit(goal,csv.DictReader(fh))
     Path(out_path).write_text(json.dumps(output,indent=2,allow_nan=False)+"\n")
