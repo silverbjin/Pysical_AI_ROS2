@@ -27,6 +27,9 @@ from ch07_181_bin_transport_contract import (corrected_high_target,
     historical_wrist_bias_lower_goal,actual_finger_tilt_drift,finger_tilt)
 from ch07_181_native_recent_contact import require_bilateral_pre_release_contact
 from ch07_181_high_goal_precision_contract import assess_precise_high_arrival
+from ch07_181_jaw_axis_carry import (
+    high_carry_jaw_compensation,real_jaw_world_axis_change,
+    real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD)
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -654,7 +657,19 @@ def main():
         # AWAY from bin, with true custody drift rising 25.7->70.2mm.
         # Reuse the existing .002rad precise target contract already
         # used for G04B final x-alignment, rather than a second motion.
-        high_joint_target=arm_ik_tilted_fingers(*high_target)
+        # The original 24mm rod slipped by 16.83cm in #43683249305
+        # DESPITE precise 1.5mrad arm tracking: yaw from 0.018 to 0.421
+        # rotated the jaw separation direction ~0.37rad because q4
+        # stayed pi/2. Counter-rotate q4 to keep actual WORLD jaw normal
+        # as close as reachable to the measured physical held orientation.
+        # At q_wrist=0, changing q4 does NOT move the target finger-centre
+        # XYZ or the cylinder's ideal transport goal.
+        held_arm_actual=dict(w.joints[-1]["arm"])
+        nominal_high_arm=arm_ik_tilted_fingers(*high_target)
+        jaw_plan=high_carry_jaw_compensation(
+            held_arm_actual,nominal_high_arm)
+        high_joint_target=jaw_plan["target"]
+        report["transport_high_jaw_axis_plan"]=jaw_plan
         report["transport_high_exact_5dof_joint_target"]=high_joint_target
         report["transport_high_movegroup_joint_constraint_rad"]=.002
         report["arm_results"].append(
@@ -662,6 +677,12 @@ def main():
                        joint_override=high_joint_target))
         report["arm_goal_count"]+=1
         w.spin_for(.5)
+        report["transport_high_measured_jaw_axis_change_rad"]=real_jaw_world_axis_change(
+            held_arm_actual,dict(w.joints[-1]["arm"]))
+        report["transport_high_measured_jaw_axis_world"]=real_jaw_world_axis(
+            dict(w.joints[-1]["arm"]))
+        if report["transport_high_measured_jaw_axis_change_rad"]>MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD:
+            raise RuntimeError("G04B_181_REAL_JAW_WORLD_DIRECTION_LOST_DURING_CARRY")
         report["transport_high_jointstate_target_audit"]=assess_precise_high_arrival(
             high_joint_target,dict(w.joints[-1]["arm"]),held_offset)
         if not report["transport_high_jointstate_target_audit"][
