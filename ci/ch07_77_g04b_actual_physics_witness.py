@@ -28,7 +28,7 @@ from ch07_181_bin_transport_contract import (corrected_high_target,
     precise_high_arrival_valid,pre_release_valid,LOWER_WRIST_Z,
     historical_wrist_bias_lower_goal,actual_finger_tilt_drift,finger_tilt)
 from ch07_181_native_recent_contact import require_bilateral_pre_release_contact
-from ch07_181_high_goal_precision_contract import assess_precise_high_arrival
+from ch07_181_high_goal_precision_contract import assess_precise_high_arrival, high_settle_recovery_eligible
 from ch07_181_jaw_axis_carry import (
     high_carry_jaw_compensation,real_jaw_world_axis_change,
     real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD)
@@ -741,17 +741,37 @@ def main():
                        joint_override=high_joint_target))
         report["arm_goal_count"]+=1
         w.spin_for(.5)
+        report["transport_high_jointstate_target_audit"]=assess_precise_high_arrival(
+            high_joint_target,dict(w.joints[-1]["arm"]),held_offset)
+        if not report["transport_high_jointstate_target_audit"][
+                "real_arm_tracking_scoped_pass"]:
+            # Original real #43713755831: MoveGroup SUCCESS yet joint2
+            # 0.013284rad behind the strict 0.010rad high acceptance.
+            # Single bounded remedy: existing strict real 5-joint FJT
+            # *to exactly the same high target*, only if native dynamic
+            # rod is actually safely above bin (no blind extra xy goal).
+            high_mid_native=rod_pose()
+            report["high_before_strict_fjt_native_rod_world_xyz"]=high_mid_native
+            if not high_settle_recovery_eligible(
+                    report["transport_high_jointstate_target_audit"],
+                    high_mid_native):
+                raise RuntimeError("G04B_181_HIGH_MOVEGROUP_ACTUAL_JOINT_TRACKING_FAILED")
+            high_strict=w.arm_precision_settle(high_joint_target)
+            report["transport_high_direct_fjt_settle"]=high_strict
+            report["arm_results"].append(high_strict)
+            report["transport_high_jointstate_target_audit"]=assess_precise_high_arrival(
+                high_joint_target,dict(w.joints[-1]["arm"]),held_offset)
+            if not report["transport_high_jointstate_target_audit"][
+                    "real_arm_tracking_scoped_pass"]:
+                raise RuntimeError("G04B_181_HIGH_DIRECT_FJT_ACTUAL_JOINT_TRACKING_FAILED")
+        # Verify actual WORLD jaw axis using the final measured arm state
+        # after a direct FJT, not a stale pre-correction observation.
         report["transport_high_measured_jaw_axis_change_rad"]=real_jaw_world_axis_change(
             held_arm_actual,dict(w.joints[-1]["arm"]))
         report["transport_high_measured_jaw_axis_world"]=real_jaw_world_axis(
             dict(w.joints[-1]["arm"]))
         if report["transport_high_measured_jaw_axis_change_rad"]>MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD:
             raise RuntimeError("G04B_181_REAL_JAW_WORLD_DIRECTION_LOST_DURING_CARRY")
-        report["transport_high_jointstate_target_audit"]=assess_precise_high_arrival(
-            high_joint_target,dict(w.joints[-1]["arm"]),held_offset)
-        if not report["transport_high_jointstate_target_audit"][
-                "real_arm_tracking_scoped_pass"]:
-            raise RuntimeError("G04B_181_HIGH_MOVEGROUP_ACTUAL_JOINT_TRACKING_FAILED")
         above=rod_pose()
         report["pose_snapshots"]["transfer_high"]=above
         high_fk=measured_finger_center(w.joints[-1]["arm"])
