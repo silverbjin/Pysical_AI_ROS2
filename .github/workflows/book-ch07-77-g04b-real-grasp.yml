@@ -299,8 +299,6 @@ jobs:
             docker run --rm --init --pull=never --shm-size=1g \
               -e RUN_SOURCE_SHA="$(cat ci-results/ch07-77-g04b/checkout_sha.txt)" \
               -e GITHUB_RUN_ID="${{ github.run_id }}" \
-              -e G04B_CYCLE05_PGS_JAW_GOAL=YES \
-              -e G04B_CYCLE06_REACHABLE_RELEASE=YES \
               -v "$PWD":/work -w /work \
               "$(cat ci-results/ch07-77-g04b/image_digest.txt)" \
               bash ci/ch07_77_g04b_physical_once.sh \

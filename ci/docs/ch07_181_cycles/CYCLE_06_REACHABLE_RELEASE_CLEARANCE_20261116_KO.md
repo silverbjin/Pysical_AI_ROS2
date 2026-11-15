@@ -51,3 +51,41 @@
 - G04B: BLOCKED
 
 **교육용 회고:** TDD로 기구학 수치 정합성을 입증한 것과 Gazebo에서 실제 접촉·중력 낙하·최종 안착을 입증하는 것은 전혀 다른 검증 계층이다. 물리 관절 제약을 우회하는 경로 설계는 허용차 완화가 아니라 목표 기능을 충족하는 새로운 동작 계획이어야 한다.
+
+## Cycle 06 실제 Gazebo 결과 — CLOSED / G04B BLOCKED
+
+| 항목 | 원본 / 실측 |
+|---|---|
+| 시험 소스 SHA | `f388e893111a709b7b0fd65b2cd6166d09b415fa` |
+| 실제 checkout | `20bb91a4cd6a614b40ed731ec1b20097bc8f9f1d` (PR 임시 병합; 별도 코드 버전으로 오인하지 않음) |
+| L0 | [#43769441968](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43769441968) **SUCCESS**, docs #43769442087 **SUCCESS** |
+| 실제 Gazebo L2 | [#43769574949](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43769574949) **FAIL** (동일 SHA 단일 실험) |
+| 원본 Artifact / ZIP SHA256 | `14183955993` / `4ee87eeccaef5f40d46b9807bfd511d1659147492b902351a976d92baab20878` |
+| 원본 world | Cycle05와 동일 테스트용 PGS + DART6.13 1mm finger margin + anchored base / real 50g dynamic rod |
+| 실제 물체 상승 / hold | **0.11407m**, 1.3초 drift **0.00081224m** |
+| 실제 high bin 위치 | XY 오차 **0.01281664m**, custody drift **0.00337592m** |
+| 새 waypoint 수치 해 | q1 **0.438796**, q2 **−0.296411**, q3 **1.05**, q4 **1.229782**, wrist **−0.086599rad** |
+| 예상 물체 목표 | [**0.549780, 0.249904, 1.899489**]m, XY 오차 0.000240m, WORLD jaw 변화 약 0 |
+| 실제 MoveGroup q3 | 목표 **1.050000rad**, 완료 직후 native **0.993322rad**, 0.3초 후 실제 **0.997986rad** |
+| 최종 q3 오류 | **0.052013877rad**, 기준 0.010000rad 초과; 직접 FJT 재시도 **안 함** |
+| 실제 중단 당시 원통 자세 | [**0.51458,0.23484,1.93606**]m; 실제 그리퍼 FK와 일치하는 물리 custody 유지 |
+| raw joint3 시계열 | `/arm_group_controller` reference→hardware `1.050663rad`, Gazebo 실제 JointPosition 완료 직후 `0.9931rad`; 시간 후 `q3≈0.998162rad`에 정체 |
+| plateau 원본 | sim 62.8~63.2초 native velocity CMD 약 **0.525rad/s**, 실제 velocity 약 **1e−7rad/s 이하** |
+| 실제 release / 안정 안착 ROI | **NOT_RUN** — 측정된 관절 오류에서 즉시 STOP |
+
+### Cycle 06 가설 판정
+
+- 5DOF 순수 계산은 정확했다. 단, 명령 목표를 바꾸어도 native 관절은 각 목표에 충분히 도달하지 못했다. **기구학 PASS는 물리 PASS가 아님**.
+- 기존 q3≈1.132rad 정체가 고정된 절대 상한이었다는 가설은 **기각**: 이번 목표1.05rad에 대해서도 q3≈0.998rad에서 물리 속도가 사라졌다.
+- 목표 위치에서 기구학적 충돌을 피하도록 q3를 낮추었으나, **bin support / robot link / rod 사이의 실제 접촉쌍**은 아직 측정되지 않았으므로 DART 내부 constraint 원인을 단정하지 않는다.
+- **실패한 Cycle06과 PGS+jaw 실험 변수를 기본 CI에서 비활성화**하되 교육용 함수·음성 테스트·원본 증거를 보존한다. 물리 기준을 완화하거나 실제 물체를 강제 배치하지 않는다.
+
+### 차기 Cycle 07 설계
+
+현재 실제 bin support 모델의 collision geometry는 0.30×0.30×0.20m, centre [0.55,0.25,1.63]m, 상단 1.73m다. 다음 사이클은 **이 충돌 geometry를 그대로 두고, bin_support contact sensor만 추가**해 정확히 언제 어느 robot link/rod와 접촉하는지 native timestamp로 기록한다. 같은 물리 Goal을 새 정보 없이 실행하지 않고, 충돌쌍을 확인할 수 있는 승인형 단일 L2만 허용한다. 충돌 데이터가 없으면 UNKNOWN 처리.
+
+### 교육용 회고
+
+관절이 움직이지 않는 원인을 하한/상한, 미도달 목표, 컨트롤러 명령 전달 문제로 순차적으로 좁혔다. 마지막 실험에서는 q3 목표 자체를 안전한 수치로 조정해도 native velocity가 소실됐다. 따라서 **제어 명령 재전송보다 환경과 운동체의 실제 접촉 관계**가 더 중요한 후속 진단 대상이다.
+
+**Cycle 06 CLOSED / G00–G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
