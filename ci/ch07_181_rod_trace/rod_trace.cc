@@ -1,6 +1,8 @@
 // READ-ONLY Gazebo Sim8 ECS witness for Issue #181: real floating rod.
 #include <gz/sim/System.hh>
 #include <gz/sim/EntityComponentManager.hh>
+#include <gz/sim/Util.hh>
+#include <gz/sim/components/World.hh>
 #include <gz/sim/components/Model.hh>
 #include <gz/sim/components/Link.hh>
 #include <gz/sim/components/Name.hh>
@@ -17,6 +19,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <cmath>
 namespace ch07_181 {
 class RodTrace final : public gz::sim::System,
                        public gz::sim::ISystemPostUpdate {
@@ -26,7 +29,11 @@ class RodTrace final : public gz::sim::System,
   out_.open(n?n:"/tmp/ch07_181_rod_ecs.csv",std::ios::out|std::ios::trunc);
   out_<<"sim_time_s,model_entity,link_entity,static_present,model_static,"
          "gravity_present,gravity_enabled,pose_present,x_m,y_m,z_m,"
-         "velocity_present,vx_mps,vy_mps,vz_mps,local_velocity_present\n";
+         "velocity_present,vx_mps,vy_mps,vz_mps,local_velocity_present,"
+         "world_gravity_component_present,world_gravity_z_mps2,"
+         "model_pose_present,link_local_pose_present,"
+         "resolved_world_x_m,resolved_world_y_m,resolved_world_z_m,"
+         "derived_world_vz_mps\n";
   out_.flush();
   std::cerr << "CH07_181_ROD_ECS_PLUGIN_CONSTRUCTOR path="
             << (n?n:"/tmp/ch07_181_rod_ecs.csv")
@@ -48,7 +55,24 @@ class RodTrace final : public gz::sim::System,
   const auto p=ecm.Component<gz::sim::components::WorldPose>(l);
   const auto v=ecm.Component<gz::sim::components::WorldLinearVelocity>(l);
   const auto local=ecm.Component<gz::sim::components::LinearVelocity>(l);
+  const auto modelPose=ecm.Component<gz::sim::components::Pose>(m);
+  const auto linkPose=ecm.Component<gz::sim::components::Pose>(l);
+  // WorldPose and WorldLinearVelocity ECS components are not created by
+  // default in this original Gazebo Sim8 world. Their absence is NOT
+  // evidence of gravity disabled or velocity zero. The official
+  // gz::sim::worldPose() computes native world pose from existing
+  // non-mutated Pose + parent link components.
+  const auto resolved=gz::sim::worldPose(l,ecm).Pos();
+  const auto world=ecm.EntityByComponents(
+    gz::sim::components::World(),
+    gz::sim::components::Name("book_camera"));
+  const auto gravity=(world==gz::sim::kNullEntity) ?
+    nullptr : ecm.Component<gz::sim::components::Gravity>(world);
   const auto nan=std::numeric_limits<double>::quiet_NaN();
+  const auto estimatedVZ=std::isfinite(previousWorldZ_) && t>previousWorldT_
+       ? (resolved.Z()-previousWorldZ_)/(t-previousWorldT_) : nan;
+  previousWorldZ_=resolved.Z();
+  previousWorldT_=t;
   out_<<std::setprecision(15)<<t<<','<<m<<','<<l
       <<','<<(st!=nullptr)<<','<<(st?int(st->Data()):-1)
       <<','<<(gr!=nullptr)<<','<<(gr?int(gr->Data()):-1)
@@ -60,12 +84,20 @@ class RodTrace final : public gz::sim::System,
       <<','<<(v?v->Data().X():nan)
       <<','<<(v?v->Data().Y():nan)
       <<','<<(v?v->Data().Z():nan)
-      <<','<<(local!=nullptr)<<'\n';
+      <<','<<(local!=nullptr)
+      <<','<<(gravity!=nullptr)
+      <<','<<(gravity?gravity->Data().Z():nan)
+      <<','<<(modelPose!=nullptr)
+      <<','<<(linkPose!=nullptr)
+      <<','<<resolved.X()<<','<<resolved.Y()<<','<<resolved.Z()
+      <<','<<estimatedVZ<<'\n';
   if(++count_%100==0)out_.flush();
  }
  private:
  std::ofstream out_;
  double last_=-1.0;
+ double previousWorldZ_=std::numeric_limits<double>::quiet_NaN();
+ double previousWorldT_=-1.0;
  unsigned long count_=0;
 };
 }
