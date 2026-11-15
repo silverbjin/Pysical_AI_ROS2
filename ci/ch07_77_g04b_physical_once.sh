@@ -28,6 +28,15 @@ running(){
 cleanup(){
  local rc="$?" shutdown="OWNED_GROUPS_EXITED_NO_SIGKILL" idx attempt pg
  trap - EXIT;set +e
+ # Always keep the first failed FJT's causal report, including rc!=0.
+ # This is read-only audit; no retry, joint motion or verdict promotion.
+ if [[ -f "$CH07_77_G04B_RECEIPT" ]];then
+   python3 "$ROOT/ci/ch07_181_g04b_first_goal_ecs_audit.py" \
+     "$CH07_77_G04B_RECEIPT" "$CH07_181_FINGER_ECS_CSV" \
+     "$OUT/first_finger_native_command_audit.json" \
+     >"$OUT/first_finger_native_command_audit.log" 2>&1 || \
+     echo G04B_FIRST_FINGER_AUDIT_FAILED_READONLY >>"$OUT/stages.log"
+ fi
  for ((idx=${#OWNED[@]}-1;idx>=0;idx--));do
    pg="${OWNED[$idx]}"
    if ! running "$pg";then wait "$pg" 2>/dev/null || true;continue;fi
