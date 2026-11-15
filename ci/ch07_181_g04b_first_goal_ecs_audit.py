@@ -16,9 +16,10 @@ def audit(first_goal,ecs_rows):
             "scope":"FIRST_FINGER_GOAL_NATIVE_ECS_READONLY",
             "source_causal_receipt":causal,
             "joint_ecs":{},"verdict":"UNKNOWN"}
+    all_ecs_rows=list(ecs_rows)
     for name in FINGERS:
         rows=[]
-        for row in ecs_rows:
+        for row in all_ecs_rows:
             try:
                 if row["joint_name"]!=name:continue
                 t=float(row["sim_time_s"])
