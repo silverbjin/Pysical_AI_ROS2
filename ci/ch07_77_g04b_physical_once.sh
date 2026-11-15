@@ -134,6 +134,7 @@ timeout --signal=TERM --kill-after=5s 90s cmake \
 test -s "$OUT/rod_ecs_build/libch07_181_rod_trace.so"
 export GZ_SIM_SYSTEM_PLUGIN_PATH="$OUT/rod_ecs_build:${GZ_SIM_SYSTEM_PLUGIN_PATH:-}"
 export CH07_181_ROD_ECS_CSV="$OUT/gazebo_rod_real_static_gravity_velocity.csv"
+export CH07_181_SYNC_CONTACT_CSV="$OUT/gazebo_rod_finger_contact_same_ecs_frame.csv"
 python3 - "$OUT/g04b_contact_world.sdf" "$OUT/rod_ecs_scope.json" <<'PY'
 import xml.etree.ElementTree as ET,json,sys
 from pathlib import Path
@@ -184,6 +185,14 @@ if [[ ! -s "$CH07_181_ROD_ECS_CSV" ]];then
   exit 24
 fi
 head -1 "$CH07_181_ROD_ECS_CSV" >"$OUT/rod_ecs_startup_schema.txt"
+# The constructor must create this read-only contact-synchrony stream
+# before any arm or finger goal. ContactSensorData may still be absent;
+# its absence is recorded and is NOT silently interpreted as zero force.
+test -s "$CH07_181_SYNC_CONTACT_CSV" || {
+  echo CH07_181_ECS_CONTACT_SYNC_STREAM_MISSING;exit 25;
+}
+head -1 "$CH07_181_SYNC_CONTACT_CSV" >"$OUT/rod_contact_sync_schema.txt"
+echo CH07_181_ECS_CONTACT_SYNC_INITIALIZED >>"$OUT/stages.log"
 echo CH07_181_ROD_ECS_PLUGIN_INITIALIZED >>"$OUT/stages.log"
 stage SPAWN_IDENTICAL_GAZEBO_URDF
 timeout --signal=TERM --kill-after=5s 50s ros2 run ros_gz_sim create \

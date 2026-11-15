@@ -12,6 +12,8 @@
 #include <gz/sim/components/Gravity.hh>
 #include <gz/sim/components/Pose.hh>
 #include <gz/sim/components/LinearVelocity.hh>
+#include <gz/sim/components/Collision.hh>
+#include <gz/sim/components/ContactSensorData.hh>
 #include <gz/plugin/Register.hh>
 #include <chrono>
 #include <cstdlib>
@@ -20,6 +22,7 @@
 #include <iostream>
 #include <limits>
 #include <cmath>
+#include <string>
 namespace ch07_181 {
 class RodTrace final : public gz::sim::System,
                        public gz::sim::ISystemPostUpdate {
@@ -35,6 +38,21 @@ class RodTrace final : public gz::sim::System,
          "resolved_world_x_m,resolved_world_y_m,resolved_world_z_m,"
          "derived_world_vz_mps\n";
   out_.flush();
+  // Separate read-only, same-Gazebo-PostUpdate-frame contact/ECS receipt.
+  const auto *c=std::getenv("CH07_181_SYNC_CONTACT_CSV");
+  sync_.open(c?c:"/tmp/ch07_181_ecs_contact_sync.csv",
+             std::ios::out|std::ios::trunc);
+  sync_<<"sim_time_s,rod_x,rod_y,rod_z,rod_qx,rod_qy,rod_qz,rod_qw,"
+          "f1_link_x,f1_link_y,f1_link_z,f1_qx,f1_qy,f1_qz,f1_qw,"
+          "f1_collision_present,f1_contact_ecs_present,f1_rod_pair_count,"
+          "f1_latest_contact_stamp_s,"
+          "f2_link_x,f2_link_y,f2_link_z,f2_qx,f2_qy,f2_qz,f2_qw,"
+          "f2_collision_present,f2_contact_ecs_present,f2_rod_pair_count,"
+          "f2_latest_contact_stamp_s\n";
+  sync_.flush();
+  std::cerr<<"CH07_181_ECS_CONTACT_SYNC_CONSTRUCTOR path="
+           <<(c?c:"/tmp/ch07_181_ecs_contact_sync.csv")
+           <<" open="<<sync_.good()<<std::endl;
   std::cerr << "CH07_181_ROD_ECS_PLUGIN_CONSTRUCTOR path="
             << (n?n:"/tmp/ch07_181_rod_ecs.csv")
             << " open=" << out_.good() << std::endl;
@@ -62,7 +80,8 @@ class RodTrace final : public gz::sim::System,
   // evidence of gravity disabled or velocity zero. The official
   // gz::sim::worldPose() computes native world pose from existing
   // non-mutated Pose + parent link components.
-  const auto resolved=gz::sim::worldPose(l,ecm).Pos();
+  const auto rodWorld=gz::sim::worldPose(l,ecm);
+  const auto resolved=rodWorld.Pos();
   const auto world=ecm.EntityByComponents(
     gz::sim::components::World(),
     gz::sim::components::Name("book_camera"));
@@ -91,10 +110,62 @@ class RodTrace final : public gz::sim::System,
       <<','<<(linkPose!=nullptr)
       <<','<<resolved.X()<<','<<resolved.Y()<<','<<resolved.Z()
       <<','<<estimatedVZ<<'\n';
-  if(++count_%100==0)out_.flush();
+  if(sync_.good()) {
+    const auto q=rodWorld.Rot();
+    sync_<<std::setprecision(15)<<t<<','<<resolved.X()<<','<<resolved.Y()
+         <<','<<resolved.Z()<<','<<q.X()<<','<<q.Y()<<','<<q.Z()<<','<<q.W();
+    LogFinger(ecm,"finger1","finger1_collision");
+    LogFinger(ecm,"finger2","finger2_collision");
+    sync_<<'\n';
+  }
+  if(++count_%100==0) { out_.flush();sync_.flush(); }
  }
  private:
+ // READ ONLY: all Gazebo ECS components and native collision-pair stamps
+ // are sampled in the same PostUpdate call; neither ECM nor physics is
+ // changed. A missing component is recorded as unavailable, NEVER zero force.
+ void LogFinger(const gz::sim::EntityComponentManager &ecm,
+                const std::string &name,const std::string &collisionName) {
+   const auto link=ecm.EntityByComponents(
+       gz::sim::components::Link(),gz::sim::components::Name(name));
+   const auto collision=ecm.EntityByComponents(
+       gz::sim::components::Collision(),
+       gz::sim::components::Name(collisionName));
+   const auto nan=std::numeric_limits<double>::quiet_NaN();
+   if(link==gz::sim::kNullEntity) {
+     for(int i=0;i<7;++i)sync_<<','<<nan;
+   } else {
+     const auto pose=gz::sim::worldPose(link,ecm);
+     const auto p=pose.Pos();const auto q=pose.Rot();
+     sync_<<','<<p.X()<<','<<p.Y()<<','<<p.Z()
+          <<','<<q.X()<<','<<q.Y()<<','<<q.Z()<<','<<q.W();
+   }
+   const auto data=(collision==gz::sim::kNullEntity) ? nullptr :
+       ecm.Component<gz::sim::components::ContactSensorData>(collision);
+   int matched=0;double lastStamp=nan;
+   if(data) {
+     const auto &all=data->Data();
+     for(int i=0;i<all.contact_size();++i) {
+       const auto &contact=all.contact(i);
+       const auto &a=contact.collision1().name();
+       const auto &b=contact.collision2().name();
+       if((a.find("g04_grasp_cylinder")!=std::string::npos ||
+           b.find("g04_grasp_cylinder")!=std::string::npos) &&
+          (a.find(collisionName)!=std::string::npos ||
+           b.find(collisionName)!=std::string::npos)) {
+          ++matched;
+          const auto &stamp=contact.header().stamp();
+          const double cstamp=stamp.sec()+stamp.nsec()*1e-9;
+          if(!std::isfinite(lastStamp) || cstamp>lastStamp)lastStamp=cstamp;
+       }
+     }
+   }
+   sync_<<','<<(collision!=gz::sim::kNullEntity)
+        <<','<<(data!=nullptr)<<','<<(data?matched:-1)
+        <<','<<lastStamp;
+ }
  std::ofstream out_;
+ std::ofstream sync_;
  double last_=-1.0;
  double previousWorldZ_=std::numeric_limits<double>::quiet_NaN();
  double previousWorldT_=-1.0;
