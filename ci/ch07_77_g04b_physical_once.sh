@@ -168,6 +168,23 @@ for attempt in $(seq 1 55);do
  sleep .3
 done
 [[ "$READY" -eq 1 ]] || { echo G04B_REAL_WORLD_NOT_READY;exit 3; }
+stage REQUIRE_READ_ONLY_ROD_ECS_PLUGIN_INITIALIZED
+# Plugin constructor creates the CSV header *before* any robot Goal.
+# If the plugin is not loaded, stop here instead of wasting another
+# full physical run and mislabeling missing evidence as a physics cause.
+ldd "$OUT/rod_ecs_build/libch07_181_rod_trace.so" >"$OUT/rod_ecs_ldd.log" 2>&1
+echo "CH07_181_ROD_ECS_EXPECTED_OUTPUT=$CH07_181_ROD_ECS_CSV" >>"$OUT/stages.log"
+for attempt in $(seq 1 35);do
+  [[ -s "$CH07_181_ROD_ECS_CSV" ]] && break
+  sleep .2
+done
+if [[ ! -s "$CH07_181_ROD_ECS_CSV" ]];then
+  echo CH07_181_ROD_ECS_PLUGIN_NOT_INITIALIZED
+  grep -Ei 'CH07_181_ROD_ECS|trace|error|plugin' "$OUT/gazebo.log" |tail -50 || true
+  exit 24
+fi
+head -1 "$CH07_181_ROD_ECS_CSV" >"$OUT/rod_ecs_startup_schema.txt"
+echo CH07_181_ROD_ECS_PLUGIN_INITIALIZED >>"$OUT/stages.log"
 stage SPAWN_IDENTICAL_GAZEBO_URDF
 timeout --signal=TERM --kill-after=5s 50s ros2 run ros_gz_sim create \
  -world book_camera -name my_robot -file "$OUT/robot.urdf" -z 0.0 >"$OUT/create.log" 2>&1
