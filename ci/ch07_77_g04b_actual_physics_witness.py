@@ -26,6 +26,7 @@ from ch07_181_bin_transport_contract import (corrected_high_target,
     precise_high_arrival_valid,pre_release_valid,LOWER_WRIST_Z,
     historical_wrist_bias_lower_goal,actual_finger_tilt_drift,finger_tilt)
 from ch07_181_native_recent_contact import require_bilateral_pre_release_contact
+from ch07_181_high_goal_precision_contract import assess_precise_high_arrival
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -647,10 +648,25 @@ def main():
         high_target=exact_fk_high_bin_wrist_target(
             dict(w.joints[-1]["arm"]),held_world)
         report["transport_high_wrist_goal"]=high_target
+        # Raw #43605465669: coarse MoveGroup joint constraint .035rad
+        # allowed up to .03358rad actual joint error, leaving 51mm physical
+        # bin miss. Its SECOND lateral correction pushed actual held rod
+        # AWAY from bin, with true custody drift rising 25.7->70.2mm.
+        # Reuse the existing .002rad precise target contract already
+        # used for G04B final x-alignment, rather than a second motion.
+        high_joint_target=arm_ik_tilted_fingers(*high_target)
+        report["transport_high_exact_5dof_joint_target"]=high_joint_target
+        report["transport_high_movegroup_joint_constraint_rad"]=.002
         report["arm_results"].append(
-            w.arm_goal("transfer_high_above_bin",high_target))
+            w.arm_goal("transfer_high_above_bin",high_target,
+                       joint_override=high_joint_target))
         report["arm_goal_count"]+=1
         w.spin_for(.5)
+        report["transport_high_jointstate_target_audit"]=assess_precise_high_arrival(
+            high_joint_target,dict(w.joints[-1]["arm"]),held_offset)
+        if not report["transport_high_jointstate_target_audit"][
+                "real_arm_tracking_scoped_pass"]:
+            raise RuntimeError("G04B_181_HIGH_MOVEGROUP_ACTUAL_JOINT_TRACKING_FAILED")
         above=rod_pose()
         report["pose_snapshots"]["transfer_high"]=above
         high_fk=measured_finger_center(w.joints[-1]["arm"])
@@ -660,26 +676,19 @@ def main():
             above[0]-.55,above[1]-.25)
         if not high_arrival_valid(above,report["transport_high_custody_drift_m"]):
             raise RuntimeError("G04B_181_REAL_ROD_NOT_ABOVE_BIN_WITH_SECURE_GRASP")
-        # Correct the observed real cylinder XY error while it is still
-        # held HIGH, no bin collision. CI #43600241307 high XY error
-        # was 62.9mm, rendering the later tight release ROI impossible
-        # even if there were no additional slip.
-        high_refined=feedback_centered_high_target(high_target,above)
-        report["transport_high_feedback_correction_wrist_goal"]=high_refined
-        report["arm_results"].append(
-            w.arm_goal("transfer_high_world_feedback_recenter",high_refined))
-        report["arm_goal_count"]+=1
-        w.spin_for(.5)
-        above=rod_pose()
-        report["pose_snapshots"]["transfer_high_precise"]=above
-        high_fk=measured_finger_center(w.joints[-1]["arm"])
-        report["transport_high_precise_custody_drift_m"]=custody_drift(
-            above,high_fk,held_offset)
-        report["transport_high_precise_bin_xy_error_m"]=math.hypot(
-            above[0]-.55,above[1]-.25)
+        # No second high XY MoveGroup Goal. G04B #43605465669 proved
+        # its predicted overshoot (~53mm) and measured dynamic rod slip.
+        # Preserve distinct receipts; do NOT fabricate a second test.
+        report["transport_second_lateral_goal"]="NOT_RUN_UNSTABLE_RAW_43605465669"
+        report["pose_snapshots"]["transfer_high_precise"]=list(above)
+        report["transport_high_precise_custody_drift_m"]=report[
+            "transport_high_custody_drift_m"]
+        report["transport_high_precise_bin_xy_error_m"]=report[
+            "transport_high_bin_xy_error_m"]
         if not precise_high_arrival_valid(
                 above,report["transport_high_precise_custody_drift_m"]):
             raise RuntimeError("G04B_181_REAL_ROD_NOT_PRECISELY_CENTERED_HIGH")
+        high_refined=high_target
         # CI #43599620070: high transfer had only 4.85mm grasp custody
         # drift, but uncorrected lower step changed world finger pitch
         # ~0.31rad, leading to 108mm real rod slip despite both contacts.
