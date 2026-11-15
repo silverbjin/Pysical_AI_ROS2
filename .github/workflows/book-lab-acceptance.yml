@@ -7,10 +7,14 @@ on:
       - 'ci/check_guides.py'
       - 'ci/book_acceptance_matrix.py'
       - 'ci/book_acceptance_evidence.json'
-      - 'ci/tests/**'
+      - 'ci/tests/test_book_acceptance_matrix.py'
+      - 'ci/tests/test_check_guides.py'
+      - 'ci/tests/test_book_lab_fastloop_policy.py'
       - 'ci/run_lab.sh'
       - 'ci/labs/**'
-      - 'Ch[0-1][0-9]/**'
+      - 'Ch[0-1][0-9]/README.md'
+      - 'Ch[0-1][0-9]/docs/**'
+      - 'Ch13/evidence/**/*.md'
       - 'README.md'
   workflow_dispatch:
     inputs:
@@ -70,8 +74,13 @@ jobs:
             /Ch13/README.md
             /Ch13/docs/**
             /Ch13/evidence/**/*.md
-      - name: Validator unit tests
-        run: python3 -m unittest discover -s ci/tests -v
+      # L0 documentation-only: never discover ROS/Gazebo controller/physics
+      # tests from a Ch07 PR. Those have their own separate workflows.
+      - name: Documentation validator unit tests only
+        run: |
+          python3 -m unittest discover -s ci/tests -p test_check_guides.py -v
+          python3 -m unittest discover -s ci/tests -p test_book_acceptance_matrix.py -v
+          python3 -m unittest discover -s ci/tests -p test_book_lab_fastloop_policy.py -v
       - name: Validate guide inventory and links
         env:
           CHAPTER: "${{ github.event_name == 'pull_request' && 'all' || inputs.chapter }}"
