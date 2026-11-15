@@ -26,3 +26,10 @@
 L0 성공·손가락 2mm 성공·lift 13cm는 **G04B Pick-and-Place 완주 PASS가 아님**. 실제 final ROI, release, settled bin ground-truth, independent native contacts, 모든 안전 판정이 같은 실제 세션에서 충족돼야 G04B 성공을 주장할 수 있다. G05 실제 RGB-D→MoveIt→전체 물리 시연은 아직 NOT_RUN.
 
 새 단계의 장시간 PPO 재학습, Ch10 IK/보행, Ch09 심화 마찰, Ch13 전체 연속 미션은 이번 Issue #181 경계와 별개다.
+
+## 조치 후 업데이트 — 다음 실패 경계 read-only 원인 계측 준비
+
+- 단일 계측 commit `0a8fb9f243436ec73382be88f555bd4d329da0cb`: 기존 Gazebo ECS pre/post 물리 관절 기록기에 **arm `joint2`**를 추가하고, 실제 `/arm_group_controller/controller_state`의 동일 시뮬레이션 시간 reference/feedback/error와 `/controller_manager/introspection_data/full`의 `command_interface.joint2/position`을 FJT 최초 실패 접수 시 오염 없이 별도 증거로 저장한다. `last_arm_settle_even_on_failure`는 FJT ABORTED 시에도 기록한다.
+- 단위검사 `ci/tests/test_ch07_181_arm_joint2_readonly_boundary.py`: ECS가 단순 관측인지, 원본 안전·파지 판정이 변경되지 않았는지 검증한다.
+- 공개 [L0 #43715620550](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43715620550) **SUCCESS**, **실제 Gazebo 이 commit에서는 NOT_RUN**. 이 단계의 계측은 원인 확정·물리 PASS·Owner 인수가 아니다.
+- 새 source와 기존 Artifact 간 관절 `joint2` hardware/native 타임싱크는 아직 실측되지 않았다. 새 Gazebo는 동일 실패 재현 용도가 아니라 신규 물리 관측을 통해 **한 가지 반증 가능한 원인 경계**를 구분할 때만 수행한다.
