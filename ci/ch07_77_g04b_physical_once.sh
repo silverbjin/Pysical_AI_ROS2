@@ -200,9 +200,25 @@ test -s "$CH07_181_POSE_SOURCE_CSV" || {
 head -1 "$CH07_181_POSE_SOURCE_CSV" >"$OUT/rod_link_pose_provenance_schema.txt"
 echo CH07_181_POSE_COMPONENT_PROVENANCE_INITIALIZED >>"$OUT/stages.log"
 echo CH07_181_ROD_ECS_PLUGIN_INITIALIZED >>"$OUT/stages.log"
-stage SPAWN_IDENTICAL_GAZEBO_URDF
+stage PREPARE_ONE_TEST_ONLY_WORLD_FIXED_BASE_SDF
+# Original URDF (same RSP/MoveIt/ros2_control) remains byte-identical.
+# Physically anchor ONLY the base_link to world in the Gazebo-spawned SDF.
+# Source URDF's world-to-base fixed joint was COMMENTED OUT: raw #195
+# model rotated ~0.095rad and the old posthoc geometry used local link poses
+# as world poses. This is a SINGLE justified fixture-level mechanical factor.
+timeout --signal=TERM --kill-after=3s 35s gz sdf -p "$OUT/robot.urdf" \
+ >"$OUT/robot_sdf_original_conversion.sdf" 2>"$OUT/robot_sdf_convert.log"
+test -s "$OUT/robot_sdf_original_conversion.sdf"
+python3 "$ROOT/ci/ch07_181_fixed_world_base_anchor.py" \
+ --input "$OUT/robot_sdf_original_conversion.sdf" \
+ --output "$OUT/robot_sdf_world_anchored.sdf" \
+ --receipt "$OUT/world_base_anchor_receipt.json" >"$OUT/world_base_anchor.log"
+timeout 20s gz sdf -k "$OUT/robot_sdf_world_anchored.sdf" \
+ > "$OUT/world_base_anchor_sdf_validate.log" 2>&1
+test -s "$OUT/robot_sdf_world_anchored.sdf"
+stage SPAWN_SAME_ORIGINAL_ROBOT_WITH_ONE_WORLD_BASE_ANCHOR
 timeout --signal=TERM --kill-after=5s 50s ros2 run ros_gz_sim create \
- -world book_camera -name my_robot -file "$OUT/robot.urdf" -z 0.0 >"$OUT/create.log" 2>&1
+ -world book_camera -name my_robot -file "$OUT/robot_sdf_world_anchored.sdf" -z 0.0 >"$OUT/create.log" 2>&1
 grep -q 'Entity creation successful' "$OUT/create.log"
 # Issue #181 raw CI #43683958215: both Gazebo finger contact sensors
 # continued to report ~13N even after actual rod moved >=0.15m away
