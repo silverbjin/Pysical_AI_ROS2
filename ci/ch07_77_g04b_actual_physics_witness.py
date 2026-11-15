@@ -27,6 +27,8 @@ from ch07_181_bin_transport_contract import (corrected_high_target,
     historical_wrist_bias_lower_goal,actual_finger_tilt_drift,finger_tilt)
 from ch07_181_native_recent_contact import require_bilateral_pre_release_contact
 from ch07_181_high_goal_precision_contract import assess_precise_high_arrival
+from ch07_181_pgs_feedback_contract import (
+    pgs_bounded_recenter,verify_post_correction)
 from ch07_181_jaw_axis_carry import (
     high_carry_jaw_compensation,real_jaw_world_axis_change,
     real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD)
@@ -707,19 +709,41 @@ def main():
             above[0]-.55,above[1]-.25)
         if not high_arrival_valid(above,report["transport_high_custody_drift_m"]):
             raise RuntimeError("G04B_181_REAL_ROD_NOT_ABOVE_BIN_WITH_SECURE_GRASP")
-        # No second high XY MoveGroup Goal. G04B #43605465669 proved
-        # its predicted overshoot (~53mm) and measured dynamic rod slip.
-        # Preserve distinct receipts; do NOT fabricate a second test.
-        report["transport_second_lateral_goal"]="NOT_RUN_UNSTABLE_RAW_43605465669"
+        # A SINGLE bounded real-rod correction is justified only AFTER
+        # the ORIGINAL DART PGS physical run #43690734272 independently
+        # met first-high true geometry custody 0.03704m<=0.04m and
+        # high bin miss 0.03724m. Earlier Dantzig failures with 5-7cm
+        # miss or 7cm custody drift are rejected BEFORE an extra Goal.
+        # The prior coarse second move rotated jaw4 back to pi/2, which
+        # worsened detachment. Keep ACTUAL PGS high jaw4, and use strict
+        # 2mrad MoveGroup joint override.
+        candidate=pgs_bounded_recenter(
+            high_target,above,report["transport_high_custody_drift_m"],
+            dict(w.joints[-1]["arm"]))
+        report["transport_pgs_high_feedback_receipt"]=candidate
+        high_refined=candidate["candidate_wrist_xyz_m"]
+        precision_q=arm_ik_tilted_fingers(*high_refined)
+        precision_q["joint4"]=candidate["held_q4_rad"]
+        report["transport_second_lateral_goal"]="ONE_PGS_SCOPED_WORLD_FEEDBACK"
+        report["transport_high_feedback_precise_joint_goal"]=precision_q
+        report["arm_results"].append(
+            w.arm_goal("transfer_high_world_feedback_recenter",
+                       high_refined,joint_override=precision_q))
+        report["arm_goal_count"]+=1
+        w.spin_for(.5)
+        above=rod_pose()
         report["pose_snapshots"]["transfer_high_precise"]=list(above)
-        report["transport_high_precise_custody_drift_m"]=report[
-            "transport_high_custody_drift_m"]
-        report["transport_high_precise_bin_xy_error_m"]=report[
-            "transport_high_bin_xy_error_m"]
-        if not precise_high_arrival_valid(
-                above,report["transport_high_precise_custody_drift_m"]):
-            raise RuntimeError("G04B_181_REAL_ROD_NOT_PRECISELY_CENTERED_HIGH")
-        high_refined=high_target
+        high_fk=measured_finger_center(w.joints[-1]["arm"])
+        report["transport_high_precise_custody_drift_m"]=custody_drift(
+            above,high_fk,held_offset)
+        report["transport_high_precise_bin_xy_error_m"]=math.hypot(
+            above[0]-.55,above[1]-.25)
+        report["transport_pgs_actual_fine_high_audit"]=verify_post_correction(
+            above,report["transport_high_precise_custody_drift_m"],
+            precision_q,dict(w.joints[-1]["arm"]))
+        if not report["transport_pgs_actual_fine_high_audit"][
+                "physical_fine_high_PASS"]:
+            raise RuntimeError("G04B_181_PGS_PHYSICAL_HIGH_FINE_POSE_OR_CUSTODY_FAILED")
         # CI #43599620070: high transfer had only 4.85mm grasp custody
         # drift, but uncorrected lower step changed world finger pitch
         # ~0.31rad, leading to 108mm real rod slip despite both contacts.
