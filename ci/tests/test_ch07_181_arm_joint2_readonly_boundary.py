@@ -5,7 +5,7 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 class ArmJoint2ReadOnlyContract(unittest.TestCase):
     def test_native_gazebo_trace_includes_arm_joint2_without_mutating_ecm(self):
         s=(ROOT/"ch07_181_rod_trace/finger_ecs_trace.cc").read_text()
-        self.assertIn('{"joint_finger1","joint_finger2","joint2"}',s)
+        self.assertIn('{"joint_finger1","joint_finger2","joint2","joint3"}',s)
         for forbidden in ("CreateComponent(", "SetComponentData(", "SetVelocity(", "SetForce("):
             self.assertNotIn(forbidden,s)
         self.assertIn("components::JointVelocityCmd",s)

@@ -30,7 +30,9 @@
 ## 4. 사이클 결과
 
 - 개발 커밋: PENDING
-- L0: PENDING
+- **L0 RED:** [#43725218239](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43725218239)에서 기존 구조 테스트 1건 FAIL. 기존 ECS 객체 이름이 finger1+finger2+joint2로만 한정돼 새 read-only joint3 계측을 허용하지 않는 **오래된 테스트 전제**가 원인.
+- **수정:** 기존 `test_ch07_181_arm_joint2_readonly_boundary.py`에서 요청 관측 joint3 추가를 허용. 기존 ECS mutation 금지 및 물리 인수 게이트는 변함없음.
+- **L0 GREEN:** PENDING
 - L2: NOT_RUN
 - raw artifact/ZIP SHA256: NOT_RUN
 - 최초 실패/가설 채택 여부: PENDING
