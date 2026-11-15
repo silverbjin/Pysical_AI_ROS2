@@ -7,7 +7,7 @@ plus independent real Gazebo rod poses showing lift, 1.3s hold and release.
 """
 import hashlib,json,math,re,sys
 from pathlib import Path
-from ch07_181_physical_preload_contract import actual_preload_pass, isolated_finger1_release_pass
+from ch07_181_physical_preload_contract import actual_preload_pass
 raw_path,physical_path,out_path,support_path=map(Path,sys.argv[1:5])
 raw=raw_path.read_text(errors="replace")
 support_native=support_path.read_bytes()
@@ -142,9 +142,6 @@ conditions={
              for v in result.get("finger_results",[]) if v.get("name")=="contact_close")),
  # Original controller Action must NOT substitute for real measured 2mm
  # lower-limit release held after MoveGroup and right before physical close.
- "isolated_finger1_2mm_release_real_feedback_before_second_goal":
-     isolated_finger1_release_pass(
-       result.get("isolated_finger1_release_before_bilateral")),
  "real_bilateral_2mm_before_and_after_movegroup":actual_preload_pass(
      result.get("lower_stop_release_both_fingers_pre_movegroup"),
      result.get("lower_stop_release_after_pregrasp_actual_m"),
@@ -159,15 +156,14 @@ conditions={
                    "transfer_high","transfer_high_precise","pre_release","settled")),
  "actual_arm_movegroup_and_gripper_fjt_sequence":(
          4<=result.get("arm_goal_count",-1)<=13 and
-         result.get("finger_goal_count")==5 and
+         result.get("finger_goal_count")==4 and
          len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2 and
-         len(result.get("finger_results",[]))==5 and
+         len(result.get("finger_results",[]))==4 and
          result.get("free_space_diagnostics_status")==
              "NOT_RERUN_PRIOR_PUBLIC_SCOPED_EVIDENCE" and
          result.get("finger_clearance_preflight")==[] and
          [g.get("name") for g in result.get("finger_results",[])] ==
-             ["open","lower_stop_release_finger1_only_2mm",
-              "lower_stop_release_both_fingers_2mm","contact_close","release"] and
+             ["open","lower_stop_release_both_fingers_2mm","contact_close","release"] and
          result.get("preclose_object_shift_m",1)<=.018 and
          result.get("aligned_pregrasp_radius_error_m",1)<=.005 and
          "aligned_pregrasp" in p and

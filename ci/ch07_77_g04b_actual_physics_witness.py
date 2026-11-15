@@ -18,7 +18,7 @@ from control_msgs.msg import JointTrajectoryControllerState, JointTolerance
 from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
 from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
-from ch07_181_physical_preload_contract import (actual_preload_pass, isolated_finger1_release_pass, EXPECTED_PRELOAD_M)
+from ch07_181_physical_preload_contract import actual_preload_pass, EXPECTED_PRELOAD_M
 from ch07_181_exact_fk import (original_finger_collision_center,
     original_finger_tool_z_axis,actual_tool_axis_angle_rad)
 from ch07_181_bin_transport_contract import (corrected_high_target,
@@ -365,8 +365,7 @@ class Witness(Node):
               "diagnostic_free_space":bool(diagnostic),
               "contact_close_position_not_success_criterion":(
                   label=="contact_close")}
-        if label in ('lower_stop_release_finger1_only_2mm',
-                     'lower_stop_release_both_fingers_2mm'):
+        if label=='lower_stop_release_both_fingers_2mm':
             goal_end_sim=self.joints[-1]['stamp'] if self.joints else goal_start_sim
             data['first_goal_causal_receipt']=first_goal_evidence(
                 self.controller_samples,self.hardware_introspection_samples,
@@ -425,21 +424,11 @@ def main():
                 w.arm_goal(name+"_plan_only",xyz,plan_only=True))
         report["finger_results"].append(w.grip_goal("open",0.0))
         report["finger_goal_count"]+=1
-        # First failed #202 real native ECS #43710243296: both hardware
-        # commands reached 2mm and finger1 JointVelocityCmd>0, but finger1
-        # remained q=0 while finger2 moved 2mm. A prior isolated 2mm FJT
-        # allowed finger2 to leave its lower stop (#43595476665).
-        # ONE causal factor: sequence release instead of simultaneous q=0
-        # departure. STOP before second Goal if finger1 actual cannot move.
-        isolated=w.grip_goal("lower_stop_release_finger1_only_2mm",
-                             EXPECTED_PRELOAD_M,0.0,diagnostic=True)
-        report["finger_results"].append(isolated)
-        report["finger_goal_count"]+=1
-        report["isolated_finger1_release_before_bilateral"]=isolated
-        if not isolated_finger1_release_pass(isolated):
-            raise RuntimeError("G04B_181_ISOLATED_FINGER1_2MM_NOT_REACHED_STOP")
-        # The original bilateral 2mm admission after the single-finger
-        # release remains mandatory; no altered tolerance, geometry or force.
+        # Original real CI #43599142218: finger2 at physical 2mm then
+        # 11mm PASS, but finger1 left at q0 FROZE (0mm for 11mm Goal,
+        # FJT ABORTED). Thus BOTH original prismatic joints need one
+        # real measured 2mm release before the same MoveGroup arm motion.
+        # No fake attach/teleport, increased effort or tolerance relaxation.
         preload=w.grip_goal("lower_stop_release_both_fingers_2mm",
                             EXPECTED_PRELOAD_M,EXPECTED_PRELOAD_M,diagnostic=True)
         report["finger_results"].append(preload)
