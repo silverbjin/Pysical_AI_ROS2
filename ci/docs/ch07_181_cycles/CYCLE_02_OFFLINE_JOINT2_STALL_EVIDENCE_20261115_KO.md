@@ -37,3 +37,11 @@ Cycle 01 `high_joint2_causal_native_audit.json`은 hardware 위치 명령의 마
 **교육용 교훈:** 데이터베이스·ROS introspection의 `.is_limited` 같은 메타데이터 필드를 수치 명령과 구분해야 한다. 빨리 테스트를 반복하는 것보다 첫 관측 단절의 인과 사슬을 올바로 정의하는 것이 중요하다.
 
 **정식 인수:** G00–G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.
+
+## CI RED → GREEN 디버깅 기록 (교육용)
+
+- **RED:** [L0 #43720153516](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43720153516)에서 `test_late_motion_not_mislabeled_stall`과 `test_real_native_post_result_stall_without_zero_command` 2건 FAIL.
+- **현상:** 합성 fixture에서 high Goal 구간 native 위치 샘플 1개만 존재할 때, legacy `HIGH_JOINT2_NONZERO_NATIVE_CMD_BUT_FROZEN`이 먼저 선택되어 post-result 마지막 0.5초의 유효한 실제 motion/stall 구간 분류가 실행되지 않았다.
+- **원인:** 단 하나의 native JointPosition 샘플의 `max-min=0`을 관절 운동 없음의 물리 증거로 잘못 취급한 판정기 결함.
+- **GREEN 수정:** high Goal 중 명령·position 각각 **8개 이상** 있어야 처음부터 고착됐다는 분류에 진입. 최종 구간 역시 8개 이상 pre-physics 실제 샘플과 명령·위치·속도를 모두 요구. 미충족 자료는 거짓 PASS/거짓 고착으로 사용하지 않음.
+- **원본 물리 판정:** 기존 실제 G04B는 여전히 BLOCKED; 오직 분석기 L0 수정으로 물리 PASS 승격 불가능. 이번 Cycle 02에서 새로운 Gazebo L2는 0회.

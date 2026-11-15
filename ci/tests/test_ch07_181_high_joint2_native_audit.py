@@ -45,7 +45,8 @@ class TestReadOnlyHighBoundary(unittest.TestCase):
                    "HARDWARE_COMMAND_UNOBSERVED")
 
  def test_nonzero_cmd_frozen_is_blocked(self):
-  x=inspect(receipt(),[row(59.,"pre",.02,.093),row(60.,"post",.02,.093)])
+  x=inspect(receipt(),[row(59.+i*.1,"pre",.02,.093)
+                       for i in range(10)])
   self.assertEqual(x["verdict"],"HIGH_JOINT2_NONZERO_NATIVE_CMD_BUT_FROZEN")
   self.assertEqual(x["G04B"],"BLOCKED")
  def test_missing_source_evidence_is_unknown(self):

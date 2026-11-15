@@ -80,8 +80,9 @@ def inspect(receipt,rows):
     elif not actual_hw:out["verdict"]="HARDWARE_COMMAND_UNOBSERVED"
     elif not pre_cmd:out["verdict"]="NATIVE_PRE_PHYSICS_COMMAND_UNOBSERVED"
     elif not native_positions:out["verdict"]="NATIVE_JOINT_POSITION_UNOBSERVED"
-    elif (max(map(abs,pre_cmd))>=.001 and
-          (max(native_positions)-min(native_positions))<.0005):
+    elif (len(pre_cmd)>=8 and len(native_positions)>=8
+          and max(map(abs,pre_cmd))>=.001
+          and (max(native_positions)-min(native_positions))<.0005):
         out["verdict"]="HIGH_JOINT2_NONZERO_NATIVE_CMD_BUT_FROZEN"
     elif (len(late)>=8 and len(late_command)>=8
           and len(late_velocity)>=8 and len(late_position)>=8
