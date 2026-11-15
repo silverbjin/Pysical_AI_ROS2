@@ -35,3 +35,30 @@ def assess_precise_high_arrival(goal,actual,held_object_offset):
             "real_arm_tracking_scoped_pass":(
                max(err.values())<=HIGH_ACTUAL_JOINT_MAX_ERROR_RAD
                and expected_err<=HIGH_FK_BIN_TARGET_MAX_ERROR_M)}
+
+# Original raw #43713755831: high MoveGroup status4/result1 but actual
+# joint2 error 0.013284rad > existing strict 0.010rad gate. Reuse the
+# EXISTING strict real arm FJT for only a small bounded lag at high stage.
+HIGH_SETTLE_MAX_INITIAL_ERROR_RAD=.020
+HIGH_SETTLE_SAFE_BIN_XY_M=.09
+HIGH_SETTLE_MIN_ROD_Z_M=1.90
+
+def high_settle_recovery_eligible(audit,native_rod):
+    """Read-only guard before ONE direct FJT at actual held high target."""
+    if not isinstance(audit,dict) or not isinstance(native_rod,(tuple,list)):
+        return False
+    errors=audit.get("per_joint_error_rad")
+    if not isinstance(errors,dict) or set(errors)!=set(ARM):
+        return False
+    if not all(isinstance(v,(int,float)) and math.isfinite(v) and v>=0
+               for v in errors.values()):
+        return False
+    e=max(errors.values())
+    if not (HIGH_ACTUAL_JOINT_MAX_ERROR_RAD<e<=HIGH_SETTLE_MAX_INITIAL_ERROR_RAD):
+        return False
+    if len(native_rod)!=3 or not all(isinstance(v,(int,float)) and math.isfinite(v)
+                                    for v in native_rod):
+        return False
+    return (math.hypot(native_rod[0]-BIN_XY[0],
+                       native_rod[1]-BIN_XY[1])<=HIGH_SETTLE_SAFE_BIN_XY_M
+            and native_rod[2]>=HIGH_SETTLE_MIN_ROD_Z_M)
