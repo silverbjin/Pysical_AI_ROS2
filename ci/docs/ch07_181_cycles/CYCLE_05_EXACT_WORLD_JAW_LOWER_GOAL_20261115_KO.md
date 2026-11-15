@@ -31,9 +31,44 @@ L0 통과 후 고정 source SHA 승인형 실제 Gazebo 단 1회. 실제 원통 
 
 ## 실행 결과(추가 기록 예정)
 
-- 개발 SHA: PENDING
-- L0: PENDING / L2: NOT_RUN
-- raw Artifact / ZIP SHA256: NOT_RUN
-- 첫 실패·물리 판정: PENDING
+- 개발 SHA: `5873726931fb66bc0ca6c1cd7a9649c763281d02`
+- L0: PASS / L2: FAIL
+- 원본 Artifact 14183066802 / ZIP SHA256 `3b7b1aa84ec750e029b89a1f2e7c2b130cef8d04b2b58477028bcc34643e2ade`
+- 첫 실패: `lower_into_bin` joint3 물리 정체, 엄격 FJT ABORTED −5
 
 **G00–G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
+
+## Cycle 05 실험 완료 — 실제 Gazebo 검증, 단일 가설 기각
+
+| 항목 | 원본 증거 |
+|---|---|
+| 개발 SHA | `5873726931fb66bc0ca6c1cd7a9649c763281d02` |
+| CI 임시 병합 checkout SHA | `a0567c7ef536042c627941381e9041affa346ca6` (PR HEAD와 git tree `83ae4b0e411904e197f281ba07c506af60daad06` 동일) |
+| L0 | [#43727342663](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43727342663) **SUCCESS**, Gazebo SKIPPED |
+| L2 실제 Gazebo | [#43767407800](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43767407800) **FAIL** |
+| 원본 Artifact | **14183066802** |
+| 다운로드한 ZIP SHA256 | `3b7b1aa84ec750e029b89a1f2e7c2b130cef8d04b2b58477028bcc34643e2ade` |
+| 실물 상응 물리 접촉·상승·유지 | native 50g 원통 물체 **0.13289m 실제 상승**, 1.3초 hold drift **0.00075936m** |
+| high 목표 도달 | 5관절 최대 실제 오차 **0.00864539rad**로 0.01rad 이하, custody drift 0.0030065m, bin XY 0.0132468m |
+| 원본 5DOF WORLD jaw 보정 | 계산 predicted jaw change **1.49e−8rad**, 구형 오차 **0.411701rad**, predicted tool-direction change 0.305846rad |
+| 실제 `lower_into_bin` | MoveGroup status4/error1, 그러나 실제 `joint3` 목표 1.25317414rad 대비 오차 **0.12574752rad** |
+| 재시도 없는 단 1회 원래 strict FJT | status6, result−5 ABORTED, `joint3 desired=1.2531741401rad, actual=1.1320985811rad`, 잔차 **0.1210755591rad** (0.01rad 기준 FAIL) |
+| 원통 최종 하강 당시 위치 | `[0.490547,0.212027,1.90007]m`, bin XY 오차 **0.070545m**. 원래 최대 0.09m 이내이지만 실제 release/settled ROI 미실행 |
+| 물리 구동 내부 증거 | JTC reference→hardware joint3 position command 정상 전달. native JointVelocityCmd tail median **1.210756rad/s** 대비 실제 velocity median **1.12e−11rad/s**, q3 tail span **6.82e−12rad** |
+| 최종 release·안착·ROI | **NOT_RUN**; 다른 성공으로 대체하지 않음 |
+
+### 원인 가설 판정과 변경 원복
+
+- 기구학 오류는 존재했다: 원래 q2+q3+qwrist 합으로 WORLD jaw 방향을 보존한다고 판단한 것은 틀렸다. 이번 5DOF 정확 계산으로 이론상 jaw 방향 오차가 크게 줄었다.
+- 그러나 하강 joint3의 **실제 물리적 정체는 해결되지 않았다**. 목표는 joint3 물리 상한 2.0944rad 이내인데, native motion은 약 1.132rad 부근에서 멈춘다. 이 결과만으로 DART 내부 제약의 특정 원인을 단정하면 안 된다.
+- **PGS world+exact jaw 목표를 활성화하는 workflow 플래그를 원복**한다. 추후 수업에서 원인을 비교할 수 있도록 원래 순수 기구학 함수·TDD와 기존 실패 원본은 유지한다.
+- **동일 물리시험 재실행 금지.** 다음 사이클은 bin collision·지지면·로봇 self-collision 등 **실제 native contact 원본 구분** 또는 물리적으로 실현 가능한 하강/해제 지점 검토에 집중한다.
+
+### 교육용 RED→GREEN→검증→회고
+
+1. RED: 이전 PGS 시험은 하강 q3 0.126rad 미도달 및 손목/world 축 불일치를 제시했다.
+2. GREEN(수치/기구학): 정확한 URDF 회전 순서를 적용하고 단위시험으로 world jaw 방향 보존을 확인했다.
+3. 실제 물리 L2: 그리퍼 방향 개선에도 joint3는 native command와 actual velocity가 어긋났고, FJT ABORTED. **물리 기능 GREEN 아님**.
+4. 회고: 수학적으로 정확한 기구학 개선이 물리 접촉 제약을 자동으로 해결하지 않는다. 실패 후 원인 후보의 활성화 플래그를 되돌리고 원본·보고서를 보존한다.
+
+**Cycle 05 CLOSED / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
