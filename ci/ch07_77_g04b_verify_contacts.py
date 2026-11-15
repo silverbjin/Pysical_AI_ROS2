@@ -147,6 +147,13 @@ conditions={
      result.get("lower_stop_release_after_pregrasp_actual_m"),
      result.get("lower_stop_release_before_contact_actual_m")) and
      result.get("lower_stop_release_real_actual_pass") is True,
+ "cycle06_reachable_real_5joint_tracking":(
+    "lower_reachable_release_plan" not in result
+    or (isinstance(result.get("lower_reachable_release_actual_joint_errors_rad"),dict)
+        and set(result["lower_reachable_release_actual_joint_errors_rad"])==
+            {"joint1","joint2","joint3","joint4","joint_wrist"}
+        and all(isinstance(v,(int,float)) and math.isfinite(v) and v<=.01
+                for v in result["lower_reachable_release_actual_joint_errors_rad"].values()))),
  "lower_into_bin_real_arm_feedback_resolved_before_release":(
       result.get("lower_into_bin_feedback_resolved") is True and
       (not result.get("lower_into_bin_direct_fjt_settle") or
