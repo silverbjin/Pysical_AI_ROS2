@@ -59,6 +59,17 @@ PY
  exit "$rc"
 }
 trap cleanup EXIT
+stage PREPARE_ORIGINAL_GAZEBO8_READONLY_ECS_HEADERS
+# Build passive test-only observer in pinned disposable container.
+# No robot, physics solver, effort, gravity, contact or FJT modifications.
+if ! apt-cache show libgz-sim8-dev >/dev/null 2>&1;then
+  timeout 15s curl -fsSL https://packages.osrfoundation.org/gazebo.gpg \
+    -o /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+  codename="$(. /etc/os-release;printf '%s' "$VERSION_CODENAME")"
+  test "$codename" = noble
+  printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable %s main\\n' "$codename" \
+    > /etc/apt/sources.list.d/gazebo-stable.list
+fi
 stage INSTALL_ONLY_MISSING_MOVEIT_JAZZY_DEPENDENCIES
 packages=(
   ros-jazzy-moveit-configs-utils
@@ -72,6 +83,7 @@ packages=(
   ros-jazzy-joint-trajectory-controller ros-jazzy-joint-state-broadcaster
   ros-jazzy-ros2-control ros-jazzy-robot-state-publisher
   ros-jazzy-xacro ros-jazzy-control-msgs
+  libgz-sim8-dev libgz-plugin2-dev cmake g++ pkg-config
 )
 missing=()
 for p in "${packages[@]}";do dpkg -s "$p" >/dev/null 2>&1||missing+=("$p");done
@@ -113,6 +125,38 @@ python3 "$ROOT/ci/ch07_77_g04b_physics_fixture.py" \
   --source "$ROOT/ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf" \
   --output "$OUT/g04b_contact_world.sdf" \
   --receipt "$OUT/g04b_fixture_receipt.json" >"$OUT/fixture.log"
+stage BUILD_READ_ONLY_GAZEBO_DYNAMIC_ROD_ECS_WITNESS
+timeout --signal=TERM --kill-after=5s 90s cmake \
+ -S "$ROOT/ci/ch07_181_rod_trace" -B "$OUT/rod_ecs_build" \
+ -DCMAKE_BUILD_TYPE=Release >"$OUT/rod_ecs_configure.log" 2>&1
+timeout --signal=TERM --kill-after=5s 90s cmake \
+ --build "$OUT/rod_ecs_build" --parallel 2 >"$OUT/rod_ecs_compile.log" 2>&1
+test -s "$OUT/rod_ecs_build/libch07_181_rod_trace.so"
+export GZ_SIM_SYSTEM_PLUGIN_PATH="$OUT/rod_ecs_build:${GZ_SIM_SYSTEM_PLUGIN_PATH:-}"
+export CH07_181_ROD_ECS_CSV="$OUT/gazebo_rod_real_static_gravity_velocity.csv"
+python3 - "$OUT/g04b_contact_world.sdf" "$OUT/rod_ecs_scope.json" <<'PY'
+import xml.etree.ElementTree as ET,json,sys
+from pathlib import Path
+file,receipt=map(Path,sys.argv[1:])
+tree=ET.parse(file)
+world=tree.getroot().find("./world[@name='book_camera']")
+assert world is not None
+rod=world.find("./model[@name='g04_grasp_cylinder']")
+assert rod is not None and rod.findtext("static")=="false"
+assert world.findtext("gravity").strip()=="0 0 -9.8"
+assert rod.find("./link[@name='cylinder_link']/inertial/mass").text=="0.05"
+ET.SubElement(world,"plugin",{
+ "filename":"libch07_181_rod_trace.so",
+ "name":"ch07_181::RodTrace"})
+tree.write(file,encoding="unicode",xml_declaration=True)
+receipt.write_text(json.dumps({"world_gravity":"0 0 -9.8",
+"rod_static_original":False,"rod_mass_original_kg":.05,
+"plugin":"READ_ONLY_GAZEBO_ROD_ECS_POSTUPDATE",
+"observations":["Static","GravityEnabled","WorldPose","WorldLinearVelocity"],
+"physics_mutated":False,"G00_G04A":"NOT_RERUN",
+"G04B":"BLOCKED_PENDING_FULL_PHYSICS","G05":"NOT_RUN",
+"Ch10":"HOLD"},indent=2)+"\\n")
+PY
 stage START_ORIGINAL_REAL_GAZEBO_WITH_GAZEBO_SIM_SYSTEM
 start rsp ros2 run robot_state_publisher robot_state_publisher \
  --ros-args --params-file "$OUT/rsp.yaml"
