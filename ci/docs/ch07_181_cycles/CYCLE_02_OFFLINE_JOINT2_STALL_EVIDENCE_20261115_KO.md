@@ -6,7 +6,7 @@
 - CI [#43719033640](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43719033640) **FAIL**, Artifact **#14164070632**
 - ZIP SHA256 `96362eace97d021acfeb47979f35d2fefcd516054547d0b937213e97fbe211e5`
 - **실제 Gazebo L2 추가 수행: 0회** (기존 원본 오프라인 재분석)
-- 상태: **Cycle 02 L0 검증 예정 / G04B BLOCKED**
+- 상태: **Cycle 02 완료 / L0 PASS / G04B BLOCKED**
 
 ## RED — 진단기 자체의 최초 실패
 
@@ -45,3 +45,13 @@ Cycle 01 `high_joint2_causal_native_audit.json`은 hardware 위치 명령의 마
 - **원인:** 단 하나의 native JointPosition 샘플의 `max-min=0`을 관절 운동 없음의 물리 증거로 잘못 취급한 판정기 결함.
 - **GREEN 수정:** high Goal 중 명령·position 각각 **8개 이상** 있어야 처음부터 고착됐다는 분류에 진입. 최종 구간 역시 8개 이상 pre-physics 실제 샘플과 명령·위치·속도를 모두 요구. 미충족 자료는 거짓 PASS/거짓 고착으로 사용하지 않음.
 - **원본 물리 판정:** 기존 실제 G04B는 여전히 BLOCKED; 오직 분석기 L0 수정으로 물리 PASS 승격 불가능. 이번 Cycle 02에서 새로운 Gazebo L2는 0회.
+
+## Cycle 02 최종 시험 결과 및 후속 유지보수
+
+- [L0 RED #43720153516](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43720153516): 실제 분석기 오분류 2건 재현(미흡한 샘플 수). 이 실패는 예상치 못한 Gazebo 실패가 아닌 **정적 판정기 버그**.
+- **수정 커밋** `933def1be623fe8d54ac12306809ad43cf54349d`: 진단기 native sample 최소 8개, `.is_limited` 정확한 분리.
+- [L0 GREEN #43720473048](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43720473048): **SUCCESS**, actual physics Job **SKIPPED**. 문서 [#43720473172](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43720473172) **SUCCESS**.
+- 동일 원본 ZIP 독립 오프라인 계산: Goal 종료+0.2~+0.7초 **111개** pre-physics native 샘플, 실제 command magnitude median **0.1238183116086rad/s**, 실제 velocity magnitude median **0.000140082248857309rad/s**, native q position span **0.00017666474895780548rad**. 새 판정 `HIGH_JOINT2_POST_RESULT_NATIVE_STALL_WITH_NONZERO_CMD` 수치 기준을 충족한다.
+- 결론: 로봇이 고위치에 다가가다 실제 물리 응답이 거의 사라지는 경계 재현. **DART 접촉 솔버 원인 자체는 미확정**, 임의 gain/velocity tolerance 확대를 정당화하지 않는다. 동일 실험 반복 금지.
+
+**Cycle 02 CLOSED**, 미달 G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD. 각 SHA의 PASS 범위 분리.
