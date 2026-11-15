@@ -63,7 +63,7 @@ class RodTrace final : public gz::sim::System,
   std::cerr<<"CH07_181_POSE_SOURCE_CONSTRUCTOR path="
            <<(v?v:"/tmp/ch07_181_pose_component_source.csv")
            <<" open="<<poseSource_.good()<<std::endl;
-  std::cerr<<"CH07_181_ECS_CONTACT_SYNC_CONSTRUCTOR path=
+  std::cerr<<"CH07_181_ECS_CONTACT_SYNC_CONSTRUCTOR path="
            <<(c?c:"/tmp/ch07_181_ecs_contact_sync.csv")
            <<" open="<<sync_.good()<<std::endl;
   std::cerr << "CH07_181_ROD_ECS_PLUGIN_CONSTRUCTOR path="
