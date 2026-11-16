@@ -95,7 +95,8 @@ packages=(ros-jazzy-gz-ros2-control ros-jazzy-controller-manager
   ros-jazzy-tf2-ros
   ros-jazzy-moveit-configs-utils ros-jazzy-moveit-planners-ompl
   ros-jazzy-moveit-simple-controller-manager ros-jazzy-moveit-kinematics
-  ros-jazzy-moveit-ros-move-group ros-jazzy-moveit-msgs)
+  ros-jazzy-moveit-ros-move-group ros-jazzy-moveit-msgs
+  libgz-sim8-dev)  # Reused exact G04B dependency to provide DART 6.13.2
 missing=()
 for pkg in "${packages[@]}";do dpkg -s "$pkg" >/dev/null 2>&1||missing+=("$pkg");done
 if (("${#missing[@]}"));then
