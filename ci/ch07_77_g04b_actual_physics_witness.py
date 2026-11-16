@@ -40,6 +40,7 @@ from moveit_msgs.srv import ApplyPlanningScene
 from geometry_msgs.msg import Pose
 from shape_msgs.msg import SolidPrimitive
 from ch07_181_bin_moveit_scene_contract import exact_bin_collision_from_world
+from ch07_181_collision_free_high_branch import alternative_high_elbow_target
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 from pal_statistics_msgs.msg import Statistics
@@ -885,6 +886,18 @@ def main():
         jaw_plan=high_carry_jaw_compensation(
             held_arm_actual,nominal_high_arm)
         high_joint_target=jaw_plan["target"]
+        if os.environ.get("CH07_181_C09_NEGATIVE_ELBOW_TRIAL")=="YES":
+            # Cycle08: exact high goal collides with real static bin link4.
+            # ONE alternative: other IK elbow branch; stop if OMPL cannot
+            # find a collision-free plan BEFORE sending any real high motion.
+            alt=alternative_high_elbow_target(
+                held_arm_actual,held_world,high_target)
+            high_joint_target=alt["joint_goal"]
+            report["cycle09_elbow_alternative_geometry"]=alt
+            report["cycle09_collision_checked_plan_only"]=w.arm_goal(
+                "cycle09_high_elbow_alternative_plan_only",high_target,
+                plan_only=True,joint_override=high_joint_target)
+
         report["transport_high_jaw_axis_plan"]=jaw_plan
         report["transport_high_exact_5dof_joint_target"]=high_joint_target
         report["transport_high_movegroup_joint_constraint_rad"]=.002
