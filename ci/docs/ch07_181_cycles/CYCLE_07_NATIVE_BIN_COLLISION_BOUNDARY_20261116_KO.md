@@ -71,3 +71,17 @@
 - 이번 Cycle07의 FAIL로 실험이 종료됐다. 이 원본을 다시 만들기 위한 즉각적 L2 재시험 금지.
 
 **Cycle07 CLOSED / G00–G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
+
+## Cycle 07 실제 검증 결과 — CLOSED / G04B BLOCKED
+
+- 코드 SHA `2cc479f025c6e4cf410e5c7e327caa31d6f63d9b`; 실제 Actions checkout `8d3610c06c0d9cae345cb7b47939bc5aeeab0d41`; Git tree 일치 `f548f34755b78b2f3538e1a0a3af510b9e622756`.
+- [L0 #43770546088](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43770546088) PASS; [실제 Gazebo L2 #43770622882](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43770622882) FAIL.
+- 원본 Artifact `14184565359`, ZIP SHA256 `b529217444359f86e4de17304824c30cc13e7cabac73bb6b9c9d54358ce1e423`.
+- **원본 native bin 접촉 5,371개**: `g04_bin_support::bin_support::bin_collision` ↔ `my_robot::link4::link4_collision`. 최초 접촉 시뮬레이션 **66.427초**, 위치 [0.41424,0.10002,1.729997]m. High Goal 구간 **64.798~67.828초**, 따라서 이송 도중 실제 충돌.
+- 실제 상승 **0.11083m**, 1.3초 hold drift **0.000498m**. High MoveGroup에선 `joint1` 목표 대비 **0.219196rad**, `joint2` **0.028768rad** 오차로 중단. 하강·해제·최종 안착 ROI **NOT_RUN**.
+- native `joint2` 속도: 66.4초 CMD≈0.05625/actual≈0.05627rad/s; 접촉 후 66.6초 CMD≈0.09022/actual≈0.03626; 68초 CMD≈0.27685/actual≈0.00191; 69초 CMD≈0.27492/actual≈0.
+- 결론: **link4와 bin의 실제 충돌이 고위치 이송 실패 이전에 발생**했다. 충돌과 제어 오차의 시간상 연관은 입증했지만 DART 내부 제약이 유일한 원인이라는 주장은 미확정.
+- Cycle08 첫 구현 후보: 기존 static bin geometry/pose를 **MoveIt PlanningScene에도 동일 CollisionObject**로 등록. 실제 Gazebo geometry, 관절/물체/물리/안전 수용 기준 변경 금지.
+- 반복 물리 실행보다 계획기 충돌환경 불일치부터 해소하는 **Architecture-First** 접근을 교육용 표준으로 보존.
+
+**Cycle 07 CLOSED** / G00~G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.
