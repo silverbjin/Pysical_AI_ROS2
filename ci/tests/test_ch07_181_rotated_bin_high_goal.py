@@ -19,6 +19,13 @@ C13_LAST_LIFT_ARM={"joint1":-0.03270249803258013,
 # snapshot, not an invented claim about the exact hold-time JointState.
 C13_REAL_HELD_OFFSET=[-0.001135262342006449,0.001124849022535129,
                       0.016879870544068254]
+C14_EXACT_HELD_ARM={"joint1":-0.024800227666388917,
+      "joint2":-0.06022640023854016,
+      "joint3":0.5699330360182593,
+      "joint4":1.5621111713048184,
+      "joint_wrist":0.023298512675850622}
+C14_HELD_OFFSET=[-0.006411709459643422,0.0015732349489266714,
+                 0.02020364067795688]
 SCENE={"id":"g04b_existing_gazebo_bin_collision","frame_id":"base_link",
        "center_m":[.55,.25,1.63],"box_m":[.30,.30,.20],
        "bin_yaw_rad":.35,"source":"ORIGINAL_SOLID_BIN_TEST_ONLY_YAW_ROTATED",
@@ -29,6 +36,18 @@ def rod_for(offset):
     return [c[k]+offset[k] for k in range(3)]
 
 class TestCycle13High(unittest.TestCase):
+ def test_exact_c14_held_time_native_joint_and_offset_refines_safe_target(self):
+  center=original_finger_collision_center(C14_EXACT_HELD_ARM)
+  rod=[center[k]+C14_HELD_OFFSET[k] for k in range(3)]
+  c=source_bin_rotated_high_goal(C14_EXACT_HELD_ARM,rod,SCENE)
+  self.assertTrue(c["local_refinement_used"])
+  self.assertLess(c["strict_bin_xy_error_m"],.005)
+  self.assertGreaterEqual(c["real_rotated_bin_sat_margin_m"],.003)
+  self.assertLess(c["jaw_world_change_rad"],.25)
+  self.assertLess(c["tool_axis_change_rad"],.38)
+  self.assertTrue(c["requires_moveit_plan_only_before_real_motion"])
+  self.assertEqual(c["G04B"],"BLOCKED_UNTIL_NATIVE_CONTACT_RELEASE_ROI_PASS")
+
  def test_c13_original_lift_orientation_and_raw_held_offset_preflight(self):
   # C13 could not find any q4 in old [1.42,1.48] while preserving
   # native jaw. This protects against a repeat of the same frozen seed.

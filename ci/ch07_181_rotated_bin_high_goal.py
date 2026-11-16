@@ -116,8 +116,55 @@ def source_bin_rotated_high_goal(held,rod,scene):
                             (MAX_WORLD_JAW_CHANGE_RAD-jaw)/.012)
                         if best is None or score>best[0]:
                             best=(score,q,predicted,xy,jaw,tool,margin)
+    # Cycle15: extra 1mm-resolution local refinement ONLY when the C14
+    # coarse target lattice found no candidate. No physics parameter sweep.
+    # Exact C14 native held-time joint state + offset is a regression input.
+    refinement_used=False
     if best is None:
-        raise ValueError("C13_NO_SAFE_HIGH_GOAL_FOR_ACTUAL_HELD_OFFSET")
+        refinement_used=True
+        for q2 in (.004,.006,.008,.010):
+            for i in range(27):
+                q4=1.340+.005*i
+                for j in range(21):
+                    wrist=-.180+.005*j
+                    try:
+                        aligned=_exact_xy_from_measured_offset(
+                            (SEED[0],q2,SEED[2],q4,wrist),offset)
+                    except ValueError:
+                        continue
+                    for dyaw in tuple(.001*k for k in range(-4,5)):
+                        for dq3 in (-.009,-.007,-.005,-.003,-.001,0.,.001,.003,.005,.007,.009):
+                            q=dict(aligned)
+                            q["joint1"]+=dyaw
+                            q["joint3"]+=dq3
+                            if (abs(q["joint1"]-SEED[0])>.10
+                                or not .35<q["joint3"]<.90):
+                                continue
+                            tested+=1
+                            p=original_finger_collision_center(q)
+                            predicted=[p[k]+offset[k] for k in range(3)]
+                            xy=math.hypot(predicted[0]-BIN[0],
+                                          predicted[1]-BIN[1])
+                            if (xy>HIGH_FK_BIN_TARGET_MAX_ERROR_M
+                                or predicted[2]<1.98):
+                                continue
+                            jaw=real_jaw_world_axis_change(held,q)
+                            if jaw>MAX_WORLD_JAW_CHANGE_RAD:
+                                continue
+                            tool=actual_tool_axis_angle_rad(held,q)
+                            if tool>MAX_TOOL_AXIS_CHANGE_RAD:
+                                continue
+                            margin=original_link4_bin_sat_margin(q,bin_yaw_rad=.35)
+                            if margin<MIN_ORIGINAL_SOLID_BIN_CLEARANCE_M:
+                                continue
+                            score=min(
+                                (margin-MIN_ORIGINAL_SOLID_BIN_CLEARANCE_M)/.002,
+                                (HIGH_FK_BIN_TARGET_MAX_ERROR_M-xy)/.002,
+                                (MAX_WORLD_JAW_CHANGE_RAD-jaw)/.012)
+                            if best is None or score>best[0]:
+                                best=(score,q,predicted,xy,jaw,tool,margin)
+    if best is None:
+        raise ValueError("C15_NO_ORIGINAL_BIN_SAFE_HIGH_GOAL_AFTER_REFINEMENT")
     score,q,predicted,xy,jaw,tool,margin=best
     if not assess_precise_high_arrival(q,q,offset)["real_arm_tracking_scoped_pass"]:
         raise ValueError("C13_SOURCE_STRICT_5MM_ORACLE_FAILED")
@@ -125,6 +172,7 @@ def source_bin_rotated_high_goal(held,rod,scene):
         "strict_bin_xy_error_m":xy,"jaw_world_change_rad":jaw,
         "tool_axis_change_rad":tool,"real_rotated_bin_sat_margin_m":margin,
         "bounded_candidates_checked":tested,
+        "local_refinement_used":refinement_used,
         "minimum_balanced_headroom_score":score,
         "world_single_factor":"C13_ADAPTIVE_HIGH_GOAL_IN_UNCHANGED_C12_REAL_BIN",
         "requires_moveit_plan_only_before_real_motion":True,
