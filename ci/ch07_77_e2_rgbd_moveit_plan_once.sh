@@ -267,7 +267,7 @@ for topic in ("images","depth","info"):
     assert r["messages"][topic][0]["frame"]=="camera_optical_frame"
 # The original camera coord node logs precisely the 3D transform publication;
 # this resolves a sparse DDS observer's missing matching 3D sample.
-pattern=r"CH07_75_VALID_3D_TARGET stamp=([0-9.]+) xyz=\\(([-+0-9.]+),([-+0-9.]+),([-+0-9.]+)\\)"
+pattern=r"CH07_75_VALID_3D_TARGET stamp=([0-9.]+) xyz=\(([-+0-9.]+),([-+0-9.]+),([-+0-9.]+)\)"
 found=False
 for m in re.finditer(pattern,txt):
     stamp=float(m.group(1)); xyz=[float(t) for t in m.groups()[1:]]
