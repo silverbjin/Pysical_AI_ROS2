@@ -1,0 +1,71 @@
+name: Book Ch07 E2 real RGB-D sensor to MoveIt PLAN ONLY (one experiment)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/book-ch07-77-e2-live-plan-once.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: book-ch07-e2-live-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  real-rgbd-to-moveit-plan-only-no-motor-goal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: Verify focused E2 code and pin source/fixture/image digest
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch07-77-e2
+          git rev-parse HEAD > ci-results/ch07-77-e2/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-77-e2/image_digest.txt
+          sha256sum ci/ch07_77_e2_rgbd_moveit_plan_once.sh ci/ch07_77_g04a_graspable_fixture.py \
+            Ch07/ros2_ws/src/vision_basics/vision_basics/{mission_geometry,mission_plan_only,mission_controller,coord_transformer,object_detector}.py \
+            > ci-results/ch07-77-e2/source_sha256.txt
+          bash -n ci/ch07_77_e2_rgbd_moveit_plan_once.sh
+          python3 -m py_compile Ch07/ros2_ws/src/vision_basics/vision_basics/{mission_geometry,mission_plan_only}.py
+          python3 -m unittest discover -s ci/tests -p 'test_ch07_77_e2_sensor_moveit_contract.py' -v
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull accepted Jazzy/Harmonic digest, never rebuild source image
+        run: docker pull "$(cat ci-results/ch07-77-e2/image_digest.txt)"
+      - name: ONE real OGRE2 RGB-D to MoveGroup plan_only, no motor Goals
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=20s 720s \
+            docker run --rm --init --pull=never --shm-size=1g \
+              -e RUN_SOURCE_SHA="$(cat ci-results/ch07-77-e2/checkout_sha.txt)" \
+              -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -v "$PWD":/work -w /work \
+              "$(cat ci-results/ch07-77-e2/image_digest.txt)" \
+              bash ci/ch07_77_e2_rgbd_moveit_plan_once.sh \
+              2>&1 | tee ci-results/ch07-77-e2/console.log
+      - name: Explicit E2-only evidence, never claim physical grasp
+        if: always()
+        run: |
+          {
+            echo '## Ch07 §7.7 E2: real sensor source -> MoveIt plan_only'
+            echo 'New code/fixture only; physical G04B BLOCKED, G05 E2E NOT_RUN, Ch10 HOLD.'
+            cat ci-results/ch07-77-e2/e2_moveit_plan_receipt.json || true
+            cat ci-results/ch07-77-e2/g04a_live_receipt.json || true
+            cat ci-results/ch07-77-e2/result.json || true
+            tail -120 ci-results/ch07-77-e2/stages.log || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-e2-live-sensor-moveit-${{ github.run_id }}
+          path: ci-results/ch07-77-e2/
+          retention-days: 30
+          if-no-files-found: warn
