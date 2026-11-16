@@ -147,6 +147,34 @@ conditions={
      result.get("lower_stop_release_after_pregrasp_actual_m"),
      result.get("lower_stop_release_before_contact_actual_m")) and
      result.get("lower_stop_release_real_actual_pass") is True,
+ "cycle06_reachable_real_5joint_tracking":(
+    "lower_reachable_release_plan" not in result
+    or (isinstance(result.get("lower_reachable_release_actual_joint_errors_rad"),dict)
+        and set(result["lower_reachable_release_actual_joint_errors_rad"])==
+            {"joint1","joint2","joint3","joint4","joint_wrist"}
+        and all(isinstance(v,(int,float)) and math.isfinite(v) and v<=.01
+                for v in result["lower_reachable_release_actual_joint_errors_rad"].values()))),
+ "lower_into_bin_real_arm_feedback_resolved_before_release":(
+      result.get("lower_into_bin_feedback_resolved") is True and
+      (not result.get("lower_into_bin_direct_fjt_settle") or
+       (result["lower_into_bin_direct_fjt_settle"].get("verdict")==
+           "ARM_SETTLE_SCOPED_PASS" and
+        result["lower_into_bin_direct_fjt_settle"].get("action_status")==4 and
+        result["lower_into_bin_direct_fjt_settle"].get("result_error")==0))),
+ "cycle18_new_release_retract_fjt_feedback_if_applicable":(
+     "cycle18_source_release_retract" not in result or
+     (isinstance(result.get("cycle18_official_moveit_plan_only"),dict)
+      and result["cycle18_official_moveit_plan_only"].get("action_status")==4
+      and result["cycle18_official_moveit_plan_only"].get("moveit_error")==1
+      and result["cycle18_official_moveit_plan_only"].get("planned_points",0)>0
+      and len([a for a in result.get("arm_results",[])
+               if a.get("name")=="release_retract_from_rod"])==1
+      and all(a.get("action_status")==4 and a.get("result_error")==0
+              and max(a.get("measured_joint_errors_rad",{}).values(),default=1)<=.01
+              for a in result.get("arm_results",[])
+              if a.get("name")=="release_retract_from_rod")
+      and result["cycle18_source_release_retract"].get(
+          "requires_true_native_zero_wrist_rod_contact") is True)),
  "real_dynamic_world_lift_at_least_0_05m":result.get("lift_m",-1)>=.05,
  "1_3s_hold_pose_drift_le_0_025m":result.get("object_pose_drift_during_hold_m",1) <=.025,
  "placement_xy_error_le_0_09m":result.get("placement_xy_error_m",1)<=.09,
@@ -157,7 +185,8 @@ conditions={
  "actual_arm_movegroup_and_gripper_fjt_sequence":(
          4<=result.get("arm_goal_count",-1)<=13 and
          result.get("finger_goal_count")==4 and
-         len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2 and
+         len(result.get("arm_results",[]))==result.get("arm_goal_count",0)+2+
+             (1 if result.get("lower_into_bin_direct_fjt_settle") else 0) and
          len(result.get("finger_results",[]))==4 and
          result.get("free_space_diagnostics_status")==
              "NOT_RERUN_PRIOR_PUBLIC_SCOPED_EVIDENCE" and
@@ -169,7 +198,8 @@ conditions={
          "aligned_pregrasp" in p and
          all(v.get("name","").startswith(("pregrasp","x_approach_",
                                          "fine_x_alignment_","lift","transfer","grasp",
-                                         "post_movegroup_direct_fjt_arm_settle","lower_into_bin"))
+                                         "post_movegroup_direct_fjt_arm_settle","lower_into_bin",
+                                         "release_retract_from_rod"))
              for v in result.get("arm_results",[])) and
          result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
          "x_clearance_stage" in p and

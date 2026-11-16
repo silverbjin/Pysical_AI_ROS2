@@ -3,7 +3,8 @@ import pathlib,math,sys,unittest
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]))
 from ch07_181_jaw_axis_carry import (
  real_jaw_world_axis,real_jaw_world_axis_change,
- high_carry_jaw_compensation,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD)
+ high_carry_jaw_compensation,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD,
+ exact_world_jaw_lower_plan)
 from ch07_181_exact_fk import original_finger_collision_center
 HELD={"joint1":.018258045521515182,"joint2":-.048328939890137694,
  "joint3":.6214992296231209,"joint4":1.5986430066757167,
@@ -34,4 +35,29 @@ class JawAxisCarryTDD(unittest.TestCase):
    high_carry_jaw_compensation(dict(HELD,joint1=float("nan")),HIGH)
   with self.assertRaises(ValueError):
    high_carry_jaw_compensation(HELD,dict(HIGH,joint_wrist=.1))
+class ExactWorldLowerTDD(unittest.TestCase):
+ def setUp(self):
+  self.high={"joint1":.4213824126806682,"joint2":.08382393430447412,
+             "joint3":.439455530265983,"joint4":1.2359596400293964,
+             "joint_wrist":-.001588469730200483}
+  self.lower={"joint1":.42489200938092025,"joint2":-.40562362175686745,
+              "joint3":1.254839883790849,"joint4":math.pi/2,"joint_wrist":0.}
+  self.offset=[-.00040626510217800504,.0009670075595501586,
+               .01741101185278149]
+ def test_true_world_jaw_and_tool_orientation_improves_with_same_q3(self):
+  r=exact_world_jaw_lower_plan(self.high,self.lower,self.offset)
+  self.assertLess(r["jaw_world_change_rad"],1e-5)
+  self.assertGreater(r["historical_jaw_world_change_rad"],.30)
+  self.assertLess(r["tool_world_change_rad"],r["historical_tool_world_change_rad"])
+  self.assertEqual(r["target"]["joint2"],self.lower["joint2"])
+  self.assertEqual(r["target"]["joint3"],self.lower["joint3"])
+  self.assertLess(r["predicted_bin_xy_error_m"],.06)
+  self.assertEqual(r["scope"],"KINEMATIC_ONLY_NOT_PHYSICAL_PASS")
+ def test_missing_nonfinite_or_unheld_object_blocks_goals(self):
+  for h,l,o in [({"joint1":0.},self.lower,self.offset),
+                (self.high,dict(self.lower,joint3=float("nan")),self.offset),
+                (self.high,self.lower,[float("nan"),0.,0.]),
+                (self.high,self.lower,[.25,.25,.25])]:
+   with self.assertRaises(ValueError):
+    exact_world_jaw_lower_plan(h,l,o)
 if __name__=="__main__":unittest.main()

@@ -56,3 +56,68 @@ def require_bilateral_pre_release_contact(dir_path,now_sim_s):
             "both_native_fresh_positive_force":all(
                 p["native_positive_force_fresh"] for p in readings.values()),
             "sim_time_s":now_sim_s}
+
+# Cycle17: original Gazebo Sim8 same-PostUpdate native wrench, no contact
+# synthesis and no acceptance-threshold relaxation. The ContactSensorData
+# embedded contact stamp may be zero: use the real ECS UpdateInfo.simTime.
+import csv
+ECS_FORCE_COLUMNS=("sim_time_s",
+  "f1_collision_present","f1_contact_ecs_present","f1_rod_pair_count",
+  "f1_max_rod_contact_force_N",
+  "f2_collision_present","f2_contact_ecs_present","f2_rod_pair_count",
+  "f2_max_rod_contact_force_N")
+
+def require_bilateral_same_ecs_frame_force(path,now_sim_s):
+    if not isinstance(now_sim_s,(int,float)) or not math.isfinite(now_sim_s) or now_sim_s<0:
+        raise ValueError("C17_INVALID_SIM_TIME")
+    path=Path(path)
+    fresh={name:[] for name in FINGER}
+    result={"per_finger":{},"both_native_fresh_positive_force":False,
+            "sim_time_s":float(now_sim_s),
+            "source":"GAZEBO_SIM8_READONLY_SAME_POSTUPDATE_ECS_CONTACT_WRENCH",
+            "evidence_path":str(path)}
+    if not path.is_file():
+        result["reason"]="C17_NATIVE_SAME_ECS_CSV_MISSING"
+    else:
+        with path.open("rb") as file:
+            first=file.readline().decode(errors="replace").strip()
+            names=first.split(",")
+            if not set(ECS_FORCE_COLUMNS).issubset(set(names)):
+                result["reason"]="C17_NATIVE_SAME_ECS_FORCE_SCHEMA_MISSING"
+            else:
+                head_end=file.tell()
+                file.seek(0,2);size=file.tell()
+                start=max(head_end,size-196608)
+                file.seek(start);raw=file.read()
+                lines=raw.decode(errors="replace").splitlines()
+                if start>head_end and lines:lines=lines[1:]
+                if not raw.endswith(b"\n") and lines:lines=lines[:-1]
+                reader=csv.DictReader([first]+lines)
+                for row in reader:
+                    try:
+                        t=float(row["sim_time_s"])
+                    except (TypeError,ValueError):
+                        continue
+                    if not math.isfinite(t) or not 0<=now_sim_s-t<=MAX_AGE_SIM_SECONDS:
+                        continue
+                    for short,name in (("f1","finger1"),("f2","finger2")):
+                        try:
+                            cp=int(row[short+"_collision_present"])
+                            dp=int(row[short+"_contact_ecs_present"])
+                            count=int(row[short+"_rod_pair_count"])
+                            force=float(row[short+"_max_rod_contact_force_N"])
+                        except (TypeError,ValueError,KeyError):
+                            continue
+                        if cp!=1 or dp!=1 or count<1 or not math.isfinite(force):
+                            continue
+                        if force>MIN_FORCE_N:fresh[name].append((t,force))
+    for name in FINGER:
+        v=fresh[name]
+        result["per_finger"][name]={
+            "finger":name,"recent_contact_events":len(v),
+            "max_force_N":max((x[1] for x in v),default=0.),
+            "last_contact_sim_s":max((x[0] for x in v),default=None),
+            "native_positive_force_fresh":len(v)>=3}
+    result["both_native_fresh_positive_force"]=all(
+        result["per_finger"][n]["native_positive_force_fresh"] for n in FINGER)
+    return result

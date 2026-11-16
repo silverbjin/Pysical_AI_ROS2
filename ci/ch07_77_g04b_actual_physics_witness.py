@@ -10,11 +10,13 @@ import json,math,os,re,subprocess,time
 from pathlib import Path
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTrajectoryControllerState, JointTolerance
-from ch07_181_arm_settle_contract import assess_arm_settle, JOINT_GOAL_TOL_RAD
+from ch07_181_arm_settle_contract import (
+    assess_arm_settle, JOINT_GOAL_TOL_RAD, lower_bin_settle_recovery_eligible)
 from ch07_181_symmetric_grasp_contract import symmetric_close_joint_target
 from ch07_181_post_approach_settle_contract import measured_contact_settle_target, unchanged_collision_center
 from ch07_181_physical_preload_contract import actual_preload_pass, EXPECTED_PRELOAD_M
@@ -25,15 +27,29 @@ from ch07_181_bin_transport_contract import (corrected_high_target,
     custody_drift,high_arrival_valid,feedback_centered_high_target,
     precise_high_arrival_valid,pre_release_valid,LOWER_WRIST_Z,
     historical_wrist_bias_lower_goal,actual_finger_tilt_drift,finger_tilt)
-from ch07_181_native_recent_contact import require_bilateral_pre_release_contact
+from ch07_181_native_recent_contact import (
+    require_bilateral_pre_release_contact,require_bilateral_same_ecs_frame_force)
 from ch07_181_high_goal_precision_contract import assess_precise_high_arrival
 from ch07_181_jaw_axis_carry import (
     high_carry_jaw_compensation,real_jaw_world_axis_change,
-    real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD)
+    real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD,
+    exact_world_jaw_lower_plan)
+from ch07_181_reachable_release_waypoint import reachable_release_waypoint
+from ch07_181_original_bin_safe_lower import collision_safe_lower_target
+from ch07_181_release_wrist_retract import source_release_wrist_retract,C19_RETRACT_FJT_DURATION_S
 from moveit_msgs.action import MoveGroup
-from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
+from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes,CollisionObject,PlanningScene
+from moveit_msgs.srv import ApplyPlanningScene
+from geometry_msgs.msg import Pose
+from shape_msgs.msg import SolidPrimitive
+from ch07_181_bin_moveit_scene_contract import exact_bin_collision_from_world
+from ch07_181_collision_free_high_branch import alternative_high_elbow_target
+from ch07_181_clearance_verified_high import source_bin_clearance_high_goal
+from ch07_181_rotated_bin_high_goal import source_bin_rotated_high_goal
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
+from pal_statistics_msgs.msg import Statistics
+from ch07_181_g04b_first_goal_causal_contract import first_goal_evidence
 
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 FINGERS=("joint_finger1","joint_finger2")
@@ -117,6 +133,7 @@ class Witness(Node):
     def __init__(self):
         super().__init__("ch07_77_g04b_actual_gazebo_contact_witness")
         self.move=ActionClient(self,MoveGroup,"/move_action")
+        self.bin_scene_client=self.create_client(ApplyPlanningScene,"/apply_planning_scene")
         self.arm_direct=ActionClient(self,FollowJointTrajectory,
                                      "/arm_group_controller/follow_joint_trajectory")
         self.grip=ActionClient(self,FollowJointTrajectory,
@@ -124,10 +141,46 @@ class Witness(Node):
         self.joints=[]
         self.last_grip_data=None
         self.controller_samples=[]
+        self.arm_joint2_controller_samples=[]
+        self.arm_joint2_observer_errors=[]
+        self.last_arm_settle_data=None
+        self.last_high_joint2_causal=None
+        self.last_lower_joint3_causal=None
+        self.hardware_introspection_samples=[]
+        self.hardware_introspection_errors=[]
+        # Existing Jazzy publisher is BEST_EFFORT (Issue #181 CI #43591101353).
+        # This is a read-only diagnostic subscriber; no command path changes.
+        self.create_subscription(Statistics,
+            '/controller_manager/introspection_data/full',
+            self.on_hardware_introspection,
+            QoSProfile(depth=10,reliability=ReliabilityPolicy.BEST_EFFORT))
         self.create_subscription(JointTrajectoryControllerState,
             "/gripper_group_controller/controller_state",
             self.on_controller_state,10)
+        self.create_subscription(JointTrajectoryControllerState,
+            "/arm_group_controller/controller_state",
+            self.on_arm_joint2_controller_state,10)
         self.create_subscription(JointState,"/joint_states",self.on_state,10)
+
+    def on_hardware_introspection(self,msg):
+        try:
+            values={}
+            for stat in msg.statistics:
+                name=str(getattr(stat,'name',''))
+                if not any(n in name for n in (*FINGERS,"joint2","joint3")):
+                    continue
+                value=float(getattr(stat,'value'))
+                if math.isfinite(value):values[name]=value
+            if values:
+                sim_now=self.get_clock().now().nanoseconds/1e9
+                self.hardware_introspection_samples.append({
+                    'sim_observed_s':sim_now,
+                    'source_stamp':msg.header.stamp.sec+
+                                   msg.header.stamp.nanosec*1e-9,
+                    'values':values})
+                self.hardware_introspection_samples=self.hardware_introspection_samples[-4500:]
+        except Exception as exc:
+            self.hardware_introspection_errors.append(repr(exc))
 
     def on_controller_state(self,m):
         # control_msgs Jazzy exposes the desired command and actual
@@ -150,7 +203,27 @@ class Witness(Node):
                 for key in ("reference","feedback","error"))):
             raise RuntimeError("G04B_JAZZY_JTC_REFERENCE_FEEDBACK_ERROR_MISSING")
         self.controller_samples.append(record)
-        self.controller_samples=self.controller_samples[-100:]
+        # Preserve the WHOLE 2s FJT+2s tolerance window. The previous 100
+        # samples showed only the post-ABORT reference reset to actual.
+        self.controller_samples=self.controller_samples[-1500:]
+
+    def on_arm_joint2_controller_state(self,m):
+        # Read-only per-sim-step Jazzy arm JTC actual feedback, NOT a Goal.
+        try:
+            names=list(m.joint_names)
+            if set(names)!=set(ARM):return
+            indices={"joint2":names.index("joint2"),"joint3":names.index("joint3")}
+            record={"stamp":m.header.stamp.sec+m.header.stamp.nanosec*1e-9}
+            for field in ("reference","feedback","error"):
+                values=list(getattr(getattr(m,field,None),"positions",[]))
+                if len(values)!=len(names) or not all(math.isfinite(v) for v in values):
+                    raise ValueError("ARM_JTC_"+field+"_INVALID")
+                for joint,idx in indices.items():
+                    record[field+"_"+joint+"_rad"]=float(values[idx])
+            self.arm_joint2_controller_samples.append(record)
+            self.arm_joint2_controller_samples=self.arm_joint2_controller_samples[-3000:]
+        except Exception as exc:
+            self.arm_joint2_observer_errors.append(repr(exc))
 
     def on_state(self,m):
         d=dict(zip(m.name,m.position))
@@ -188,7 +261,40 @@ class Witness(Node):
             except Exception:pass
         raise TimeoutError("G04B_TIMEOUT_"+label)
 
-    def arm_goal(self,label,xyz,plan_only=False,joint_override=None):
+    def register_real_bin_planning_collision(self,world_path):
+        """One-factor change: MoveIt uses the SAME native static Gazebo bin."""
+        spec=exact_bin_collision_from_world(
+            world_path,allow_cycle12_yaw=(os.environ.get("CH07_181_C12_BIN_YAW_ONLY")=="YES"))
+        if not self.bin_scene_client.wait_for_service(timeout_sec=12.):
+            raise RuntimeError("G04B_C08_APPLY_PLANNING_SCENE_SERVER_MISSING")
+        scene=PlanningScene()
+        scene.is_diff=True
+        obj=CollisionObject()
+        obj.header.frame_id=spec["frame_id"]
+        obj.id=spec["id"]
+        primitive=SolidPrimitive()
+        primitive.type=SolidPrimitive.BOX
+        primitive.dimensions=list(spec["box_m"])
+        origin=Pose()
+        origin.position.x,origin.position.y,origin.position.z=spec["center_m"]
+        origin.orientation.z=spec["quaternion_xyzw"][2]
+        origin.orientation.w=spec["quaternion_xyzw"][3]
+        obj.primitives=[primitive]
+        obj.primitive_poses=[origin]
+        obj.operation=CollisionObject.ADD
+        scene.world.collision_objects=[obj]
+        request=ApplyPlanningScene.Request()
+        request.scene=scene
+        response=self.await_future(self.bin_scene_client.call_async(request),
+                                   "C08_APPLY_BIN_SCENE",15)
+        if response is None or not response.success:
+            raise RuntimeError("G04B_C08_MOVEIT_BIN_COLLISION_APPLY_FAILED")
+        return {**spec,"apply_planning_scene_success":True,
+                "actual_gazebo_world_mutated":False,
+                "acceptance":"STILL_BLOCKED_PENDING_NATIVE_PHYSICS"}
+
+    def arm_goal(self,label,xyz,plan_only=False,joint_override=None,
+                 defer_lower_fjt_recovery=False):
         # Avoid reconstructing a different elbow/wrist posture when moving
         # laterally toward the rod. For a yaw-only sweep, retain the ACTUAL
         # observed radial geometry, rather than re-solving approximate IK.
@@ -218,6 +324,8 @@ class Witness(Node):
             c.joint_constraints.append(jc)
         goal.request.goal_constraints.append(c)
         before=self.joints[-1] if self.joints else {}
+        high_first_sim_s=(before.get("stamp",0.) if label=="transfer_high_above_bin" else None)
+        lower_first_sim_s=(before.get("stamp",0.) if label=="lower_into_bin" else None)
         handle=self.await_future(self.move.send_goal_async(goal),
                                  label+"_ACCEPT",15)
         if not handle or not handle.accepted:
@@ -230,6 +338,52 @@ class Witness(Node):
              "planned_points":len(outcome.result.planned_trajectory.joint_trajectory.points),
              "initial_joint_state":before,
              "final_joint_state":self.joints[-1] if self.joints else None}
+        if label=="transfer_high_above_bin":
+            # Preserve real high MoveGroup JTC/HW evidence before any later
+            # acceptance exception. Command interface names are not guessed:
+            # record actual introspection names and timed samples.
+            high_end_s=self.joints[-1]["stamp"] if self.joints else high_first_sim_s
+            a=[s for s in self.arm_joint2_controller_samples
+               if high_first_sim_s<=s["stamp"]<=high_end_s]
+            h=[s for s in self.hardware_introspection_samples
+               if high_first_sim_s<=s["sim_observed_s"]<=high_end_s]
+            named=[{"stamp":s["sim_observed_s"],"name":name,"position_rad":float(value)}
+                   for s in h for name,value in s["values"].items()
+                   if "joint2" in name and "command" in name.lower()
+                   and "position" in name.lower()]
+            causal={"start_sim_s":high_first_sim_s,"end_sim_s":high_end_s,
+                    "joint":"joint2",
+                    "jtc_reference_feedback_error":a,
+                    "hardware_command_position":named,
+                    "introspection_joint2_names":sorted(set(
+                        name for s in h for name in s["values"] if "joint2" in name)),
+                    "observer_errors":self.arm_joint2_observer_errors[-10:],
+                    "trace_csv":"gazebo_finger_ecs_pre_post_command.csv",
+                    "scope":"HIGH_MOVEGROUP_READ_ONLY_NOT_PHYSICAL_PASS"}
+            row["high_joint2_causal_evidence"]=causal
+            self.last_high_joint2_causal=causal
+        if label=="lower_into_bin":
+            # Cycle 04: preserve native lower-stage provenance BEFORE FJT
+            # recovery and BEFORE any error can short-circuit the receipt.
+            lower_end_s=self.joints[-1]["stamp"] if self.joints else lower_first_sim_s
+            jtc=[v for v in self.arm_joint2_controller_samples
+                 if lower_first_sim_s<=v["stamp"]<=lower_end_s]
+            hw=[{"stamp":v["sim_observed_s"],"name":"command_interface.joint3/position",
+                 "position_rad":v["values"]["command_interface.joint3/position"]}
+                for v in self.hardware_introspection_samples
+                if lower_first_sim_s<=v["sim_observed_s"]<=lower_end_s
+                and "command_interface.joint3/position" in v["values"]]
+            self.last_lower_joint3_causal={
+                "stage":"lower_into_bin_MoveGroup",
+                "start_sim_s":lower_first_sim_s,"end_sim_s":lower_end_s,
+                "goal_joint3_rad":target["joint3"],
+                "actual_joint3_rad":self.joints[-1]["arm"]["joint3"],
+                "jtc_reference_feedback_error":jtc,
+                "hardware_command_position":hw,
+                "observer_errors":self.arm_joint2_observer_errors[-10:],
+                "native_trace_csv":"gazebo_finger_ecs_pre_post_command.csv",
+                "scope":"READ_ONLY_G04B_BLOCKED"}
+            row["lower_joint3_causal_evidence"]=self.last_lower_joint3_causal
         if (row["action_status"]!=GoalStatus.STATUS_SUCCEEDED or
             row["moveit_error"]!=MoveItErrorCodes.SUCCESS or
             row["planned_points"]==0):
@@ -238,7 +392,17 @@ class Witness(Node):
             errors={n:abs(self.joints[-1]["arm"][n]-target[n]) for n in ARM}
             row["measured_joint_errors_rad"]=errors
             if max(errors.values())>.075:
-                raise RuntimeError("G04B_ARM_"+label+"_JOINT_ERROR_EXCESS_"+str(errors))
+                # The lower_into_bin MoveGroup can falsely report SUCCEEDED
+                # while real q3 is 135mrad behind (#43712237998). For that
+                # ONE stage only, return an explicitly pending strict FJT
+                # request; NEVER mark this as joint tracking PASS. The
+                # caller must perform the independent <=10mrad real feedback
+                # gate before release; huge errors still raise immediately.
+                if (defer_lower_fjt_recovery and
+                        lower_bin_settle_recovery_eligible(label,errors)):
+                    row["strict_joint_feedback_deferred_to_fjt"]=True
+                else:
+                    raise RuntimeError("G04B_ARM_"+label+"_JOINT_ERROR_EXCESS_"+str(errors))
         return row
 
     def arm_precision_settle(self,target):
@@ -259,6 +423,7 @@ class Witness(Node):
             jt.position=JOINT_GOAL_TOL_RAD
             goal.goal_tolerance.append(jt)
         goal.goal_time_tolerance.sec=2
+        arm_fjt_start_sim=self.joints[-1]["stamp"] if self.joints else 0.
         handle=self.await_future(self.arm_direct.send_goal_async(goal),
                                  "post_movegroup_settle_ACCEPT",12)
         if not handle or not handle.accepted:
@@ -270,15 +435,143 @@ class Witness(Node):
         verdict,errors=assess_arm_settle(int(outcome.status),
                                          int(outcome.result.error_code),
                                          target,observed)
+        arm_fjt_end_sim=self.joints[-1]["stamp"] if self.joints else arm_fjt_start_sim
+        arm_jtc_window=[s for s in self.arm_joint2_controller_samples
+                        if arm_fjt_start_sim<=s["stamp"]<=arm_fjt_end_sim]
+        hw_window=[s for s in self.hardware_introspection_samples
+                   if arm_fjt_start_sim<=s["sim_observed_s"]<=arm_fjt_end_sim
+                   and "command_interface.joint2/position" in s["values"]]
+        arm_jtc3=[v for v in self.arm_joint2_controller_samples
+                  if arm_fjt_start_sim<=v["stamp"]<=arm_fjt_end_sim]
+        hw3=[{"stamp":v["sim_observed_s"],"name":"command_interface.joint3/position",
+              "position_rad":v["values"]["command_interface.joint3/position"]}
+             for v in self.hardware_introspection_samples
+             if arm_fjt_start_sim<=v["sim_observed_s"]<=arm_fjt_end_sim
+             and "command_interface.joint3/position" in v["values"]]
         row={"name":"post_movegroup_direct_fjt_arm_settle",
              "desired":target,"actual":observed,"error_rad":errors,
              "action_status":int(outcome.status),
              "result_error":int(outcome.result.error_code),
              "goal_tolerance_rad":JOINT_GOAL_TOL_RAD,
-             "goal_time_tolerance_s":2,"verdict":verdict}
+             "goal_time_tolerance_s":2,"verdict":verdict,
+             "joint3_observation_window":{
+                 "stage":"lower_into_bin_direct_FJT_if_called",
+                 "start_sim_s":arm_fjt_start_sim,"end_sim_s":arm_fjt_end_sim,
+                 "goal_joint3_rad":target["joint3"],
+                 "actual_joint3_rad":observed["joint3"],
+                 "jtc_reference_feedback_error":arm_jtc3,
+                 "hardware_command_position":hw3,
+                 "observer_errors":self.arm_joint2_observer_errors[-10:],
+                 "native_trace_csv":"gazebo_finger_ecs_pre_post_command.csv",
+                 "scope":"READ_ONLY_G04B_BLOCKED"},
+             "joint2_observation_window":{
+                 "start_sim_s":arm_fjt_start_sim,
+                 "end_sim_s":arm_fjt_end_sim,
+                 "jtc_reference_feedback_error":arm_jtc_window,
+                 "hardware_command_position":[
+                    {"stamp":s["sim_observed_s"],
+                     "value_rad":s["values"]["command_interface.joint2/position"]}
+                    for s in hw_window],
+                 "observer_errors":self.arm_joint2_observer_errors[-10:],
+                 "native_trace_csv":"gazebo_finger_ecs_pre_post_command.csv",
+                 "status":"READ_ONLY_NOT_PHYSICAL_PASS"}}
+        self.last_arm_settle_data=row
         if verdict!="ARM_SETTLE_SCOPED_PASS":
             raise RuntimeError("G04B_181_ARM_SETTLE_FAILED_"+str(row))
         return row
+
+    def release_and_retract_fjt(self,arm_target):
+        """Both real Jazzy FJT servers act concurrently, no fabricated pose.
+
+        This one C18 action replaces only the blocking release call. All
+        original independent release-contact, zero-wrist-rod and settled ROI
+        acceptance checks run exactly as before.
+        """
+        if not self.arm_direct.wait_for_server(timeout_sec=8.):
+            raise RuntimeError("C18_ARM_DIRECT_ACTION_MISSING")
+        if not self.grip.wait_for_server(timeout_sec=8.):
+            raise RuntimeError("C18_GRIPPER_DIRECT_ACTION_MISSING")
+        start=dict(self.joints[-1]["arm"])
+        if (set(arm_target)!=set(ARM) or
+            any(not math.isfinite(v) for v in arm_target.values()) or
+            abs(arm_target["joint3"]-start["joint3"]+.055)>.012 or
+            any(abs(arm_target[n]-start[n])>.012 for n in ARM if n!="joint3")):
+            raise ValueError("C18_RETREAT_TARGET_NOT_ONLY_BOUNDED_JOINT3")
+        sim_start=self.joints[-1]["stamp"]
+        ag=FollowJointTrajectory.Goal()
+        ag.trajectory.joint_names=list(ARM)
+        ap=JointTrajectoryPoint()
+        ap.positions=[float(arm_target[n]) for n in ARM]
+        ap.time_from_start.nanosec=int(C19_RETRACT_FJT_DURATION_S*1e9)
+        ag.trajectory.points=[ap]
+        for n in ARM:
+            tol=JointTolerance();tol.name=n;tol.position=.01
+            ag.goal_tolerance.append(tol)
+        ag.goal_time_tolerance.sec=2
+        gg=FollowJointTrajectory.Goal()
+        gg.trajectory.joint_names=list(FINGERS)
+        gp=JointTrajectoryPoint()
+        gp.positions=[0.0,0.0]
+        gp.time_from_start.sec=2
+        gg.trajectory.points=[gp]
+        for n in FINGERS:
+            tol=JointTolerance();tol.name=n;tol.position=.001
+            gg.goal_tolerance.append(tol)
+        gg.goal_time_tolerance.sec=2
+        # Both independent controller Goals are enqueued before either result
+        # is awaited; the original blocking release was TOO LATE for retreat.
+        af=self.arm_direct.send_goal_async(ag)
+        gf=self.grip.send_goal_async(gg)
+        ah=self.await_future(af,"C18_ARM_RETRACT_ACCEPT",12)
+        gh=self.await_future(gf,"C18_GRIP_RELEASE_ACCEPT",12)
+        if not ah or not ah.accepted or not gh or not gh.accepted:
+            if ah and ah.accepted:ah.cancel_goal_async()
+            if gh and gh.accepted:gh.cancel_goal_async()
+            raise RuntimeError("C18_RELEASE_RETRACT_ACTION_NOT_ACCEPTED")
+        aresult=self.await_future(ah.get_result_async(),"C18_ARM_RETRACT_RESULT",
+                                  20,ah.cancel_goal_async)
+        gresult=self.await_future(gh.get_result_async(),"C18_RELEASE_RESULT",
+                                  20,gh.cancel_goal_async)
+        arm_actual=dict(self.joints[-1]["arm"])
+        finger_actual=dict(self.joints[-1]["fingers"])
+        errors={n:abs(arm_actual[n]-arm_target[n]) for n in ARM}
+        grip_error={n:abs(finger_actual[n]) for n in FINGERS}
+        arm_row={
+            "name":"release_retract_from_rod",
+            "target_joint_positions":dict(arm_target),
+            "source_actual_joint_positions":start,
+            "actual_joint_positions":arm_actual,
+            "measured_joint_errors_rad":errors,
+            "action_status":int(aresult.status),
+            "result_error":int(aresult.result.error_code),
+            "goal_time_from_start_s":C19_RETRACT_FJT_DURATION_S,
+            "started_sim_s":sim_start,
+            "finished_sim_s":self.joints[-1]["stamp"],
+            "coordinated_direct_controller_fjt_no_fake_physics":True}
+        grip_row={
+            "name":"release","command_m":0.0,
+            "command_by_joint_m":{n:0.0 for n in FINGERS},
+            "status":int(gresult.status),
+            "result_error":int(gresult.result.error_code),
+            "explicit_fjt_goal_tolerance_m":.001,
+            "explicit_fjt_goal_time_tolerance_sec":2,
+            "actual_m":finger_actual,
+            "per_finger_position_error_m":finger_actual,
+            "tracking_error_max_m":max(grip_error.values()),
+            "joint_tracking_pass":max(grip_error.values())<=.001,
+            "controller_state_last":(
+                self.controller_samples[-1] if self.controller_samples else None),
+            "controller_state_sample_count":len(self.controller_samples),
+            "diagnostic_free_space":False,
+            "contact_close_position_not_success_criterion":False,
+            "simultaneous_arm_retract":True}
+        self.last_grip_data=grip_row
+        if (arm_row["action_status"]!=GoalStatus.STATUS_SUCCEEDED or
+            arm_row["result_error"]!=0 or max(errors.values())>.01 or
+            grip_row["status"]!=GoalStatus.STATUS_SUCCEEDED or
+            grip_row["result_error"]!=0 or not grip_row["joint_tracking_pass"]):
+            raise RuntimeError("C18_ACTUAL_RELEASE_RETRACT_FJT_OR_FEEDBACK_FAILED")
+        return grip_row,arm_row
 
     def grip_goal(self,label,q,q2=None,diagnostic=False):
         # Both original ROS 2 joints must always be present. A diagnostic
@@ -307,6 +600,7 @@ class Witness(Node):
             tol.position=tolerance_m
             goal.goal_tolerance.append(tol)
         goal.goal_time_tolerance.sec=2
+        goal_start_sim=self.joints[-1]['stamp'] if self.joints else 0.0
         h=self.await_future(self.grip.send_goal_async(goal),label+"_ACCEPT",15)
         if not h or not h.accepted:
             raise RuntimeError("G04B_GRIP_"+label+"_REJECTED")
@@ -331,6 +625,14 @@ class Witness(Node):
               "diagnostic_free_space":bool(diagnostic),
               "contact_close_position_not_success_criterion":(
                   label=="contact_close")}
+        if label=='lower_stop_release_both_fingers_2mm':
+            goal_end_sim=self.joints[-1]['stamp'] if self.joints else goal_start_sim
+            data['first_goal_causal_receipt']=first_goal_evidence(
+                self.controller_samples,self.hardware_introspection_samples,
+                actual,goal_start_sim,goal_end_sim,
+                target_m=EXPECTED_PRELOAD_M)
+            data['introspection_schema_errors']=self.hardware_introspection_errors[-15:]
+            data['causal_receipt_is_not_physical_acceptance']=True
         self.last_grip_data=data
         if data["status"]!=GoalStatus.STATUS_SUCCEEDED or data["result_error"]!=0:
             raise RuntimeError("G04B_GRIP_"+label+"_RESULT_FAILURE_"+str(data))
@@ -649,6 +951,11 @@ def main():
         # Transport actual dynamic rod into BIN_XY while HIGH above it,
         # then lower without lateral sweep and only release if the
         # independent rod world pose and gripper custody both pass.
+        # Cycle07 real Gazebo contact sim 66.427: link4 struck bin support.
+        # Plan around the exact unchanged obstacle instead of retrying a
+        # blocked velocity/position goal with relaxed tolerances.
+        report["cycle08_native_bin_in_moveit_scene"]=w.register_real_bin_planning_collision(
+            os.environ["CH07_181_C08_GAZEBO_WORLD_SDF"])
         held_world=report["pose_snapshots"]["held"]
         held_fk=measured_finger_center(w.joints[-1]["arm"])
         held_offset=custody_offset(held_world,held_fk)
@@ -675,10 +982,47 @@ def main():
         # At q_wrist=0, changing q4 does NOT move the target finger-centre
         # XYZ or the cylinder's ideal transport goal.
         held_arm_actual=dict(w.joints[-1]["arm"])
+        # Cycle14: exact held-time input provenance for the adaptive selector.
+        # Read-only; never substitute earlier lift final JointState.
+        report["cycle14_actual_held_arm_jointstate_pre_high"]=held_arm_actual
         nominal_high_arm=arm_ik_tilted_fingers(*high_target)
         jaw_plan=high_carry_jaw_compensation(
             held_arm_actual,nominal_high_arm)
         high_joint_target=jaw_plan["target"]
+        if os.environ.get("CH07_181_C12_BIN_YAW_ONLY")=="YES":
+            # Actual solid bin same size, centre and top; yaw-only test fixture.
+            # 5mm source goal and native FCL/Gazebo all mandatory.
+            c12=source_bin_rotated_high_goal(
+                held_arm_actual,held_world,
+                report["cycle08_native_bin_in_moveit_scene"])
+            high_joint_target=c12["joint_goal"]
+            report["cycle12_rotated_real_bin_high_goal"]=c12
+            report["cycle12_collision_checked_plan_only"]=w.arm_goal(
+                "cycle12_bin_yaw_high_plan_only",high_target,
+                plan_only=True,joint_override=high_joint_target)
+        elif os.environ.get("CH07_181_C10_CLEARANCE_HIGH_GOAL")=="YES":
+            # Offline original OBB SAT is ONLY a candidate; actual FCL
+            # plan_only must pass before any real high motion.
+            candidate=source_bin_clearance_high_goal(
+                held_arm_actual,held_world,
+                report["cycle08_native_bin_in_moveit_scene"])
+            high_joint_target=candidate["joint_goal"]
+            report["cycle10_original_bin_high_candidate"]=candidate
+            report["cycle10_collision_checked_plan_only"]=w.arm_goal(
+                "cycle10_original_bin_high_plan_only",high_target,
+                plan_only=True,joint_override=high_joint_target)
+        elif os.environ.get("CH07_181_C09_NEGATIVE_ELBOW_TRIAL")=="YES":
+            # Cycle08: exact high goal collides with real static bin link4.
+            # ONE alternative: other IK elbow branch; stop if OMPL cannot
+            # find a collision-free plan BEFORE sending any real high motion.
+            alt=alternative_high_elbow_target(
+                held_arm_actual,held_world,high_target)
+            high_joint_target=alt["joint_goal"]
+            report["cycle09_elbow_alternative_geometry"]=alt
+            report["cycle09_collision_checked_plan_only"]=w.arm_goal(
+                "cycle09_high_elbow_alternative_plan_only",high_target,
+                plan_only=True,joint_override=high_joint_target)
+
         report["transport_high_jaw_axis_plan"]=jaw_plan
         report["transport_high_exact_5dof_joint_target"]=high_joint_target
         report["transport_high_movegroup_joint_constraint_rad"]=.002
@@ -697,6 +1041,10 @@ def main():
             high_joint_target,dict(w.joints[-1]["arm"]),held_offset)
         if not report["transport_high_jointstate_target_audit"][
                 "real_arm_tracking_scoped_pass"]:
+            audit=report["transport_high_jointstate_target_audit"]
+            if (audit["max_joint_error_rad"]<=.01 and
+                    audit["ideal_object_bin_xy_error_m"]>.005):
+                raise RuntimeError("G04B_181_HIGH_SOURCE_FK_GOAL_GEOMETRY_OVER_5MM")
             raise RuntimeError("G04B_181_HIGH_MOVEGROUP_ACTUAL_JOINT_TRACKING_FAILED")
         above=rod_pose()
         report["pose_snapshots"]["transfer_high"]=above
@@ -731,14 +1079,69 @@ def main():
         # Preserve previous lower wrist command as a CONTROLLED candidate.
         # It does NOT preserve true physical tool orientation at q4=pi/2;
         # exact 5DOF tool axis is recorded independently below.
-        lower_oriented=historical_wrist_bias_lower_goal(
-            high_arm_actual,lower_nominal)
+        if os.environ.get("CH07_181_C16_COLLISION_SAFE_LOWER")=="YES":
+            # Cycle15's original lower goal intersects REAL solid bin/link4.
+            # Source OBB preview is necessary but not MoveIt FCL proof.
+            lower_plan=collision_safe_lower_target(
+                high_arm_actual,held_offset,
+                report["cycle08_native_bin_in_moveit_scene"])
+            lower_oriented=lower_plan["target"]
+            report["cycle16_source_solid_bin_lower_candidate"]=lower_plan
+            report["cycle16_lower_fcl_plan_only"]=w.arm_goal(
+                "cycle16_lower_original_bin_plan_only",lower,
+                joint_override=lower_oriented,plan_only=True)
+            report["lower_exact_world_jaw_plan"]="CYCLE16_SOLID_BIN_SAFE_LOWER"
+        elif os.environ.get("G04B_CYCLE06_REACHABLE_RELEASE")=="YES":
+            # One new waypoint, no FJT/tolerance/gain change: avoid the
+            # independently observed native q3 stall at ~1.132 rad.
+            lower_plan=reachable_release_waypoint(
+                high_arm_actual,lower_nominal,held_offset)
+            lower_oriented=lower_plan["target"]
+            report["lower_reachable_release_plan"]=lower_plan
+            report["lower_exact_world_jaw_plan"]="CYCLE06_REACHABLE_SHORT_DROP"
+        elif os.environ.get("G04B_CYCLE05_PGS_JAW_GOAL")=="YES":
+            lower_plan=exact_world_jaw_lower_plan(
+                high_arm_actual,lower_nominal,held_offset)
+            lower_oriented=lower_plan["target"]
+            report["lower_exact_world_jaw_plan"]=lower_plan
+        else:
+            lower_oriented=historical_wrist_bias_lower_goal(
+                high_arm_actual,lower_nominal)
+            report["lower_exact_world_jaw_plan"]="NOT_RUN_DEFAULT"
         report["transport_high_measured_finger_tilt_rad"]=finger_tilt(high_arm_actual)
         report["transport_lower_wrist_goal"]=lower
         report["transport_lower_joint_target_with_pitch_compensation"]=lower_oriented
-        report["arm_results"].append(
-            w.arm_goal("lower_into_bin",lower,joint_override=lower_oriented))
+        lower_movegroup=w.arm_goal(
+            "lower_into_bin",lower,joint_override=lower_oriented,
+            defer_lower_fjt_recovery=True)
+        report["arm_results"].append(lower_movegroup)
         report["arm_goal_count"]+=1
+        if os.environ.get("G04B_CYCLE06_REACHABLE_RELEASE")=="YES":
+            # Fail closed: MoveGroup SUCCEEDED does NOT prove real q.
+            # Do not re-send the same blocked q3 Goal via FJT.
+            w.spin_for(.3)
+            actual=dict(w.joints[-1]["arm"])
+            errors={name:abs(actual[name]-lower_oriented[name]) for name in ARM}
+            report["lower_reachable_release_actual_joint_errors_rad"]=errors
+            report["lower_reachable_release_actual_jointstate"]=actual
+            if (lower_movegroup.get("strict_joint_feedback_deferred_to_fjt")
+                    or max(errors.values())>JOINT_GOAL_TOL_RAD):
+                raise RuntimeError("G04B_CYCLE06_ACTUAL_LOWER_JOINT_TRACKING_FAILED")
+        if lower_movegroup.get("strict_joint_feedback_deferred_to_fjt"):
+            # Native dynamic object remains above the bin while the arm
+            # joint3 trails the MoveGroup goal. Do not issue another motion
+            # if the object is outside the ORIGINAL 9cm bin XY envelope.
+            lower_mid_rod=rod_pose()
+            report["lower_midway_native_dynamic_rod_pose"]=lower_mid_rod
+            lower_mid_xy=math.hypot(lower_mid_rod[0]-.55,
+                                    lower_mid_rod[1]-.25)
+            report["lower_midway_bin_xy_error_m"]=lower_mid_xy
+            if lower_mid_xy>.09:
+                raise RuntimeError("G04B_181_LOWER_FJT_OBJECT_OUTSIDE_BIN_XY_STOP")
+            strict_settle=w.arm_precision_settle(lower_oriented)
+            report["lower_into_bin_direct_fjt_settle"]=strict_settle
+            report["arm_results"].append(strict_settle)
+        report["lower_into_bin_feedback_resolved"]=True
         w.spin_for(.5)
         report["transport_legacy_scalar_tilt_drift_rad"]=actual_finger_tilt_drift(
             high_arm_actual,w.joints[-1]["arm"])
@@ -765,8 +1168,23 @@ def main():
             raise RuntimeError("G04B_181_ACTUAL_GRIPPER_OPENED_DURING_CARRY")
         sim_now=w.get_clock().now().nanoseconds*1e-9
         report["pre_release_sim_stamp"]=sim_now
-        report["pre_release_recent_native_contact"]=require_bilateral_pre_release_contact(
-            Path(os.environ["CH07_77_G04B_NATIVE_RAW"]).parent,sim_now)
+        native_dir=Path(os.environ["CH07_77_G04B_NATIVE_RAW"]).parent
+        cli_contact_diagnostic=require_bilateral_pre_release_contact(
+            native_dir,sim_now)
+        if os.environ.get("CH07_181_C17_NATIVE_ECS_FORCE")=="YES":
+            # Actual read-only same-ECS-frame contact + native force.
+            # The large asynchronous gz topic text log remains unmodified
+            # and is independently audited AFTER release in the original
+            # physical acceptance script; do not infer force from old data.
+            ecs_contact=require_bilateral_same_ecs_frame_force(
+                native_dir/"gazebo_rod_finger_contact_same_ecs_frame.csv",sim_now)
+            report["cycle17_async_cli_contact_diagnostic"]=cli_contact_diagnostic
+            report["cycle17_same_ecs_native_force"]=ecs_contact
+            report["pre_release_recent_native_contact"]=(
+                ecs_contact if ecs_contact["both_native_fresh_positive_force"]
+                else cli_contact_diagnostic)
+        else:
+            report["pre_release_recent_native_contact"]=cli_contact_diagnostic
         # Original scalar FK receipt was invalid after nonzero q_wrist.
         # Independent contemporaneous real Gazebo collision and force
         # are stronger custody proof. Object XY/Z, closed JointState
@@ -775,8 +1193,27 @@ def main():
                 release_pose,report["pre_release_custody_drift_m"],
                 report["pre_release_recent_native_contact"]):
             raise RuntimeError("G04B_181_REAL_ROD_OUTSIDE_SAFE_BIN_RELEASE_ENVELOPE_OR_LOST_NATIVE_GRIP")
-        report["finger_results"].append(w.grip_goal("release",0.0))
-        report["finger_goal_count"]+=1
+        if os.environ.get("CH07_181_C18_RELEASE_RETRACT")=="YES":
+            # The original wrist OBB intersects the actual falling rod.
+            # ONE new concurrent FJT wrist retreat, source/FCL preflight
+            # required. Never assume the rod remains fixed during motion.
+            actual_lower=dict(w.joints[-1]["arm"])
+            retreat=source_release_wrist_retract(
+                actual_lower,release_pose,
+                report["cycle08_native_bin_in_moveit_scene"])
+            report["cycle18_source_release_retract"]=retreat
+            report["cycle18_official_moveit_plan_only"]=w.arm_goal(
+                "cycle18_release_retract_plan_only",None,
+                plan_only=True,joint_override=retreat["target"])
+            fingers,arm=w.release_and_retract_fjt(retreat["target"])
+            report["finger_results"].append(fingers)
+            report["finger_goal_count"]+=1
+            report["arm_results"].append(arm)
+            report["arm_goal_count"]+=1
+            report["cycle18_rod_world_after_retract"]=rod_pose()
+        else:
+            report["finger_results"].append(w.grip_goal("release",0.0))
+            report["finger_goal_count"]+=1
         w.spin_for(2.0)
         report["pose_snapshots"]["settled"]=rod_pose()
         obj=report["pose_snapshots"]["settled"]
@@ -814,6 +1251,13 @@ def main():
                         for link in ("finger1","finger2")}
                 except Exception as snapshot_error:
                     report["failure_snapshot_error"]=repr(snapshot_error)
+        # Read-only FJT evidence survives a real action ABORTED exception.
+        if w.last_arm_settle_data is not None:
+            report["last_arm_settle_even_on_failure"]=w.last_arm_settle_data
+        if w.last_high_joint2_causal is not None:
+            report["last_high_joint2_causal_even_on_failure"]=w.last_high_joint2_causal
+        if w.last_lower_joint3_causal is not None:
+            report["last_lower_joint3_causal_even_on_failure"]=w.last_lower_joint3_causal
         report["joint_state_samples"]=len(w.joints)
         out.parent.mkdir(parents=True,exist_ok=True)
         out.write_text(json.dumps(report,indent=2,allow_nan=False)+"\n")

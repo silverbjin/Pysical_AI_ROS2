@@ -7,7 +7,7 @@ world XYZ; raw #43683249305 lost 16.83cm object custody despite accurate
 change during that same high waypoint, preserving wrist/rod target XYZ.
 """
 import math
-from ch07_181_exact_fk import original_finger_collision_center
+from ch07_181_exact_fk import original_finger_collision_center, original_finger_tool_z_axis
 ARM=("joint1","joint2","joint3","joint4","joint_wrist")
 MAX_Q4_DEVIATION_FROM_PREVIOUS_NOMINAL_RAD=.5
 MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD=.25
@@ -62,3 +62,57 @@ def high_carry_jaw_compensation(held_actual_arm,nominal_high_goal):
             "jaw_axis_world_reference":reference,
             "jaw_axis_world_target":real_jaw_world_axis(target),
             "physical_rod_position_target_unchanged":True}
+
+# Cycle05: exact 5DOF WORLD jaw preserving lowered target. The historical
+# q2+q3+qwrist angle-sum is not a valid WORLD orientation when q4~pi/2.
+def exact_world_jaw_lower_plan(high_actual,lower_nominal,held_offset):
+    if not all(isinstance(a,dict) and set(a)==set(ARM)
+               for a in (high_actual,lower_nominal)):
+        raise ValueError("G04B_181_LOWER_JAW_JOINTS_INCOMPLETE")
+    if not isinstance(held_offset,(list,tuple)) or len(held_offset)!=3:
+        raise ValueError("G04B_181_LOWER_JAW_HELD_OFFSET_MISSING")
+    if not all(isinstance(x,(float,int)) and math.isfinite(x)
+       for a in (high_actual,lower_nominal) for x in a.values()):
+        raise ValueError("G04B_181_LOWER_JAW_NONFINITE")
+    if not all(isinstance(x,(float,int)) and math.isfinite(x) for x in held_offset):
+        raise ValueError("G04B_181_LOWER_JAW_OFFSET_NONFINITE")
+    if math.dist(held_offset,(0.,0.,0.))>.055:
+        raise ValueError("G04B_181_LOWER_JAW_OBJECT_NOT_IN_GRIPPER")
+    x,y,z=real_jaw_world_axis(high_actual)
+    yaw=lower_nominal["joint1"];theta=lower_nominal["joint2"]+lower_nominal["joint3"]
+    # Rz(-yaw) Ry(-theta) world jaw, then inverse Rz(phi) Ry(wrist) ex.
+    a=math.cos(yaw)*x+math.sin(yaw)*y
+    b=-math.sin(yaw)*x+math.cos(yaw)*y
+    ax=math.cos(theta)*a-math.sin(theta)*z
+    az=math.sin(theta)*a+math.cos(theta)*z
+    phi=math.atan2(b,ax)
+    wrist=math.atan2(-az,math.hypot(ax,b))
+    if not (-3.14159<=phi<=3.14159 and -1.5708<=wrist<=1.5708):
+        raise ValueError("G04B_181_LOWER_JAW_LIMIT")
+    goal=dict(lower_nominal,joint4=phi,joint_wrist=wrist)
+    old=dict(lower_nominal)
+    old["joint_wrist"]=(high_actual["joint2"]+high_actual["joint3"]+
+                        high_actual["joint_wrist"]-
+                        lower_nominal["joint2"]-lower_nominal["joint3"])
+    old_change=real_jaw_world_axis_change(high_actual,old)
+    change=real_jaw_world_axis_change(high_actual,goal)
+    if change>1e-5 or old_change-change<.10:
+        raise ValueError("G04B_181_EXACT_LOWER_JAW_NO_IMPROVEMENT")
+    def tool_angle(target):
+        a=original_finger_tool_z_axis(high_actual)
+        b=original_finger_tool_z_axis(target)
+        return math.acos(max(-1.,min(1.,sum(x*y for x,y in zip(a,b)))))
+    new_tool=tool_angle(goal); old_tool=tool_angle(old)
+    if new_tool>.38 or new_tool>old_tool:
+        raise ValueError("G04B_181_EXACT_LOWER_TOOL_DIRECTION_UNSAFE")
+    c=original_finger_collision_center(goal)
+    rod=[c[i]+held_offset[i] for i in range(3)]
+    xy=math.hypot(rod[0]-.55,rod[1]-.25)
+    if xy>.06 or not (1.78<=rod[2]<=1.92):
+        raise ValueError("G04B_181_EXACT_LOWER_ROD_OUTSIDE_BIN")
+    return {"target":goal,"predicted_rod_xyz_m":rod,
+            "predicted_bin_xy_error_m":xy,"jaw_world_change_rad":change,
+            "historical_jaw_world_change_rad":old_change,
+            "tool_world_change_rad":new_tool,
+            "historical_tool_world_change_rad":old_tool,
+            "scope":"KINEMATIC_ONLY_NOT_PHYSICAL_PASS"}

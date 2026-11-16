@@ -10,6 +10,13 @@ export GZ_PARTITION="ch07_77_g04b_${GITHUB_RUN_ID:-local}_$$_$RANDOM"
 export DEBIAN_FRONTEND=noninteractive
 export CH07_77_G04B_RECEIPT="$OUT/g04b_physical_receipt.json"
 export CH07_77_G04B_FIXTURE_RECEIPT="$OUT/g04b_fixture_receipt.json"
+export CH07_181_C08_GAZEBO_WORLD_SDF="$OUT/g04b_contact_world.sdf"
+# Cycle09 one-factor safety trial, plan-only negative elbow before real Goal.
+export CH07_181_C09_NEGATIVE_ELBOW_TRIAL=NO  # Cycle09 L2 failed plan_only collision, leave disabled
+export CH07_181_C10_CLEARANCE_HIGH_GOAL="${CH07_181_C10_CLEARANCE_HIGH_GOAL:-NO}"  # explicit L2 only
+export CH07_181_C16_COLLISION_SAFE_LOWER="${CH07_181_C16_COLLISION_SAFE_LOWER:-NO}"  # explicit L2 only
+export CH07_181_C17_NATIVE_ECS_FORCE="${CH07_181_C17_NATIVE_ECS_FORCE:-NO}"  # explicit L2 only
+export CH07_181_C18_RELEASE_RETRACT="${CH07_181_C18_RELEASE_RETRACT:-NO}"  # explicit L2 only
 export CH07_77_G04B_NATIVE_RAW="$OUT/native_contacts.log"
 export CH07_77_G04B_SUPPORT_RAW="$OUT/diag_support_contacts.log"
 export CH07_77_G04B_SIMULATION_ONLY_VERIFIED=NO
@@ -28,6 +35,28 @@ running(){
 cleanup(){
  local rc="$?" shutdown="OWNED_GROUPS_EXITED_NO_SIGKILL" idx attempt pg
  trap - EXIT;set +e
+ # Always keep the first failed FJT's causal report, including rc!=0.
+ # This is read-only audit; no retry, joint motion or verdict promotion.
+ if [[ -f "$CH07_77_G04B_RECEIPT" ]];then
+   python3 "$ROOT/ci/ch07_181_lower_joint3_native_audit.py" \
+     "$CH07_77_G04B_RECEIPT" "$CH07_181_FINGER_ECS_CSV" \
+     "$OUT/lower_joint3_native_first_boundary.json" \
+     >"$OUT/lower_joint3_native_first_boundary.log" 2>&1 || \
+     echo G04B_CYCLE04_LOWER_JOINT3_AUDIT_FAILED >>"$OUT/stages.log"
+ fi
+ if [[ -f "$CH07_77_G04B_RECEIPT" ]];then
+   python3 "$ROOT/ci/ch07_181_high_joint2_native_audit.py" \
+     "$CH07_77_G04B_RECEIPT" "$CH07_181_FINGER_ECS_CSV" \
+     "$OUT/high_joint2_causal_native_audit.json" \
+     >"$OUT/high_joint2_causal_native_audit.log" 2>&1 || \
+     echo G04B_181_HIGH_JOINT2_AUDIT_READONLY_FAILED >>"$OUT/stages.log"
+ fi
+ if [[ -f "$CH07_77_G04B_RECEIPT" ]];then   python3 "$ROOT/ci/ch07_181_g04b_first_goal_ecs_audit.py" \
+     "$CH07_77_G04B_RECEIPT" "$CH07_181_FINGER_ECS_CSV" \
+     "$OUT/first_finger_native_command_audit.json" \
+     >"$OUT/first_finger_native_command_audit.log" 2>&1 || \
+     echo G04B_FIRST_FINGER_AUDIT_FAILED_READONLY >>"$OUT/stages.log"
+ fi
  for ((idx=${#OWNED[@]}-1;idx>=0;idx--));do
    pg="${OWNED[$idx]}"
    if ! running "$pg";then wait "$pg" 2>/dev/null || true;continue;fi
@@ -82,7 +111,7 @@ packages=(
   ros-jazzy-controller-manager ros-jazzy-ros2controlcli
   ros-jazzy-joint-trajectory-controller ros-jazzy-joint-state-broadcaster
   ros-jazzy-ros2-control ros-jazzy-robot-state-publisher
-  ros-jazzy-xacro ros-jazzy-control-msgs
+  ros-jazzy-xacro ros-jazzy-control-msgs ros-jazzy-pal-statistics-msgs
   libgz-sim8-dev libgz-plugin2-dev cmake g++ pkg-config
 )
 missing=()
@@ -125,6 +154,33 @@ python3 "$ROOT/ci/ch07_77_g04b_physics_fixture.py" \
   --source "$ROOT/ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf" \
   --output "$OUT/g04b_contact_world.sdf" \
   --receipt "$OUT/g04b_fixture_receipt.json" >"$OUT/fixture.log"
+# Cycle03 PGS one-factor comparison FAILED in real CI #43721071561.
+# Reverted the *application*, retaining optional source and archived evidence.
+# Do not silently carry solver=pgs into unrelated future diagnostic cycles.
+# Cycle05: selected ONLY in approved physical GitHub CI. Comparator is the
+# earlier original PGS trial #43721071561; the sole *new* control variable
+# relative to that trial is exact-world lower jaw orientation.
+if [[ "${G04B_CYCLE05_PGS_JAW_GOAL:-NO}" == "YES" ]];then
+ stage G04B_CYCLE05_PRIOR_PGS_BASELINE_EXACT_WORLD_JAW_COMPARISON
+ python3 "$ROOT/ci/ch07_181_dart_solver_single_factor.py" \
+  --world "$OUT/g04b_contact_world.sdf" \
+  --receipt "$OUT/g04b_cycle05_pgs_comparator_receipt.json" \
+  >"$OUT/g04b_cycle05_pgs_comparator.log"
+fi
+if [[ "${G04B_CYCLE07_BIN_CONTACT_PROBE:-NO}" == "YES" ]];then
+  stage G04B_CYCLE07_ADD_READONLY_BIN_CONTACT_SENSOR
+  python3 "$ROOT/ci/ch07_181_bin_contacts_readonly.py" \
+    --world "$OUT/g04b_contact_world.sdf" \
+    --receipt "$OUT/cycle07_bin_sensor_receipt.json" \
+    > "$OUT/cycle07_bin_sensor_instrument.log"
+fi
+if [[ "${CH07_181_C12_BIN_YAW_ONLY:-NO}" == "YES" ]];then
+  stage CYCLE12_TEST_ONLY_REAL_SOLID_BIN_YAW_SINGLE_FACTOR
+  python3 "$ROOT/ci/ch07_181_bin_yaw_single_factor.py" \
+    --world "$OUT/g04b_contact_world.sdf" \
+    --receipt "$OUT/cycle12_real_bin_yaw_receipt.json" \
+    >"$OUT/cycle12_real_bin_yaw.log"
+fi
 stage BUILD_READ_ONLY_GAZEBO_DYNAMIC_ROD_ECS_WITNESS
 timeout --signal=TERM --kill-after=5s 90s cmake \
  -S "$ROOT/ci/ch07_181_rod_trace" -B "$OUT/rod_ecs_build" \
@@ -132,10 +188,12 @@ timeout --signal=TERM --kill-after=5s 90s cmake \
 timeout --signal=TERM --kill-after=5s 90s cmake \
  --build "$OUT/rod_ecs_build" --parallel 2 >"$OUT/rod_ecs_compile.log" 2>&1
 test -s "$OUT/rod_ecs_build/libch07_181_rod_trace.so"
+test -s "$OUT/rod_ecs_build/libch07_181_finger_ecs_trace.so"
 export GZ_SIM_SYSTEM_PLUGIN_PATH="$OUT/rod_ecs_build:${GZ_SIM_SYSTEM_PLUGIN_PATH:-}"
 export CH07_181_ROD_ECS_CSV="$OUT/gazebo_rod_real_static_gravity_velocity.csv"
 export CH07_181_SYNC_CONTACT_CSV="$OUT/gazebo_rod_finger_contact_same_ecs_frame.csv"
 export CH07_181_POSE_SOURCE_CSV="$OUT/gazebo_link_pose_component_provenance.csv"
+export CH07_181_FINGER_ECS_CSV="$OUT/gazebo_finger_ecs_pre_post_command.csv"
 python3 - "$OUT/g04b_contact_world.sdf" "$OUT/rod_ecs_scope.json" <<'PY'
 import xml.etree.ElementTree as ET,json,sys
 from pathlib import Path
@@ -150,6 +208,12 @@ assert rod.find("./link[@name='cylinder_link']/inertial/mass").text=="0.05"
 ET.SubElement(world,"plugin",{
  "filename":"libch07_181_rod_trace.so",
  "name":"ch07_181::RodTrace"})
+# Proven read-only Gazebo Sim8 PreUpdate(priority100)/PostUpdate observer:
+# native velocity CMD and true position for BOTH fingers, one sim timestamp.
+# No physics/URDF/controller/Goal changes. Commit only original raw custody.
+ET.SubElement(world,"plugin",{
+ "filename":"libch07_181_finger_ecs_trace.so",
+ "name":"ch07_181::FingerEcsTrace"})
 tree.write(file,encoding="unicode",xml_declaration=True)
 receipt.write_text(json.dumps({"world_gravity":"0 0 -9.8",
 "rod_static_original":False,"rod_mass_original_kg":.05,
@@ -200,9 +264,49 @@ test -s "$CH07_181_POSE_SOURCE_CSV" || {
 head -1 "$CH07_181_POSE_SOURCE_CSV" >"$OUT/rod_link_pose_provenance_schema.txt"
 echo CH07_181_POSE_COMPONENT_PROVENANCE_INITIALIZED >>"$OUT/stages.log"
 echo CH07_181_ROD_ECS_PLUGIN_INITIALIZED >>"$OUT/stages.log"
-stage SPAWN_IDENTICAL_GAZEBO_URDF
+test -s "$CH07_181_FINGER_ECS_CSV" || {
+ echo CH07_181_FINGER_ECS_PLUGIN_NOT_INITIALIZED;exit 27;
+}
+head -1 "$CH07_181_FINGER_ECS_CSV" > "$OUT/gazebo_finger_ecs_schema.txt"
+echo CH07_181_FINGER_NATIVE_CMD_ECS_PRE_POST_INITIALIZED >>"$OUT/stages.log"
+stage PREPARE_ONE_TEST_ONLY_WORLD_FIXED_BASE_SDF
+# Original URDF (same RSP/MoveIt/ros2_control) remains byte-identical.
+# Physically anchor ONLY the base_link to world in the Gazebo-spawned SDF.
+# Source URDF's world-to-base fixed joint was COMMENTED OUT: raw #195
+# model rotated ~0.095rad and the old posthoc geometry used local link poses
+# as world poses. This is a SINGLE justified fixture-level mechanical factor.
+timeout --signal=TERM --kill-after=3s 35s gz sdf -p "$OUT/robot.urdf" \
+ >"$OUT/robot_sdf_original_conversion.sdf" 2>"$OUT/robot_sdf_convert.log"
+test -s "$OUT/robot_sdf_original_conversion.sdf"
+python3 "$ROOT/ci/ch07_181_fixed_world_base_anchor.py" \
+ --input "$OUT/robot_sdf_original_conversion.sdf" \
+ --output "$OUT/robot_sdf_world_anchored.sdf" \
+ --receipt "$OUT/world_base_anchor_receipt.json" >"$OUT/world_base_anchor.log"
+timeout 20s gz sdf -k "$OUT/robot_sdf_world_anchored.sdf" \
+ > "$OUT/world_base_anchor_sdf_validate.log" 2>&1
+test -s "$OUT/robot_sdf_world_anchored.sdf"
+# Upstream gz-sim #1684: DART 6.13.2 velocity servo can lock at q=0
+# despite nonzero native JointVelocityCmd. One factor: extend ONLY the
+# SDF lower bound by 1mm, WITHOUT changing original URDF, cmd range,
+# all robot links/joint axes, physics solver, contacts or ROI verdict.
+stage G04B_TEST_ONLY_DART_6_13_2_LOWER_LIMIT_MARGIN
+DART_VERSION="$(dpkg-query -W -f='${Version}' 'libdart-core+collisions+odelcpsolver6.13')"
+printf '%s\n' "$DART_VERSION" > "$OUT/dart_engine_package_version.txt"
+case "$DART_VERSION" in
+  6.13.2*) ;;
+  *) echo "G04B_UNKNOWN_DART_ENGINE_VERSION_NO_UNAPPROVED_SDF_PATCH=$DART_VERSION";exit 30 ;;
+esac
+python3 "$ROOT/ci/ch07_181_g04b_dart_limit_margin.py" \
+ --input "$OUT/robot_sdf_world_anchored.sdf" \
+ --output "$OUT/robot_sdf_dart_margin.sdf" \
+ --receipt "$OUT/dart_margin_single_factor_receipt.json" \
+ >"$OUT/dart_margin_test_only.log"
+timeout 20s gz sdf -k "$OUT/robot_sdf_dart_margin.sdf" \
+ > "$OUT/dart_margin_sdf_validate.log" 2>&1
+test -s "$OUT/robot_sdf_dart_margin.sdf"
+stage SPAWN_SAME_ORIGINAL_ROBOT_WITH_WORLD_BASE_AND_TEST_ONLY_DART_LIMIT_MARGIN
 timeout --signal=TERM --kill-after=5s 50s ros2 run ros_gz_sim create \
- -world book_camera -name my_robot -file "$OUT/robot.urdf" -z 0.0 >"$OUT/create.log" 2>&1
+ -world book_camera -name my_robot -file "$OUT/robot_sdf_dart_margin.sdf" -z 0.0 >"$OUT/create.log" 2>&1
 grep -q 'Entity creation successful' "$OUT/create.log"
 # Issue #181 raw CI #43683958215: both Gazebo finger contact sensors
 # continued to report ~13N even after actual rod moved >=0.15m away
@@ -235,6 +339,20 @@ stage VERIFY_ACTUAL_DYNAMICAL_ROD_AND_NATIVE_CONTACT_TOPIC
 timeout 12s gz model --list >"$OUT/gz_models.txt" 2>&1
 grep -q g04_grasp_cylinder "$OUT/gz_models.txt"
 timeout 12s gz model --model g04_grasp_cylinder --pose >"$OUT/gz_rod_initial.txt" 2>&1
+if [[ "${G04B_CYCLE07_BIN_CONTACT_PROBE:-NO}" == "YES" ]];then
+ BIN_TOPIC=/world/book_camera/model/g04_bin_support/link/bin_support/sensor/g04b_cycle07_bin_contacts/contact
+ echo "$BIN_TOPIC" > "$OUT/cycle07_bin_contact_topic.txt"
+ bin_ready=0
+ for attempt in $(seq 1 30);do
+  if timeout 4s gz topic -l |grep -Fxq "$BIN_TOPIC";then
+   bin_ready=1;break
+  fi
+  sleep .2
+ done
+ [[ "$bin_ready" == 1 ]] || { echo G04B_CYCLE07_BIN_CONTACT_TOPIC_MISSING;exit 34; }
+ start diag_bin_contacts stdbuf -oL gz topic -e -t "$BIN_TOPIC"
+ echo G04B_CYCLE07_BIN_CONTACT_SENSOR_READY >>"$OUT/stages.log"
+fi
 CONTACT_TOPIC=/world/book_camera/model/g04_grasp_cylinder/link/cylinder_link/sensor/book_ch07_77_rod_contact/contact
 echo "$CONTACT_TOPIC" > "$OUT/contact_native_topic.txt"
 CONTACT_READY=0

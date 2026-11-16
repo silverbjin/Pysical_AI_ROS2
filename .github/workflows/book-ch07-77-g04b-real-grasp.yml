@@ -1,6 +1,7 @@
-name: Book Ch07 7.7 G04B physical contact/lift/place with real Gazebo world pose
+name: Book Ch07 G04B L0 contract; L2 Gazebo requires explicit approval
 on:
   pull_request:
+    types: [opened, reopened, synchronize, labeled]
     paths:
       - '.github/workflows/book-ch07-77-g04b-real-grasp.yml'
       - 'ci/ch07_77_g04b_physics_fixture.py'
@@ -17,11 +18,44 @@ on:
       - 'ci/ch07_181_high_goal_precision_contract.py'
       - 'ci/ch07_181_jaw_axis_carry.py'
       - 'ci/ch07_181_rod_trace/**'
+      - 'ci/ch07_181_g04b_first_goal_causal_contract.py'
+      - 'ci/tests/test_ch07_181_g04b_first_goal_causal_contract.py'
+      - 'ci/ch07_181_g04b_first_goal_ecs_audit.py'
+      - 'ci/tests/test_ch07_181_g04b_first_goal_ecs_audit.py'
+      - 'ci/tests/test_ch07_181_arm_joint2_readonly_boundary.py'
+      - 'ci/ch07_181_high_joint2_native_audit.py'
+      - 'ci/tests/test_ch07_181_high_joint2_native_audit.py'
+      - 'ci/ch07_181_lower_joint3_native_audit.py'
+      - 'ci/tests/test_ch07_181_lower_joint3_native_audit.py'
       - 'ci/ch07_181_ecm_contact_boundary.py'
       - 'ci/tests/test_ch07_181_ecm_contact_boundary.py'
       - 'ci/ch07_181_worldpose_source_contract.py'
       - 'ci/tests/test_ch07_181_worldpose_source_contract.py'
+      - 'ci/ch07_181_fixed_world_base_anchor.py'
+      - 'ci/ch07_181_g04b_dart_limit_margin.py'
+      - 'ci/ch07_181_dart_solver_single_factor.py'
+      - 'ci/tests/test_ch07_181_dart_solver_single_factor.py'
+      - 'ci/tests/test_ch07_181_g04b_dart_limit_margin.py'
+      - 'ci/tests/test_ch07_181_fixed_world_base_anchor.py'
       - 'ci/tests/test_ch07_181_jaw_axis_carry.py'
+      - 'ci/ch07_181_reachable_release_waypoint.py'
+      - 'ci/ch07_181_original_bin_safe_lower.py'
+      - 'ci/ch07_181_release_wrist_retract.py'
+      - 'ci/tests/test_ch07_181_release_wrist_retract.py'
+      - 'ci/tests/test_ch07_181_original_bin_safe_lower.py'
+      - 'ci/tests/test_ch07_181_reachable_release_waypoint.py'
+      - 'ci/ch07_181_bin_contacts_readonly.py'
+      - 'ci/tests/test_ch07_181_bin_contacts_readonly.py'
+      - 'ci/ch07_181_bin_moveit_scene_contract.py'
+      - 'ci/tests/test_ch07_181_bin_moveit_scene_contract.py'
+      - 'ci/ch07_181_collision_free_high_branch.py'
+      - 'ci/ch07_181_clearance_verified_high.py'
+      - 'ci/ch07_181_rotated_bin_high_goal.py'
+      - 'ci/ch07_181_bin_yaw_single_factor.py'
+      - 'ci/tests/test_ch07_181_collision_free_high_branch.py'
+      - 'ci/tests/test_ch07_181_clearance_verified_high.py'
+      - 'ci/tests/test_ch07_181_rotated_bin_high_goal.py'
+      - 'ci/tests/test_ch07_181_bin_yaw_single_factor.py'
       - 'ci/tests/test_ch07_181_grasp_compression_tdd.py'
       - 'ci/tests/test_ch07_181_high_goal_precision_contract.py'
       - 'ci/ch07_181_exact_fk.py'
@@ -41,7 +75,164 @@ concurrency:
   group: book-ch07-77-g04b-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+
+  # PR updates: L0 only. No Gazebo, ROS Goal, Docker pull or apt here.
+  # Physical trial requires a fresh explicit PR label event, or manual
+  # workflow_dispatch when this workflow exists on the default branch.
+  contract-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+            Ch07
+      - name: L0 single-source hashes, syntax, focused Python contracts; NO Gazebo
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ci-results/ch07-77-g04b
+          git rev-parse HEAD > ci-results/ch07-77-g04b/checkout_sha.txt
+          echo 'ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f' > ci-results/ch07-77-g04b/image_digest.txt
+          sha256sum ci/ch07_77_g04a_graspable_fixture.py \
+            ci/ch07_77_g04b_physics_fixture.py \
+            ci/ch07_181_physical_preload_contract.py \
+            ci/tests/test_ch07_181_physical_preload_contract.py \
+            ci/ch07_181_bin_transport_contract.py \
+            ci/tests/test_ch07_181_bin_transport_contract.py \
+            ci/ch07_181_high_goal_precision_contract.py \
+            ci/tests/test_ch07_181_high_goal_precision_contract.py \
+            ci/ch07_181_jaw_axis_carry.py \
+            ci/tests/test_ch07_181_jaw_axis_carry.py \
+            ci/ch07_181_reachable_release_waypoint.py \
+            ci/ch07_181_original_bin_safe_lower.py \
+            ci/ch07_181_release_wrist_retract.py \
+            ci/tests/test_ch07_181_release_wrist_retract.py \
+            ci/tests/test_ch07_181_original_bin_safe_lower.py \
+            ci/tests/test_ch07_181_reachable_release_waypoint.py \
+            ci/ch07_181_bin_contacts_readonly.py \
+            ci/tests/test_ch07_181_bin_contacts_readonly.py \
+            ci/ch07_181_bin_moveit_scene_contract.py \
+            ci/tests/test_ch07_181_bin_moveit_scene_contract.py \
+            ci/ch07_181_collision_free_high_branch.py \
+            ci/ch07_181_clearance_verified_high.py \
+            ci/ch07_181_rotated_bin_high_goal.py \
+            ci/ch07_181_bin_yaw_single_factor.py \
+            ci/tests/test_ch07_181_collision_free_high_branch.py \
+            ci/tests/test_ch07_181_clearance_verified_high.py \
+            ci/tests/test_ch07_181_rotated_bin_high_goal.py \
+            ci/tests/test_ch07_181_bin_yaw_single_factor.py \
+            ci/ch07_181_rod_trace/rod_trace.cc \
+            ci/ch07_181_rod_trace/finger_ecs_trace.cc \
+            ci/ch07_181_g04b_first_goal_causal_contract.py \
+            ci/tests/test_ch07_181_g04b_first_goal_causal_contract.py \
+            ci/ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/tests/test_ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/tests/test_ch07_181_arm_joint2_readonly_boundary.py \
+            ci/ch07_181_high_joint2_native_audit.py \
+            ci/tests/test_ch07_181_high_joint2_native_audit.py \
+            ci/ch07_181_lower_joint3_native_audit.py \
+            ci/tests/test_ch07_181_lower_joint3_native_audit.py \
+            ci/ch07_181_rod_trace/CMakeLists.txt \
+            ci/ch07_181_ecm_contact_boundary.py \
+            ci/tests/test_ch07_181_ecm_contact_boundary.py \
+            ci/ch07_181_worldpose_source_contract.py \
+            ci/tests/test_ch07_181_worldpose_source_contract.py \
+            ci/ch07_181_fixed_world_base_anchor.py \
+            ci/ch07_181_g04b_dart_limit_margin.py \
+            ci/ch07_181_dart_solver_single_factor.py \
+            ci/tests/test_ch07_181_dart_solver_single_factor.py \
+            ci/tests/test_ch07_181_g04b_dart_limit_margin.py \
+            ci/tests/test_ch07_181_fixed_world_base_anchor.py \
+            ci/tests/test_ch07_181_grasp_compression_tdd.py \
+            ci/ch07_181_exact_fk.py \
+            ci/ch07_181_original_bin_safe_lower.py \
+            ci/ch07_181_release_wrist_retract.py \
+            ci/tests/test_ch07_181_release_wrist_retract.py \
+            ci/ch07_181_clearance_verified_high.py \
+            ci/ch07_181_rotated_bin_high_goal.py \
+            ci/ch07_181_bin_yaw_single_factor.py \
+            ci/tests/test_ch07_181_exact_fk.py \
+            ci/ch07_181_native_recent_contact.py \
+            ci/tests/test_ch07_181_native_recent_contact.py \
+            ci/ch07_77_g04b_actual_physics_witness.py \
+            ci/ch07_77_g04b_verify_contacts.py \
+            ci/docker/fixtures/ch07_77_g02_dynamic_red_world.sdf \
+            Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro \
+            > ci-results/ch07-77-g04b/input_hashes.txt
+          bash -n ci/ch07_77_g04b_physical_once.sh
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_first_goal_causal_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_first_goal_ecs_audit.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_arm_joint2_readonly_boundary.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_high_joint2_native_audit.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_lower_joint3_native_audit.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_ecm_contact_boundary.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_worldpose_source_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_fixed_world_base_anchor.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_dart_limit_margin.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_dart_solver_single_factor.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_arm_settle_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_thin_support_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_symmetric_grasp_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_post_approach_settle_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_physical_preload_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_transport_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_high_goal_precision_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_jaw_axis_carry.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_reachable_release_waypoint.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_original_bin_safe_lower.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_release_wrist_retract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_contacts_readonly.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_moveit_scene_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_collision_free_high_branch.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_clearance_verified_high.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_rotated_bin_high_goal.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_yaw_single_factor.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_grasp_compression_tdd.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_exact_fk.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_native_recent_contact.py -v
+          python3 -m py_compile ci/ch07_181_g04b_first_goal_causal_contract.py \
+            ci/ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/ch07_181_fixed_world_base_anchor.py \
+            ci/ch07_181_g04b_dart_limit_margin.py \
+            ci/ch07_181_dart_solver_single_factor.py \
+            ci/tests/test_ch07_181_dart_solver_single_factor.py \
+            ci/tests/test_ch07_181_g04b_dart_limit_margin.py \
+            ci/ch07_181_worldpose_source_contract.py \
+            ci/ch07_181_ecm_contact_boundary.py \
+            ci/ch07_77_g04b_physics_fixture.py \
+            ci/ch07_77_g04b_instrument_finger_contacts.py \
+            ci/ch07_77_g04b_actual_physics_witness.py \
+            ci/ch07_181_arm_settle_contract.py \
+            ci/ch07_181_symmetric_grasp_contract.py \
+            ci/ch07_181_post_approach_settle_contract.py \
+            ci/ch07_181_physical_preload_contract.py \
+            ci/ch07_181_bin_transport_contract.py \
+            ci/ch07_181_high_goal_precision_contract.py \
+            ci/ch07_181_jaw_axis_carry.py \
+            ci/ch07_181_exact_fk.py \
+            ci/ch07_181_original_bin_safe_lower.py \
+            ci/ch07_181_release_wrist_retract.py \
+            ci/tests/test_ch07_181_release_wrist_retract.py \
+            ci/ch07_181_clearance_verified_high.py \
+            ci/ch07_181_rotated_bin_high_goal.py \
+            ci/ch07_181_bin_yaw_single_factor.py \
+            ci/ch07_181_native_recent_contact.py \
+            ci/ch07_77_g04b_verify_contacts.py
+
+      - name: Preserve strict RED / physical not run
+        if: always()
+        run: |
+          {
+            echo 'G04B_L0_SOURCE_CONTRACT_ONLY: no Gazebo, no Goal.'
+            echo 'G00-G04A NOT_RERUN; G04B BLOCKED; G05 NOT_RUN; Ch10 HOLD.'
+            echo 'Real G04B physical run ONLY on pull_request labeled event with label g04b-physics-once.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   dynamic-physics-grasp-only:
+    needs: contract-preflight
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'g04b-physics-once') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 16
     steps:
@@ -67,14 +258,54 @@ jobs:
             ci/tests/test_ch07_181_high_goal_precision_contract.py \
             ci/ch07_181_jaw_axis_carry.py \
             ci/tests/test_ch07_181_jaw_axis_carry.py \
+            ci/ch07_181_reachable_release_waypoint.py \
+            ci/ch07_181_original_bin_safe_lower.py \
+            ci/ch07_181_release_wrist_retract.py \
+            ci/tests/test_ch07_181_release_wrist_retract.py \
+            ci/tests/test_ch07_181_original_bin_safe_lower.py \
+            ci/tests/test_ch07_181_reachable_release_waypoint.py \
+            ci/ch07_181_bin_contacts_readonly.py \
+            ci/tests/test_ch07_181_bin_contacts_readonly.py \
+            ci/ch07_181_bin_moveit_scene_contract.py \
+            ci/tests/test_ch07_181_bin_moveit_scene_contract.py \
+            ci/ch07_181_collision_free_high_branch.py \
+            ci/ch07_181_clearance_verified_high.py \
+            ci/ch07_181_rotated_bin_high_goal.py \
+            ci/ch07_181_bin_yaw_single_factor.py \
+            ci/tests/test_ch07_181_collision_free_high_branch.py \
+            ci/tests/test_ch07_181_clearance_verified_high.py \
+            ci/tests/test_ch07_181_rotated_bin_high_goal.py \
+            ci/tests/test_ch07_181_bin_yaw_single_factor.py \
             ci/ch07_181_rod_trace/rod_trace.cc \
+            ci/ch07_181_rod_trace/finger_ecs_trace.cc \
+            ci/ch07_181_g04b_first_goal_causal_contract.py \
+            ci/tests/test_ch07_181_g04b_first_goal_causal_contract.py \
+            ci/ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/tests/test_ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/tests/test_ch07_181_arm_joint2_readonly_boundary.py \
+            ci/ch07_181_high_joint2_native_audit.py \
+            ci/tests/test_ch07_181_high_joint2_native_audit.py \
+            ci/ch07_181_lower_joint3_native_audit.py \
+            ci/tests/test_ch07_181_lower_joint3_native_audit.py \
             ci/ch07_181_rod_trace/CMakeLists.txt \
             ci/ch07_181_ecm_contact_boundary.py \
             ci/tests/test_ch07_181_ecm_contact_boundary.py \
             ci/ch07_181_worldpose_source_contract.py \
             ci/tests/test_ch07_181_worldpose_source_contract.py \
+            ci/ch07_181_fixed_world_base_anchor.py \
+            ci/ch07_181_g04b_dart_limit_margin.py \
+            ci/ch07_181_dart_solver_single_factor.py \
+            ci/tests/test_ch07_181_dart_solver_single_factor.py \
+            ci/tests/test_ch07_181_g04b_dart_limit_margin.py \
+            ci/tests/test_ch07_181_fixed_world_base_anchor.py \
             ci/tests/test_ch07_181_grasp_compression_tdd.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_original_bin_safe_lower.py \
+            ci/ch07_181_release_wrist_retract.py \
+            ci/tests/test_ch07_181_release_wrist_retract.py \
+            ci/ch07_181_clearance_verified_high.py \
+            ci/ch07_181_rotated_bin_high_goal.py \
+            ci/ch07_181_bin_yaw_single_factor.py \
             ci/tests/test_ch07_181_exact_fk.py \
             ci/ch07_181_native_recent_contact.py \
             ci/tests/test_ch07_181_native_recent_contact.py \
@@ -84,8 +315,16 @@ jobs:
             Ch07/ros2_ws/src/vision_basics/urdf/my_robot.pick_gazebo.urdf.xacro \
             > ci-results/ch07-77-g04b/input_hashes.txt
           bash -n ci/ch07_77_g04b_physical_once.sh
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_first_goal_causal_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_first_goal_ecs_audit.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_arm_joint2_readonly_boundary.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_high_joint2_native_audit.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_lower_joint3_native_audit.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_ecm_contact_boundary.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_worldpose_source_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_fixed_world_base_anchor.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_g04b_dart_limit_margin.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_dart_solver_single_factor.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_arm_settle_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_thin_support_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_symmetric_grasp_contract.py -v
@@ -94,10 +333,26 @@ jobs:
           python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_transport_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_high_goal_precision_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_jaw_axis_carry.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_reachable_release_waypoint.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_original_bin_safe_lower.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_release_wrist_retract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_contacts_readonly.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_moveit_scene_contract.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_collision_free_high_branch.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_clearance_verified_high.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_rotated_bin_high_goal.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_yaw_single_factor.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_grasp_compression_tdd.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_exact_fk.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_native_recent_contact.py -v
-          python3 -m py_compile ci/ch07_181_worldpose_source_contract.py \
+          python3 -m py_compile ci/ch07_181_g04b_first_goal_causal_contract.py \
+            ci/ch07_181_g04b_first_goal_ecs_audit.py \
+            ci/ch07_181_fixed_world_base_anchor.py \
+            ci/ch07_181_g04b_dart_limit_margin.py \
+            ci/ch07_181_dart_solver_single_factor.py \
+            ci/tests/test_ch07_181_dart_solver_single_factor.py \
+            ci/tests/test_ch07_181_g04b_dart_limit_margin.py \
+            ci/ch07_181_worldpose_source_contract.py \
             ci/ch07_181_ecm_contact_boundary.py \
             ci/ch07_77_g04b_physics_fixture.py \
             ci/ch07_77_g04b_instrument_finger_contacts.py \
@@ -110,6 +365,12 @@ jobs:
             ci/ch07_181_high_goal_precision_contract.py \
             ci/ch07_181_jaw_axis_carry.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_original_bin_safe_lower.py \
+            ci/ch07_181_release_wrist_retract.py \
+            ci/tests/test_ch07_181_release_wrist_retract.py \
+            ci/ch07_181_clearance_verified_high.py \
+            ci/ch07_181_rotated_bin_high_goal.py \
+            ci/ch07_181_bin_yaw_single_factor.py \
             ci/ch07_181_native_recent_contact.py \
             ci/ch07_77_g04b_verify_contacts.py
       - uses: docker/login-action@v3
@@ -126,6 +387,14 @@ jobs:
             docker run --rm --init --pull=never --shm-size=1g \
               -e RUN_SOURCE_SHA="$(cat ci-results/ch07-77-g04b/checkout_sha.txt)" \
               -e GITHUB_RUN_ID="${{ github.run_id }}" \
+              -e G04B_CYCLE05_PGS_JAW_GOAL=YES \
+              -e G04B_CYCLE06_REACHABLE_RELEASE=YES \
+              -e CH07_181_C16_COLLISION_SAFE_LOWER=YES \
+              -e CH07_181_C17_NATIVE_ECS_FORCE=YES \
+              -e CH07_181_C18_RELEASE_RETRACT=YES \
+              -e G04B_CYCLE07_BIN_CONTACT_PROBE=YES \
+              -e CH07_181_C10_CLEARANCE_HIGH_GOAL=NO \
+              -e CH07_181_C12_BIN_YAW_ONLY=YES \
               -v "$PWD":/work -w /work \
               "$(cat ci-results/ch07-77-g04b/image_digest.txt)" \
               bash ci/ch07_77_g04b_physical_once.sh \
@@ -137,10 +406,14 @@ jobs:
             echo '## Ch07 #173 G04B true dynamic rod + fingers + arm in Gazebo'
             echo 'G02/G03A/G03B/G04A earlier successes NOT_RERUN. No current live RGB-D.'
             echo 'No static attach, no kinematic teleport, no hardware. Ch10 #123 HOLD.'
-            cat ci-results/ch07-77-g04b/g04b_physical_receipt.json || true
-            cat ci-results/ch07-77-g04b/g04b_contact_audit.json || true
+            # Keep GitHub's 1 MiB STEP_SUMMARY limit. Full original
+            # 1.9 MiB+ native receipt remains UNMODIFIED in the artifact.
+            python3 -c 'import json,pathlib; p=pathlib.Path("ci-results/ch07-77-g04b/g04b_physical_receipt.json"); d=json.loads(p.read_text()) if p.exists() else {}; keys=("status","reason","source_sha","lift_m","object_pose_drift_during_hold_m","cycle10_original_bin_high_candidate","cycle10_collision_checked_plan_only","transport_high_jointstate_target_audit"); compact={k:d.get(k) for k in keys if k in d}; c=compact.get("cycle10_collision_checked_plan_only"); compact["cycle10_collision_checked_plan_only"]={k:c.get(k) for k in ("action_status","moveit_error","planned_points")} if isinstance(c,dict) else c; print("G04B BOUNDED RECEIPT (full raw in artifact):"); print(json.dumps(compact,ensure_ascii=False,indent=2)[:7500])' || true
+            printf '\nContact audit (first 4 KiB):\n'
+            head -c 4096 ci-results/ch07-77-g04b/g04b_contact_audit.json || true
+            printf '\nResult & stages:\n'
             cat ci-results/ch07-77-g04b/result.json || true
-            cat ci-results/ch07-77-g04b/stages.log || true
+            tail -n 60 ci-results/ch07-77-g04b/stages.log || true
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
