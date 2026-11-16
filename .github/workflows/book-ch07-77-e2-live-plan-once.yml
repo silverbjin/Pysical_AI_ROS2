@@ -5,6 +5,8 @@
 name: Book Ch07 E2 real RGB-D sensor to MoveIt PLAN ONLY (one experiment)
 on:
   pull_request:
+    # Expensive real Gazebo E2 is opt-in, not every synchronize from cumulative PR diff.
+    types: [labeled]
     paths:
       - '.github/workflows/book-ch07-77-e2-live-plan-once.yml'
   workflow_dispatch:
@@ -16,6 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   real-rgbd-to-moveit-plan-only-no-motor-goal:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'ch07-e2-live-once' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
