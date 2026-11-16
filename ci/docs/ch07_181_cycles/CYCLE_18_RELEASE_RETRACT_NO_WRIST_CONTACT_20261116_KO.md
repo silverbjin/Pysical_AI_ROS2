@@ -30,3 +30,14 @@ _2026-11-16 / Issue #181 / Draft PR #202 / BOOK_ROS2_DEV_DEBUG_CI_STD_V1_
 - G04B는 독립 감사 PASS, shutdown clean, original artifact checksum 고정, Owner WSL2 실제 인수 전까지 **BLOCKED**. 기하 후보/MoveIt plan-only/Action SUCCESS만으로 승격 불가.
 
 **교육용 주제:** '기구학상 목표 도달'과 '낙하 물체와 손목의 시간 의존 충돌'은 다르다. 정적 충돌이 필연적이면 controller gain/speed/threshold 반복 대신, 유효한 제어권을 가진 손목 후퇴 Goal을 해제와 동기화해 한 요인으로 반증한다.
+
+## Cycle18 실제 물리 실행 감사 및 CLOSED (G04B BLOCKED)
+
+- 동일 Cycle18 코드 `42905211c062b4a6806af798caf0443f3e2f536f` → 공개 L0 #43806636196 SUCCESS, Book Lab #43806636229 SUCCESS.
+- 승인형 실제 Gazebo [#43806722104](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43806722104) FAIL, Artifact **#14198364217**, ZIP SHA256 `f8186a2ee776241e1a5756875b7a5d222cff4c0e70d9717b58a1c2afd0dc658e` **다운로드 원본 독립 SHA 확인**.
+- 50g rod 실제 상승 **0.13144m**, 1.3s hold drift **0.0009895m**, 고위치 XY **0.003337m**. 원래 양손 native + ECS force, MoveIt high/lower FCL SUCCESS, 실제 하강 SUCCESS. C18 retreat MoveIt plan_only 5점 SUCCESS, 별도 arm/grip FJT 둘 다 SUCCESS/실측 후퇴 q3 오차 ~1.44e-8rad, settle XY **0.061265m**, height error **0.028m**.
+- 유일한 독립 원본 실패: **손목↔원통 충돌 620건**, 최대 native force **16.2973N**, 시작 **70.675s**, 끝 **71.331s**. 원래 no-wrist-contact 전체시퀀스 계약 유지, 전체 **FAIL**. 손목/지지대 충돌은 0건.
+- 첫 충돌은 후퇴 FJT sim 시작 **70.578s** 후 약 **97ms**. t70.702의 q3=**1.045864rad** vs 최초1.049362, 목표0.994359 → 실제 손목이 약 3.5mrad만 후퇴한 상태였음. 후퇴가 완료된 t71.6 이전에 rod는 손목을 물리적으로 건드림. **새 원인은 후퇴의 목표 기하가 아닌 초기 동역학 시간축**.
+- 후속 Cycle19는 같은 손목 후퇴 자세/원본 물리·판정 보존, **후퇴 FJT time_from_start만 0.80→0.25s**로 바꾼 단일 반증 시험. 기존 실패와 같은 결과면 속도만 계속 높이지 않고 아키텍처 재검토.
+
+**Cycle18 CLOSED / G04B BLOCKED / Owner WSL2 NOT_READY.**

@@ -36,7 +36,7 @@ from ch07_181_jaw_axis_carry import (
     exact_world_jaw_lower_plan)
 from ch07_181_reachable_release_waypoint import reachable_release_waypoint
 from ch07_181_original_bin_safe_lower import collision_safe_lower_target
-from ch07_181_release_wrist_retract import source_release_wrist_retract
+from ch07_181_release_wrist_retract import source_release_wrist_retract,C19_RETRACT_FJT_DURATION_S
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes,CollisionObject,PlanningScene
 from moveit_msgs.srv import ApplyPlanningScene
@@ -502,7 +502,7 @@ class Witness(Node):
         ag.trajectory.joint_names=list(ARM)
         ap=JointTrajectoryPoint()
         ap.positions=[float(arm_target[n]) for n in ARM]
-        ap.time_from_start.nanosec=800000000
+        ap.time_from_start.nanosec=int(C19_RETRACT_FJT_DURATION_S*1e9)
         ag.trajectory.points=[ap]
         for n in ARM:
             tol=JointTolerance();tol.name=n;tol.position=.01
@@ -544,7 +544,7 @@ class Witness(Node):
             "measured_joint_errors_rad":errors,
             "action_status":int(aresult.status),
             "result_error":int(aresult.result.error_code),
-            "goal_time_from_start_s":.8,
+            "goal_time_from_start_s":C19_RETRACT_FJT_DURATION_S,
             "started_sim_s":sim_start,
             "finished_sim_s":self.joints[-1]["stamp"],
             "coordinated_direct_controller_fjt_no_fake_physics":True}
