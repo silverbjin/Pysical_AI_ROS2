@@ -33,13 +33,42 @@ MoveGroup이 성공이라고 보고해도 Gazebo의 정적 장애물은 별도 �
 ## 테스트/증거 기록 (후속 커밋에서 확정)
 
 - 소스 SHA: 이 문서 포함 커밋으로 확정
-- L0: PENDING
-- 실제 Gazebo L2: NOT_RUN
-- Original raw Artifact/ZIP SHA256: NOT_RUN
-- 첫 실패 및 PASS 범위: PENDING, **G04B BLOCKED**
+- L0: SUCCESS #43780864030
+- 실제 Gazebo L2: FAIL #43780956237 (충돌 목표 안전 거부)
+- 원본 Artifact: 14188012578, SHA256 8232ebeecd0c32bc7d3a1516218689f670043db8595277c50b1f8705cecb864e
+- 첫 실패: MoveIt high 목표 자체 link4↔bin collision, G04B BLOCKED
 
 ## 교육용 회고
 
 **로봇 제어기 실패처럼 보이는 문제가 실제로는 경로 계획기의 환경 모델 누락 때문일 수 있다.** 실제 충돌 센서와 Action 피드백의 타임스탬프를 결합해 하드웨어 명령 재전송이 아닌 환경 모델 정합 문제를 식별하고, 물리 세계를 손대지 않은 채 계획장면 한 개만 변경하는 실험을 설계한다.
 
 검증 계층: L0 geometry/frame/schema ≠ L2 실제 피드백·접촉/안착, 문서·계획기 성공만으로 G04B 완료 선언 불가.
+
+## Cycle08 L0→실제 Gazebo L2·원본 감사 — CLOSED
+
+| 항목 | 결과 |
+|---|---|
+| 소스 | `9904b2d2c529ab7018472ab2d0e68f847a1304ef` |
+| L0·문서 CI | [#43780864030](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43780864030) **SUCCESS** / [#43780864018](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43780864018) **SUCCESS** |
+| 승인형 L2 | [#43780956237](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43780956237) **FAIL** (정상 안전 거부) |
+| 원본 Artifact | **#14188012578**; ZIP SHA256 `8232ebeecd0c32bc7d3a1516218689f670043db8595277c50b1f8705cecb864e` |
+| PlanningScene | `/apply_planning_scene` success=True, 실제 Gazebo world 불변 |
+| MoveGroup 고위치 목표 | `action_status=6`, `moveit_error=99999`, planned_points=0 |
+| MoveIt 독립 충돌 증거 | `Found a contact between 'g04b_existing_gazebo_bin_collision' (Object) and 'link4' (Robot link)` |
+| OMPL | `Unable to sample any valid states for goal tree`; 기하학적으로 무효한 목표 |
+| 실제 동적 물체 상승·hold | **0.14139m** / 1.3초 drift **0.001077m** |
+| 추가 물리 파지·하강·최종 ROI | 하강·release **NOT_RUN**, Goal 실패 즉시 STOP |
+
+### 인과 결론
+
+이전 Cycle07은 **Gazebo native bin↔link4 collision**과 관절 운동 정체를 보였다. 이번엔 동일 정적 bin shape/pose만 MoveIt PlanningScene에 등록해, **목표 상태 자체가 링크4와 충돌하는 상태**임을 별도 계획기(FCL)가 확인했다. 이로써 "현재 고위치 목표가 장애물을 고려하지 않은 채 선택됐다"는 설계 결함의 근거가 강화됐다.
+
+다음에 단지 더 많은 속도/토크, 허용오차를 가하는 것은 무의미하다. **현재 목표 관절 자세의 실제 collision-free 도달 가능성부터 재계획**해야 한다. PlanningScene 등록 자체는 보존하고, 원본 URDF/물리/bin/로드 및 independent native 파지·ROI 수용 기준은 불변.
+
+### RED → GREEN 방식의 의미
+
+- RED: 기존 MoveGroup은 장애물 없는 상태에서 성공 판정을 내지만 실제 로봇 link4가 bin에 충돌.
+- GREEN(부분): MoveIt PlanningScene에 정확한 bin static collision을 적용하여 위험 목표를 **실행 이전에 거부**.
+- **물리 G04B는 여전히 BLOCKED**: 위험 목표 거부가 집기·운반·하강·해제 완료의 증거가 될 수 없다.
+
+**Cycle08 CLOSED / G00~G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
