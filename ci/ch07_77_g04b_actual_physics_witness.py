@@ -42,6 +42,7 @@ from shape_msgs.msg import SolidPrimitive
 from ch07_181_bin_moveit_scene_contract import exact_bin_collision_from_world
 from ch07_181_collision_free_high_branch import alternative_high_elbow_target
 from ch07_181_clearance_verified_high import source_bin_clearance_high_goal
+from ch07_181_rotated_bin_high_goal import source_bin_rotated_high_goal
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 from pal_statistics_msgs.msg import Statistics
@@ -259,7 +260,8 @@ class Witness(Node):
 
     def register_real_bin_planning_collision(self,world_path):
         """One-factor change: MoveIt uses the SAME native static Gazebo bin."""
-        spec=exact_bin_collision_from_world(world_path)
+        spec=exact_bin_collision_from_world(
+            world_path,allow_cycle12_yaw=(os.environ.get("CH07_181_C12_BIN_YAW_ONLY")=="YES"))
         if not self.bin_scene_client.wait_for_service(timeout_sec=12.):
             raise RuntimeError("G04B_C08_APPLY_PLANNING_SCENE_SERVER_MISSING")
         scene=PlanningScene()
@@ -272,7 +274,8 @@ class Witness(Node):
         primitive.dimensions=list(spec["box_m"])
         origin=Pose()
         origin.position.x,origin.position.y,origin.position.z=spec["center_m"]
-        origin.orientation.w=1.
+        origin.orientation.z=spec["quaternion_xyzw"][2]
+        origin.orientation.w=spec["quaternion_xyzw"][3]
         obj.primitives=[primitive]
         obj.primitive_poses=[origin]
         obj.operation=CollisionObject.ADD
@@ -887,7 +890,18 @@ def main():
         jaw_plan=high_carry_jaw_compensation(
             held_arm_actual,nominal_high_arm)
         high_joint_target=jaw_plan["target"]
-        if os.environ.get("CH07_181_C10_CLEARANCE_HIGH_GOAL")=="YES":
+        if os.environ.get("CH07_181_C12_BIN_YAW_ONLY")=="YES":
+            # Actual solid bin same size, centre and top; yaw-only test fixture.
+            # 5mm source goal and native FCL/Gazebo all mandatory.
+            c12=source_bin_rotated_high_goal(
+                held_arm_actual,held_world,
+                report["cycle08_native_bin_in_moveit_scene"])
+            high_joint_target=c12["joint_goal"]
+            report["cycle12_rotated_real_bin_high_goal"]=c12
+            report["cycle12_collision_checked_plan_only"]=w.arm_goal(
+                "cycle12_bin_yaw_high_plan_only",high_target,
+                plan_only=True,joint_override=high_joint_target)
+        elif os.environ.get("CH07_181_C10_CLEARANCE_HIGH_GOAL")=="YES":
             # Offline original OBB SAT is ONLY a candidate; actual FCL
             # plan_only must pass before any real high motion.
             candidate=source_bin_clearance_high_goal(

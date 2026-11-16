@@ -171,6 +171,13 @@ if [[ "${G04B_CYCLE07_BIN_CONTACT_PROBE:-NO}" == "YES" ]];then
     --receipt "$OUT/cycle07_bin_sensor_receipt.json" \
     > "$OUT/cycle07_bin_sensor_instrument.log"
 fi
+if [[ "${CH07_181_C12_BIN_YAW_ONLY:-NO}" == "YES" ]];then
+  stage CYCLE12_TEST_ONLY_REAL_SOLID_BIN_YAW_SINGLE_FACTOR
+  python3 "$ROOT/ci/ch07_181_bin_yaw_single_factor.py" \
+    --world "$OUT/g04b_contact_world.sdf" \
+    --receipt "$OUT/cycle12_real_bin_yaw_receipt.json" \
+    >"$OUT/cycle12_real_bin_yaw.log"
+fi
 stage BUILD_READ_ONLY_GAZEBO_DYNAMIC_ROD_ECS_WITNESS
 timeout --signal=TERM --kill-after=5s 90s cmake \
  -S "$ROOT/ci/ch07_181_rod_trace" -B "$OUT/rod_ecs_build" \

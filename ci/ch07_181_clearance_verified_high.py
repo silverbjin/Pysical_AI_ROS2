@@ -28,7 +28,7 @@ def valid_arm(q):
             all(isinstance(v,(float,int)) and math.isfinite(v)
                 for v in q.values()))
 
-def original_link4_bin_sat_margin(q):
+def original_link4_bin_sat_margin(q, bin_yaw_rad=0.):
     """Positive means a 3D box separating axis exists, not a path."""
     if not valid_arm(q):
         raise ValueError("C10_INVALID_ARM")
@@ -43,10 +43,13 @@ def original_link4_bin_sat_margin(q):
     radial=.5*math.sin(q2)+.75*math.sin(theta)
     center=(radial*cy,radial*sy,.6+.5*math.cos(q2)+.75*math.cos(theta))
     delta=tuple(BIN[k]-center[k] for k in range(3))
-    world=((1.,0.,0.),(0.,1.,0.),(0.,0.,1.))
-    separating_axes=list(axes)+list(world)
+    if not isinstance(bin_yaw_rad,(float,int)) or not math.isfinite(bin_yaw_rad):
+        raise ValueError("C12_BIN_YAW_NONFINITE")
+    cs,ss=math.cos(bin_yaw_rad),math.sin(bin_yaw_rad)
+    bin_axes=((cs,ss,0.),(-ss,cs,0.),(0.,0.,1.))
+    separating_axes=list(axes)+list(bin_axes)
     for a in axes:
-        for b in world:
+        for b in bin_axes:
             v=cross(a,b)
             norm=math.sqrt(dot(v,v))
             if norm>1e-10:
@@ -55,7 +58,7 @@ def original_link4_bin_sat_margin(q):
     for u in separating_axes:
         projected=sum(LINK4_HALF[k]*abs(dot(axes[k],u))
                       for k in range(3))
-        projected+=sum(BIN_HALF[k]*abs(u[k]) for k in range(3))
+        projected+=sum(BIN_HALF[k]*abs(dot(bin_axes[k],u)) for k in range(3))
         margin=max(margin,abs(dot(delta,u))-projected)
     return margin
 
