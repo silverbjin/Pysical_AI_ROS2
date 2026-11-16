@@ -41,6 +41,7 @@ from geometry_msgs.msg import Pose
 from shape_msgs.msg import SolidPrimitive
 from ch07_181_bin_moveit_scene_contract import exact_bin_collision_from_world
 from ch07_181_collision_free_high_branch import alternative_high_elbow_target
+from ch07_181_clearance_verified_high import source_bin_clearance_high_goal
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 from pal_statistics_msgs.msg import Statistics
@@ -886,7 +887,18 @@ def main():
         jaw_plan=high_carry_jaw_compensation(
             held_arm_actual,nominal_high_arm)
         high_joint_target=jaw_plan["target"]
-        if os.environ.get("CH07_181_C09_NEGATIVE_ELBOW_TRIAL")=="YES":
+        if os.environ.get("CH07_181_C10_CLEARANCE_HIGH_GOAL")=="YES":
+            # Offline original OBB SAT is ONLY a candidate; actual FCL
+            # plan_only must pass before any real high motion.
+            candidate=source_bin_clearance_high_goal(
+                held_arm_actual,held_world,
+                report["cycle08_native_bin_in_moveit_scene"])
+            high_joint_target=candidate["joint_goal"]
+            report["cycle10_original_bin_high_candidate"]=candidate
+            report["cycle10_collision_checked_plan_only"]=w.arm_goal(
+                "cycle10_original_bin_high_plan_only",high_target,
+                plan_only=True,joint_override=high_joint_target)
+        elif os.environ.get("CH07_181_C09_NEGATIVE_ELBOW_TRIAL")=="YES":
             # Cycle08: exact high goal collides with real static bin link4.
             # ONE alternative: other IK elbow branch; stop if OMPL cannot
             # find a collision-free plan BEFORE sending any real high motion.

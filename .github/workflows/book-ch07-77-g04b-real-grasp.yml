@@ -45,7 +45,9 @@ on:
       - 'ci/ch07_181_bin_moveit_scene_contract.py'
       - 'ci/tests/test_ch07_181_bin_moveit_scene_contract.py'
       - 'ci/ch07_181_collision_free_high_branch.py'
+      - 'ci/ch07_181_clearance_verified_high.py'
       - 'ci/tests/test_ch07_181_collision_free_high_branch.py'
+      - 'ci/tests/test_ch07_181_clearance_verified_high.py'
       - 'ci/tests/test_ch07_181_grasp_compression_tdd.py'
       - 'ci/tests/test_ch07_181_high_goal_precision_contract.py'
       - 'ci/ch07_181_exact_fk.py'
@@ -102,7 +104,9 @@ jobs:
             ci/ch07_181_bin_moveit_scene_contract.py \
             ci/tests/test_ch07_181_bin_moveit_scene_contract.py \
             ci/ch07_181_collision_free_high_branch.py \
+            ci/ch07_181_clearance_verified_high.py \
             ci/tests/test_ch07_181_collision_free_high_branch.py \
+            ci/tests/test_ch07_181_clearance_verified_high.py \
             ci/ch07_181_rod_trace/rod_trace.cc \
             ci/ch07_181_rod_trace/finger_ecs_trace.cc \
             ci/ch07_181_g04b_first_goal_causal_contract.py \
@@ -127,6 +131,7 @@ jobs:
             ci/tests/test_ch07_181_fixed_world_base_anchor.py \
             ci/tests/test_ch07_181_grasp_compression_tdd.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_clearance_verified_high.py \
             ci/tests/test_ch07_181_exact_fk.py \
             ci/ch07_181_native_recent_contact.py \
             ci/tests/test_ch07_181_native_recent_contact.py \
@@ -158,6 +163,7 @@ jobs:
           python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_contacts_readonly.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_moveit_scene_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_collision_free_high_branch.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_clearance_verified_high.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_grasp_compression_tdd.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_exact_fk.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_native_recent_contact.py -v
@@ -181,6 +187,7 @@ jobs:
             ci/ch07_181_high_goal_precision_contract.py \
             ci/ch07_181_jaw_axis_carry.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_clearance_verified_high.py \
             ci/ch07_181_native_recent_contact.py \
             ci/ch07_77_g04b_verify_contacts.py
 
@@ -228,7 +235,9 @@ jobs:
             ci/ch07_181_bin_moveit_scene_contract.py \
             ci/tests/test_ch07_181_bin_moveit_scene_contract.py \
             ci/ch07_181_collision_free_high_branch.py \
+            ci/ch07_181_clearance_verified_high.py \
             ci/tests/test_ch07_181_collision_free_high_branch.py \
+            ci/tests/test_ch07_181_clearance_verified_high.py \
             ci/ch07_181_rod_trace/rod_trace.cc \
             ci/ch07_181_rod_trace/finger_ecs_trace.cc \
             ci/ch07_181_g04b_first_goal_causal_contract.py \
@@ -253,6 +262,7 @@ jobs:
             ci/tests/test_ch07_181_fixed_world_base_anchor.py \
             ci/tests/test_ch07_181_grasp_compression_tdd.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_clearance_verified_high.py \
             ci/tests/test_ch07_181_exact_fk.py \
             ci/ch07_181_native_recent_contact.py \
             ci/tests/test_ch07_181_native_recent_contact.py \
@@ -284,6 +294,7 @@ jobs:
           python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_contacts_readonly.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_moveit_scene_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_collision_free_high_branch.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_clearance_verified_high.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_grasp_compression_tdd.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_exact_fk.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_native_recent_contact.py -v
@@ -307,6 +318,7 @@ jobs:
             ci/ch07_181_high_goal_precision_contract.py \
             ci/ch07_181_jaw_axis_carry.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_clearance_verified_high.py \
             ci/ch07_181_native_recent_contact.py \
             ci/ch07_77_g04b_verify_contacts.py
       - uses: docker/login-action@v3
@@ -326,6 +338,7 @@ jobs:
               -e G04B_CYCLE05_PGS_JAW_GOAL=YES \
               -e G04B_CYCLE06_REACHABLE_RELEASE=YES \
               -e G04B_CYCLE07_BIN_CONTACT_PROBE=YES \
+              -e CH07_181_C10_CLEARANCE_HIGH_GOAL=YES \
               -v "$PWD":/work -w /work \
               "$(cat ci-results/ch07-77-g04b/image_digest.txt)" \
               bash ci/ch07_77_g04b_physical_once.sh \
