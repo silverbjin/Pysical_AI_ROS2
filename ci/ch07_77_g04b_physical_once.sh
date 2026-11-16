@@ -12,7 +12,7 @@ export CH07_77_G04B_RECEIPT="$OUT/g04b_physical_receipt.json"
 export CH07_77_G04B_FIXTURE_RECEIPT="$OUT/g04b_fixture_receipt.json"
 export CH07_181_C08_GAZEBO_WORLD_SDF="$OUT/g04b_contact_world.sdf"
 # Cycle09 one-factor safety trial, plan-only negative elbow before real Goal.
-export CH07_181_C09_NEGATIVE_ELBOW_TRIAL=YES
+export CH07_181_C09_NEGATIVE_ELBOW_TRIAL=NO  # Cycle09 L2 failed plan_only collision, leave disabled
 export CH07_77_G04B_NATIVE_RAW="$OUT/native_contacts.log"
 export CH07_77_G04B_SUPPORT_RAW="$OUT/diag_support_contacts.log"
 export CH07_77_G04B_SIMULATION_ONLY_VERIFIED=NO
