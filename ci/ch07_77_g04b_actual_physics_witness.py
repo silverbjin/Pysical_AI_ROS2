@@ -27,7 +27,8 @@ from ch07_181_bin_transport_contract import (corrected_high_target,
     custody_drift,high_arrival_valid,feedback_centered_high_target,
     precise_high_arrival_valid,pre_release_valid,LOWER_WRIST_Z,
     historical_wrist_bias_lower_goal,actual_finger_tilt_drift,finger_tilt)
-from ch07_181_native_recent_contact import require_bilateral_pre_release_contact
+from ch07_181_native_recent_contact import (
+    require_bilateral_pre_release_contact,require_bilateral_same_ecs_frame_force)
 from ch07_181_high_goal_precision_contract import assess_precise_high_arrival
 from ch07_181_jaw_axis_carry import (
     high_carry_jaw_compensation,real_jaw_world_axis_change,
@@ -1073,8 +1074,23 @@ def main():
             raise RuntimeError("G04B_181_ACTUAL_GRIPPER_OPENED_DURING_CARRY")
         sim_now=w.get_clock().now().nanoseconds*1e-9
         report["pre_release_sim_stamp"]=sim_now
-        report["pre_release_recent_native_contact"]=require_bilateral_pre_release_contact(
-            Path(os.environ["CH07_77_G04B_NATIVE_RAW"]).parent,sim_now)
+        native_dir=Path(os.environ["CH07_77_G04B_NATIVE_RAW"]).parent
+        cli_contact_diagnostic=require_bilateral_pre_release_contact(
+            native_dir,sim_now)
+        if os.environ.get("CH07_181_C17_NATIVE_ECS_FORCE")=="YES":
+            # Actual read-only same-ECS-frame contact + native force.
+            # The large asynchronous gz topic text log remains unmodified
+            # and is independently audited AFTER release in the original
+            # physical acceptance script; do not infer force from old data.
+            ecs_contact=require_bilateral_same_ecs_frame_force(
+                native_dir/"gazebo_rod_finger_contact_same_ecs_frame.csv",sim_now)
+            report["cycle17_async_cli_contact_diagnostic"]=cli_contact_diagnostic
+            report["cycle17_same_ecs_native_force"]=ecs_contact
+            report["pre_release_recent_native_contact"]=(
+                ecs_contact if ecs_contact["both_native_fresh_positive_force"]
+                else cli_contact_diagnostic)
+        else:
+            report["pre_release_recent_native_contact"]=cli_contact_diagnostic
         # Original scalar FK receipt was invalid after nonzero q_wrist.
         # Independent contemporaneous real Gazebo collision and force
         # are stronger custody proof. Object XY/Z, closed JointState
