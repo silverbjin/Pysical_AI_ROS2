@@ -35,7 +35,11 @@ from ch07_181_jaw_axis_carry import (
     exact_world_jaw_lower_plan)
 from ch07_181_reachable_release_waypoint import reachable_release_waypoint
 from moveit_msgs.action import MoveGroup
-from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes
+from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes,CollisionObject,PlanningScene
+from moveit_msgs.srv import ApplyPlanningScene
+from geometry_msgs.msg import Pose
+from shape_msgs.msg import SolidPrimitive
+from ch07_181_bin_moveit_scene_contract import exact_bin_collision_from_world
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 from pal_statistics_msgs.msg import Statistics
@@ -123,6 +127,7 @@ class Witness(Node):
     def __init__(self):
         super().__init__("ch07_77_g04b_actual_gazebo_contact_witness")
         self.move=ActionClient(self,MoveGroup,"/move_action")
+        self.bin_scene_client=self.create_client(ApplyPlanningScene,"/apply_planning_scene")
         self.arm_direct=ActionClient(self,FollowJointTrajectory,
                                      "/arm_group_controller/follow_joint_trajectory")
         self.grip=ActionClient(self,FollowJointTrajectory,
@@ -249,6 +254,36 @@ class Witness(Node):
                 cf=cancel();self.spin_for(2)
             except Exception:pass
         raise TimeoutError("G04B_TIMEOUT_"+label)
+
+    def register_real_bin_planning_collision(self,world_path):
+        """One-factor change: MoveIt uses the SAME native static Gazebo bin."""
+        spec=exact_bin_collision_from_world(world_path)
+        if not self.bin_scene_client.wait_for_service(timeout_sec=12.):
+            raise RuntimeError("G04B_C08_APPLY_PLANNING_SCENE_SERVER_MISSING")
+        scene=PlanningScene()
+        scene.is_diff=True
+        obj=CollisionObject()
+        obj.header.frame_id=spec["frame_id"]
+        obj.id=spec["id"]
+        primitive=SolidPrimitive()
+        primitive.type=SolidPrimitive.BOX
+        primitive.dimensions=list(spec["box_m"])
+        origin=Pose()
+        origin.position.x,origin.position.y,origin.position.z=spec["center_m"]
+        origin.orientation.w=1.
+        obj.primitives=[primitive]
+        obj.primitive_poses=[origin]
+        obj.operation=CollisionObject.ADD
+        scene.world.collision_objects=[obj]
+        request=ApplyPlanningScene.Request()
+        request.scene=scene
+        response=self.await_future(self.bin_scene_client.call_async(request),
+                                   "C08_APPLY_BIN_SCENE",15)
+        if response is None or not response.success:
+            raise RuntimeError("G04B_C08_MOVEIT_BIN_COLLISION_APPLY_FAILED")
+        return {**spec,"apply_planning_scene_success":True,
+                "actual_gazebo_world_mutated":False,
+                "acceptance":"STILL_BLOCKED_PENDING_NATIVE_PHYSICS"}
 
     def arm_goal(self,label,xyz,plan_only=False,joint_override=None,
                  defer_lower_fjt_recovery=False):
@@ -815,6 +850,11 @@ def main():
         # Transport actual dynamic rod into BIN_XY while HIGH above it,
         # then lower without lateral sweep and only release if the
         # independent rod world pose and gripper custody both pass.
+        # Cycle07 real Gazebo contact sim 66.427: link4 struck bin support.
+        # Plan around the exact unchanged obstacle instead of retrying a
+        # blocked velocity/position goal with relaxed tolerances.
+        report["cycle08_native_bin_in_moveit_scene"]=w.register_real_bin_planning_collision(
+            os.environ["CH07_181_C08_GAZEBO_WORLD_SDF"])
         held_world=report["pose_snapshots"]["held"]
         held_fk=measured_finger_center(w.joints[-1]["arm"])
         held_offset=custody_offset(held_world,held_fk)
