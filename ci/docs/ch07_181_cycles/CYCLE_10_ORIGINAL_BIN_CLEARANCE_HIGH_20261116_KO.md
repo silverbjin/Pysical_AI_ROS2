@@ -23,3 +23,18 @@ L0와 승인형 L2 Run/Artifact는 뒤이어 원본 조회 후 이 문서에 기
 교육 포인트: 원래 구조의 OBB와 실제 월드 장애물의 3D 교차를 검증한 뒤 목표 *자세*를 수정한다. 물리 충돌을 무시한 MotionPlanner 재시도는 문제를 은폐할 뿐이다.
 
 **G00~G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY**.
+
+## 2026-11-16 실제 원본 L0→L2 감사 — Cycle 10 CLOSED / G04B BLOCKED
+
+- Cycle10 PR HEAD `1b6b9044112fed3c0e84e0b0e23754859cbf67b1`; 실제 `pull_request` Actions checkout merge commit `d95f75d51960d80c9556f816682f5a1df8317358` — **둘을 혼동하지 말 것**.
+- 공개 G04B L0: [#43788323615](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43788323615) SUCCESS. Book Lab L0: [#43788323620](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43788323620) SUCCESS.
+- 신규 라벨 이벤트 승인형 실제 Gazebo L2: [#43788405858](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43788405858) **FAIL**; Artifact **#14191850785**; ZIP SHA256 **`665a6b73bfdd82771c6453c5a2b3daa4412ecff44b882bb65b8a5b398355e164`**. 런타임 기존 GHCR `sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f`.
+- 실제 50g rod 상승 **0.11841m**; 1.3s hold 동적 world-pose 변동 **0.00139890m**. 실제 bin 원래 shape/pose `/apply_planning_scene` SUCCESS, 세션 original native ROS/Gazebo 및 실물체 유지.
+- **중대한 개선:** 새 high goal `joint1=0.42525871, joint2=0.06, joint3=0.468, joint4=1.23086970, wrist=0`의 원본 `link4`↔bin SAT separation **+0.00730558m**. MoveIt 실제 FCL `plan_only` **SUCCEEDED, 28 points**, 이어 실제 high MoveGroup **SUCCEEDED, 28 points**. 이전 Cycle08/09의 목표 충돌 BLOCK이 **현재 목적지/계획경로 범위에서 해소됨**.
+- 원본 high 이후 actual joint-state 최대 목표 오차 **0.00191845rad**, 계약 최대 `0.01rad` 이내. **관절 구동 실패가 아님**.
+- **새 최초 실패 (엄격 계약 유지):** source `ci/ch07_181_high_goal_precision_contract.py`는 high goal *예측* bin 중심 XY `<=0.005m`를 별도로 요구. Cycle10 선택기가 이전 넓은 `<=0.025m` high-native ROI만 고려했고, 실제 후보 목표 오차 **0.02046291m**여서 `real_arm_tracking_scoped_pass=False`가 됨. 오류 문자열 `G04B_181_HIGH_MOVEGROUP_ACTUAL_JOINT_TRACKING_FAILED`는 joint 오차가 작았음에도 **두 조건을 OR가 아닌 AND로 결합해서 나온 이름**임. 원본 Gazebo native rod high 이후 `[0.528893,0.242913,2.067270]`m, XY **0.0222650m**.
+- 따라서 **목표 설계기와 정확도 계약 사이의 충돌**이 신규 RED. L2 후반 lower/release/settled ROI **NOT_RUN**. 기존 5mm 계약을 25mm로 수정하거나 실제 bin을 삭제·축소하면 안 된다. 물리 G04B **FAIL/BLOCKED**.
+- 관측성 결함 별도 확인: CI Job summary에 약 1.9MB raw JSON 전체를 출력해 GitHub 1MB 제한 오류 `$GITHUB_STEP_SUMMARY upload aborted`. 원본 Artifact 원형 보존, 이후 SUMMARY는 10KB 이하 요약만 쓰고 전체 데이터는 Artifact 전용으로 유지.
+- 보고서 후속 계획: **새 물리 L2 호출 전에** original real bin/link4/5mm/held offset/jaw 제약을 동시에 만족하는 high 목표의 기구학적 가능성을 오프라인으로 검토. 검증 가능한 목표가 없으면 보류하고 환경 또는 절차 아키텍처를 재검토. 반복 L2 금지.
+
+**Cycle 10 CLOSED / G00~G04A ACCEPTED_NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
