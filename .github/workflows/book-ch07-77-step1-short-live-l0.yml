@@ -1,0 +1,34 @@
+name: Book Ch07 Step1 physical fixture + RGBD source contract L0
+on:
+  pull_request:
+    paths:
+      - 'ci/tests/test_ch07_77_step1_same_world_rgbd_contract.py'
+      - 'ci/ch07_77_step1_same_world_rgbd_once.sh'
+      - 'ci/ch07_77_g04a_live_small_target_witness.py'
+      - '.github/workflows/book-ch07-77-step1-short-live-l0.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-ros-same-world-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci
+      - name: Static and exact physical fixture source contract, zero ROS/Goal
+        run: |
+          set -Eeuo pipefail
+          bash -n ci/ch07_77_step1_same_world_rgbd_once.sh
+          python3 -m py_compile ci/ch07_77_g04b_physics_fixture.py \
+             ci/ch07_181_bin_yaw_single_factor.py \
+             ci/ch07_181_fixed_world_base_anchor.py \
+             ci/ch07_181_g04b_dart_limit_margin.py \
+             ci/ch07_77_g04a_live_small_target_witness.py \
+             ci/tests/test_ch07_77_step1_same_world_rgbd_contract.py
+          python3 -m unittest discover -s ci/tests \
+             -p test_ch07_77_step1_same_world_rgbd_contract.py -v
+          echo CH07_STEP1_SHORT_PHYSICAL_FIXTURE_REAL_RGBD_CONTRACT_L0_PASS_NO_GOALS
