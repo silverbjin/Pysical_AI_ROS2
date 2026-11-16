@@ -350,10 +350,14 @@ jobs:
             echo '## Ch07 #173 G04B true dynamic rod + fingers + arm in Gazebo'
             echo 'G02/G03A/G03B/G04A earlier successes NOT_RERUN. No current live RGB-D.'
             echo 'No static attach, no kinematic teleport, no hardware. Ch10 #123 HOLD.'
-            cat ci-results/ch07-77-g04b/g04b_physical_receipt.json || true
-            cat ci-results/ch07-77-g04b/g04b_contact_audit.json || true
+            # Keep GitHub's 1 MiB STEP_SUMMARY limit. Full original
+            # 1.9 MiB+ native receipt remains UNMODIFIED in the artifact.
+            python3 -c 'import json,pathlib; p=pathlib.Path("ci-results/ch07-77-g04b/g04b_physical_receipt.json"); d=json.loads(p.read_text()) if p.exists() else {}; keys=("status","reason","source_sha","lift_m","object_pose_drift_during_hold_m","cycle10_original_bin_high_candidate","cycle10_collision_checked_plan_only","transport_high_jointstate_target_audit"); compact={k:d.get(k) for k in keys if k in d}; c=compact.get("cycle10_collision_checked_plan_only"); compact["cycle10_collision_checked_plan_only"]={k:c.get(k) for k in ("action_status","moveit_error","planned_points")} if isinstance(c,dict) else c; print("G04B BOUNDED RECEIPT (full raw in artifact):"); print(json.dumps(compact,ensure_ascii=False,indent=2)[:7500])' || true
+            printf '\nContact audit (first 4 KiB):\n'
+            head -c 4096 ci-results/ch07-77-g04b/g04b_contact_audit.json || true
+            printf '\nResult & stages:\n'
             cat ci-results/ch07-77-g04b/result.json || true
-            cat ci-results/ch07-77-g04b/stages.log || true
+            tail -n 60 ci-results/ch07-77-g04b/stages.log || true
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
