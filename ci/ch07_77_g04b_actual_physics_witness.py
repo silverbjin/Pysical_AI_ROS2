@@ -928,6 +928,10 @@ def main():
             high_joint_target,dict(w.joints[-1]["arm"]),held_offset)
         if not report["transport_high_jointstate_target_audit"][
                 "real_arm_tracking_scoped_pass"]:
+            audit=report["transport_high_jointstate_target_audit"]
+            if (audit["max_joint_error_rad"]<=.01 and
+                    audit["ideal_object_bin_xy_error_m"]>.005):
+                raise RuntimeError("G04B_181_HIGH_SOURCE_FK_GOAL_GEOMETRY_OVER_5MM")
             raise RuntimeError("G04B_181_HIGH_MOVEGROUP_ACTUAL_JOINT_TRACKING_FAILED")
         above=rod_pose()
         report["pose_snapshots"]["transfer_high"]=above

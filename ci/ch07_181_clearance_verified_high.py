@@ -6,6 +6,7 @@ Never substitute this kinematic filter for MoveIt FCL or native physics.
 """
 import math
 from ch07_181_exact_fk import original_finger_collision_center
+from ch07_181_high_goal_precision_contract import HIGH_FK_BIN_TARGET_MAX_ERROR_M
 from ch07_181_jaw_axis_carry import (
     high_carry_jaw_compensation, real_jaw_world_axis_change)
 
@@ -92,14 +93,15 @@ def source_bin_clearance_high_goal(held_arm,held_rod,scene):
             xy=math.hypot(rod[0]-.55,rod[1]-.25)
             jaw=real_jaw_world_axis_change(held_arm,q)
             margin=original_link4_bin_sat_margin(q)
-            if xy>.025 or rod[2]<1.98 or jaw>.25 or margin<.003:
+            if xy>HIGH_FK_BIN_TARGET_MAX_ERROR_M or rod[2]<1.98 or jaw>.25 or margin<.003:
                 continue
             # Balance both metre-valued margins and radian jaw reserve.
-            score=min(margin,.025-xy,.1*(.25-jaw))
+            score=min(margin-.003,HIGH_FK_BIN_TARGET_MAX_ERROR_M-xy,
+                      .1*(.25-jaw))
             if best is None or score>best[0]:
                 best=(score,q,rod,xy,jaw,margin)
-    if best is None or best[0]<.002:
-        raise ValueError("C10_NO_HIGH_GOAL_WITH_SAME_STATIC_BIN")
+    if best is None or best[0]<0.:
+        raise ValueError("C11_NO_HIGH_GOAL_WITH_ORIGINAL_BIN_AND_STRICT_5MM_XY")
     _,q,rod,xy,jaw,margin=best
     return {"joint_goal":q,"predicted_rod_world_xyz_m":rod,
             "predicted_bin_xy_error_m":xy,

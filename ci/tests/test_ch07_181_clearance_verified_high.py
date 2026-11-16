@@ -19,13 +19,17 @@ class TestClearanceHigh(unittest.TestCase):
             (.423773,.648605,-.370351,1.133468,0.)):
    arm=dict(zip(HELD,q))
    self.assertLess(original_link4_bin_sat_margin(arm),0.)
- def test_raw_held_offset_source_box_feasible_but_not_physical_pass(self):
-  c=source_bin_clearance_high_goal(HELD,ROD,SCENE)
-  self.assertGreater(c["original_link4_bin_sat_margin_m"],.003)
-  self.assertLess(c["predicted_bin_xy_error_m"],.025)
-  self.assertGreater(c["predicted_rod_world_xyz_m"][2],1.98)
-  self.assertTrue(c["requires_moveit_plan_only_before_real_goal"])
-  self.assertEqual(c["G04B"],"BLOCKED_PENDING_NATIVE_PHYSICS")
+ def test_cycle10_20mm_candidate_is_not_strict_5mm_pass(self):
+  from ch07_181_high_goal_precision_contract import assess_precise_high_arrival
+  previous=dict(zip(HELD,(.4252587105445989,.06,.468,1.2308696971991355,0.)))
+  self.assertGreater(original_link4_bin_sat_margin(previous),.003)
+  audit=assess_precise_high_arrival(previous,previous,OFFSET)
+  self.assertEqual(audit["max_joint_error_rad"],0.0)
+  self.assertGreater(audit["ideal_object_bin_xy_error_m"],.005)
+  self.assertFalse(audit["real_arm_tracking_scoped_pass"])
+ def test_cycle11_strict_accuracy_preflight_blocks_before_any_goal(self):
+  with self.assertRaisesRegex(ValueError,"C11_NO_HIGH_GOAL_WITH_ORIGINAL_BIN_AND_STRICT_5MM_XY"):
+   source_bin_clearance_high_goal(HELD,ROD,SCENE)
  def test_not_allowed_to_replace_real_bin_or_skip_scene(self):
   for changed in ({"center_m":[.55,.25,1.50]},
                   {"box_m":[.10,.10,.20]},
