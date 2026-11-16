@@ -36,6 +36,7 @@ from ch07_181_jaw_axis_carry import (
     exact_world_jaw_lower_plan)
 from ch07_181_reachable_release_waypoint import reachable_release_waypoint
 from ch07_181_original_bin_safe_lower import collision_safe_lower_target
+from ch07_181_release_wrist_retract import source_release_wrist_retract
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes,CollisionObject,PlanningScene
 from moveit_msgs.srv import ApplyPlanningScene
@@ -478,6 +479,99 @@ class Witness(Node):
         if verdict!="ARM_SETTLE_SCOPED_PASS":
             raise RuntimeError("G04B_181_ARM_SETTLE_FAILED_"+str(row))
         return row
+
+    def release_and_retract_fjt(self,arm_target):
+        """Both real Jazzy FJT servers act concurrently, no fabricated pose.
+
+        This one C18 action replaces only the blocking release call. All
+        original independent release-contact, zero-wrist-rod and settled ROI
+        acceptance checks run exactly as before.
+        """
+        if not self.arm_direct.wait_for_server(timeout_sec=8.):
+            raise RuntimeError("C18_ARM_DIRECT_ACTION_MISSING")
+        if not self.grip.wait_for_server(timeout_sec=8.):
+            raise RuntimeError("C18_GRIPPER_DIRECT_ACTION_MISSING")
+        start=dict(self.joints[-1]["arm"])
+        if (set(arm_target)!=set(ARM) or
+            any(not math.isfinite(v) for v in arm_target.values()) or
+            abs(arm_target["joint3"]-start["joint3"]+.055)>.012 or
+            any(abs(arm_target[n]-start[n])>.012 for n in ARM if n!="joint3")):
+            raise ValueError("C18_RETREAT_TARGET_NOT_ONLY_BOUNDED_JOINT3")
+        sim_start=self.joints[-1]["stamp"]
+        ag=FollowJointTrajectory.Goal()
+        ag.trajectory.joint_names=list(ARM)
+        ap=JointTrajectoryPoint()
+        ap.positions=[float(arm_target[n]) for n in ARM]
+        ap.time_from_start.nanosec=800000000
+        ag.trajectory.points=[ap]
+        for n in ARM:
+            tol=JointTolerance();tol.name=n;tol.position=.01
+            ag.goal_tolerance.append(tol)
+        ag.goal_time_tolerance.sec=2
+        gg=FollowJointTrajectory.Goal()
+        gg.trajectory.joint_names=list(FINGERS)
+        gp=JointTrajectoryPoint()
+        gp.positions=[0.0,0.0]
+        gp.time_from_start.sec=2
+        gg.trajectory.points=[gp]
+        for n in FINGERS:
+            tol=JointTolerance();tol.name=n;tol.position=.001
+            gg.goal_tolerance.append(tol)
+        gg.goal_time_tolerance.sec=2
+        # Both independent controller Goals are enqueued before either result
+        # is awaited; the original blocking release was TOO LATE for retreat.
+        af=self.arm_direct.send_goal_async(ag)
+        gf=self.grip.send_goal_async(gg)
+        ah=self.await_future(af,"C18_ARM_RETRACT_ACCEPT",12)
+        gh=self.await_future(gf,"C18_GRIP_RELEASE_ACCEPT",12)
+        if not ah or not ah.accepted or not gh or not gh.accepted:
+            if ah and ah.accepted:ah.cancel_goal_async()
+            if gh and gh.accepted:gh.cancel_goal_async()
+            raise RuntimeError("C18_RELEASE_RETRACT_ACTION_NOT_ACCEPTED")
+        aresult=self.await_future(ah.get_result_async(),"C18_ARM_RETRACT_RESULT",
+                                  20,ah.cancel_goal_async)
+        gresult=self.await_future(gh.get_result_async(),"C18_RELEASE_RESULT",
+                                  20,gh.cancel_goal_async)
+        arm_actual=dict(self.joints[-1]["arm"])
+        finger_actual=dict(self.joints[-1]["fingers"])
+        errors={n:abs(arm_actual[n]-arm_target[n]) for n in ARM}
+        grip_error={n:abs(finger_actual[n]) for n in FINGERS}
+        arm_row={
+            "name":"release_retract_from_rod",
+            "target_joint_positions":dict(arm_target),
+            "source_actual_joint_positions":start,
+            "actual_joint_positions":arm_actual,
+            "measured_joint_errors_rad":errors,
+            "action_status":int(aresult.status),
+            "result_error":int(aresult.result.error_code),
+            "goal_time_from_start_s":.8,
+            "started_sim_s":sim_start,
+            "finished_sim_s":self.joints[-1]["stamp"],
+            "coordinated_direct_controller_fjt_no_fake_physics":True}
+        grip_row={
+            "name":"release","command_m":0.0,
+            "command_by_joint_m":{n:0.0 for n in FINGERS},
+            "status":int(gresult.status),
+            "result_error":int(gresult.result.error_code),
+            "explicit_fjt_goal_tolerance_m":.001,
+            "explicit_fjt_goal_time_tolerance_sec":2,
+            "actual_m":finger_actual,
+            "per_finger_position_error_m":finger_actual,
+            "tracking_error_max_m":max(grip_error.values()),
+            "joint_tracking_pass":max(grip_error.values())<=.001,
+            "controller_state_last":(
+                self.controller_samples[-1] if self.controller_samples else None),
+            "controller_state_sample_count":len(self.controller_samples),
+            "diagnostic_free_space":False,
+            "contact_close_position_not_success_criterion":False,
+            "simultaneous_arm_retract":True}
+        self.last_grip_data=grip_row
+        if (arm_row["action_status"]!=GoalStatus.STATUS_SUCCEEDED or
+            arm_row["result_error"]!=0 or max(errors.values())>.01 or
+            grip_row["status"]!=GoalStatus.STATUS_SUCCEEDED or
+            grip_row["result_error"]!=0 or not grip_row["joint_tracking_pass"]):
+            raise RuntimeError("C18_ACTUAL_RELEASE_RETRACT_FJT_OR_FEEDBACK_FAILED")
+        return grip_row,arm_row
 
     def grip_goal(self,label,q,q2=None,diagnostic=False):
         # Both original ROS 2 joints must always be present. A diagnostic
@@ -1099,8 +1193,27 @@ def main():
                 release_pose,report["pre_release_custody_drift_m"],
                 report["pre_release_recent_native_contact"]):
             raise RuntimeError("G04B_181_REAL_ROD_OUTSIDE_SAFE_BIN_RELEASE_ENVELOPE_OR_LOST_NATIVE_GRIP")
-        report["finger_results"].append(w.grip_goal("release",0.0))
-        report["finger_goal_count"]+=1
+        if os.environ.get("CH07_181_C18_RELEASE_RETRACT")=="YES":
+            # The original wrist OBB intersects the actual falling rod.
+            # ONE new concurrent FJT wrist retreat, source/FCL preflight
+            # required. Never assume the rod remains fixed during motion.
+            actual_lower=dict(w.joints[-1]["arm"])
+            retreat=source_release_wrist_retract(
+                actual_lower,release_pose,
+                report["cycle08_native_bin_in_moveit_scene"])
+            report["cycle18_source_release_retract"]=retreat
+            report["cycle18_official_moveit_plan_only"]=w.arm_goal(
+                "cycle18_release_retract_plan_only",None,
+                plan_only=True,joint_override=retreat["target"])
+            fingers,arm=w.release_and_retract_fjt(retreat["target"])
+            report["finger_results"].append(fingers)
+            report["finger_goal_count"]+=1
+            report["arm_results"].append(arm)
+            report["arm_goal_count"]+=1
+            report["cycle18_rod_world_after_retract"]=rod_pose()
+        else:
+            report["finger_results"].append(w.grip_goal("release",0.0))
+            report["finger_goal_count"]+=1
         w.spin_for(2.0)
         report["pose_snapshots"]["settled"]=rod_pose()
         obj=report["pose_snapshots"]["settled"]

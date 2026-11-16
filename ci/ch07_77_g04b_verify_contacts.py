@@ -161,6 +161,20 @@ conditions={
            "ARM_SETTLE_SCOPED_PASS" and
         result["lower_into_bin_direct_fjt_settle"].get("action_status")==4 and
         result["lower_into_bin_direct_fjt_settle"].get("result_error")==0))),
+ "cycle18_new_release_retract_fjt_feedback_if_applicable":(
+     "cycle18_source_release_retract" not in result or
+     (isinstance(result.get("cycle18_official_moveit_plan_only"),dict)
+      and result["cycle18_official_moveit_plan_only"].get("action_status")==4
+      and result["cycle18_official_moveit_plan_only"].get("moveit_error")==1
+      and result["cycle18_official_moveit_plan_only"].get("planned_points",0)>0
+      and len([a for a in result.get("arm_results",[])
+               if a.get("name")=="release_retract_from_rod"])==1
+      and all(a.get("action_status")==4 and a.get("result_error")==0
+              and max(a.get("measured_joint_errors_rad",{}).values(),default=1)<=.01
+              for a in result.get("arm_results",[])
+              if a.get("name")=="release_retract_from_rod")
+      and result["cycle18_source_release_retract"].get(
+          "requires_true_native_zero_wrist_rod_contact") is True)),
  "real_dynamic_world_lift_at_least_0_05m":result.get("lift_m",-1)>=.05,
  "1_3s_hold_pose_drift_le_0_025m":result.get("object_pose_drift_during_hold_m",1) <=.025,
  "placement_xy_error_le_0_09m":result.get("placement_xy_error_m",1)<=.09,
@@ -184,7 +198,8 @@ conditions={
          "aligned_pregrasp" in p and
          all(v.get("name","").startswith(("pregrasp","x_approach_",
                                          "fine_x_alignment_","lift","transfer","grasp",
-                                         "post_movegroup_direct_fjt_arm_settle","lower_into_bin"))
+                                         "post_movegroup_direct_fjt_arm_settle","lower_into_bin",
+                                         "release_retract_from_rod"))
              for v in result.get("arm_results",[])) and
          result.get("rod_shift_before_close_at_yaw_stage_m",1)<=.012 and
          "x_clearance_stage" in p and
