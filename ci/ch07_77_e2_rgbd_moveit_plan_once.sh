@@ -131,7 +131,7 @@ python3 "$ROOT/ci/ch07_77_g04a_graspable_fixture.py" \
 stage ORIGINAL_RSP_AND_GAZEBO_OGRE2_SENSOR_WORLD
 start rsp ros2 run robot_state_publisher robot_state_publisher \
   --ros-args --params-file "$OUT/rsp.yaml"
-start gazebo gz sim -s -r -v 4 --headless-rendering --iterations 80000 \
+start gazebo gz sim -s -r -v 4 --headless-rendering --iterations 25000 \
   "$OUT/graspable_dynamic_world.sdf"
 READY=0
 for _ in $(seq 1 45);do
