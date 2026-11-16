@@ -8,7 +8,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 PKG = ROOT / "Ch07/ros2_ws/src/vision_basics"
 sys.path.insert(0, str(PKG))
-from vision_basics.mission_geometry import ARM, FixtureCalibration, (
+from vision_basics.mission_geometry import (ARM, FixtureCalibration,
     arm_ik_fixture, fixture_plan_targets)
 
 
