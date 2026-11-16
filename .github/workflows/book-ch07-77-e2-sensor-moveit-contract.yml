@@ -1,0 +1,52 @@
+name: Book Ch07 7.7 E1/E2 real target to MoveIt plan-only contract
+on:
+  pull_request:
+    paths:
+      - 'Ch07/ros2_ws/src/vision_basics/vision_basics/mission_geometry.py'
+      - 'Ch07/ros2_ws/src/vision_basics/vision_basics/mission_plan_only.py'
+      - 'Ch07/ros2_ws/src/vision_basics/setup.py'
+      - 'ci/tests/test_ch07_77_e2_sensor_moveit_contract.py'
+      - '.github/workflows/book-ch07-77-e2-sensor-moveit-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: book-ch07-e2-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  focused-e1-e2-no-ros-no-goals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            Ch07/ros2_ws/src/vision_basics
+            ci/tests/test_ch07_77_e2_sensor_moveit_contract.py
+      - name: Compile only new modules and package entrypoint
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile \
+            Ch07/ros2_ws/src/vision_basics/vision_basics/mission_geometry.py \
+            Ch07/ros2_ws/src/vision_basics/vision_basics/mission_plan_only.py \
+            Ch07/ros2_ws/src/vision_basics/setup.py \
+            ci/tests/test_ch07_77_e2_sensor_moveit_contract.py
+      - name: Targeted pure Python E1 E2 negative and provenance tests
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest discover -s ci/tests \
+            -p 'test_ch07_77_e2_sensor_moveit_contract.py' -v
+      - name: Strict static motor-goal prohibition
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          source=Path('Ch07/ros2_ws/src/vision_basics/vision_basics/mission_plan_only.py').read_text()
+          assert 'goal.planning_options.plan_only = True' in source
+          assert 'goal.planning_options.replan = False' in source
+          assert 'ActionClient(self, MoveGroup, "/move_action")' in source
+          assert 'FollowJointTrajectory.Goal' not in source
+          assert 'execute_sim' not in source
+          print('CH07_E2_STATIC_PLAN_ONLY_NO_ARM_OR_GRIPPER_MOTOR_GOAL_PASS')
+          PY
