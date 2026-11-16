@@ -250,7 +250,7 @@ assert r["status"]=="SCOPED_PASS" and r.get("same_physical_80mm_world") is True,
 assert f["rod_static"] is False and f["radius_m"]==.012 and f["height_m"]==.08
 assert f["rod_center_initial_world_m"]==[.70,0,1.94] and f["world_spawn_robot_base_z_m"]==0.
 assert bin_yaw["bin_world_center_m"]==[.55,.25,1.63]
-assert abs(bin_yaw["only_change"]=="real_bin_model_yaw_0_to_0.35_rad")==1
+assert bin_yaw["only_change"]=="real_bin_model_yaw_0_to_0.35_rad"
 assert anchor["anchor"]["parent"]=="world" and anchor["anchor"]["child"]=="base_link"
 assert r["actual_ready_count"]==1 and r["valid_positive_count"]>=2
 assert min(r["actual_image_count"],r["actual_depth_count"],r["actual_camera_info_count"])>=3
@@ -263,7 +263,7 @@ assert .665<=ready["xyz"][0]<=.71 and abs(ready["xyz"][1])<=.09
 assert 1.80<=ready["xyz"][2]<=2.08
 assert any(abs(x["stamp"]-ready["stamp"])<=.08 for x in r["messages"]["pixels"])
 # Verify original 3D source publication from real camera/Depth/K/TF.
-pat=r"CH07_75_VALID_3D_TARGET stamp=([0-9.]+) xyz=\\(([-+0-9.]+),([-+0-9.]+),([-+0-9.]+)\\)"
+pat=r"CH07_75_VALID_3D_TARGET stamp=([0-9.]+) xyz=\(([-+0-9.]+),([-+0-9.]+),([-+0-9.]+)\)"
 assert any(abs(float(m.group(1))-ready["stamp"])<=.002
                and math.dist([float(x) for x in m.groups()[1:]],ready["xyz"])<=2e-4
                for m in re.finditer(pat,coord)),"NO_EXACT_SENSOR_SOURCE_FOR_SHORT_PHYSICAL_WORLD"
@@ -276,7 +276,7 @@ out={"scope":"STEP1_G04B_SHORT_ROD_SAME_WORLD_CAMERA_G01",
      "arm_motor_goals":0,"gripper_motor_goals":0,
      "release_clearance":"NOT_VERIFIED","G04B":"BLOCKED",
      "E2E":"BLOCKED","Ch10":"HOLD"}
-Path("ci-results/ch07-step1-short-live/same_world_rgbd_receipt.json").write_text(
+(paths[0].parent/"same_world_rgbd_receipt.json").write_text(
     json.dumps(out,indent=2,allow_nan=False)+"\\n")
 print("CH07_STEP1_G04B_SHORT_ROD_REAL_OGRE2_RGBD_G01_SCOPED_PASS_NO_GOALS")
 PY
