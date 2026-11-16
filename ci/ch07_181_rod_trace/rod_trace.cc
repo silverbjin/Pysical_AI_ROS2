@@ -45,10 +45,10 @@ class RodTrace final : public gz::sim::System,
   sync_<<"sim_time_s,rod_x,rod_y,rod_z,rod_qx,rod_qy,rod_qz,rod_qw,"
           "f1_link_x,f1_link_y,f1_link_z,f1_qx,f1_qy,f1_qz,f1_qw,"
           "f1_collision_present,f1_contact_ecs_present,f1_rod_pair_count,"
-          "f1_latest_contact_stamp_s,"
+          "f1_latest_contact_stamp_s,f1_max_rod_contact_force_N,"
           "f2_link_x,f2_link_y,f2_link_z,f2_qx,f2_qy,f2_qz,f2_qw,"
           "f2_collision_present,f2_contact_ecs_present,f2_rod_pair_count,"
-          "f2_latest_contact_stamp_s\n";
+          "f2_latest_contact_stamp_s,f2_max_rod_contact_force_N\n";
   sync_.flush();
   // A second read-only source-provenance stream: helper worldPose() vs
   // actual components::WorldPose vs components::Pose in the SAME frame.
@@ -130,6 +130,8 @@ class RodTrace final : public gz::sim::System,
     LogFinger(ecm,"finger1","finger1_collision");
     LogFinger(ecm,"finger2","finger2_collision");
     sync_<<'\n';
+    // Small native read-only frame, flush immediately for ROS /clock parity.
+    sync_.flush();
   }
   if(poseSource_.good()) {
     LogPoseSource(ecm,"g04_grasp_cylinder",m,t);
@@ -186,8 +188,9 @@ class RodTrace final : public gz::sim::System,
    }
    const auto data=(collision==gz::sim::kNullEntity) ? nullptr :
        ecm.Component<gz::sim::components::ContactSensorData>(collision);
-   int matched=0;double lastStamp=nan;
+   int matched=0;double lastStamp=nan;double maxForce=nan;
    if(data) {
+     maxForce=0.;
      const auto &all=data->Data();
      for(int i=0;i<all.contact_size();++i) {
        const auto &contact=all.contact(i);
@@ -198,6 +201,12 @@ class RodTrace final : public gz::sim::System,
           (a.find(collisionName)!=std::string::npos ||
            b.find(collisionName)!=std::string::npos)) {
           ++matched;
+          // Actual ECS ContactSensorData wrench: read-only physics evidence.
+          for(int wi=0;wi<contact.wrench_size();++wi) {
+            const auto &f=contact.wrench(wi).body_1_wrench().force();
+            const double mag=std::sqrt(f.x()*f.x()+f.y()*f.y()+f.z()*f.z());
+            if(std::isfinite(mag) && mag>maxForce)maxForce=mag;
+          }
           const auto &stamp=contact.header().stamp();
           const double cstamp=stamp.sec()+stamp.nsec()*1e-9;
           if(!std::isfinite(lastStamp) || cstamp>lastStamp)lastStamp=cstamp;
@@ -206,7 +215,7 @@ class RodTrace final : public gz::sim::System,
    }
    sync_<<','<<(collision!=gz::sim::kNullEntity)
         <<','<<(data!=nullptr)<<','<<(data?matched:-1)
-        <<','<<lastStamp;
+        <<','<<lastStamp<<','<<maxForce;
  }
  std::ofstream out_;
  std::ofstream sync_;
