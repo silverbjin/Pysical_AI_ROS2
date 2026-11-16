@@ -26,10 +26,24 @@
 
 ## 실험 결과 / 교육용 판정
 
-- L0: PENDING
-- L2: NOT_RUN
-- Artifact SHA256: NOT_RUN
+- L0: PASS #43781888729
+- L2: FAIL #43781963845 (plan_only safe collision rejection)
+- Artifact: #14188569056 / 076bf90754e09a7a39dd3d23672681ceb191b43130ed8083a6bab46b15d0e87c
 - 변경 요인: **대체 high elbow 목표의 joint configuration 한 가지**
 - G04B: BLOCKED
 
 **교육용 핵심:** MotionPlanner가 collision으로 거부하면 장면을 숨기거나 관절 허용오차를 늘리는 대신, 기구학적으로 가능한 **다른 관절 branch**를 검토한다. 그 branch가 안전한지는 알고리즘의 수치 정확도 → MoveIt 충돌 계획 → 실제 Gazebo 접촉·운반·배치의 순서로 입증해야 한다.
+
+## 실제 CI 및 고정 원본 결과 — Cycle 09 CLOSED / G04B BLOCKED
+
+- L0 [#43781888729](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43781888729) **SUCCESS**, docs [#43781888637](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43781888637) **SUCCESS**.
+- 승인형 실제 Gazebo [#43781963845](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43781963845) **FAIL**, Artifact **#14188569056**, 원본 ZIP SHA256 `076bf90754e09a7a39dd3d23672681ceb191b43130ed8083a6bab46b15d0e87c`.
+- 실제 50g rod 상승 **0.14509m**, hold drift **0.00077469m**, 기존 양측 물리 접촉 유지. `/apply_planning_scene` static bin 등록 **SUCCESS**.
+- 대체 IK 목표: `joint1=0.423773, joint2=0.648605, joint3=-0.370351, joint4=1.133468, wrist=0`; 예측 held rod [**0.550000064,0.250000029,2.072817**]m, XY 오차 약 `7.03e-8m`. **수학적 위치 정확성과 충돌 회피는 다름**.
+- 실제 MoveIt `plan_only`: **ABORTED** `status=6`, `moveit_error=99999`, `planned_points=0`. move_group 원본 로그에서 `g04b_existing_gazebo_bin_collision` vs robot `link4` 접촉, RRTConnect `Unable to sample any valid states for goal tree` 반복.
+- 실제 high MoveGroup Goal **미송신**, 하강·release·settled ROI **NOT_RUN**. 시스템 설계상 부적합한 목표를 안전하게 거부한 것.
+- 가설 **기각**: elbow sign 양수/음수 두 목표 모두 동일 실재 bin과 link4 충돌. 적절한 목표 높이·로봇 배치·접근 구조의 충돌 없는 자유도를 먼저 검사해야 함.
+- Cycle09 trial flag는 기본 CI에서 **NO로 원복**, 순수 목표 계산기와 negative unit tests 및 원본 증거는 교육용으로 보존.
+- 다음 단계는 무작위 IK/속도/솔버 sweep가 아닌 **기하학적 도달 가능성·충돌 없는 목표 자세 확인**, 반드시 planning-only 사전검증. 충돌 경로를 인수 PASS로 위장 금지.
+
+**Cycle09 CLOSED / G00~G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
