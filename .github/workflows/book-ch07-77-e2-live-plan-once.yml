@@ -1,5 +1,7 @@
-# C2: previous Run 43911395629 completed 3 real MoveIt plans; FAILED only SIGKILL on Gazebo termination.
-# Narrow correction: finite Gazebo --iterations 25000 (accepted G04A) to exit naturally.
+# C3: #43911395629 E2 plan=3 PASS but gazebo teardown FAIL; #43912441624 E2 plan=3 PASS,
+# prior G04A witness missed the earlier 3D source stamp (DDS sparse capture).
+# Fail closed using exact coord.log stamp/xyz + observed camera pixel + G01 ready + E2 Goal.
+# Keep finite 25000-iteration Gazebo for natural exit; NO motor Goals.
 name: Book Ch07 E2 real RGB-D sensor to MoveIt PLAN ONLY (one experiment)
 on:
   pull_request:
@@ -35,6 +37,19 @@ jobs:
           bash -n ci/ch07_77_e2_rgbd_moveit_plan_once.sh
           python3 -m py_compile Ch07/ros2_ws/src/vision_basics/vision_basics/{mission_geometry,mission_plan_only}.py
           python3 -m unittest discover -s ci/tests -p 'test_ch07_77_e2_sensor_moveit_contract.py' -v
+          python3 - <<'PY_REGEX'
+          import ast,re
+          from pathlib import Path
+          code=Path('ci/ch07_77_e2_rgbd_moveit_plan_once.sh').read_text()
+          line=next(x for x in code.splitlines()
+                    if x.startswith('pattern=r"CH07_75_VALID_3D_TARGET'))
+          pattern=ast.literal_eval(line.partition('=')[2])
+          sample='CH07_75_VALID_3D_TARGET stamp=16.369000 xyz=(0.788066,0.001349,1.942992)'
+          m=re.search(pattern,sample)
+          assert m is not None and len(m.groups())==4
+          assert m.groups()[0]=='16.369000'
+          print('CH07_E2_EXACT_SENSOR_STAMP_REGEX_L0_PASS')
+          PY_REGEX
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
