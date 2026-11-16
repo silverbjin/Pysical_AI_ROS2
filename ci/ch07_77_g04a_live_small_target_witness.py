@@ -66,7 +66,11 @@ class Witness(Node):
 def run():
     rclpy.init()
     w=Witness()
-    report={"scope":"G04A_GRASPABLE_DYNAMIC_ROD_REAL_RGBD_AND_MISSION_TARGET",
+    # Keep G04A accepted default unchanged. This opt-in measures the
+    # *same* real camera/TF pipeline against PR202 80mm G04B physical rod.
+    short_live=os.environ.get("CH07_77_G04B_SHORT_LIVE","NO")=="YES"
+    report={"scope":("G04B_80MM_PHYSICAL_WORLD_LIVE_RGBD_NO_GOAL" if short_live
+                      else "G04A_GRASPABLE_DYNAMIC_ROD_REAL_RGBD_AND_MISSION_TARGET"),
             "source_sha":os.environ.get("RUN_SOURCE_SHA","UNKNOWN"),
             "G03_MoveIt":"NOT_RUN","G04B_physical_grasp":"NOT_RUN","Ch10":"HOLD",
             "status":"FAIL"}
@@ -119,9 +123,15 @@ def run():
         # proves the measured coordinate comes from expected real object
         # region, not from constant legacy move_arm(1.0...).
         x,y,z=w.targets[-1]["xyz"]
-        assert .765<=x<=.81 and abs(y)<=.09 and 1.80<=z<=2.08, (x,y,z)
+        x_min,x_max=((.665,.71) if short_live else (.765,.81))
+        assert x_min<=x<=x_max and abs(y)<=.09 and 1.80<=z<=2.08, (x,y,z)
+        report["live_region_m"]=[x_min,x_max]
+        report["same_physical_80mm_world"]=short_live
         report["status"]="SCOPED_PASS"
-        print("CH07_77_G04A_REAL_OGRE2_RGBD_RED_DETECTOR_3D_TARGET_NO_GOAL_SCOPED_PASS",flush=True)
+        if short_live:
+            print("CH07_77_G04B_SHORT_SAME_WORLD_REAL_RGBD_G01_NO_GOAL_SCOPED_PASS",flush=True)
+        else:
+            print("CH07_77_G04A_REAL_OGRE2_RGBD_RED_DETECTOR_3D_TARGET_NO_GOAL_SCOPED_PASS",flush=True)
     except Exception as exc:
         report["reason"]=repr(exc)
         print("CH07_77_G04A_FAIL "+repr(exc),flush=True)
