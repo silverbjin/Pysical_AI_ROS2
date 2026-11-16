@@ -68,10 +68,15 @@ def source_bin_rotated_high_goal(held,rod,scene):
     best=None
     tested=0
     for q2 in (.0,.004,.008,.012,.016):
-        for i in range(13):
-            q4=1.420+.005*i
-            for j in range(6):
-                wrist=-.215+.010*j
+        # Cycle14: the original C13 narrow q4/wrist seeds silently assumed
+        # one old held jaw direction. Original native C13 lift feedback had
+        # q4≈1.548rad, unlike earlier 1.60rad. Broaden ONLY target-posture
+        # candidates; no accepted geometry, contact or goal gate changes.
+        # Fixed finite grid: no scipy/random solver or Gazebo calls here.
+        for i in range(26):
+            q4=1.250+.010*i
+            for j in range(10):
+                wrist=-.255+.020*j
                 try:
                     aligned=_exact_xy_from_measured_offset(
                         (SEED[0],q2,SEED[2],q4,wrist),offset)

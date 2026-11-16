@@ -26,3 +26,13 @@ C12 기구학 후보는 이전 한 개의 held-offset sample에 맞춰 q2/q4/qwr
 - 실패하면 원본 Artifact의 **첫 실패**만 독립 감사하여 동일한 목표 재시도 금지. 성공하더라도 최종 native bilateral contact, lift/hold/carry, lower/release, settled ROI를 모두 감사하기 전에는 물리 인수 아님.
 
 **G00~G04A ACCEPTED_NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
+
+## Cycle13 L0→실제 Gazebo 원본 결과 — CLOSED / G04B BLOCKED
+
+- 소스 PR HEAD `57cf1458ccacda25482562bbb79153fd2de4c411`; 실제 Actions merge checkout `ea9b5d7937b59e777317452b638ff88e17b89c4c` (`receipt.source_sha`).
+- [L0 #43793516668](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43793516668) **SUCCESS**, 일반 문서 [#43793516819](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43793516819) **SUCCESS**, physical SKIPPED.
+- 승인형 실제 [L2 #43793586874](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43793586874) **FAIL**. 원본 Artifact **#14193288185**, ZIP SHA256 `53c6c93d8ddba9de6f698296d236dc40d163c1338ee1fdf09b3fcc27c29cf89e`. 독립 ZIP 원본 다운로드·해시/receipt/로그 감사 완료.
+- 실재 50g rod 상승 **0.152610m**; 1.3s hold drift **0.00107990m**. FJT real bilateral closed fingers 약 [0.011478,0.011500]m, native finger1/finger2 접촉 쌍 진단 존재. 정적 실제 bin yaw=.35 quaternion 동일, PlanningScene 등록 성공.
+- 최신 **실제 held offset**=[-0.0011352623,+0.0011248490,+0.0168798705]m. 최근 독립 lift arm JointState의 q4는 약 **1.548rad** (이 값은 이후 held 시각과 동일하다는 뜻은 아님). 기존 C13 근방 q4=[1.420,1.480] 및 wrist=[-.215,-.165] 목표는 **안전 후보 없음**.
+- **최초 실패** `C13_NO_SAFE_HIGH_GOAL_FOR_ACTUAL_HELD_OFFSET`. MoveIt high plan_only, actual high Goal, lower/release/settled **NOT_RUN**. 이것은 **실패를 안전하게 걸러낸 증거**이지 물리 완료가 아니다.
+- 다음 Cycle14 한 요인: 실제 파지 후 jaw 방향 변화를 수용하도록 고위치 `joint4`/wrist 근방 후보 범위만 확대하고 source 수용 기준/물리 solver/bin/robot 그대로 유지. 실제 held joint orientation을 함께 receipt에 저장하여 이전/현재 원본을 혼동하지 않는다. **반복 물리시험은 C14 L0 통과 이후 한 번만 허가.**

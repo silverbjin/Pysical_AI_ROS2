@@ -886,6 +886,9 @@ def main():
         # At q_wrist=0, changing q4 does NOT move the target finger-centre
         # XYZ or the cylinder's ideal transport goal.
         held_arm_actual=dict(w.joints[-1]["arm"])
+        # Cycle14: exact held-time input provenance for the adaptive selector.
+        # Read-only; never substitute earlier lift final JointState.
+        report["cycle14_actual_held_arm_jointstate_pre_high"]=held_arm_actual
         nominal_high_arm=arm_ik_tilted_fingers(*high_target)
         jaw_plan=high_carry_jaw_compensation(
             held_arm_actual,nominal_high_arm)
