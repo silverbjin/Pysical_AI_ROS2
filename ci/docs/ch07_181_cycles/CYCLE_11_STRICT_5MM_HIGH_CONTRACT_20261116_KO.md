@@ -28,3 +28,10 @@ Cycle10 physical [#43788405858](https://github.com/silverbjin/Pysical_AI_ROS2/ac
 테스트가 `JOINT_TRACKING_FAILED`로 보이더라도 반환된 복합 predicate의 각 조건을 분리하여 최초 원인(잘못된 목표 선택)을 확인한다. ROS/Gazebo 비싼 재시도보다 기존 Artifact를 감사하고 오프라인 가설을 먼저 반증한다.
 
 **L0:** 후속 Run ID로 확정 기록. **물리 L2:** NOT_RUN (새로운 실제 목표 없음). **G00~G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
+
+## Cycle11 실제 L0 검증 종료
+
+- [G04B L0 Run #43790029897](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43790029897) **SUCCESS**, `dynamic-physics-grasp-only` **SKIPPED**.
+- [Book Lab Run #43790029886](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43790029886) 일반 문서 경로에 해당. 물리 L2 재실행 없음.
+- Cycle11 패치 커밋 `1480775ce9a12c2399bd2706c5278f7259b0c22b`; 이후 summary-only CI 수정 별도 `671e289c4129c6ad5a90298f674a213be3262ca0`.
+- 실제 bin을 유지한 C11 제한 탐색에 충돌 없는 5mm 후보가 없음을 조기 중단으로 표현하며, *모든 설계가 불가능하다는 증명은 아님*. 다음 아키텍처 실험은 원본 형상 유지 + 물리적 설치 방향 한 가지만 변경한 새로운 시험 fixture로 취급해야 함.
