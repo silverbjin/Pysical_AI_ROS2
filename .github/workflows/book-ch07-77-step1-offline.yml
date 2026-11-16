@@ -1,0 +1,45 @@
+name: Book Ch07 Step1 pinned offline geometry gate (NO ROS/Goals)
+on:
+  pull_request:
+    paths:
+      - 'ci/ch07_77_step1_offline_geometry.py'
+      - 'ci/tests/test_ch07_77_step1_offline_geometry.py'
+      - '.github/workflows/book-ch07-77-step1-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: book-ch07-step1-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  read-only-c17-source-bound-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci/ch07_77_step1_offline_geometry.py
+            ci/tests/test_ch07_77_step1_offline_geometry.py
+      - name: Focused geometry and fail-closed contracts
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ci/ch07_77_step1_offline_geometry.py ci/tests/test_ch07_77_step1_offline_geometry.py
+          python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_offline_geometry.py' -v
+          python3 ci/ch07_77_step1_offline_geometry.py --out ci-results/ch07-step1/offline.json
+          python3 - <<'PY'
+          import json
+          r=json.load(open('ci-results/ch07-step1/offline.json'))
+          assert r['status']=='STEP1_BLOCKED'
+          assert not r['physics_goal_authorized']
+          assert r['step2_e2e_l2']=='NOT_RUN'
+          assert not r['bounded_collision_free_candidate_found']
+          print('CH07_77_STEP1_BOUNDARY_L0_PASS_E3_PHYSICAL_BLOCKED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-step1-offline-${{ github.run_id }}
+          path: ci-results/ch07-step1/
+          retention-days: 30
