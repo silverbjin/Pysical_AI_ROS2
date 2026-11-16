@@ -29,3 +29,15 @@ _2026-11-16 / Issue #181 / 단일 활성 Draft PR #202 / 적용 표준 BOOK_ROS2
 - 교육 회고: MotionPlanner가 충돌 목표를 안전 거부한 시점을 **컨트롤러 동작 실패**로 오분류하지 않는다. 기존 원본 물리 obstacle과 장비 제약을 바꾸지 않고 실측 high pose 기반으로 하강 목표만 새로 설계한다.
 
 **G00~G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
+
+## Cycle16 실제 공개 CI 원본 검증 — CLOSED / G04B BLOCKED
+
+- L0 [#43799151259](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43799151259) **SUCCESS**, Book Lab [#43799151101](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43799151101) **SUCCESS**.
+- 승인형 실제 L2 [#43799242462](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43799242462) **FAIL**, Artifact **#14195708042** 원본 ZIP SHA256 **`d632f336048853d9c1d72d4c44a21c50153732c9cd688c52392a952ae90b9528`**, 독립 압축 원본·receipt·native logs 감사 완료. PR source HEAD `f154be2d1780d9b992422fdaad227438fdd2f633` / Actions merge checkout `7dd7f4f4bb0b971787a705be6497b71a9398a8fe`.
+- 50g rod lift **0.140390m**, 1.3초 hold drift **0.00095136m**, high 실제 동적 원통 bin XY **0.00358434m**, custody drift **0.00318233m**. 원본 collision-aware high 성공 재사용.
+- 새로운 lower 3D source SAT/경로 보간 사전검증 통과, **MoveIt plan_only 22-point SUCCESS, 실제 lower 22-point SUCCESS**. native pre-release rod `[0.503899,0.235408,1.91191]m`, XY 오차 **0.048355m**, world FK custody drift **0.008570m**, 실제 finger joints 약 [0.0114847,0.0115]m. 과거 link4↔bin collision 원인 해결.
+- **첫 미해결 경계:** `require_bilateral_pre_release_contact`가 해제 직전 ROS sim `65.818s`에서 각 CLI 대형 텍스트 로그 tail 150KB에 최신 양측 접촉을 못 찾아 0건씩 판정 → `G04B_181_REAL_ROD_OUTSIDE_SAFE_BIN_RELEASE_ENVELOPE_OR_LOST_NATIVE_GRIP`. **release·settled NOT_RUN**, 물리 G04B PASS 금지.
+- **상반된 독립 native 근거:** 사후 원본 `diag_finger1_contacts.log`, `diag_finger2_contacts.log`에는 바로 그 65.418~65.818s 시점에 손가락별 401건의 진짜 rod collision / 양의 native force (65.818s f1≈0.701N, f2≈0.582N)가 존재. 이미 존재하는 same-Gazebo-PostUpdate ECS CSV에도 t≈65.81s `f1_rod_pair_count=1, f2_rod_pair_count=1`. 해당 ECS 버퍼의 contact 내부 stamp 0은 시각 증거로 사용하지 않는다. **텍스트 스트림의 실제 조회 시점 지연은 사후 원본만으로 단정할 수 없으므로 원인은 비동기 관측 경계로 한정.**
+- 후속 Cycle17은 동작·물리·허용오차를 변경하지 않고, **read-only ECS 동시 프레임 positive force 출처**와 실시간 CSV flush를 추가하여 실제 0.4s·0.05N·3개 이상 per-finger 계약을 원본과 같은 엄격도로 증명. 모든 실제 해제/정착 및 최종 독립 native raw audit 유지.
+
+**Cycle16 CLOSED / G00~G04A NOT_RERUN / G04B BLOCKED / G05 NOT_RUN / Ch10 HOLD / Owner WSL2 NOT_READY.**
