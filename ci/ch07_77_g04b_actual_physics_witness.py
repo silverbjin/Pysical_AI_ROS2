@@ -34,6 +34,7 @@ from ch07_181_jaw_axis_carry import (
     real_jaw_world_axis,MAX_ACTUAL_JAW_NORMAL_DRIFT_RAD,
     exact_world_jaw_lower_plan)
 from ch07_181_reachable_release_waypoint import reachable_release_waypoint
+from ch07_181_original_bin_safe_lower import collision_safe_lower_target
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints,JointConstraint,MoveItErrorCodes,CollisionObject,PlanningScene
 from moveit_msgs.srv import ApplyPlanningScene
@@ -983,7 +984,19 @@ def main():
         # Preserve previous lower wrist command as a CONTROLLED candidate.
         # It does NOT preserve true physical tool orientation at q4=pi/2;
         # exact 5DOF tool axis is recorded independently below.
-        if os.environ.get("G04B_CYCLE06_REACHABLE_RELEASE")=="YES":
+        if os.environ.get("CH07_181_C16_COLLISION_SAFE_LOWER")=="YES":
+            # Cycle15's original lower goal intersects REAL solid bin/link4.
+            # Source OBB preview is necessary but not MoveIt FCL proof.
+            lower_plan=collision_safe_lower_target(
+                high_arm_actual,held_offset,
+                report["cycle08_native_bin_in_moveit_scene"])
+            lower_oriented=lower_plan["target"]
+            report["cycle16_source_solid_bin_lower_candidate"]=lower_plan
+            report["cycle16_lower_fcl_plan_only"]=w.arm_goal(
+                "cycle16_lower_original_bin_plan_only",lower,
+                joint_override=lower_oriented,plan_only=True)
+            report["lower_exact_world_jaw_plan"]="CYCLE16_SOLID_BIN_SAFE_LOWER"
+        elif os.environ.get("G04B_CYCLE06_REACHABLE_RELEASE")=="YES":
             # One new waypoint, no FJT/tolerance/gain change: avoid the
             # independently observed native q3 stall at ~1.132 rad.
             lower_plan=reachable_release_waypoint(

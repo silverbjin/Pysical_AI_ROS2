@@ -39,6 +39,8 @@ on:
       - 'ci/tests/test_ch07_181_fixed_world_base_anchor.py'
       - 'ci/tests/test_ch07_181_jaw_axis_carry.py'
       - 'ci/ch07_181_reachable_release_waypoint.py'
+      - 'ci/ch07_181_original_bin_safe_lower.py'
+      - 'ci/tests/test_ch07_181_original_bin_safe_lower.py'
       - 'ci/tests/test_ch07_181_reachable_release_waypoint.py'
       - 'ci/ch07_181_bin_contacts_readonly.py'
       - 'ci/tests/test_ch07_181_bin_contacts_readonly.py'
@@ -102,6 +104,8 @@ jobs:
             ci/ch07_181_jaw_axis_carry.py \
             ci/tests/test_ch07_181_jaw_axis_carry.py \
             ci/ch07_181_reachable_release_waypoint.py \
+            ci/ch07_181_original_bin_safe_lower.py \
+            ci/tests/test_ch07_181_original_bin_safe_lower.py \
             ci/tests/test_ch07_181_reachable_release_waypoint.py \
             ci/ch07_181_bin_contacts_readonly.py \
             ci/tests/test_ch07_181_bin_contacts_readonly.py \
@@ -139,6 +143,7 @@ jobs:
             ci/tests/test_ch07_181_fixed_world_base_anchor.py \
             ci/tests/test_ch07_181_grasp_compression_tdd.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_original_bin_safe_lower.py \
             ci/ch07_181_clearance_verified_high.py \
             ci/ch07_181_rotated_bin_high_goal.py \
             ci/ch07_181_bin_yaw_single_factor.py \
@@ -170,6 +175,7 @@ jobs:
           python3 -m unittest discover -s ci/tests -p test_ch07_181_high_goal_precision_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_jaw_axis_carry.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_reachable_release_waypoint.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_original_bin_safe_lower.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_contacts_readonly.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_moveit_scene_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_collision_free_high_branch.py -v
@@ -199,6 +205,7 @@ jobs:
             ci/ch07_181_high_goal_precision_contract.py \
             ci/ch07_181_jaw_axis_carry.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_original_bin_safe_lower.py \
             ci/ch07_181_clearance_verified_high.py \
             ci/ch07_181_rotated_bin_high_goal.py \
             ci/ch07_181_bin_yaw_single_factor.py \
@@ -243,6 +250,8 @@ jobs:
             ci/ch07_181_jaw_axis_carry.py \
             ci/tests/test_ch07_181_jaw_axis_carry.py \
             ci/ch07_181_reachable_release_waypoint.py \
+            ci/ch07_181_original_bin_safe_lower.py \
+            ci/tests/test_ch07_181_original_bin_safe_lower.py \
             ci/tests/test_ch07_181_reachable_release_waypoint.py \
             ci/ch07_181_bin_contacts_readonly.py \
             ci/tests/test_ch07_181_bin_contacts_readonly.py \
@@ -280,6 +289,7 @@ jobs:
             ci/tests/test_ch07_181_fixed_world_base_anchor.py \
             ci/tests/test_ch07_181_grasp_compression_tdd.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_original_bin_safe_lower.py \
             ci/ch07_181_clearance_verified_high.py \
             ci/ch07_181_rotated_bin_high_goal.py \
             ci/ch07_181_bin_yaw_single_factor.py \
@@ -311,6 +321,7 @@ jobs:
           python3 -m unittest discover -s ci/tests -p test_ch07_181_high_goal_precision_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_jaw_axis_carry.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_reachable_release_waypoint.py -v
+          python3 -m unittest discover -s ci/tests -p test_ch07_181_original_bin_safe_lower.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_contacts_readonly.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_bin_moveit_scene_contract.py -v
           python3 -m unittest discover -s ci/tests -p test_ch07_181_collision_free_high_branch.py -v
@@ -340,6 +351,7 @@ jobs:
             ci/ch07_181_high_goal_precision_contract.py \
             ci/ch07_181_jaw_axis_carry.py \
             ci/ch07_181_exact_fk.py \
+            ci/ch07_181_original_bin_safe_lower.py \
             ci/ch07_181_clearance_verified_high.py \
             ci/ch07_181_rotated_bin_high_goal.py \
             ci/ch07_181_bin_yaw_single_factor.py \
@@ -361,6 +373,7 @@ jobs:
               -e GITHUB_RUN_ID="${{ github.run_id }}" \
               -e G04B_CYCLE05_PGS_JAW_GOAL=YES \
               -e G04B_CYCLE06_REACHABLE_RELEASE=YES \
+              -e CH07_181_C16_COLLISION_SAFE_LOWER=YES \
               -e G04B_CYCLE07_BIN_CONTACT_PROBE=YES \
               -e CH07_181_C10_CLEARANCE_HIGH_GOAL=NO \
               -e CH07_181_C12_BIN_YAW_ONLY=YES \
