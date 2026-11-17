@@ -68,6 +68,11 @@ class TestSingleWorldRGBD(unittest.TestCase):
         self.assertIn('(.665,.71) if short_live else (.765,.81)',source)
         self.assertIn('CH07_77_G04A_REAL_OGRE2_RGBD_RED_DETECTOR_3D_TARGET_NO_GOAL_SCOPED_PASS',source)
 
+    def test_independent_same_world_receipt_has_valid_json_ending(self):
+        source=(ROOT/"ci/ch07_77_step1_same_world_rgbd_once.sh").read_text()
+        self.assertIn('json.dumps(out,indent=2,allow_nan=False)+"\\n")',source)
+        self.assertNotIn('json.dumps(out,indent=2,allow_nan=False)+"\\\\n")',source)
+
     def test_coord_log_exact_timestamp_pattern(self):
         runner=(ROOT/"ci/ch07_77_step1_same_world_rgbd_once.sh").read_text()
         expr=next(x.partition("=")[2] for x in runner.splitlines()
