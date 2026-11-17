@@ -4,6 +4,8 @@ on:
     paths:
       - 'ci/ch07_77_step1_offline_geometry.py'
       - 'ci/tests/test_ch07_77_step1_offline_geometry.py'
+      - 'ci/ch07_77_step1_supported_release_preflight.py'
+      - 'ci/tests/test_ch07_77_step1_supported_release_preflight.py'
       - '.github/workflows/book-ch07-77-step1-offline.yml'
   workflow_dispatch:
 permissions:
@@ -22,11 +24,24 @@ jobs:
           sparse-checkout: |
             ci/ch07_77_step1_offline_geometry.py
             ci/tests/test_ch07_77_step1_offline_geometry.py
+            ci/ch07_77_step1_supported_release_preflight.py
+            ci/tests/test_ch07_77_step1_supported_release_preflight.py
       - name: Focused geometry and fail-closed contracts
         run: |
           set -Eeuo pipefail
           python3 -m py_compile ci/ch07_77_step1_offline_geometry.py ci/tests/test_ch07_77_step1_offline_geometry.py
           python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_offline_geometry.py' -v
+          python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_supported_release_preflight.py' -v
+          python3 ci/ch07_77_step1_supported_release_preflight.py \
+             --out ci-results/ch07-step1/supported_place_preflight.json
+          python3 - <<'PY_SUPPORTED'
+          import json
+          r=json.load(open('ci-results/ch07-step1/supported_place_preflight.json'))
+          assert r['status']=='STEP1_BLOCKED'
+          assert not r['physical_goal_authorized']
+          assert not r['supported_place_by_C17_vertical_drop_feasible']
+          print('CH07_STEP1_SUPPORTED_PLACE_PRECHECK_L0_PASS_VERTICAL_NOT_SAFE')
+          PY_SUPPORTED
           python3 ci/ch07_77_step1_offline_geometry.py --out ci-results/ch07-step1/offline.json
           python3 - <<'PY'
           import json
