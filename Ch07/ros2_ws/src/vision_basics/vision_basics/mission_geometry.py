@@ -18,12 +18,29 @@ JOINT_LIMITS = {
 
 @dataclass(frozen=True)
 class FixtureCalibration:
-    # From C17 G04B measured 24mm test rod (not a general grasp model).
+    # The G04A legacy plan-only default is preserved exactly.
+    # The optional G04B 80mm profile is measured from actual run 43984345894;
+    # that fixture requires explicitly supplying all three values.
     source_id: str = "g04a_24mm_red_rod_test_only"
     visible_surface_to_wrist_x_m: float = -0.15
     visible_surface_to_wrist_z_m: float = -0.09
     approach_distance_m: float = 0.14
     clearance_distance_m: float = 0.07
+
+
+def physical_short_rod_profile():
+    """Real G04B 80mm rod, sensor stamp 16.204, same world/base_link.
+
+    From native rod centre [.700,0,1.940] and observed *front surface*
+    [.6880574608,.0011689713,1.9436128276] in actual CI #43984345894.
+    Physical C17 grasp wrist reference is [.630,0,1.850]. This does NOT
+    certify native contact for a new Goal or release safety.
+    """
+    return FixtureCalibration(
+        source_id="g04b_80mm_red_rod_test_only",
+        visible_surface_to_wrist_x_m=-0.05805746078541863,
+        visible_surface_to_wrist_z_m=-0.09361282757726553)
+
 
 
 def arm_ik_fixture(x, y, z):
@@ -58,13 +75,18 @@ def fixture_plan_targets(surface_xyz, calibration=None):
     planning scene collision and actual Gazebo world / target calibration.
     """
     c = calibration or FixtureCalibration()
-    if c.source_id != "g04a_24mm_red_rod_test_only":
+    regions = {
+        "g04a_24mm_red_rod_test_only": (0.70, 0.91),
+        "g04b_80mm_red_rod_test_only": (0.665, 0.71),
+    }
+    if c.source_id not in regions:
         raise ValueError("UNAPPROVED_FIXTURE")
     if len(surface_xyz) != 3 or not all(
             isinstance(v, (int, float)) and math.isfinite(v) for v in surface_xyz):
         raise ValueError("INVALID_SENSOR_TARGET")
     x, y, z = (float(v) for v in surface_xyz)
-    if not (0.70 <= x <= 0.91 and abs(y) <= 0.17 and 1.75 <= z <= 2.08):
+    x_lo, x_hi = regions[c.source_id]
+    if not (x_lo <= x <= x_hi and abs(y) <= 0.17 and 1.75 <= z <= 2.08):
         raise ValueError("TARGET_OUTSIDE_TEST_FIXTURE")
     for value in (c.visible_surface_to_wrist_x_m,
                   c.visible_surface_to_wrist_z_m,
