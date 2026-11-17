@@ -46,10 +46,8 @@ def side_outside_necessary_condition(arm=None, rod=None):
     ):
         raise ValueError("C17_NATIVE_GRASP_SOURCE_INVALID")
 
-    wrist_origin, wrist_axes, _ = wrist_source_fk(arm)
-    wrist_center = tuple(
-        wrist_origin[i] + 0.03*wrist_axes[2][i] for i in range(3)
-    )
+    # wrist_source_fk already returns the +0.03m-local-Z OBB centre.
+    wrist_center, _wrist_axes, _ = wrist_source_fk(arm)
     native_rod_to_wrist_m = math.dist(rod, wrist_center)
     most_wrist_centre_from_bin_m = (
         MAX_SETTLED_BIN_XY_ERROR_M + native_rod_to_wrist_m
