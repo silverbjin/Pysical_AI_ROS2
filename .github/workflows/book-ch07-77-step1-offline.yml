@@ -4,6 +4,8 @@ on:
     paths:
       - 'ci/ch07_77_step1_offline_geometry.py'
       - 'ci/tests/test_ch07_77_step1_offline_geometry.py'
+      - 'ci/ch07_77_step1_single_overhead_grasp_preflight.py'
+      - 'ci/tests/test_ch07_77_step1_single_overhead_grasp_preflight.py'
       - 'ci/ch07_77_step1_side_outside_no_go.py'
       - 'ci/tests/test_ch07_77_step1_side_outside_no_go.py'
       - 'ci/ch07_77_step1_supported_release_preflight.py'
@@ -26,6 +28,8 @@ jobs:
           sparse-checkout: |
             ci/ch07_77_step1_offline_geometry.py
             ci/tests/test_ch07_77_step1_offline_geometry.py
+            ci/ch07_77_step1_single_overhead_grasp_preflight.py
+            ci/tests/test_ch07_77_step1_single_overhead_grasp_preflight.py
             ci/ch07_77_step1_side_outside_no_go.py
             ci/tests/test_ch07_77_step1_side_outside_no_go.py
             ci/ch07_77_step1_supported_release_preflight.py
@@ -37,6 +41,20 @@ jobs:
           python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_offline_geometry.py' -v
           python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_supported_release_preflight.py' -v
           python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_side_outside_no_go.py' -v
+          python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_single_overhead_grasp_preflight.py' -v
+          python3 ci/ch07_77_step1_single_overhead_grasp_preflight.py \
+            --out ci-results/ch07-step1/single_overhead_candidate.json
+          python3 - <<'PY_OVERHEAD'
+          import json
+          r=json.load(open('ci-results/ch07-step1/single_overhead_candidate.json'))
+          assert r['candidate_status']=='REJECTED_PRE_FCL_HARD_GEOMETRY'
+          assert not r['pickup_position_reachable']
+          assert not r['supported_place_within_joint_limits']
+          assert not r['supported_place_source_collision_clear']
+          assert r['moveit_plan_only_goals_sent']==r['motor_goals_sent']==0
+          assert r['moveit_fcl_plan_only']=='NOT_REQUESTED_PRE_FCL_HARD_REJECT'
+          print('CH07_STEP1_ONE_OVERHEAD_REJECTED_PRE_FCL_MINIMAL_MVP_STOP')
+          PY_OVERHEAD
           python3 ci/ch07_77_step1_side_outside_no_go.py --out ci-results/ch07-step1/side_outside_no_go.json
           python3 - <<'PY_SIDE'
           import json
