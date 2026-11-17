@@ -96,7 +96,7 @@ packages=(ros-jazzy-gz-ros2-control ros-jazzy-controller-manager
   ros-jazzy-moveit-configs-utils ros-jazzy-moveit-planners-ompl
   ros-jazzy-moveit-simple-controller-manager ros-jazzy-moveit-kinematics
   ros-jazzy-moveit-ros-move-group ros-jazzy-moveit-msgs
-  libgz-sim8-dev)  # Reused exact G04B dependency to provide DART 6.13.2
+ ) # ROS/OGRE2 sensor-only: no G04B motor/DART dev packages in pinned digest
 missing=()
 for pkg in "${packages[@]}";do dpkg -s "$pkg" >/dev/null 2>&1||missing+=("$pkg");done
 if (("${#missing[@]}"));then
@@ -139,13 +139,13 @@ python3 "$ROOT/ci/ch07_181_fixed_world_base_anchor.py" \
  --input "$OUT/robot_source.sdf" \
  --output "$OUT/robot_anchored.sdf" \
  --receipt "$OUT/base_anchor_receipt.json" > "$OUT/base_anchor.log"
-# Match G04B DART 6.13.2 source-only lower limit margin. It is not a Goal.
-DART_VERSION="$(dpkg-query -W -f='${Version}' 'libdart-core+collisions+odelcpsolver6.13')"
-case "$DART_VERSION" in 6.13.2*) ;; *) echo "UNKNOWN_DART_VERSION=$DART_VERSION";exit 30;; esac
-python3 "$ROOT/ci/ch07_181_g04b_dart_limit_margin.py" \
- --input "$OUT/robot_anchored.sdf" \
- --output "$OUT/robot_physical.sdf" \
- --receipt "$OUT/dart_margin_receipt.json" > "$OUT/dart_margin.log"
+# In the pinned accepted E2 image the OSRF libgz-sim8-dev apt candidate is
+# absent (Run 43983765332). For RGBD ONLY, no motor Goal or DART min-limit
+# adjustment is needed. Preserve original URDF joint bounds; do not pretend
+# this is a fully parity-matched physical motor acceptance runtime.
+cp "$OUT/robot_anchored.sdf" "$OUT/robot_physical.sdf"
+printf '%s\n' 'DART_TEST_ONLY_1MM_LIMIT_MARGIN_NOT_APPLIED_NO_MOTOR_GOALS' \
+  > "$OUT/dart_profile_scope.txt"
 timeout 20s gz sdf -k "$OUT/robot_physical.sdf" > "$OUT/sdf_validate.log" 2>&1
 stage ORIGINAL_RSP_AND_GAZEBO_OGRE2_SENSOR_WORLD
 start rsp ros2 run robot_state_publisher robot_state_publisher \
@@ -253,6 +253,7 @@ assert f["rod_center_initial_world_m"]==[.70,0,1.94] and f["world_spawn_robot_ba
 assert bin_yaw["bin_world_center_m"]==[.55,.25,1.63]
 assert bin_yaw["only_change"]=="real_bin_model_yaw_0_to_0.35_rad"
 assert anchor["anchor"]["parent"]=="world" and anchor["anchor"]["child"]=="base_link"
+assert paths[0].parent.joinpath("dart_profile_scope.txt").read_text().strip()=="DART_TEST_ONLY_1MM_LIMIT_MARGIN_NOT_APPLIED_NO_MOTOR_GOALS"
 assert r["actual_ready_count"]==1 and r["valid_positive_count"]>=2
 assert min(r["actual_image_count"],r["actual_depth_count"],r["actual_camera_info_count"])>=3
 assert min(r["actual_target_pixel_count"],r["actual_3d_target_count"])>=2
