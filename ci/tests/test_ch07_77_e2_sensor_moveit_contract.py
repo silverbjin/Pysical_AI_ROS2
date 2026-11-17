@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PKG = ROOT / "Ch07/ros2_ws/src/vision_basics"
 sys.path.insert(0, str(PKG))
 from vision_basics.mission_geometry import (ARM, FixtureCalibration,
-    arm_ik_fixture, fixture_plan_targets)
+    arm_ik_fixture, fixture_plan_targets, physical_short_rod_profile)
 
 
 class TestE2RealSensorPlanContract(unittest.TestCase):
@@ -31,6 +31,25 @@ class TestE2RealSensorPlanContract(unittest.TestCase):
         b = fixture_plan_targets((0.82, 0.04, 1.95))
         self.assertNotEqual(a[0]["joints_rad"], b[0]["joints_rad"])
         self.assertNotEqual(a[-1]["wrist_xyz_m"], b[-1]["wrist_xyz_m"])
+
+    def test_native_80mm_same_world_real_sensor_calibration_is_distinct(self):
+        # Actual G04B short-rod Run 43984345894, real RGBD stamp 16.204.
+        live=(0.6880574607854186, 0.0011689712676005552,
+              1.9436128275772655)
+        with self.assertRaises(ValueError):
+            fixture_plan_targets(live)  # NEVER silently use legacy G04A!
+        profile=physical_short_rod_profile()
+        self.assertEqual(profile.source_id,"g04b_80mm_red_rod_test_only")
+        stages=fixture_plan_targets(live,profile)
+        self.assertEqual([v["stage"] for v in stages],
+                         ["pregrasp","approach","grasp"])
+        self.assertAlmostEqual(stages[0]["wrist_xyz_m"][0],0.49,delta=1e-9)
+        self.assertAlmostEqual(stages[1]["wrist_xyz_m"][0],0.56,delta=1e-9)
+        self.assertAlmostEqual(stages[2]["wrist_xyz_m"][0],0.63,delta=1e-9)
+        self.assertAlmostEqual(stages[2]["wrist_xyz_m"][2],1.85,delta=1e-9)
+        self.assertEqual(len(stages[-1]["joints_rad"]),5)
+        with self.assertRaises(ValueError):
+            fixture_plan_targets((0.788,0,1.94),profile)
 
     def test_invalid_sensor_targets_fail_without_plan(self):
         bad = [(float("nan"), 0, 1.94), (float("inf"), 0, 1.94),
