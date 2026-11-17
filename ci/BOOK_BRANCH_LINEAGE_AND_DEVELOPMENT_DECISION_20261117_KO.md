@@ -79,3 +79,15 @@ flowchart TD
 - `ci/book_branch_prune_verified_once.py`: 표준 Python, `--mode plan`은 네트워크/삭제 없음. `--mode apply`는 GitHub Actions **same-repo** `pull_request.labeled`의 특정 label/감사 브랜치 조건에서만, 현재 main 및 각 PR merged 상태 재검증 뒤 삭제; 로컬 개발자가 실수로 호출해도 GitHub 이벤트 없이 apply 불가.
 - `.github/workflows/book-branch-prune-merged-once.yml`: `contents: write` 작업 격리, 원본 branch HEAD re-check, 열린 PR base/head 보호, 삭제 이후 GET HTTP 404, 결과 Artifact 90일 보존.
 - 검사 결과를 얻기 전에는 `DELETED`라고 쓰지 않는다. 임시 감사 workflow는 main에 포함하지 않으며, 다음 단계에서 감사 PR 기록을 어떻게 보존할지 결정한다.
+
+## 6. 실제 원격 삭제 결과 — 54/54, ZERO ERRORS (2026-11-17)
+
+**원샷 실제 [GitHub Actions Run #43999012612](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43999012612) SUCCESS**, [원본 Artifact #14291077913](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/43999012612/artifacts/14291077913) ZIP SHA256 `58c49260303a7d2aca72497ccc6180dc2c56a33cf61973435b655f59c4a90f5c`, 4032 bytes. ZIP 내 `dry-run.json`은 54개 dry-run / 실제 deletion 0; `actual-deletions.json`은 실제 **54 deleted / 0 skipped / 0 failed**, 54개 각각 `remote_post_delete=HTTP_404_VERIFIED`. CI job 자체도 최종 SUCCESS. GitHub API 추가 조회:
+- 감사 전 원격 브랜치 **197**, 삭제된 원본 **54**, 원본 보존 **143**, 새 감사 브랜치 **1**, **현재 실제 원격 총 144**.
+- 원래 **143개 보존 브랜치 전부 이름·HEAD SHA 그대로**. 비의도 삭제 0, SHA 변조 0.
+- 여전히 열린 PR **25개**(기존 24개 + 이번 감사 Draft [PR #205](https://github.com/silverbjin/Pysical_AI_ROS2/pull/205)). **25개 모두 head/base ref 정상**. 기존 24개 개발 브랜치는 단 하나도 삭제하지 않음.
+- 과거 pre-audit baseline `feat/ch13-section-13-8=6cb0b489...`, 현재 `main=9431fb535...` **불변**.
+- **실제 남은 144개 브랜치 각각의 역할·개발 중단 사유·다음 의사결정**: [BOOK_RETAINED_BRANCH_DECISION_MATRIX_20261117.csv](BOOK_RETAINED_BRANCH_DECISION_MATRIX_20261117.csv). `main` 1, 기존 열린 G04B 22 + 독립 개발 #203/#204 2, old merged-but-advanced 73, HOLD/backup 31, no-PR 14, 이번 감사 브랜치 1의 전수 레코드.
+- 삭제 후 감사 작업의 재발 방지를 위해 **원샷 삭제 workflow와 실행 스크립트는 감사 PR의 최종 상태에서 제거**해도 삭제 원본 Action Artifact와 해당 커밋 이력은 보존된다. 새 cleanup PR을 main으로 병합할 필요 없음.
+
+이후 개발의 **변경 범위 권장**: (P1) #203 개발/CI 가이드 정리, (P1) #204 E2 plan-only 최소 이식과 Ch07 §7.7 오래된 source claim 수정, (P1) #118 35개 증거 linkage, (P2) Ch08 원본 PPO 0/10 성능 실습 범위 및 Ch09/Ch11/Ch12/Ch13 선택 옵션 정리. Ch10 HOLD·G04B physical BLOCKED·Owner WSL2 NOT_READY는 수정 없이 유지.
