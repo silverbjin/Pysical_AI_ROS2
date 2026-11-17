@@ -1,0 +1,63 @@
+name: Book branch inventory - prune verified merged refs ONCE
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: book-branch-prune-merged-once
+  cancel-in-progress: false
+
+jobs:
+  narrowly-verified-merged-branch-prune:
+    if: >-
+      ${{ github.event.action == 'labeled' &&
+          github.event.label.name == 'book-prune-merged-exact-once' &&
+          github.event.pull_request.head.ref == 'audit/book-branch-lineage-prune-20261117' &&
+          github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: L0 allowlisted SHA/merged-PR and fail-closed deletion contract
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ci/book_branch_prune_verified_once.py
+          python3 ci/book_branch_prune_verified_once.py \
+            --manifest ci/BOOK_BRANCH_LINEAGE_INVENTORY_20261117.json \
+            --out ci-results/book-branch-prune/dry-run.json --mode plan
+          python3 - <<'PY_CHECK'
+          import json
+          r=json.load(open('ci-results/book-branch-prune/dry-run.json'))
+          assert r['eligible_count']==54 and r['dry_run']
+          assert not r['deleted'] and len(r['skipped'])==54
+          print('BOOK_BRANCH_PRUNE_L0_54_SAFE_WHITELIST_NO_REMOTE_MUTATION')
+          PY_CHECK
+      - name: Delete only immutable merged-to-main refs, verify actual 404 for each
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          python3 ci/book_branch_prune_verified_once.py \
+            --manifest ci/BOOK_BRANCH_LINEAGE_INVENTORY_20261117.json \
+            --out ci-results/book-branch-prune/actual-deletions.json --mode apply
+      - name: Record nonsecret deletion receipts, preserve failures
+        if: always()
+        run: |
+          {
+            echo '## Book merged PR branch prune'
+            echo 'Scope: 54 SHA-pinned merged PR branch refs only. Open PRs, HOLD, backups, unmerged commits untouched.'
+            cat ci-results/book-branch-prune/actual-deletions.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-merged-branch-prune-${{ github.run_id }}
+          path: ci-results/book-branch-prune/
+          retention-days: 90
+          if-no-files-found: warn
