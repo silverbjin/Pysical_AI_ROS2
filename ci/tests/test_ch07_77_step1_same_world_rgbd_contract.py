@@ -44,7 +44,10 @@ class TestSingleWorldRGBD(unittest.TestCase):
         self.assertNotIn('python3 "$ROOT/ci/ch07_77_g04a_graspable_fixture.py"',source)
         self.assertIn("ch07_181_fixed_world_base_anchor.py",source)
         self.assertIn(' -z 0.0 ',source)
-        self.assertIn("ch07_181_g04b_dart_limit_margin.py",source)
+        # Sensor-only run uses exact source 7-joint URDF bounds. A future
+        # actual motor L2 must pin the proven physical DART profile separately.
+        self.assertIn("DART_TEST_ONLY_1MM_LIMIT_MARGIN_NOT_APPLIED_NO_MOTOR_GOALS",source)
+        self.assertNotIn('python3 "$ROOT/ci/ch07_181_g04b_dart_limit_margin.py"',source)
         self.assertIn("CH07_77_G04B_SHORT_LIVE=YES",source)
         self.assertIn("original_real_sensor",source.replace("ORIGINAL_ROS_DETECTOR_COORD_TRANSFORM_NO_GOALS","original_real_sensor") )
 
