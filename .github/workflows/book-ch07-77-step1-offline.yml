@@ -1,0 +1,92 @@
+name: Book Ch07 Step1 pinned offline geometry gate (NO ROS/Goals)
+on:
+  pull_request:
+    paths:
+      - 'ci/ch07_77_step1_offline_geometry.py'
+      - 'ci/tests/test_ch07_77_step1_offline_geometry.py'
+      - 'ci/ch07_77_step1_single_overhead_grasp_preflight.py'
+      - 'ci/tests/test_ch07_77_step1_single_overhead_grasp_preflight.py'
+      - 'ci/ch07_77_step1_side_outside_no_go.py'
+      - 'ci/tests/test_ch07_77_step1_side_outside_no_go.py'
+      - 'ci/ch07_77_step1_supported_release_preflight.py'
+      - 'ci/tests/test_ch07_77_step1_supported_release_preflight.py'
+      - '.github/workflows/book-ch07-77-step1-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: book-ch07-step1-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  read-only-c17-source-bound-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          sparse-checkout: |
+            ci/ch07_77_step1_offline_geometry.py
+            ci/tests/test_ch07_77_step1_offline_geometry.py
+            ci/ch07_77_step1_single_overhead_grasp_preflight.py
+            ci/tests/test_ch07_77_step1_single_overhead_grasp_preflight.py
+            ci/ch07_77_step1_side_outside_no_go.py
+            ci/tests/test_ch07_77_step1_side_outside_no_go.py
+            ci/ch07_77_step1_supported_release_preflight.py
+            ci/tests/test_ch07_77_step1_supported_release_preflight.py
+      - name: Focused geometry and fail-closed contracts
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ci/ch07_77_step1_offline_geometry.py ci/tests/test_ch07_77_step1_offline_geometry.py
+          python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_offline_geometry.py' -v
+          python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_supported_release_preflight.py' -v
+          python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_side_outside_no_go.py' -v
+          python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_single_overhead_grasp_preflight.py' -v
+          python3 ci/ch07_77_step1_single_overhead_grasp_preflight.py \
+            --out ci-results/ch07-step1/single_overhead_candidate.json
+          python3 - <<'PY_OVERHEAD'
+          import json
+          r=json.load(open('ci-results/ch07-step1/single_overhead_candidate.json'))
+          assert r['candidate_status']=='REJECTED_PRE_FCL_HARD_GEOMETRY'
+          assert not r['pickup_position_reachable']
+          assert not r['supported_place_within_joint_limits']
+          assert not r['supported_place_source_collision_clear']
+          assert r['moveit_plan_only_goals_sent']==r['motor_goals_sent']==0
+          assert r['moveit_fcl_plan_only']=='NOT_REQUESTED_PRE_FCL_HARD_REJECT'
+          print('CH07_STEP1_ONE_OVERHEAD_REJECTED_PRE_FCL_MINIMAL_MVP_STOP')
+          PY_OVERHEAD
+          python3 ci/ch07_77_step1_side_outside_no_go.py --out ci-results/ch07-step1/side_outside_no_go.json
+          python3 - <<'PY_SIDE'
+          import json
+          r=json.load(open('ci-results/ch07-step1/side_outside_no_go.json'))
+          assert r['candidate_status']=='REJECT_FIXED_C17_GRIP_WRIST_OUTSIDE_BIN_XY'
+          assert r['minimum_unachievable_horizontal_separation_m']>0.005
+          assert r['physical_goal_authorized'] is False
+          print('CH07_STEP1_SIDE_OUTSIDE_NO_GO_L0_PASS_FIXED_GRIP_NOT_EXECUTABLE')
+          PY_SIDE
+          python3 ci/ch07_77_step1_supported_release_preflight.py \
+             --out ci-results/ch07-step1/supported_place_preflight.json
+          python3 - <<'PY_SUPPORTED'
+          import json
+          r=json.load(open('ci-results/ch07-step1/supported_place_preflight.json'))
+          assert r['status']=='STEP1_BLOCKED'
+          assert not r['physical_goal_authorized']
+          assert not r['supported_place_by_C17_vertical_drop_feasible']
+          print('CH07_STEP1_SUPPORTED_PLACE_PRECHECK_L0_PASS_VERTICAL_NOT_SAFE')
+          PY_SUPPORTED
+          python3 ci/ch07_77_step1_offline_geometry.py --out ci-results/ch07-step1/offline.json
+          python3 - <<'PY'
+          import json
+          r=json.load(open('ci-results/ch07-step1/offline.json'))
+          assert r['status']=='STEP1_BLOCKED'
+          assert not r['physics_goal_authorized']
+          assert r['step2_e2e_l2']=='NOT_RUN'
+          assert not r['bounded_collision_free_candidate_found']
+          print('CH07_77_STEP1_BOUNDARY_L0_PASS_E3_PHYSICAL_BLOCKED')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: book-ch07-step1-offline-${{ github.run_id }}
+          path: ci-results/ch07-step1/
+          retention-days: 30
