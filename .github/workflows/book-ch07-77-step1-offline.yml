@@ -4,6 +4,8 @@ on:
     paths:
       - 'ci/ch07_77_step1_offline_geometry.py'
       - 'ci/tests/test_ch07_77_step1_offline_geometry.py'
+      - 'ci/ch07_77_step1_side_outside_no_go.py'
+      - 'ci/tests/test_ch07_77_step1_side_outside_no_go.py'
       - 'ci/ch07_77_step1_supported_release_preflight.py'
       - 'ci/tests/test_ch07_77_step1_supported_release_preflight.py'
       - '.github/workflows/book-ch07-77-step1-offline.yml'
@@ -24,6 +26,8 @@ jobs:
           sparse-checkout: |
             ci/ch07_77_step1_offline_geometry.py
             ci/tests/test_ch07_77_step1_offline_geometry.py
+            ci/ch07_77_step1_side_outside_no_go.py
+            ci/tests/test_ch07_77_step1_side_outside_no_go.py
             ci/ch07_77_step1_supported_release_preflight.py
             ci/tests/test_ch07_77_step1_supported_release_preflight.py
       - name: Focused geometry and fail-closed contracts
@@ -32,6 +36,16 @@ jobs:
           python3 -m py_compile ci/ch07_77_step1_offline_geometry.py ci/tests/test_ch07_77_step1_offline_geometry.py
           python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_offline_geometry.py' -v
           python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_supported_release_preflight.py' -v
+          python3 -m unittest discover -s ci/tests -p 'test_ch07_77_step1_side_outside_no_go.py' -v
+          python3 ci/ch07_77_step1_side_outside_no_go.py --out ci-results/ch07-step1/side_outside_no_go.json
+          python3 - <<'PY_SIDE'
+          import json
+          r=json.load(open('ci-results/ch07-step1/side_outside_no_go.json'))
+          assert r['candidate_status']=='REJECT_FIXED_C17_GRIP_WRIST_OUTSIDE_BIN_XY'
+          assert r['minimum_unachievable_horizontal_separation_m']>0.005
+          assert r['physical_goal_authorized'] is False
+          print('CH07_STEP1_SIDE_OUTSIDE_NO_GO_L0_PASS_FIXED_GRIP_NOT_EXECUTABLE')
+          PY_SIDE
           python3 ci/ch07_77_step1_supported_release_preflight.py \
              --out ci-results/ch07-step1/supported_place_preflight.json
           python3 - <<'PY_SUPPORTED'
