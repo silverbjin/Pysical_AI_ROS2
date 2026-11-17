@@ -279,7 +279,7 @@ out={"scope":"STEP1_G04B_SHORT_ROD_SAME_WORLD_CAMERA_G01",
      "release_clearance":"NOT_VERIFIED","G04B":"BLOCKED",
      "E2E":"BLOCKED","Ch10":"HOLD"}
 (paths[0].parent/"same_world_rgbd_receipt.json").write_text(
-    json.dumps(out,indent=2,allow_nan=False)+"\\n")
+    json.dumps(out,indent=2,allow_nan=False)+"\n")
 print("CH07_STEP1_G04B_SHORT_ROD_REAL_OGRE2_RGBD_G01_SCOPED_PASS_NO_GOALS")
 PY
 stage STEP1_SAME_WORLD_RGBD_SCOPED_PASS_NO_GOALS
