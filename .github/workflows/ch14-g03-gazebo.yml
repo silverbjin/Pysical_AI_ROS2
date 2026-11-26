@@ -1,0 +1,70 @@
+name: Ch14 G03 actual Gazebo semantic RGB-D
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - 'Ch14/ros2_ws/src/ch14_simulation/**'
+      - 'Ch14/scripts/g03_gazebo*'
+      - 'Ch14/scripts/g03_fetch_scene_assets.py'
+      - 'Ch14/fixtures/g03_scene.lock.json'
+      - '.github/workflows/ch14-g03-gazebo.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: ch14-g03-gazebo-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  actual-gazebo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Verify source, scene XML and exact external asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-g03-l2-evidence
+          echo "$GITHUB_SHA" > ch14-g03-l2-evidence/source-sha.txt
+          python3 -m compileall -q Ch14/ros2_ws/src/ch14_simulation Ch14/scripts/g03_gazebo_witness.py Ch14/scripts/g03_fetch_scene_assets.py
+          python3 -c 'import xml.etree.ElementTree as E; E.parse("Ch14/ros2_ws/src/ch14_simulation/worlds/semantic_rgbd.sdf")'
+          bash -n Ch14/scripts/g03_gazebo_ci.sh
+          python3 Ch14/scripts/g03_fetch_scene_assets.py "$RUNNER_TEMP/ch14-assets" ch14-g03-l2-evidence/scene-asset-receipt.json
+      - uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull existing immutable Jazzy Harmonic image
+        run: |
+          image=ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f
+          echo "$image" > ch14-g03-l2-evidence/image-digest.txt
+          docker pull "$image"
+      - name: Actual Gazebo RGB-D semantic witness, pause and bounded shutdown
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-wheelhouse
+          timeout --signal=TERM --kill-after=15s 720s docker run --rm --init --pull=never --shm-size=1g -e GITHUB_RUN_ID \
+            -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g03-l2-evidence:/evidence" -v "$RUNNER_TEMP/ch14-assets:/assets:ro" \
+            "$(cat ch14-g03-l2-evidence/image-digest.txt)" bash /ch14/scripts/g03_gazebo_ci.sh 2>&1 | tee ch14-g03-l2-evidence/run.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch14-g03-l2-evidence
+          cd ch14-g03-l2-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch14-g03-actual-gazebo
+          path: ch14-g03-l2-evidence/
+          retention-days: 30
