@@ -1,17 +1,41 @@
-name: Ch14 G00 CPU candidate preflight
+name: Ch14 G00 CPU preflight and independent T03
 on:
   push:
     branches: [feat/ch14-ai-deployment]
     paths:
-      - 'Ch14/requirements/cpu.candidate.txt'
-      - 'Ch14/requirements/cpu.probe.lock.txt'
+      - 'Ch14/requirements/cpu.ros-probe.lock.txt'
       - 'Ch14/scripts/g00_*'
+      - 'Ch14/scripts/validate_dependency_graph.py'
+      - 'Ch14/scripts/test_validate_dependency_graph.py'
+      - 'Ch14/scripts/g01_cpu_t03.sh'
       - '.github/workflows/ch14-g00.yml'
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ch14-g00-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
+  l0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Static and historical failure regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m compileall -q Ch14/scripts Ch14/python Ch14/ros2_ws/src/ch14_ai_common
+          bash -n Ch14/scripts/g00_cpu_probe.sh
+          bash -n Ch14/scripts/g01_cpu_t03.sh
+          python3 Ch14/scripts/test_g00_wheel_lock.py
+          python3 Ch14/scripts/test_validate_dependency_graph.py
+          python3 Ch14/scripts/test_fetch_models.py
   cpu-preflight:
+    needs: l0
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -19,16 +43,41 @@ jobs:
         with:
           sparse-checkout: Ch14
           persist-credentials: false
-      - name: Resolve actual ROS base and test CPU candidate
+      - name: Restore exact CPU wheelhouse
+        id: wheels
+        uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - name: Prepare pinned ROS container
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p ch14-g00-evidence
+          mkdir -p ch14-g00-evidence ch14-wheelhouse
           printf '%s\n' "$GITHUB_SHA" > ch14-g00-evidence/source-sha.txt
-          docker pull ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
-          docker image inspect ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 > ch14-g00-evidence/base-image.json
-          image="$(docker image inspect --format '{{.Id}}' ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6)"
-          docker run --rm -e CH14_SOURCE_SHA="$GITHUB_SHA" -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-g00-evidence:/evidence" "$image" bash /ch14/scripts/g00_cpu_probe.sh /evidence 2>&1 | tee ch14-g00-evidence/probe.log
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker pull "$image"
+          docker image inspect "$image" > ch14-g00-evidence/base-image.json
+          docker run -d --name ch14-g00 -e CH14_SOURCE_SHA="$GITHUB_SHA" -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-g00-evidence:/evidence" -v "$PWD/ch14-wheelhouse:/wheelhouse" "$image" sleep infinity
+      - name: G00 graph, install, build, ABI and smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec ch14-g00 bash /ch14/scripts/g00_cpu_probe.sh /evidence 2>&1 | tee ch14-g00-evidence/probe.log
+      - name: Save verified wheelhouse even if later stage failed
+        if: always() && steps.wheels.outputs.cache-hit != 'true' && hashFiles('ch14-g00-evidence/wheelhouse-verified') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - name: G01 independent T03 actual export
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec ch14-g00 bash /ch14/scripts/g01_cpu_t03.sh /evidence/g01 2>&1 | tee ch14-g00-evidence/g01.log
+      - name: Cleanup container
+        if: always()
+        run: docker rm -f ch14-g00 || true
       - name: Hash collected evidence
         if: always()
         shell: bash
@@ -36,7 +85,7 @@ jobs:
           mkdir -p ch14-g00-evidence
           cd ch14-g00-evidence
           find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
-      - name: Preserve candidate lock and actual logs
+      - name: Preserve evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:

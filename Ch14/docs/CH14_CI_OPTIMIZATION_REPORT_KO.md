@@ -1,0 +1,2 @@
+# Ch14 CI 최적화 보고서 — 구현 checkpoint
+이전 run 세 건의 실패는 각각 다른 최초 실패 경계. 세 번째 run의 wheel 46개 검증 증거를 보존, 충돌 항목 1개만 제거. 신규 L0 job으로 metadata regression 및 graph fixture를 target container 다운로드 전에 수행. wheelhouse exact cache와 재검증, CI concurrency/timeout/path 필터 적용. G00 설치/ABI/colcon과 G01 T03을 동일 컨테이너에서 분리 step으로 실행. 전후 실제 시간/캐시 효과는 신규 run 결과 미확인으로 수치 주장 금지. G00 target PASS 전 후보 lock을 release lock으로 승격 금지. 이후 G01~G09 전체 CI 분리는 미구현. 
