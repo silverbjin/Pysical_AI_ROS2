@@ -1,0 +1,58 @@
+name: Ch14 G02 ORT and OpenVINO CPU comparison
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - 'Ch14/ros2_ws/src/ch14_ai_common/ch14_ai_common/ov_backend.py'
+      - 'Ch14/ros2_ws/src/ch14_ai_common/ch14_ai_common/backend_comparison.py'
+      - 'Ch14/python/compare_backends.py'
+      - 'Ch14/python/ov_inference.py'
+      - 'Ch14/requirements/openvino.lock.txt'
+      - 'Ch14/scripts/g02_cpu_compare.sh'
+      - 'Ch14/tests/test_g02_comparison.py'
+      - '.github/workflows/ch14-g02.yml'
+permissions:
+  contents: read
+concurrency:
+  group: ch14-g02-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  cpu-comparison:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Static and frozen fixture preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-g02-evidence
+          echo "$GITHUB_SHA" > ch14-g02-evidence/source-sha.txt
+          python3 -m compileall -q Ch14/python Ch14/ros2_ws/src/ch14_ai_common
+          bash -n Ch14/scripts/g02_cpu_compare.sh
+          python3 Ch14/scripts/g01_select_coco.py "$RUNNER_TEMP/ch14-coco" 2>&1 | tee ch14-g02-evidence/fixture-preflight.log
+      - uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - name: Actual CPU comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-wheelhouse
+          docker run --rm -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g02-evidence:/evidence" -v "$RUNNER_TEMP/ch14-coco:/fixture:ro" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g02_cpu_compare.sh 2>&1 | tee ch14-g02-evidence/run.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch14-g02-evidence
+          cd ch14-g02-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch14-g02-cpu-comparison
+          path: ch14-g02-evidence/
+          retention-days: 30
