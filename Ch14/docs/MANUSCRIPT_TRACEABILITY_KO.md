@@ -9,8 +9,8 @@ S2 26쪽, SHA256 0ca3425f57c3608a5078edb5a8c708dc1d734459072532f9954634695df2b3a
 | 14-4 | 5–6 | G01 | python/inference_onnx.py | T04 raw/paired PASS, required semantics FAIL |
 | 14-5 | 7–8 | G02 | python/trt_inference.py | T05 NOT_RUN |
 | 14-6 | 8 | G02 | python/ov_inference.py → ch14_ai_common/ov_backend.py | T06 actual CPU SCOPED_PASS 45748461194 |
-| 14-7 | 9–11 | G03 | python/async_inference_node.py | T07 NOT_RUN |
-| 14-8 | 11–12 | G03 | python/rgbd_sync.py | T08 NOT_RUN |
+| 14-7 | 9–11 | G03 | python/async_inference_node.py → detector_node.py/latest_slot.py | T07 actual L0/L1 scoped 45750110277 |
+| 14-8 | 11–12 | G03 | python/rgbd_sync.py → rgbd_sync.py/detector_node.py | T08 L0/L1 scoped 45750520212/45750895879/45751287261; L2 separate |
 | 14-9 | 12 | G04 | python/parameter_declaration.py | T09 NOT_RUN |
 | 14-10 | 12 | G04 | python/param_callback.py | T10 NOT_RUN |
 | 14-11 | 13 | G04 | python/hot_swap.py | T11 NOT_RUN |
