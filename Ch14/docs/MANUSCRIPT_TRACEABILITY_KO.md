@@ -42,3 +42,23 @@ G07 code14-17 python/export_rl_policy.py → ch14_rl_deployment/export_policy.py
 G08 code14-19 canonical Ch14/python/rl_controller.py → installed ch14_rl_deployment/rl_controller.py. MuJoCo normal/pause actual 45787876247 SCOPED_PASS; actual 400/400 DDS and feedback. Gazebo and protection candidates submitted, full T19 pending. No walking quality or L3 claim.
 
 G08 final: T19 SCOPED_PASS, actual MuJoCo and Gazebo ROS closed-loop normal cases; MuJoCo 5 negative checks and synthetic clock-reset DDS. 400/399 complete target-feedback pairs, 50Hz each. Gazebo source-time latency not established; no walking quality or L3 promotion. Earlier pending statements are historical checkpoints.
+
+## G09 canonical execution index (scope, not a new runtime test)
+| Code | command / entry point (prepared environment) | historical test/evidence | current release scope |
+|---|---|---|---|
+| 14-1 | python python/benchmark_torch.py --help; LAB14.1 pinned asset command | T01 45744146299 | CPU scoped |
+| 14-2 | python python/export_yolo.py --help; LAB14.2 | T02 45744146299 / 45745101023 | CPU parity |
+| 14-3 | python python/export_custom_model.py --output NEW_DIR | T03 45742206902 | synthetic custom model parity only |
+| 14-4 | python python/inference_onnx.py --help; LAB14.2 | T04 45745101023 / 45746373267 | absolute semantic FAIL; conversion scoped |
+| 14-5 | no implemented file; GPU optional | T05 NOT_RUN | NOT_IMPLEMENTED |
+| 14-6 | python python/ov_inference.py --help; compare_backends.py; LAB14.3 | T06 45748461194 | CPU scoped |
+| 14-7/8 | ros2 launch ch14_ai_perception perception.launch.py with verified args; LAB14.4 | T07/T08 45750110277/45751287261/45751598173 | DDS/actual RGB-D scope |
+| 14-9/10/11 | ros2 param get/set and /ch14/swap_model; LAB14.5 | T09~11 45755020128 | atomic/rollback scoped |
+| 14-12 | ros2 launch ch14_ai_perception robot_ai_system.launch.py; LAB14.5 | T12 45755020128/45760289636 | ordered runner scope |
+| 14-13 | ros2 run ch14_performance_monitor monitor_node; LAB14.6 | T13 45758721447 | 60s A/B/C scoped |
+| 14-14/15/16 | docker/build_cpu.sh, docker/run_docker.sh, docker compose -f docker/compose.yaml; LAB14.7 | T14~16 45761633396 | Linux CPU replay only |
+| 14-17/18 | python python/export_rl_policy.py; ros2 run ch14_rl_deployment rl_shadow; LAB14.8 | T17/18 45763347165 | original accepted smoke artifact reuse; no new training/export |
+| 14-19 | ros2 run ch14_rl_deployment rl_controller; LAB14.8 | T19 45787876247/45799511462/45799639451/45799888629 | two engines normal, MuJoCo negative, synthetic reset |
+| 14.9 | scripts/bootstrap.sh, doctor.sh, run_lab.sh, verify_ch14.sh; LAB14.9 | G09 actual results pending | owner L3 NOT_RUN |
+
+See G09_PUBLICATION_QA_KO.md for proposed checklist replacement; G09_ASSET_RELEASE_REGISTER_KO.md for current provenance vs historical manifests. Existing "NOT_RUN" statements inside historical paragraphs reflect the recorded checkpoint, not superseding the acceptance ledger.

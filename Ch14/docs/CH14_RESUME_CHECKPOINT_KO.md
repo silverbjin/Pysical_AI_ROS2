@@ -76,3 +76,6 @@ All three targeted runs completed SUCCESS. Gazebo 45799511462 source f4ac6713a9a
 
 ## G09 start
 Original specification recovered from Library; G09 candidate source audit, clean 6-package combined build, pinned owner headless Docker wrapper and 14.9 guide. No new training, no earlier benchmark/physics CI repeats. Full release HOLD, owner L3 pending. See reports/G09_DEVELOPMENT_REPORT_KO.md. GUI and complete per-section automated routes not implemented; 14-5 optional NOT_RUN. CI candidate only.
+
+## G09 audit correction + original model retention
+First CI 45808374531 artifact15109828744 verified2/2: overstrict setup.cfg for data-only ch14_simulation, clean build NOT_RUN. Fix 2d6e3c180fb5959597ccb4e5a6060f996c0596a3 checks setup.cfg only if console_scripts declared. Retry 45808558133 structural QA and fail-closed options succeeded; actual combined build in progress at review. Main/base old chapters 31,894 tree items unchanged. Original G07 archive15090667475 downloaded and SHA +23/23 independently verified for owner retention. Publication and asset registers added, release rights not granted. No new training/export or prior benchmark repeats. G09 overall HOLD; owner L3 NOT_RUN.
