@@ -1,17 +1,6 @@
 name: Ch15 G02 actual installed DDS
 on:
-  push:
-    branches: [feat/ch15-mission-engineering]
-    paths:
-      - 'Ch15/ros2_ws/src/ch15_interfaces/**'
-      - 'Ch15/ros2_ws/src/ch15_adapters/**'
-      - 'Ch15/ros2_ws/src/ch15_safety/**'
-      - 'Ch15/ros2_ws/src/ch15_mission/launch/**'
-      - 'Ch15/tests/g02*'
-      - 'Ch15/tests/test_g02*'
-      - 'Ch15/tests/test_icd.py'
-      - 'Ch15/scripts/g02_ci.sh'
-      - '.github/workflows/ch15-g02.yml'
+  # Retain the accepted normal-path run; dispatch explicitly when its scope changes.
   workflow_dispatch:
 permissions:
   contents: read

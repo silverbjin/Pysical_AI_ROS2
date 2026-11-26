@@ -13,21 +13,22 @@ from tf2_ros import StaticTransformBroadcaster
 from nav2_msgs.action import NavigateToPose
 from ch15_interfaces.action import PickObject,PlaceObject
 from ch15_interfaces.srv import SwitchGait
-from ch15_interfaces.msg import ReadyState
+from ch15_interfaces.msg import ReadyState,SafetyState
 from .contracts import valid_pose,valid_timeout
-from .qos_profiles import profile,sensor_qos
+from .qos_profiles import profile,sensor_qos,state_qos
 
 class MockServers(Node):
     def __init__(self):
         super().__init__('ch15_mock_servers')
         self.group=ReentrantCallbackGroup(); self.lock=threading.Lock()
-        self.active=False; self.ready=False; self.ready_at=0.; self.gait='stand'; self.held=False; self.arrived=False; self.placed=False; self.motion_samples=0
+        self.active=False; self.ready=False; self.ready_at=0.; self.safety_at=0.; self.safety_latched=True; self.gait='stand'; self.held=False; self.arrived=False; self.placed=False; self.motion_samples=0
         self.scan_enabled=self.declare_parameter('publish_scan',True).value
         self.cmd=self.create_publisher(TwistStamped,'/ch15/cmd_vel_in',profile())
         self.scan=self.create_publisher(LaserScan,'/scan',sensor_qos)
         self.gait_pub=self.create_publisher(String,'/ch15/gait_state',profile(transient=True))
         self.witness=self.create_publisher(String,'/ch15/mock_witness',profile(10))
         self.create_subscription(ReadyState,'/ch15/ready',self.on_ready,profile(),callback_group=self.group)
+        self.create_subscription(SafetyState,'/ch15/safety_state',self.on_safety,state_qos,callback_group=self.group)
         self.create_subscription(Twist,'/cmd_vel',self.on_motion,profile(),callback_group=self.group)
         self.create_service(SwitchGait,'/switch_gait',self.switch,callback_group=self.group)
         self.servers=[]
@@ -39,7 +40,11 @@ class MockServers(Node):
         self.create_timer(.1,self.sample,clock=Clock(clock_type=ClockType.STEADY_TIME),callback_group=self.group)
     def on_ready(self,msg):
         with self.lock: self.ready=msg.ready;self.ready_at=time.monotonic()
-    def ready_now(self): return self.ready and time.monotonic()-self.ready_at<=.3
+    def on_safety(self,msg):
+        with self.lock:
+            self.safety_latched=msg.latched or msg.owner!='MOCK:ch15_command_arbiter';self.safety_at=time.monotonic()
+    def ready_now(self):
+        now=time.monotonic();return self.ready and now-self.ready_at<=.3 and not self.safety_latched and now-self.safety_at<=.3
     def on_motion(self,msg):
         with self.lock:
             if self.active and msg.linear.x>0.:self.motion_samples+=1
@@ -94,6 +99,7 @@ class MockServers(Node):
                     # Feedback then a bounded cancellation opportunity, followed by logical witness.
                     time.sleep(.15)
                     if h.is_cancel_requested:reason='canceled';break
+                    if time.monotonic()>=deadline:reason='deadline';break
                     with self.lock:
                         if not self.ready_now():reason='readiness lost';break
                         if kind=='pick' and self.arrived and not self.held and self.gait=='stand':self.held=True;success=True
