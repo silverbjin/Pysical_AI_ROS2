@@ -55,8 +55,8 @@ class MissionExecutor(Node):
         self.create_subscription(String,'/ch15/mock_goal_witness',self.on_witness,profile(20))
         self.create_subscription(TargetObservation,'/ch15/target_observation',self.on_target,profile())
         self.gait_client=self.create_client(SwitchGait,'/switch_gait')
-        self.clients={k:ActionClient(self,a,n) for k,a,n in [('nav',NavigateToPose,'/navigate_to_pose'),('pick',PickObject,'/pick_object'),('place',PlaceObject,'/place_object')]}
-        self.sup={k:ActionSupervisor(c,lambda x:UUID(uuid=list(bytes.fromhex(x))),lambda uid,k=k:self.valid_witness(uid,k),emit=self.emit,block=self.trigger_fault,timeout=5.) for k,c in self.clients.items()}
+        self._action_clients={k:ActionClient(self,a,n) for k,a,n in [('nav',NavigateToPose,'/navigate_to_pose'),('pick',PickObject,'/pick_object'),('place',PlaceObject,'/place_object')]}
+        self.sup={k:ActionSupervisor(c,lambda x:UUID(uuid=list(bytes.fromhex(x))),lambda uid,k=k:self.valid_witness(uid,k),emit=self.emit,block=self.trigger_fault,timeout=5.) for k,c in self._action_clients.items()}
         self.create_service(Trigger,'/ch15/start_mission',self.start)
         self.create_service(Trigger,'/ch15/cancel_mission',self.cancel)
         self.create_service(Trigger,'/ch15/reset_safety',self.reset)
