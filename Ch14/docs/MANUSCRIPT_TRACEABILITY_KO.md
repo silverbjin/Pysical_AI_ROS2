@@ -38,3 +38,5 @@ G05: canonical ch14_ai_common/profiler.py, ch14_performance_monitor/monitor_node
 G06 canonical docker/Dockerfile.cpu, entrypoint.sh, build_cpu.sh, run_docker.sh, compose.yaml. Actual L1 CPU deployment scope 45761633396, 39/39 semantic + points each in two executions. Synthetic depth/TF bag, not actual Gazebo source; owner WSL2/GPU NOT_RUN.
 
 G07 code14-17 python/export_rl_policy.py → ch14_rl_deployment/export_policy.py and policy.py; code14-18 observation_builder.py → observation_adapter.py and exact vendor/ch12 ros_core. Actual 45763347165 one SMOKE_ONLY training, 136 FP32 parity, actual ROS shadow DDS240/command0, T17/T18 scoped PASS. No original trained checkpoint/physical command or walking claim. T19 G08 pending.
+
+G08 code14-19 canonical Ch14/python/rl_controller.py → installed ch14_rl_deployment/rl_controller.py. MuJoCo normal/pause actual 45787876247 SCOPED_PASS; actual 400/400 DDS and feedback. Gazebo and protection candidates submitted, full T19 pending. No walking quality or L3 claim.

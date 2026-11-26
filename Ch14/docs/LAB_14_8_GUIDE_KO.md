@@ -32,3 +32,26 @@ ros2 run ch14_rl_deployment rl_shadow --ros-args \
 
 ## 7. 실제 검수 결과와 재사용 (2026-11-26)
 Run45763347165 source 21d4281f825ed23938a399377b29bad5252fde25; artifact15090667475 (ZIP c8defc1a154c3d0ec92ddd3a7fbd70f8d3b012dc21d375acde9f5c5f9be9641d; 23/23). 이미 학습한 final_model.zip 및 export를 사용: archive 보존 및 SHA 검증 후 `python scripts/g07_verify_reuse.py --root /absolute/extracted_artifact`. ONNX/contract SHA c6bc846346ea156f39b31a84da3e2051e17d377b39b825eb08ba3ef77f51e546 / 1209b04f0d6f31d12249b7fd355ba4ed7d45789cfee8d94486d869608c48d168. 128 실제 환경 관측+8 수치 입력, max abs7.45e-8, 240 DDS shadow 추론, command0, max.325422ms. 신규 학습을 반복하지 않는다. 14 additional wheels hash lock `requirements/rl.lock.txt` is derived from successful pip install report; clean locked reinstall is next G08 environment check. Artifact contains newly generated smoke evaluation binaries (public repo Actions artifact, 30d), not original external weights or release. No model binaries Git committed. Actual physical control/WSL2 NOT_RUN. See reports/G07_EXECUTION_REPORT_KO.md.
+
+## 8. 코드 14-19 — 실제 제어 (G08 진행 중)
+G07 원본 ZIP (run 45763347165, artifact 15090667475)의 파일을 다운로드하여 ZIP SHA256을 확인한 뒤 압축을 푼다. 원본 ZIP이 없거나 일치하지 않으면 중단하며 자동 학습/export하지 않는다. G08 모델은 학습된 보행 제품이 아닌 SMOKE_ONLY. 실제 MuJoCo 정상 경로 검수는 45787876247에서 성공했으며 Gazebo 및 보호 검수는 별도 Gate.
+
+실제 Ubuntu24.04/Jazzy CPU 환경에서 검증된 cpu.lock.txt와 rl.lock.txt를 적용한 venv 및 ROS underlay를 활성화하고 vendor/ch12 패키지를 설치한다. Ch14 기준:
+```bash
+python scripts/g07_verify_reuse.py --root /absolute/extracted_g07
+cd ros2_ws
+colcon build --packages-select ch14_rl_deployment
+source install/setup.bash
+```
+두 터미널에서 동일 underlay/overlay/venv, ROS_DOMAIN_ID를 사용한다. 먼저 `ros2 run ch14_rl_deployment mujoco_bridge`로 물리를 실행한다. 다른 터미널에서 controller를 실행한다. 모델/계약은 위 원본 archive를 사용한다. 기본은 disabled; 실제 시뮬레이션만 명시적으로 enable한다. 다른 명령 발행 노드와 동시에 사용 금지.
+```bash
+EXPORT=/absolute/extracted_g07/export
+ros2 run ch14_rl_deployment rl_controller --ros-args \\
+  -p use_sim_time:=true -p backend:=mujoco -p enabled:=false \\
+  -p onnx_path:="$EXPORT/quadruped_policy.onnx" \\
+  -p contract_path:="$EXPORT/policy_contract.json" \\
+  -p contract_sha256:=1209b04f0d6f31d12249b7fd355ba4ed7d45789cfee8d94486d869608c48d168
+```
+실제 명령 실습은 disabled 실행을 종료한 다음 동일 명령에서 enabled:=true로 재실행. /rl/controller_status, /rl/joint_targets, /joint_states, /simulation/odom을 별도로 관측한다. `ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist '{linear: {x: 0.2}}'`는 관측 명령의 변화를 확인하기 위한 것이며 보행 거리 성공 판정 아님. 명령 발행 중단 후 .5 sim seconds에 관측 command가 0으로 돌아오는지 확인. 먼저 controller를 종료하고 이어 bridge를 종료한다. 
+
+CI 실제 증거: ACTIVE400, 50Hz, 독립 DDS 목표400/400 (최대 차이0), 400 실제 피드백쌍, 최대 연속 목표 변화 .0249288rad, 높이 .39247m, 0.169344ms 최대 추론, pause/resume, exit0/0. 해당 수치는 클라우드 CI이며 사용자 WSL2 인수값이 아니다. Gazebo와 보호 시험 결과는 확정 후 별도 업데이트한다.
