@@ -15,7 +15,7 @@ S2 26쪽, SHA256 0ca3425f57c3608a5078edb5a8c708dc1d734459072532f9954634695df2b3a
 | 14-10 | 12 | G04 | python/param_callback.py | T10 actual atomic17 and frame snapshot 45755020128 |
 | 14-11 | 13 | G04 | python/hot_swap.py | T11 actual CPU n→s and rollback/busy 45755020128 |
 | 14-12 | 14 | G04 | ros2_ws/src/ch14_ai_perception/launch/robot_ai_system.launch.py | T12 actual installed replay/sim launch 45755020128 |
-| 14-13 | 15 | G05 | python/profiler.py | T13 NOT_RUN |
+| 14-13 | 15 | G05 | python/profiler.py | T13 actual CPU A/B/C 60s 45758721447; D N/A; node-local age caveat |
 | 14-14 | 17 | G06 | docker/Dockerfile.cpu | T14 NOT_RUN |
 | 14-15 | 17 | G06 | docker/run_docker.sh | T15 NOT_RUN |
 | 14-16 | 18 | G06 | docker/compose.yaml | T16 NOT_RUN |
@@ -32,3 +32,5 @@ G02 Code 14-6 actual CPU comparison: compare_backends.py and backend_comparison.
 G03 actual L2: ch14_simulation/worlds/semantic_rgbd.sdf and scripts/g03_gazebo_ci.sh, 13/13 evaluable semantic/3D frames. CPU scope only; no release or L3 promotion.
 
 G04 canonical parameters.py, model_slot.py, ch14_ai_interfaces/srv/SwapModel.srv, installed YAML. Actual T09–T12 CPU ORT scope 45755020128; G04 launch node yolo_detector_node, legacy G03 direct node/name maintained. /diagnostics and debug topic completion G05; GPU/WSL2 NOT_RUN.
+
+G05: canonical ch14_ai_common/profiler.py, ch14_performance_monitor/monitor_node.py, scripts/g05_actual_compare.py; actual CPU benchmark and manuscript table G05_EXECUTION_REPORT_KO.md. G04 historical PASS retained; latest regression shutdown HOLD 45758721305. No overall release promotion.
