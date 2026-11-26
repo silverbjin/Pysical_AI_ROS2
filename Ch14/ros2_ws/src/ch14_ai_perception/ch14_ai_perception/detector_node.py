@@ -37,6 +37,7 @@ class Frame:
     image:np.ndarray
     intr:object=None
     depth:object=None
+    oldest_stamp:int=0
 
 class Detector(Node):
     def __init__(self):
@@ -51,7 +52,7 @@ class Detector(Node):
         self.p=p;self.bridge=CvBridge();self.count=Counter();self.last_status="STARTING";self.last_age=None
         self.guard=Freshness(self.get_parameter("use_sim_time").value)
         self.last_published=0;self.pause_latched=False;self.heartbeat_ns=None
-        self.tf=Buffer();self.listener=TransformListener(self.tf,self)
+        self.tf=Buffer(node=self);self.listener=TransformListener(self.tf,self)
         if p["backend"]=="ort":self.backend=OrtBackend(Path(p["onnx"]),p["model_sha256"],p["threads"])
         else:
             from ch14_ai_common.ov_backend import OpenVinoBackend
@@ -102,9 +103,9 @@ class Detector(Node):
         for msg in (depth,info):
             reason=self.guard.check(ns(msg.header),now,wall,self.guard.epoch)
             if reason:self.invalidate(reason);return
-        self.receive(rgb,intr,z)
+        self.receive(rgb,intr,z,min(ns(m.header) for m in (rgb,depth,info)))
 
-    def receive(self,msg,intr=None,depth=None):
+    def receive(self,msg,intr=None,depth=None,oldest_stamp=None):
         self.count["callbacks"]+=1
         now,wall=self.clock();stamp=ns(msg.header)
         reason=self.guard.accept(stamp,now,wall)
@@ -115,7 +116,7 @@ class Detector(Node):
             if image.shape!=(msg.height,msg.width,3):raise ValueError("RGB_SHAPE")
         except Exception:
             self.invalidate("INVALID_RGB");return
-        frame=Frame(msg.header,stamp,self.guard.epoch,image,intr,depth)
+        frame=Frame(msg.header,stamp,self.guard.epoch,image,intr,depth,oldest_stamp or stamp)
         self.count["accepted"]+=1
         if self.slot:self.slot.put(frame)
         else:
@@ -139,7 +140,7 @@ class Detector(Node):
 
     def emit(self,result):
         frame,payload,error=result;now,wall=self.clock()
-        reason=self.guard.check(frame.stamp,now,wall,frame.epoch)
+        reason=self.guard.check(frame.oldest_stamp,now,wall,frame.epoch)
         if reason or frame.stamp<=self.last_published:
             self.count[reason or "RESULT_OUT_OF_ORDER"]+=1;return
         if error:self.count["INFERENCE_ERROR"]+=1;self.last_status="INFERENCE_ERROR";return
@@ -173,7 +174,7 @@ class Detector(Node):
         ann=self.bridge.cv2_to_imgmsg(annotated,encoding="bgr8") if annotated is not None else None
         if ann is not None:ann.header=frame.header
         # Final freshness check after geometry/annotation work, not only inference.
-        now,wall=self.clock();reason=self.guard.check(frame.stamp,now,wall,frame.epoch)
+        now,wall=self.clock();reason=self.guard.check(frame.oldest_stamp,now,wall,frame.epoch)
         if reason:self.count[reason]+=1;return
         self.dets.publish(msg)
         if ann is not None:self.annot.publish(ann)

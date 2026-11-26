@@ -1,0 +1,55 @@
+name: Ch14 G03 asynchronous RGB-D ROS DDS
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - 'Ch14/ros2_ws/src/ch14_ai_perception/**'
+      - 'Ch14/scripts/g03_ros*'
+      - 'Ch14/tests/test_g03_core.py'
+      - '.github/workflows/ch14-g03.yml'
+permissions:
+  contents: read
+concurrency:
+  group: ch14-g03-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  ros-dds:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Static and one-image asset preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-g03-evidence "$RUNNER_TEMP/ch14-fixture"
+          echo "$GITHUB_SHA" > ch14-g03-evidence/source-sha.txt
+          python3 -m compileall -q Ch14/ros2_ws/src/ch14_ai_perception Ch14/scripts/g03_ros_dds_probe.py
+          bash -n Ch14/scripts/g03_ros_ci.sh
+          curl -fsSL --proto '=https' --proto-redir '=https' --connect-timeout 15 --max-time 60 -o "$RUNNER_TEMP/ch14-fixture/000000455085.jpg" https://huggingface.co/datasets/merve/coco/resolve/9e50abcdc1361852f34841af4939cbcd2d37c92f/val2017/000000455085.jpg
+          echo "022d2068d525b03a753287c333c09026fe22b9ae6d8071d4e8c757cbed32bdc4  $RUNNER_TEMP/ch14-fixture/000000455085.jpg" | sha256sum -c - | tee ch14-g03-evidence/fixture-check.txt
+      - uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - name: Real ROS DDS test in pinned Jazzy container
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-wheelhouse
+          docker run --rm -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g03-evidence:/evidence" -v "$RUNNER_TEMP/ch14-fixture:/fixture:ro" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g03_ros_ci.sh 2>&1 | tee ch14-g03-evidence/run.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch14-g03-evidence
+          cd ch14-g03-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch14-g03-ros-dds
+          path: ch14-g03-evidence/
+          retention-days: 30
