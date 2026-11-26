@@ -9,6 +9,8 @@ on:
       - 'Ch14/python/ov_inference.py'
       - 'Ch14/requirements/openvino.lock.txt'
       - 'Ch14/scripts/g02_cpu_compare.sh'
+      - 'Ch14/scripts/verify_openvino_wheels.py'
+      - 'Ch14/scripts/test_verify_openvino_wheels.py'
       - 'Ch14/tests/test_g02_comparison.py'
       - '.github/workflows/ch14-g02.yml'
 permissions:
@@ -33,6 +35,7 @@ jobs:
           echo "$GITHUB_SHA" > ch14-g02-evidence/source-sha.txt
           python3 -m compileall -q Ch14/python Ch14/ros2_ws/src/ch14_ai_common
           bash -n Ch14/scripts/g02_cpu_compare.sh
+          python3 Ch14/scripts/test_verify_openvino_wheels.py
           python3 Ch14/scripts/g01_select_coco.py "$RUNNER_TEMP/ch14-coco" 2>&1 | tee ch14-g02-evidence/fixture-preflight.log
       - uses: actions/cache/restore@v4
         with:

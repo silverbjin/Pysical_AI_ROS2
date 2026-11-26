@@ -28,10 +28,7 @@ stage=openvino_overlay
 mkdir -p /ovwheelhouse
 ovlock=/ch14/requirements/openvino.lock.txt
 python -m pip download --only-binary=:all: --require-hashes --no-deps --dest /ovwheelhouse -r "$ovlock"
-python /ch14/scripts/g00_make_wheel_lock.py /ovwheelhouse /tmp
-sort "$ovlock" > /tmp/expected-ov.lock
-sort /tmp/cpu.candidate.lock.txt > /tmp/actual-ov.lock
-cmp /tmp/expected-ov.lock /tmp/actual-ov.lock
+python /ch14/scripts/verify_openvino_wheels.py "$ovlock" /ovwheelhouse "$out/openvino-wheel-manifest.json"
 python -m pip inspect > "$out/base-pip-inspect.json"
 python /ch14/scripts/validate_dependency_graph.py "$out/base-pip-inspect.json" /ovwheelhouse "$out/openvino-dependency-graph.json"
 python -m pip install --no-index --find-links /ovwheelhouse --require-hashes --no-deps -r "$ovlock"
