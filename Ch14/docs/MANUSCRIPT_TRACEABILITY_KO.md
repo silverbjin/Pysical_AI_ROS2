@@ -19,9 +19,9 @@ S2 26쪽, SHA256 0ca3425f57c3608a5078edb5a8c708dc1d734459072532f9954634695df2b3a
 | 14-14 | 17 | G06 | docker/Dockerfile.cpu | T14 actual source-free CPU image/4 packages/ORT 45761633396 |
 | 14-15 | 17 | G06 | docker/run_docker.sh | T15 actual standalone DDS/replay/negative domain/exit 45761633396 |
 | 14-16 | 18 | G06 | docker/compose.yaml | T16 actual three-service compose bag/AI/monitor and cleanup 45761633396 |
-| 14-17 | 19–20 | G07 | python/export_rl_policy.py | T17 NOT_RUN |
-| 14-18 | 20–21 | G07 | python/observation_builder.py | T18 NOT_RUN |
-| 14-19 | 21–22 | G08 | python/rl_controller.py | T19 NOT_RUN |
+| 14-17 | 19–20 | G07 | python/export_rl_policy.py | T17 actual SMOKE_ONLY scoped 45763347165 |
+| 14-18 | 20–21 | G07 | python/observation_builder.py | T18 actual ROS DDS shadow scoped 45763347165 |
+| 14-19 | 21–22 | G08 | python/rl_controller.py | T19 actual SMOKE_ONLY scoped: MuJoCo 45787876247, Gazebo 45799511462, protection 45799639451, clock DDS 45799888629 |
 
 차이: 14-7 예시에서 모델 생성은 노드 init이지만 GPU worker 자원 수명은 worker 내에서 관리; threshold snapshot 단일 읽기. 14-8 ATS slop은 공간 정렬 보장 아님. 14-9 중복 선언 금지. 14-11 후보 warmup 외 hash/클래스/계약·rollback·terminal request 상태 추가. 14-12/14-14/14-16 my_robot_ai_pkg → ch14_ai_perception, compose 명칭 정리. 14-17 shape 단독 검사보다 원본 load_bundle 선검증. 14-18/19 발췌는 기존 보호 계약과 결합. 14.6.6 Q6 예시 값 실측 아님. GPU 선택, 실제 HW 제외. T19 actual joint feedback, shadow/hold 별도 검증. 구현·실측 시 표 갱신.
 
@@ -40,3 +40,5 @@ G06 canonical docker/Dockerfile.cpu, entrypoint.sh, build_cpu.sh, run_docker.sh,
 G07 code14-17 python/export_rl_policy.py → ch14_rl_deployment/export_policy.py and policy.py; code14-18 observation_builder.py → observation_adapter.py and exact vendor/ch12 ros_core. Actual 45763347165 one SMOKE_ONLY training, 136 FP32 parity, actual ROS shadow DDS240/command0, T17/T18 scoped PASS. No original trained checkpoint/physical command or walking claim. T19 G08 pending.
 
 G08 code14-19 canonical Ch14/python/rl_controller.py → installed ch14_rl_deployment/rl_controller.py. MuJoCo normal/pause actual 45787876247 SCOPED_PASS; actual 400/400 DDS and feedback. Gazebo and protection candidates submitted, full T19 pending. No walking quality or L3 claim.
+
+G08 final: T19 SCOPED_PASS, actual MuJoCo and Gazebo ROS closed-loop normal cases; MuJoCo 5 negative checks and synthetic clock-reset DDS. 400/399 complete target-feedback pairs, 50Hz each. Gazebo source-time latency not established; no walking quality or L3 promotion. Earlier pending statements are historical checkpoints.
