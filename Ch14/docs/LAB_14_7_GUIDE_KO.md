@@ -1,4 +1,7 @@
 # 14.7 CPU Docker 배포 실습 — T14~T16
+
+> 출고 상태(2026-11-26): [최신 인수 원장](CH14_ACCEPTANCE_LEDGER.md), [출판 QA](reports/G09_RELEASE_CLOSEOUT_QA_20261126_KO.md) 우선. 아래 기존 checkpoint는 역사적 증거이며, G09 WSL2 L3는 14.9의 네 선택 경로에만 해당합니다. 전체 출고 HOLD, 권리 및 범위 승인 필요. 실제 실행 PIN은 G09_WSL2_OWNER_ACCEPTANCE_KO.md를 참조합니다.
+
 ## 0. 범위와 사전 준비
 Ubuntu24.04 ROS Jazzy 기반 Linux Docker Engine 검수. Windows는 WSL2 Docker Desktop 또는 WSL 내부 Engine 중 하나만 사용합니다. Docker Desktop의 host network 지원/설정은 별도 검증해야 합니다. GPU나 실제 장치 전달 불필요. CPU image는 Gazebo 실행용 이미지가 아니며, 설치된 replay 패키지 4개와 rosbag2/ORT/CycloneDDS를 사용합니다. 모델/fixture는 외부 권리 확인 후 로컬에서 확보하며 배포 이미지나 저장소에 넣지 않습니다. 모든 명령은 검증된 source의 Ch14에서 실행합니다. G06 CI 결과는 인수 원장 참조; WSL2 owner NOT_RUN.
 ## 1. T14 — CPU 이미지 빌드

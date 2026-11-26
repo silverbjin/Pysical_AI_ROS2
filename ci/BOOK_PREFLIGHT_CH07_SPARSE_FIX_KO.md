@@ -1,0 +1,6 @@
+# Book Lab Acceptance: Ch07 sparse checkout dependency
+2026-11-26 | User authorized independent shared CI correction during Ch14 release.
+
+RED: PR #206 run 45825072895 job 139927013907, unittest discovery ran 9 tests and failed importing test_ch07_77_target_gate (ModuleNotFoundError: vision_basics). Prior run 45817052187 same boundary. The test inserts Ch07/ros2_ws/src/vision_basics into sys.path, then imports vision_basics.mission_target_gate. Main has both package __init__.py (empty) and mission_target_gate.py (stdlib dataclasses/math only); preflight checked out Ch07 README/docs, not these two source files. No evidence of ROS runtime regression.
+
+Correction: add exactly those two files to non-cone sparse checkout in document-preflight. Keep all unit tests, guide audit and evidence matrix, existing runtime pilot conditions, no skip, no application changes. No Ch14 source or immutable owner SHA changes. No rerun of physical simulation. Scope: shared document-preflight dependency only. GREEN requires actual Validator unit tests, guide inventory/link and matrix success on independent PR; record actual run separately before merge. G07 physical limitations and Ch14 publication holds unaffected.

@@ -1,4 +1,7 @@
 # 14.6 성능 모니터링 실습 — 실제 CPU 검증 범위
+
+> 출고 상태(2026-11-26): [최신 인수 원장](CH14_ACCEPTANCE_LEDGER.md), [출판 QA](reports/G09_RELEASE_CLOSEOUT_QA_20261126_KO.md) 우선. 아래 기존 checkpoint는 역사적 증거이며, G09 WSL2 L3는 14.9의 네 선택 경로에만 해당합니다. 전체 출고 HOLD, 권리 및 범위 승인 필요. 실제 실행 PIN은 G09_WSL2_OWNER_ACCEPTANCE_KO.md를 참조합니다.
+
 코드14-13 `python/profiler.py` → `ch14_ai_common/profiler.py`. 단조 벽시계는 처리시간, ROS clock은 메시지 stamp age, RTF는 sim/wall 비율입니다. `published()`는 실제 성공 발행 후 호출. Bounded history와 fake-clock 회귀에서 NaN/역행을 거부합니다.
 
 ## 준비

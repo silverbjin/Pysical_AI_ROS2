@@ -1,4 +1,7 @@
 # 14.8 강화학습 정책 배포 실습 — G07 (G08 물리 제어 별도)
+
+> 출고 상태(2026-11-26): [최신 인수 원장](CH14_ACCEPTANCE_LEDGER.md), [출판 QA](reports/G09_RELEASE_CLOSEOUT_QA_20261126_KO.md) 우선. 아래 기존 checkpoint는 역사적 증거이며, G09 WSL2 L3는 14.9의 네 선택 경로에만 해당합니다. 전체 출고 HOLD, 권리 및 범위 승인 필요. 실제 실행 PIN은 G09_WSL2_OWNER_ACCEPTANCE_KO.md를 참조합니다.
+
 ## 0. 실습 목표
 Ch12 locomotion-v1-48의 PPO Actor를 CPU ONNX로 변환하고 동일한 관측에 대한 12차원 행동을 비교한다. 48차원이라는 숫자가 같아도 goal/avoidance 정책과 섞지 않는다. VecNormalize 없음. G07은 Shadow, 실제 관절 명령 publisher를 생성하지 않는다. 안정적 보행은 별도 검수이며 짧은 smoke 정책을 완성 보행 모델로 부르지 않는다.
 ## 1. 실행 환경

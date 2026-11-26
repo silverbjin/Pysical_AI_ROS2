@@ -1,4 +1,7 @@
 # 14.5 파라미터 및 Hot Swap 실습 (CPU ORT 실제 검증 완료)
+
+> 출고 상태(2026-11-26): [최신 인수 원장](CH14_ACCEPTANCE_LEDGER.md), [출판 QA](reports/G09_RELEASE_CLOSEOUT_QA_20261126_KO.md) 우선. 아래 기존 checkpoint는 역사적 증거이며, G09 WSL2 L3는 14.9의 네 선택 경로에만 해당합니다. 전체 출고 HOLD, 권리 및 범위 승인 필요. 실제 실행 PIN은 G09_WSL2_OWNER_ACCEPTANCE_KO.md를 참조합니다.
+
 G03 기반 CPU ORT. 모델 파일/레지스트리는 절대 경로, publisher PT 해시와 권리 확인 후 로컬에서 생성; 모델/참조 tensor 재배포 금지. `python scripts/g04_prepare_registry.py --cache /absolute/models --output /absolute/registry --manifest models/model_manifest.json --receipt /absolute/registry-receipt.json`. 실제 설치 (Ch14/ros2_ws): `python "$(command -v colcon)" build --packages-select ch14_ai_common ch14_ai_interfaces ch14_ai_perception ch14_simulation --cmake-args -DPython3_EXECUTABLE="$(command -v python)"` (검증된 venv 사용). `source install/setup.bash`. 
 ```bash
 ros2 launch ch14_ai_perception robot_ai_system.launch.py profile:=replay \

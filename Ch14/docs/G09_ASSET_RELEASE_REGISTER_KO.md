@@ -18,3 +18,10 @@ Historic model_manifest status REMOTE_HASH_CONFIRMED_NOT_DOWNLOADED and original
 G07 original archive downloaded and ZIP + 23 internal hashes checked. Keep exact bytes in authorized local/private backup before retention expires. GitHub Actions artifact links expire; do not assume perpetual retrieval. No model ZIP committed or new public artifact. If missing/expired/corrupt, stop with BLOCKED (no automatic retraining). Store original archive alongside SHA256 separately from reproducibility logs. G09 owner wrapper extracts only after exact ZIP SHA, verifies original 11 payload hashes with existing g07_verify_reuse.py. A new ZIP packaging the same files is not the original accepted ZIP.
 
 2026-11-26 owner actual intake: 11 required G07 payloads verified, original ZIP excluded from owner tar. No release-rights approval follows from successful owner execution or asset terms acknowledgment. Retain original owner tar and sidecar privately; only redacted summary and hash in Git. Asset register remains HOLD.
+
+## 출판 권리 재확인 (2026-11-26; 검토 자료, 법률 승인 아님)
+- Ultralytics 공식 https://www.ultralytics.com/license 및 https://www.ultralytics.com/legal/terms-of-service : AGPL-3.0/Enterprise 조건 구분. 다운로드 시점 동의나 원본 바이너리 미포함만으로 통합 코드의 배포 조건이 자동 충족되지 않는다. 출판사와 코드 라이선스/소스 제공/notice 및 필요한 별도 계약을 검토한다.
+- COCO 공식 https://cocodataset.org/dataset/termsofuse.htm : annotation CC BY 4.0, 이미지 권리는 별도. fixed 20 이미지 license IDs 4/5 유지; 원본별 Flickr attribution, license version, 수정 여부 확인 전 원본 이미지/렌더 표본을 출판물에 복제하지 않는다.
+- MakeHuman 공식 https://www.makehumancommunity.org/about/license.html : core assets CC0 안내. 실제 person_standing은 고정 osrf/gazebo_models revision 및 CC BY 3.0 source-level 표시; author Marina Kollmitz, 모델과 각 texture의 권리/attribution 확인 필요. CC0 안내만으로 특정 옛 자산의 모든 권리를 확정하지 않는다.
+- root/Ch11/Ch12/Ch14 최상위 목록에서 독립 LICENSE/COPYING/NOTICE 파일명을 확인하지 못함(하위 및 외부 원본 전체 권리 감사 아님). vendor manifests OWNER_RELEASE_REVIEW_PENDING 유지. 저자/출판사 권리와 third-party notices 확인 필요.
+- 원본 G07 모델 ZIP의 장기 private 보존 여부는 사용자 확인 필요. 배포/재학습 금지 유지.

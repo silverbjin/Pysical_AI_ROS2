@@ -37,7 +37,9 @@ ZIP을 복사하고 외부 자산 사용 조건에 동의한 경우, WSL Ubuntu 
 마지막 `CH14_OWNER_EVIDENCE=/home/.../evidence.tar.gz`와 같은 경로의 .sha256을 제출. 실제 출력 경로로 `ARCHIVE=/absolute/.../evidence.tar.gz; sha256sum -c "$ARCHIVE.sha256"; tar -tzf "$ARCHIVE" | head -30`. 성공/실패/취소 모두 원본 제출. owner-result.json의 status, exit_code, stage, source_sha==actual_source_sha, level=WSL2_OWNER_REVIEW_REQUIRED를 검토한다. Exit0은 요청 범위만 성공, 2 BLOCKED, 130 취소, 1 FAIL. 스크립트 다운로드 이전 실패 등 archive가 없는 경우 터미널 로그 제출. 실제 L3 승격은 원본 검토 후만 가능. 사용자 인수 준비와 인수 완료는 구분한다.
 
 ## 6. 배포 제한
-G01 절대 의미 기준, 모델/외부 자산 권리, 일반 Gazebo 종료, legacy Ch07 sparse preflight, 원고 전문 QA, 모든 절 자동 실행/GUI/native ROS 미검증. WSL2 L3는 지정된 네 경로에 한해 PASS. main merge 없음. 
+G01 절대 의미 기준, 모델/외부 자산 권리, 일반 Gazebo 종료, 최종 합성 원고 QA, 모든 절 자동 실행/GUI/native ROS 미검증. WSL2 L3는 지정된 네 경로에 한해 PASS. main merge 없음. 
 
 ## 7. 실제 인수 결과 (2026-11-26)
 기존 사용자는 재실행하지 않는다. [보고서](reports/G09_WSL2_OWNER_ACCEPTANCE_REVIEW_20261126_KO.md) 및 [정제 증거](../evidence/g09_wsl2_owner_acceptance_20261126.json): 82/82 해시, source exact, --check all, 4/4, exit0. 신규 독자는 권리/자산 조건과 동일 PIN을 따르며 본 기록은 해당 환경의 제한적 인수이지 모든 PC에 대한 보증이 아니다. 공개 출고 HOLD.
+
+공용 legacy Ch07 sparse preflight는 독립 PR #207/run45828900636으로 수정 및 main 병합 완료. Ch14 PR 검사 상태는 출고 결정서 참조. 기존 사용자 성공 PIN 재실행 불필요.

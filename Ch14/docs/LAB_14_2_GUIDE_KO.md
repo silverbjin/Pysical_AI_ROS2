@@ -1,5 +1,8 @@
 # 14.2 실습 가이드 — 개발 중인 14-3 독립 경로
 
+> 출고 상태(2026-11-26): [최신 인수 원장](CH14_ACCEPTANCE_LEDGER.md), [출판 QA](reports/G09_RELEASE_CLOSEOUT_QA_20261126_KO.md) 우선. 아래 기존 checkpoint는 역사적 증거이며, G09 WSL2 L3는 14.9의 네 선택 경로에만 해당합니다. 전체 출고 HOLD, 권리 및 범위 승인 필요. 실제 실행 PIN은 G09_WSL2_OWNER_ACCEPTANCE_KO.md를 참조합니다.
+
+
 목표: PyTorch의 계산 그래프를 ONNX로 변환하고 입력/출력 계약 및 수치 동등성을 이해한다. 이 예제는 미학습 MLP이므로 로봇팔 제어에 사용하지 않는다.
 
 ```mermaid

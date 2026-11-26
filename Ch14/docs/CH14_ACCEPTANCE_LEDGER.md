@@ -16,3 +16,5 @@
 GPU_OPTIONAL: NOT_RUN. Ch12 역사적 PASS는 Ch14에 전이하지 않음. CI ≠ Owner L3. 승인 전 main 병합 금지.
 
 G09 L3 is limited to the four owner entrypoints at the immutable PIN. Do not promote historical G00–G08 L3 rows or full release; source and original automatic status remain unchanged.
+
+2026-11-26: shared legacy document-preflight RED corrected independently (PR #207, run45828900636 SUCCESS 14/14, Ch07 6/6, guide inventory and evidence matrix PASS; main 4255f810524c177db724548bb74d16b20fda64e5). Existing Ch07 §7.7 BLOCKED unchanged. Ch14 feature synchronization and PR-specific check separately tracked. No G00–G09 runtime promotion, no new training or owner repeat. Full release HOLD for scope/rights/publication approval.
