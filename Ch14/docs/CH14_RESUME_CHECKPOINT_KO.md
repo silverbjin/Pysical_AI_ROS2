@@ -17,3 +17,6 @@
 4. G02~G09는 명세의 의존성과 완료 조건대로. 새로운 증거 없는 반복, 범용 로봇 HW/파지/장기 학습 확대 금지. L3 최종 인수는 owner WSL2만.
 
 이 checkpoint는 완료 선언이 아니다. Gate별 실제 결과 보고서와 commit으로 갱신할 것. main 병합 금지.
+
+## 2026-11-26 갱신 — CPU profile 실제 PASS
+이전 checkpoint를 역사로 유지. 현재 우선 근거 https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45742206902, source 1228072c5679b608756bfbd578b2c56cbcfe32e8, artifact 15081503468; 원본 ZIP/internal 25/25 SHA 확인. CPU profile PASS, T03 actual 100 input PASS, 12 foundation PASS. 45-wheel cpu.lock.txt 승격(artifact exact SHA), setuptools 68.1.2 inherited; graph 197/182 zero. 실패 45739828134 원본 9/9 확인. 다음: T01/02/04 actual YOLO가 남음; publisher weight expected SHA는 확인했으나 다운로드/권리/평가 fixture 미확정. 기존 CPU/T03 재실행 불필요(관련 변경 시에만). G00 overall BLOCKED, G01 scoped; G02~09 NOT_STARTED. Main 및 기존 챕터 변경 금지.
