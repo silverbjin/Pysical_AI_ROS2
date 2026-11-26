@@ -19,3 +19,6 @@ CPU 기본, GPU 선택, 실제 로봇 HW 제외. 개발 중이며 배포용 실�
 
 - [14.6 G05 실습](docs/LAB_14_6_GUIDE_KO.md) · [실제 60초 A/B/C 보고서](docs/reports/G05_EXECUTION_REPORT_KO.md)
 - [G06 다음 작업 프리뷰](docs/G06_NEXT_WORK_PREVIEW_KO.md)
+
+- [14.7 G06 CPU Docker 실습](docs/LAB_14_7_GUIDE_KO.md) · [실제 배포 검수 보고서](docs/reports/G06_EXECUTION_REPORT_KO.md)
+- [G07 다음 작업 프리뷰](docs/G07_NEXT_WORK_PREVIEW_KO.md)
