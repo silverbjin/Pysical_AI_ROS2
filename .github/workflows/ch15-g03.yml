@@ -1,0 +1,57 @@
+name: Ch15 G03 async behavior tree and action boundaries
+on:
+  push:
+    branches: [feat/ch15-mission-engineering]
+    paths:
+      - 'Ch15/ros2_ws/src/ch15_mission/**'
+      - 'Ch15/tests/g03*'
+      - 'Ch15/tests/test_action_supervisor.py'
+      - 'Ch15/tests/test_target_contract.py'
+      - 'Ch15/tests/test_mission_tree.py'
+      - 'Ch15/scripts/g03_ci.sh'
+      - '.github/workflows/ch15-g03.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ch15-g03-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  g03:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: Ch15
+          persist-credentials: false
+      - name: Prepare baseline RED witness
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ch15-red/Ch15/tests" ch15-g03-evidence
+          git archive 1501416d5e399ee308c4ba38b6e4cb78c8e6d185 Ch15/ros2_ws/src/ch15_mission | tar -xf - -C "$RUNNER_TEMP/ch15-red"
+          cp Ch15/tests/test_action_supervisor.py "$RUNNER_TEMP/ch15-red/Ch15/tests/"
+          git rev-parse HEAD > ch15-g03-evidence/source-sha.txt
+      - name: Pinned CPU container, RED/GREEN, actual DDS
+        shell: bash
+        run: |
+          set -euo pipefail
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker pull "$image"
+          docker image inspect "$image" > ch15-g03-evidence/image.json
+          docker run --rm --init -v "$PWD/Ch15:/ch15:ro" -v "$RUNNER_TEMP/ch15-red:/red:ro" -v "$PWD/ch15-g03-evidence:/evidence" "$image" bash /ch15/scripts/g03_ci.sh 2>&1 | tee ch15-g03-evidence/run.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch15-g03-evidence
+          cd ch15-g03-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g03-evidence
+          path: ch15-g03-evidence/
+          if-no-files-found: error
+          retention-days: 30

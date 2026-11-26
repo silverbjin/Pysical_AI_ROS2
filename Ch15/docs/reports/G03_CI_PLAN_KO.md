@@ -1,0 +1,2 @@
+# G03 실제 검수 계획
+G02 PASS 재사용. G03 대상 pure tests (10 Action, 3 target, 3 tree tests), 이전 SHA에서 Action module 부재 RED, 설치 4 package, 실제 8 Action boundary fixture, actual DDS full mock mission 1회, owned exit 및 JSONL/tick CSV. 별도 domain, 고정 image, 15s readiness/60s mission, tick p95<=20ms/max<=100ms. 실제 취소 service abnormal path 및 T07 DDS invalid injection은 별도 경계로 남음; 결과 확인 전 PASS 금지. 0.3s zero dwell은 신규 mock 교육 fixture이며 physical settle 계약과 무관. G03 reset은 정상 terminal/zero/fresh/no-held/no-latch만 허용, 실제 latch 해제는 G08. Current scope mock; no physical claim.

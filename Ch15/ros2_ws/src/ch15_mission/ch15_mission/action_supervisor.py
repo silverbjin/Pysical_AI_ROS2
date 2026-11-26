@@ -71,6 +71,15 @@ class ActionSupervisor:
                 self.event(a,'GOAL_ACCEPTED')
                 a.result=h.get_result_async()
                 if a.state!='FAILED':a.state='ACCEPTED'
+            if not a.result_read and now>=a.deadline and a.cancel_at is None and (a.result is None or not a.result.done()):
+                a.timed_out=True;self.request_cancel(a.request_id)
+            if a.cancel_at is not None and a.handle is not None and a.accepted_uuid==a.requested_uuid and a.cancel is None and not a.result_read:
+                a.cancel=a.handle.cancel_goal_async()
+            if a.cancel is not None and a.cancel.done() and not a.ack_read:
+                a.ack_read=True
+                ids=[bytes(x.goal_id.uuid).hex() for x in a.cancel.result().goals_canceling]
+                self.event(a,'CANCEL_ACK',matches=a.accepted_uuid in ids,ids=ids)
+                if a.accepted_uuid not in ids and not a.result_read:self.fail(a,'cancel_ack_mismatch')
             if a.result is not None and a.result.done() and not a.result_read:
                 result=a.result.result();a.result_read=True;a.terminal_status=int(result.status)
                 if a.terminal_status not in (4,5,6):
@@ -84,18 +93,10 @@ class ActionSupervisor:
                     self.fail(a,'terminal_without_verified_success',True);return
                 a.state='VERIFYING'
             if a.state=='VERIFYING':
+                if a.cancel_at is not None:self.fail(a,'canceled_during_verification',True);return
                 if self.witness(a.accepted_uuid):
                     self.finish(a,'SUCCEEDED_VERIFIED');return
                 if now>=a.deadline:self.fail(a,'missing_witness',True);return
-            elif not a.result_read and now>=a.deadline and a.cancel_at is None:
-                a.timed_out=True;self.request_cancel(a.request_id)
-            if a.cancel_at is not None and a.handle is not None and a.accepted_uuid==a.requested_uuid and a.cancel is None and not a.result_read:
-                a.cancel=a.handle.cancel_goal_async()
-            if a.cancel is not None and a.cancel.done() and not a.ack_read:
-                a.ack_read=True
-                ids=[bytes(x.goal_id.uuid).hex() for x in a.cancel.result().goals_canceling]
-                self.event(a,'CANCEL_ACK',matches=a.accepted_uuid in ids,ids=ids)
-                if a.accepted_uuid not in ids and not a.result_read:self.fail(a,'cancel_ack_mismatch')
             if a.cancel_at is not None and now-a.cancel_at>=self.cancel_budget and not a.resolved and a.state!='FAILED':
                 self.fail(a,'cancel_terminal_unconfirmed')
         except Exception as exc:
