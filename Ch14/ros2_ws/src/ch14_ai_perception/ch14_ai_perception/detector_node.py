@@ -233,7 +233,7 @@ class Detector(Node):
         now,wall=self.clock();reason=self.guard.check(frame.oldest_stamp,now,wall,frame.epoch)
         if reason:self.count[reason]+=1;return
         if self.p["trace_inputs"]:
-            print("CH14_EMIT",json.dumps(dict(stamp=frame.stamp,oldest_stamp=frame.oldest_stamp,ros_ns=now,age_ms=(now-frame.stamp)/1e6,oldest_age_ms=(now-frame.oldest_stamp)/1e6,epoch=frame.epoch,target=point is not None,labels=[NAMES[d.class_id] for d in ds],detection_count=len(ds),model_id=self.models.active.model_id,model_sha256=self.models.active.sha256,generation=frame.generation,confidence_threshold=frame.thresholds.confidence,iou_threshold=frame.thresholds.iou)),flush=True)
+            print("CH14_EMIT",json.dumps(dict(stamp=frame.stamp,oldest_stamp=frame.oldest_stamp,ros_ns=now,wall_ns=wall,age_ms=(now-frame.stamp)/1e6,oldest_age_ms=(now-frame.oldest_stamp)/1e6,epoch=frame.epoch,target=point is not None,labels=[NAMES[d.class_id] for d in ds],detection_count=len(ds),model_id=self.models.active.model_id,model_sha256=self.models.active.sha256,generation=frame.generation,confidence_threshold=frame.thresholds.confidence,iou_threshold=frame.thresholds.iou)),flush=True)
         self.dets.publish(msg)
         if ann is not None:self.annot.publish(ann)
         if point is not None:self.target.publish(point);self.count["targets"]+=1

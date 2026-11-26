@@ -42,7 +42,7 @@ export QT_QPA_PLATFORM=offscreen EGL_PLATFORM=surfaceless LIBGL_ALWAYS_SOFTWARE=
 unset DISPLAY
 stage=environment
 apt-get update -qq
-apt-get install -y --no-install-recommends python3-venv python3-pip ros-jazzy-cv-bridge ros-jazzy-vision-msgs ros-jazzy-message-filters ros-jazzy-tf2-ros-py ros-jazzy-diagnostic-msgs ros-jazzy-rosgraph-msgs ros-jazzy-ros-gz-bridge ros-jazzy-ros-gz-sim ros-jazzy-tf2-ros >/dev/null
+apt-get install -y --no-install-recommends python3-venv python3-pip ros-jazzy-cv-bridge ros-jazzy-vision-msgs ros-jazzy-message-filters ros-jazzy-tf2-ros-py ros-jazzy-diagnostic-msgs ros-jazzy-rosgraph-msgs ros-jazzy-rosidl-default-generators ros-jazzy-rosidl-default-runtime ros-jazzy-ament-cmake ros-jazzy-ros-gz-bridge ros-jazzy-ros-gz-sim ros-jazzy-tf2-ros >/dev/null
 python3 -m venv --system-site-packages /tmp/ch14-venv
 source /tmp/ch14-venv/bin/activate
 set +u
@@ -62,9 +62,9 @@ python -m pip check
 export PYTHONPATH=/ch14/ros2_ws/src/ch14_ai_common:${PYTHONPATH:-}
 stage=colcon
 mkdir -p /tmp/ch14-build/src
-cp -a /ch14/ros2_ws/src/{ch14_ai_common,ch14_ai_perception,ch14_simulation} /tmp/ch14-build/src/
+cp -a /ch14/ros2_ws/src/{ch14_ai_common,ch14_ai_interfaces,ch14_ai_perception,ch14_simulation} /tmp/ch14-build/src/
 cd /tmp/ch14-build
-python "$(command -v colcon)" build --packages-select ch14_ai_common ch14_ai_perception ch14_simulation 2>&1 | tee "$out/colcon-build.log"
+python "$(command -v colcon)" build --packages-select ch14_ai_common ch14_ai_interfaces ch14_ai_perception ch14_simulation 2>&1 | tee "$out/colcon-build.log"
 unset PYTHONPATH
 set +u
 source /opt/ros/jazzy/setup.bash

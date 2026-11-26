@@ -6,7 +6,7 @@ trap 'rc=$?; printf "{\"status\":\"%s\",\"stage\":\"%s\",\"exit_code\":%d,\"scop
 export DEBIAN_FRONTEND=noninteractive PYTHONNOUSERSITE=1 OMP_NUM_THREADS=1 MPLBACKEND=Agg YOLO_CONFIG_DIR=/tmp/ch14-ultralytics ROS_DOMAIN_ID=71 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 stage=environment
 apt-get update -qq
-apt-get install -y --no-install-recommends python3-venv python3-pip ros-jazzy-cv-bridge ros-jazzy-vision-msgs ros-jazzy-message-filters ros-jazzy-tf2-ros-py ros-jazzy-diagnostic-msgs ros-jazzy-rosgraph-msgs >/dev/null
+apt-get install -y --no-install-recommends python3-venv python3-pip ros-jazzy-cv-bridge ros-jazzy-vision-msgs ros-jazzy-message-filters ros-jazzy-tf2-ros-py ros-jazzy-diagnostic-msgs ros-jazzy-rosgraph-msgs ros-jazzy-rosidl-default-generators ros-jazzy-rosidl-default-runtime ros-jazzy-ament-cmake >/dev/null
 python3 -m venv --system-site-packages /tmp/ch14-venv
 source /tmp/ch14-venv/bin/activate
 set +u
@@ -30,9 +30,9 @@ export PYTHONPATH=/ch14/ros2_ws/src/ch14_ai_perception:$PYTHONPATH
 python -m pytest -q -p no:cacheprovider tests/test_g03_core.py --junitxml="$out/core-tests.xml"
 stage=colcon
 mkdir -p /tmp/ch14-build/src
-cp -a /ch14/ros2_ws/src/ch14_ai_common /ch14/ros2_ws/src/ch14_ai_perception /tmp/ch14-build/src/
+cp -a /ch14/ros2_ws/src/ch14_ai_common /ch14/ros2_ws/src/ch14_ai_interfaces /ch14/ros2_ws/src/ch14_ai_perception /tmp/ch14-build/src/
 cd /tmp/ch14-build
-python "$(command -v colcon)" build --packages-select ch14_ai_common ch14_ai_perception 2>&1 | tee "$out/colcon-build.log"
+python "$(command -v colcon)" build --packages-select ch14_ai_common ch14_ai_interfaces ch14_ai_perception 2>&1 | tee "$out/colcon-build.log"
 unset PYTHONPATH
 set +u
 source /opt/ros/jazzy/setup.bash
