@@ -11,6 +11,7 @@ class NativeEdges(unittest.TestCase):
             p=Path(d);root=p/'native';root.mkdir();(p/'upstream-iit-locomanipulation-d010212').mkdir()
             approval=p/'approval.json';approval.write_text(json.dumps(dict(local_use_approved=True,redistribution=False,upstream_commit='a'*40,review_reference='fixture-only')))
             lock=dict(ch13=dict(upstream=dict(commit='a'*40),assets=[]))
+            native=root/'Ch13/dependencies/section_13_5_reuse.lock.json';native.parent.mkdir(parents=True);native.write_text(json.dumps(dict(upstream=dict(commit='a'*40),files=[])))
             with patch('ch15_adapters.ch13_basic_adapter.verify_source'),patch('ch15_adapters.ch13_basic_adapter.git',return_value='a'*40),patch('ch15_adapters.ch13_basic_adapter.verify_assets',return_value=94):
                 with self.assertRaisesRegex(ValueError,'SHARED_LOCK_MISSING'):authorize(root,lock,dict(base_sha='b'*40),approval)
                 (p/'ch13_reuse_engine.lock').touch()
