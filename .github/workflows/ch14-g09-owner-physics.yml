@@ -1,0 +1,110 @@
+name: Ch14 G09 pinned owner physical entrypoints
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - '.github/workflows/ch14-g09-owner-physics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ch14-g09-owner-physics-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  selected:
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [perception, mujoco, gazebo]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      OWNER_PIN: 6c458e345236b124c9aa60f65788f35cfed74e62
+      OWNER_CHECK: ${{ matrix.check }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 6c458e345236b124c9aa60f65788f35cfed74e62
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Prepare only required original inputs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-g09-physical-evidence ch14-wheelhouse
+          echo "$OWNER_PIN" > ch14-g09-physical-evidence/source-sha.txt
+          echo "$OWNER_CHECK" > ch14-g09-physical-evidence/check.txt
+          test "$(git rev-parse HEAD)" = "$OWNER_PIN"
+          curl --proto '=https' --proto-redir '=https' -fsSL --connect-timeout 15 --max-time 90 "https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/$OWNER_PIN/Ch14/scripts/bootstrap.sh" -o "$RUNNER_TEMP/ch14-bootstrap.sh"
+          cmp "$RUNNER_TEMP/ch14-bootstrap.sh" Ch14/scripts/bootstrap.sh
+          if [[ "$OWNER_CHECK" != perception ]]; then
+            curl --proto '=https' --proto-redir '=https' -fsSL --connect-timeout 15 --max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/silverbjin/Pysical_AI_ROS2/actions/artifacts/15090667475/zip" -o "$RUNNER_TEMP/g07-original.zip"
+            echo "c8defc1a154c3d0ec92ddd3a7fbd70f8d3b012dc21d375acde9f5c5f9be9641d  $RUNNER_TEMP/g07-original.zip" | sha256sum -c - | tee ch14-g09-physical-evidence/original-zip-check.txt
+          fi
+      - uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - name: Actual owner entrypoint on isolated Linux host
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/ch14-owner"
+          mv ch14-wheelhouse "$HOME/ch14-owner/wheelhouse"
+          args=(--profile cpu --headless --check "$OWNER_CHECK")
+          if [[ "$OWNER_CHECK" == perception ]]; then
+            # The historical evaluation was permitted; no new public redistribution.
+            # No GHCR login: prove owner can access the pinned image without CI credentials.
+            args+=(--acknowledge-assets)
+          else
+            args+=(--enable-sim-control --reuse "$RUNNER_TEMP/g07-original.zip")
+          fi
+          set +e
+          CH14_SOURCE_SHA="$OWNER_PIN" bash "$RUNNER_TEMP/ch14-bootstrap.sh" "${args[@]}" 2>&1 | tee ch14-g09-physical-evidence/owner-bootstrap.log
+          codes=("${PIPESTATUS[@]}")
+          set -e
+          test "${codes[1]}" = 0
+          archive="$(sed -n 's/^CH14_OWNER_EVIDENCE=//p' ch14-g09-physical-evidence/owner-bootstrap.log | tail -1)"
+          test -f "$archive"
+          sha256sum -c "$archive.sha256"
+          cp "$archive" ch14-g09-physical-evidence/owner-rehearsal.tar.gz
+          cp "$archive.sha256" ch14-g09-physical-evidence/owner-rehearsal.tar.gz.sha256
+          mkdir -p ch14-g09-physical-evidence/owner
+          tar -xzf "$archive" -C ch14-g09-physical-evidence/owner
+          (cd ch14-g09-physical-evidence/owner && sha256sum -c sha256sums.txt)
+          if [[ "${codes[0]}" != 0 ]]; then exit "${codes[0]}"; fi
+          python3 - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path("ch14-g09-physical-evidence/owner")
+          check=os.environ["OWNER_CHECK"]
+          d=json.loads((p/"owner-result.json").read_text())
+          assert d["status"]=="SCOPED_PASS" and d["level"]=="LINUX_REHEARSAL_ONLY" and d["check"]==check,d
+          assert d["actual_source_sha"]==d["source_sha"]==os.environ["OWNER_PIN"],d
+          q=p/check
+          assert "OWNED_CONTAINER_ABSENT" in (q/"container-cleanup.txt").read_text()
+          res=json.loads((q/"result.json").read_text())
+          assert res["status"]=="PASS",res
+          if check=="perception":
+              assert res["stage"]=="complete" and res["exit_code"]==0,res
+          else:
+              assert json.loads((q/"stage.json").read_text())=={"stage":"complete","exit_code":0}
+              assert res["active_samples"]>=100 and 35<=res["sim_rate_hz"]<=55 and res["height_min"]>.14
+              assert res["matched_commands"]>=100 and res["feedback_pairs"]>=50 and res["command_expiry"]=="PASS"
+              assert res["clean_shutdown"] and not res["forced_cleanup"] and all(v==0 for v in res["exit_codes"].values())
+              assert json.loads((p/"reuse.json").read_text())["status"]=="G07_REUSE_VERIFIED"
+          PY
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch14-g09-physical-evidence
+          cd ch14-g09-physical-evidence
+          find . -type f ! -path './sha256sums.txt' -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch14-g09-owner-${{ matrix.check }}
+          path: ch14-g09-physical-evidence/
+          retention-days: 30

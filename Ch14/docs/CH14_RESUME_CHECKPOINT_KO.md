@@ -85,3 +85,6 @@ First CI 45808374531 artifact15109828744 verified2/2: overstrict setup.cfg for d
 
 ## G09 owner rehearsal failure / bounded correction
 45809242091 failed at second APT install ALSA HTTP404 after pinned sparse fetch, source QA and CPU/RL install; artifact15109519924 ZIP 64ff2961ab7e28f9396fa2bea60dca6f256838f842845946d7ec594a8aedbca4 inner7/7. Local archive path emitted but CI did not recover it. Prior clean build 45808558133 preserved. Signed index refresh and conditional one retry, failure archive capture, raw bootstrap and wrong-SHA negative proof. No physics reruns. Owner L3 NOT_RUN, full release HOLD.
+
+## G09 actual immutable build bootstrap PASS
+45815645513 source 6c458e345236b124c9aa60f65788f35cfed74e62 artifact15115816641 outer35/35, positive tar20/20, negative tar2/2. Raw URL→exact source→6 clean packages in5.69s→exit0→container absent→archive; wrong SHA BLOCKED exit2 preflight, archive verified. APT second transaction FIRST_PASS. Candidate PIN fixed to 6c458e345236b124c9aa60f65788f35cfed74e62, docs-only head may differ. Separate actual wrapper options matrix (perception/mujoco/gazebo) added with pinned same source; new owner wrapper asset and evidence boundary only. Full release HOLD, WSL2 L3 NOT_RUN.
