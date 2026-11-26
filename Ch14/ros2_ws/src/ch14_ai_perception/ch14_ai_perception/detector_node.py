@@ -195,7 +195,7 @@ class Detector(Node):
         now,wall=self.clock();reason=self.guard.check(frame.oldest_stamp,now,wall,frame.epoch)
         if reason:self.count[reason]+=1;return
         if self.p["trace_inputs"]:
-            print("CH14_EMIT",json.dumps(dict(stamp=frame.stamp,oldest_stamp=frame.oldest_stamp,ros_ns=now,age_ms=(now-frame.stamp)/1e6,oldest_age_ms=(now-frame.oldest_stamp)/1e6,epoch=frame.epoch,target=point is not None)),flush=True)
+            print("CH14_EMIT",json.dumps(dict(stamp=frame.stamp,oldest_stamp=frame.oldest_stamp,ros_ns=now,age_ms=(now-frame.stamp)/1e6,oldest_age_ms=(now-frame.oldest_stamp)/1e6,epoch=frame.epoch,target=point is not None,labels=[NAMES[d.class_id] for d in ds],detection_count=len(ds))),flush=True)
         self.dets.publish(msg)
         if ann is not None:self.annot.publish(ann)
         if point is not None:self.target.publish(point);self.count["targets"]+=1
@@ -211,7 +211,7 @@ class Detector(Node):
         if self.last_published and now-self.last_published>300_000_000:self.last_status="STALE_NO_OUTPUT"
         record=dict(status=self.last_status,epoch=self.guard.epoch,ros_ns=now,wall_ns=wall,
                     heartbeat_interval_ms=interval,last_age_ms=self.last_age,last_infer_ms=getattr(self,"last_infer_ms",None),
-                    counters=dict(self.count),slot=self.slot.snapshot() if self.slot else {},mode=self.p["mode"],backend=self.p["backend"])
+                    counters=dict(self.count),slot=self.slot.snapshot() if self.slot else {},mode=self.p["mode"],backend=self.p["backend"],det_subscribers=self.dets.get_subscription_count(),point_subscribers=self.target.get_subscription_count())
         s=String();s.data=json.dumps(record);self.heartbeat.publish(s)
         a=DiagnosticArray();a.header.stamp=self.get_clock().now().to_msg()
         st=DiagnosticStatus();st.name="ch14/perception";st.hardware_id="simulation_or_replay"

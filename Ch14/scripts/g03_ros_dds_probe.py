@@ -38,8 +38,8 @@ class Probe(Node):
         t=TransformStamped();t.header.frame_id="odom";t.child_frame_id=FRAME;t.transform.rotation.w=1.;t.transform.translation.x=1.
         self.tf.sendTransform(t)
         self.ds=[];self.ps=[];self.hs=[];self.anns=[];self.sent={}
-        self.create_subscription(Detection2DArray,"/perception/detections",self.on_det,10)
-        self.create_subscription(PointStamped,"/perception/target_point",self.on_point,10)
+        self.det_sub=self.create_subscription(Detection2DArray,"/perception/detections",self.on_det,10)
+        self.point_sub=self.create_subscription(PointStamped,"/perception/target_point",self.on_point,10)
         self.create_subscription(String,"/perception/heartbeat",self.on_heartbeat,10)
         self.create_subscription(Image,"/perception/image_annotated",self.on_ann,Q)
     def on_det(self,m):
@@ -86,7 +86,7 @@ class Probe(Node):
         while time.monotonic()<until:
             if proc.poll() is not None:raise RuntimeError("node exited before readiness")
             self.spin(.05)
-            if self.hs and self.rgb.get_subscription_count()>0 and (not pair or (self.depth.get_subscription_count()>0 and self.info.get_subscription_count()>0)):
+            if self.hs and self.hs[-1].get("det_subscribers",0)>0 and self.hs[-1].get("point_subscribers",0)>0 and self.det_sub.get_publisher_count()>0 and self.point_sub.get_publisher_count()>0 and self.rgb.get_subscription_count()>0 and (not pair or (self.depth.get_subscription_count()>0 and self.info.get_subscription_count()>0)):
                 self.spin(.3);return
         raise TimeoutError("no actual DDS readiness")
     def dump(self,name):
@@ -230,13 +230,19 @@ def remaining_rgbd(probe,args):
 def missing_tf(probe,args):
     p,log=start(probe,args,"missing_tf","async",0,True,target_frame="missing_frame")
     try:
-        n=probe.send(True);probe.spin(.4)
-        assert any(d["stamp"]==n and hit(d) for d in probe.ds)
+        stamps=[]
+        for _ in range(3):
+            stamps.append(probe.send(True));probe.spin(.25)
+        assert any(d["stamp"] in stamps and hit(d) for d in probe.ds)
         assert not probe.ps
         assert any(h["status"]=="INVALID_DEPTH_OR_TF" for h in probe.hs)
         assert any(h["counters"].get("TF_UNAVAILABLE",0)>0 for h in probe.hs)
     finally:rec=stop(probe,p,log,"missing_tf")
-    return dict(no_point=True,valid_2d=True,shutdown=rec)
+    lines=(probe.out/"missing_tf.log").read_text().splitlines()
+    emits=[json.loads(l.split("CH14_EMIT ",1)[1]) for l in lines if "CH14_EMIT " in l]
+    assert len(emits)==3 and all(not e["target"] and "bus" in e["labels"] and 0<=e["oldest_age_ms"]<=300 for e in emits)
+    assert rec["counters"].get("TF_UNAVAILABLE",0)==3
+    return dict(no_point=True,valid_2d=True,source_emits=emits,dds_received=len(probe.ds),shutdown=rec)
 
 def pause(probe,args):
     p,log=start(probe,args,"clock_pause","async",0,False,True)
@@ -261,9 +267,9 @@ def pause(probe,args):
     return dict(pause_blocked=True,rewind_epoch_recovery=True,shutdown=rec)
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--onnx",type=Path,required=True);p.add_argument("--sha256",required=True);p.add_argument("--image",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["all","rgbd","remaining"],default="all")
+    p=argparse.ArgumentParser();p.add_argument("--onnx",type=Path,required=True);p.add_argument("--sha256",required=True);p.add_argument("--image",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["all","rgbd","remaining","final_faults"],default="all")
     a=p.parse_args();image=cv2.imread(str(a.image));assert image is not None and image.shape==(640,427,3)
-    rclpy.init();probe=Probe(image,a.out,reliable=a.phase=="remaining");result={}
+    rclpy.init();probe=Probe(image,a.out,reliable=a.phase in ("remaining","final_faults"));result={}
     try:
         if a.phase=="all":
             for mode in ("sync","async"):
@@ -273,6 +279,7 @@ def main():
         if a.phase=="remaining":
             result["reused_t08_partial_run"]=45750520212
             result["rgbd_remaining"]=remaining_rgbd(probe,a)
+        elif a.phase=="final_faults":result["reused_t08_remaining_run"]=45750895879
         else:result["rgbd"]=rgbd(probe,a)
         result["missing_tf"]=missing_tf(probe,a)
         result["clock_pause"]=pause(probe,a)
