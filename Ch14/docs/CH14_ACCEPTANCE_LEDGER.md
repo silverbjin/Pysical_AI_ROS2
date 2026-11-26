@@ -8,7 +8,7 @@
 | G03 | 14.4 | SCOPED_PASS (CPU L0/L1/L2); full release HOLD | SCOPED_PASS | SCOPED_PASS | SCOPED_PASS | NOT_RUN | T07 240x2, 123 overwrite, hb miss39→0; T08 final DDS 45751287261; actual Gazebo 45751598173: 13/13 GT, 27 source emits max86ms, pause/resume and clean shutdown; G01/release/legacy/L3 pending |
 | G04 | 14.5 | historical CPU SCOPED_PASS; ordered shutdown SCOPED_PASS | SCOPED_PASS | SCOPED_PASS | SCOPED_PASS (ordered runner); generic Ctrl+C HOLD | NOT_RUN | 45755020128 historical SUCCESS; 45758721305 failure preserved; 45760289636 targeted 3/3 GT and four clean exits in 601ms, no server escalation; native hang root cause unconfirmed |
 | G05 | 14.6 | SCOPED_PASS (CPU T13 actual A/B/C); full release HOLD | SCOPED_PASS | SCOPED_PASS | SCOPED_PASS (actual fixed scene) | NOT_RUN | 45758721447 SUCCESS; 23 tests, 5 packages, 3x60 wall sec, 660 source/DDS match, GT miss0, heartbeat16/7/0; local Age caveat, G04 shutdown regression and release HOLD |
-| G06 | 14.7 | IMPLEMENTED; actual CI in progress | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 45760742831 source 57e63678; static lock/syntax passed; T14–16 actual results pending |
+| G06 | 14.7 | build failure isolated; targeted correction | SCOPED_PASS (static/45 wheels) | NOT_RUN | NOT_RUN | NOT_RUN | 45760742831 FAIL rosdep ament_python; artifact5/5; explicit toolchain check and single virtual-key skip, rerun G06 only |
 | G07 | 14.8 전반 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
 | G08 | 14.8 후반 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
 | G09 | 14.9 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
