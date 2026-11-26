@@ -47,3 +47,7 @@ Run 45755020128 source 0a94aebe5438df0b6de462b0f961299bb90f5b3e SUCCESS, artifac
 
 ## G05 actual CPU profiling checkpoint
 Run45758721447 source 595e88a23856c9c791c227a189ea90388e0bb208 SUCCESS, artifact15089655249 ZIP/internal39/39 verified. 23 tests, 5 packages, A/B/C actual fixed scene each60 wall seconds after warm-up, 660 source/DDS detections, identical pixel hash, semantic GT miss0, local age max60/39/163ms (sync clock lag caveat), heartbeat misses16/7/0; all three clean. D N/A, L3 NOT_RUN. G04 auto regression 45758721305 same source replay and sim GT3/3 PASS but Gazebo exit-9; latest shutdown HOLD, prior G04 PASS preserved. Exact failure boundary before G06 deployment; no blanket rerun, no main merge. Read reports/G05_EXECUTION_REPORT_KO.md, LAB_14_6_GUIDE_KO.md, G06_NEXT_WORK_PREVIEW_KO.md.
+
+
+## G04 ordered shutdown follow-up
+45760289636 SUCCESS source 62dd619babc8c59ef38d3f5d6fb951065c1a241f, artifact15090161225 internal16/16; short actual Gazebo/ORT launch GT3/3, worker and four owned processes clean in601ms, ACK→actual exit101ms without server signal. Prior 45758721305 retained, native hang root cause and ordinary simultaneous Ctrl+C HOLD. No G04 hot swap or G05 60s reruns. G06 code candidate 57e63678b4bfdf6efd0e44531e8e0ba785b1657d, actual CI 45760742831 in progress; L1 not yet accepted. Main unchanged.

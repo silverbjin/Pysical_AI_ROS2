@@ -50,3 +50,12 @@ ros2 launch ch14_ai_perception robot_ai_system.launch.py profile:=sim \
 
 ## 4. 교육 실습 체크
 기본값→YAML→CLI 우선순위 확인, 잘못된 묶음 요청 원자성, threshold snapshot과 generation 구분, model SHA/ref hash 검사, 실패 후보와 기존 활성 모델의 출력 확인, 관측 출력 공백과 데이터 Age 구분. 이전 G03 300ms freshness 계약을 완화하지 않습니다. 전체 장시간 성능은 G05. 보고서 [G04_EXECUTION_REPORT_KO.md](reports/G04_EXECUTION_REPORT_KO.md), 원장 [CH14_ACCEPTANCE_LEDGER.md](CH14_ACCEPTANCE_LEDGER.md).
+
+
+## G04 종료 경계 후속 검수 (2026-11-26)
+기존 회귀 45758721305에서는 인지 GT 3/3과 Worker join은 PASS지만 Gazebo exit -9. 서버 ACK만으로 종료 성공 판단 금지. 새 검수는 소비자 3개를 SIGINT로 먼저 종료하고 정상 종료를 확인 후 서버 stop 요청, 서버 실제 exit 확인, 마지막 launch 종료 순서. 실제 Run 45760289636, source 62dd619babc8c59ef38d3f5d6fb951065c1a241f, 3/3 GT, 4/4 clean, 601.262ms, forced0, artifact16/16. 아래 스크립트가 설치된 launch를 직접 소유하고 자동 실행·종료하므로 기존 launch와 동시에 실행하지 않습니다.
+```bash
+mkdir -p /absolute/shutdown-evidence
+python scripts/g06_shutdown_probe.py --onnx /absolute/yolov8n.onnx --sha256 VERIFIED_SHA --assets /absolute/ch14-assets --out /absolute/shutdown-evidence
+```
+기존 G04 일반 Ctrl+C와 WSL2 GUI의 간헐적 종료 문제 원인 확정은 아님. 별도 profile, 같은 시험의 불필요한 반복 금지. [종료 보고서](reports/G04_SHUTDOWN_BOUNDARY_DEBUG_KO.md).
