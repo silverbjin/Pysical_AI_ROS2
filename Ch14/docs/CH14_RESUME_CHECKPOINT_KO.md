@@ -64,3 +64,6 @@ Run45763347165 SUCCESS source 21d4281f825ed23938a399377b29bad5252fde25, artifact
 
 ## G08-C actual MuJoCo PASS
 Run 45787876247 source 2ebd6ea9ea3277b0d62a80d05e489470544d8bb2, artifact15101700809 ZIP 8beeea041532c56c2a5710afbdb91203b4f8b4a9761840610f32d421f5dd50c5, internal14/14 verified. 400 ACTIVE, 400 DDS and feedback pairs, 52 direction positive, 50Hz, height .39247m, 0.169344ms max, command expiry/pause/resume and two exits0. RL lock reinstall succeeded. No normal rerun. G08-D separate Gazebo candidate with exact nine Ch11/12 assets; actual result pending. Negative fault tests and G09 not accepted.
+
+## G08 environment failure boundary
+Gazebo 45798971449 artifact15106606988 and protection 45799070950 artifact15105963572: verified ZIP/internal4/4 each, both locked_environment exit100 signed index mismatch, G07 reuse11 PASS, actual tests NOT_RUN. Gazebo targeted retry 45799511462 source f4ac6713a9ac8f4555ee263760e9b05249b0c30d after HTTPS/no-cache/bounded apt retries, no dependency/hash changes. Same correction applied only to protection CI. MuJoCo normal PASS unchanged. Do not retry same fingerprint without evidence; do not change policy code based on apt failure.
