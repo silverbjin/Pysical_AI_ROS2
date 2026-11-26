@@ -30,3 +30,6 @@ Run 45744146299: n/s ONNX actual checker/ORT load and infer PASS, FP32 static 64
 
 ## 실제 T04 결과 및 학생 분석 과제
 Run 45745101023: 두 실제 모델 20개씩 raw allclose PASS, paired n30/s41, unmatched 0; semantic target n14/16, s15/16, 전체 T04 FAIL. 동일 모델의 PT/ORT가 동일 오류를 발생시키는 이유와 최적화로 해결할 수 없는 모델 품질 문제를 비교한다. 463199 bus 누락 및 392818 dog→cat(n) 고정 ID를 분석하되 원본 라이선스 및 라벨을 확인하고 threshold/fixture를 임의 변경하지 않는다. P/R n .8667/.40625, s .8780/.5625; 소규모 fixture로 일반화 금지. [실제 증거](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45745101023/artifacts/15082717992). G01 full acceptance 미완료, WSL2 미인수.
+
+## 두 실패 사례 실측 원시 점수 (교육용)
+진단 Run 45746373267: Bus n/s GT 영역 최고 .001084/.000669 (<.5); 위치 IoU>=.5 후보 17/31개 존재. Dog n 최고 .211315 (<.5), 최종 cat .528898 vs dog .149248; s dog .785238. Ultralytics NMS와 공통 NMS 동일. 원본과 ORT의 동일 실패를 정상 변환 결과와 구분한다. 모든 64 GT 중 실제 매칭 집합은 n26/26, s36/36, 새 누락 0. 절대 필수 표적 기준 FAIL은 보존. 실습 기술 범위 SCOPED_PASS, 전체 Gate/배포 HOLD. [검수 범위](G01_ACCEPTANCE_SCOPE_KO.md).

@@ -1,0 +1,53 @@
+{
+  "version": "1.0",
+  "scope": "G01 educational offline CPU conversion and inference acceptance",
+  "decision": "SCOPED_PASS",
+  "original_gate": {
+    "spec_section": "7.1",
+    "required_target_misses": 0,
+    "status": "FAIL",
+    "observed": {
+      "yolov8n": 2,
+      "yolov8s": 1
+    },
+    "historical_run": 45745101023
+  },
+  "thresholds": {
+    "confidence": 0.5,
+    "nms_iou": 0.45,
+    "gt_iou": 0.5,
+    "raw_atol": 0.001,
+    "raw_rtol": 0.001,
+    "matched_box_min_iou": 0.95,
+    "score_abs_diff_max": 0.02
+  },
+  "scope_acceptance": {
+    "T01": "PASS",
+    "T02": "PASS",
+    "T03": "PASS",
+    "T04_numeric": "PASS",
+    "T04_detection_equivalence": "PASS",
+    "T04_no_new_gt_miss": "PASS",
+    "T04_absolute_semantic": "FAIL"
+  },
+  "evidence": {
+    "T01": 45744146299,
+    "T02_T04": 45745101023,
+    "T03": 45742206902,
+    "diagnostic": 45746373267
+  },
+  "no_new_gt_miss": 0,
+  "fixture_unchanged": true,
+  "allow_G02_independent_CPU_comparison": true,
+  "full_gate_pass": false,
+  "main_merge": false,
+  "full_release_blockers": [
+    "original G01 absolute semantic criterion not met; any formal change to full specification requires explicit approval",
+    "AGPL/code/model distribution and fixture attribution approval pending",
+    "existing Book Lab Acceptance sparse checkout failure",
+    "owner WSL2 not run (final release)"
+  ],
+  "G03_boundary": "actual Gazebo required semantic target misses zero, valid RGB-D/TF/time, no stale reuse; no waiver",
+  "gpu": "NOT_RUN_OPTIONAL",
+  "changes": "No thresholds, fixtures, source weights or production code modified; explicit scope separation only; original FAIL retained"
+}

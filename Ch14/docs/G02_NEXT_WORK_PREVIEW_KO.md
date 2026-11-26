@@ -3,3 +3,6 @@
 
 ## G01 결과에 따른 착수 조건 갱신
 G01 T04 실제 raw/box parity PASS, required semantic FAIL (n 2/s1), run 45745101023. 즉시 G02 전체 Gate 진행하지 않는다. Prior successful export/benchmark evidence 유지. 우선 두 고정 이미지의 raw score/GT만 단일 분석하고 owner release/semantic policy 및 legacy PR sparse checkout fix 확인. G02의 OpenVINO CPU 비교 설계/lock 사전 감사만 독립적으로 가능; 실제 G02 통합 검수는 G01 gate 승인 뒤. 모델을 변경하지 않으면 G01 T01/T03 반복 금지. G02는 실제 입력·출력 동일 계약 유지, backend별 latency 비교와 의미 검출 한계를 분리한다.
+
+## 최종 범위 확정 이후
+두 영상 raw 진단 45746373267 완료. G01 기술 범위 SCOPED_PASS, 원래 전체 Gate BLOCKED. 독립 G02 CPU 비교 개발을 허용하되 G01 전체 PASS 주장 및 통합 인수 금지. 동일 frozen fixture/모델/threshold, 새 GT 누락 0을 상대적 배포 기술 검수로 적용하고 절대 의미 누락은 공개 기록한다. G03 실제 target criterion remains strict. Reference G01_ACCEPTANCE_SCOPE_KO.md.
