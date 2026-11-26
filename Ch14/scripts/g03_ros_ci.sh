@@ -47,5 +47,5 @@ python python/export_yolo.py --manifest models/model_manifest.json --cache /tmp/
 cp /tmp/yolov8n/export.json "$out/yolov8n-export.json"
 sha="$(python -c 'import json;print(json.load(open("/tmp/yolov8n/export.json"))["onnx_sha256"])')"
 stage=dds
-python scripts/g03_ros_dds_probe.py --onnx /tmp/yolov8n/yolov8n.onnx --sha256 "$sha" --image /fixture/000000455085.jpg --out "$out"
+python scripts/g03_ros_dds_probe.py --onnx /tmp/yolov8n/yolov8n.onnx --sha256 "$sha" --image /fixture/000000455085.jpg --out "$out" --phase rgbd
 stage=complete

@@ -43,3 +43,16 @@ def test_depth_si_and_invalid():
     np.testing.assert_allclose(deproject(5,5,z,Intrinsics(10,10,10.,10.,5.,5.,"camera","id")),[0,0,2])
     with pytest.raises(ValueError):sample_depth(np.zeros((10,10)),b)
     with pytest.raises(ValueError):decode_depth(b"1","32FC1",10,10,40,False)
+
+def test_ats_exact_boundary():
+    from message_filters import SimpleFilter,ApproximateTimeSynchronizer
+    from sensor_msgs.msg import Image
+    from builtin_interfaces.msg import Time
+    for delta,expected in [(49_000_000,1),(50_000_000,1),(51_000_000,0)]:
+        filters=[SimpleFilter() for _ in range(3)]
+        ats=ApproximateTimeSynchronizer(filters,10,.050000001)
+        result=[];ats.registerCallback(lambda *xs:result.append(xs))
+        for f,n in zip(filters,[1_000_000_000,1_000_000_000-delta,1_000_000_000]):
+            m=Image();m.header.stamp=Time(sec=n//1_000_000_000,nanosec=n%1_000_000_000)
+            f.signalMessage(m)
+        assert len(result)==expected

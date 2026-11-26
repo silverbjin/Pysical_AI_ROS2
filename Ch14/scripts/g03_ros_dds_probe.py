@@ -66,6 +66,8 @@ class Probe(Node):
         self.sent[n]=kind
         self.rgb.publish(rgb)
         if pair:
+            # Pace distinct DDS writes; retain original source stamps. No retries.
+            self.spin(.015)
             z=np.full((self.h,self.w),2.,np.float32)
             if kind=="bad_depth":z[:]=np.nan
             depth=self.bridge.cv2_to_imgmsg(z,encoding="32FC1");depth.header.stamp=stamp(n+skew)
@@ -73,16 +75,17 @@ class Probe(Node):
             info=CameraInfo();info.header.stamp=stamp(n);info.header.frame_id=FRAME;info.width=self.w;info.height=self.h
             info.k=[400.,0.,self.w/2,0.,400.,self.h/2,0.,0.,1.]
             if kind=="bad_k":info.k=[0.]*9
-            self.depth.publish(depth);self.info.publish(info)
+            self.depth.publish(depth);self.spin(.015);self.info.publish(info)
         return n
     def send_clock(self,n):
         m=Clock();m.clock=stamp(n);self.clockpub.publish(m)
-    def wait_ready(self,proc):
+    def wait_ready(self,proc,pair=False):
         until=time.monotonic()+40
         while time.monotonic()<until:
             if proc.poll() is not None:raise RuntimeError("node exited before readiness")
             self.spin(.05)
-            if self.hs and self.rgb.get_subscription_count()>0:return
+            if self.hs and self.rgb.get_subscription_count()>0 and (not pair or (self.depth.get_subscription_count()>0 and self.info.get_subscription_count()>0)):
+                self.spin(.3);return
         raise TimeoutError("no actual DDS readiness")
     def dump(self,name):
         d=dict(detections=self.ds,points=self.ps,heartbeats=self.hs,annotations=self.anns,sent=self.sent)
@@ -94,9 +97,9 @@ def start(probe,args,name,mode,delay,pair=False,sim=False,target_frame="odom"):
     log=(probe.out/(name+".log")).open("w")
     cmd=[str(executable),"--ros-args","-p",f"onnx:={args.onnx}","-p",f"model_sha256:={args.sha256}",
          "-p",f"mode:={mode}","-p",f"delay_ms:={float(delay)}","-p",f"rgbd:={str(pair).lower()}",
-         "-p",f"use_sim_time:={str(sim).lower()}","-p",f"target_frame:={target_frame}"]
+         "-p",f"use_sim_time:={str(sim).lower()}","-p",f"target_frame:={target_frame}","-p",f"trace_inputs:={str(pair).lower()}"]
     p=subprocess.Popen(cmd,stdout=log,stderr=subprocess.STDOUT,cwd="/tmp")
-    try:probe.wait_ready(p)
+    try:probe.wait_ready(p,pair)
     except BaseException:
         stop(probe,p,log,name);raise
     return p,log
@@ -145,7 +148,7 @@ def burst(probe,args,mode):
 
 def rgbd(probe,args):
     p,log=start(probe,args,"rgbd","async",0,True)
-    expected={};bad=[]
+    expected={};bad=[];faults={}
     try:
         for i in range(4):
             n=probe.send(True);expected[n]="good";probe.spin(.25)
@@ -159,23 +162,37 @@ def rgbd(probe,args):
             assert hit(d)
         assert all(pnt["stamp"] in expected for pnt in probe.ps)
         for kind in ("bad_depth","bad_frame","bad_k","bad_rgb"):
-            bad.append(probe.send(True,kind=kind));probe.spin(.35)
+            n=probe.send(True,kind=kind);bad.append(n);faults[kind]=n;probe.spin(.35)
         # 49ms within tolerance, 51ms outside; depth uses past stamp to avoid future.
         n=probe.send(True,skew=-49_000_000);expected[n]="within";probe.spin(.35)
         assert any(v["stamp"]==n for v in probe.ps)
-        bad.append(probe.send(True,skew=-51_000_000));probe.spin(.4)
-        bad.append(probe.send(True,n=probe.get_clock().now().nanoseconds-700_000_000));probe.spin(.35)
-        bad.append(probe.send(True,n=probe.get_clock().now().nanoseconds+900_000_000));probe.spin(.35)
+        n=probe.send(True,skew=-50_000_000);expected[n]="exact_boundary";probe.spin(.35)
+        assert any(v["stamp"]==n for v in probe.ps)
+        n=probe.send(True,skew=-51_000_000);bad.append(n);faults["skew_51ms"]=n;probe.spin(.4)
+        n=probe.send(True,n=probe.get_clock().now().nanoseconds-700_000_000);bad.append(n);faults["stale"]=n;probe.spin(.35)
+        n=probe.send(True,n=probe.get_clock().now().nanoseconds+900_000_000);bad.append(n);faults["future"]=n;probe.spin(.35)
         assert not any(v["stamp"] in bad for v in probe.ps)
         assert not any(v["stamp"] in bad[1:] for v in probe.ds)
         assert all(v["stamp"] in expected for v in probe.ps)
         n=probe.send(True);expected[n]="recovery";probe.spin(.35)
         assert any(v["stamp"]==n for v in probe.ps)
-        result=dict(valid_points=len(probe.ps),fault_cases=bad,within_49ms=True,outside_51ms=True,
+        result=dict(valid_points=len(probe.ps),fault_cases=faults,within_49ms=True,exact_50ms=True,outside_51ms=True,
                     zero_fault_points=True,source_header=True,metre_geometry=True,recovered=True,
                     scope="actual ROS DDS RGB image + synthetic aligned depth/static TF")
     finally:rec=stop(probe,p,log,"rgbd")
     result["shutdown"]=rec
+    # Every injected fault must reach its intended boundary, not just disappear in DDS.
+    lines=(probe.out/"rgbd.log").read_text().splitlines()
+    inputs=[json.loads(l.split("CH14_INPUT ",1)[1]) for l in lines if "CH14_INPUT " in l]
+    pairs=[json.loads(l.split("CH14_PAIR ",1)[1]) for l in lines if "CH14_PAIR " in l]
+    for n in list(faults.values())+list(expected):
+        depth_stamp=n-51_000_000 if n==faults["skew_51ms"] else n-49_000_000 if expected.get(n)=="within" else n-50_000_000 if expected.get(n)=="exact_boundary" else n
+        for stream,stamp_ in (("rgb",n),("depth",depth_stamp),("info",n)):
+            assert any(x["stream"]==stream and x["stamp"]==stamp_ for x in inputs),f"DDS delivery missing {stream} {stamp_}"
+        assert any(x["stamps"][0]==n for x in pairs)==(n!=faults["skew_51ms"]),f"ATS boundary {n}"
+    for reason in ("INVALID_DEPTH","RGBD_FRAME","CAMERA_K","INVALID_RGB","STALE","FUTURE"):
+        assert rec["counters"].get(reason,0)>0,f"missing fault boundary {reason}"
+    result["raw_inputs"]=len(inputs);result["matched_pairs"]=len(pairs)
     return result
 
 def missing_tf(probe,args):
@@ -211,13 +228,15 @@ def pause(probe,args):
     return dict(pause_blocked=True,rewind_epoch_recovery=True,shutdown=rec)
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--onnx",type=Path,required=True);p.add_argument("--sha256",required=True);p.add_argument("--image",type=Path,required=True);p.add_argument("--out",type=Path,required=True)
+    p=argparse.ArgumentParser();p.add_argument("--onnx",type=Path,required=True);p.add_argument("--sha256",required=True);p.add_argument("--image",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["all","rgbd"],default="all")
     a=p.parse_args();image=cv2.imread(str(a.image));assert image is not None and image.shape==(640,427,3)
     rclpy.init();probe=Probe(image,a.out);result={}
     try:
-        for mode in ("sync","async"):
-            result[mode]=burst(probe,a,mode)
-            (a.out/"dds-summary.json").write_text(json.dumps(result,indent=2)+"\n")
+        if a.phase=="all":
+            for mode in ("sync","async"):
+                result[mode]=burst(probe,a,mode)
+                (a.out/"dds-summary.json").write_text(json.dumps(result,indent=2)+"\n")
+        else:result["reused_t07_run"]=45750110277
         result["rgbd"]=rgbd(probe,a)
         result["missing_tf"]=missing_tf(probe,a)
         result["clock_pause"]=pause(probe,a)

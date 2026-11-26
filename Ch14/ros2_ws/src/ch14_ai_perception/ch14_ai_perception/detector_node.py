@@ -44,7 +44,7 @@ class Detector(Node):
         super().__init__("ch14_detector")
         defaults=dict(onnx="",model_sha256="",backend="ort",mode="async",rgbd=False,
                       target_frame="odom",target_class="bus",threads=2,delay_ms=0.,
-                      annotation=True)
+                      annotation=True,trace_inputs=False)
         for k,v in defaults.items():self.declare_parameter(k,v)
         p={k:self.get_parameter(k).value for k in defaults}
         if p["mode"] not in ("sync","async") or p["backend"] not in ("ort","openvino"):raise ValueError("mode/backend")
@@ -68,7 +68,11 @@ class Detector(Node):
             self.subs=[Subscriber(self,Image,"/camera/color/image_raw",qos_profile=SYNC_QOS),
                        Subscriber(self,Image,"/camera/aligned_depth_to_color/image_raw",qos_profile=SYNC_QOS),
                        Subscriber(self,CameraInfo,"/camera/color/camera_info",qos_profile=SYNC_QOS)]
-            self.sync=ApproximateTimeSynchronizer(self.subs,10,.05)
+            if p["trace_inputs"]:
+                for label,sub in zip(("rgb","depth","info"),self.subs):
+                    sub.registerCallback(lambda msg,label=label:self.trace_input(label,msg))
+            # ATS uses strict < slop; one nanosecond includes exactly 50ms.
+            self.sync=ApproximateTimeSynchronizer(self.subs,10,.050000001)
             self.sync.registerCallback(self.receive_pair)
         else:self.sub=self.create_subscription(Image,"/camera/color/image_raw",self.receive,SENSOR)
         self.steady=Clock(clock_type=ClockType.STEADY_TIME)
@@ -94,7 +98,13 @@ class Detector(Node):
         self.pause_latched=paused
         return now,wall
 
+    def trace_input(self,label,msg):
+        print("CH14_INPUT",json.dumps(dict(stream=label,stamp=ns(msg.header),frame=msg.header.frame_id,wall_ns=time.monotonic_ns())),flush=True)
+
     def receive_pair(self,rgb,depth,info):
+        self.count["matched_pairs"]+=1
+        if self.p["trace_inputs"]:
+            print("CH14_PAIR",json.dumps(dict(stamps=[ns(x.header) for x in (rgb,depth,info)],wall_ns=time.monotonic_ns())),flush=True)
         try:intr,z=validate_pair(rgb,depth,info)
         except ValueError as e:
             self.count["invalid_pair"]+=1;self.invalidate(str(e));return
@@ -158,8 +168,10 @@ class Detector(Node):
                     point=PointStamped();point.header.stamp=frame.header.stamp;point.header.frame_id=target_frame
                     point.point.x,point.point.y,point.point.z=map(float,xyz)
                     target_status="TRACKED";break
-                except (ValueError,TransformException):
-                    target_status="INVALID_DEPTH_OR_TF"
+                except ValueError:
+                    self.count["INVALID_DEPTH"]+=1;target_status="INVALID_DEPTH_OR_TF"
+                except TransformException:
+                    self.count["TF_UNAVAILABLE"]+=1;target_status="INVALID_DEPTH_OR_TF"
         msg=Detection2DArray();msg.header=frame.header
         annotated=frame.image.copy() if self.p["annotation"] else None
         for d in ds:
