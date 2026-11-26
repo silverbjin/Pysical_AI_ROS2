@@ -1,5 +1,5 @@
 """T07/T08: ROS callbacks never block on inference in async mode."""
-import json,time,sys
+import json,time,sys,hashlib
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,7 +25,7 @@ from ch14_ai_common.yolo import preprocess,postprocess
 from ch14_ai_common.profiler import stage_metrics
 from .latest_slot import LatestSlot
 from .parameters import declare,snapshot
-from .model_slot import Active,ModelSlot,registry,engine,load_candidate
+from .model_slot import Active,ModelSlot,registry,engine,load_candidate,PINNED
 from ch14_ai_interfaces.srv import SwapModel
 from .freshness import Freshness
 from .rgbd_sync import ns,validate_pair,point_from_detection,transform_matrix,transform_point
@@ -70,7 +70,7 @@ class Detector(Node):
             initial_engine=engine(Path(p["onnx"]),p["model_sha256"],p["backend"],p["threads"])
             initial_engine.forward(np.zeros((1,3,640,640),np.float32))
             initial_id="unregistered"
-            if p["backend"]=="torch-cpu":initial_id=next(i for i,h in __import__("ch14_ai_perception.model_slot",fromlist=["PINNED"]).PINNED.items() if h==p["model_sha256"])
+            if p["backend"]=="torch-cpu":initial_id=next(i for i,h in PINNED.items() if h==p["model_sha256"])
         self.models=ModelSlot(Active(initial_id,p["model_sha256"],initial_engine),entries,
                              lambda e:load_candidate(e,p["backend"],p["threads"]),self.swap_event)
         self.swap_gap_start=None
@@ -147,6 +147,7 @@ class Detector(Node):
     def receive(self,msg,intr=None,depth=None,oldest_stamp=None,receipt=None):
         receipt=receipt if receipt is not None else time.monotonic_ns()
         self.count["callbacks"]+=1
+        if self.p["profile_timing"]:print("CH14_RECEIPT",json.dumps(dict(stamp=ns(msg.header),wall_ns=receipt)),flush=True)
         if self.p["trace_inputs"] and not self.p["rgbd"]:self.trace_input("rgb",msg)
         now,wall=self.clock();stamp=ns(msg.header)
         reason=self.guard.accept(stamp,now,wall)
@@ -257,7 +258,7 @@ class Detector(Node):
         self.debug["inference_latency"].publish(Float32(data=timing["inference_ms"]))
         self.debug["result_age"].publish(Float32(data=self.last_age))
         if self.p["profile_timing"]:
-            print("CH14_PROFILE",json.dumps(dict(stamp=frame.stamp,receipt_ns=frame.receipt_ns,publish_end_ns=pub_end,ros_ns=now,age_ms=self.last_age,oldest_age_ms=(now-frame.oldest_stamp)/1e6,generation=frame.generation,epoch=frame.epoch,model_sha256=self.models.active.sha256,boxes=[dict(label=NAMES[d.class_id],score=d.confidence,xyxy=list(d.xyxy)) for d in ds],**timing)),flush=True)
+            print("CH14_PROFILE",json.dumps(dict(stamp=frame.stamp,receipt_ns=frame.receipt_ns,publish_end_ns=pub_end,ros_ns=now,age_ms=self.last_age,oldest_age_ms=(now-frame.oldest_stamp)/1e6,generation=frame.generation,epoch=frame.epoch,model_sha256=self.models.active.sha256,image_sha256=hashlib.sha256(frame.image.tobytes()).hexdigest(),boxes=[dict(label=NAMES[d.class_id],score=d.confidence,xyxy=list(d.xyxy)) for d in ds],**timing)),flush=True)
 
     def beat(self):
         now,wall=self.clock()
