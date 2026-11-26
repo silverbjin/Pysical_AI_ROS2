@@ -7,7 +7,7 @@ from ch14_ai_common.backends import NAMES
 DEFAULTS=dict(onnx="",model_path="",model_sha256="",model_id="yolov8n",model_registry="",
               backend="ort",mode="async",rgbd=False,target_frame="odom",target_class="bus",
               threads=2,delay_ms=0.,annotation=True,trace_inputs=False,
-              sensor_reliability="best_effort",input_topic="/camera/color/image_raw",
+              profile_timing=False,sensor_reliability="best_effort",input_topic="/camera/color/image_raw",
               max_age_sec=.3,confidence_threshold=.5,iou_threshold=.45)
 RUNTIME=frozenset(("confidence_threshold","iou_threshold"))
 @dataclass(frozen=True)
@@ -41,12 +41,13 @@ def validate_startup(p):
     if not re.fullmatch("[0-9a-f]{64}",p["model_sha256"]):raise ValueError("model SHA256 required")
     if p["model_id"] not in ("yolov8n","yolov8s"):raise ValueError("model id")
     if p["model_registry"] and not Path(p["model_registry"]).is_absolute():raise ValueError("absolute registry path required")
-    if p["backend"] not in ("ort","openvino","onnx-cpu","openvino-cpu") or p["mode"] not in ("sync","async"):raise ValueError("backend/mode")
+    if p["backend"] not in ("ort","openvino","onnx-cpu","openvino-cpu","torch-cpu") or p["mode"] not in ("sync","async"):raise ValueError("backend/mode")
     if not 1<=p["threads"]<=32 or not math.isfinite(p["delay_ms"]) or not 0<=p["delay_ms"]<=1000:raise ValueError("threads/delay")
     if not math.isfinite(p["max_age_sec"]) or not 0<p["max_age_sec"]<=.3:raise ValueError("max age must not exceed G03 300ms")
     if p["target_class"] not in NAMES or not p["target_frame"].strip():raise ValueError("target")
     if not p["input_topic"].startswith("/") or " " in p["input_topic"]:raise ValueError("absolute input topic")
     if p["sensor_reliability"] not in ("best_effort","reliable"):raise ValueError("sensor reliability")
+    if p["backend"]=="torch-cpu" and p["model_registry"]:raise ValueError("Torch profile does not support model swap")
     if p["model_registry"] and p["mode"]!="async":raise ValueError("swap requires async mode")
     return dict(p,onnx=path,backend={"onnx-cpu":"ort","openvino-cpu":"openvino"}.get(p["backend"],p["backend"]))
 

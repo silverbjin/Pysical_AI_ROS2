@@ -57,6 +57,10 @@ def registry(path):
 
 def engine(path,expected,backend,threads):
     if backend=="ort":return OrtBackend(path,expected,threads)
+    if backend=="torch-cpu":
+        from ch14_ai_common.backends import TorchBackend
+        if expected not in PINNED.values():raise ValueError("only pinned publisher PT permitted")
+        return TorchBackend(path,expected,"cpu",threads)
     if backend=="openvino":
         from ch14_ai_common.ov_backend import OpenVinoBackend
         return OpenVinoBackend(path,expected,threads)

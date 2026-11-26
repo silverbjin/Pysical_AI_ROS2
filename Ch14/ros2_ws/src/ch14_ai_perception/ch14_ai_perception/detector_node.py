@@ -15,13 +15,14 @@ from rclpy.signals import SignalHandlerOptions
 from sensor_msgs.msg import Image,CameraInfo
 from vision_msgs.msg import Detection2DArray,Detection2D,ObjectHypothesisWithPose
 from geometry_msgs.msg import PointStamped
-from std_msgs.msg import String
+from std_msgs.msg import String,Float32
 from diagnostic_msgs.msg import DiagnosticArray,DiagnosticStatus,KeyValue
 from cv_bridge import CvBridge
 from message_filters import Subscriber,ApproximateTimeSynchronizer
 from tf2_ros import Buffer,TransformListener,TransformException
 from ch14_ai_common.backends import OrtBackend,NAMES
 from ch14_ai_common.yolo import preprocess,postprocess
+from ch14_ai_common.profiler import stage_metrics
 from .latest_slot import LatestSlot
 from .parameters import declare,snapshot
 from .model_slot import Active,ModelSlot,registry,engine,load_candidate
@@ -43,6 +44,8 @@ class Frame:
     oldest_stamp:int=0
     thresholds:object=None
     generation:int=0
+    receipt_ns:int=0
+    queued_ns:int=0
 
 class Detector(Node):
     def __init__(self):
@@ -67,6 +70,7 @@ class Detector(Node):
             initial_engine=engine(Path(p["onnx"]),p["model_sha256"],p["backend"],p["threads"])
             initial_engine.forward(np.zeros((1,3,640,640),np.float32))
             initial_id="unregistered"
+            if p["backend"]=="torch-cpu":initial_id=next(i for i,h in __import__("ch14_ai_perception.model_slot",fromlist=["PINNED"]).PINNED.items() if h==p["model_sha256"])
         self.models=ModelSlot(Active(initial_id,p["model_sha256"],initial_engine),entries,
                              lambda e:load_candidate(e,p["backend"],p["threads"]),self.swap_event)
         self.swap_gap_start=None
@@ -76,6 +80,8 @@ class Detector(Node):
         self.target=self.create_publisher(PointStamped,"/perception/target_point",10)
         self.diag=self.create_publisher(DiagnosticArray,"/perception/diagnostics",10)
         self.heartbeat=self.create_publisher(String,"/perception/heartbeat",10)
+        self.standard_diag=self.create_publisher(DiagnosticArray,"/diagnostics",10)
+        self.debug={name:self.create_publisher(Float32,"/debug/"+name,10) for name in ("inference_latency","result_age","heartbeat_interval")}
         self.slot=LatestSlot(self.infer) if p["mode"]=="async" else None
         if p["rgbd"]:
             self.subs=[Subscriber(self,Image,p["input_topic"],qos_profile=sync_q),
@@ -124,6 +130,7 @@ class Detector(Node):
         print("CH14_INPUT",json.dumps(dict(stream=label,stamp=ns(msg.header),frame=msg.header.frame_id,wall_ns=time.monotonic_ns())),flush=True)
 
     def receive_pair(self,rgb,depth,info):
+        receipt=time.monotonic_ns()
         self.count["matched_pairs"]+=1
         if self.p["trace_inputs"]:
             print("CH14_PAIR",json.dumps(dict(stamps=[ns(x.header) for x in (rgb,depth,info)],wall_ns=time.monotonic_ns())),flush=True)
@@ -135,9 +142,10 @@ class Detector(Node):
         for msg in (depth,info):
             reason=self.guard.check(ns(msg.header),now,wall,self.guard.epoch)
             if reason:self.invalidate(reason);return
-        self.receive(rgb,intr,z,min(ns(m.header) for m in (rgb,depth,info)))
+        self.receive(rgb,intr,z,min(ns(m.header) for m in (rgb,depth,info)),receipt)
 
-    def receive(self,msg,intr=None,depth=None,oldest_stamp=None):
+    def receive(self,msg,intr=None,depth=None,oldest_stamp=None,receipt=None):
+        receipt=receipt if receipt is not None else time.monotonic_ns()
         self.count["callbacks"]+=1
         if self.p["trace_inputs"] and not self.p["rgbd"]:self.trace_input("rgb",msg)
         now,wall=self.clock();stamp=ns(msg.header)
@@ -151,7 +159,7 @@ class Detector(Node):
             self.invalidate("INVALID_RGB");return
         if self.models.state=="DRAINING":
             self.count["swap_drain_drop"]+=1;return
-        frame=Frame(msg.header,stamp,self.guard.epoch,image,intr,depth,oldest_stamp or stamp,self.thresholds(),self.models.active.generation)
+        frame=Frame(msg.header,stamp,self.guard.epoch,image,intr,depth,oldest_stamp or stamp,self.thresholds(),self.models.active.generation,receipt,time.monotonic_ns())
         self.count["accepted"]+=1
         if self.slot:self.slot.put(frame)
         else:
@@ -164,10 +172,13 @@ class Detector(Node):
         start=time.monotonic_ns()
         if self.p["delay_ms"]:time.sleep(self.p["delay_ms"]/1000)
         x,meta=preprocess(frame.image)
+        pre_end=time.monotonic_ns()
         active=self.models.active
         if active.generation!=frame.generation:raise RuntimeError("MODEL_GENERATION_MISMATCH")
-        detections=postprocess(active.engine.forward(x),meta,frame.thresholds.confidence,frame.thresholds.iou)
-        return detections,(time.monotonic_ns()-start)/1e6
+        raw=active.engine.forward(x);infer_end=time.monotonic_ns()
+        detections=postprocess(raw,meta,frame.thresholds.confidence,frame.thresholds.iou)
+        post_end=time.monotonic_ns()
+        return detections,(post_end-start)/1e6,(start,pre_end,infer_end,post_end)
 
     def tick(self):
         self.clock()
@@ -198,7 +209,7 @@ class Detector(Node):
         if reason or frame.stamp<=self.last_published:
             self.count[reason or "RESULT_OUT_OF_ORDER"]+=1;return
         if error:self.count["INFERENCE_ERROR"]+=1;self.last_status="INFERENCE_ERROR";return
-        ds,ms=payload
+        ds,ms,marks=payload
         point=None;target_status="NO_TARGET"
         if self.p["rgbd"]:
             for d in ds:
@@ -234,12 +245,19 @@ class Detector(Node):
         if reason:self.count[reason]+=1;return
         if self.p["trace_inputs"]:
             print("CH14_EMIT",json.dumps(dict(stamp=frame.stamp,oldest_stamp=frame.oldest_stamp,ros_ns=now,wall_ns=wall,age_ms=(now-frame.stamp)/1e6,oldest_age_ms=(now-frame.oldest_stamp)/1e6,epoch=frame.epoch,target=point is not None,labels=[NAMES[d.class_id] for d in ds],detection_count=len(ds),model_id=self.models.active.model_id,model_sha256=self.models.active.sha256,generation=frame.generation,confidence_threshold=frame.thresholds.confidence,iou_threshold=frame.thresholds.iou)),flush=True)
+        pub_start=time.monotonic_ns()
         self.dets.publish(msg)
         if ann is not None:self.annot.publish(ann)
         if point is not None:self.target.publish(point);self.count["targets"]+=1
+        pub_end=time.monotonic_ns()
         self.last_published=frame.stamp;self.last_age=(now-frame.stamp)/1e6
         self.count["published"]+=1;self.last_status=target_status if self.p["rgbd"] else "DETECTION"
         self.last_infer_ms=ms
+        timing=stage_metrics(frame.receipt_ns,frame.queued_ns,*marks,pub_start,pub_end)
+        self.debug["inference_latency"].publish(Float32(data=timing["inference_ms"]))
+        self.debug["result_age"].publish(Float32(data=self.last_age))
+        if self.p["profile_timing"]:
+            print("CH14_PROFILE",json.dumps(dict(stamp=frame.stamp,receipt_ns=frame.receipt_ns,publish_end_ns=pub_end,ros_ns=now,age_ms=self.last_age,oldest_age_ms=(now-frame.oldest_stamp)/1e6,generation=frame.generation,epoch=frame.epoch,model_sha256=self.models.active.sha256,boxes=[dict(label=NAMES[d.class_id],score=d.confidence,xyxy=list(d.xyxy)) for d in ds],**timing)),flush=True)
 
     def beat(self):
         now,wall=self.clock()
@@ -254,7 +272,8 @@ class Detector(Node):
         a=DiagnosticArray();a.header.stamp=self.get_clock().now().to_msg()
         st=DiagnosticStatus();st.name="ch14/perception";st.hardware_id="simulation_or_replay"
         st.level=DiagnosticStatus.OK if self.last_status in ("READY","DETECTION","TRACKED","NO_TARGET") else DiagnosticStatus.WARN
-        st.message=self.last_status;st.values=[KeyValue(key="evidence",value=s.data)];a.status=[st];self.diag.publish(a)
+        st.message=self.last_status;st.values=[KeyValue(key="evidence",value=s.data)];a.status=[st];self.diag.publish(a);self.standard_diag.publish(a)
+        if interval is not None:self.debug["heartbeat_interval"].publish(Float32(data=interval))
 
     def close(self):
         worker_ok=self.slot.close(10) if self.slot else True
