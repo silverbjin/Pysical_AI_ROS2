@@ -38,6 +38,7 @@ class MissionExecutor(Node):
         self.out.mkdir(parents=True,exist_ok=True)
         self.events=(self.out/'mission-events.jsonl').open('x')
         self.ticks=(self.out/'ticks.csv').open('x',newline='')
+        self.target_audit=(self.out/'target-audit.jsonl').open('x')
         self.writer=csv.writer(self.ticks);self.writer.writerow(['tick','steady_ns','duration_ms','root_status'])
         self.seq=0;self.tick_count=0;self.started=False;self.finished=False;self.fault='';self.block=True;self.state='IDLE';self.epoch=0;self.mission_id=uuid4().hex
         self.started_at=0.;self.setup_at=time.monotonic();self.held=False;self.completed=[];self.tasks={};self.entered={};self.witnesses={};self.requests={}
@@ -94,10 +95,10 @@ class MissionExecutor(Node):
     def tf_ready(self):return self.tf.can_transform('map','base_link',Time())
     def on_target(self,m):
         if not self.started or self.finished:return
-        now=time.monotonic();self.bb.clock(self.get_clock().now().nanoseconds,now);p=m.target_pose.pose.position;q=m.target_pose.pose.orientation
-        t=Target(m.mission_id,m.epoch,m.source,m.object_class,m.target_pose.header.frame_id,ns(m.target_pose.header.stamp),(p.x,p.y,p.z),(q.x,q.y,q.z,q.w),m.pose_kind,now)
-        if not m.valid or ns(m.header.stamp)!=t.stamp_ns or m.header.frame_id!=t.frame:self.bb.invalidate('invalid_header');return
-        if self.bb.write_target(t,self.tf_ready(),now):self.target_pub.publish(m.target_pose)
+        now=time.monotonic();self.bb.clock(self.get_clock().now().nanoseconds,now)
+        accepted=self.bb.write_observation(m,self.tf_ready(),now)
+        self.target_audit.write(json.dumps(dict(mission_id=self.mission_id,observation_mission_id=m.mission_id,epoch=self.epoch,observation_epoch=m.epoch,stamp_ns=ns(m.target_pose.header.stamp),steady_ns=time.monotonic_ns(),valid=accepted,reason=self.bb.reason,source=m.source,settle_ns=self.bb.settle_ns))+'\n');self.target_audit.flush()
+        if accepted:self.target_pub.publish(m.target_pose)
     def fresh_ready(self):
         now=time.monotonic()
         return self.ready_count==3 and now-self.ready_at<=.3 and self.safety is not None and now-self.safe_at<=.3 and not self.safety.latched and self.safety.owner=='MOCK:ch15_command_arbiter'
@@ -223,7 +224,7 @@ class MissionExecutor(Node):
             # Do not claim clean ABORTED while a UUID terminal is unknown.
             self.finish('ERROR')
     def close(self):
-        self.events.close();self.ticks.close()
+        self.events.close();self.ticks.close();self.target_audit.close()
 def main():
     rclpy.init();n=MissionExecutor()
     try:rclpy.spin(n)

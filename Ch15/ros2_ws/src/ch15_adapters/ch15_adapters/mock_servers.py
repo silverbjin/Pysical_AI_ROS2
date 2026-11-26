@@ -23,6 +23,9 @@ class MockServers(Node):
         self.group=ReentrantCallbackGroup(); self.lock=threading.Lock()
         self.active=False; self.ready=False; self.ready_at=0.; self.safety_at=0.; self.safety_latched=True; self.gait='stand'; self.held=False; self.arrived=False; self.placed=False; self.motion_samples=0
         self.scan_enabled=self.declare_parameter('publish_scan',True).value
+        self.target_enabled=self.declare_parameter('publish_target',True).value
+        self.nav_hold_s=float(self.declare_parameter('nav_fixture_hold_s',0.).value)
+        if not math.isfinite(self.nav_hold_s) or not 0.<=self.nav_hold_s<=2.:raise ValueError('invalid mock fixture hold')
         self.cmd=self.create_publisher(TwistStamped,'/ch15/cmd_vel_in',profile())
         self.scan=self.create_publisher(LaserScan,'/scan',sensor_qos)
         self.gait_pub=self.create_publisher(String,'/ch15/gait_state',profile(transient=True))
@@ -63,7 +66,7 @@ class MockServers(Node):
             s=LaserScan();s.header.stamp=self.get_clock().now().to_msg();s.header.frame_id='base_link';s.angle_min=-.5;s.angle_max=.5;s.angle_increment=.5;s.range_min=.05;s.range_max=5.;s.ranges=[2.,2.,2.];self.scan.publish(s)
         with self.lock:gait=self.gait;mission=self.mission
         self.gait_pub.publish(String(data=gait))
-        if mission is not None and mission.state in ('SEARCHING','APPROACHING','MANIPULATING'):
+        if self.target_enabled and mission is not None and mission.state in ('SEARCHING','APPROACHING','MANIPULATING'):
             t=TargetObservation();t.header.stamp=self.get_clock().now().to_msg();t.header.frame_id='map';t.mission_id=mission.mission_id;t.epoch=mission.epoch;t.source='MOCK';t.object_class='red_cube';t.valid=True;t.pose_kind='GRASP_POSE';t.target_pose.header=t.header;t.target_pose.pose.position.x=1.;t.target_pose.pose.position.z=.225;t.target_pose.pose.orientation.w=1.;self.target.publish(t)
     def switch(self,req,res):
         with self.lock:
@@ -104,7 +107,7 @@ class MockServers(Node):
                 else:
                     fb.current_state='MOCK_'+kind.upper();fb.distance_remaining=0.
                 h.publish_feedback(fb)
-                if kind=='nav' and samples>=3:
+                if kind=='nav' and samples>=3 and time.monotonic()-start>=self.nav_hold_s:
                     with self.lock:self.arrived=True
                     success=True;break
                 if kind!='nav':

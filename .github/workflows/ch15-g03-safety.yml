@@ -1,0 +1,47 @@
+name: Ch15 G03 targeted DDS target and abort boundaries
+on:
+  push:
+    branches: [feat/ch15-mission-engineering]
+    paths:
+      - 'Ch15/tests/g03_target*'
+      - 'Ch15/tests/g03_fault_probe.py'
+      - 'Ch15/scripts/g03_safety_ci.sh'
+      - '.github/workflows/ch15-g03-safety.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ch15-g03-safety-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch15
+          persist-credentials: false
+      - name: Independent DDS target, cancel and invalid observation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch15-g03-safety-evidence
+          git rev-parse HEAD > ch15-g03-safety-evidence/source-sha.txt
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker pull "$image"
+          docker image inspect "$image" > ch15-g03-safety-evidence/image.json
+          docker run --rm --init -v "$PWD/Ch15:/ch15:ro" -v "$PWD/ch15-g03-safety-evidence:/evidence" "$image" bash /ch15/scripts/g03_safety_ci.sh 2>&1 | tee ch15-g03-safety-evidence/run.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch15-g03-safety-evidence
+          cd ch15-g03-safety-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g03-targeted-safety
+          path: ch15-g03-safety-evidence/
+          if-no-files-found: error
+          retention-days: 30

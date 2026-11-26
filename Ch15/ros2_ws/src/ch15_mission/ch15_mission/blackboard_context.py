@@ -30,6 +30,13 @@ class BlackboardContext:
         return True
     def mark_settled(self):
         self.settle_ns=self.ros_ns or 0;self.invalidate('fresh_after_settle_required')
+    def write_observation(self,msg,tf_available,now):
+        """One decoder for executor and actual DDS contract fixture."""
+        def ns(stamp):return int(stamp.sec)*1000000000+int(stamp.nanosec)
+        p=msg.target_pose.pose.position;q=msg.target_pose.pose.orientation
+        t=Target(msg.mission_id,msg.epoch,msg.source,msg.object_class,msg.target_pose.header.frame_id,ns(msg.target_pose.header.stamp),(p.x,p.y,p.z),(q.x,q.y,q.z,q.w),msg.pose_kind,now)
+        if not msg.valid or ns(msg.header.stamp)!=t.stamp_ns or msg.header.frame_id!=t.frame:return self.invalidate('invalid_header')
+        return self.write_target(t,tf_available,now)
     def write_target(self,pose_stamped,tf_available=True,now=None):
         t=pose_stamped # typed immutable snapshot, not a raw unlabelled pose
         if not isinstance(t,Target):return self.invalidate('untyped')
