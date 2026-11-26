@@ -57,7 +57,7 @@ class MockServers(Node):
     def admit(self,g,kind):
         pose=g.pose if kind=='nav' else g.target_pose
         p=pose.pose.position;q=pose.pose.orientation
-        valid=valid_pose(pose.header.frame_id,[p.x,p.y,p.z],[q.x,q.y,q.z])
+        valid=valid_pose(pose.header.frame_id,[p.x,p.y,p.z],[q.x,q.y,q.z,q.w])
         if kind!='nav':valid=valid and valid_timeout(g.timeout_sec)
         if kind=='pick':valid=valid and g.object_class=='red_cube'
         with self.lock:

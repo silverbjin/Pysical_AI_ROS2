@@ -39,4 +39,6 @@ def main():
     rclpy.init();node=CommandArbiter()
     try:rclpy.spin(node)
     except (KeyboardInterrupt,rclpy.executors.ExternalShutdownException):pass
-    finally:node.out.publish(Twist());node.destroy_node();rclpy.try_shutdown()
+    finally:
+        if rclpy.ok():node.out.publish(Twist())
+        node.destroy_node();rclpy.try_shutdown()

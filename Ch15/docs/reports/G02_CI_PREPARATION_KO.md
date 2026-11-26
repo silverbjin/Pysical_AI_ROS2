@@ -1,0 +1,4 @@
+# G02 CI 검수 설계
+G00/G01 prior run 45853673522 3/3 success, prior artifacts retained. Dedicated G02 push filter; old G00/G01 workflow is explicit dispatch to avoid cumulative PR diff reruns. Shared legacy workflow unchanged (may trigger automatically).
+G02 installed build 4 packages and eight ros2 interface show; pure contracts and exact IDL count. Multiprocess DDS probe separate process per node; lifecycle fixture returns INACTIVE/ACTIVE, no actual managed Nav2 lifecycle claim; startup missing 6 predicates, duplicate graph owner, actual nav/pick/place accepts/rejects/feedback/result and exact UUID log, gait 3 valid/1 invalid, QoS BE 10 vs reliable 0 / TL last state, owned exit audit. No physical launch. G03 full mission/cancel/unconfirmed and G08 actual faults remain unverified.
+Static self-review before CI corrected missing quaternion w in goal validation and guarded shutdown publish after context invalidation. CI outcome pending, no L1 PASS claim.
