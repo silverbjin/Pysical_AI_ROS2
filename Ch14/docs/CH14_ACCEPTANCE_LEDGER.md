@@ -11,6 +11,6 @@
 | G06 | 14.7 | SCOPED_PASS (CPU T14–T16); full release HOLD | SCOPED_PASS | SCOPED_PASS | NOT_RUN (replay, not Gazebo) | NOT_RUN | 45761633396 SUCCESS, artifact34/34; 4 installed packages, actual CPU inference, single/compose 39/39 DDS+3D each, six containers exit0 same image, domain mismatch rejected, cleanup PASS |
 | G07 | 14.8 전반 | SCOPED_PASS (SMOKE_ONLY T17/18); full release HOLD | SCOPED_PASS | SCOPED_PASS (ROS shadow) | NOT_RUN | NOT_RUN | 45763347165 SUCCESS; 19 exact source files, one 2048-transition training, 136 parity inputs/1632 elements, max7.45e-8, 14 tests, 240 shadow/0 commands, artifact23/23; walking NOT_ACCEPTED |
 | G08 | 14.8 후반 | SCOPED_PASS (T19 SMOKE_ONLY); full release HOLD | SCOPED_PASS | SCOPED_PASS | SCOPED_PASS (both engines normal; MuJoCo negative/pause) | NOT_RUN | MuJoCo 45787876247/15101700809 14/14, 400 ACTIVE/DDS/feedback; Gazebo 45799511462/15106482820 25/25, 399 ACTIVE/DDS/feedback; both 50Hz; protection 45799639451/15106449298 16/16 5/5; clock DDS synthetic 45799888629/15106658250 12/12; all clean exits; walking NOT_ACCEPTED, Gazebo negative paths not exercised, L3 NOT_RUN |
-| G09 | 14.9 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
+| G09 | 14.9 | IMPLEMENTED_CANDIDATE; full release HOLD | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | original spec recovered; 19-code registry (14-5 optional missing), 9 guides, headless owner candidate and clean combined build CI; actual results pending |
 
 GPU_OPTIONAL: NOT_RUN. Ch12 역사적 PASS는 Ch14에 전이하지 않음. CI ≠ Owner L3. 승인 전 main 병합 금지.

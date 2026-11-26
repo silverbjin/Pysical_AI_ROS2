@@ -25,3 +25,8 @@ CPU 기본, GPU 선택, 실제 로봇 HW 제외. 개발 중이며 배포용 실�
 
 - [14.8 G07 PPO 정책 변환 및 Shadow](docs/LAB_14_8_GUIDE_KO.md) · [실제 검수](docs/reports/G07_EXECUTION_REPORT_KO.md)
 - [G08 다음 작업 프리뷰](docs/G08_NEXT_WORK_PREVIEW_KO.md)
+
+- [G08 실제 두 물리 엔진 검수](docs/reports/G08_EXECUTION_REPORT_KO.md) · [14.8 실습](docs/LAB_14_8_GUIDE_KO.md)
+- [14.9 최종 검수·Owner 실행 후보](docs/LAB_14_9_GUIDE_KO.md) · [G09 개발 보고서](docs/reports/G09_DEVELOPMENT_REPORT_KO.md)
+
+G09 진행 중. `bash scripts/run_lab.sh 14.9 --guide`에서 검수 후보 안내를 확인. 전체 배포 HOLD; 원장 기준. GUI 및 선택 GPU 미검수.
