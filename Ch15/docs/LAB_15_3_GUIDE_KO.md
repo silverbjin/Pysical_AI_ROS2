@@ -12,18 +12,18 @@ ros2 launch ch15_mission mission.launch.py auto_start:=false evidence_dir:=$HOME
 교육 과제: Root SUCCESS와 END 상태의 차이, request_id와 UUID의 차이, stamp와 steady clock의 차이, tick과 supervisor 별도 timer의 역할. mission-events.jsonl 및 ticks.csv를 제출한다. G03 CI 확인 전 결과는 기대값이다.
 
 ## G04 독립 물리 실습: 두 경로를 동시에 실행하지 않는다
-### B-1 Ch13 native basic (현재 BLOCKED)
-원본 Ch13 시작 가이드 Ch13/docs/START_HERE_13_8_KO.md를 먼저 확인. 현재 외부 자산 권리/94 SHA256, 현재 설치 closure 미확보. 실행 전 승인된 local-use 검토 reference, 원본 upstream SHA, 실제 자산 바이트 필요. 사용 승인 receipt는 템플릿이며 사용자 승인 증거를 꾸미지 않는다. GitHub repository의 공개 여부는 외부 weight/mesh의 사용·재배포 허가가 아니다.
+### B-1 Ch13 native basic (자산·소스 preflight PASS, 실제 실행 미검증)
+원본 Ch13 시작 가이드 Ch13/docs/START_HERE_13_8_KO.md를 먼저 확인. Owner 승인 후 CI 45911815970에서 실제 94 SHA256 및 407 source freeze PASS. 사용자/CI 검증용 승인 receipt dependencies/native_local_use_approval.json 사용; 재배포 미승인. 설치 closure 및 실제 미션은 미검증. GitHub repository의 공개 여부는 외부 weight/mesh의 사용·재배포 허가가 아니다.
 - 기존 Ch13 main 기준 1931cac92585fc155357880b584c72c76d67257c을 별도 checkout에 고정. 상류 경로는 해당 checkout의 부모/upstream-iit-locomanipulation-d010212, shared lock은 부모/ch13_reuse_engine.lock. 기존 engine이 소유 중인 lock 삭제 금지.
-- 상류 94개 경로 존재, 71개 크기 차이. deploy/config.py 한 파일의 CRLF 변환이 원래 SHA와 일치하는 것으로 확인. 다른 자산의 EOL/바이트 변환은 미확인. 승인된 별도 checkout에서만 원래 SHA 전수 검사; 해시를 덮어쓰지 않는다.
+- 실제 94개: 23 raw 그대로, 71 LF→CRLF 후보가 원래 SHA256과 정확히 일치. 기존 폴더는 수정하지 않으며 새 격리 부모 경로에서 python3 Ch15/scripts/prepare_native_assets.py --target /path/to/parent/upstream-iit-locomanipulation-d010212 --receipt /path/to/new-asset-receipt.json 으로 준비한다. 기존 폴더는 adapter preflight에서 읽기 전용 전수 검증.
 - 원본 가이드와 동일한 검증된 native venv와 별도 build를 사용한다.
 ```bash
 # 승인과 의존성 검수 완료 후에만 사용하는 명령 예시 (현재 실행 미검증)
-export CH13_REUSE_BUILD="$HOME/ch15_native_13_build"
-export CH13_REUSE_VENV="$HOME/ch13_reuse_iit_d010212_venv"
-bash Ch15/scripts/run_physical_basic.sh /path/to/pinned_ch13 /path/to/approved_local_use.json "$HOME/ch15_native_$(date +%s)"
+export CH13_REUSE_BUILD="$HOME/ch15_native_isolated/ch13_reuse_13_8_build"
+export CH13_REUSE_VENV="$HOME/ch15_native_isolated/ch13_reuse_iit_d010212_venv"
+bash Ch15/scripts/run_physical_basic.sh /path/to/pinned_ch13 Ch15/dependencies/native_local_use_approval.json "$HOME/ch15_native_$(date +%s)"
 ```
-기본 exercise는 navigate/find/finish이며 pick/return/place 없음. 원본 basic_result, bag, source freeze, after lock receipt를 읽는다. 현재 T10 BLOCKED; historical v53 PASS를 신규 결과로 취급하지 않는다. native stop injection F01은 별도 검증된 hook 미확보로 BLOCKED.
+기본 exercise는 navigate/find/finish이며 pick/return/place 없음. 원본 basic_result, bag, source freeze, after lock receipt를 읽는다. 현재 T10 asset/source preflight PASS, native build/install/actual level2 NOT_RUN; historical v53 PASS를 신규 결과로 취급하지 않는다. native stop injection F01은 별도 검증된 hook 미확보로 BLOCKED.
 ### B-2 독립 RGB-D cube lab
 Gazebo Harmonic, ROS Jazzy, cv_bridge, OpenCV, ros_gz_bridge, tf2_ros. 별도 ROS domain과 headless software renderer. 실제 로봇 또는 다른 시뮬레이터와 같은 domain에서 실행 금지.
 ```bash
