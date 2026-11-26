@@ -44,11 +44,16 @@ class Detector(Node):
         super().__init__("ch14_detector")
         defaults=dict(onnx="",model_sha256="",backend="ort",mode="async",rgbd=False,
                       target_frame="odom",target_class="bus",threads=2,delay_ms=0.,
-                      annotation=True,trace_inputs=False)
+                      annotation=True,trace_inputs=False,sensor_reliability="best_effort")
         for k,v in defaults.items():self.declare_parameter(k,v)
         p={k:self.get_parameter(k).value for k in defaults}
         if p["mode"] not in ("sync","async") or p["backend"] not in ("ort","openvino"):raise ValueError("mode/backend")
         if p["target_class"] not in NAMES or not p["target_frame"] or not 0<=p["delay_ms"]<=1000:raise ValueError("target or delay")
+        if p["sensor_reliability"] not in ("best_effort","reliable"):raise ValueError("sensor_reliability")
+        # Production default remains sensor BEST_EFFORT; reliable only for explicit deterministic replay.
+        reliability=ReliabilityPolicy.RELIABLE if p["sensor_reliability"]=="reliable" else ReliabilityPolicy.BEST_EFFORT
+        sensor_q=QoSProfile(depth=1,reliability=reliability,durability=DurabilityPolicy.VOLATILE)
+        sync_q=QoSProfile(depth=10,reliability=reliability,durability=DurabilityPolicy.VOLATILE)
         self.p=p;self.bridge=CvBridge();self.count=Counter();self.last_status="STARTING";self.last_age=None
         self.guard=Freshness(self.get_parameter("use_sim_time").value)
         self.last_published=0;self.pause_latched=False;self.heartbeat_ns=None
@@ -65,16 +70,16 @@ class Detector(Node):
         self.heartbeat=self.create_publisher(String,"/perception/heartbeat",10)
         self.slot=LatestSlot(self.infer) if p["mode"]=="async" else None
         if p["rgbd"]:
-            self.subs=[Subscriber(self,Image,"/camera/color/image_raw",qos_profile=SYNC_QOS),
-                       Subscriber(self,Image,"/camera/aligned_depth_to_color/image_raw",qos_profile=SYNC_QOS),
-                       Subscriber(self,CameraInfo,"/camera/color/camera_info",qos_profile=SYNC_QOS)]
+            self.subs=[Subscriber(self,Image,"/camera/color/image_raw",qos_profile=sync_q),
+                       Subscriber(self,Image,"/camera/aligned_depth_to_color/image_raw",qos_profile=sync_q),
+                       Subscriber(self,CameraInfo,"/camera/color/camera_info",qos_profile=sync_q)]
             if p["trace_inputs"]:
                 for label,sub in zip(("rgb","depth","info"),self.subs):
                     sub.registerCallback(lambda msg,label=label:self.trace_input(label,msg))
             # ATS uses strict < slop; one nanosecond includes exactly 50ms.
             self.sync=ApproximateTimeSynchronizer(self.subs,10,.050000001)
             self.sync.registerCallback(self.receive_pair)
-        else:self.sub=self.create_subscription(Image,"/camera/color/image_raw",self.receive,SENSOR)
+        else:self.sub=self.create_subscription(Image,"/camera/color/image_raw",self.receive,sensor_q)
         self.steady=Clock(clock_type=ClockType.STEADY_TIME)
         self.poll=self.create_timer(.01,self.tick,clock=self.steady)
         self.hb=self.create_timer(.1,self.beat,clock=self.steady)
@@ -117,6 +122,7 @@ class Detector(Node):
 
     def receive(self,msg,intr=None,depth=None,oldest_stamp=None):
         self.count["callbacks"]+=1
+        if self.p["trace_inputs"] and not self.p["rgbd"]:self.trace_input("rgb",msg)
         now,wall=self.clock();stamp=ns(msg.header)
         reason=self.guard.accept(stamp,now,wall)
         if reason:self.invalidate(reason);return
@@ -188,6 +194,8 @@ class Detector(Node):
         # Final freshness check after geometry/annotation work, not only inference.
         now,wall=self.clock();reason=self.guard.check(frame.oldest_stamp,now,wall,frame.epoch)
         if reason:self.count[reason]+=1;return
+        if self.p["trace_inputs"]:
+            print("CH14_EMIT",json.dumps(dict(stamp=frame.stamp,oldest_stamp=frame.oldest_stamp,ros_ns=now,age_ms=(now-frame.stamp)/1e6,oldest_age_ms=(now-frame.oldest_stamp)/1e6,epoch=frame.epoch,target=point is not None)),flush=True)
         self.dets.publish(msg)
         if ann is not None:self.annot.publish(ann)
         if point is not None:self.target.publish(point);self.count["targets"]+=1

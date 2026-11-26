@@ -19,18 +19,20 @@ from ch14_ai_common.yolo_lab import iou
 from ch14_ai_perception.rgbd_sync import ns
 
 Q=QoSProfile(depth=10,reliability=ReliabilityPolicy.BEST_EFFORT,durability=DurabilityPolicy.VOLATILE)
+R=QoSProfile(depth=10,reliability=ReliabilityPolicy.RELIABLE,durability=DurabilityPolicy.VOLATILE)
 GT=[2.88,4.67,412.76,552.63]
 FRAME="camera_optical"
 def stamp(n):
     return Time(sec=n//1_000_000_000,nanosec=n%1_000_000_000)
 
 class Probe(Node):
-    def __init__(self,image,out):
+    def __init__(self,image,out,reliable=False):
         super().__init__("ch14_dds_probe")
         self.bridge=CvBridge();self.image=image;self.out=out;self.h,self.w=image.shape[:2]
-        self.rgb=self.create_publisher(Image,"/camera/color/image_raw",Q)
-        self.depth=self.create_publisher(Image,"/camera/aligned_depth_to_color/image_raw",Q)
-        self.info=self.create_publisher(CameraInfo,"/camera/color/camera_info",Q)
+        self.reliable=reliable;input_q=R if reliable else Q
+        self.rgb=self.create_publisher(Image,"/camera/color/image_raw",input_q)
+        self.depth=self.create_publisher(Image,"/camera/aligned_depth_to_color/image_raw",input_q)
+        self.info=self.create_publisher(CameraInfo,"/camera/color/camera_info",input_q)
         self.clockpub=self.create_publisher(Clock,"/clock",10)
         self.tf=StaticTransformBroadcaster(self)
         t=TransformStamped();t.header.frame_id="odom";t.child_frame_id=FRAME;t.transform.rotation.w=1.;t.transform.translation.x=1.
@@ -97,7 +99,7 @@ def start(probe,args,name,mode,delay,pair=False,sim=False,target_frame="odom"):
     log=(probe.out/(name+".log")).open("w")
     cmd=[str(executable),"--ros-args","-p",f"onnx:={args.onnx}","-p",f"model_sha256:={args.sha256}",
          "-p",f"mode:={mode}","-p",f"delay_ms:={float(delay)}","-p",f"rgbd:={str(pair).lower()}",
-         "-p",f"use_sim_time:={str(sim).lower()}","-p",f"target_frame:={target_frame}","-p",f"trace_inputs:={str(pair).lower()}"]
+         "-p",f"use_sim_time:={str(sim).lower()}","-p",f"target_frame:={target_frame}","-p",f"trace_inputs:={str(pair or probe.reliable).lower()}","-p",f"sensor_reliability:={'reliable' if probe.reliable else 'best_effort'}"]
     p=subprocess.Popen(cmd,stdout=log,stderr=subprocess.STDOUT,cwd="/tmp")
     try:probe.wait_ready(p,pair)
     except BaseException:
@@ -195,6 +197,36 @@ def rgbd(probe,args):
     result["raw_inputs"]=len(inputs);result["matched_pairs"]=len(pairs)
     return result
 
+
+def remaining_rgbd(probe,args):
+    p,log=start(probe,args,"rgbd_remaining","async",0,True)
+    try:
+        good=probe.send(True);probe.spin(.18)
+        assert any(v["stamp"]==good for v in probe.ps)
+        # duplicate source time is still within 300ms at receipt.
+        probe.send(True,n=good);probe.spin(.18)
+        assert sum(v["stamp"]==good for v in probe.ps)==1
+        wide=probe.send(True,skew=-51_000_000);probe.spin(.4)
+        stale=probe.send(True,n=probe.get_clock().now().nanoseconds-1_000_000_000);probe.spin(.35)
+        assert not any(v["stamp"] in (wide,stale) for v in probe.ps+probe.ds)
+        recovery=probe.send(True);probe.spin(.35)
+        assert any(v["stamp"]==recovery for v in probe.ps)
+    finally:rec=stop(probe,p,log,"rgbd_remaining")
+    lines=(probe.out/"rgbd_remaining.log").read_text().splitlines()
+    inputs=[json.loads(l.split("CH14_INPUT ",1)[1]) for l in lines if "CH14_INPUT " in l]
+    pairs=[json.loads(l.split("CH14_PAIR ",1)[1]) for l in lines if "CH14_PAIR " in l]
+    emits=[json.loads(l.split("CH14_EMIT ",1)[1]) for l in lines if "CH14_EMIT " in l]
+    for n,skew in [(good,0),(wide,-51_000_000),(stale,0),(recovery,0)]:
+        for stream,s in [("rgb",n),("depth",n+skew),("info",n)]:
+            assert any(x["stream"]==stream and x["stamp"]==s for x in inputs),f"missing reliable input {stream} {s}"
+    assert not any(x["stamps"][0]==wide for x in pairs)
+    assert any(x["stamps"][0]==stale for x in pairs)
+    assert rec["counters"].get("STALE",0)>0
+    assert rec["counters"].get("OUT_OF_ORDER",0)>0
+    assert all(0<=r["oldest_age_ms"]<=300 and 0<=r["age_ms"]<=300 for r in emits)
+    return dict(reliable_fault_profile=True,wide_skew_all_received_no_pair=True,stale_pair_received_no_output=True,
+                out_of_order_rejected=True,recovered=True,raw_inputs=len(inputs),matched_pairs=len(pairs),emits=emits,shutdown=rec)
+
 def missing_tf(probe,args):
     p,log=start(probe,args,"missing_tf","async",0,True,target_frame="missing_frame")
     try:
@@ -202,6 +234,7 @@ def missing_tf(probe,args):
         assert any(d["stamp"]==n and hit(d) for d in probe.ds)
         assert not probe.ps
         assert any(h["status"]=="INVALID_DEPTH_OR_TF" for h in probe.hs)
+        assert any(h["counters"].get("TF_UNAVAILABLE",0)>0 for h in probe.hs)
     finally:rec=stop(probe,p,log,"missing_tf")
     return dict(no_point=True,valid_2d=True,shutdown=rec)
 
@@ -228,16 +261,19 @@ def pause(probe,args):
     return dict(pause_blocked=True,rewind_epoch_recovery=True,shutdown=rec)
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--onnx",type=Path,required=True);p.add_argument("--sha256",required=True);p.add_argument("--image",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["all","rgbd"],default="all")
+    p=argparse.ArgumentParser();p.add_argument("--onnx",type=Path,required=True);p.add_argument("--sha256",required=True);p.add_argument("--image",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["all","rgbd","remaining"],default="all")
     a=p.parse_args();image=cv2.imread(str(a.image));assert image is not None and image.shape==(640,427,3)
-    rclpy.init();probe=Probe(image,a.out);result={}
+    rclpy.init();probe=Probe(image,a.out,reliable=a.phase=="remaining");result={}
     try:
         if a.phase=="all":
             for mode in ("sync","async"):
                 result[mode]=burst(probe,a,mode)
                 (a.out/"dds-summary.json").write_text(json.dumps(result,indent=2)+"\n")
         else:result["reused_t07_run"]=45750110277
-        result["rgbd"]=rgbd(probe,a)
+        if a.phase=="remaining":
+            result["reused_t08_partial_run"]=45750520212
+            result["rgbd_remaining"]=remaining_rgbd(probe,a)
+        else:result["rgbd"]=rgbd(probe,a)
         result["missing_tf"]=missing_tf(probe,a)
         result["clock_pause"]=pause(probe,a)
         result["status"]="PASS"
