@@ -1,0 +1,54 @@
+name: Ch14 G07 RL actor and ROS shadow
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - 'Ch14/scripts/g07_*'
+      - 'Ch14/ros2_ws/src/ch14_rl_deployment/**'
+      - 'Ch14/tests/test_g07_contracts.py'
+      - '.github/workflows/ch14-g07.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ch14-g07-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Static and provenance preflight
+        run: |
+          mkdir -p ch14-g07-evidence ch14-wheelhouse ch14-g07-reuse
+          echo "$GITHUB_SHA" > ch14-g07-evidence/source-sha.txt
+          python3 -m compileall -q Ch14/scripts/g07_*.py Ch14/ros2_ws/src/ch14_rl_deployment
+          bash -n Ch14/scripts/g07_ci.sh Ch14/scripts/g07_env.sh
+      - uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - name: Run actual bounded training, export and ROS shadow
+        run: |
+          set -eo pipefail
+          docker run --rm --init -e GITHUB_RUN_ID -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g07-evidence:/evidence" -v "$PWD/ch14-g07-reuse:/reuse:ro" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g07_ci.sh 2>&1 | tee ch14-g07-evidence/run.log
+      - name: Hash exact scoped evidence
+        if: always()
+        run: |
+          cd ch14-g07-evidence
+          find . -type f ! -name sha256sums.txt ! -path './smoke_bundle/checkpoints/*' ! -path './smoke_bundle/best_model/*' ! -path './smoke_bundle/tensorboard/*' -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch14-g07-evidence
+          path: |
+            ch14-g07-evidence/
+            !ch14-g07-evidence/smoke_bundle/checkpoints/**
+            !ch14-g07-evidence/smoke_bundle/best_model/**
+            !ch14-g07-evidence/smoke_bundle/tensorboard/**
+          retention-days: 30
