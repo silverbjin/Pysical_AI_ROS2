@@ -9,6 +9,8 @@ on:
       - 'Ch14/scripts/g01_select_coco.py'
       - 'Ch14/scripts/g01_check_reuse.py'
       - 'Ch14/scripts/g01_label_metrics.py'
+      - 'Ch14/fixtures/g01_eval.lock.json'
+      - 'Ch14/scripts/test_g01_fresh_export.py'
       - 'Ch14/tests/test_g01_yolo_contract.py'
       - '.github/workflows/ch14-g01.yml'
   workflow_dispatch:
@@ -30,6 +32,7 @@ jobs:
         run: |
           python3 -m compileall -q Ch14/scripts/g01_select_coco.py Ch14/python Ch14/ros2_ws/src/ch14_ai_common
           bash -n Ch14/scripts/g01_yolo_ci.sh
+          python3 Ch14/scripts/test_g01_fresh_export.py
       - name: Validate actual fixture provenance and transport before CPU setup
         shell: bash
         run: |

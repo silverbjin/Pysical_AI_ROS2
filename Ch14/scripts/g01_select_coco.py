@@ -73,4 +73,9 @@ def main():
     (root/"manifest.json").write_text(json.dumps({"status":"EVALUATION_CANDIDATE_NOT_RELEASE_APPROVED","annotation_url":URL,"annotation_sha256":SHA,
       "image_mirror_revision":MIRROR_REV,"image_mirror":MIRROR,"annotation_license":"CC BY 4.0; COCO Consortium","selection":"16 largest GT targets, 4 real unlabeled negatives, no model selection",
       "images":rows},indent=2)+"\n")
+    lock=json.loads((Path(__file__).resolve().parents[1]/"fixtures/g01_eval.lock.json").read_text())
+    actual=[{k:r[k] for k in ("id","sha256","license_id")} for r in rows]
+    if actual!=lock["images"] or sha(root/"manifest.json")!=lock["manifest_sha256"]:
+        raise ValueError("frozen fixture bytes or annotations drift")
+    print("FROZEN_FIXTURE_MATCH",len(rows),lock["manifest_sha256"],flush=True)
 if __name__=="__main__":main()

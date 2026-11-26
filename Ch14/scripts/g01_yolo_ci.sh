@@ -66,21 +66,41 @@ import json,sys
 from pathlib import Path
 from ch14_ai_common.backends import TorchBackend,OrtBackend
 from ch14_ai_common.yolo_lab import compare_images,read_fixture,infer_image
+import torch,subprocess
 out=Path(sys.argv[1]);failed=False
 for mid in ('yolov8n','yolov8s'):
     meta=json.loads((out/f'{mid}-export.json').read_text())
     model=Path('/tmp')/mid/f'{mid}.onnx'
-    pt=TorchBackend(Path('/tmp/models')/f'{mid}.pt',meta['source_sha256'])
+    pt_path=Path('/tmp/models')/f'{mid}.pt'
+    pt=TorchBackend(pt_path,meta['source_sha256'])
     ort=OrtBackend(model,meta['onnx_sha256'])
+    # Actual fail-closed boundary checks on pinned model/CPU runtime.
+    def rejected(fn, types):
+        try: fn()
+        except types: return True
+        raise AssertionError('invalid input not rejected')
+    checks={
+      'missing_onnx':rejected(lambda:OrtBackend(Path('/tmp/nonexistent-ch14.onnx'),meta['onnx_sha256']), (ValueError,FileNotFoundError)),
+      'wrong_onnx_sha':rejected(lambda:OrtBackend(model,'0'*64),(ValueError,)),
+      'wrong_pt_sha':rejected(lambda:TorchBackend(pt_path,'0'*64),(ValueError,)),
+      'missing_image':rejected(lambda:infer_image(ort,Path('/tmp/nonexistent-ch14.jpg'),Path('/tmp/invalid-output')),(ValueError,))}
+    if not torch.cuda.is_available(): checks['cuda_unavailable_rejected']=rejected(lambda:TorchBackend(pt_path,meta['source_sha256'],'cuda'),(RuntimeError,))
+    (out/f'{mid}-negative-contracts.json').write_text(json.dumps(checks,indent=2)+'\n')
     rows=list(read_fixture(Path('/fixture/manifest.json'),Path('/fixture/images')))
     r=compare_images(pt,ort,rows,out/f'{mid}-parity.json')
-    infer_image(ort,Path('/fixture/images')/rows[0][0]['file'],Path('/tmp')/f'{mid}-sample')
+    subprocess.run([sys.executable,'python/inference_onnx.py','--onnx',str(model),'--sha256',meta['onnx_sha256'], '--image',str(Path('/fixture/images')/rows[0][0]['file']),'--output',str(Path('/tmp')/f'{mid}-sample')],check=True)
     # Annotation images not redistributed; JSON detection evidence only.
     import shutil
     shutil.copyfile(Path('/tmp')/f'{mid}-sample/detections.json',out/f'{mid}-sample-detections.json')
     failed |= r['status']!='PASS'
-if failed:raise SystemExit('T04 parity/target failed; no threshold relaxation')
+(out/"t04-status.json").write_text(json.dumps({"status":"FAIL" if failed else "PASS"})+"\n")
 PY
 stage=label_metrics
 python scripts/g01_label_metrics.py "$out/fixture-candidate.json" "$out"
+stage=T04_acceptance
+python - "$out/t04-status.json" <<'PY'
+import json,sys
+if json.load(open(sys.argv[1]))["status"]!="PASS":
+    raise SystemExit("T04 parity/target failed; no threshold relaxation")
+PY
 stage=complete

@@ -23,3 +23,6 @@
 
 ## G01 actual YOLO update
 PR #206 Draft, commit fcab9108a748cdc6e77ae0918655b89336295b96, run 45744146299: actual T01/T02 scoped PASS, T04 blocked TLS; artifact 15081689764 internal 13/13. Targeted fixture transport correction and source-identity reuse implemented. Legacy book PR doc preflight failure 45744271653 independently caused by missing Ch07 sparse checkout; no runtime pilots. No main merge before full G01 acceptance, release rights and PR checks resolved. G02 preview docs/G02_NEXT_WORK_PREVIEW_KO.md.
+
+## G01 second failure boundary
+Run 45744752315: transport resolved; 20 image hashes and fixed manifest, T01 reused (10/10 blob), fresh T02 exports both seed parity PASS but differ in bytes from prior export. Guard rejected; T04 NOT_RUN. Artifact 15082926406 verified 10/10. Freeze fixture and classify actual fresh T02 without claiming old binary reuse. New targeted run only. Do not merge until full actual T04, rights and legacy PR check resolved.

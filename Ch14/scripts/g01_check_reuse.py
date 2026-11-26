@@ -6,6 +6,18 @@ from pathlib import Path
 def blob(path):
     b=path.read_bytes()
     return hashlib.sha1(f"blob {len(b)}\0".encode()+b).hexdigest()
+def check_fresh(previous, current, actual_hash):
+    """Different bytes require fresh T02, not reuse of old T02."""
+    import math
+    valid=(current.get("status")=="PASS" and current.get("model")==previous["model"]
+           and current.get("source_sha256")==previous["source_sha256"]
+           and current.get("onnx_sha256")==actual_hash
+           and current.get("class_map_sha256")==previous["class_map_sha256"]
+           and all(current.get(k)==previous[k] for k in ("input_shape","output_shape","dtype","opset","nms","provider","classes"))
+           and isinstance(current.get("seed_max_abs"),(int,float)) and math.isfinite(current["seed_max_abs"]))
+    if not valid:raise ValueError("fresh T02 receipt/file contract invalid")
+    return {"mode":"SAME_BYTES_VERIFIED" if actual_hash==previous["onnx_sha256"] else "FRESH_T02_VALIDATED_NOT_REUSED",
+            "previous_onnx_sha256":previous["onnx_sha256"],"current_onnx_sha256":actual_hash}
 def main():
     p=argparse.ArgumentParser();p.add_argument("receipt",type=Path);p.add_argument("output",type=Path);p.add_argument("--exports",type=Path);a=p.parse_args()
     d=json.loads(a.receipt.read_text());root=Path(__file__).resolve().parents[1]
@@ -16,11 +28,15 @@ def main():
     if a.exports:
         for e in d["exports"]:
             current=json.loads((a.exports/(e["model"]+"-export.json")).read_text())
-            export_match[e["model"]]=current["onnx_sha256"]==e["onnx_sha256"] and current["source_sha256"]==e["source_sha256"]
-            if not export_match[e["model"]]:failures.append(e["model"]+" export bytes drift")
+            path=Path("/tmp")/e["model"]/(e["model"]+".onnx")
+            try:
+                with path.open("rb") as f: actual_hash=hashlib.file_digest(f,"sha256").hexdigest()
+                export_match[e["model"]]=check_fresh(e,current,actual_hash)
+            except (ValueError,OSError) as exc:
+                failures.append(e["model"]+" "+str(exc))
     result={"status":"REUSE_VALID" if not failures else "REUSE_REJECTED","prior_run":d["run_id"],"source_sha":d["source_sha"],
             "matched_source_files":len(d["prior_source_blobs"])-sum(x in d["prior_source_blobs"] for x in failures),
-            "export_bytes_match":export_match,"errors":failures}
+            "export_validation":export_match,"errors":failures}
     a.output.write_text(json.dumps(result,indent=2)+"\n")
     print(json.dumps(result))
     raise SystemExit(bool(failures))
