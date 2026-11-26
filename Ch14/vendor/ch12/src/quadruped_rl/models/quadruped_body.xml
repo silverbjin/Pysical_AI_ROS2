@@ -1,0 +1,78 @@
+<mujoco model="quadruped_common">
+  <compiler angle="radian" />
+  <option timestep="0.002" gravity="0 0 -9.81" integrator="implicitfast" />
+  <default>
+    <joint damping="0.5" armature="0.01" limited="true" />
+    <geom contype="1" conaffinity="2" friction="1 0.005 0.0001" />
+    <motor ctrllimited="true" />
+  </default>
+  <worldbody>
+    <light pos="0 -2 4" dir="0 0 -1" />
+    <geom name="ground" type="plane" size="10 10 .1" contype="2" conaffinity="1" rgba=".8 .85 .8 1" />
+    <camera name="overview" pos="1.5 -1.5 1.1" xyaxes=".707 .707 0 -.3 .3 .905" />
+    <body name="base_link" pos="0 0 .41">
+      <freejoint name="root" />
+      <geom name="base_collision" type="box" size=".30 .15 .075" mass="6" rgba=".12 .17 .23 1" />
+      <body name="fr_hip_link" pos="0.25 -0.1 0">
+        <joint name="fr_hip_joint" axis="1 0 0" range="-.8 .8" />
+        <geom type="box" size=".04 .02 .02" mass=".2" rgba=".5 .5 .5 1" />
+        <body name="fr_thigh_link" pos="0 -0.05 0" quat=".8253356149 0 .5646424734 0">
+          <joint name="fr_thigh_joint" axis="0 1 0" range="-1 4" />
+          <geom type="capsule" fromto="0 0 0 0 0 -.25" size=".02" mass=".7" rgba=".15 .2 .25 1" />
+          <body name="fr_calf_link" pos="0 0 -.25" quat=".3623577545 0 -.9320390860 0">
+            <joint name="fr_calf_joint" axis="0 1 0" range="-2.8 2.8" />
+            <geom type="capsule" fromto="0 0 0 0 0 -.25" size=".015" mass=".5" rgba=".55 .6 .65 1" />
+            <body name="fr_foot" pos="0 0 -.25">
+              <geom name="fr_foot_collision" type="sphere" size=".02" mass=".1" rgba=".1 .1 .1 1" />
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="fl_hip_link" pos="0.25 0.1 0">
+        <joint name="fl_hip_joint" axis="1 0 0" range="-.8 .8" />
+        <geom type="box" size=".04 .02 .02" mass=".2" rgba=".5 .5 .5 1" />
+        <body name="fl_thigh_link" pos="0 0.05 0" quat=".8253356149 0 .5646424734 0">
+          <joint name="fl_thigh_joint" axis="0 1 0" range="-1 4" />
+          <geom type="capsule" fromto="0 0 0 0 0 -.25" size=".02" mass=".7" rgba=".15 .2 .25 1" />
+          <body name="fl_calf_link" pos="0 0 -.25" quat=".3623577545 0 -.9320390860 0">
+            <joint name="fl_calf_joint" axis="0 1 0" range="-2.8 2.8" />
+            <geom type="capsule" fromto="0 0 0 0 0 -.25" size=".015" mass=".5" rgba=".55 .6 .65 1" />
+            <body name="fl_foot" pos="0 0 -.25">
+              <geom name="fl_foot_collision" type="sphere" size=".02" mass=".1" rgba=".1 .1 .1 1" />
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="rr_hip_link" pos="-0.25 -0.1 0">
+        <joint name="rr_hip_joint" axis="1 0 0" range="-.8 .8" />
+        <geom type="box" size=".04 .02 .02" mass=".2" rgba=".5 .5 .5 1" />
+        <body name="rr_thigh_link" pos="0 -0.05 0" quat=".8253356149 0 .5646424734 0">
+          <joint name="rr_thigh_joint" axis="0 1 0" range="-1 4" />
+          <geom type="capsule" fromto="0 0 0 0 0 -.25" size=".02" mass=".7" rgba=".15 .2 .25 1" />
+          <body name="rr_calf_link" pos="0 0 -.25" quat=".3623577545 0 -.9320390860 0">
+            <joint name="rr_calf_joint" axis="0 1 0" range="-2.8 2.8" />
+            <geom type="capsule" fromto="0 0 0 0 0 -.25" size=".015" mass=".5" rgba=".55 .6 .65 1" />
+            <body name="rr_foot" pos="0 0 -.25">
+              <geom name="rr_foot_collision" type="sphere" size=".02" mass=".1" rgba=".1 .1 .1 1" />
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="rl_hip_link" pos="-0.25 0.1 0">
+        <joint name="rl_hip_joint" axis="1 0 0" range="-.8 .8" />
+        <geom type="box" size=".04 .02 .02" mass=".2" rgba=".5 .5 .5 1" />
+        <body name="rl_thigh_link" pos="0 0.05 0" quat=".8253356149 0 .5646424734 0">
+          <joint name="rl_thigh_joint" axis="0 1 0" range="-1 4" />
+          <geom type="capsule" fromto="0 0 0 0 0 -.25" size=".02" mass=".7" rgba=".15 .2 .25 1" />
+          <body name="rl_calf_link" pos="0 0 -.25" quat=".3623577545 0 -.9320390860 0">
+            <joint name="rl_calf_joint" axis="0 1 0" range="-2.8 2.8" />
+            <geom type="capsule" fromto="0 0 0 0 0 -.25" size=".015" mass=".5" rgba=".55 .6 .65 1" />
+            <body name="rl_foot" pos="0 0 -.25">
+              <geom name="rl_foot_collision" type="sphere" size=".02" mass=".1" rgba=".1 .1 .1 1" />
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>
