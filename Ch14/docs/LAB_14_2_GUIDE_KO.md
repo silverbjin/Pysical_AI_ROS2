@@ -21,3 +21,6 @@ python python/export_custom_model.py --output evidence/t03_run_001
 
 ## 실제 CI 증거
 [Run 45742206902](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45742206902) · [원본 ONNX/NPZ/JSON](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45742206902/artifacts/15081503468). source 1228072c5679b608756bfbd578b2c56cbcfe32e8. T03 scope only; 실측 결과 참고, YOLO 코드 14-2/4 미검수. CPU+export exact lock requirements/cpu.lock.txt와 실제 환경은 G00_CPU_ENVIRONMENT_ACCEPTANCE_KO.md 참조.
+
+## 14-2 / 14-4 — YOLO 실습 (검증 후보)
+`python python/export_yolo.py --manifest models/model_manifest.json --cache /absolute/models --model yolov8n --output evidence/yolov8n` (yolov8s 동일). export.json의 실제 ONNX SHA256을 사용해 `python python/inference_onnx.py --onnx evidence/yolov8n/yolov8n.onnx --sha256 <actual_sha256> --image /absolute/authorized.jpg --output evidence/detect_1`. Netron에서 images/predictions static shape 확인. detections.json, annotated.jpg 확인. 실제 CI에서 이미지/모델 바이너리는 외부 권리 확인 전 업로드하지 않는다. Fixture manifest는 출처와 해시 보존; T04 raw atol=1e-3/rtol=1e-3, bbox IoU>=.95, score diff<=.02, GT IoU>=.5. 실제 결과 후 판정.
