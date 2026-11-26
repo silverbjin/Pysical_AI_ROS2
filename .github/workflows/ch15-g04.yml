@@ -1,0 +1,64 @@
+name: Ch15 G04 actual cube RGB-D and native source boundary
+on:
+  push:
+    branches: [feat/ch15-mission-engineering]
+    paths:
+      - 'Ch15/ros2_ws/src/ch15_simulation/**'
+      - 'Ch15/ros2_ws/src/ch15_adapters/ch15_adapters/*adapter.py'
+      - 'Ch15/ros2_ws/src/ch15_adapters/ch15_adapters/target_contract.py'
+      - 'Ch15/scripts/g04_ci.sh'
+      - 'Ch15/scripts/run_cube_lab.sh'
+      - 'Ch15/tests/*cube*'
+      - 'Ch15/tests/test_physical_adapter.py'
+      - '.github/workflows/ch15-g04.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: ch15-g04-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  cube:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Prepare exact RED baseline
+        run: |
+          mkdir -p "$RUNNER_TEMP/ch15-red/Ch15/tests" ch15-g04-evidence
+          git archive 30fa2fa012404ba83d110e308e201eeda5bf5d6c Ch15/ros2_ws/src/ch15_adapters | tar -xf - -C "$RUNNER_TEMP/ch15-red"
+          cp Ch15/tests/test_physical_adapter.py "$RUNNER_TEMP/ch15-red/Ch15/tests/"
+          git rev-parse HEAD > ch15-g04-evidence/source-sha.txt
+          bash -n Ch15/scripts/run_physical_basic.sh Ch15/scripts/run_cube_lab.sh Ch15/scripts/g04_ci.sh
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Immutable Harmonic runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          image=ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f
+          docker pull "$image"
+          docker image inspect "$image" > ch15-g04-evidence/image.json
+          docker run --rm --init --shm-size=1g -v "$PWD/Ch15:/ch15:ro" -v "$RUNNER_TEMP/ch15-red:/red:ro" -v "$PWD/ch15-g04-evidence:/evidence" "$image" bash /ch15/scripts/g04_ci.sh 2>&1 | tee ch15-g04-evidence/run.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch15-g04-evidence
+          cd ch15-g04-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g04-cube-evidence
+          path: ch15-g04-evidence/
+          if-no-files-found: error
+          retention-days: 30
