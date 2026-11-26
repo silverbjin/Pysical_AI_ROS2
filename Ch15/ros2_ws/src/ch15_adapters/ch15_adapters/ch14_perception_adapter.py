@@ -2,6 +2,12 @@
 import math
 from .target_contract import check_metadata
 def adapt(point,detections,*,target_class,model_sha,approved_sha,tf_at_source,ros_ns,confidence_min=.25,metadata=None):
+    try:
+        return _adapt(point,detections,target_class=target_class,model_sha=model_sha,approved_sha=approved_sha,tf_at_source=tf_at_source,ros_ns=ros_ns,confidence_min=confidence_min,metadata=metadata)
+    except (TypeError,ValueError,KeyError,AttributeError,OverflowError):
+        return dict(valid=False,source='UNKNOWN',pose_kind='UNKNOWN',reason='BLOCKED_COMPATIBILITY:invalid_metadata')
+
+def _adapt(point,detections,*,target_class,model_sha,approved_sha,tf_at_source,ros_ns,confidence_min,metadata):
     def blocked(reason):return dict(valid=False,source='UNKNOWN',pose_kind='UNKNOWN',reason='BLOCKED_COMPATIBILITY:'+reason)
     if not approved_sha or model_sha!=approved_sha or len(model_sha)!=64:return blocked('model_provenance')
     if not metadata or metadata.get('rgb_stamp')!=point.get('stamp') or check_metadata(metadata['rgb_stamp'],metadata['depth_stamp'],metadata['info_stamp'],metadata['frame'],metadata['depth_frame'],metadata['info_frame'],ros_ns,metadata['optical_tf'],metadata['receipt_age']):return blocked('rgbd_metadata')

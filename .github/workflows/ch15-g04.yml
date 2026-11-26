@@ -1,16 +1,6 @@
 name: Ch15 G04 actual cube RGB-D and native source boundary
 on:
-  push:
-    branches: [feat/ch15-mission-engineering]
-    paths:
-      - 'Ch15/ros2_ws/src/ch15_simulation/**'
-      - 'Ch15/ros2_ws/src/ch15_adapters/ch15_adapters/*adapter.py'
-      - 'Ch15/ros2_ws/src/ch15_adapters/ch15_adapters/target_contract.py'
-      - 'Ch15/scripts/g04_ci.sh'
-      - 'Ch15/scripts/run_cube_lab.sh'
-      - 'Ch15/tests/*cube*'
-      - 'Ch15/tests/test_physical_adapter.py'
-      - '.github/workflows/ch15-g04.yml'
+  # Preserve accepted T11 evidence. Explicit dispatch only if its source closure changes.
   workflow_dispatch:
 permissions:
   contents: read

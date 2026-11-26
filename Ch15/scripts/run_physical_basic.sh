@@ -23,12 +23,18 @@ runtime="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["runt
 cd "$runtime"
 set +e
 CH13_CAPTURE_OVERLAP=1 CH13_EXPERIMENTAL_SE2=0 CH13_CALLBACK_TIMING=0 bash Ch13/scripts/reuse_13_8/env.sh -u Ch13/scripts/reuse_13_8/run_mission.py --repo-root "$runtime" --manifest "$runtime/$freeze" --evidence "$out/native" --exercise basic --scenario level2_obstacles --auto-start 2>&1 | tee "$out/native-run.log"
-rc=${PIPESTATUS[0]}
+pipeline_rc=("${PIPESTATUS[@]}")
+rc=${pipeline_rc[0]}
+if ((pipeline_rc[1]!=0));then rc=1;fi
 set -e
 cd "$root"
 set +e
 bash Ch13/scripts/reuse_13_8/env.sh Ch13/scripts/reuse_13_8/inspect_case.py --case "$out/native" >"$out/inspect.json"
+inspect_rc=$?
 python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py "$out/after.json"
+residual_rc=$?
+printf '{"runner_exit":%d,"inspect_exit":%d,"residual_exit":%d}\n' "$rc" "$inspect_rc" "$residual_rc" >"$out/exit-contract.json"
+if ((inspect_rc || residual_rc));then rc=1;fi
 python3 "$adapter" assess --case "$out/native" --residual "$out/after.json" --contract "$contract" --runner-exit "$rc" --out "$out/result.json"
 result=$?
 set -e
