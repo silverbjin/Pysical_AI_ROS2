@@ -28,11 +28,13 @@ python -m pip --version
 wh=/tmp/ch14-wheelhouse
 mkdir -p "$wh"
 stage=download_cpu_torch
-python -m pip download --only-binary=:all: --no-deps --index-url https://download.pytorch.org/whl/cpu --dest "$wh" 'torch==2.5.1+cpu' 'torchvision==0.20.1+cpu'
-stage=resolve
-python -m pip download --only-binary=:all: --index-url https://pypi.org/simple --find-links "$wh" --dest "$wh" -r /ch14/requirements/cpu.candidate.txt
+grep -E '^torch(vision)?==' /ch14/requirements/cpu.probe.lock.txt > /tmp/ch14-torch.lock.txt
+python -m pip download --require-hashes --only-binary=:all: --no-deps --index-url https://download.pytorch.org/whl/cpu --dest "$wh" -r /tmp/ch14-torch.lock.txt
+stage=download_pinned_wheels
+python -m pip download --require-hashes --only-binary=:all: --no-deps --index-url https://pypi.org/simple --find-links "$wh" --dest "$wh" -r /ch14/requirements/cpu.probe.lock.txt
 stage=hash_lock
 python /ch14/scripts/g00_make_wheel_lock.py "$wh" "$out"
+cmp /ch14/requirements/cpu.probe.lock.txt "$out/cpu.candidate.lock.txt"
 stage=install_locked
 python -m pip install --ignore-installed --no-index --find-links "$wh" --require-hashes -r "$out/cpu.candidate.lock.txt"
 python -m pip freeze --all > "$out/pip-freeze.txt"

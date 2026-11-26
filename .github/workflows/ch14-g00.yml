@@ -4,6 +4,7 @@ on:
     branches: [feat/ch14-ai-deployment]
     paths:
       - 'Ch14/requirements/cpu.candidate.txt'
+      - 'Ch14/requirements/cpu.probe.lock.txt'
       - 'Ch14/scripts/g00_*'
       - '.github/workflows/ch14-g00.yml'
   workflow_dispatch:
@@ -24,9 +25,9 @@ jobs:
           set -euo pipefail
           mkdir -p ch14-g00-evidence
           printf '%s\n' "$GITHUB_SHA" > ch14-g00-evidence/source-sha.txt
-          docker pull ros:jazzy-ros-base
-          docker image inspect ros:jazzy-ros-base > ch14-g00-evidence/base-image.json
-          image="$(docker image inspect --format '{{.Id}}' ros:jazzy-ros-base)"
+          docker pull ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker image inspect ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 > ch14-g00-evidence/base-image.json
+          image="$(docker image inspect --format '{{.Id}}' ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6)"
           docker run --rm -e CH14_SOURCE_SHA="$GITHUB_SHA" -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-g00-evidence:/evidence" "$image" bash /ch14/scripts/g00_cpu_probe.sh /evidence 2>&1 | tee ch14-g00-evidence/probe.log
       - name: Hash collected evidence
         if: always()

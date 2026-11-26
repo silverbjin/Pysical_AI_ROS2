@@ -21,23 +21,27 @@ def make_lock(wheelhouse: Path, out: Path):
             if len(matches) != 1:
                 raise ValueError(f"Invalid root wheel metadata: {path.name}: {matches}")
             meta = BytesParser().parsebytes(wheel.read(matches[0]))
-        name, version = meta["Name"], meta["Version"]
-        if not name or not version:
+        if not meta["Name"] or not meta["Version"]:
             raise ValueError(f"Missing metadata: {path.name}")
+        name, version = str(meta["Name"]), str(meta["Version"])
         key = name.lower().replace("_", "-").replace(".", "-")
         if key in rows:
             raise ValueError(f"Ambiguous resolved wheel: {key}")
         with path.open("rb") as f:
             digest = hashlib.file_digest(f, "sha256").hexdigest()
         rows[key] = f"{name}=={version} --hash=sha256:{digest}"
+        license_value = meta.get("License-Expression") or meta.get("License")
         details.append({"name": name, "version": version, "wheel": path.name,
-                        "sha256": digest, "license_metadata": meta.get("License-Expression") or meta.get("License"),
-                        "license_classifiers": [x for x in meta.get_all("Classifier", []) if x.startswith("License ::")]})
+                        "sha256": digest, "license_metadata": str(license_value) if license_value is not None else None,
+                        "license_classifiers": [str(x) for x in meta.get_all("Classifier", []) if str(x).startswith("License ::")]})
     if not rows or not {"torch", "torchvision", "numpy", "onnx", "onnxruntime", "ultralytics"} <= rows.keys():
         raise ValueError("Incomplete CPU wheelhouse")
+    # Serialize both before publishing either, so a Header cannot leave a partial lock.
+    manifest_text = json.dumps(details, indent=2) + "\n"
+    lock_text = "\n".join(rows[k] for k in sorted(rows)) + "\n"
     out.mkdir(parents=True, exist_ok=True)
-    (out / "cpu.candidate.lock.txt").write_text("\n".join(rows[k] for k in sorted(rows)) + "\n")
-    (out / "wheel_manifest.json").write_text(json.dumps(details, indent=2) + "\n")
+    (out / "wheel_manifest.json").write_text(manifest_text, encoding="utf-8")
+    (out / "cpu.candidate.lock.txt").write_text(lock_text, encoding="utf-8")
     return len(rows)
 
 

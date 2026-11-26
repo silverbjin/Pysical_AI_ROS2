@@ -35,6 +35,16 @@ class WheelLockTests(unittest.TestCase):
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         self.assertIn(f'setuptools==1.0 --hash=sha256:{digest}', (self.out / 'cpu.candidate.lock.txt').read_text())
 
+    def test_non_ascii_header_is_json_serializable(self):
+        path = self.wh / "setuptools-1.0-py3-none-any.whl"
+        with ZipFile(path, "w") as f:
+            f.writestr("setuptools-1.0.dist-info/METADATA",
+                       b"Name: setuptools\nVersion: 1.0\nLicense: caf\xc3\xa9\nClassifier: License :: caf\xc3\xa9\n")
+        self.assertEqual(make_lock(self.wh, self.out), 7)
+        row = next(x for x in json.loads((self.out / "wheel_manifest.json").read_text()) if x["name"] == "setuptools")
+        self.assertIsInstance(row["license_metadata"], str)
+        self.assertEqual(len(row["license_classifiers"]), 1)
+
     def test_two_root_metadata_rejected(self):
         self.wheel('setuptools', 'other-9.0.dist-info/METADATA')
         with self.assertRaisesRegex(ValueError, 'Invalid root wheel metadata'):
