@@ -14,9 +14,9 @@ flowchart LR
 ## 사전 조건
 WSL2 Ubuntu24.04 x86_64, Python3.12, Docker Engine 또는 Docker Desktop WSL integration 한 가지, Linux 파일시스템, 충분한 공간, 네트워크/권리 확인. Docker headless 인수 후보이며 WSLg GUI·native ROS 설치 검증은 별도다. 선택 GPU/TensorRT는 미실행, 14-5 구현 없음. 실제 HW 금지. 원래 14.9 체크리스트의 비상정지 시 토크0은 실물 HW 검수이며 이 도서의 위치 hold 검수로 대체하거나 PASS 표시하지 않는다.
 ## 실행 방법
-정확한 검수 후보 SHA는 최종 인수 안내에서 제공한다. 아래 PIN은 placeholder. 기존 Git 작업공간 수정하지 않는다.
+정확한 고정 검수 SHA는 아래와 같다. 전체 실행 및 다운로드 해시 검증은 G09_WSL2_OWNER_ACCEPTANCE_KO.md 참조. 기존 Git 작업공간 수정하지 않는다.
 ```bash
-PIN=REVIEWED_40_HEX_SOURCE_SHA
+PIN=6c458e345236b124c9aa60f65788f35cfed74e62
 curl -fsSLo "$HOME/ch14-bootstrap.sh" "https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/$PIN/Ch14/scripts/bootstrap.sh"
 CH14_SOURCE_SHA="$PIN" bash "$HOME/ch14-bootstrap.sh" --profile cpu --headless --check build
 ```
@@ -29,7 +29,7 @@ G07 원본 artifact 15090667475 ZIP SHA256 c8defc1a154c3d0ec92ddd3a7fbd70f8d3b01
 3. 모델 미확보·잘못된 SHA·비활성 제어에서 어떤 단계가 중단되는지 확인한다.
 4. G05 heartbeat와 ROS age, G06 replay와 실제 가상 센서, G08 smoke policy와 보행 품질을 비교한다.
 ## 인수 범위
-현재 G09 OWNER_READY_HEADLESS_SCOPED (Linux 실제 원샷 4개 선택 경로 성공, WSL2 L3 NOT_RUN). 전체 권리/의미 탐지/일반 종료/legacy PR/WSL2 L3 조건은 원장에 따르며 승인 전 main 병합 금지.
+현재 G09 OWNER_L3_SCOPED_PASS (Linux 독립 4경로 및 WSL2 실제 --check all 성공). 전체 권리/의미 탐지/일반 종료/legacy PR/원고 QA 조건은 원장에 따르며 승인 및 조건 충족 전 main 병합 금지.
 
 ## 7. 검수된 사용자 출고 PIN
-6c458e345236b124c9aa60f65788f35cfed74e62. [WSL2 사용자 인수 안내](G09_WSL2_OWNER_ACCEPTANCE_KO.md)에서 정확한 SHA256 및 단일 명령을 사용한다. Build45815645513 and physical45816276822 actual SUCCESS, same source. Four selected paths separately tested; no redundant combined all CI. Headless Docker only; user WSL2 L3 not run. 
+6c458e345236b124c9aa60f65788f35cfed74e62. [WSL2 사용자 인수 안내](G09_WSL2_OWNER_ACCEPTANCE_KO.md)에서 정확한 SHA256 및 단일 명령을 사용한다. Build45815645513 and physical45816276822 actual SUCCESS, same source. Four selected paths separately tested; no redundant combined all CI. Headless Docker only; user WSL2 L3 scoped PASS (82/82 hashes, 4/4). See reports/G09_WSL2_OWNER_ACCEPTANCE_REVIEW_20261126_KO.md. Existing owner need not repeat. 

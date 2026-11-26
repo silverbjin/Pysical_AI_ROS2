@@ -16,3 +16,5 @@ Historic model_manifest status REMOTE_HASH_CONFIRMED_NOT_DOWNLOADED and original
 
 ## Owner evidence retention
 G07 original archive downloaded and ZIP + 23 internal hashes checked. Keep exact bytes in authorized local/private backup before retention expires. GitHub Actions artifact links expire; do not assume perpetual retrieval. No model ZIP committed or new public artifact. If missing/expired/corrupt, stop with BLOCKED (no automatic retraining). Store original archive alongside SHA256 separately from reproducibility logs. G09 owner wrapper extracts only after exact ZIP SHA, verifies original 11 payload hashes with existing g07_verify_reuse.py. A new ZIP packaging the same files is not the original accepted ZIP.
+
+2026-11-26 owner actual intake: 11 required G07 payloads verified, original ZIP excluded from owner tar. No release-rights approval follows from successful owner execution or asset terms acknowledgment. Retain original owner tar and sidecar privately; only redacted summary and hash in Git. Asset register remains HOLD.

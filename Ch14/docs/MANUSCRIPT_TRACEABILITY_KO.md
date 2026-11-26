@@ -59,8 +59,10 @@ G08 final: T19 SCOPED_PASS, actual MuJoCo and Gazebo ROS closed-loop normal case
 | 14-14/15/16 | docker/build_cpu.sh, docker/run_docker.sh, docker compose -f docker/compose.yaml; LAB14.7 | T14~16 45761633396 | Linux CPU replay only |
 | 14-17/18 | python python/export_rl_policy.py; ros2 run ch14_rl_deployment rl_shadow; LAB14.8 | T17/18 45763347165 | original accepted smoke artifact reuse; no new training/export |
 | 14-19 | ros2 run ch14_rl_deployment rl_controller; LAB14.8 | T19 45787876247/45799511462/45799639451/45799888629 | two engines normal, MuJoCo negative, synthetic reset |
-| 14.9 | scripts/bootstrap.sh, doctor.sh, run_lab.sh, verify_ch14.sh; LAB14.9 | G09 actual results pending | owner L3 NOT_RUN |
+| 14.9 | scripts/bootstrap.sh, doctor.sh, run_lab.sh, verify_ch14.sh; LAB14.9 | G09 Linux CI 45815645513/45816276822 + actual WSL2 owner all 2026-11-26 | OWNER_L3_SCOPED_PASS, full release HOLD |
 
 See G09_PUBLICATION_QA_KO.md for proposed checklist replacement; G09_ASSET_RELEASE_REGISTER_KO.md for current provenance vs historical manifests. Existing "NOT_RUN" statements inside historical paragraphs reflect the recorded checkpoint, not superseding the acceptance ledger.
 
 G09 final owner preparation: exact source 6c458e345236b124c9aa60f65788f35cfed74e62; immutable build45815645513 and three physical entrypoints45816276822 actual Linux CI success. 9 guides, 18 code paths and optional14-5 absent. WSL2 actual L3 NOT_RUN; combined all not separately repeated, headless Docker only. Full release HOLD. See G09_WSL2_OWNER_ACCEPTANCE_KO.md.
+
+G09 actual owner acceptance supersedes prior preparation checkpoint: --check all on WSL2, 82/82 hashes, build 6, perception13/13, MuJoCo400/400/400, Gazebo398/398/397, both50Hz, exit0 and no owned containers. Only 14.9 selected paths; no blanket T01–T19 L3 promotion or manuscript full QA. See reports/G09_WSL2_OWNER_ACCEPTANCE_REVIEW_20261126_KO.md.

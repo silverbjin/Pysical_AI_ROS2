@@ -29,6 +29,8 @@ CPU 기본, GPU 선택, 실제 로봇 HW 제외. 개발 중이며 배포용 실�
 - [G08 실제 두 물리 엔진 검수](docs/reports/G08_EXECUTION_REPORT_KO.md) · [14.8 실습](docs/LAB_14_8_GUIDE_KO.md)
 - [14.9 최종 검수·Owner 실행 후보](docs/LAB_14_9_GUIDE_KO.md) · [G09 개발 보고서](docs/reports/G09_DEVELOPMENT_REPORT_KO.md)
 
-G09 진행 중. `bash scripts/run_lab.sh 14.9 --guide`에서 검수 후보 안내를 확인. 전체 배포 HOLD; 원장 기준. GUI 및 선택 GPU 미검수.
+G09 WSL2 사용자 제한 인수 완료. `bash scripts/run_lab.sh 14.9 --guide`는 고정 실행 안내 조회이며 자체 실행 증거가 아니다. 전체 배포 HOLD; 원장 기준. GUI 및 선택 GPU 미검수.
 
-- [G09 SHA 고정 WSL2 사용자 인수 안내](docs/G09_WSL2_OWNER_ACCEPTANCE_KO.md) — OWNER_READY_HEADLESS_SCOPED, PIN 6c458e345236b124c9aa60f65788f35cfed74e62, build and three selected physical entrypoints verified in Linux CI. WSL2 L3 and full release pending. [물리 원샷 보고서](docs/reports/G09_OWNER_PHYSICS_EXECUTION_REPORT_KO.md)
+- [G09 SHA 고정 WSL2 사용자 인수 안내](docs/G09_WSL2_OWNER_ACCEPTANCE_KO.md) — OWNER_L3_SCOPED_PASS, PIN 6c458e345236b124c9aa60f65788f35cfed74e62, build and three selected physical entrypoints verified in Linux CI. WSL2 `--check all` actual PASS (82/82 evidence hashes, four stages exit0); full release HOLD. [물리 원샷 보고서](docs/reports/G09_OWNER_PHYSICS_EXECUTION_REPORT_KO.md)
+
+- [G09 WSL2 실제 인수 검수 보고서](docs/reports/G09_WSL2_OWNER_ACCEPTANCE_REVIEW_20261126_KO.md) · [정제 증거](evidence/g09_wsl2_owner_acceptance_20261126.json) · [MVP 출고 결정 및 잔여 조건](docs/G09_MVP_RELEASE_DECISION_KO.md). 기존 성공 PIN 유지, 기존 owner 재실행 불필요.
