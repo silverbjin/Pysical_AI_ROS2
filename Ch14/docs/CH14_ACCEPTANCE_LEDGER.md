@@ -2,7 +2,7 @@
 
 | Gate | 절 | 상태 | L0 | L1 | L2 | L3 | 범위/증거 |
 |---|---|---|---|---|---|---|---|
-| G00 | 공통 | BLOCKED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | repo/S2 확인, 모델/권리/ABI/lock 미완료 |
+| G00 | 공통 | BLOCKED | SCOPED_PASS | NOT_RUN | NOT_RUN | NOT_RUN | repo/S2/source pointers 확인, lock/asset regression 4+5 PASS; CI 45739048641/45739405822 FAIL; pinned retry 45739828134 미확정; actual model/rights/ABI 미완료 |
 | G01 | 14.1–2 | BLOCKED | SCOPED_PASS | NOT_RUN | NOT_RUN | NOT_RUN | local foundation 12 PASS; actual ONNX/YOLO NOT_RUN; G00 lock pending |
 | G02 | 14.3 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
 | G03 | 14.4 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |

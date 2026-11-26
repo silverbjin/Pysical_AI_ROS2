@@ -1,0 +1,19 @@
+# Ch14 개발 재개점 — 2026-11-26
+
+승인 저장소 silverbjin/Pysical_AI_ROS2, main base 9431fb535ce7a51416c19c4395fb2ba3fabdad40, 개발 feat/ch14-ai-deployment. 이 문서 직전 head 237688eae533b7cfbd57e39a5206e39d8ed4760b. 기준 대비 44개 변경 모두 Ch14 또는 .github/workflows/ch14-g00.yml, main 동일 확인. G00 전체 BLOCKED, G01 foundation SCOPED_PASS / 전체 BLOCKED, G02~09 NOT_STARTED.
+
+## 완료 단위 및 증거
+- f01dfa3c2973c94a85e04c096223bd7721f4ce39: 사용자 승인 반영, S2 19개 원고 추적, G00 감사. S1/S3 전량 직접 대조 미완료.
+- 2a41906353027454bf32357615b53deef3b6cf3c: CPU preflight 구현. [최초 FAIL 45739048641](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45739048641). artifact 15080153039.
+- a2eedeb3532aec8a35490de3d55795776d6aaeb1: G01 independent foundation source + 12/12 local pytest PASS, source blob 대조. 미학습 Torch forward 및 합성 전후처리/계측 테스트. ONNX 실제 export/YOLO/ROS 미실행. 환경 Debian13/Python3.13이므로 target acceptance 아님.
+- 3b3b636efeaceeb54166e663a4cf0f742230166f: nested wheel metadata 경계 수정. local 3/3; [두번째 FAIL 45739405822](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45739405822) artifact 15080307846. 실제 nested 12개 확인, 다른 JSON Header 오류 확인.
+- a937bd43efe0bca4f4d4eeee7f2d0796ef2d951a: 공식 HF YOLOv8n/s revision 및 publisher expected SHA, 다운로드/검사 스크립트 및 5/5 local regression. 실제 checkpoint 다운로드/로드 미실행. AGPL 배포 결정 필요.
+- 237688eae533b7cfbd57e39a5206e39d8ed4760b: Header 수정 및 4/4 local regression, 이전 artifact SHA/내부 7개 검증, 46개 wheel의 exact candidate lock 보존, ROS base digest 고정. [retry 45739828134](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45739828134)는 이 기록 작성 시 in_progress. 기존 두 실패와 다른 원인을 수정한 1회 실행이다.
+
+## 바로 다음 작업 (순서 유지)
+1. retry 45739828134의 실제 결론과 artifact 확인. PASS 시 exact lock 및 cv_bridge/ONNX smoke/라이선스 메타데이터/apt 목록 검토 후 CPU lock으로 승격. FAIL 시 최초 미통과 단계만 확인하며 동일 원인 반복 금지. 성공한 wheel 해시/ABI 증거는 재사용.
+2. G01 T03 actual export/parity 100 input과 결과 저장을 target CPU CI에서 검증. 현재 source 작성됨. G01 T01/02/04 YOLO backend/CLI/export/real fixture 20개는 아직 필요. 공개 배포 권리 확정 없이 모델이나 이미지 vendor 금지. 사용자 소유 원고 자체는 공개 Git에 넣지 않는다.
+3. PPO 원본 ZIP 또는 명세 허용 smoke 1회, Ch07/11/12 권리와 Ch11 minimal closure, Ch13 TF 계약 등은 해당 Gate 이전에 확정. B의 모델 부재 때문에 독립 A 검수를 차단하지 않는다.
+4. G02~G09는 명세의 의존성과 완료 조건대로. 새로운 증거 없는 반복, 범용 로봇 HW/파지/장기 학습 확대 금지. L3 최종 인수는 owner WSL2만.
+
+이 checkpoint는 완료 선언이 아니다. Gate별 실제 결과 보고서와 commit으로 갱신할 것. main 병합 금지.
