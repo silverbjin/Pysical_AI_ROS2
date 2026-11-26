@@ -14,11 +14,15 @@ source /tmp/rl_ws/install/setup.bash
 set -u
 stage=training
 if [[ -f /reuse/smoke-receipt.json ]];then
+ python /ch14/scripts/g07_verify_reuse.py --root /reuse
  cp /reuse/smoke-receipt.json "$out/"
  mkdir -p "$out/smoke_bundle"
  cp /reuse/smoke_bundle/{final_model.zip,manifest.json,result.json} "$out/smoke_bundle/"
-else
+elif [[ "${G07_ALLOW_SMOKE_TRAIN:-0}" == 1 ]];then
  python /ch14/scripts/g07_train_smoke.py --out "$out"
+else
+ echo "verified G07 smoke bundle missing; no automatic retraining" >&2
+ exit 2
 fi
 # Only the exact new owner-source smoke model and metadata are retained for reuse.
 readarray -t hashes < <(python -c 'import json;d=json.load(open("/evidence/smoke-receipt.json"));print(d["checkpoint_sha256"]);print(d["manifest_sha256"])')

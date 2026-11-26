@@ -9,7 +9,7 @@
 | G04 | 14.5 | historical CPU SCOPED_PASS; ordered shutdown SCOPED_PASS | SCOPED_PASS | SCOPED_PASS | SCOPED_PASS (ordered runner); generic Ctrl+C HOLD | NOT_RUN | 45755020128 historical SUCCESS; 45758721305 failure preserved; 45760289636 targeted 3/3 GT and four clean exits in 601ms, no server escalation; native hang root cause unconfirmed |
 | G05 | 14.6 | SCOPED_PASS (CPU T13 actual A/B/C); full release HOLD | SCOPED_PASS | SCOPED_PASS | SCOPED_PASS (actual fixed scene) | NOT_RUN | 45758721447 SUCCESS; 23 tests, 5 packages, 3x60 wall sec, 660 source/DDS match, GT miss0, heartbeat16/7/0; local Age caveat, G04 shutdown regression and release HOLD |
 | G06 | 14.7 | SCOPED_PASS (CPU T14–T16); full release HOLD | SCOPED_PASS | SCOPED_PASS | NOT_RUN (replay, not Gazebo) | NOT_RUN | 45761633396 SUCCESS, artifact34/34; 4 installed packages, actual CPU inference, single/compose 39/39 DDS+3D each, six containers exit0 same image, domain mismatch rejected, cleanup PASS |
-| G07 | 14.8 전반 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
+| G07 | 14.8 전반 | SCOPED_PASS (SMOKE_ONLY T17/18); full release HOLD | SCOPED_PASS | SCOPED_PASS (ROS shadow) | NOT_RUN | NOT_RUN | 45763347165 SUCCESS; 19 exact source files, one 2048-transition training, 136 parity inputs/1632 elements, max7.45e-8, 14 tests, 240 shadow/0 commands, artifact23/23; walking NOT_ACCEPTED |
 | G08 | 14.8 후반 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
 | G09 | 14.9 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
 

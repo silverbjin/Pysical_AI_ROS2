@@ -1,12 +1,5 @@
 name: Ch14 G07 RL actor and ROS shadow
 on:
-  push:
-    branches: [feat/ch14-ai-deployment]
-    paths:
-      - 'Ch14/scripts/g07_*'
-      - 'Ch14/ros2_ws/src/ch14_rl_deployment/**'
-      - 'Ch14/tests/test_g07_contracts.py'
-      - '.github/workflows/ch14-g07.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -33,7 +26,13 @@ jobs:
         with:
           path: ch14-wheelhouse
           key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
-      - name: Run actual bounded training, export and ROS shadow
+      - uses: actions/download-artifact@v4
+        with:
+          name: ch14-g07-evidence
+          run-id: 45763347165
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ch14-g07-reuse
+      - name: Reuse exact accepted smoke bundle; export and ROS shadow
         run: |
           set -eo pipefail
           docker run --rm --init -e GITHUB_RUN_ID -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g07-evidence:/evidence" -v "$PWD/ch14-g07-reuse:/reuse:ro" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g07_ci.sh 2>&1 | tee ch14-g07-evidence/run.log
