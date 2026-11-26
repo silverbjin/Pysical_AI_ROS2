@@ -113,7 +113,7 @@ def export_report(data, output):
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--chapter", choices=["all"] + ["Ch%02d" % i for i in range(1, 14)], default="all")
+    parser.add_argument("--chapter", choices=["all"] + ["Ch%02d" % i for i in range(1, 15)], default="all")
     parser.add_argument("--output", type=Path, default=ROOT / "ci-results" / "docs")
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args(argv)

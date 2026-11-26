@@ -1,0 +1,5 @@
+# G08-C actual MuJoCo execution report
+
+Run [45787876247](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45787876247), source 2ebd6ea9ea3277b0d62a80d05e489470544d8bb2, artifact 15101700809. ZIP SHA256 및 내부 14/14 검증. G07 archive SHA 확인 및 11개 reuse payload 검증, exact Ch12 19 blobs, CPU/RL hash lock install 및 pip check 성공, package build 성공. 8.000048593 wall sec, ACTIVE400, 50Hz, DDS target400/400, real feedback400, direction dot positive52, minimum height .392472774m, max inference .169344ms. cmd expiry, pause/resume, two owned exit0. Direction correlation is not controlled tracking causality or walking proficiency. SMOKE_ONLY. No full G08 pass, no re-run normal path. Next Gazebo exact Ch11 model geometry and Ch12 preparation, receipt-aligned headerless command witness, separate shutdown evidence. Full guards pending.
+
+독립 raw JSON 재계산: 측정 400 ACTIVE, 목표 DDS 최대 차이0.0rad, 연속 목표 max delta .02492879126220937rad (< .1rad); 전체 관절 피드백 486개 모두 서로 다른 위치 벡터. Status 전체 active480, arming1, wall_sensor_timeout16, WALL_SENSOR_TIMEOUT2. 측정 창 0.26~8.24 simulation seconds. 정상 8초와 pause 후 active는 분리. 이 수치는 동일 archive에서 별도 재계산하였으며 신규 실행하지 않았다.

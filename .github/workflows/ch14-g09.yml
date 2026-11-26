@@ -1,0 +1,115 @@
+name: Ch14 G09 clean CPU packaging and source QA
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - '.github/workflows/ch14-g09.yml'
+      - 'Ch14/scripts/g09*'
+      - 'Ch14/scripts/bootstrap.sh'
+      - 'Ch14/scripts/doctor.sh'
+      - 'Ch14/scripts/run_lab.sh'
+      - 'Ch14/scripts/verify_ch14.sh'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ch14-g09-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  clean:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Structural QA and fail-closed entrypoints
+        run: |
+          mkdir -p ch14-g09-evidence ch14-wheelhouse
+          echo "$GITHUB_SHA" > ch14-g09-evidence/source-sha.txt
+          for f in bootstrap doctor run_lab verify_ch14 g09_clean_build_ci; do bash -n "Ch14/scripts/$f.sh"; done
+          python3 Ch14/scripts/g09_audit.py --out ch14-g09-evidence/audit.json
+          bash Ch14/scripts/run_lab.sh 14.9 --guide > ch14-g09-evidence/guide.txt
+          set +e
+          bash Ch14/scripts/bootstrap.sh > ch14-g09-evidence/negative-pin.log 2>&1
+          rc=$?
+          test "$rc" = 2 || exit 1
+          bash Ch14/scripts/verify_ch14.sh --profile gpu > ch14-g09-evidence/negative-profile.log 2>&1
+          rc=$?
+          test "$rc" = 2 || exit 1
+          bash Ch14/scripts/verify_ch14.sh --headless > ch14-g09-evidence/negative-source.log 2>&1
+          rc=$?
+          test "$rc" = 2 || exit 1
+          set -e
+      - uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - name: Actual pinned bootstrap to clean combined build
+        run: |
+          set -eo pipefail
+          mkdir -p "$HOME/ch14-owner"
+          mv ch14-wheelhouse "$HOME/ch14-owner/wheelhouse"
+          curl --proto '=https' --proto-redir '=https' -fsSL --connect-timeout 15 --max-time 90 "https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/$GITHUB_SHA/Ch14/scripts/bootstrap.sh" -o "$RUNNER_TEMP/ch14-bootstrap.sh"
+          cmp "$RUNNER_TEMP/ch14-bootstrap.sh" Ch14/scripts/bootstrap.sh
+          set +e
+          CH14_SOURCE_SHA="$GITHUB_SHA" bash "$RUNNER_TEMP/ch14-bootstrap.sh" --profile cpu --headless --check build 2>&1 | tee ch14-g09-evidence/owner-bootstrap.log
+          codes=("${PIPESTATUS[@]}")
+          set -e
+          test "${codes[1]}" = 0
+          archive="$(sed -n 's/^CH14_OWNER_EVIDENCE=//p' ch14-g09-evidence/owner-bootstrap.log | tail -1)"
+          test -f "$archive"
+          sha256sum -c "$archive.sha256"
+          cp "$archive" ch14-g09-evidence/owner-rehearsal.tar.gz
+          cp "$archive.sha256" ch14-g09-evidence/owner-rehearsal.tar.gz.sha256
+          mkdir -p ch14-g09-evidence/owner
+          tar -xzf "$archive" -C ch14-g09-evidence/owner
+          (cd ch14-g09-evidence/owner && sha256sum -c sha256sums.txt)
+          if [[ "${codes[0]}" != 0 ]]; then exit "${codes[0]}"; fi
+          python3 - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path("ch14-g09-evidence/owner")
+          d=json.loads((p/"owner-result.json").read_text())
+          assert d["status"]=="SCOPED_PASS" and d["level"]=="LINUX_REHEARSAL_ONLY",d
+          assert d["source_sha"]==d["actual_source_sha"]==os.environ["GITHUB_SHA"],d
+          assert json.loads((p/"build/stage.json").read_text())=={"stage":"complete","exit_code":0}
+          assert "6 packages finished" in (p/"build/colcon.log").read_text()
+          assert "OWNED_CONTAINER_ABSENT" in (p/"build/container-cleanup.txt").read_text()
+          PY
+      - name: Actual SHA drift rejection and failure archive
+        run: |
+          set -eo pipefail
+          source_dir="$(sed -n 's/^CH14_SOURCE=//p' ch14-g09-evidence/owner-bootstrap.log | head -1)"
+          test -d "$source_dir/Ch14"
+          wrong=0000000000000000000000000000000000000000
+          set +e
+          bash "$source_dir/Ch14/scripts/verify_ch14.sh" --profile cpu --headless --source-sha "$wrong" --check build 2>&1 | tee ch14-g09-evidence/owner-negative-drift.log
+          codes=("${PIPESTATUS[@]}")
+          set -e
+          test "${codes[0]}" = 2 && test "${codes[1]}" = 0
+          archive="$(sed -n 's/^CH14_OWNER_EVIDENCE=//p' ch14-g09-evidence/owner-negative-drift.log | tail -1)"
+          sha256sum -c "$archive.sha256"
+          cp "$archive" ch14-g09-evidence/owner-negative-drift.tar.gz
+          mkdir -p ch14-g09-evidence/negative-drift
+          tar -xzf "$archive" -C ch14-g09-evidence/negative-drift
+          (cd ch14-g09-evidence/negative-drift && sha256sum -c sha256sums.txt)
+          python3 - <<'PY'
+          import os,json,pathlib
+          p=pathlib.Path("ch14-g09-evidence/negative-drift")
+          d=json.loads((p/"owner-result.json").read_text())
+          assert d["status"]=="BLOCKED" and d["exit_code"]==2 and d["stage"]=="preflight",d
+          assert d["actual_source_sha"]==os.environ["GITHUB_SHA"] and d["source_sha"]=="0"*40,d
+          assert not (p/"build").exists(),d
+          PY
+      - name: Hash evidence
+        if: always()
+        run: |
+          cd ch14-g09-evidence
+          find . -type f ! -path './sha256sums.txt' -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch14-g09-clean-evidence
+          path: ch14-g09-evidence/
+          retention-days: 30

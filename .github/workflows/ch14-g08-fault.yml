@@ -1,0 +1,55 @@
+name: Ch14 G08 pinned ONNX protection first boundary
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - '.github/workflows/ch14-g08-fault.yml'
+      - 'Ch14/scripts/g08_fault*'
+      - 'Ch14/ros2_ws/src/ch14_rl_deployment/ch14_rl_deployment/rl_controller.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ch14-g08-fault-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fault:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Static boundary
+        run: |
+          mkdir -p ch14-g08-evidence ch14-wheelhouse ch14-g07-reuse
+          echo "$GITHUB_SHA" > ch14-g08-evidence/source-sha.txt
+          python3 -m compileall -q Ch14/scripts/g08_fault_probe.py Ch14/scripts/g08_fault_controller.py Ch14/ros2_ws/src/ch14_rl_deployment Ch14/python/rl_controller.py
+          bash -n Ch14/scripts/g08_fault_ci.sh
+      - uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ch14-g07-evidence
+          run-id: 45763347165
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ch14-g07-reuse
+      - name: Pinned G07 model and actual protection DDS loop
+        run: |
+          set -eo pipefail
+          docker run --rm --init -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g08-evidence:/evidence" -v "$PWD/ch14-g07-reuse:/reuse:ro" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g08_fault_ci.sh 2>&1 | tee ch14-g08-evidence/run.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          cd ch14-g08-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch14-g08-fault-evidence
+          path: ch14-g08-evidence/
+          retention-days: 30

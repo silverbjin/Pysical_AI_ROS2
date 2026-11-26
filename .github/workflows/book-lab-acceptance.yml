@@ -19,7 +19,7 @@ on:
         required: true
         type: choice
         default: all
-        options: [all, Ch01, Ch02, Ch03, Ch04, Ch05, Ch06, Ch07, Ch08, Ch09, Ch10, Ch11, Ch12, Ch13]
+        options: [all, Ch01, Ch02, Ch03, Ch04, Ch05, Ch06, Ch07, Ch08, Ch09, Ch10, Ch11, Ch12, Ch13, Ch14]
       level:
         description: 'preflight docs, or pilot Ch02/Ch12 runtime'
         required: true
@@ -72,13 +72,15 @@ jobs:
             /Ch13/README.md
             /Ch13/docs/**
             /Ch13/evidence/**/*.md
+            /Ch14/README.md
+            /Ch14/docs/**
       - name: Validator unit tests
         run: python3 -m unittest discover -s ci/tests -v
       - name: Validate guide inventory and links
         env:
           CHAPTER: "${{ github.event_name == 'pull_request' && 'all' || inputs.chapter }}"
         run: python3 ci/check_guides.py --chapter "$CHAPTER" --output ci-results/docs
-      - name: Reconcile 101-guide evidence without ROS / Gazebo execution
+      - name: Reconcile legacy Ch01–13 101-guide evidence without ROS / Gazebo execution
         run: python3 ci/book_acceptance_matrix.py --output ci-results/book-101-matrix
       - name: Publish document report
         if: always()

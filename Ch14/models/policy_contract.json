@@ -1,0 +1,97 @@
+{
+  "status": "SOURCE_CONTRACT_ONLY",
+  "task": "locomotion",
+  "observation_schema": "locomotion-v1-48",
+  "input_shape": [
+    1,
+    48
+  ],
+  "output_shape": [
+    1,
+    12
+  ],
+  "normalization": "none",
+  "checkpoint_sha256": null,
+  "manifest_blob_sha": "7779d717451bfd84512d94b0a4e8e01188a4f3c0",
+  "joint_names": [
+    "fr_hip_joint",
+    "fr_thigh_joint",
+    "fr_calf_joint",
+    "fl_hip_joint",
+    "fl_thigh_joint",
+    "fl_calf_joint",
+    "rr_hip_joint",
+    "rr_thigh_joint",
+    "rr_calf_joint",
+    "rl_hip_joint",
+    "rl_thigh_joint",
+    "rl_calf_joint"
+  ],
+  "observation_fields": [
+    [
+      "body_linear",
+      0,
+      3
+    ],
+    [
+      "body_angular",
+      3,
+      6
+    ],
+    [
+      "projected_gravity",
+      6,
+      9
+    ],
+    [
+      "body_command",
+      9,
+      12
+    ],
+    [
+      "relative_joint_position",
+      12,
+      24
+    ],
+    [
+      "joint_velocity",
+      24,
+      36
+    ],
+    [
+      "published_residual",
+      36,
+      48
+    ]
+  ],
+  "nominal": [
+    0,
+    -0.5,
+    1,
+    0,
+    -0.5,
+    1,
+    0,
+    -0.5,
+    1,
+    0,
+    -0.5,
+    1
+  ],
+  "action_scale_rad": 0.35,
+  "action_clip": [
+    -1,
+    1
+  ],
+  "step_limit_rad": 0.1,
+  "period_s": 0.02,
+  "sensor_timeout_s": 0.25,
+  "skew_s": 0.1,
+  "command_timeout_s": 0.5,
+  "wall_watchdog_s": 0.5,
+  "inference_budget_s": 0.02,
+  "source_future_tolerance_s": 0.05,
+  "source_tilt_limit_deg": 45,
+  "controller_min_height_m": 0.2,
+  "verifier_min_height_exclusive_m": 0.14
+}

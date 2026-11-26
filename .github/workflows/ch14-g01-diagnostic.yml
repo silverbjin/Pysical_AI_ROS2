@@ -1,0 +1,49 @@
+name: Ch14 G01 bounded semantic diagnostic
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - 'Ch14/scripts/g01_two_image_diagnostic.py'
+      - 'Ch14/scripts/g01_two_image_diagnostic.sh'
+      - '.github/workflows/ch14-g01-diagnostic.yml'
+permissions:
+  contents: read
+concurrency:
+  group: ch14-g01-two-image
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Static check
+        run: |
+          python3 -m py_compile Ch14/scripts/g01_two_image_diagnostic.py
+          bash -n Ch14/scripts/g01_two_image_diagnostic.sh
+      - uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - name: Actual two-image raw score and independent NMS
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-wheelhouse ch14-diagnostic-evidence
+          echo "$GITHUB_SHA" > ch14-diagnostic-evidence/source-sha.txt
+          docker run --rm -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-diagnostic-evidence:/evidence" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g01_two_image_diagnostic.sh 2>&1 | tee ch14-diagnostic-evidence/run.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch14-diagnostic-evidence
+          cd ch14-diagnostic-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch14-g01-two-image-diagnostic
+          path: ch14-diagnostic-evidence/
+          retention-days: 30

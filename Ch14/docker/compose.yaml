@@ -1,0 +1,34 @@
+x-common: &common
+  image: ${CH14_IMAGE:?set tested image}
+  pull_policy: never
+  network_mode: host
+  init: true
+  user: "${CH14_UID:?set host UID}:${CH14_GID:?set host GID}"
+  stop_signal: SIGINT
+  stop_grace_period: 18s
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  environment:
+    HOME: /tmp
+    ROS_LOG_DIR: /tmp/ch14-ros-logs
+    ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-89}"
+    ROS_AUTOMATIC_DISCOVERY_RANGE: LOCALHOST
+    RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+    MODEL_SHA256: "${MODEL_SHA256:?set verified ONNX SHA}"
+services:
+  ai-inference:
+    <<: *common
+    volumes:
+      - "${CH14_MODELS:?set model directory}:/models:ro"
+    command: [python, /opt/ch14/scripts/g06_runtime.py, detector]
+  monitor:
+    <<: *common
+    volumes:
+      - "${CH14_EVIDENCE:?set evidence directory}:/evidence:rw"
+    command: [python, /opt/ch14/scripts/g06_monitor.py, --out, /evidence/monitor.json]
+  sensor-source:
+    <<: *common
+    depends_on: [ai-inference, monitor]
+    volumes:
+      - "${CH14_BAGS:?set bag directory}:/bags:ro"
+    command: [python, /opt/ch14/scripts/g06_runtime.py, sensor]

@@ -1,0 +1,2 @@
+from setuptools import setup
+setup(name='ch14_simulation',version='0.1.0',packages=['ch14_simulation'],data_files=[('share/ament_index/resource_index/packages',['resource/ch14_simulation']),('share/ch14_simulation',['package.xml']),('share/ch14_simulation/worlds',['worlds/semantic_rgbd.sdf']),('share/ch14_simulation/launch',['launch/semantic_rgbd.launch.py'])],install_requires=['setuptools'],zip_safe=False)

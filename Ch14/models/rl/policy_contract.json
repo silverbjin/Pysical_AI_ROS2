@@ -1,0 +1,267 @@
+{
+  "manifest": {
+    "format_version": 1,
+    "task": "locomotion",
+    "observation_schema": "locomotion-v1-48",
+    "env_kwargs": {
+      "max_episode_steps": 200
+    },
+    "observation_size": 48,
+    "action_size": 12,
+    "normalization": "none",
+    "evaluation_env_kwargs": {
+      "max_episode_steps": 200
+    },
+    "training": {
+      "total_timesteps": 2048,
+      "n_envs": 2,
+      "backend": "dummy",
+      "device": "cpu",
+      "seed": 42,
+      "n_steps": 128,
+      "batch_size": 64,
+      "n_epochs": 2,
+      "learning_rate": 0.0003,
+      "gamma": 0.99,
+      "ent_coef": 0.005,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "net_arch": {
+        "pi": [
+          256,
+          256
+        ],
+        "vf": [
+          256,
+          256
+        ]
+      },
+      "activation": "Tanh",
+      "torch_threads": 1,
+      "eval_every": 512,
+      "eval_episodes": 2,
+      "checkpoint_every": 512
+    },
+    "eval_callback_frequency": 256,
+    "versions": {
+      "physical-ai-quadruped-rl": "0.8.0",
+      "stable-baselines3": "2.7.1",
+      "torch": "2.5.1+cpu",
+      "mujoco": "3.3.7",
+      "gymnasium": "1.2.1",
+      "numpy": "1.26.4"
+    }
+  },
+  "policy_scope": "SMOKE_ONLY",
+  "checkpoint_sha256": "45b2450e95d68d258c5d437b3a59d04c37a7d84f5b9ac9cb119c6c2d2002f2ce",
+  "manifest_sha256": "f019c67de3aad30e4b020538546fc10154aabf5fb3d5bbb0d453a7512cbbe7a9",
+  "env_config_sha256": "3fa339ac84f5ed29a717f3c85b6ba39bc9411260767e9ac3afed82bb2f5e7d37",
+  "joint_names": [
+    "fr_hip_joint",
+    "fr_thigh_joint",
+    "fr_calf_joint",
+    "fl_hip_joint",
+    "fl_thigh_joint",
+    "fl_calf_joint",
+    "rr_hip_joint",
+    "rr_thigh_joint",
+    "rr_calf_joint",
+    "rl_hip_joint",
+    "rl_thigh_joint",
+    "rl_calf_joint"
+  ],
+  "nominal": [
+    0.0,
+    -0.5,
+    1.0,
+    0.0,
+    -0.5,
+    1.0,
+    0.0,
+    -0.5,
+    1.0,
+    0.0,
+    -0.5,
+    1.0
+  ],
+  "joint_limits": [
+    [
+      -0.8,
+      0.8
+    ],
+    [
+      -1.0,
+      4.0
+    ],
+    [
+      -2.8,
+      2.8
+    ],
+    [
+      -0.8,
+      0.8
+    ],
+    [
+      -1.0,
+      4.0
+    ],
+    [
+      -2.8,
+      2.8
+    ],
+    [
+      -0.8,
+      0.8
+    ],
+    [
+      -1.0,
+      4.0
+    ],
+    [
+      -2.8,
+      2.8
+    ],
+    [
+      -0.8,
+      0.8
+    ],
+    [
+      -1.0,
+      4.0
+    ],
+    [
+      -2.8,
+      2.8
+    ]
+  ],
+  "action_scale": [
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35
+  ],
+  "action_low": [
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0
+  ],
+  "action_high": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "control_period_s": 0.02,
+  "max_target_delta_rad": 0.1,
+  "startup_velocity_rad_s": 1.0,
+  "sensor_timeout_s": 0.25,
+  "max_skew_s": 0.1,
+  "command_timeout_s": 0.5,
+  "wall_watchdog_s": 0.5,
+  "inference_budget_s": 0.02,
+  "observation_fields": [
+    {
+      "slice": [
+        0,
+        3
+      ],
+      "meaning": "body linear velocity",
+      "unit": "m/s",
+      "scale": 1
+    },
+    {
+      "slice": [
+        3,
+        6
+      ],
+      "meaning": "body angular velocity",
+      "unit": "rad/s",
+      "scale": 1
+    },
+    {
+      "slice": [
+        6,
+        9
+      ],
+      "meaning": "projected unit gravity",
+      "unit": "1",
+      "scale": 1
+    },
+    {
+      "slice": [
+        9,
+        12
+      ],
+      "meaning": "body velocity command",
+      "unit": "m/s,m/s,rad/s",
+      "scale": 1
+    },
+    {
+      "slice": [
+        12,
+        24
+      ],
+      "meaning": "joint position minus nominal",
+      "unit": "rad",
+      "scale": 1
+    },
+    {
+      "slice": [
+        24,
+        36
+      ],
+      "meaning": "joint velocity",
+      "unit": "rad/s",
+      "scale": 1
+    },
+    {
+      "slice": [
+        36,
+        48
+      ],
+      "meaning": "last actually applied residual",
+      "unit": "1",
+      "scale": 1
+    }
+  ],
+  "onnx_io": {
+    "input": "observation",
+    "output": "joint_action",
+    "input_shape": [
+      1,
+      48
+    ],
+    "output_shape": [
+      1,
+      12
+    ],
+    "dtype": "float32",
+    "opset": 13
+  },
+  "onnx_sha256": "c6bc846346ea156f39b31a84da3e2051e17d377b39b825eb08ba3ef77f51e546"
+}

@@ -1,0 +1,161 @@
+{
+  "run_id": 45745101023,
+  "job_id": 139659106036,
+  "source_sha": "ce2ee7a3cada354d6c2625201f2fdcb7258decf5",
+  "artifact_id": 15082717992,
+  "artifact_zip_sha256": "0537cf7ba76db50b918fe8d27a12c3304b810a8aa98781861591441d98ed32e9",
+  "internal_files_verified": 18,
+  "workflow_status": "FAIL",
+  "failed_stage": "T04_acceptance",
+  "t01_reused": "45744146299 source match 10/10; 2x100 actual forward",
+  "t02": "FRESH_ACTUAL_PASS",
+  "t03": "PASS historical 45742206902",
+  "fixture_manifest_sha256": "ffc6cf6fafc0c3c9477060596a838e303115f060d66011a75849a77c86a6086d",
+  "fixture_images": 20,
+  "positive": 16,
+  "unlabeled_negative": 4,
+  "total_labels": 64,
+  "scope": "CPU_OFFLINE_ONLY",
+  "models": {
+    "yolov8n": {
+      "onnx_sha256": "e8950e7e6edc29ee614a027ee7a07aa492afbda7f24faad049972be5b7c96546",
+      "t02_seed_max_abs": 0.00079345703125,
+      "raw_pass": 20,
+      "matched_boxes": 30,
+      "unmatched_reference": 0,
+      "unmatched_candidate": 0,
+      "min_iou": 0.9999987535783985,
+      "max_score_abs_diff": 0.0000012516975402832031,
+      "max_raw_abs": 0.002593994140625,
+      "mean_raw_abs": 0.0000014012150188591477,
+      "required_positive_pass": 14,
+      "required_positive_fail": 2,
+      "total_images_pass": 18,
+      "synthetic_empty": true,
+      "nonsquare": true,
+      "negative_contracts": {
+        "missing_onnx": true,
+        "wrong_onnx_sha": true,
+        "wrong_pt_sha": true,
+        "missing_image": true,
+        "cuda_unavailable_rejected": true
+      },
+      "label_metrics": {
+        "reference": {
+          "tp": 26,
+          "fp": 4,
+          "fn": 38,
+          "ignored_crowd": 0,
+          "precision": 0.8666666666666667,
+          "recall": 0.40625
+        },
+        "candidate": {
+          "tp": 26,
+          "fp": 4,
+          "fn": 38,
+          "ignored_crowd": 0,
+          "precision": 0.8666666666666667,
+          "recall": 0.40625
+        }
+      },
+      "failed_ids": [
+        463199,
+        392818
+      ]
+    },
+    "yolov8s": {
+      "onnx_sha256": "6b213b04c58fc0df0039d59f00b665b727943ebed2a6a393727a2423a95e50e9",
+      "raw_pass": 20,
+      "matched_boxes": 41,
+      "unmatched_reference": 0,
+      "unmatched_candidate": 0,
+      "min_iou": 0.9999986261405609,
+      "max_score_abs_diff": 7.152557373046875e-7,
+      "max_raw_abs": 0.003570556640625,
+      "mean_raw_abs": 0.0000013369375608363044,
+      "required_positive_pass": 15,
+      "required_positive_fail": 1,
+      "total_images_pass": 19,
+      "synthetic_empty": true,
+      "nonsquare": true,
+      "negative_contracts": {
+        "missing_onnx": true,
+        "wrong_onnx_sha": true,
+        "wrong_pt_sha": true,
+        "missing_image": true,
+        "cuda_unavailable_rejected": true
+      },
+      "label_metrics": {
+        "reference": {
+          "tp": 36,
+          "fp": 5,
+          "fn": 28,
+          "ignored_crowd": 0,
+          "precision": 0.8780487804878049,
+          "recall": 0.5625
+        },
+        "candidate": {
+          "tp": 36,
+          "fp": 5,
+          "fn": 28,
+          "ignored_crowd": 0,
+          "precision": 0.8780487804878049,
+          "recall": 0.5625
+        }
+      },
+      "failed_ids": [
+        463199
+      ]
+    }
+  },
+  "failure_details": [
+    {
+      "id": 463199,
+      "required_class": "bus",
+      "required_class_id": 5,
+      "gt_xyxy": [
+        0,
+        0,
+        640,
+        355.56
+      ],
+      "models": [
+        "yolov8n",
+        "yolov8s"
+      ],
+      "reference_and_candidate": "bus absent at threshold .5; person/cell phone detections matched",
+      "cause_limit": "No raw per-target candidate or original visual adjudication retained; do not claim bus interior, label error, or low-confidence cause confirmed."
+    },
+    {
+      "id": 392818,
+      "required_class": "dog",
+      "required_class_id": 16,
+      "gt_xyxy": [
+        0,
+        10.55,
+        500,
+        447
+      ],
+      "models": [
+        "yolov8n"
+      ],
+      "reference": "cat score 0.528897225856781",
+      "candidate": "cat score 0.5288981795310974",
+      "cause_limit": "Shared class mismatch; v8s required target passed; no re-labeling"
+    }
+  ],
+  "raw_files_sha256": {
+    "fixture-label-metrics.json": "ddfbb8f4a72aecf0f4f9fb695d6c264a0b24e266fa31218497c221d0476c1d6e",
+    "yolov8n-parity.json": "3425698639bb0c567d317c8d6512fd36e0d9a747959154f2d72c503a1af651cb",
+    "yolov8s-parity.json": "4ed58e04455e41175b0bf4cd2ebad785e3260b9b01053bf209d08eb96254f715",
+    "yolov8n-negative-contracts.json": "e6786daace23318b4fae53eca1686ceeb80d3f62519026a34741f44893451c50",
+    "yolov8s-negative-contracts.json": "e6786daace23318b4fae53eca1686ceeb80d3f62519026a34741f44893451c50",
+    "t01-t02-reuse.json": "de2d966cd6f01b495d6c94e8a247d9212e6e423ed66f326cc1d0a06f8de15c9f",
+    "yolov8n-export.json": "306a7ed8f6d047d2b7292e03e483aaca6c8ca1262fac2420ee125842aa57b2e8",
+    "yolov8s-export.json": "609a9ec868ab63d05944d118bca5043d2551144cbad6dbd1b2d6a49662286e70"
+  },
+  "g01_gate": "BLOCKED_SEMANTIC_AND_RELEASE",
+  "owner": "NOT_RUN",
+  "rights": "PENDING",
+  "main_merge": "NOT_AUTHORIZED_CONDITION_NOT_MET"
+}

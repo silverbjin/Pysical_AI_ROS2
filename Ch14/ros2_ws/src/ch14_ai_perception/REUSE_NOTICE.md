@@ -1,0 +1,2 @@
+# Ch13 reuse
+Unmodified geometry.py and contracts.py from silverbjin/Pysical_AI_ROS2 9431fb535ce7a51416c19c4395fb2ba3fabdad40, under Ch13/LICENSE Apache-2.0. Original package integrated_robot_vision declares Apache-2.0. Original blobs 9d77c8225ac2cb1b40e9538068f44f6ba1d3daaf and a17673b4afe706ee12c0c64743bcc4f41f5d61a9. Relative imports preserved. Ch07 launch reference f3fab691695f6d9c91148f23cb80585ec24614bc, no code copied (license TODO). Overall Ch14 release rights still pending.
