@@ -27,3 +27,6 @@ python python/export_custom_model.py --output evidence/t03_run_001
 
 ## 실제 T02 검증
 Run 45744146299: n/s ONNX actual checker/ORT load and infer PASS, FP32 static 640 batch1, COCO 80 map, NMS 없음. Seed max abs n 0.000701904296875, s 0.0015869140625 (combined atol/rtol allclose PASS). n SHA 7a0036fa3389769f62f48fae0b26e0acec937cee0e3c8d78e0bab31a7dbcfc4e; s SHA 18fb51e7a65dbfba1c011d2d99c30d066324a1164e1c0eddf5fbcd383153f8d3. T04 fixture TLS blocked; do not call image parity PASS. External model/fixture distribution approval pending.
+
+## 실제 T04 결과 및 학생 분석 과제
+Run 45745101023: 두 실제 모델 20개씩 raw allclose PASS, paired n30/s41, unmatched 0; semantic target n14/16, s15/16, 전체 T04 FAIL. 동일 모델의 PT/ORT가 동일 오류를 발생시키는 이유와 최적화로 해결할 수 없는 모델 품질 문제를 비교한다. 463199 bus 누락 및 392818 dog→cat(n) 고정 ID를 분석하되 원본 라이선스 및 라벨을 확인하고 threshold/fixture를 임의 변경하지 않는다. P/R n .8667/.40625, s .8780/.5625; 소규모 fixture로 일반화 금지. [실제 증거](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45745101023/artifacts/15082717992). G01 full acceptance 미완료, WSL2 미인수.

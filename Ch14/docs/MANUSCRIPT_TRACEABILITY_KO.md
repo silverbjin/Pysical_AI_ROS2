@@ -3,10 +3,10 @@ S2 26쪽, SHA256 0ca3425f57c3608a5078edb5a8c708dc1d734459072532f9954634695df2b3a
 
 | 코드 | S2 쪽 | Gate | 대상 | 시험 |
 |---|---|---|---|---|
-| 14-1 | 2–3 | G01 | python/benchmark_torch.py | T01 NOT_RUN |
-| 14-2 | 4 | G01 | python/export_yolo.py | T02 NOT_RUN |
-| 14-3 | 4 | G01 | python/export_custom_model.py | T03 NOT_RUN |
-| 14-4 | 5–6 | G01 | python/inference_onnx.py | T04 NOT_RUN |
+| 14-1 | 2–3 | G01 | python/benchmark_torch.py | T01 actual CPU 2x100 PASS, CUDA unavailable rejected |
+| 14-2 | 4 | G01 | python/export_yolo.py | T02 fresh actual n/s export PASS |
+| 14-3 | 4 | G01 | python/export_custom_model.py | T03 actual 100 inputs PASS |
+| 14-4 | 5–6 | G01 | python/inference_onnx.py | T04 raw/paired PASS, required semantics FAIL |
 | 14-5 | 7–8 | G02 | python/trt_inference.py | T05 NOT_RUN |
 | 14-6 | 8 | G02 | python/ov_inference.py | T06 NOT_RUN |
 | 14-7 | 9–11 | G03 | python/async_inference_node.py | T07 NOT_RUN |
@@ -24,3 +24,5 @@ S2 26쪽, SHA256 0ca3425f57c3608a5078edb5a8c708dc1d734459072532f9954634695df2b3a
 | 14-19 | 21–22 | G08 | python/rl_controller.py | T19 NOT_RUN |
 
 차이: 14-7 예시에서 모델 생성은 노드 init이지만 GPU worker 자원 수명은 worker 내에서 관리; threshold snapshot 단일 읽기. 14-8 ATS slop은 공간 정렬 보장 아님. 14-9 중복 선언 금지. 14-11 후보 warmup 외 hash/클래스/계약·rollback·terminal request 상태 추가. 14-12/14-14/14-16 my_robot_ai_pkg → ch14_ai_perception, compose 명칭 정리. 14-17 shape 단독 검사보다 원본 load_bundle 선검증. 14-18/19 발췌는 기존 보호 계약과 결합. 14.6.6 Q6 예시 값 실측 아님. GPU 선택, 실제 HW 제외. T19 actual joint feedback, shadow/hold 별도 검증. 구현·실측 시 표 갱신.
+
+Actual G01 evidence: 45744146299 T01, 45742206902 T03, 45745101023 fresh T02/T04. G01 not complete; actual T04 semantic failure documented. 14-2 canonical export_yolo currently implemented in backends.py (single backend contract), not export.py; 14-1/2/4 wrappers use yolo_lab.py. No code 14-5 onward acceptance.
