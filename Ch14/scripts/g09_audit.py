@@ -31,7 +31,13 @@ def audit(root):
             node=ET.parse(q).getroot()
             if node.findtext("name")!=n:errors.append("package name "+n)
             if n=="ch14_ai_interfaces":need(prefix/"CMakeLists.txt");need(prefix/"srv/SwapModel.srv")
-            else:need(prefix/"setup.py");need(prefix/"setup.cfg");need(prefix/"resource"/n)
+            else:
+                setup=need(prefix/"setup.py");need(prefix/"resource"/n)
+                # ROS executable placement is needed only for console_scripts.
+                # A data-only launch/world package has no executable to place.
+                setup_ast=ast.parse(setup.read_text())
+                has_console=any(isinstance(x,ast.Constant) and x.value=="console_scripts" for x in ast.walk(setup_ast))
+                if has_console:need(prefix/"setup.cfg")
             packages.append(n)
         except (OSError,ET.ParseError) as exc:errors.append(str(exc))
     for p in ("vendor/ch12/REUSE_MANIFEST.json","vendor/ch11_g08/REUSE_MANIFEST.json"):
