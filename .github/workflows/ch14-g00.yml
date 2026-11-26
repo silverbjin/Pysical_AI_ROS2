@@ -1,0 +1,45 @@
+name: Ch14 G00 CPU candidate preflight
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - 'Ch14/requirements/cpu.candidate.txt'
+      - 'Ch14/scripts/g00_*'
+      - '.github/workflows/ch14-g00.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cpu-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Resolve actual ROS base and test CPU candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-g00-evidence
+          printf '%s\n' "$GITHUB_SHA" > ch14-g00-evidence/source-sha.txt
+          docker pull ros:jazzy-ros-base
+          docker image inspect ros:jazzy-ros-base > ch14-g00-evidence/base-image.json
+          image="$(docker image inspect --format '{{.Id}}' ros:jazzy-ros-base)"
+          docker run --rm -e CH14_SOURCE_SHA="$GITHUB_SHA" -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-g00-evidence:/evidence" "$image" bash /ch14/scripts/g00_cpu_probe.sh /evidence 2>&1 | tee ch14-g00-evidence/probe.log
+      - name: Hash collected evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p ch14-g00-evidence
+          cd ch14-g00-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - name: Preserve candidate lock and actual logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch14-g00-cpu-preflight
+          path: ch14-g00-evidence/
+          retention-days: 30
+          if-no-files-found: error
