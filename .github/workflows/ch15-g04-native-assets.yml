@@ -1,0 +1,52 @@
+name: Ch15 T10 actual 94 asset bytes and original source preflight
+on:
+  push:
+    branches: [feat/ch15-mission-engineering]
+    paths:
+      - 'Ch15/scripts/prepare_native_assets.py'
+      - '.github/workflows/ch15-g04-native-assets.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch15
+          persist-credentials: false
+          path: feature
+      - uses: actions/checkout@v4
+        with:
+          ref: 1931cac92585fc155357880b584c72c76d67257c
+          sparse-checkout: Ch13
+          persist-credentials: false
+          path: native
+      - name: Actual byte acquisition and native preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          git -C feature rev-parse HEAD > evidence/source-sha.txt
+          git -C native rev-parse HEAD > evidence/native-sha.txt
+          python3 feature/Ch15/scripts/prepare_native_assets.py --target "$PWD/upstream-iit-locomanipulation-d010212" --receipt evidence/asset-verification.json | tee evidence/acquisition.log
+          touch ch13_reuse_engine.lock
+          python3 feature/Ch15/ros2_ws/src/ch15_adapters/ch15_adapters/ch13_basic_adapter.py preflight --root "$PWD/native" --lock feature/Ch15/dependencies/reuse.audit.json --contract feature/Ch15/dependencies/ch13_contract.lock.json --approval feature/Ch15/dependencies/native_local_use_approval.json --out evidence/preflight.json
+          python3 native/Ch13/scripts/reuse_13_5/inspect_r2_residuals.py evidence/residual.json
+          python3 native/Ch13/scripts/reuse_13_8/freeze_runtime.py write "$PWD/evidence/current-freeze.json" | tee evidence/freeze.log
+          python3 native/Ch13/scripts/reuse_13_8/freeze_runtime.py verify "$PWD/evidence/current-freeze.json" | tee evidence/freeze-verify.log
+      - name: Hash only receipts and logs (no external assets)
+        if: always()
+        run: |
+          mkdir -p evidence
+          cd evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-t10-assets-receipts-only
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

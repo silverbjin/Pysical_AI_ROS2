@@ -31,12 +31,17 @@ def verify_residual(row):
     need(row.get('result')=='PASS' and row.get('owned_stack_matches')==[] and row.get('engine_lock_free') is True,'NATIVE_RESIDUAL_OR_LOCK_BUSY')
 def authorize(root,lock,contract,approval):
     verify_source(root,contract)
+    native_lock=load(root/'Ch13/dependencies/section_13_5_reuse.lock.json')
+    need(native_lock['files']==lock['ch13']['assets'] and native_lock['upstream']['commit']==lock['ch13']['upstream']['commit'],'ORIGINAL_MANIFEST_DRIFT')
     need(approval is not None and approval.is_file(),'ASSET_USE_APPROVAL_MISSING')
     a=load(approval)
     need(a.get('local_use_approved') is True and a.get('redistribution') is False and a.get('upstream_commit')==lock['ch13']['upstream']['commit'] and isinstance(a.get('review_reference'),str) and bool(a['review_reference'].strip()) and not a['review_reference'].startswith('REPLACE_'),'ASSET_USE_APPROVAL_INVALID')
     assets=root.parent/'upstream-iit-locomanipulation-d010212'
     need(assets.is_dir(),'ASSETS_MISSING')
-    need(git(assets,'rev-parse','HEAD')==lock['ch13']['upstream']['commit'],'ASSET_SOURCE_SHA_DRIFT')
+    # Original Ch13 guide supports raw-file directories without .git.
+    # Exact original manifest bytes are mandatory regardless of acquisition method.
+    if (assets/'.git').exists():
+        need(git(assets,'rev-parse','HEAD')==lock['ch13']['upstream']['commit'],'ASSET_SOURCE_SHA_DRIFT')
     count=verify_assets(assets,lock['ch13']['assets'])
     shared=root.parent/'ch13_reuse_engine.lock'
     need(shared.is_file() and not shared.is_symlink(),'SHARED_LOCK_MISSING_OR_INVALID')
