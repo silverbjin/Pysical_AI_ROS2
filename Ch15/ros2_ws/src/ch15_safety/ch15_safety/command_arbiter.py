@@ -16,8 +16,12 @@ class CommandArbiter(Node):
         self.create_subscription(TwistStamped,'/ch15/cmd_vel_in',self.on_command,profile())
         self.out=self.create_publisher(Twist,'/cmd_vel',profile())
         self.status=self.create_publisher(SafetyState,'/ch15/safety_state',state_qos)
-        self.create_service(Trigger,'/ch15/reset_safety',self.reset)
+        self.require_authorization=self.declare_parameter('require_mission_authorization',False).value
+        self.mission_block=True;self.mission_at=0.
+        if self.require_authorization:self.create_subscription(Bool,'/ch15/mission_block',self.on_mission_block,profile(10))
+        else:self.create_service(Trigger,'/ch15/reset_safety',self.reset)
         self.create_timer(.05,self.tick,clock=Clock(clock_type=ClockType.STEADY_TIME))
+    def on_mission_block(self,msg):self.mission_block=msg.data;self.mission_at=time.monotonic()
     def on_ready(self,msg):self.ready=msg.ready;self.ready_at=time.monotonic()
     def on_command(self,msg):self.cmd=msg;self.cmd_at=time.monotonic()
     def reset(self,req,res):
@@ -26,6 +30,7 @@ class CommandArbiter(Node):
         now=time.monotonic();ready=self.ready and now-self.ready_at<=.3
         owner=self.count_publishers('/cmd_vel')==1 and self.count_publishers('/ch15/cmd_vel_in')==1 and self.count_publishers('/ch15/stop_request')==1
         blocked=self.gate.blocked(now,ready,owner);reason='gate' if blocked else ''
+        if self.require_authorization and (self.mission_block or now-self.mission_at>.15):blocked=True;reason='mission_block'
         out=Twist()
         if not blocked and self.cmd is not None:
             m=self.cmd;stamp=m.header.stamp.sec*1000000000+m.header.stamp.nanosec;age=self.get_clock().now().nanoseconds-stamp

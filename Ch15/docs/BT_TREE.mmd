@@ -1,0 +1,13 @@
+flowchart TD
+  Root[Selector memory=false] --> Safety[Sequence memory=false]
+  Root --> Mission[Sequence memory=true]
+  Safety --> Fault[fault_latched]
+  Safety --> Abort[safe_abort: block cancel terminal zero]
+  Mission --> Ready[ready]
+  Ready --> Nav[navigate]
+  Nav --> Detect[detect]
+  Detect --> Approach[approach_stand]
+  Approach --> Pick[pick_retract]
+  Pick --> Return[return_home]
+  Return --> Place[place]
+  Place --> Verify[verify_finish]

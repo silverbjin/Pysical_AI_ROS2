@@ -1,5 +1,5 @@
 """Only a logical mock. Never launch with a real robot or Ch13."""
-import math, threading, time
+import json, math, threading, time
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionServer, GoalResponse, CancelResponse
@@ -13,7 +13,7 @@ from tf2_ros import StaticTransformBroadcaster
 from nav2_msgs.action import NavigateToPose
 from ch15_interfaces.action import PickObject,PlaceObject
 from ch15_interfaces.srv import SwitchGait
-from ch15_interfaces.msg import ReadyState,SafetyState
+from ch15_interfaces.msg import ReadyState,SafetyState,MissionStatus,TargetObservation
 from .contracts import valid_pose,valid_timeout
 from .qos_profiles import profile,sensor_qos,state_qos
 
@@ -31,6 +31,10 @@ class MockServers(Node):
         self.create_subscription(SafetyState,'/ch15/safety_state',self.on_safety,state_qos,callback_group=self.group)
         self.create_subscription(Twist,'/cmd_vel',self.on_motion,profile(),callback_group=self.group)
         self.create_service(SwitchGait,'/switch_gait',self.switch,callback_group=self.group)
+        self.goal_witness=self.create_publisher(String,'/ch15/mock_goal_witness',profile(20))
+        self.target=self.create_publisher(TargetObservation,'/ch15/target_observation',profile())
+        self.mission=None
+        self.create_subscription(MissionStatus,'/ch15/mission_state',self.on_mission,state_qos,callback_group=self.group)
         self.servers=[]
         for kind,action,name in [('nav',NavigateToPose,'/navigate_to_pose'),('pick',PickObject,'/pick_object'),('place',PlaceObject,'/place_object')]:
             self.servers.append(ActionServer(self,action,name,execute_callback=lambda h,k=kind,a=action:self.execute(h,k,a),goal_callback=lambda g,k=kind:self.admit(g,k),cancel_callback=lambda _:CancelResponse.ACCEPT,callback_group=self.group))
@@ -38,6 +42,12 @@ class MockServers(Node):
         if self.declare_parameter('publish_tf',True).value:
             tf=TransformStamped(); tf.header.stamp=self.get_clock().now().to_msg();tf.header.frame_id='map';tf.child_frame_id='base_link';tf.transform.rotation.w=1.;self.tf.sendTransform(tf)
         self.create_timer(.1,self.sample,clock=Clock(clock_type=ClockType.STEADY_TIME),callback_group=self.group)
+    def on_mission(self,msg):
+        with self.lock:
+            if msg.profile!='mock' or msg.source!='MOCK':return
+            if self.mission is not None and self.mission.mission_id!=msg.mission_id and not self.active and not self.held:
+                self.arrived=False;self.placed=False
+            self.mission=msg
     def on_ready(self,msg):
         with self.lock: self.ready=msg.ready;self.ready_at=time.monotonic()
     def on_safety(self,msg):
@@ -51,8 +61,10 @@ class MockServers(Node):
     def sample(self):
         if self.scan_enabled:
             s=LaserScan();s.header.stamp=self.get_clock().now().to_msg();s.header.frame_id='base_link';s.angle_min=-.5;s.angle_max=.5;s.angle_increment=.5;s.range_min=.05;s.range_max=5.;s.ranges=[2.,2.,2.];self.scan.publish(s)
-        with self.lock:gait=self.gait
+        with self.lock:gait=self.gait;mission=self.mission
         self.gait_pub.publish(String(data=gait))
+        if mission is not None and mission.state in ('SEARCHING','APPROACHING','MANIPULATING'):
+            t=TargetObservation();t.header.stamp=self.get_clock().now().to_msg();t.header.frame_id='map';t.mission_id=mission.mission_id;t.epoch=mission.epoch;t.source='MOCK';t.object_class='red_cube';t.valid=True;t.pose_kind='GRASP_POSE';t.target_pose.header=t.header;t.target_pose.pose.position.x=1.;t.target_pose.pose.position.z=.225;t.target_pose.pose.orientation.w=1.;self.target.publish(t)
     def switch(self,req,res):
         with self.lock:
             res.success=req.gait_type in ('stand','crawl','trot') and not self.active
@@ -109,6 +121,8 @@ class MockServers(Node):
                 time.sleep(.05)
             if success:
                 self.witness.publish(String(data='MOCK:'+kind+':logical_transition'))
+                with self.lock:held=self.held;placed=self.placed
+                self.goal_witness.publish(String(data=json.dumps(dict(uuid=bytes(h.goal_id.uuid).hex(),kind=kind,held=held,placed=placed,source='MOCK'))))
                 h.succeed()
             elif h.is_cancel_requested:h.canceled()
             else:h.abort()
