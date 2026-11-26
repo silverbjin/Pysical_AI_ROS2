@@ -14,6 +14,7 @@ export CH14_WHEELHOUSE="$(realpath "$2")"
 export CH14_RUN_ID="${GITHUB_RUN_ID:-$$}"
 export CH14_MODELS="$work/models" CH14_BAGS="$work/bags"
 export ROS_DOMAIN_ID=89
+export CH14_UID="$(id -u)" CH14_GID="$(id -g)"
 mkdir -p "$out/single" "$out/compose" "$work/bags" "$work/fixture"
 cleanup(){
  rc=$?
@@ -23,9 +24,9 @@ cleanup(){
  for cid in "$monitor_cid" "$sensor_cid";do if [[ -n "$cid" ]];then docker stop --signal SIGINT --time 18 "$cid" >/dev/null 2>&1;docker rm "$cid" >/dev/null 2>&1;fi;done
  if [[ -n "$single_cid" ]] && docker inspect "$single_cid" >/dev/null 2>&1;then docker stop --signal SIGINT --time 18 "$single_cid" >/dev/null;docker rm "$single_cid" >/dev/null;fi
  if [[ -n "${MODEL_SHA256:-}" ]];then CH14_EVIDENCE="$out/compose" docker compose -p "$project" -f "$root/docker/compose.yaml" down --timeout 18 > "$out/compose-down.log" 2>&1;fi
- printf '{"status":"%s","stage":"%s","exit_code":%d,"scope":"G06_CPU_DOCKER"}\n' "$(if ((rc==0));then echo PASS;else echo FAIL;fi)" "$stage" "$rc" > "$out/result.json"
  # The bag and model bytes are local evaluation inputs, never upload as evidence.
- rm -rf "$work"
+ rm -rf "$work" || rc=1
+ printf '{"status":"%s","stage":"%s","exit_code":%d,"scope":"G06_CPU_DOCKER"}\n' "$(if ((rc==0));then echo PASS;else echo FAIL;fi)" "$stage" "$rc" > "$out/result.json"
  exit "$rc"
 }
 trap cleanup EXIT
@@ -40,7 +41,7 @@ docker run --rm --network none "$CH14_IMAGE" bash -ec 'test ! -e /opt/robot_ws/s
 stage=assets
 curl -fsSL --proto '=https' --proto-redir '=https' --connect-timeout 15 --max-time 90 -o "$work/fixture/000000455085.jpg" https://huggingface.co/datasets/merve/coco/resolve/9e50abcdc1361852f34841af4939cbcd2d37c92f/val2017/000000455085.jpg
 echo "022d2068d525b03a753287c333c09026fe22b9ae6d8071d4e8c757cbed32bdc4  $work/fixture/000000455085.jpg" | sha256sum -c -
-docker run --rm -v "$work:/work:rw" "$CH14_IMAGE" bash -ec '
+docker run --rm --user "$CH14_UID:$CH14_GID" -e HOME=/tmp -e ROS_LOG_DIR=/tmp/ch14-ros-logs -v "$work:/work:rw" "$CH14_IMAGE" bash -ec '
  python /opt/ch14/scripts/fetch_models.py yolov8n --cache /work/cache --fetch --acknowledge-agpl
  python /opt/ch14/python/export_yolo.py --manifest /opt/ch14/models/model_manifest.json --cache /work/cache --model yolov8n --output /work/models --threads 1
  python /opt/ch14/scripts/g06_make_bag.py --image /work/fixture/000000455085.jpg --bag /work/bags/ch14_rgbd --receipt /work/bag-receipt.json
@@ -50,7 +51,7 @@ cp "$work/models/export.json" "$out/model-export.json"
 cp "$work/bag-receipt.json" "$out/bag-receipt.json"
 export MODEL_SHA256="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["onnx_sha256"])' "$out/model-export.json")"
 stage=offline
-docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges -e MODEL_SHA256 -v "$CH14_MODELS:/models:ro" -v "$work/fixture:/fixture:ro" "$CH14_IMAGE" python -c '
+docker run --rm --user "$CH14_UID:$CH14_GID" -e HOME=/tmp --network none --cap-drop ALL --security-opt no-new-privileges -e MODEL_SHA256 -v "$CH14_MODELS:/models:ro" -v "$work/fixture:/fixture:ro" "$CH14_IMAGE" python -c '
 import cv2,json,os
 from ch14_ai_common.backends import OrtBackend,NAMES
 from ch14_ai_common.yolo import preprocess,postprocess
@@ -63,7 +64,7 @@ print(json.dumps(dict(status="PASS",provider=e.session.get_providers(),detection
 ' | tee "$out/offline-inference.json"
 stage=single
 export CH14_EVIDENCE="$out/single"
-env_common=(--init --network host --stop-signal SIGINT --stop-timeout 18 --cap-drop ALL --security-opt no-new-privileges -e ROS_DOMAIN_ID -e ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp -e MODEL_SHA256)
+env_common=(--init --user "$CH14_UID:$CH14_GID" -e HOME=/tmp -e ROS_LOG_DIR=/tmp/ch14-ros-logs --network host --stop-signal SIGINT --stop-timeout 18 --cap-drop ALL --security-opt no-new-privileges -e ROS_DOMAIN_ID -e ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp -e MODEL_SHA256)
 # Run from unrelated working directory; verify script does not depend on CWD.
 (cd /tmp && exec bash "$root/docker/run_docker.sh") > "$out/single/runner.log" 2>&1 &
 single_pid=$!

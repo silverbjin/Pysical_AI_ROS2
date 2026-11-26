@@ -3,11 +3,14 @@ x-common: &common
   pull_policy: never
   network_mode: host
   init: true
+  user: "${CH14_UID:?set host UID}:${CH14_GID:?set host GID}"
   stop_signal: SIGINT
   stop_grace_period: 18s
   cap_drop: [ALL]
   security_opt: [no-new-privileges:true]
   environment:
+    HOME: /tmp
+    ROS_LOG_DIR: /tmp/ch14-ros-logs
     ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-89}"
     ROS_AUTOMATIC_DISCOVERY_RANGE: LOCALHOST
     RMW_IMPLEMENTATION: rmw_cyclonedds_cpp

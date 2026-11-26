@@ -1,5 +1,5 @@
 """Independent replay witness with signal-controlled evidence persistence."""
-import argparse,json,signal,time,math
+import argparse,json,signal,time,math,tempfile,os
 from pathlib import Path
 import rclpy
 from rclpy.signals import SignalHandlerOptions
@@ -17,6 +17,11 @@ class Witness(Monitor):
         if self.clocks:self.independent_age.append(dict(stamp=ns(m.header),clock_ns=self.clocks[-1][0],observed_age_ms=(self.clocks[-1][0]-ns(m.header))/1e6))
 def main():
     p=argparse.ArgumentParser();p.add_argument("--out",type=Path,required=True);p.add_argument("--timeout",type=float,default=45.);a=p.parse_args()
+    # Check real bind-mount write access before discovery, with no permission escalation.
+    if a.out.exists():raise FileExistsError(str(a.out))
+    with tempfile.NamedTemporaryFile(dir=a.out.parent,prefix=".ch14-write-probe-") as f:
+        f.write(b"ok");f.flush()
+    print(json.dumps(dict(status="EVIDENCE_WRITABLE",uid=os.getuid(),gid=os.getgid())),flush=True)
     rclpy.init(signal_handler_options=SignalHandlerOptions.NO);w=Witness();stop=False
     def handler(*_):
         nonlocal stop

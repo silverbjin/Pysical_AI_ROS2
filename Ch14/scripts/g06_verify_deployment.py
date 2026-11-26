@@ -1,5 +1,5 @@
 """Check actual Docker inspect + source traces + independent DDS evidence."""
-import argparse,json,re
+import argparse,json,re,os
 from pathlib import Path
 def load(p):return json.loads(p.read_text())
 def main():
@@ -13,7 +13,8 @@ def main():
     assert len(inspectors)==3
     for d in inspectors:
         assert d["Image"]==a.image_id and d["State"]["ExitCode"]==0 and not d["State"]["OOMKilled"] and not d["State"]["Running"]
-        hc=d["HostConfig"];assert not hc["Privileged"] and hc["PidMode"]!="host" and not hc.get("Devices") and hc["NetworkMode"]=="host"
+        assert d["Config"]["User"]==f"{os.getuid()}:{os.getgid()}" and os.getuid()!=0
+        hc=d["HostConfig"];assert "ALL" in hc.get("CapDrop",[]) and not hc["Privileged"] and hc["PidMode"]!="host" and not hc.get("Devices") and hc["NetworkMode"]=="host"
         for m in d["Mounts"]:
             assert m["Destination"] in ("/models","/bags","/evidence")
             if m["Destination"] in ("/models","/bags"):assert not m["RW"]

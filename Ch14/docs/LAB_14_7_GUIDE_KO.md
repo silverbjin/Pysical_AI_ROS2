@@ -22,7 +22,7 @@ curl -fsSL --proto '=https' --proto-redir '=https' \
  -o "$RUN/fixture/000000455085.jpg" \
  https://huggingface.co/datasets/merve/coco/resolve/9e50abcdc1361852f34841af4939cbcd2d37c92f/val2017/000000455085.jpg
 echo "022d2068d525b03a753287c333c09026fe22b9ae6d8071d4e8c757cbed32bdc4  $RUN/fixture/000000455085.jpg" | sha256sum -c -
-docker run --rm -v "$RUN:/work:rw" "$CH14_IMAGE" bash -ec '
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e ROS_LOG_DIR=/tmp/ch14-ros-logs -v "$RUN:/work:rw" "$CH14_IMAGE" bash -ec '
  python /opt/ch14/scripts/fetch_models.py yolov8n --cache /work/cache --fetch --acknowledge-agpl
  python /opt/ch14/python/export_yolo.py --manifest /opt/ch14/models/model_manifest.json --cache /work/cache --model yolov8n --output /work/models --threads 1
  python /opt/ch14/scripts/g06_make_bag.py --image /work/fixture/000000455085.jpg --bag /work/bags/ch14_rgbd --receipt /work/bag-receipt.json
@@ -31,6 +31,7 @@ docker run --rm -v "$RUN:/work:rw" "$CH14_IMAGE" bash -ec '
 export CH14_MODELS="$RUN/models" CH14_BAGS="$RUN/bags" CH14_EVIDENCE="$RUN/evidence"
 export MODEL_SHA256="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["onnx_sha256"])' "$RUN/models/export.json")"
 export ROS_DOMAIN_ID=89
+export CH14_UID="$(id -u)" CH14_GID="$(id -g)"
 echo "$MODEL_SHA256  $CH14_MODELS/yolov8n.onnx" | sha256sum -c -
 \`\`\`
 Bag에는 RGB, depth, CameraInfo, static TF가 포함되고 /clock은 저장하지 않습니다. player가 단 하나의 /clock을 생성합니다. 동일 domain의 기존 simulator/player를 종료하거나 별도 미사용 domain을 선택하십시오.
@@ -38,7 +39,7 @@ Bag에는 RGB, depth, CameraInfo, static TF가 포함되고 /clock은 저장하�
 \`\`\`bash
 bash docker/run_docker.sh
 \`\`\`
-이 스크립트는 독립 detector만 실행합니다. 유효 결과에는 별도 sensor/monitor가 필요합니다. T15 자동 검수는 g06_deploy_ci.sh의 single phase: 같은 image로 monitor와 sensor를 각각 별도 container에서 실행하고, 잘못된 domain readiness 거부와 정상 실제 DDS/point 결과를 확인합니다. Ctrl+C/TERM은 소유한 container만 정리하고 inspect/log를 evidence에 남깁니다. 실행 자체는 결과 수신 성공을 의미하지 않습니다. Compose와 동시에 같은 domain에서 실행하지 않습니다.
+이 스크립트는 독립 detector만 실행합니다. 유효 결과에는 별도 sensor/monitor가 필요합니다. T15 자동 검수는 g06_deploy_ci.sh의 single phase: 같은 image로 monitor와 sensor를 각각 별도 container에서 실행하고, 잘못된 domain readiness 거부와 정상 실제 DDS/point 결과를 확인합니다. Ctrl+C/TERM은 소유한 container만 정리하고 inspect/log를 evidence에 남깁니다. 실행 자체는 결과 수신 성공을 의미하지 않습니다. 컨테이너는 호스트 UID/GID로 실행하고 monitor는 실제 evidence 쓰기 검사를 discovery 전에 수행합니다. chmod 777 또는 CAP_DAC_OVERRIDE 복구 금지. Compose와 동시에 같은 domain에서 실행하지 않습니다.
 ## 4. T16 — Compose 3서비스
 \`\`\`bash
 docker compose -p ch14-lab -f docker/compose.yaml config

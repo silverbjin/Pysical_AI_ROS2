@@ -8,7 +8,7 @@ domain="${ROS_DOMAIN_ID:-89}"
 [[ "$domain" =~ ^[0-9]+$ ]] && ((10#$domain<=232)) || { echo "invalid ROS_DOMAIN_ID"; exit 2; }
 [[ "$MODEL_SHA256" =~ ^[0-9a-f]{64}$ ]]
 models="$(realpath "$CH14_MODELS")";out="$(realpath "$CH14_EVIDENCE")"
-[[ -d "$out" && -f "$models/yolov8n.onnx" && ! -L "$models/yolov8n.onnx" ]]
+[[ -d "$out" && -w "$out" && -f "$models/yolov8n.onnx" && ! -L "$models/yolov8n.onnx" ]]
 echo "$MODEL_SHA256  $models/yolov8n.onnx" | sha256sum -c -
 docker info >/dev/null
 docker image inspect "$CH14_IMAGE" >/dev/null
@@ -29,7 +29,7 @@ cleanup(){
 }
 trap cleanup EXIT
 trap 'exit 0' INT TERM
-cid="$(docker run -d --name "$name" --init --network host --stop-signal SIGINT --stop-timeout 18 --cap-drop ALL --security-opt no-new-privileges \
+cid="$(docker run -d --name "$name" --init --user "$(id -u):$(id -g)" -e HOME=/tmp -e ROS_LOG_DIR=/tmp/ch14-ros-logs --network host --stop-signal SIGINT --stop-timeout 18 --cap-drop ALL --security-opt no-new-privileges \
  -e ROS_DOMAIN_ID="$domain" -e ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp -e MODEL_SHA256 \
  -v "$models:/models:ro" "$CH14_IMAGE")"
 echo "$cid" > "$out/single-container-id.txt"
