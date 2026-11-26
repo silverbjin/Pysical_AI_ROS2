@@ -24,7 +24,8 @@ else
  python -m pip install --only-binary=:all: -c /tmp/cpu-constraints.txt -r /ch14/requirements/rl.in --report "$out/rl-install-report.json"
 fi
 python -m pip check
-python -m pip install --no-deps --no-build-isolation /ch14/vendor/ch12
+cp -a /ch14/vendor/ch12 /tmp/ch12-source
+python -m pip install --no-deps --no-build-isolation /tmp/ch12-source
 python -m pip check
 python -m pip freeze --all > "$out/pip-freeze.txt"
 python -c 'import torch,onnx,onnxruntime,stable_baselines3,mujoco,gymnasium,rclpy; print(torch.__version__,stable_baselines3.__version__,mujoco.__version__,gymnasium.__version__)'
@@ -33,7 +34,7 @@ import json,hashlib,pathlib
 root=pathlib.Path('/ch14')
 m=json.loads((root/'vendor/ch12/REUSE_MANIFEST.json').read_text())
 for row in m['files']:
-    b=(root.parent/row['target']).read_bytes()
+    b=(root/row['target'].removeprefix('Ch14/')).read_bytes()
     assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==row['git_blob'],row
 print('CH12_REUSE_BLOBS_VERIFIED',len(m['files']))
 PY
