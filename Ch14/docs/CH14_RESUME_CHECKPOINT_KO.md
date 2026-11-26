@@ -20,3 +20,6 @@
 
 ## 2026-11-26 갱신 — CPU profile 실제 PASS
 이전 checkpoint를 역사로 유지. 현재 우선 근거 https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45742206902, source 1228072c5679b608756bfbd578b2c56cbcfe32e8, artifact 15081503468; 원본 ZIP/internal 25/25 SHA 확인. CPU profile PASS, T03 actual 100 input PASS, 12 foundation PASS. 45-wheel cpu.lock.txt 승격(artifact exact SHA), setuptools 68.1.2 inherited; graph 197/182 zero. 실패 45739828134 원본 9/9 확인. 다음: T01/02/04 actual YOLO가 남음; publisher weight expected SHA는 확인했으나 다운로드/권리/평가 fixture 미확정. 기존 CPU/T03 재실행 불필요(관련 변경 시에만). G00 overall BLOCKED, G01 scoped; G02~09 NOT_STARTED. Main 및 기존 챕터 변경 금지.
+
+## G01 actual YOLO update
+PR #206 Draft, commit fcab9108a748cdc6e77ae0918655b89336295b96, run 45744146299: actual T01/T02 scoped PASS, T04 blocked TLS; artifact 15081689764 internal 13/13. Targeted fixture transport correction and source-identity reuse implemented. Legacy book PR doc preflight failure 45744271653 independently caused by missing Ch07 sparse checkout; no runtime pilots. No main merge before full G01 acceptance, release rights and PR checks resolved. G02 preview docs/G02_NEXT_WORK_PREVIEW_KO.md.

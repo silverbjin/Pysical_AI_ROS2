@@ -3,7 +3,7 @@
 | Gate | 절 | 상태 | L0 | L1 | L2 | L3 | 범위/증거 |
 |---|---|---|---|---|---|---|---|
 | G00 | 공통 | BLOCKED | SCOPED_PASS | SCOPED_PASS | NOT_RUN | NOT_RUN | CPU profile PASS 45742206902 / 197 graph / 45 lock / build ABI smoke; rights/model/fixture/profile closure pending |
-| G01 | 14.1–2 | BLOCKED | SCOPED_PASS | SCOPED_PASS | NOT_RUN | NOT_RUN | T03 PASS (100 input parity) + foundation 12/12 target; T01/02/04 actual YOLO NOT_RUN |
+| G01 | 14.1–2 | BLOCKED | SCOPED_PASS | SCOPED_PASS | NOT_RUN | NOT_RUN | T03 PASS; T01 actual 2x100, T02 actual n/s PASS scope run 45744146299; T04 NOT_RUN TLS fixture; retry targeted; rights pending |
 | G02 | 14.3 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
 | G03 | 14.4 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
 | G04 | 14.5 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |

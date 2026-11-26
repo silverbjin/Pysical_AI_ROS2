@@ -7,6 +7,8 @@ on:
       - 'Ch14/ros2_ws/src/ch14_ai_common/ch14_ai_common/yolo_lab.py'
       - 'Ch14/scripts/g01_yolo_ci.sh'
       - 'Ch14/scripts/g01_select_coco.py'
+      - 'Ch14/scripts/g01_check_reuse.py'
+      - 'Ch14/scripts/g01_label_metrics.py'
       - 'Ch14/tests/test_g01_yolo_contract.py'
       - '.github/workflows/ch14-g01.yml'
   workflow_dispatch:
@@ -28,6 +30,14 @@ jobs:
         run: |
           python3 -m compileall -q Ch14/scripts/g01_select_coco.py Ch14/python Ch14/ros2_ws/src/ch14_ai_common
           bash -n Ch14/scripts/g01_yolo_ci.sh
+      - name: Validate actual fixture provenance and transport before CPU setup
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch14-g01-evidence
+          echo "$GITHUB_SHA" > ch14-g01-evidence/source-sha.txt
+          python3 Ch14/scripts/g01_select_coco.py "$RUNNER_TEMP/ch14-coco" 2>&1 | tee ch14-g01-evidence/fixture-preflight.log
+          cp "$RUNNER_TEMP/ch14-coco/manifest.json" ch14-g01-evidence/fixture-candidate.json
       - uses: actions/cache/restore@v4
         with:
           path: ch14-wheelhouse
@@ -38,7 +48,7 @@ jobs:
           set -euo pipefail
           mkdir -p ch14-wheelhouse ch14-g01-evidence
           echo "$GITHUB_SHA" > ch14-g01-evidence/source-sha.txt
-          docker run --rm -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g01-evidence:/evidence" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g01_yolo_ci.sh 2>&1 | tee ch14-g01-evidence/run.log
+          docker run --rm -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g01-evidence:/evidence" -v "$RUNNER_TEMP/ch14-coco:/fixture:ro" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g01_yolo_ci.sh 2>&1 | tee ch14-g01-evidence/run.log
       - name: Hash evidence
         if: always()
         run: |

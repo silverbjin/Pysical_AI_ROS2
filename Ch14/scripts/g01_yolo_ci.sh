@@ -4,6 +4,9 @@ out=/evidence
 stage=init
 trap 'rc=$?; printf "{\"status\":\"%s\",\"stage\":\"%s\",\"exit_code\":%d}\n" "$(if ((rc==0)); then echo PASS; else echo FAIL; fi)" "$stage" "$rc" > "$out/result.json"' EXIT
 export DEBIAN_FRONTEND=noninteractive PYTHONNOUSERSITE=1 OMP_NUM_THREADS=1 MPLBACKEND=Agg YOLO_CONFIG_DIR=/tmp/ch14-ultralytics
+stage=fixture_preflight
+[[ -f /fixture/manifest.json ]]
+cp /fixture/manifest.json "$out/fixture-candidate.json"
 stage=environment
 apt-get update -qq
 apt-get install -y --no-install-recommends python3-venv python3-pip ros-jazzy-cv-bridge ros-jazzy-vision-msgs >/dev/null
@@ -33,19 +36,30 @@ stage=asset_acquisition
 for id in yolov8n yolov8s; do
  python scripts/fetch_models.py "$id" --cache /tmp/models --fetch --acknowledge-agpl
 done
+stage=prior_evidence
+# Reuse only source-identical T01/T02; exact prior evidence remains immutable.
+if python scripts/g01_check_reuse.py evidence/g01_run_45744146299.json "$out/t01-t02-reuse.json"; then
+  reuse=1
+else
+  reuse=0
+fi
 stage=T01
-for threads in 1 2; do
- python python/benchmark_torch.py --manifest models/model_manifest.json --cache /tmp/models --model yolov8n --threads "$threads" --output "$out/t01_threads_$threads"
-done
+if [[ "$reuse" == 0 ]]; then
+ for threads in 1 2; do
+  python python/benchmark_torch.py --manifest models/model_manifest.json --cache /tmp/models --model yolov8n --threads "$threads" --output "$out/t01_threads_$threads"
+ done
+else
+ echo T01_REUSED_RUN_45744146299
+fi
 stage=T02
 # Export each model once; T04 consumes the exact same exported bytes.
 for id in yolov8n yolov8s; do
  python python/export_yolo.py --manifest models/model_manifest.json --cache /tmp/models --model "$id" --output "/tmp/$id"
  cp "/tmp/$id/export.json" "$out/$id-export.json"
 done
-stage=fixture_candidate
-python scripts/g01_select_coco.py /tmp/coco
-cp /tmp/coco/manifest.json "$out/fixture-candidate.json"
+if [[ "$reuse" == 1 ]]; then
+ python scripts/g01_check_reuse.py evidence/g01_run_45744146299.json "$out/t01-t02-reuse.json" --exports "$out"
+fi
 stage=T04
 python - "$out" <<'PY'
 import json,sys
@@ -58,13 +72,15 @@ for mid in ('yolov8n','yolov8s'):
     model=Path('/tmp')/mid/f'{mid}.onnx'
     pt=TorchBackend(Path('/tmp/models')/f'{mid}.pt',meta['source_sha256'])
     ort=OrtBackend(model,meta['onnx_sha256'])
-    rows=list(read_fixture(Path('/tmp/coco/manifest.json'),Path('/tmp/coco/images')))
+    rows=list(read_fixture(Path('/fixture/manifest.json'),Path('/fixture/images')))
     r=compare_images(pt,ort,rows,out/f'{mid}-parity.json')
-    infer_image(ort,Path('/tmp/coco/images')/rows[0][0]['file'],Path('/tmp')/f'{mid}-sample')
+    infer_image(ort,Path('/fixture/images')/rows[0][0]['file'],Path('/tmp')/f'{mid}-sample')
     # Annotation images not redistributed; JSON detection evidence only.
     import shutil
     shutil.copyfile(Path('/tmp')/f'{mid}-sample/detections.json',out/f'{mid}-sample-detections.json')
     failed |= r['status']!='PASS'
 if failed:raise SystemExit('T04 parity/target failed; no threshold relaxation')
 PY
+stage=label_metrics
+python scripts/g01_label_metrics.py "$out/fixture-candidate.json" "$out"
 stage=complete
