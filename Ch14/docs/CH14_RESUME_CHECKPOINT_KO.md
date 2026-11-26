@@ -61,3 +61,6 @@ Run45763347165 SUCCESS source 21d4281f825ed23938a399377b29bad5252fde25, artifact
 
 ## G08 start — candidate only
 5fa05f8fa56a23edbada3896f4e517374a25aa0e: exact pinned G07 actor, Ch12 controller derivative, strict G07 envelope, exact MuJoCo bridge. Artifact metadata verified unexpired. First MuJoCo CI uses exact artifact and locked environment; independent status/target/physical feedback and pause/resume. Actual run not yet reviewed. G08 overall NOT_ACCEPTED; Gazebo and negative protections pending. No main merge, no retraining/export.
+
+## G08-C actual MuJoCo PASS
+Run 45787876247 source 2ebd6ea9ea3277b0d62a80d05e489470544d8bb2, artifact15101700809 ZIP 8beeea041532c56c2a5710afbdb91203b4f8b4a9761840610f32d421f5dd50c5, internal14/14 verified. 400 ACTIVE, 400 DDS and feedback pairs, 52 direction positive, 50Hz, height .39247m, 0.169344ms max, command expiry/pause/resume and two exits0. RL lock reinstall succeeded. No normal rerun. G08-D separate Gazebo candidate with exact nine Ch11/12 assets; actual result pending. Negative fault tests and G09 not accepted.
