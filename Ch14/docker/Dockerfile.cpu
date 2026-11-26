@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1.7
+FROM ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 AS base
+SHELL ["/bin/bash","-o","pipefail","-c"]
+ENV DEBIAN_FRONTEND=noninteractive PYTHONNOUSERSITE=1 OMP_NUM_THREADS=1 MPLBACKEND=Agg
+RUN apt-get update && apt-get install -y --no-install-recommends \
+ python3-venv python3-pip python3-colcon-common-extensions python3-rosdep curl \
+ ros-jazzy-ament-cmake ros-jazzy-rosidl-default-generators ros-jazzy-rosidl-default-runtime \
+ ros-jazzy-cv-bridge ros-jazzy-vision-msgs ros-jazzy-message-filters ros-jazzy-tf2-ros-py \
+ ros-jazzy-tf2-msgs ros-jazzy-diagnostic-msgs ros-jazzy-rosgraph-msgs \
+ ros-jazzy-rosbag2 ros-jazzy-rosbag2-storage-default-plugins ros-jazzy-rmw-cyclonedds-cpp python3-psutil \
+ && rm -rf /var/lib/apt/lists/*
+RUN python3 -m venv --system-site-packages /opt/ai-venv
+ENV PATH="/opt/ai-venv/bin:${PATH}"
+COPY docker/requirements-cpu.txt /opt/ch14/requirements-cpu.txt
+COPY requirements/cpu.lock.txt /tmp/cpu.lock.txt
+RUN --mount=type=bind,from=wheels,source=.,target=/wheelhouse,ro \
+ cmp /opt/ch14/requirements-cpu.txt /tmp/cpu.lock.txt && mkdir /tmp/wheels && \
+ (python -m pip download --no-index --find-links /wheelhouse --require-hashes --no-deps --only-binary=:all: -d /tmp/wheels -r /tmp/cpu.lock.txt || \
+ (grep -E '^torch(vision)?==' /tmp/cpu.lock.txt >/tmp/torch.lock && \
+ python -m pip download --require-hashes --no-deps --only-binary=:all: --index-url https://download.pytorch.org/whl/cpu -d /tmp/wheels -r /tmp/torch.lock && \
+ python -m pip download --require-hashes --no-deps --only-binary=:all: --find-links /tmp/wheels --find-links /wheelhouse -d /tmp/wheels -r /tmp/cpu.lock.txt)) && \
+ python -m pip install --ignore-installed --no-deps --no-index --find-links /tmp/wheels --require-hashes -r /tmp/cpu.lock.txt && \
+ python -m pip check && rm -rf /tmp/wheels /tmp/torch.lock /tmp/cpu.lock.txt
+FROM base AS builder
+WORKDIR /opt/robot_ws
+COPY ros2_ws/src/ch14_ai_common src/ch14_ai_common
+COPY ros2_ws/src/ch14_ai_interfaces src/ch14_ai_interfaces
+COPY ros2_ws/src/ch14_ai_perception src/ch14_ai_perception
+COPY ros2_ws/src/ch14_performance_monitor src/ch14_performance_monitor
+RUN source /opt/ros/jazzy/setup.bash && apt-get update && \
+ (test -f /etc/ros/rosdep/sources.list.d/20-default.list || rosdep init) && \
+ rosdep update --rosdistro jazzy && rosdep install --from-paths src --ignore-src --rosdistro jazzy -y && \
+ python "$(command -v colcon)" build --packages-select ch14_ai_common ch14_ai_interfaces ch14_ai_perception ch14_performance_monitor --cmake-args -DPython3_EXECUTABLE="$(command -v python)" && \
+ rosdep check --from-paths src --ignore-src --rosdistro jazzy
+FROM base AS runner
+COPY --from=builder /opt/robot_ws/install /opt/robot_ws/install
+COPY docker/entrypoint.sh /entrypoint.sh
+COPY scripts/fetch_models.py scripts/g06_runtime.py scripts/g06_make_bag.py scripts/g06_monitor.py /opt/ch14/scripts/
+COPY python/export_yolo.py /opt/ch14/python/export_yolo.py
+COPY models/model_manifest.json /opt/ch14/models/model_manifest.json
+COPY docker/playback_qos.yaml /opt/ch14/playback_qos.yaml
+RUN chmod 755 /entrypoint.sh && mkdir -p /opt/ch14/evidence && \
+ dpkg-query -W > /opt/ch14/evidence/dpkg-versions.txt && \
+ /entrypoint.sh python -c 'import cv_bridge,rclpy,rosbag2_py,onnxruntime; from ch14_ai_interfaces.srv import SwapModel; from ch14_ai_perception.detector_node import Detector; from ch14_performance_monitor.monitor_node import Monitor' && python -m pip check
+WORKDIR /opt/ch14
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["python","/opt/ch14/scripts/g06_runtime.py","detector"]

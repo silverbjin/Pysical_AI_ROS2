@@ -1,0 +1,2 @@
+# G06 CPU deployment checkpoint
+T14–T16: pinned ROS base, exact CPU lock, rosdep/normal colcon builder, runner contains four installed replay packages. Gazebo simulation package intentionally excluded from replay image; external simulator optional. No embedded models or fixture data, read-only bind mounts, host network with CycloneDDS and bounded readiness. Actual ROS bag uses pinned real RGB, synthetic 2m depth and static TF; no recorded /clock, playback generates one. Separate G04 termination probe. Actual build and runtime evidence pending.
