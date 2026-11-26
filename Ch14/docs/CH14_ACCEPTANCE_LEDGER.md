@@ -6,7 +6,7 @@
 | G01 | 14.1–2 | BLOCKED (full); SCOPED_PASS (CPU conversion/inference) | SCOPED_PASS | NOT_RUN | NOT_RUN | NOT_RUN | T01/02/03 PASS; T04 40 raw/71 boxes, new GT miss 0; absolute n14/16 s15/16 FAIL unchanged; raw diagnostic 45746373267 PASS execution only; scope G01_ACCEPTANCE_SCOPE_KO.md |
 | G02 | 14.3 | SCOPED_PASS (CPU T06); full BLOCKED | SCOPED_PASS | NOT_RUN | NOT_RUN | NOT_RUN | 45748461194 SUCCESS, 800 samples, 40/40 raw, 71/71 matched, new GT miss 0; T05 NOT_RUN; G01 full/release HOLD |
 | G03 | 14.4 | SCOPED_PASS (CPU L0/L1/L2); full release HOLD | SCOPED_PASS | SCOPED_PASS | SCOPED_PASS | NOT_RUN | T07 240x2, 123 overwrite, hb miss39→0; T08 final DDS 45751287261; actual Gazebo 45751598173: 13/13 GT, 27 source emits max86ms, pause/resume and clean shutdown; G01/release/legacy/L3 pending |
-| G04 | 14.5 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
+| G04 | 14.5 | SCOPED_PASS (CPU ORT T09–12); full release HOLD | SCOPED_PASS | SCOPED_PASS | SCOPED_PASS (T12 installed sim) | NOT_RUN | 45755020128 SUCCESS; 15/15 core, 4 packages, atomic17 (7/10), actual n→s gen0→1, rollback/busy; 11 source emits max286.909ms; actual sim launch 3/3 GT; WSL2/release pending |
 | G05 | 14.6 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
 | G06 | 14.7 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |
 | G07 | 14.8 전반 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | 없음 |

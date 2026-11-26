@@ -11,3 +11,8 @@ CPU 기본, GPU 선택, 실제 로봇 HW 제외. 개발 중이며 배포용 실�
 - [G00 모델 출처 및 권리](docs/reports/G00_MODEL_SOURCE_AUDIT_KO.md)
 - [G01 foundation 결과](docs/reports/G01_DEVELOPMENT_REPORT_KO.md) · [14.2 가이드 초안](docs/LAB_14_2_GUIDE_KO.md)
 - [현재 재개점](docs/CH14_RESUME_CHECKPOINT_KO.md)
+
+- [14.3 G02 CPU 추론 비교](docs/reports/G02_CPU_EXECUTION_REPORT_KO.md)
+- [14.4 G03 실습](docs/LAB_14_4_GUIDE_KO.md) · [실제 Gazebo 검수](docs/reports/G03_L2_EXECUTION_REPORT_KO.md)
+- [14.5 G04 실습](docs/LAB_14_5_GUIDE_KO.md) · [실제 개발 검수](docs/reports/G04_EXECUTION_REPORT_KO.md)
+- [G05 다음 작업 프리뷰](docs/G05_NEXT_WORK_PREVIEW_KO.md)

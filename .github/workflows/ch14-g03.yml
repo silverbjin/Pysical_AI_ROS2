@@ -1,5 +1,10 @@
 name: Ch14 G03 asynchronous RGB-D ROS DDS
 on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - 'Ch14/scripts/g03_ros*'
+      - 'Ch14/tests/test_g03_core.py'
   workflow_dispatch:
     inputs:
       phase:
@@ -41,7 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ch14-wheelhouse
-          docker run --rm --shm-size=1g -e G03_PHASE=${{ inputs.phase }} -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g03-evidence:/evidence" -v "$RUNNER_TEMP/ch14-fixture:/fixture:ro" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g03_ros_ci.sh 2>&1 | tee ch14-g03-evidence/run.log
+          docker run --rm --shm-size=1g -e G03_PHASE=${{ inputs.phase || 'final_faults' }} -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g03-evidence:/evidence" -v "$RUNNER_TEMP/ch14-fixture:/fixture:ro" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g03_ros_ci.sh 2>&1 | tee ch14-g03-evidence/run.log
       - name: Hash evidence
         if: always()
         run: |
