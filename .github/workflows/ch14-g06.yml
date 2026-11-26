@@ -1,0 +1,55 @@
+name: Ch14 G06 CPU Docker deployment
+on:
+  push:
+    branches: [feat/ch14-ai-deployment]
+    paths:
+      - 'Ch14/docker/**'
+      - 'Ch14/scripts/g06_deploy_ci.sh'
+      - 'Ch14/scripts/g06_make_bag.py'
+      - 'Ch14/scripts/g06_runtime.py'
+      - 'Ch14/scripts/g06_monitor.py'
+      - 'Ch14/scripts/g06_verify_deployment.py'
+      - '.github/workflows/ch14-g06.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ch14-g06-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  cpu-deployment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch14
+          persist-credentials: false
+      - name: Static checks and pinned lock
+        run: |
+          mkdir -p ch14-g06-evidence ch14-wheelhouse
+          echo "$GITHUB_SHA" > ch14-g06-evidence/source-sha.txt
+          cmp Ch14/requirements/cpu.lock.txt Ch14/docker/requirements-cpu.txt
+          python3 -m compileall -q Ch14/scripts/g06_*.py
+          bash -n Ch14/docker/build_cpu.sh Ch14/docker/run_docker.sh Ch14/docker/entrypoint.sh Ch14/scripts/g06_deploy_ci.sh
+      - uses: actions/cache/restore@v4
+        with:
+          path: ch14-wheelhouse
+          key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
+      - name: Actual clean image and DDS bag deployments
+        shell: bash
+        run: |
+          set -eo pipefail
+          bash Ch14/scripts/g06_deploy_ci.sh "$PWD/ch14-g06-evidence" "$PWD/ch14-wheelhouse"
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch14-g06-evidence
+          cd ch14-g06-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch14-g06-cpu
+          path: ch14-g06-evidence/
+          retention-days: 30

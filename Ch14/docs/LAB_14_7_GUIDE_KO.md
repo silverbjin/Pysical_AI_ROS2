@@ -1,0 +1,3 @@
+# 14.7 CPU Docker 배포 실습 (검증 후보)
+Docker Desktop WSL2 또는 WSL native Docker Engine 중 하나만 사용. CPU는 GPU 드라이버/Toolkit 불필요. 호스트 network의 실제 DDS 통신 검증 전까지 WSL2 성공을 주장하지 않음.
+Ch14/docker/build_cpu.sh: pinned base, lock exact, rosdep, normal install, runner no src. Model/fixture external rights 확인 및 로컬 취득. 모델 파일은 read-only mount. T14 actual offline inference, T15 standalone detector and external DDS peer, T16 compose actual rosbag2 single replay. Evidence JSON and Docker inspect. No privileged/host PID/hardware. See G06_DEVELOPMENT_REPORT_KO.md.
