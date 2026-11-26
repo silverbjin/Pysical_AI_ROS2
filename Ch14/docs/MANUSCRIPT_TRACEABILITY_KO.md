@@ -62,3 +62,5 @@ G08 final: T19 SCOPED_PASS, actual MuJoCo and Gazebo ROS closed-loop normal case
 | 14.9 | scripts/bootstrap.sh, doctor.sh, run_lab.sh, verify_ch14.sh; LAB14.9 | G09 actual results pending | owner L3 NOT_RUN |
 
 See G09_PUBLICATION_QA_KO.md for proposed checklist replacement; G09_ASSET_RELEASE_REGISTER_KO.md for current provenance vs historical manifests. Existing "NOT_RUN" statements inside historical paragraphs reflect the recorded checkpoint, not superseding the acceptance ledger.
+
+G09 final owner preparation: exact source 6c458e345236b124c9aa60f65788f35cfed74e62; immutable build45815645513 and three physical entrypoints45816276822 actual Linux CI success. 9 guides, 18 code paths and optional14-5 absent. WSL2 actual L3 NOT_RUN; combined all not separately repeated, headless Docker only. Full release HOLD. See G09_WSL2_OWNER_ACCEPTANCE_KO.md.
