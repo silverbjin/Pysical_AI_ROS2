@@ -7,6 +7,7 @@ for c in git python3 docker timeout sha256sum tar; do command -v "$c" >/dev/null
 [[ "$(python3 -c 'import sys;print(".".join(map(str,sys.version_info[:2])))')" == 3.12 ]] || { echo 'BLOCKED Python 3.12' >&2; exit 2; }
 [[ "$PWD" != /mnt/[a-z]/* ]] || { echo 'BLOCKED: use WSL Linux filesystem' >&2; exit 2; }
 docker info --format '{{.ServerVersion}}' || exit 2
+docker context show
 docker version
 uname -a
 df -h .

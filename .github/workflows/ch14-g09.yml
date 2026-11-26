@@ -46,10 +46,28 @@ jobs:
         with:
           path: ch14-wheelhouse
           key: ch14-noble-x64-cp312-jazzy-5147d3ae250ce754-${{ hashFiles('Ch14/requirements/cpu.ros-probe.lock.txt') }}
-      - name: Actual combined clean install and build
+      - name: Actual pinned bootstrap to clean combined build
         run: |
           set -eo pipefail
-          docker run --rm --init -v "$PWD/Ch14:/ch14:ro" -v "$PWD/ch14-wheelhouse:/wheelhouse" -v "$PWD/ch14-g09-evidence:/evidence" ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6 bash /ch14/scripts/g09_clean_build_ci.sh 2>&1 | tee ch14-g09-evidence/run.log
+          mkdir -p "$HOME/ch14-owner"
+          mv ch14-wheelhouse "$HOME/ch14-owner/wheelhouse"
+          CH14_SOURCE_SHA="$GITHUB_SHA" bash Ch14/scripts/bootstrap.sh --profile cpu --headless --check build 2>&1 | tee ch14-g09-evidence/owner-bootstrap.log
+          archive="$(sed -n 's/^CH14_OWNER_EVIDENCE=//p' ch14-g09-evidence/owner-bootstrap.log | tail -1)"
+          test -f "$archive"
+          sha256sum -c "$archive.sha256"
+          cp "$archive" ch14-g09-evidence/owner-rehearsal.tar.gz
+          mkdir -p ch14-g09-evidence/owner
+          tar -xzf "$archive" -C ch14-g09-evidence/owner
+          (cd ch14-g09-evidence/owner && sha256sum -c sha256sums.txt)
+          python3 - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path("ch14-g09-evidence/owner")
+          d=json.loads((p/"owner-result.json").read_text())
+          assert d["status"]=="SCOPED_PASS" and d["level"]=="LINUX_REHEARSAL_ONLY",d
+          assert d["source_sha"]==d["actual_source_sha"]==os.environ["GITHUB_SHA"],d
+          assert json.loads((p/"build/stage.json").read_text())=={"stage":"complete","exit_code":0}
+          assert "6 packages finished" in (p/"build/colcon.log").read_text()
+          PY
       - name: Hash evidence
         if: always()
         run: |
