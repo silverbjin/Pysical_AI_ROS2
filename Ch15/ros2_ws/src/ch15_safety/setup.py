@@ -1,0 +1,3 @@
+from setuptools import setup
+package_name='ch15_safety'
+setup(name=package_name,version='0.1.0',packages=[package_name],data_files=[('share/ament_index/resource_index/packages',['resource/'+package_name]),('share/'+package_name,['package.xml'])],install_requires=['setuptools'],zip_safe=True,maintainer='Ch15 maintainers',maintainer_email='maintainer@example.invalid',description='Educational mock contracts',license='TODO',entry_points={'console_scripts':["readiness_monitor = ch15_safety.readiness_monitor:main","sensor_watchdog = ch15_safety.sensor_watchdog:main","command_arbiter = ch15_safety.command_arbiter:main"]})

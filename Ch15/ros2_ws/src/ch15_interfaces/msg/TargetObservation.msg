@@ -1,0 +1,11 @@
+std_msgs/Header header
+string mission_id
+uint64 epoch
+string source
+string object_class
+geometry_msgs/PoseStamped target_pose
+bool valid
+string reason
+string pose_kind
+float32 confidence
+bool has_confidence
