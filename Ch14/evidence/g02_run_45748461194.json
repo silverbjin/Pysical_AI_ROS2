@@ -1,0 +1,186 @@
+{
+  "status": "SCOPED_PASS",
+  "scope": "T06 native OpenVINO/ORT offline CPU FP32 comparison only",
+  "full_gate": "BLOCKED_PENDING_G01_FULL_AND_RELEASE",
+  "source_sha": "a9d7e7d3514a2a9ab2698ef66dc8f91b5fd81bbd",
+  "run_id": 45748461194,
+  "job_id": 139670157282,
+  "artifact_id": 15084542683,
+  "artifact_zip_sha256": "93403937224455a1450cd716b81ef92db68d969ad6e5cdb6b6a2140d60a52483",
+  "artifact_internal_verified": 27,
+  "workflow_status": "SUCCESS",
+  "elapsed_seconds": 265,
+  "base_cpu_lock_sha256": "73a9ca05ed6d36893faf575a06398dd6420e609dfca80753b1f3bb7c9ea1ada3",
+  "fixture_manifest_sha256": "ffc6cf6fafc0c3c9477060596a838e303115f060d66011a75849a77c86a6086d",
+  "dependency_graph": {
+    "status": "PASS",
+    "distributions": 199,
+    "edges": 185,
+    "errors": 0,
+    "pip_check": "PASS"
+  },
+  "cpu": "AMD EPYC 7763 64-Core Processor",
+  "affinity": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "settings": {
+    "ort": "1.20.1 CPUExecutionProvider threads2 inter-op1",
+    "openvino": "2025.1.0-18503-6fec06580ab-releases/2025/1 CPU FP32 LATENCY threads2 streams1 cpu_pinning=false"
+  },
+  "warmup": 10,
+  "iterations": 100,
+  "samples_total": 800,
+  "stat_columns": [
+    "mean_ms",
+    "p50_ms",
+    "p95_ms",
+    "p99_ms",
+    "max_ms",
+    "std_ms",
+    "sequential_fps"
+  ],
+  "stats": {
+    "yolov8n": {
+      "onnx": "7a0036fa3389769f62f48fae0b26e0acec937cee0e3c8d78e0bab31a7dbcfc4e",
+      "size": 12830217,
+      "model_api": {
+        "ort": [
+          68.13917088,
+          67.733537,
+          68.88515735,
+          74.99813573,
+          85.12373,
+          2.14988752733908,
+          14.675846316960646
+        ],
+        "ov": [
+          60.34952061,
+          59.7299495,
+          67.27158995,
+          72.70236136,
+          75.836737,
+          4.378038999911072,
+          16.570139909848738
+        ]
+      },
+      "end_to_end": {
+        "ort": [
+          70.03052116,
+          69.690483,
+          71.65734705,
+          79.21712566,
+          79.293025,
+          1.5183860755135148,
+          14.279488192230955
+        ],
+        "ov": [
+          62.31436612,
+          64.056651,
+          69.31580135,
+          72.64076544,
+          73.316286,
+          3.7435339923970785,
+          16.04766384166181
+        ]
+      },
+      "raw": 20,
+      "matched": 30,
+      "min_iou": 0.999995434334783,
+      "max_score": 9.5367431640625e-7,
+      "max_abs": 0.003814697265625,
+      "mean_abs": 0.0000017841659769146645,
+      "gt": 26,
+      "required": 14,
+      "miss_ids": [
+        463199,
+        392818
+      ],
+      "p": 0.8666666666666667,
+      "r": 0.40625
+    },
+    "yolov8s": {
+      "onnx": "18fb51e7a65dbfba1c011d2d99c30d066324a1164e1c0eddf5fbcd383153f8d3",
+      "size": 44848867,
+      "model_api": {
+        "ort": [
+          184.57725814,
+          183.5262765,
+          189.18017,
+          200.25356882,
+          205.323341,
+          3.3868255593755343,
+          5.417785539112895
+        ],
+        "ov": [
+          170.9602812,
+          171.3067215,
+          180.4991402,
+          183.00727953,
+          185.733,
+          5.03676239988001,
+          5.849311857589527
+        ]
+      },
+      "end_to_end": {
+        "ort": [
+          185.82028017,
+          185.4466835,
+          188.5752647,
+          193.79483347,
+          193.878931,
+          1.7236863871649504,
+          5.381543925588409
+        ],
+        "ov": [
+          172.64924639,
+          172.9420475,
+          181.9053839,
+          191.43247548,
+          204.270546,
+          6.054043391425749,
+          5.792090153356851
+        ]
+      },
+      "raw": 20,
+      "matched": 41,
+      "min_iou": 0.9999987401797008,
+      "max_score": 9.5367431640625e-7,
+      "max_abs": 0.003143310546875,
+      "mean_abs": 0.0000014612614393172408,
+      "gt": 36,
+      "required": 15,
+      "miss_ids": [
+        463199
+      ],
+      "p": 0.8780487804878049,
+      "r": 0.5625
+    }
+  },
+  "actual_gt_sets_same_as_G01_20_of_20_per_model": true,
+  "additional_gt_miss": 0,
+  "additional_gt_hit": 0,
+  "raw_allclose": 40,
+  "paired": 71,
+  "unmatched": 0,
+  "negative_contracts": 12,
+  "blank": "PASS_BOTH_MODELS_BOTH_ENGINES",
+  "actual_T02_relation": "FRESH_PT_REQUALIFICATION both models; new artifact bytes differ from G01 T04; PT/ORT 40 raw and 71 paired PASS, historical GT sets independently compared",
+  "files_sha256": {
+    "yolov8n/benchmark.json": "0dde6a056a62f4f8fd3c8a8586544c56c6d07bf8e0c8a2d33c0790b6dfa7c6c3",
+    "yolov8n/end_to_end.csv": "a7bc157b4a342d428b9637f0e96ecbba0f7a3b38b742003dcc83d9ae613ff207",
+    "yolov8n/model_api.csv": "4602ac0e3f3e64346f68917ad9aab2f90ecb5e93a1e950e57e6ad080d54fbeb5",
+    "yolov8n/parity.json": "a5b1927dac8ad814ef2e5756f6b159cd8139ce7b529eadea4cd839ddb0850de5",
+    "yolov8s/benchmark.json": "84dc2ec7c502c2faa2eaff081fa03458679fb9586bb296f5480f8f6fe436ca7c",
+    "yolov8s/end_to_end.csv": "28405bea6a9b82bd184e519549dac9da5ddf725f65395accd4d96e3099b7406d",
+    "yolov8s/model_api.csv": "8b5175b5cf215b5bae03c0f462b8def2fe0a6eecd8ebe15b679535f7c73f8a00",
+    "yolov8s/parity.json": "0cd398b7499abab9360606d96d98a5393e4294460757b5aeb561f9078817bf59"
+  },
+  "absolute_semantics": "G01 FAIL n14/16 s15/16 preserved",
+  "T05": "NOT_RUN_NOT_IMPLEMENTED_IN_REQUESTED_CPU_SCOPE",
+  "L3": "NOT_RUN",
+  "main": "HOLD",
+  "data_redistribution": "no source images/weights/ONNX"
+}

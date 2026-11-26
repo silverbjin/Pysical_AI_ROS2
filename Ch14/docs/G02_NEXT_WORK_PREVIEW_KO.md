@@ -6,3 +6,6 @@ G01 T04 실제 raw/box parity PASS, required semantic FAIL (n 2/s1), run 4574510
 
 ## 최종 범위 확정 이후
 두 영상 raw 진단 45746373267 완료. G01 기술 범위 SCOPED_PASS, 원래 전체 Gate BLOCKED. 독립 G02 CPU 비교 개발을 허용하되 G01 전체 PASS 주장 및 통합 인수 금지. 동일 frozen fixture/모델/threshold, 새 GT 누락 0을 상대적 배포 기술 검수로 적용하고 절대 의미 누락은 공개 기록한다. G03 실제 target criterion remains strict. Reference G01_ACCEPTANCE_SCOPE_KO.md.
+
+## G02 CPU actual result
+45748461194 SUCCESS, T06 CPU scoped PASS; 800 raw timing samples and 40 raw/71 paired / no new GT loss. Full G02 BLOCKED due G01 full/rights; T05 not run. G03 independent design/implementation preview docs/G03_NEXT_WORK_PREVIEW_KO.md. No main merge.
