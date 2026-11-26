@@ -82,3 +82,6 @@ First CI 45808374531 artifact15109828744 verified2/2: overstrict setup.cfg for d
 
 ## G09 actual combined build success
 45808558133 source 2d6e3c180fb5959597ccb4e5a6060f996c0596a3, artifact15111280018 ZIP59627c0aa523f61faed10d6d383d9c0fdde3d950cca9a758b21d26a83a421fe1, 17/17. Six clean packages build 5.74s, five installed executables, two launch show-args, SwapModel, ABI/imports, pip check PASS. Source QA 18+optional14-5 missing/9 guides/28 exact vendor files and three CLI rejects. G09 L0/L1 scoped PASS, L3 NOT_RUN; additional narrow wrapper rehearsal only due new immutable sparse clone/owner archive path, not blanket runtime rerun. Read reports/G09_CLEAN_BUILD_EXECUTION_REPORT_KO.md. Full release HOLD.
+
+## G09 owner rehearsal failure / bounded correction
+45809242091 failed at second APT install ALSA HTTP404 after pinned sparse fetch, source QA and CPU/RL install; artifact15109519924 ZIP 64ff2961ab7e28f9396fa2bea60dca6f256838f842845946d7ec594a8aedbca4 inner7/7. Local archive path emitted but CI did not recover it. Prior clean build 45808558133 preserved. Signed index refresh and conditional one retry, failure archive capture, raw bootstrap and wrong-SHA negative proof. No physics reruns. Owner L3 NOT_RUN, full release HOLD.

@@ -51,14 +51,22 @@ jobs:
           set -eo pipefail
           mkdir -p "$HOME/ch14-owner"
           mv ch14-wheelhouse "$HOME/ch14-owner/wheelhouse"
-          CH14_SOURCE_SHA="$GITHUB_SHA" bash Ch14/scripts/bootstrap.sh --profile cpu --headless --check build 2>&1 | tee ch14-g09-evidence/owner-bootstrap.log
+          curl --proto '=https' --proto-redir '=https' -fsSL --connect-timeout 15 --max-time 90 "https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/$GITHUB_SHA/Ch14/scripts/bootstrap.sh" -o "$RUNNER_TEMP/ch14-bootstrap.sh"
+          cmp "$RUNNER_TEMP/ch14-bootstrap.sh" Ch14/scripts/bootstrap.sh
+          set +e
+          CH14_SOURCE_SHA="$GITHUB_SHA" bash "$RUNNER_TEMP/ch14-bootstrap.sh" --profile cpu --headless --check build 2>&1 | tee ch14-g09-evidence/owner-bootstrap.log
+          codes=("${PIPESTATUS[@]}")
+          set -e
+          test "${codes[1]}" = 0
           archive="$(sed -n 's/^CH14_OWNER_EVIDENCE=//p' ch14-g09-evidence/owner-bootstrap.log | tail -1)"
           test -f "$archive"
           sha256sum -c "$archive.sha256"
           cp "$archive" ch14-g09-evidence/owner-rehearsal.tar.gz
+          cp "$archive.sha256" ch14-g09-evidence/owner-rehearsal.tar.gz.sha256
           mkdir -p ch14-g09-evidence/owner
           tar -xzf "$archive" -C ch14-g09-evidence/owner
           (cd ch14-g09-evidence/owner && sha256sum -c sha256sums.txt)
+          if [[ "${codes[0]}" != 0 ]]; then exit "${codes[0]}"; fi
           python3 - <<'PY'
           import json,os,pathlib
           p=pathlib.Path("ch14-g09-evidence/owner")
@@ -67,12 +75,38 @@ jobs:
           assert d["source_sha"]==d["actual_source_sha"]==os.environ["GITHUB_SHA"],d
           assert json.loads((p/"build/stage.json").read_text())=={"stage":"complete","exit_code":0}
           assert "6 packages finished" in (p/"build/colcon.log").read_text()
+          assert "OWNED_CONTAINER_ABSENT" in (p/"build/container-cleanup.txt").read_text()
+          PY
+      - name: Actual SHA drift rejection and failure archive
+        run: |
+          set -eo pipefail
+          source_dir="$(sed -n 's/^CH14_SOURCE=//p' ch14-g09-evidence/owner-bootstrap.log | head -1)"
+          test -d "$source_dir/Ch14"
+          wrong=0000000000000000000000000000000000000000
+          set +e
+          bash "$source_dir/Ch14/scripts/verify_ch14.sh" --profile cpu --headless --source-sha "$wrong" --check build 2>&1 | tee ch14-g09-evidence/owner-negative-drift.log
+          codes=("${PIPESTATUS[@]}")
+          set -e
+          test "${codes[0]}" = 2 && test "${codes[1]}" = 0
+          archive="$(sed -n 's/^CH14_OWNER_EVIDENCE=//p' ch14-g09-evidence/owner-negative-drift.log | tail -1)"
+          sha256sum -c "$archive.sha256"
+          cp "$archive" ch14-g09-evidence/owner-negative-drift.tar.gz
+          mkdir -p ch14-g09-evidence/negative-drift
+          tar -xzf "$archive" -C ch14-g09-evidence/negative-drift
+          (cd ch14-g09-evidence/negative-drift && sha256sum -c sha256sums.txt)
+          python3 - <<'PY'
+          import os,json,pathlib
+          p=pathlib.Path("ch14-g09-evidence/negative-drift")
+          d=json.loads((p/"owner-result.json").read_text())
+          assert d["status"]=="BLOCKED" and d["exit_code"]==2 and d["stage"]=="preflight",d
+          assert d["actual_source_sha"]==os.environ["GITHUB_SHA"] and d["source_sha"]=="0"*40,d
+          assert not (p/"build").exists(),d
           PY
       - name: Hash evidence
         if: always()
         run: |
           cd ch14-g09-evidence
-          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+          find . -type f ! -path './sha256sums.txt' -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -10,7 +10,19 @@ done
 printf '%s\n' 'Acquire::Retries "2";' 'Acquire::http::No-Cache "true";' 'Acquire::https::No-Cache "true";' 'APT::Update::Error-Mode "any";' > /etc/apt/apt.conf.d/99g09
 test -s /ch14/requirements/rl.lock.txt
 source /ch14/scripts/g07_env.sh "$out"
-apt-get install -y --no-install-recommends ros-jazzy-cv-bridge ros-jazzy-vision-msgs ros-jazzy-message-filters ros-jazzy-tf2-ros-py ros-jazzy-diagnostic-msgs ros-jazzy-rosgraph-msgs ros-jazzy-ros-gz-bridge ros-jazzy-ros-gz-sim ros-jazzy-tf2-ros ros-jazzy-rosidl-default-generators ros-jazzy-rosidl-default-runtime ros-jazzy-ament-cmake ros-jazzy-std-srvs ros-jazzy-visualization-msgs ros-jazzy-xacro >/dev/null
+# Refresh signed indexes immediately before the second transaction.
+stage=ros_apt_packages
+ros_packages=(ros-jazzy-cv-bridge ros-jazzy-vision-msgs ros-jazzy-message-filters ros-jazzy-tf2-ros-py ros-jazzy-diagnostic-msgs ros-jazzy-rosgraph-msgs ros-jazzy-ros-gz-bridge ros-jazzy-ros-gz-sim ros-jazzy-tf2-ros ros-jazzy-rosidl-default-generators ros-jazzy-rosidl-default-runtime ros-jazzy-ament-cmake ros-jazzy-std-srvs ros-jazzy-visualization-msgs ros-jazzy-xacro)
+apt-get update -qq 2>&1 | tee "$out/ros-apt-update.log"
+if apt-get install -y --no-install-recommends "${ros_packages[@]}" 2>&1 | tee "$out/ros-apt-install-1.log"; then
+  echo 'G09_ROS_APT_FIRST_PASS'
+else
+  rc=$?
+  if [[ "$rc" != 100 ]] || ! grep -Eq '404[[:space:]]+Not Found' "$out/ros-apt-install-1.log"; then exit "$rc"; fi
+  echo 'G09_ROS_APT_404_REFRESH_ONCE'
+  apt-get update -qq 2>&1 | tee "$out/ros-apt-update-retry.log"
+  apt-get install -y --no-install-recommends "${ros_packages[@]}" 2>&1 | tee "$out/ros-apt-install-2.log"
+fi
 dpkg-query -W > "$out/dpkg-versions.txt"
 stage=clean_build
 mkdir -p /tmp/g09_ws/src

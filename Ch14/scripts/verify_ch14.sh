@@ -17,8 +17,6 @@ while (($#)); do
 done
 [[ "$headless" == 1 && "$source_sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'BLOCKED: explicit --headless and --source-sha required' >&2;exit 2; }
 case "$check" in build|perception|mujoco|gazebo|all) ;; *) echo 'BLOCKED unsupported check';exit 2;; esac
-actual="$(git -C "$repo" rev-parse HEAD)"
-[[ "$actual" == "$source_sha" && -z "$(git -C "$repo" status --porcelain --untracked-files=all)" ]] || { echo 'BLOCKED: SHA drift or dirty tree' >&2;exit 2; }
 base="${HOME}/ch14-owner"
 mkdir -p "$base"
 run="$(mktemp -d "$base/run_$(date -u +%Y%m%dT%H%M%SZ)_XXXXXX")"
@@ -29,16 +27,27 @@ if grep -qiE "microsoft.*wsl2|wsl2.*microsoft" /proc/sys/kernel/osrelease; then 
 finish(){
  raw_rc=$?;rc="$raw_rc";trap - EXIT;set +e
  case "$rc" in 0|1|2|130) ;; *) rc=1;; esac
- if [[ -n "$container" ]]; then docker rm -f "$container" >/dev/null 2>&1; fi
+ if [[ -n "$container" ]]; then
+   if docker inspect "$container" >/dev/null 2>&1; then
+      docker rm -f "$container" > "$out/container-cleanup.log" 2>&1 || rc=1
+   elif ! docker info --format '{{.ServerVersion}}' > "$out/container-cleanup.log" 2>&1; then
+      rc=1
+   fi
+ fi
  python3 - "$out" "$rc" "$stage" "$source_sha" "$check" "$actual" "$raw_rc" "$host_kind" <<'PY'
 import json,sys,pathlib
 out,rc,stage,sha,check,actual,raw_rc,host_kind=sys.argv[1:];rc=int(rc)
 pathlib.Path(out,"owner-result.json").write_text(json.dumps(dict(status="SCOPED_PASS" if rc==0 else "BLOCKED" if rc==2 else "CANCELLED" if rc==130 else "FAIL",exit_code=rc,stage=stage,source_sha=sha,actual_source_sha=actual,raw_exit_code=int(raw_rc),check=check,level=host_kind,full_release="HOLD",gui="NOT_RUN"),indent=2)+"\n")
 PY
  # The asset directory and original model archive are deliberately excluded.
- (cd "$out" && find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt)
- tar -czf "$run/evidence.tar.gz" -C "$out" . && sha256sum "$run/evidence.tar.gz" > "$run/evidence.tar.gz.sha256" || rc=1
- echo "CH14_OWNER_EVIDENCE=$run/evidence.tar.gz"
+ if (cd "$out" && find . -type f ! -path './sha256sums.txt' -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt) &&
+    tar -czf "$run/evidence.tar.gz" -C "$out" . &&
+    sha256sum "$run/evidence.tar.gz" > "$run/evidence.tar.gz.sha256"; then
+   echo "CH14_OWNER_EVIDENCE=$run/evidence.tar.gz"
+ else
+   echo 'FAIL: evidence archive not completed' >&2
+   rc=1
+ fi
  exit "$rc"
 }
 trap finish EXIT
@@ -54,6 +63,7 @@ if [[ "$check" == perception || "$check" == all ]]; then
 fi
 if [[ "$check" == mujoco || "$check" == gazebo || "$check" == all ]]; then
  [[ "$enabled" == 1 && -n "$reuse" ]] || { echo 'BLOCKED: --enable-sim-control and exact G07 ZIP required';exit 2; }
+ [[ -f "$reuse" ]] || { echo 'BLOCKED: original G07 ZIP missing' >&2; exit 2; }
  reuse="$(realpath "$reuse")"
  echo "c8defc1a154c3d0ec92ddd3a7fbd70f8d3b012dc21d375acde9f5c5f9be9641d  $reuse" | sha256sum -c - || exit 2
  mkdir "$run/reuse"
@@ -69,6 +79,9 @@ run_one(){
  container="ch14-owner-$(basename "$run" | tr '[:upper:]' '[:lower:]')-$name"
  echo "$img" > "$out/$name/image.txt"
  timeout --signal=TERM --kill-after=15s 1200s docker run --name "$container" --rm --init --shm-size=1g -v "$root:/ch14:ro" -v "$base/wheelhouse:/wheelhouse" -v "$out/$name:/evidence" "$@" "$img" bash "/ch14/scripts/$script" 2>&1 | tee "$out/$name/run.log"
+ if docker inspect "$container" >/dev/null 2>&1; then echo 'FAIL: owned container still exists' >&2; exit 1; fi
+ docker info --format '{{.ServerVersion}}' > "$out/$name/container-cleanup.txt"
+ echo 'OWNED_CONTAINER_ABSENT' >> "$out/$name/container-cleanup.txt"
  container=
  python3 - "$out/$name" <<'PY'
 import sys,json,pathlib
