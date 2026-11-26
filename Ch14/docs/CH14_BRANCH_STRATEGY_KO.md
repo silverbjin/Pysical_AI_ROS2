@@ -3,3 +3,5 @@
 PR 영향: main의 book-lab-acceptance.yml 광역 Ch[0-1][0-9]/**가 Ch14 PR에 반응하나 document-preflight만 실행, Ch02/12 runtime pilot은 workflow_dispatch 조건. 주요 Gazebo/ROS workflows는 기존 장의 경로에 한정. 기존 workflow 변경 금지. G01 신규 CI는 전용 push 경로. 사용자 이번 승인: G01 성공 후 main 병합(기존 chapter 최종 배포와 구분). G00 권리/fixture 및 G01 전체 검수 실패/미실행 시 merge 금지; 실제 성공 시 merge commit, expected head SHA, main 변경 범위 확인. G02~09 작업은 병합 뒤 새 기준에서 동일 챕터 브랜치 관리 또는 재개. WSL2 L3는 별도.
 
 2026-11-26 authorized exception: shared preflight corrected in independent PR #207, main 4255f810524c177db724548bb74d16b20fda64e5. Integrate this main ancestor into feature with non-force merge, no changes to accepted owner pin 6c458e345236b124c9aa60f65788f35cfed74e62. No Ch14 main merge until remaining scope/rights/publication decisions.
+
+2026-11-26: explicit owner authorization to merge Ch14 source to main after README/document CI. Limited source integration is not final publication approval. Preserve exact successful PIN; no force push; merge using expected head; preserve prior gates. Extend document-only CI inventory to Ch14 (9 guides), retain Ch01–13 historical 101-guide matrix unchanged.

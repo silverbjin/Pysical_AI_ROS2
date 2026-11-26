@@ -29,7 +29,7 @@ G07 원본 artifact 15090667475 ZIP SHA256 c8defc1a154c3d0ec92ddd3a7fbd70f8d3b01
 3. 모델 미확보·잘못된 SHA·비활성 제어에서 어떤 단계가 중단되는지 확인한다.
 4. G05 heartbeat와 ROS age, G06 replay와 실제 가상 센서, G08 smoke policy와 보행 품질을 비교한다.
 ## 인수 범위
-현재 G09 OWNER_L3_SCOPED_PASS (Linux 독립 4경로 및 WSL2 실제 --check all 성공). 전체 권리/의미 탐지/일반 종료/legacy PR/원고 QA 조건은 원장에 따르며 승인 및 조건 충족 전 main 병합 금지.
+현재 G09 OWNER_L3_SCOPED_PASS (Linux 독립 4경로 및 WSL2 실제 --check all 성공). 전체 권리/의미 탐지/일반 종료/최종 원고 QA 조건은 원장에 따릅니다. 소스 main 통합 승인과 전체 출판/외부 자산 재배포 승인은 구분합니다.
 
 ## 7. 검수된 사용자 출고 PIN
 6c458e345236b124c9aa60f65788f35cfed74e62. [WSL2 사용자 인수 안내](G09_WSL2_OWNER_ACCEPTANCE_KO.md)에서 정확한 SHA256 및 단일 명령을 사용한다. Build45815645513 and physical45816276822 actual SUCCESS, same source. Four selected paths separately tested; no redundant combined all CI. Headless Docker only; user WSL2 L3 scoped PASS (82/82 hashes, 4/4). See reports/G09_WSL2_OWNER_ACCEPTANCE_REVIEW_20261126_KO.md. Existing owner need not repeat. 
