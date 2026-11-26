@@ -6,14 +6,20 @@ from pathlib import Path
 from zipfile import ZipFile
 from email.parser import BytesParser
 
+
 def make_lock(wheelhouse: Path, out: Path):
     rows = {}
     details = []
     for path in sorted(wheelhouse.glob("*.whl")):
         with ZipFile(path) as wheel:
-            matches = [x for x in wheel.namelist() if x.endswith(".dist-info/METADATA")]
+            all_metadata = [x for x in wheel.namelist() if x.endswith(".dist-info/METADATA")]
+            # A wheel can contain vendored distributions below its own package.
+            # Only the wheel's top-level dist-info belongs to this distribution.
+            matches = [x for x in all_metadata if x.count("/") == 1]
+            if len(all_metadata) != len(matches):
+                print(f"vendored metadata ignored: {path.name}: {sorted(set(all_metadata) - set(matches))}")
             if len(matches) != 1:
-                raise ValueError(f"Invalid wheel metadata: {path.name}")
+                raise ValueError(f"Invalid root wheel metadata: {path.name}: {matches}")
             meta = BytesParser().parsebytes(wheel.read(matches[0]))
         name, version = meta["Name"], meta["Version"]
         if not name or not version:
@@ -33,6 +39,7 @@ def make_lock(wheelhouse: Path, out: Path):
     (out / "cpu.candidate.lock.txt").write_text("\n".join(rows[k] for k in sorted(rows)) + "\n")
     (out / "wheel_manifest.json").write_text(json.dumps(details, indent=2) + "\n")
     return len(rows)
+
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()

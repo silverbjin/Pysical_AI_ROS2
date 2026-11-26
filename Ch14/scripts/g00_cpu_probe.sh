@@ -10,6 +10,8 @@ export PYTHONNOUSERSITE=1
 export YOLO_CONFIG_DIR=/tmp/ch14-ultralytics
 export MPLBACKEND=Agg
 export OMP_NUM_THREADS=1
+stage=lock_regression
+python3 /ch14/scripts/test_g00_wheel_lock.py
 stage=apt
 cat /etc/os-release > "$out/os-release.txt"
 apt-get update
