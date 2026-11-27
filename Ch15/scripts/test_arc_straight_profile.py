@@ -5,11 +5,26 @@ class ArcTests(unittest.TestCase):
         x,y,h=local((1.,3.,math.pi/2),(1.,2.,math.pi/2))
         self.assertAlmostEqual(x,1);self.assertAlmostEqual(y,0);self.assertAlmostEqual(h,0)
     def test_arc(self):
-        self.assertEqual(arc_command((0,0,0)),(.008,-.10))
+        self.assertEqual(arc_command((0,0,0)),(.0125,-.10))
         x,y=arc_point(ANGLE)
         self.assertTrue(arc_ready((x,y,-ANGLE)))
         self.assertEqual(arc_command((x,y,-ANGLE)),(0.,0.))
         self.assertIsNone(arc_command((.2,.2,-.2)))
+    def test_radial_feedback(self):
+        theta=.8
+        x,y=arc_point(theta)
+        # Inward displacement (toward circle centre) with same heading.
+        inside=(x-.02*math.sin(theta),y-.02*math.cos(theta),-theta)
+        nominal=arc_command((x,y,-theta));corrected=arc_command(inside)
+        self.assertGreater(corrected[0],nominal[0])
+        self.assertGreater(corrected[1],nominal[1])
+        outside=(x+.02*math.sin(theta),y+.02*math.cos(theta),-theta)
+        self.assertLess(arc_command(outside)[0],nominal[0])
+        self.assertGreaterEqual(corrected[0],0)
+        self.assertLessEqual(corrected[0],.018)
+        self.assertGreaterEqual(corrected[1],-.10)
+        self.assertLessEqual(corrected[1],-.07)
+        self.assertIsNone(arc_command((float('nan'),0,0)))
     def test_straight(self):
         x,y=arc_point(ANGLE)
         self.assertIsNotNone(straight_command((x,y,-ANGLE)))

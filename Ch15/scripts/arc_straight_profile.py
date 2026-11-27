@@ -4,7 +4,10 @@ RADIUS=.18
 ANGLE=1.45
 STRAIGHT=.20
 ARC_W=-.10
-ARC_V_FEED=.008
+ARC_V_FEED=.0125
+ARC_CROSS_V_GAIN=.25
+ARC_CROSS_W_GAIN=.8
+ARC_W_MAX=-.07
 ARC_V_MAX=.018
 ARC_STOP_LEAD=.03
 STRAIGHT_V=.035
@@ -21,13 +24,19 @@ def arc_error(p):
     theta=clip(-p[2],0,ANGLE)
     x,y=arc_point(theta)
     ex,ey=x-p[0],y-p[1]
-    return math.hypot(ex,ey),ex*math.cos(theta)-ey*math.sin(theta)
+    return (math.hypot(ex,ey),ex*math.cos(theta)-ey*math.sin(theta),
+            ex*math.sin(theta)+ey*math.cos(theta))
 def arc_command(p):
-    err,along=arc_error(p)
-    if not all(math.isfinite(x) for x in p) or -p[2]<-.08 or err>.05:
+    if not all(math.isfinite(x) for x in p):return None
+    err,along,cross=arc_error(p)
+    if -p[2]<-.08 or err>.05:
         return None
     if -p[2]>=ANGLE-ARC_STOP_LEAD:return (0.,0.)
-    return clip(ARC_V_FEED+.6*along,0,ARC_V_MAX),ARC_W
+    # Positive cross = robot inside the clockwise reference circle.
+    # Increase forward contribution and reduce clockwise turn rate, bounded
+    # by the same original 0.018 m/s and 0.10 rad/s command envelope.
+    return (clip(ARC_V_FEED+.6*along+ARC_CROSS_V_GAIN*cross,0,ARC_V_MAX),
+            clip(ARC_W+ARC_CROSS_W_GAIN*cross,ARC_W,ARC_W_MAX))
 def arc_ready(p):
     return math.dist(p[:2],arc_point(ANGLE))<=.03 and abs(wrap(p[2]+ANGLE))<=.06
 def final_target():

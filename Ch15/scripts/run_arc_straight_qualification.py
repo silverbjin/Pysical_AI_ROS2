@@ -24,7 +24,7 @@ def main():
     from ament_index_python.packages import get_package_prefix
     from ch13_navigation_reuse.command_gateway import N,ns,set_stamp
     from run_r2_probe import service_call
-    S=dict(source='CH15_COUPLED_ARC_STRAIGHT_V1',result='FAIL',full_mission_success=False,original_native_l2_pass=False,segment_pass=False,phases=[],checks={})
+    S=dict(source='CH15_COUPLED_ARC_STRAIGHT_V2',result='FAIL',full_mission_success=False,original_native_l2_pass=False,segment_pass=False,phases=[],checks={})
     children=[];logs=[];node=None;clock=0;state=None;state_wall=0.;safe_stamp=0;safe_wall=0.;safe_zero=False;statuses={};clients={};vx=wz=0.;origin=None;trace=[]
     def write():
         (out/'arc_straight_result.json').write_text(json.dumps(S,indent=2,allow_nan=False)+'\n')
@@ -151,7 +151,8 @@ def main():
         S['checks']['one_raw_safe_owner_no_nav2']=counts()
         S['checks']['no_fault']=not fault()
         assert all(S['checks'].values())
-        call('platform/shutdown');platform=children[-1][1];platform.wait(timeout=12);assert platform.returncode==0
+        call('platform/shutdown');S['shutdown_admission']={'wall':time.monotonic(),'clock_ns':clock};write()
+        platform=children[-1][1];platform.wait(timeout=12);assert platform.returncode==0
         e=json.loads((out/'engine.json').read_text());S['checks']['engine_clean']=bool(e['result']=='COMPLETED' and e['normal_shutdown_requested'] and e['rx_joined'] and e['upstream_threads_joined'])
         S['checks']['same_compiled_model']=e['compiled_model_sha256']=='6ab165146bd617a8d99e6e71109bd140a7c9d56d30ddc91b3cf98e66914d25ff'
         rows=[json.loads(l) for l in (out/'engine_observations.jsonl').read_text().splitlines()]
@@ -177,7 +178,8 @@ def main():
         if node is not None and children and alive():
             try:
                 until(lambda:False,.2)
-                if until(stationary,8):call('platform/shutdown');children[-1][1].wait(timeout=12)
+                if until(stationary,8):
+                    call('platform/shutdown');S['shutdown_admission']={'wall':time.monotonic(),'clock_ns':clock};children[-1][1].wait(timeout=12)
             except BaseException:S['cleanup_error']=traceback.format_exc()
         if node is not None:node.destroy_node();rclpy.try_shutdown()
         for name,c in reversed(children):
@@ -195,6 +197,14 @@ def main():
         if trace_path.is_file():
             native_trace=json.loads(trace_path.read_text())
             S['gateway_first_fault']=native_trace.get('fault')
+            first=S['gateway_first_fault']
+            if first and S['result']=='PASS_SCOPED_ARC_STRAIGHT':
+                shutdown=S.get('shutdown_admission')
+                # The native gateway may legitimately latch source loss after
+                # the owned platform has accepted stationary shutdown. Do not
+                # suppress or reset it. Never admit a pre-shutdown fault.
+                S['checks']['gateway_fault_after_shutdown_only']=bool(shutdown and first['decision_wall']>=shutdown['wall'] and first['clock_ns']>=shutdown['clock_ns'] and first['reason']=='INPUT_OR_CLOCK_TIMEOUT')
+                if not S['checks']['gateway_fault_after_shutdown_only']:S['result']='FAIL'
         elif S['result']=='PASS_SCOPED_ARC_STRAIGHT':S['result']='FAIL'
         (out/'arc_straight_trace.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in trace))
         write();print(json.dumps(S,indent=2),flush=True)
