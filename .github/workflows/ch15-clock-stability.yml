@@ -20,7 +20,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest discover -s Ch15/tests -p 'test_clock_*analyzer.py' -v
-          bash -n Ch15/scripts/clock_diag_wsl2.sh Ch15/scripts/clock_diag_cross_layer.sh
+          bash -n Ch15/scripts/clock_diag_wsl2.sh
+          bash -n Ch15/scripts/clock_diag_cross_layer.sh
           cc -Wall -Wextra -Werror Ch15/python/clock_timex_read.c -o /tmp/ch15-timex
           /tmp/ch15-timex | python3 -c 'import json,sys; assert json.load(sys.stdin)["modes"]==0'
           bash Ch15/scripts/clock_diag_cross_layer.sh /tmp/ch15-clock-smoke 12 idle
@@ -47,4 +48,8 @@ jobs:
           $tokens=$null; $errors=$null
           [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'Ch15/scripts/clock_diag_windows.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
           if ($errors.Count) { $errors | Format-List; exit 1 }
-          Write-Output 'PowerShell syntax PASS only; actual Windows WSL2 NOT_RUN'
+          $tokens=$null; $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'Ch15/scripts/clock_diag_bootstrap.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
+          if ($errors.Count) { $errors | Format-List; exit 1 }
+          & ./Ch15/scripts/clock_diag_bootstrap.ps1 -VerifyOnly -OutputRoot (Join-Path $env:RUNNER_TEMP 'ch15-clock-verify')
+          Write-Output 'PowerShell syntax and download integrity PASS; actual WSL2 NOT_RUN'
