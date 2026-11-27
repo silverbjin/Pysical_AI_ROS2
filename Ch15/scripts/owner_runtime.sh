@@ -6,6 +6,8 @@ CH=/repo/Ch15
 export DEBIAN_FRONTEND=noninteractive PYTHONDONTWRITEBYTECODE=1 ROS_LOCALHOST_ONLY=1 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 unset ROS_STATIC_PEERS ROS_DISCOVERY_SERVER CYCLONEDDS_URI RMW_FASTRTPS_PUBLICATION_MODE FASTDDS_DEFAULT_PROFILES_FILE FASTRTPS_DEFAULT_PROFILES_FILE RMW_FASTRTPS_USE_QOS_FROM_XML
 if [[ "$kind" == clock_diag ]]; then
+  apt-get update
+  apt-get install -y --no-install-recommends ros-jazzy-rmw-cyclonedds-cpp
   source /opt/ros/jazzy/setup.bash
   export ROS_DOMAIN_ID=96
   python3 "$CH/python/clock_diag.py" --out /evidence/container-clock --duration 8 --scope container_idle --ros

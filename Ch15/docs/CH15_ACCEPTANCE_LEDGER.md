@@ -112,3 +112,5 @@
 - G09-R01 owner archives SHA 5/5 and internal 157/157 verified, fixed PIN 70ed8b509809b09db26f57e4f9a7aea9f83d095c; build/mock/cube/joint 4/4 PASS preserved; faults F03_transient ABORTED after 2.927308797s stamp-vs-steady discontinuity, seven clean children; remaining four scenarios NOT_RUN, host origin unknown. [Owner receipt](../evidence/g09/owner_l3_r01_receipt.json), [report](reports/G09_R01_OWNER_EVIDENCE_KO.md). Main HOLD.
 
 - R02 read-only clock diagnostic candidate; host/idle ROS/fault probe simultaneous bracketed clocks; CI pending. No safety threshold/auto reset change. [Report](reports/G09_R02_CLOCK_DIAG_CANDIDATE_KO.md).
+
+- R02 V1 run45978901460 unit9/9, instrumented F03 transient actual Linux PASS (2 attempts, 4 goals, 31 events, 7 clean, residual0; probe cleanup gap PARTIAL). Idle host246 samples COMPLETE but ROS init RED missing CycloneDDS shared library. V2 target idle only, original fault path unchanged. [R02 debug](reports/G09_R02_V1_DEBUG_KO.md).
