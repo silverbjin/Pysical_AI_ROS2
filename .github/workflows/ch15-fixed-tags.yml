@@ -1,0 +1,61 @@
+name: Ch15 fixed acceptance tags
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/ch15-fixed-tags.yml']
+permissions:
+  contents: read
+concurrency:
+  group: ch15-fixed-acceptance-tags
+  cancel-in-progress: false
+jobs:
+  pin:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && github.event.pull_request.number == 208 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/ch15-mission-engineering' && contains(github.event.pull_request.title, '[PIN G01-G07]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Preflight all fixed refs, create missing only, verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo=silverbjin/Pysical_AI_ROS2
+          cat > pins.txt <<'PINS'
+          ch15-g01-scoped-v1 92f50d6c1dba7814c9952bce74da4e94bb510583
+          ch15-g02-scoped-v1 1501416d5e399ee308c4ba38b6e4cb78c8e6d185
+          ch15-g03-mock-v1 30fa2fa012404ba83d110e308e201eeda5bf5d6c
+          ch15-g04-basic-v1 0f67d0222a9737ddc07c447a35a9be50ed2e761d
+          ch15-g05-evidence-v1 d4405ebb7d65aecb9d54e3d124da6bb31d699509
+          ch15-g06-visualization-v1 00e6e2d33b616dcd9e93891e9431e19ed824cfb4
+          ch15-g07-joint-v1 d05c67b1e88e06e5323722403e459afa6eaa2027
+          PINS
+          gh api "repos/$repo/git/matching-refs/tags/ch15-" > existing.json
+          python3 - <<'PY'
+          import json
+          refs={x['ref']:x['object'] for x in json.load(open('existing.json'))}
+          for line in open('pins.txt'):
+              tag,sha=line.split()
+              found=refs.get('refs/tags/'+tag)
+              if found and (found['type']!='commit' or found['sha']!=sha):
+                  raise SystemExit('TAG_DRIFT '+tag)
+          PY
+          while read -r tag sha; do
+            actual=$(gh api "repos/$repo/git/commits/$sha" --jq .sha)
+            test "$actual" = "$sha"
+          done < pins.txt
+          while read -r tag sha; do
+            if jq -e --arg ref "refs/tags/$tag" 'any(.[]; .ref==$ref)' existing.json >/dev/null; then
+              echo "EXISTING_MATCH $tag $sha"
+            else
+              gh api --method POST "repos/$repo/git/refs" -f ref="refs/tags/$tag" -f sha="$sha" --jq '.ref + " " + .object.sha'
+            fi
+          done < pins.txt
+          while read -r tag sha; do
+            actual=$(gh api "repos/$repo/git/ref/tags/$tag" --jq .object.sha)
+            test "$actual" = "$sha"
+            echo "TAG_VERIFIED $tag $sha"
+          done < pins.txt
+          echo CH15_FIXED_TAGS_PASS
