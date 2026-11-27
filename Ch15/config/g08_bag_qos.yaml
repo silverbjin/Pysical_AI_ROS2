@@ -1,0 +1,59 @@
+# Recorder-only QoS. Never modify the native control publisher/subscriber QoS.
+# Events remain lossless by contract; sampled continuous data may lose individual
+# frames, but all required topics, terminal status and exact events are verified.
+/ch15/mission_event:
+  reliability: reliable
+  durability: volatile
+  history: keep_last
+  depth: 100
+/ch15/mission_state:
+  reliability: best_effort
+  durability: transient_local
+  history: keep_last
+  depth: 10
+/ch15/safety_state:
+  reliability: best_effort
+  durability: transient_local
+  history: keep_last
+  depth: 10
+/tf_static:
+  reliability: reliable
+  durability: transient_local
+  history: keep_last
+  depth: 10
+/ch15/gait_state:
+  reliability: best_effort
+  durability: transient_local
+  history: keep_last
+  depth: 10
+/scan:
+  reliability: best_effort
+  durability: volatile
+  history: keep_last
+  depth: 10
+/ch15/ready:
+  reliability: best_effort
+  durability: volatile
+  history: keep_last
+  depth: 10
+/ch15/stop_request:
+  reliability: best_effort
+  durability: volatile
+  history: keep_last
+  depth: 10
+/ch15/cmd_vel_in:
+  reliability: best_effort
+  durability: volatile
+  history: keep_last
+  depth: 10
+/cmd_vel:
+  reliability: best_effort
+  durability: volatile
+  history: keep_last
+  depth: 10
+
+/ch15/target_observation:
+  reliability: best_effort
+  durability: volatile
+  history: keep_last
+  depth: 10
