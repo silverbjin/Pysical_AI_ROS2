@@ -12,6 +12,9 @@ ARC_V_MAX=.018
 ARC_STOP_LEAD=.03
 STRAIGHT_V=.035
 STRAIGHT_STOP_LEAD=.007
+STRAIGHT_SLIP_BIAS=.067
+STRAIGHT_STOP_CROSS=.0065
+STRAIGHT_BIAS_TAPER=.10
 def wrap(x):return math.atan2(math.sin(x),math.cos(x))
 def clip(x,lo,hi):return max(lo,min(hi,x))
 def local(p,origin):
@@ -50,8 +53,13 @@ def straight_command(p):
     along,lateral,heading=straight_errors(p)
     if not -.025<=along<=.25 or abs(lateral)>.05 or abs(heading)>.12:return None
     if along<=STRAIGHT_STOP_LEAD:return (0.,0.)
-    # Small experimental heading-bias feed-forward, bounded feedback.
-    return STRAIGHT_V,clip(.012+heading+clip(2*lateral,-.035,.035),-.05,.05)
+    # Actual V2 straight body vy=-2.919mm/s, vx=43.594mm/s:
+    # forward heading bias atan2(-vy,vx) ~=.067rad. Fade the bias
+    # as the unchanged final goal approaches. The measured stationary
+    # transition added +6.58mm cross error; anticipate that recoil.
+    bias=STRAIGHT_SLIP_BIAS*clip((along-STRAIGHT_STOP_LEAD)/STRAIGHT_BIAS_TAPER,0,1)
+    cross=clip(2*(lateral+STRAIGHT_STOP_CROSS),-.035,.035)
+    return STRAIGHT_V,clip(.012+heading+cross+bias,-.05,.05)
 def final_ready(p):
     g=final_target()
     return math.dist(p[:2],g[:2])<=.015 and abs(wrap(p[2]-g[2]))<=.06

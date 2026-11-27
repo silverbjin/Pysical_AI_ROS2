@@ -31,4 +31,18 @@ class ArcTests(unittest.TestCase):
         g=final_target();self.assertEqual(straight_command(g),(0.,0.))
         self.assertTrue(final_ready(g));self.assertFalse(final_ready((g[0]+.02,g[1],g[2])))
         self.assertIsNone(straight_command((g[0],g[1],g[2]+.2)))
+    def test_straight_slip_and_stop_compensation(self):
+        x,y,h=final_target()
+        def pose(along,lat,heading=0):
+            c,s=math.cos(h),math.sin(h)
+            return x-along*c+lat*s,y-along*s-lat*c,h-heading
+        early=straight_command(pose(.15,0))
+        near=straight_command(pose(.015,0))
+        self.assertGreater(early[1],near[1])
+        self.assertGreater(near[1],.012)
+        self.assertGreaterEqual(early[1],-.05)
+        self.assertLessEqual(early[1],.05)
+        self.assertEqual(straight_command(pose(.006,0)),(0.,0.))
+        self.assertFalse(final_ready(pose(0,.016)))
+        self.assertFalse(final_ready(pose(0,0,.061)))
 if __name__=='__main__':unittest.main()

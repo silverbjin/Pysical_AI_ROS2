@@ -24,7 +24,7 @@ def main():
     from ament_index_python.packages import get_package_prefix
     from ch13_navigation_reuse.command_gateway import N,ns,set_stamp
     from run_r2_probe import service_call
-    S=dict(source='CH15_COUPLED_ARC_STRAIGHT_V2',result='FAIL',full_mission_success=False,original_native_l2_pass=False,segment_pass=False,phases=[],checks={})
+    S=dict(source='CH15_COUPLED_ARC_STRAIGHT_V3',result='FAIL',full_mission_success=False,original_native_l2_pass=False,segment_pass=False,phases=[],checks={})
     children=[];logs=[];node=None;clock=0;state=None;state_wall=0.;safe_stamp=0;safe_wall=0.;safe_zero=False;statuses={};clients={};vx=wz=0.;origin=None;trace=[]
     def write():
         (out/'arc_straight_result.json').write_text(json.dumps(S,indent=2,allow_nan=False)+'\n')

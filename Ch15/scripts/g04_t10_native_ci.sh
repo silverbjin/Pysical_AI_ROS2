@@ -124,7 +124,7 @@ if [[ "${1:-}" == --arc-straight ]]; then
   python3 - "$e/case/native/arc_straight_result.json" <<'PY'
 import json,sys
 r=json.load(open(sys.argv[1]))
-assert r['source']=='CH15_COUPLED_ARC_STRAIGHT_V2' and r['result']=='PASS_SCOPED_ARC_STRAIGHT'
+assert r['source']=='CH15_COUPLED_ARC_STRAIGHT_V3' and r['result']=='PASS_SCOPED_ARC_STRAIGHT'
 assert not r['original_native_l2_pass'] and not r['segment_pass'] and not r['full_mission_success']
 assert len(r['phases'])==2 and all(p['ready'] for p in r['phases'])
 assert all(r['checks'].values())
