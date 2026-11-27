@@ -2,6 +2,7 @@
 QPC is independent of guest time discipline, not an external UTC standard.
 """
 import argparse
+from bisect import bisect_left, bisect_right
 import json
 import subprocess
 import time
@@ -27,6 +28,38 @@ def bounds(before, after, value):
         return None
     return {'elapsed_guest_s':elapsed/1e9,'elapsed_qpc_lower_s':lo/1e9,'elapsed_qpc_upper_s':hi/1e9,
             'lower_ppm':(elapsed/hi-1)*1e6,'upper_ppm':(elapsed/lo-1)*1e6}
+
+
+def matched_bounds(anchors, host_rows, key):
+    """Bound same-kind elapsed rates with host samples bracketing Docker RPCs."""
+    if key == 'monotonic':
+        reads=[(r['monotonic_ns'],r['monotonic_ns'],r['monotonic_ns']) for r in host_rows]
+    else:
+        reads=[(d['m0'],d['m1'],d['value_ns']) for r in host_rows if (d:=r['reads'].get(key)) is not None]
+    starts=[r[0] for r in reads]; ends=[r[1] for r in reads]
+    if starts!=sorted(starts) or ends!=sorted(ends): return None
+    def candidates(phase):
+        out=[]
+        for a in anchors:
+            if a.get('phase')!=phase or not a.get('guest'): continue
+            q0,q1=a['qpc_before_ns'],a['qpc_after_ns']
+            if not 0<=q1-q0<=500_000_000: continue
+            i=bisect_right(ends,q0)-1; j=bisect_left(starts,q1)
+            if i<0 or j>=len(reads) or i>=j or reads[j][1]-reads[i][0]>1_000_000_000: continue
+            local=reads[i:j+1]
+            if any(not 0<=x[1]-x[0]<=5_000_000 for x in local): continue
+            if any(b[0]-a[1]>250_000_000 or b[2]<a[2] or (key=='realtime' and abs((b[2]-a[2])-(b[0]-a[0]))>100_000_000) for a,b in zip(local,local[1:])): continue
+            try:
+                g=a['guest']['monotonic_ns'] if key=='monotonic' else a['guest']['reads'][key]['value_ns']
+            except KeyError: continue
+            out.append((local[0][2],local[-1][2],g,q0,q1))
+        return out
+    before,after=candidates('before'),candidates('after')
+    if not before or not after:return None
+    a=min(before,key=lambda x:x[1]-x[0]); b=min(after,key=lambda x:x[1]-x[0])
+    lo,hi=b[0]-a[1],b[1]-a[0]; elapsed=b[2]-a[2]; coverage=b[3]-a[4]
+    if lo<=0 or elapsed<=0 or coverage<=0:return None
+    return dict(reference_clock=key,elapsed_guest_s=elapsed/1e9,elapsed_reference_lower_s=lo/1e9,elapsed_reference_upper_s=hi/1e9,coverage_monotonic_lower_s=coverage/1e9,lower_ppm=(elapsed/hi-1)*1e6,upper_ppm=(elapsed/lo-1)*1e6)
 
 
 def docker_anchors(path, name, label, seconds):
@@ -82,7 +115,8 @@ def analyze_phase(path):
             anchors=read_jsonl(path/(name+'-anchors.jsonl'))
             a,b=choose(anchors,'before'),choose(anchors,'after')
             if not a or not b: raise ValueError('no valid Docker RPC brackets')
-            output['container_vs_host'][name] = {k:bounds(a,b,(lambda r:r['monotonic_ns']) if k=='monotonic' else (lambda r,key=k:r['reads'][key]['value_ns'])) for k in ('monotonic','realtime','monotonic_raw')}
+            host_rows=read_jsonl(path/'host'/'samples.jsonl')
+            output['container_vs_host'][name] = {k:matched_bounds(anchors,host_rows,k) for k in ('monotonic','realtime','monotonic_raw')}
         except (ValueError,KeyError,OSError) as e:
             output['container_vs_host'][name]={'quality':'NOT_AVAILABLE','error':str(e)}
     output['provisional_gate']=gate(output,path)
@@ -119,7 +153,7 @@ def gate(output,path):
         for layer in ('container','container_ros'):
             for key in ('monotonic','monotonic_raw','realtime'):
                 r=output['container_vs_host'].get(layer,{}).get(key)
-                if not r or r['elapsed_qpc_lower_s']<600: unknown.append(layer+'/host/'+key+': coverage')
+                if not r or r['coverage_monotonic_lower_s']<600: unknown.append(layer+'/host/'+key+': coverage')
                 check_rate(layer+'/host/'+key,r)
     if not (path/'timex-samples.jsonl').is_file(): unknown.append('timex: unavailable')
     return {'result':'DIAGNOSTIC_FAIL' if failures else 'INCONCLUSIVE' if unknown else 'CANDIDATE_WITHIN_REVIEW_REQUIRED',
