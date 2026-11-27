@@ -6,6 +6,7 @@ from pathlib import Path
 from table_approach_contract import route,entry_ready,Handoff
 from arc_straight_profile import local,arc_command,arc_ready,straight_command,final_ready,wrap
 from concurrent.futures import ThreadPoolExecutor
+from table_visibility_gate import VisibilityGate,project
 
 def main(argv=None,mission=None):
     parser=argparse.ArgumentParser()
@@ -39,11 +40,11 @@ def main(argv=None,mission=None):
     from vision_mission import select_goal,wait_new_capture,current_q
     from run_r2_probe import service_call
     import numpy as np
-    S=dict(source='CH15_TABLE_V3_SEGMENT_V1',scope='actual table approach only; original native L2 and BT not claimed',
+    S=dict(source='CH15_TABLE_V3_SEGMENT_V2',scope='actual table approach only; original native L2 and BT not claimed',
            result='FAIL',full_mission_success=False,original_native_l2_pass=False,phases=[],checks={})
     launch=node=log=None;active=None;clients={};armed=False;phase='startup'
     clock=0;state=joints=grid=observation=local_grid=None;statuses={};rows=[];last_state_wall=0.;plans=[]
-    handoff=Handoff();command=(0.,0.);mux=None;mux_last=0;mux_fault='';cost_wall=0.;cost_seq=0;nav2_packets=0;v3_packets=0;cost_checks=[];cost_job=None;cost_good=None
+    handoff=Handoff();command=(0.,0.);mux=None;mux_last=0;mux_fault='';cost_wall=0.;cost_stamp=0;cost_seq=0;nav2_packets=0;v3_packets=0;cost_checks=[];cost_job=None;cost_good=None
     pool=ThreadPoolExecutor(max_workers=1,thread_name_prefix='ch15_geometry')
     def write():
         (out/'segment_result.json').write_text(json.dumps(S,indent=2,allow_nan=False)+'\n')
@@ -70,13 +71,15 @@ def main(argv=None,mission=None):
         grid=dict(width=m.info.width,height=m.info.height,resolution=m.info.resolution,
                   origin=[m.info.origin.position.x,m.info.origin.position.y],data=list(m.data))
     def on_cost(m):
-        nonlocal local_grid,cost_wall,cost_seq
+        nonlocal local_grid,cost_wall,cost_stamp,cost_seq
+        stamp=ns(m.header.stamp)
+        if stamp<=cost_stamp:return
         q=m.info.origin.orientation
         if m.header.frame_id!='reuse/odom' or abs(q.w-1)>1e-6 or any(abs(v)>1e-6 for v in (q.x,q.y,q.z)):return
         local_grid=dict(width=m.info.width,height=m.info.height,resolution=m.info.resolution,
             origin=[m.info.origin.position.x,m.info.origin.position.y],
             data=[100 if v==100 or v<0 else 0 for v in m.data])
-        cost_wall=time.monotonic();cost_seq+=1
+        cost_wall=time.monotonic();cost_stamp=stamp;cost_seq+=1
     def forward(m):
         nonlocal mux_last,mux_fault,nav2_packets
         if handoff.owner!='NAV2':return
@@ -171,21 +174,35 @@ def main(argv=None,mission=None):
         # sweep +/-0.12rad covers stop latency and local check interval.
         nonlocal cost_job,cost_good
         now=time.monotonic()
-        if local_grid is None or now-cost_wall>.65:return False
+        if local_grid is None or node.count_publishers('/local_costmap/costmap')!=1:return False
+        new_fresh=0<=now-cost_wall<=.65 and -25_000_000<=clock-cost_stamp<=650_000_000
         if cost_job is not None and cost_job[0].done():
-            f,started,p,seq=cost_job;cost_job=None
-            cost_good=(bool(f.result()),started,p,seq)
-            cost_checks.append(dict(clear=cost_good[0],wall=now,pose=p,cost_seq=seq))
-        if cost_job is None and (cost_good is None or cost_good[3]!=cost_seq):
+            f,started,p,seq,stamp,receipt=cost_job;cost_job=None
+            cost_good=(bool(f.result()),started,p,seq,stamp,receipt)
+            cost_checks.append(dict(clear=cost_good[0],wall=now,pose=p,cost_seq=seq,source_stamp_ns=stamp,source_receipt_wall=receipt))
+        if new_fresh and cost_job is None and (cost_good is None or cost_good[3]!=cost_seq):
             p=pose();x,y,h=p
             # Expanded rectangle covers all translations within 50mm;
             # include 5 orientation samples for bounded yaw drift.
             enlarged=[[a+math.copysign(.05,a),b+math.copysign(.05,b)] for a,b in fp]
             sweep=[(x,y,h+d) for d in (-.12,-.06,0.,.06,.12)]
-            cost_job=(pool.submit(path_footprint_clear,sweep,local_grid,enlarged),now,p,cost_seq)
-        return bool(cost_good and cost_good[0] and now-cost_good[1]<=.65
+            cost_job=(pool.submit(path_footprint_clear,sweep,local_grid,enlarged),now,p,cost_seq,cost_stamp,cost_wall)
+        return bool(cost_good and cost_good[0] and now-cost_good[1]<=.65 and 0<=now-cost_good[5]<=.65
+                    and -25_000_000<=clock-cost_good[4]<=650_000_000
                     and math.dist(pose()[:2],cost_good[2][:2])<=.035
                     and abs(wrap(pose()[2]-cost_good[2][2]))<=.08)
+    visibility=VisibilityGate();vision_events=[]
+    def vision_admission(source_point):
+        now=time.monotonic();b=snapshot()['boundary'];capture_wall=b.get('vision_capture_wall');stamp=b.get('vision_capture_ns',0)
+        health=type(capture_wall) in (int,float) and 0<=now-capture_wall<=.3 and -25_000_000<=clock-stamp<=300_000_000
+        fresh=bool(observation is not None and admissible(observation['capture_ns'],observation['capture_wall'],clock,now,observation['tf_stamp_ns']))
+        shift=float(np.linalg.norm(np.array(observation['point'])-source_point)) if fresh else None
+        p,q=state.pose.pose.position,state.pose.pose.orientation
+        projection=project(source_point,(p.x,p.y,p.z),(q.x,q.y,q.z,q.w),scenario.camera_pos,scenario.camera_yaw_deg,scenario.camera_pitch_up_deg,record['source_observation']['calibration'])
+        ok,reason=visibility.check(now,full_frame=projection['full_frame'],health=health,fresh=fresh,shift=shift)
+        if not vision_events or vision_events[-1]['reason']!=reason:
+            vision_events.append(dict(reason=reason,ok=ok,clock_ns=clock,wall=now,pose=pose(),projection=projection,health_stamp_ns=stamp,observation_stamp_ns=observation.get('capture_ns') if observation else None,shift_m=shift))
+        return ok,reason
     def custom_phase(label,controller,gate,budget,entry,source_point):
         nonlocal command,phase
         phase=label;start=clock
@@ -194,8 +211,16 @@ def main(argv=None,mission=None):
         assert not fault() and counts_ok() and snapshot()['platform'].get('stationary_ready')
         command=(0.,0.)
         assert until(lambda:local_clear() or fault(),3) and not fault(),'local costmap admission'
-        assert until(lambda:observation is not None and admissible(observation['capture_ns'],observation['capture_wall'],clock,time.monotonic(),observation['tf_stamp_ns']),3),'fresh observation'
-        assert np.linalg.norm(np.array(observation['point'])-source_point)<.03,'target moved'
+        # Original Ch13 requires fresh capture health continuously. For this
+        # static known target only, permit bounded geometric FOV exclusion;
+        # reacquire within 300 wall ms after full-frame prediction.
+        if label=='straight':
+            fresh_observation=wait_new_capture(until,lambda:observation,lambda:clock,timeout=3)
+            assert np.linalg.norm(np.array(fresh_observation['point'])-source_point)<.03,'target moved at reacquisition'
+            S['checks']['arc_target_reacquired']=True
+            S['arc_reacquired_capture_ns']=fresh_observation['capture_ns']
+        ok,reason=vision_admission(source_point)
+        assert ok,reason
         call('navigation/require_vision');call('navigation/enable')
         assert until(lambda:fault() or prepared_zero(snapshot(),already_armed=True,now=time.monotonic()),5)
         assert not fault() and prepared_zero(snapshot(),already_armed=True,now=time.monotonic()),'V3 held zero not ready'
@@ -209,14 +234,16 @@ def main(argv=None,mission=None):
             elif time.monotonic()-last_state_wall>.10:reason='STATE_EXPIRED'
             elif clock-start>budget*1e9:reason='SIM_BUDGET'
             elif not local_clear():reason='LOCAL_COSTMAP_ENVELOPE'
-            elif observation is None or not admissible(observation['capture_ns'],observation['capture_wall'],clock,time.monotonic(),observation['tf_stamp_ns']):reason='OBSERVATION_EXPIRED'
-            elif np.linalg.norm(np.array(observation['point'])-source_point)>=.03:reason='TARGET_MOVED'
             else:
-                value=controller(local(pose(),entry))
-                if value is None:reason='TRACKING_ENVELOPE'
+                ok,why=vision_admission(source_point)
+                if not ok:reason=why
+                elif label=='straight' and why not in ('OBSERVED','OBSERVED_EDGE'):reason='STRAIGHT_OBSERVATION_LOST'
                 else:
-                    command=value
-                    if value==(0.,0.):return True
+                    value=controller(local(pose(),entry))
+                    if value is None:reason='TRACKING_ENVELOPE'
+                    else:
+                        command=value
+                        if value==(0.,0.):return True
             if reason:
                 command=(0.,0.);rec.update(interruption=reason,interruption_pose=pose(),interruption_sim_ns=clock);write();return True
             return False
@@ -307,7 +334,7 @@ def main(argv=None,mission=None):
         assert S['checks']['absolute_final_pose']
         if mission:mission.navigated(until,S,clock)
         obs3=wait_new_capture(until,lambda:observation,lambda:clock,timeout=3)
-        S['checks']['fresh_final_observation']=bool(admissible(obs3['capture_ns'],obs3['capture_wall'],clock,time.monotonic(),obs3['tf_stamp_ns']) and np.linalg.norm(np.array(obs3['point'])-np.array(obs2['point']))<.03)
+        S['checks']['fresh_final_observation']=bool(admissible(obs3['capture_ns'],obs3['capture_wall'],clock,time.monotonic(),obs3['tf_stamp_ns']) and np.linalg.norm(np.array(obs3['point'])-source_point)<.03)
         assert S['checks']['fresh_final_observation']
         S['checks']['workspace']=position_ik(model,current_q(state,joints),obs3['point']) is not None
         S['final_observation']=obs3
@@ -362,6 +389,7 @@ def main(argv=None,mission=None):
         S['last_status']=statuses
         S['mux']={'nav2_packets':nav2_packets,'v3_packets':v3_packets,'owner':handoff.owner,'fault':mux_fault}
         (out/'local_cost_checks.json').write_text(json.dumps(cost_checks,indent=2)+'\n')
+        (out/'visibility_gate_events.json').write_text(json.dumps(vision_events,indent=2)+'\n')
         (out/'segment_trace.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in rows))
         (out/'plans.json').write_text(json.dumps(plans)+'\n')
         write();print(json.dumps(S,indent=2),flush=True)
