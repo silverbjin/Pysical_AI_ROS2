@@ -4,7 +4,7 @@
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 python3 -m venv --system-site-packages "$HOME/ch15-joint-venv"
-"$HOME/ch15-joint-venv/bin/python" -m pip install --only-binary=:all: --no-deps --require-hashes -r Ch15/requirements/joint.lock.txt
+"$HOME/ch15-joint-venv/bin/python" -m pip install --only-binary=:all: --no-deps --ignore-installed --require-hashes -r Ch15/requirements/joint.lock.txt
 "$HOME/ch15-joint-venv/bin/python" -m pip check
 P="$HOME/ch15-joint-venv/bin/python"
 MODEL="$(ros2 pkg prefix --share ch15_simulation)/models/joint_lab.xml"
