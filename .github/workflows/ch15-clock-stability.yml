@@ -2,7 +2,7 @@ name: Ch15 isolated clock diagnostic QA
 on:
   push:
     branches: [feat/ch15-wsl2-clock-stability]
-    paths: ['Ch15/python/clock_*', 'Ch15/scripts/clock_diag_*', 'Ch15/tests/test_clock_*', '.github/workflows/ch15-clock-stability.yml']
+    paths: ['Ch15/python/clock_*', 'Ch15/scripts/clock_diag_*', '!Ch15/scripts/clock_diag_timesyncd_experiment.py', 'Ch15/tests/test_clock_*', '!Ch15/tests/test_clock_timesyncd_experiment.py', '.github/workflows/ch15-clock-stability.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -29,7 +29,7 @@ jobs:
           python3 Ch15/python/clock_cross_layer_analyzer.py /tmp/ch15-clock-smoke > /tmp/ch15-clock-smoke/analysis.json
           python3 -c 'import json; x=json.load(open("/tmp/ch15-clock-smoke/analysis.json")); assert x["layers"]["host"]["samples"]>100; assert x["provisional_gate"]["result"]!="CANDIDATE_WITHIN_REVIEW_REQUIRED"'
           git fetch --no-tags --depth=1 origin 72db9392fa8e8c9fa3eb8e4033453bedeb299430
-          git diff --name-only FETCH_HEAD HEAD | python3 -c 'import sys; allowed=("Ch15/python/clock_", "Ch15/scripts/clock_diag_", "Ch15/tests/test_clock_", "Ch15/docs/", "Ch15/evidence/g09/owner_l3_r07_receipt.json", "Ch15/evidence/g09/r10_owner_clock_baseline.json", ".github/workflows/ch15-clock-stability.yml"); bad=[x.strip() for x in sys.stdin if not x.strip().startswith(allowed)]; assert not bad,bad'
+          git diff --name-only FETCH_HEAD HEAD | python3 -c 'import sys; allowed=("Ch15/python/clock_", "Ch15/scripts/clock_diag_", "Ch15/tests/test_clock_", "Ch15/docs/", "Ch15/evidence/g09/owner_l3_r07_receipt.json", "Ch15/evidence/g09/r10_owner_clock_baseline.json", "Ch15/evidence/g09/r10_writer_trace_receipt.json", ".github/workflows/ch15-clock-timesyncd-experiment.yml", ".github/workflows/ch15-clock-stability.yml"); bad=[x.strip() for x in sys.stdin if not x.strip().startswith(allowed)]; assert not bad,bad'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

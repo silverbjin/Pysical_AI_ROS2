@@ -1,0 +1,27 @@
+name: Ch15 approved timesyncd experiment QA
+on:
+  push:
+    branches: [feat/ch15-wsl2-clock-stability]
+    paths: ['Ch15/scripts/clock_diag_timesyncd_experiment.py', 'Ch15/tests/test_clock_timesyncd_experiment.py', '.github/workflows/ch15-clock-timesyncd-experiment.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mock-and-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify pinned trace and experiment contracts without service mutations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile Ch15/scripts/clock_diag_timesyncd_experiment.py
+          python3 -m unittest discover -s Ch15/tests -p test_clock_timesyncd_experiment.py -v
+          curl -fsSLo /tmp/ch15-trace.sh https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/bafcf08b2c9072467009c6f232242d74eca8a767/Ch15/scripts/clock_diag_writer_trace.sh
+          echo 'e64e6898fa0a71acffc90761d13bce05b729af4623418f0779a4d00e54a2a9eb  /tmp/ch15-trace.sh' | sha256sum -c -
+          bash -n /tmp/ch15-trace.sh
+          git diff --name-only 8071cae5da811cac46726ca99297edeb293dc9b8 HEAD | python3 -c 'import sys; allowed={"Ch15/scripts/clock_diag_timesyncd_experiment.py","Ch15/tests/test_clock_timesyncd_experiment.py",".github/workflows/ch15-clock-timesyncd-experiment.yml","Ch15/docs/reports/G09_R10_TIMESYNCD_EXPERIMENT_KO.md","Ch15/docs/CH15_ACCEPTANCE_LEDGER.md",".github/workflows/ch15-clock-stability.yml"}; bad=set(sys.stdin.read().splitlines())-allowed; assert not bad,bad'
+          echo 'CI MOCK/INTEGRITY ONLY; real systemctl stop/start NOT_RUN'
