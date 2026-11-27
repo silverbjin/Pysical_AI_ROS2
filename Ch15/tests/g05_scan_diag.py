@@ -10,14 +10,15 @@ def state():
         try:result[f]=Path(f).read_text().strip()
         except OSError:result[f]=None
     return result
-def producer(out,kind):
+def producer(out,kind,mode='normal'):
     import rclpy
     from rclpy.node import Node
     from rclpy.executors import MultiThreadedExecutor,SingleThreadedExecutor
     from rclpy.clock import Clock,ClockType
     from sensor_msgs.msg import LaserScan
+    from geometry_msgs.msg import TwistStamped
     from ch15_adapters.mock_servers import MockServers
-    from ch15_adapters.qos_profiles import sensor_qos
+    from ch15_adapters.qos_profiles import sensor_qos,profile
     rows=[];gc_rows=[]
     def event(k,**kw):rows.append(dict(kind=k,wall_ns=now(),thread_cpu_ns=time.thread_time_ns(),process_cpu_ns=time.process_time_ns(),**kw))
     def gc_cb(phase,info):gc_rows.append(dict(phase=phase,generation=info['generation'],wall_ns=now(),process_cpu_ns=time.process_time_ns()))
@@ -39,8 +40,14 @@ def producer(out,kind):
         def __init__(self):
             super().__init__('g05_scan_source')
             self.scan=Timed(self.create_publisher(LaserScan,'/scan',sensor_qos))
+            self.enabled=True
+            if mode=='F01':self.create_subscription(TwistStamped,'/ch15/cmd_vel_in',self.on_command,profile())
             self.create_timer(.1,self.sample,clock=Clock(clock_type=ClockType.STEADY_TIME))
+        def on_command(self,m):
+            if self.enabled and m.twist.linear.x>0:
+                self.enabled=False;event('fault_injection',mode='F01',trigger='actual positive cmd_vel_in',command_stamp_ns=m.header.stamp.sec*10**9+m.header.stamp.nanosec)
         def sample(self):
+            if not self.enabled:return
             a=now();b=time.thread_time_ns();event('sample_enter')
             try:
                 s=LaserScan();s.header.stamp=self.get_clock().now().to_msg();s.header.frame_id='base_link';s.angle_min=-.5;s.angle_max=.5;s.angle_increment=.5;s.range_min=.05;s.range_max=5.;s.ranges=[2.,2.,2.];self.scan.publish(s)
@@ -54,7 +61,7 @@ def producer(out,kind):
     except (KeyboardInterrupt,rclpy.executors.ExternalShutdownException):pass
     finally:
         ex.shutdown(timeout_sec=6);n.destroy_node();rclpy.try_shutdown();gc.callbacks.remove(gc_cb)
-        write(out,dict(kind=kind,affinity=sorted(os.sched_getaffinity(0)),start=start,end=state(),events=rows,gc=gc_rows))
+        write(out,dict(kind=kind,mode=mode,affinity=sorted(os.sched_getaffinity(0)),start=start,end=state(),events=rows,gc=gc_rows))
 def run_case(out,kind,record,domain):
     os.environ.update(ROS_DOMAIN_ID=str(domain),ROS_LOCALHOST_ONLY='1',ROS_AUTOMATIC_DISCOVERY_RANGE='LOCALHOST')
     import rclpy
@@ -106,10 +113,10 @@ def run_case(out,kind,record,domain):
     result['qualified']=len(pubs)>=70 and len(rec)>=70 and result['source_gap_ms']<=250 and result['watchdog_receipt_gap_ms']<=250 and result['watchdog_tick_gap_ms']<=100 and not latch and all(x['exit']==0 and not x['forced'] for x in exits)
     write(out/'result.json',result);print(json.dumps(result),flush=True);return result
 if __name__=='__main__':
-    if sys.argv[1]=='producer':producer(Path(sys.argv[2]),sys.argv[3])
+    if sys.argv[1]=='producer':producer(Path(sys.argv[2]),sys.argv[3],sys.argv[4] if len(sys.argv)>4 else 'normal')
     else:
         out=Path(sys.argv[1]);out.mkdir(parents=True,exist_ok=False)
-        cases=[('original-on-async','original',True,84)] if len(sys.argv)>2 and sys.argv[2]=='--async-qualify' else [('original-off','original',False,81),('original-on','original',True,82),('isolated-on','isolated',True,83)]
+        cases=[('isolated-on-async','isolated',True,85)] if '--isolated-async-qualify' in sys.argv else [('original-on-async','original',True,84)] if '--async-qualify' in sys.argv else [('original-off','original',False,81),('original-on','original',True,82),('isolated-on','isolated',True,83)]
         results=[run_case(out/name,kind,on,d) for name,kind,on,d in cases]
         write(out/'diagnosis.json',dict(result='DIAGNOSTIC_COMPLETE',cases=results,original_source_unchanged=True,physical_motion=False,rmw=os.environ.get('RMW_IMPLEMENTATION'),publication_mode=os.environ.get('RMW_FASTRTPS_PUBLICATION_MODE')))
-        if '--async-qualify' in sys.argv and not all(r['qualified'] for r in results):raise SystemExit(1)
+        if any(x in sys.argv for x in ('--async-qualify','--isolated-async-qualify')) and not all(r['qualified'] for r in results):raise SystemExit(1)

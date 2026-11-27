@@ -16,7 +16,7 @@ children=[];statuses=[];events=[];ready=[];err=None;exits=[];discovered=[];start
 cpus=sorted(os.sched_getaffinity(0));assert len(cpus)>=4,'G05 recording requires at least 4 available CPUs'
 safety_cpu=str(cpus[0]);recorder_cpu=str(cpus[-1]);worker_cpus=','.join(map(str,cpus[1:-1]))
 def spawn(name,args):
-    log=(out/(name+'.log')).open('w');affinity=recorder_cpu if name=='recorder' else safety_cpu if name in ('command_arbiter','sensor_watchdog') else worker_cpus
+    log=(out/(name+'.log')).open('w');affinity=recorder_cpu if name in ('recorder','scan_source') else safety_cpu if name in ('command_arbiter','sensor_watchdog') else worker_cpus
     p=subprocess.Popen(['taskset','-c',affinity,*args],stdout=log,stderr=subprocess.STDOUT,start_new_session=True);children.append((name,p,log));return p
 def launch(pkg,exe,*args):
     return spawn(exe,[str(Path(os.environ['G03_INSTALL'])/pkg/'lib'/pkg/exe),*args])
@@ -44,7 +44,7 @@ def until(pred,seconds):
     raise RuntimeError('deadline')
 def graph():
     discovered[:]=[t for t in cfg['required'] if any(x.node_name=='rosbag2_recorder' for x in n.get_subscriptions_info_by_topic(t)) and n.count_publishers(t)>0]
-    return set(discovered)==set(cfg['required'])
+    return set(discovered)==set(cfg['required']) and n.count_publishers('/scan')==1
 def admission():
     global stable_since,stable_ready_count,start_admission
     now=time.monotonic_ns()
@@ -72,9 +72,11 @@ try:
     until(lambda:'rosbag2_recorder' in n.get_node_names(),10)
     stage('recorder_ready')
     os.sched_setaffinity(0,set(cpus[1:-1]))
+    spawn('scan_source',[sys.executable,str(ROOT/'tests/g05_scan_diag.py'),'producer',str(out/'scan_source_trace.json'),'isolated',mode])
+    until(scan_stable,15);stage('isolated_scan_stable')
     launch('ch15_safety','readiness_monitor')
     launch('ch15_mission','mission_executor','--ros-args','-p','evidence_dir:='+str(out/'executor'))
-    spawn('mock_servers',[sys.executable,str(ROOT/'tests/g05_fault_fixture.py'),mode,str(out/'mock_native_trace.json'),'--ros-args','-p','nav_fixture_hold_s:=2.0' if mode=='F01' else 'nav_fixture_hold_s:=0.0'])
+    spawn('mock_servers',[sys.executable,str(ROOT/'tests/g05_fault_fixture.py'),mode,str(out/'mock_native_trace.json'),'--ros-args','-p','nav_fixture_hold_s:=2.0' if mode=='F01' else 'nav_fixture_hold_s:=0.0','-p','publish_scan:=false'])
     until(scan_stable,15);stage('scan_stable')
     spawn('sensor_watchdog',[sys.executable,str(ROOT/'tests/g05_safety_trace.py'),'watchdog',str(out/'watchdog_native_trace.json')])
     until(heartbeat_stable,10);stage('heartbeat_stable')
@@ -104,6 +106,6 @@ finally:
     (out/'scan_trace.json').write_text(json.dumps(scan_trace,indent=2)+'\n')
     (out/'stop_trace.json').write_text(json.dumps(stop_trace,indent=2)+'\n')
     (out/'startup_stages.json').write_text(json.dumps(dict(stages=startup_stages,affinity=dict(safety=safety_cpu,recorder=recorder_cpu,workers=worker_cpus)),indent=2)+'\n')
-    result=dict(result='PASS' if err is None and len(exits)==6 and all(x['exit']==0 and not x['forced'] for x in exits) and size()<=cfg['max_bytes'] else 'FAIL',mode=mode,source='MOCK',error=err,discovered=discovered,start_admission=start_admission,start_wall_ns=start_wall,terminal=statuses[-1].state if statuses else None,observed_events=len(events),processes=exits,bag_bytes=size(),full_mission_success=False)
+    result=dict(result='PASS' if err is None and len(exits)==7 and all(x['exit']==0 and not x['forced'] for x in exits) and size()<=cfg['max_bytes'] else 'FAIL',mode=mode,source='MOCK',error=err,discovered=discovered,start_admission=start_admission,start_wall_ns=start_wall,terminal=statuses[-1].state if statuses else None,observed_events=len(events),processes=exits,bag_bytes=size(),full_mission_success=False)
     (out/'record_result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result),flush=True)
 sys.exit(0 if result['result']=='PASS' else 1)

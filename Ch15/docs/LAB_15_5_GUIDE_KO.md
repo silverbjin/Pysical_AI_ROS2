@@ -11,3 +11,5 @@ F01/F06은 별도 새 출력 및 domain으로 반복한다. 실제 Mock 장애 �
 기록 실행기는 최소 4개 사용 가능한 CPU가 필요합니다(안전 pair/recorder/worker 분리). 실제 scan과 false heartbeat가 충분히 진행된 뒤 Arbiter를 기동합니다. 이미 latch 상태이면 미션을 시작하지 않으며 자동 reset하지 않습니다. `startup_stages.json`, `arbiter_native_trace.json`, `watchdog_native_trace.json`을 분석하십시오.
 
 V4의 기록기 구독은 continuous telemetry Best Effort, MissionEvent 및 /tf_static Reliable로 구분합니다. 원본 제어 QoS는 그대로입니다. Event 무결성은 반드시 100% 일치해야 하고 sampled telemetry는 모든 필수 토픽과 마지막 상태를 검증합니다. `mock_native_trace.json`의 actual goal gate와 `arbiter_native_trace.json`의 publisher 시간을 대조하십시오.
+
+V6에서는 G05 전용 Scan 노드가 독립 SingleThreadedExecutor에서 원본과 동일한 10Hz LaserScan을 발행합니다. 기존 Mock Action 서버는 Scan publisher를 제거하고, 실제 `/scan` 발행자 1개를 확인합니다. Fast DDS 비동기 모드는 G05 스크립트 내에서만 적용됩니다. F01은 실제 양의 `/ch15/cmd_vel_in`을 관측한 뒤 Scan 발행을 중단하며 명령을 생성하지 않습니다. 7개 프로세스 정상 종료와 `scan_source_trace.json`을 확인하십시오.

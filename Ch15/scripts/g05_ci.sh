@@ -40,7 +40,7 @@ assert actual=='rmw_fastrtps_cpp'
 print(json.dumps(dict(rmw=actual,publication_mode=os.environ['RMW_FASTRTPS_PUBLICATION_MODE'])))
 PY
 # No motion. Qualify actual timing before any normal mission.
-timeout --signal=INT --kill-after=15s 60s python3 /repo/Ch15/tests/g05_scan_diag.py /evidence/async-qualification --async-qualify
+timeout --signal=INT --kill-after=15s 60s python3 /repo/Ch15/tests/g05_scan_diag.py /evidence/async-qualification --isolated-async-qualify
 for row in normal:76 F01:77 F06:78; do
   mode="${row%:*}"; domain="${row#*:}"
   timeout --signal=INT --kill-after=20s 90s bash /repo/Ch15/scripts/record_mission.sh "$mode" "/evidence/$mode" "$domain"
@@ -59,7 +59,12 @@ for mode in ('normal','F01','F06'):
  m=json.loads((p/'analysis/metrics.json').read_text());assert m['terminal']==('COMPLETED' if mode=='normal' else 'ABORTED')
  assert m['energy_j'] is None
  if mode=='normal':assert m['goals']==4 and m['rejected_goals']==0
- if mode=='F01':assert any(x['event']=='FAULT' for x in orig) and any(x['event']=='STOP_OBSERVED' for x in orig) and any(x['event']=='GOAL_ACCEPTED' for x in orig)
+ scan=json.loads((p/'scan_source_trace.json').read_text())['events']
+ faults=[x for x in scan if x['kind']=='fault_injection']
+ if mode=='F01':
+  assert any(x['event']=='FAULT' for x in orig) and any(x['event']=='STOP_OBSERVED' for x in orig) and any(x['event']=='GOAL_ACCEPTED' for x in orig)
+  assert len(faults)==1 and not any(x['kind']=='publish_enter' and x['wall_ns']>faults[0]['wall_ns'] for x in scan)
+ else:assert not faults
  if mode=='F06':assert any(x['event']=='STEP_ENTER' and x['detail']['step']=='pick_retract' for x in orig) and any(x['event']=='GOAL_TERMINAL' and x['detail']['status']==6 for x in orig)
  print(mode,m['events'],m['terminal'])
 PY

@@ -8,6 +8,11 @@ mode=sys.argv.pop(1);out=Path(sys.argv.pop(1));trace=[]
 assert mode in ('normal','F01','F06')
 def row(kind,**fields):trace.append(dict(kind=kind,wall_ns=time.monotonic_ns(),cpu_ns=time.thread_time_ns(),**fields))
 class Fixture(MockServers):
+    def __init__(self):
+        super().__init__()
+        # G05 only: independent scan process owns /scan. Original mock remains unchanged.
+        assert not self.scan_enabled
+        self.destroy_publisher(self.scan)
     def sample(self):
         start=time.monotonic_ns();cpu=time.thread_time_ns();row('sample_enter')
         try:super().sample()
