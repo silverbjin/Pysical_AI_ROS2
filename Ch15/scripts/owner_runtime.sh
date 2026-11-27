@@ -10,6 +10,10 @@ if [[ "$kind" == joint ]]; then
   printf '{"result":"PASS","scope":"no ROS graph launched (joint)"}\n' > /evidence/residual.json
   exit 0
 fi
+# G04 T11 qualified on the image default RMW, without mock-specific DDS overrides.
+if [[ "$kind" == cube ]]; then
+  unset RMW_IMPLEMENTATION ROS_LOCALHOST_ONLY ROS_AUTOMATIC_DISCOVERY_RANGE
+fi
 apt-get update
 common=(python3-colcon-common-extensions ros-jazzy-nav2-msgs ros-jazzy-tf2-ros ros-jazzy-tf2-ros-py ros-jazzy-rmw-cyclonedds-cpp ros-jazzy-rosbag2 ros-jazzy-rosbag2-storage-mcap python3-yaml)
 case "$kind" in
@@ -62,7 +66,7 @@ case "$kind" in
   python3 "$CH/python/plot_mission.py" /evidence/analysis
   timeout --signal=INT --kill-after=10s 55s bash "$CH/scripts/replay_mission.sh" /input-bag /evidence/replay.json 79 76;;
  cube)
-  export ROS_DOMAIN_ID=79;domains=(79)
+  export ROS_DOMAIN_ID=79 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST;domains=(79)
   bash "$CH/scripts/run_cube_lab.sh" /evidence/cube;;
  markers)
   export ROS_DOMAIN_ID=85;domains=(85)
