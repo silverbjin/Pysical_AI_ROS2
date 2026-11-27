@@ -35,7 +35,7 @@ def rate(a, b):
         return None
     bounds = [x/t*1e6 for x in (lo,hi) for t in (dtlo,dthi)]
     return dict(lower_ppm=min(bounds), upper_ppm=max(bounds),
-                midpoint_ppm=(min(bounds)+max(bounds))/2)
+                midpoint_ppm=(min(bounds)+max(bounds))/2, start_ns=a['m0'], end_ns=b['m1'])
 
 
 def analyze(rows):
@@ -87,13 +87,25 @@ def analyze(rows):
     raw = result.get('monotonic_raw',{})
     paired = []
     steps = [e for e in rt.get('events',[]) if e['kind'] in ('FORWARD','BACKWARD')]
-    raw_rate = raw.get('median_clean_ppm')
-    if raw_rate is not None:
-        for a,b in zip(steps,steps[1:]):
-            if a['kind'] == b['kind'] == 'FORWARD':
-                dt=(b['at_ns']-a['at_ns'])/NS
-                paired.append(dict(interval_s=dt, predicted_s=dt*raw_rate/1e6,
-                                   observed_s=(b['lower_ns']+b['upper_ns'])/(2*NS)))
+    # Pair each step with RAW offset change over the same local interval;
+    # do not use a run-wide median across a regime transition.
+    raw_reads = [(r['reads']['realtime']['m1'],r['reads']['monotonic_raw'])
+                 for r in rows if valid(r['reads'].get('realtime')) and valid(r['reads'].get('monotonic_raw'))]
+    import bisect
+    times=[t for t,_ in raw_reads]
+    for a,b in zip(steps,steps[1:]):
+        if a['kind'] != 'FORWARD' or b['kind'] != 'FORWARD':
+            continue
+        i,j=bisect.bisect_left(times,a['at_ns']),bisect.bisect_left(times,b['at_ns'])
+        if i>=len(times) or j>=len(times) or times[i]!=a['at_ns'] or times[j]!=b['at_ns']:
+            continue
+        if any(a['at_ns'] < e['at_ns'] <= b['at_ns'] for e in raw.get('events',[])) or raw.get('gaps'):
+            continue
+        lo,hi=delta(raw_reads[i][1],raw_reads[j][1])
+        observed=(b['lower_ns']+b['upper_ns'])/(2*NS)
+        predicted=(lo+hi)/(2*NS)
+        paired.append(dict(interval_s=(b['at_ns']-a['at_ns'])/NS, predicted_s=predicted,
+                           predicted_bounds_s=[lo/NS,hi/NS], observed_s=observed, residual_s=observed-predicted))
     return dict(scope=rows[0]['scope'], samples=len(rows), duration_s=(rows[-1]['monotonic_ns']-rows[0]['monotonic_ns'])/NS,
                 quality='COMPLETE' if result and all(v['quality']=='COMPLETE' for v in result.values()) else 'PARTIAL',
                 clocks=result, forward_pairs=paired, origin='UNKNOWN')
