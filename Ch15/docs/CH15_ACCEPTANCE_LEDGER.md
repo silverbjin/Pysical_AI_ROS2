@@ -134,3 +134,5 @@
 - R10 same-kind correction RED run 46022995010 (20 tests pass, new receipt missing scope allowlist); GREEN run 46023104036 both jobs PASS, 20/20, artifact 15210186610. Trace candidate PIN bafcf08b2c9072467009c6f232242d74eca8a767, actual root trace NOT_RUN; mechanism confirmed, writer UNKNOWN; environment FAIL/HOLD, safety unchanged.
 
 - R10 writer trace actual 180s RAW, SHA PASS, manifest16/16, trace1482/1482. Five forward steps each contain systemd-timesyn call, median 2.930657s, MONO mean period32.222561s. chronyd76 calls, tick9167 fixed. Initial tick writer and PID namespace mapping unknown. [Report](reports/G09_R10_WRITER_TRACE_KO.md). No settings or safety changes; F06/F01 blocked.
+
+- R10 approved single-variable timesyncd stop/restore candidate: RED 46025023333 (8 tests pass, shallow base missing); GREEN 46025247533 job140594855542 10/10 mock and integrity PASS. Source PIN b20f9bc7af6066f14a02ccc2e3d3a3486b2a7d99, SHA256 4ad89f807b889a7d2aabec645726bdf3c17d3c4435a0e17a04df4473267c689d. Actual owner service experiment NOT_RUN. No other setting change or mission. [Report](reports/G09_R10_TIMESYNCD_EXPERIMENT_KO.md).
