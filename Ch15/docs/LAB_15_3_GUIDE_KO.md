@@ -1,0 +1,41 @@
+# 15.3 실습 — 비동기 BT 전체 미션
+Profile A mock 전용. 실제 하드웨어/Ch13와 같은 DDS domain에서 실행하지 않는다.
+```bash
+source /opt/ros/jazzy/setup.bash
+cd Ch15/ros2_ws
+colcon build --packages-select ch15_interfaces ch15_adapters ch15_safety ch15_mission
+source install/setup.bash
+export ROS_DOMAIN_ID=74
+ros2 launch ch15_mission mission.launch.py auto_start:=false evidence_dir:=$HOME/ch15_g03_$(date +%s)
+```
+같은 domain의 두 번째 terminal: ros2 topic echo /ch15/ready, ros2 service call /ch15/start_mission std_srvs/srv/Trigger '{}', ros2 topic echo /ch15/mission_state. 상태와 Goal UUID 이벤트를 관찰한다. 취소는 /ch15/cancel_mission Trigger; 미션 중 reset은 거절되어야 한다. 종료 후 재시작은 명시 reset 없이 거절. Ctrl+C는 terminal 확인 후. 실제 안전 fault latch reset은 G08 전까지 fail-closed. Profile B native runner G04, C 실행 금지.
+교육 과제: Root SUCCESS와 END 상태의 차이, request_id와 UUID의 차이, stamp와 steady clock의 차이, tick과 supervisor 별도 timer의 역할. mission-events.jsonl 및 ticks.csv를 제출한다. G03 actual mock mission PASS; L3 별도.
+
+## G04 독립 물리 실습: 두 경로를 동시에 실행하지 않는다
+### B-1 원본 Ch13 native basic (RED4 FAIL 보존; 권장 실행 경로 아님)
+원본 Ch13 시작 가이드 Ch13/docs/START_HERE_13_8_KO.md를 먼저 확인. Owner 승인 후 CI 45911815970에서 실제 94 SHA256 및 407 source freeze PASS. 사용자/CI 검증용 승인 receipt dependencies/native_local_use_approval.json 사용; 재배포 미승인. 원본 native 실제 RED4 FAIL; 대체 Ch15 V6 실제 BT/MCAP PASS. GitHub repository의 공개 여부는 외부 weight/mesh의 사용·재배포 허가가 아니다.
+- 기존 Ch13 main 기준 1931cac92585fc155357880b584c72c76d67257c을 별도 checkout에 고정. 상류 경로는 해당 checkout의 부모/upstream-iit-locomanipulation-d010212, shared lock은 부모/ch13_reuse_engine.lock. 기존 engine이 소유 중인 lock 삭제 금지.
+- 실제 94개: 23 raw 그대로, 71 LF→CRLF 후보가 원래 SHA256과 정확히 일치. 기존 폴더는 수정하지 않으며 새 격리 부모 경로에서 python3 Ch15/scripts/prepare_native_assets.py --target /path/to/parent/upstream-iit-locomanipulation-d010212 --receipt /path/to/new-asset-receipt.json 으로 준비한다. 기존 폴더는 adapter preflight에서 읽기 전용 전수 검증.
+- 원본 가이드와 동일한 검증된 native venv와 별도 build를 사용한다.
+```bash
+# 승인과 의존성 검수 완료 후 실행 (CI V6 exact downstream; 사용자 L3 NOT_RUN)
+export CH13_REUSE_BUILD="$HOME/ch15_native_isolated/ch13_reuse_13_8_build"
+export CH13_REUSE_VENV="$HOME/ch15_native_isolated/ch13_reuse_iit_d010212_venv"
+bash Ch15/scripts/run_table_mission.sh /path/to/pinned_ch13 Ch15/dependencies/native_local_use_approval.json "$HOME/ch15_native_$(date +%s)"
+```
+기본 exercise는 navigate/find/finish이며 pick/return/place 없음. 원본 CH13_NATIVE 실패 보존. 권장 canonical physical_basic은 성공한 Ch15 대체 V6 run_table_mission.sh를 호출한다. [실제 G04 인수](reports/G04_T10_MISSION_GREEN_CLOSEOUT_KO.md). native stop injection F01은 별도 검증된 hook 미확보로 BLOCKED.
+### B-2 독립 RGB-D cube lab
+Gazebo Harmonic, ROS Jazzy, cv_bridge, OpenCV, ros_gz_bridge, tf2_ros. 별도 ROS domain과 headless software renderer. 실제 로봇 또는 다른 시뮬레이터와 같은 domain에서 실행 금지.
+```bash
+source /opt/ros/jazzy/setup.bash
+cd Ch15/ros2_ws
+colcon build --packages-select ch15_interfaces ch15_adapters ch15_simulation
+source install/setup.bash
+export ROS_DOMAIN_ID=79
+cd ../..
+bash Ch15/scripts/run_cube_lab.sh "$HOME/ch15_cube_$(date +%s)"
+```
+실제 RGB/depth/info, map→camera_optical static TF, HSV color segment 및 median depth. Known 5cm cube half-edge correction; orientation identity is POSITION_ONLY marker only, not grasp. GT independent native pose and 8-corner projection. 10 fresh frames normal, invalid-depth copied fixture 3 frames, actual Gazebo occlusion 3 frames. No command topics published. 제출: positions.csv/json, model-pose.log, cube-result.json, shutdown.tsv, input-sha256.txt, rendered RGB samples. CI에서 실제 Harmonic T11 PASS (run 45910585983, 10/10 normal, max 2.046mm, min IoU .9216, 6/6 invalid blocked, 4/4 exit0). 동일한 WSL2 owner 실행은 아직 미검증. 원본 evidence/g04/positions.csv와 G04 보고서를 대조한다.
+
+## G09 공통 실행 경로
+Ch15 루트, `CH15_SOURCE_SHA`를 실제 고정 HEAD로 설정하고 `bash scripts/run_lab.sh 15.3 --profile mock` 실행. 상세 선행 환경과 evidence archive는 [15.9](LAB_15_9_GUIDE_KO.md) 참조. 문서 조회와 실제 실행을 구분한다.

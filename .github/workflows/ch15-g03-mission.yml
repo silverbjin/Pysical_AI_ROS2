@@ -1,0 +1,41 @@
+name: Ch15 G03 targeted mission integration
+on:
+  # Accepted normal run retained. Do not rerun it for independent fault fixtures.
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ch15-g03-mission-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  mission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch15
+          persist-credentials: false
+      - name: Targeted mission only; reuse T06 and pure evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch15-g03-mission-evidence
+          git rev-parse HEAD > ch15-g03-mission-evidence/source-sha.txt
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker pull "$image"
+          docker image inspect "$image" > ch15-g03-mission-evidence/image.json
+          docker run --rm --init -v "$PWD/Ch15:/ch15:ro" -v "$PWD/ch15-g03-mission-evidence:/evidence" "$image" bash /ch15/scripts/g03_mission_ci.sh 2>&1 | tee ch15-g03-mission-evidence/run.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch15-g03-mission-evidence
+          cd ch15-g03-mission-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g03-targeted-mission
+          path: ch15-g03-mission-evidence/
+          if-no-files-found: error
+          retention-days: 30

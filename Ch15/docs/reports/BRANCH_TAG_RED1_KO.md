@@ -1,0 +1,3 @@
+# 기준선 태그 생성 권한 실패 및 조치
+- source 565140ad7e21fbbe88cb89f1888176b74243574a, [Run 45955337263](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45955337263), job 140360413609, actual FAIL. GitHub token declared Contents write, POST git/refs returns HTTP403 Resource not accessible by integration. Read preflight successful; remote matching refs actual 0/7. No existing tag altered.
+- 원인 범위: 통합 token으로 ref 생성 불허. 세부 서버 권한 사유 미확정. 권한 상승/secret/PAT 수집/반복 실행 금지. 일회성 write workflow 삭제; PR title opt-in 제거. owner-authenticated Git script provided, atomic push and verify, full SHA manifest remains canonical; tags NOT_CREATED. G08 source baseline fixed independently by full SHA. G09/main merge HOLD unchanged.

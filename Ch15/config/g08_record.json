@@ -1,0 +1,29 @@
+{
+  "required": {
+    "/ch15/mission_event": "ch15_interfaces/msg/MissionEvent",
+    "/ch15/mission_state": "ch15_interfaces/msg/MissionStatus",
+    "/ch15/safety_state": "ch15_interfaces/msg/SafetyState",
+    "/ch15/ready": "ch15_interfaces/msg/ReadyState",
+    "/ch15/stop_request": "std_msgs/msg/Bool",
+    "/ch15/cmd_vel_in": "geometry_msgs/msg/TwistStamped",
+    "/cmd_vel": "geometry_msgs/msg/Twist",
+    "/scan": "sensor_msgs/msg/LaserScan",
+    "/tf_static": "tf2_msgs/msg/TFMessage",
+    "/ch15/gait_state": "std_msgs/msg/String",
+    "/ch15/target_observation": "ch15_interfaces/msg/TargetObservation"
+  },
+  "not_applicable": {
+    "/clock": "mock uses system ROS time; playback creates one clock",
+    "/tf": "mock static transform only",
+    "/odom": "no physical odometry",
+    "/joint_states": "no joint dynamics; energy null",
+    "/imu/data": "no IMU"
+  },
+  "replay": [
+    "/ch15/mission_event",
+    "/ch15/mission_state"
+  ],
+  "max_bytes": 67108864,
+  "split_bytes": 8388608,
+  "max_wall_s": 60
+}

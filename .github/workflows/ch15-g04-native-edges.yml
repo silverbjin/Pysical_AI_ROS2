@@ -1,0 +1,41 @@
+name: Ch15 G04 targeted native adapter boundaries
+on:
+  push:
+    branches: [feat/ch15-mission-engineering]
+    paths:
+      - 'Ch15/tests/test_g04_native_edges.py'
+      - '.github/workflows/ch15-g04-native-edges.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch15
+          persist-credentials: false
+      - name: Independent new native adapter negative fixtures only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch15-g04-native-evidence
+          git rev-parse HEAD > ch15-g04-native-evidence/source-sha.txt
+          python3 --version | tee ch15-g04-native-evidence/python.txt
+          bash -n Ch15/scripts/run_physical_basic.sh
+          python3 -m unittest discover -s Ch15/tests -p test_g04_native_edges.py -v 2>&1 | tee ch15-g04-native-evidence/native-edges.log
+      - name: Hash evidence
+        if: always()
+        run: |
+          mkdir -p ch15-g04-native-evidence
+          cd ch15-g04-native-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g04-native-edges
+          path: ch15-g04-native-evidence/
+          if-no-files-found: error
+          retention-days: 30

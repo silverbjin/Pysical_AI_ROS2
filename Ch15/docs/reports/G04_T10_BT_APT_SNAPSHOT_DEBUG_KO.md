@@ -1,0 +1,11 @@
+# G04 T10 — Python GREEN, BT Debian pin 차단 및 snapshot 복구
+2026-11-27 KST / Draft PR #208.
+## 원본 RED2 및 확인된 GREEN
+Run 45918686561 / job 140243918380 / source b9083dbb629546cc1a299c75adf3d6f73ae15a70 / FAIL exit100. Artifact 15163184267, 109856 bytes, ZIP SHA256 44dfb35bbefc8b46610dee6edd4902333c56ed5d7b113be3cb5a04f9f1f0fa64 independently downloaded/rehashed; 22/22 manifest entries matched. python-boundary.txt confirms inherited PYTHONPATH=/opt/ros/jazzy/lib/python3.12/site-packages; isolated pip check, system apt imports, actual EGL renderer all PASS. 94/94 source/asset preflight and residual/lock PASS. No native compilation or robot motion.
+case/build.log: E: Version '2.6.0-1noble.20261006.034533' for 'ros-jazzy-py-trees-ros' was not found; E: Version '2.1.2-1noble.20260911.113643' for 'ros-jazzy-py-trees-ros-interfaces' was not found. Current apt candidates 2.6.0-1noble.20261105.102359 and 2.1.2-1noble.20261105.060542. Upstream release versions equal but Debian build identifiers differ. Original prepare_bt_deps.sh requires five exact version/hash pairs.
+## 수정 전략
+- Add pre-build exact apt-index SHA256 gate for five original pins; compare against immutable native script. Before costly dependency installation, if missing add supplemental official signed Jazzy snapshot dated 2026-10-05 (listed in official directory; package availability NOT YET VERIFIED).
+- Official snapshot docs: https://projects.localizethedocs.org/ros2-docs-l10n/en-us/rolling/Get-Started/Installation/Snapshot-Repository.html ; index https://snapshots.ros.org/jazzy/. Verify official key fingerprint, apt signature, exact version and SHA256; snapshot priority 1 so other current dependencies not downgraded. Original script still downloads and checks all five bytes. No apt signature bypass, no alternative latest, no changes Ch13.
+- Print failing build tail to job log; retain original logs/artifact. Only targeted T10 CI, no T11/G03 re-run. New ephemeral runner must materialize verified environment again. If exact snapshot fails, distinguish connectivity/signature/version absence.
+## 상태
+Python and EGL actual GREEN. T10 build dependency recovery pending; physical L2 NOT_RUN. F01 BLOCKED, G04 PARTIAL_PASS_T11, L3 NOT_RUN, merge/publication HOLD.

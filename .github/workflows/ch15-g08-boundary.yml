@@ -1,0 +1,43 @@
+name: Ch15 G08 isolated safety boundaries
+on:
+  pull_request:
+    branches: [main]
+    paths: ['Ch15/config/g08_faults.yaml','Ch15/python/fault_injector.py','Ch15/tests/*g08*','Ch15/scripts/g08*','Ch15/ros2_ws/src/ch15_mission/ch15_mission/recovery.py','.github/workflows/ch15-g08-boundary.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  boundary:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.title, '[RUN G08 BOUNDARY]')))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Scoped G08 L0 and actual safety DDS
+        run: |
+          set -euo pipefail
+          mkdir -p g08-evidence
+          git rev-parse HEAD > g08-evidence/source-sha.txt
+          python3 - <<'PY'
+          import json,subprocess
+          lock=json.load(open('Ch15/dependencies/reuse.audit.json'))
+          assert all(subprocess.check_output(['git','rev-parse','HEAD:'+p],text=True).strip()==v for p,v in lock['protected_trees'].items())
+          PY
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker run --rm --init -v "$PWD:/repo:ro" -v "$PWD/g08-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g08_boundary_ci.sh 2>&1 | tee g08-evidence/run.log
+      - name: Hash receipts
+        if: always()
+        run: |
+          cd g08-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g08-boundary-receipts
+          path: g08-evidence/
+          retention-days: 30

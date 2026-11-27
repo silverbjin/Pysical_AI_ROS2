@@ -1,0 +1,10 @@
+std_msgs/Header header
+string mission_id
+string profile
+string state
+string error_code
+string source
+uint64 epoch
+bool is_object_grasped
+string grasp_source
+bool full_mission_success

@@ -1,0 +1,46 @@
+name: Ch15 G08 actual mock recovery
+on:
+  pull_request:
+    branches: [main]
+    paths: ['Ch15/ros2_ws/src/ch15_mission/**','Ch15/tests/g08_*','Ch15/python/g08_analyze.py','Ch15/config/g08*','Ch15/scripts/g08_recovery_ci.sh','.github/workflows/ch15-g08-recovery.yml']
+permissions:
+  contents: read
+concurrency:
+  group: ch15-g08-recovery
+  cancel-in-progress: false
+jobs:
+  recovery:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && github.event.pull_request.head.repo.full_name == github.repository && (contains(github.event.pull_request.title, '[RUN G08 SEARCH]') || contains(github.event.pull_request.title, '[RUN G08 PICK]'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Scoped G08 real DDS and MCAP
+        env:
+          G08_CASES: ${{ contains(github.event.pull_request.title, '[RUN G08 PICK]') && 'pick' || 'search' }}
+        run: |
+          set -euo pipefail
+          mkdir -p g08-evidence
+          git rev-parse HEAD > g08-evidence/source-sha.txt
+          python3 - <<'PY'
+          import json,subprocess
+          lock=json.load(open('Ch15/dependencies/reuse.audit.json'))
+          assert all(subprocess.check_output(['git','rev-parse','HEAD:'+p],text=True).strip()==v for p,v in lock['protected_trees'].items())
+          PY
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker run --rm --init -e G08_CASES="$G08_CASES" -v "$PWD:/repo:ro" -v "$PWD/g08-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g08_recovery_ci.sh 2>&1 | tee g08-evidence/run.log
+      - name: Stage allowlisted receipts without raw MCAP
+        id: sanitize
+        if: always()
+        run: python3 Ch15/python/stage_g08_receipts.py g08-evidence g08-public
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.sanitize.outcome == 'success'
+        with:
+          name: ch15-g08-recovery-receipts
+          path: g08-public/
+          retention-days: 30

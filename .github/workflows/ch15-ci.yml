@@ -1,0 +1,121 @@
+name: Ch15 contract and environment checks
+on:
+  # G00/G01 successful evidence reused; explicit dispatch for changed contracts only.
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: ch15-contract-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Ch15 G01 Python 3.12 and immutable legacy tree audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch15-ci-evidence
+          git rev-parse HEAD > ch15-ci-evidence/source-sha.txt
+          python3 --version | tee ch15-ci-evidence/python.txt
+          python3 - <<'PY' | tee ch15-ci-evidence/protected-trees.json
+          import json, subprocess
+          lock=json.load(open('Ch15/dependencies/reuse.audit.json'))
+          actual={p:subprocess.check_output(['git','rev-parse','HEAD:'+p],text=True).strip() for p in lock['protected_trees']}
+          assert actual==lock['protected_trees'], 'protected tree drift'
+          print(json.dumps(actual,indent=2))
+          PY
+          python3 -m unittest discover -s Ch15/tests -p 'test_scenarios.py' -v 2>&1 | tee ch15-ci-evidence/scenarios.log
+          python3 -m unittest discover -s Ch15/tests -p 'test_world_contract.py' -v 2>&1 | tee ch15-ci-evidence/world.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g01-static
+          path: ch15-ci-evidence/
+          if-no-files-found: error
+          retention-days: 30
+  cpu-preflight:
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Historical Ch14 digest, scoped Ch15 mock environment probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch15-g00-evidence
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker pull "$image"
+          docker image inspect "$image" > ch15-g00-evidence/image.json
+          docker run --rm --init -v "$PWD:/repo:ro" -v "$PWD/ch15-g00-evidence:/evidence" -e SOURCE_SHA="$(git rev-parse HEAD)" -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/repo "$image" bash -c '
+            set -eo pipefail
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git python3-colcon-common-extensions ros-jazzy-rosbag2 ros-jazzy-rosbag2-storage-mcap
+            source /opt/ros/jazzy/setup.bash
+            dpkg-query -W > /evidence/dpkg-versions.txt
+            set +e
+            python3 /repo/Ch15/scripts/preflight.py --repo /repo --pin 0000000000000000000000000000000000000000 --profile mock --receipt /evidence/drift.json
+            drift=$?
+            python3 /repo/Ch15/scripts/preflight.py --repo /repo --pin "$SOURCE_SHA" --profile physical_basic --receipt /evidence/missing-assets.json
+            assets=$?
+            set -e
+            test "$drift" -eq 2
+            test "$assets" -eq 2
+            python3 -c "import json; assert json.load(open(\"/evidence/drift.json\"))[\"reason\"]==\"SOURCE_SHA_DRIFT\"; assert json.load(open(\"/evidence/missing-assets.json\"))[\"reason\"]==\"ASSET_ACCESS_OR_RIGHTS_UNCONFIRMED\""
+            python3 /repo/Ch15/scripts/preflight.py --repo /repo --pin "$SOURCE_SHA" --profile mock --receipt /evidence/mock.json
+          ' 2>&1 | tee ch15-g00-evidence/preflight.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g00-mock-preflight
+          path: ch15-g00-evidence/
+          if-no-files-found: error
+          retention-days: 30
+  sdf-validator:
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate SDF using immutable Harmonic image; no simulation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ch15-g01-sdf-evidence
+          git rev-parse HEAD > ch15-g01-sdf-evidence/source-sha.txt
+          image=ghcr.io/silverbjin/pysical-ai-book-gazebo@sha256:8288028a25df2dee0f8a4980231b0b9594bfd1048cdab9fc8ac49298e079e82f
+          docker pull "$image"
+          docker image inspect "$image" > ch15-g01-sdf-evidence/image.json
+          docker run --rm --init -v "$PWD/Ch15:/ch15:ro" "$image" bash -c '
+            set -eo pipefail
+            gz sdf -k /ch15/ros2_ws/src/ch15_simulation/models/red_cube/model.sdf
+            gz sdf -k /ch15/ros2_ws/src/ch15_simulation/worlds/fetch_carry.sdf
+          ' 2>&1 | tee ch15-g01-sdf-evidence/validator.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g01-native-sdf
+          path: ch15-g01-sdf-evidence/
+          if-no-files-found: error
+          retention-days: 30

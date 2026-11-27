@@ -1,0 +1,98 @@
+name: Ch15 G09 canonical release QA
+on:
+  pull_request:
+    branches: [main]
+    paths: ['Ch15/scripts/**','Ch15/docs/**','Ch15/evidence/release_traceability.json','Ch15/tests/test_release_contract.py','.github/workflows/ch15-g09.yml']
+permissions:
+  contents: read
+  packages: read
+jobs:
+  owner-path:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.title, '[RUN G09]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [cube]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: |
+            Ch15
+            .github/workflows
+          persist-credentials: false
+          lfs: false
+      - uses: docker/login-action@v3
+        if: matrix.check == 'cube'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Actual canonical entrypoint at fixed SHA
+        env:
+          CHECK: ${{ matrix.check }}
+        run: |
+          set -euo pipefail
+          export CH15_SOURCE_SHA="$(git rev-parse HEAD)"
+          export CH15_WORK_ROOT="$RUNNER_TEMP/ch15-owner-$CHECK"
+          export CH15_BOOTSTRAP_SHA256="$(sha256sum Ch15/scripts/bootstrap_ch15.sh | cut -d' ' -f1)"
+          mkdir -p qa-receipts
+          echo "$CH15_SOURCE_SHA" > qa-receipts/source-sha.txt
+          echo "$CH15_BOOTSTRAP_SHA256" > qa-receipts/bootstrap-sha256.txt
+          if [[ "$CHECK" == contract ]]; then
+            python3 -m unittest discover -s Ch15/tests -p test_release_contract.py -v 2>&1 | tee qa-receipts/contracts.log
+            for n in $(seq 1 9); do bash Ch15/scripts/run_lab.sh "15.$n" --guide > "qa-receipts/guide-$n.log"; done
+            # Negative source drift on actual wrapper with valid-looking wrong PIN.
+            set +e
+            CH15_SOURCE_SHA=0000000000000000000000000000000000000000 bash Ch15/scripts/verify_ch15.sh --check build --headless > qa-receipts/sha-drift.log 2>&1
+            rc=$?
+            set -e
+            test "$rc" = 2
+            grep -q SOURCE_SHA_DRIFT qa-receipts/sha-drift.log
+            set +e
+            bash Ch15/scripts/bootstrap_ch15.sh --check physical_basic --headless > qa-receipts/native-blocked.log 2>&1
+            rc=$?
+            set -e
+            test "$rc" = 2
+            grep -q ASSET_ACK_REQUIRED qa-receipts/native-blocked.log
+            bash Ch15/scripts/run_lab.sh 15.1 --profile mock | tee qa-receipts/design.log
+            echo CH15_G09_CONTRACT_PASS
+          else
+            args=(--check "$CHECK" --headless)
+            if [[ "$CHECK" == faults ]]; then args+=(--scenario F06); fi
+            bash Ch15/scripts/bootstrap_ch15.sh "${args[@]}" 2>&1 | tee qa-receipts/entrypoint.log
+          fi
+      - name: Verify archives independently and stage only summaries
+        if: always()
+        env:
+          CHECK: ${{ matrix.check }}
+        run: |
+          set -euo pipefail
+          mkdir -p qa-receipts
+          work="$RUNNER_TEMP/ch15-owner-$CHECK/runs"
+          shopt -s nullglob
+          for arc in "$work"/*.evidence.tar.gz; do
+            python3 Ch15/scripts/verify_evidence.py "$arc" "$arc.sha256" | tee "qa-receipts/$(basename "$arc").verify.json"
+            dir="${arc%.evidence.tar.gz}"
+            mkdir -p "qa-receipts/$(basename "$dir")"
+            dest="qa-receipts/$(basename "$dir")"
+            for f in owner-result.json source-receipt.json process_audit.json environment.json manifest.sha256; do cp "$dir/$f" "$dest/"; done
+            cp "$arc.sha256" "$dest/archive.sha256.txt"
+            # Preserve bounded textual diagnostic tails even on nonzero runtime exit.
+            find "$dir" -type f \( -name container.log -o -name shutdown.tsv -o -name result.json -o -name gazebo.log -o -name bridge.log -o -name detector.log -o -name server-stop.log -o -name tf.log \) | while read -r f; do
+              rel="${f#"$dir"/}";mkdir -p "$dest/$(dirname "$rel")";tail -c 65536 "$f" > "$dest/$rel"
+            done
+            find "$dir" -name residual.json -o -name metrics.json -o -name record_result.json -o -name replay.json -o -name cube-result.json -o -name nav2-plugin-audit.json -o -name 'detector-shutdown-probe-*.json' | while read -r f; do
+              rel="${f#"$dir"/}";mkdir -p "$dest/$(dirname "$rel")";cp "$f" "$dest/$rel"
+            done
+          done
+          cd qa-receipts
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g09-${{ matrix.check }}
+          path: qa-receipts/
+          retention-days: 30

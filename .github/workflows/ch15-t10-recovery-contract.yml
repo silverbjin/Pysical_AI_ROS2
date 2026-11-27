@@ -1,0 +1,25 @@
+name: Ch15 T10 targeted recovery contract
+on:
+  push:
+    branches: [feat/ch15-mission-engineering]
+    paths:
+      - 'Ch15/tests/test_t10_asset_recovery.py'
+      - '.github/workflows/ch15-t10-recovery-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recovery-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: Ch15
+          persist-credentials: false
+      - name: New byte selection and affected approval/lock fixtures
+        run: |
+          set -euo pipefail
+          cd Ch15/tests
+          python3 -m unittest -v test_t10_asset_recovery test_physical_adapter.Tests.test_approval_absent test_g04_native_edges.NativeEdges.test_missing_shared_lock
+          bash -n ../scripts/run_physical_basic.sh

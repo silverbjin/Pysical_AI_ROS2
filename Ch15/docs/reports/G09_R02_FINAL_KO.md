@@ -1,0 +1,6 @@
+# G09-R02 읽기 전용 시계 진단 범위 인수
+판정 PASS_SCOPED_R02_READ_ONLY_DIAGNOSTIC_LINUX. 사용자 환경 원인 미확정. 기존 4개 owner PASS 고정.
+- V1 run45978901460 단위9/9, 실제 instrumented F03 transient COMPLETED, 2 attempts, 4 goals, 31 events, 7 clean. Host1690 samples complete, probe169 partial (cleanup gap2.278s); no observed step, inconclusive probe. V1 idle RED missing CycloneDDS before ROS init; host246 complete.
+- V2 [run45979301639](https://github.com/silverbjin/Pysical_AI_ROS2/actions/runs/45979301639) job140438824765 artifact15187604496 source 0b044f528ffd99b23d563f32eddf27833dea7566: install exact needed RMW package, actual standalone host954/container160 complete, no observed step, exit0/host0, graph0/container0, ZIP+17/17, original archive11/11 CI verified.
+- Total 3 public ZIP 50/50 internal independently verified; original archives61/61 verified in CI. No prior successful owner profile re-run. Linux CI does not reproduce WSL2 clock jump; neither host NTP nor Windows time service origin established. Diagnostic 100ms bound is not safety threshold. No clock write/reset or control changes. R03 actual controlled /clock forward/rewind regression next. R04 correlated classification remains separate, owner L3 and main HOLD.
+- [Receipt](../../evidence/g09/r02_final_receipt.json).

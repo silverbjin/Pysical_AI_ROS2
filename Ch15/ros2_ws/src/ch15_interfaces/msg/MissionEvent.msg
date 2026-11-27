@@ -1,0 +1,11 @@
+std_msgs/Header header
+string mission_id
+uint64 epoch
+string producer
+uint64 event_seq
+uint64 steady_ns
+string event
+string request_id
+string goal_uuid
+string source
+string detail

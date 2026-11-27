@@ -1,0 +1,76 @@
+name: Ch15 G05 collaboration and MCAP evidence
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Ch15/python/**'
+      - 'Ch15/scripts/g05*'
+      - 'Ch15/scripts/record_mission.sh'
+      - 'Ch15/scripts/replay_mission.sh'
+      - 'Ch15/config/*bag*'
+      - 'Ch15/config/g05_record.json'
+      - 'Ch15/tests/*bag*'
+      - 'Ch15/tests/g05*'
+      - 'Ch15/tests/*replay*'
+      - 'Ch15/ros2_ws/src/ch15_visualization/**'
+      - '.github/workflows/ch15-g05.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ch15-g05-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  g05:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && (contains(github.event.pull_request.title, '[RUN G05]') || contains(github.event.pull_request.title, '[RUN G05 REPLAY]'))))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Clean ROS build and actual recorded mock missions
+        shell: bash
+        env:
+          G05_MODE: ${{ contains(github.event.pull_request.title, '[RUN G05 REPLAY]') && 'replay-only' || 'full' }}
+        run: |
+          set -euo pipefail
+          mkdir -p g05-evidence
+          git rev-parse HEAD > g05-evidence/source-sha.txt
+          python3 - <<'PY'
+          import json,subprocess
+          lock=json.load(open('Ch15/dependencies/reuse.audit.json'))
+          assert all(subprocess.check_output(['git','rev-parse','HEAD:'+p],text=True).strip()==v for p,v in lock['protected_trees'].items())
+          PY
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker pull "$image"
+          docker image inspect "$image" > g05-evidence/image.json
+          docker run --rm --init -e G05_MODE="$G05_MODE" -v "$PWD:/repo:ro" -v "$PWD/g05-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g05_ci.sh 2>&1 | tee g05-evidence/run.log
+      - name: Hash and preserve public receipts
+        if: always()
+        run: |
+          mkdir -p g05-public
+          python3 - <<'PY'
+          import hashlib,json,shutil
+          from pathlib import Path
+          root=Path('g05-evidence');dest=Path('g05-public');bags=[]
+          for p in sorted(root.rglob('*')):
+              if not p.is_file() or p.is_symlink():continue
+              rel=p.relative_to(root)
+              if 'bag' in rel.parts:
+                  with p.open('rb') as f:bags.append(dict(path=str(rel),bytes=p.stat().st_size,sha256=hashlib.file_digest(f,'sha256').hexdigest()))
+                  if p.name!='metadata.yaml':continue
+              q=dest/rel;q.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,q)
+          (dest/'bag-payload-receipts.json').write_text(json.dumps(bags,indent=2))
+          PY
+          cd g05-public
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g05-receipts
+          path: g05-public/
+          retention-days: 30

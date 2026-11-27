@@ -1,0 +1,80 @@
+{
+  "scope": "actual isolated arc RED3, counterfactual sensitivity not physical prediction",
+  "run": 45932381041,
+  "job": 140287704403,
+  "artifact": 15169266117,
+  "source_sha": "0df3ac348b767d0794d96d17cb1c3d8b36d8a44a",
+  "archive_bytes": 1712504,
+  "archive_sha256": "0f33a97cc5b6a1b901420c4d7c1db8488e5ee11e3fe0bb084fa15e6a98e5540b",
+  "verified_members": 53,
+  "engine_model_sha256": "6ab165146bd617a8d99e6e71109bd140a7c9d56d30ddc91b3cf98e66914d25ff",
+  "actual": {
+    "startup_window_resets": 0,
+    "both_armed_clock_ns": 3680000000,
+    "arc_samples": 670,
+    "arc_start_sim_s": 3.68,
+    "arc_end_sim_s": 17.1,
+    "settled_sim_s": 18.3,
+    "settled_pose": [
+      0.13936679545842245,
+      -0.15525148190351992,
+      -1.4418251701754854
+    ],
+    "reference_arc_end": [
+      0.17868833838676593,
+      -0.15830950151387402,
+      -1.45
+    ],
+    "xy_error_m": 0.03944027411419536,
+    "yaw_error_rad": 0.008174829824514562,
+    "active_max_abs_vx": 0.01139103807434532,
+    "active_max_abs_wz": 0.1,
+    "arc_xy_path_m": 0.265165858513495,
+    "steady_actual_body_vx": 0.01751287292133648,
+    "steady_actual_body_vy": -0.0019869759128091063,
+    "steady_actual_wz": -0.10861808441510766,
+    "steady_command_vx": 0.009929549310833785,
+    "effective_v_over_omega_radius_m": 0.1612334908651788,
+    "near_end_cross_error_m": 0.03188,
+    "near_end_along_error_m": 0.00097,
+    "engine_sample_max_wall_gap_s": 0.09204356999998708,
+    "engine_result": "COMPLETED",
+    "engine_fault": "",
+    "children_clean": 3,
+    "residual": "PASS",
+    "straight": "NOT_RUN"
+  },
+  "trace": {
+    "sha256": "5e7731e4d13a28b8ffea5db89a8dcb8c80f40cf7163835efcd62edd0b63c159d",
+    "first_fault": "INPUT_OR_CLOCK_TIMEOUT",
+    "clock_ns": 18480000000,
+    "decision_wall": 498.035308647,
+    "last_clock_receipt_wall": 497.742758921,
+    "scope": "after measured settled phase; normal engine shutdown; exact shutdown ACK wall not recorded in V1, no motion-phase fault"
+  },
+  "proxy": {
+    "method": "actual arc trace velocity residuals plus local linear command deltas: vx gain .844, yaw gain 1.08; original settle displacement reused; not real dynamics",
+    "baseline_xy_m": 0.03894747199436888,
+    "candidate_xy_m": 0.02337451138427842,
+    "baseline_yaw_rad": 0.004786173503783964,
+    "candidate_yaw_rad": 0.005994927281857132,
+    "baseline_max_error_m": 0.033316037264258164,
+    "candidate_max_error_m": 0.02318283528696319
+  },
+  "candidate": {
+    "feed_vx": 0.0125,
+    "cross_v_gain": 0.25,
+    "cross_w_gain": 0.8,
+    "wz_range": [
+      -0.1,
+      -0.07
+    ],
+    "vx_range": [
+      0,
+      0.018
+    ],
+    "arc_gate_m": 0.03,
+    "final_gate_m": 0.015,
+    "yaw_gate_rad": 0.06
+  }
+}

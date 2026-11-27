@@ -1,0 +1,3 @@
+# 15.9 최종 결과 보고 및 사용자 인수
+공통 실행기 `bash scripts/run_lab.sh 15.9 --guide`는 문서 조회만 한다. [인수 원장](CH15_ACCEPTANCE_LEDGER.md), [G09 QA](reports/G09_RELEASE_QA_KO.md), [WSL2 인수](reports/G09_WSL2_OWNER_ACCEPTANCE_KO.md), [Ch16 인계](CH16_HANDOVER_KO.md). G00~G08 성공 PIN의 범위와 실패도 함께 보존. 전체 물리 파지, physical fault, GUI 및 출판 권리 별도.
+WSL2에서 SHA 및 bootstrap digest 고정 후 `bash scripts/verify_ch15.sh --check build --headless`, mock, cube, joint, faults, physical_basic 순서의 독립 실행 또는 all. 실제 evidence.tar.gz와 .sha256을 제출. all의 실제 순서는 build→mock→physical_basic→cube→joint→faults; native 사전조건이 없으면 exit2. 사용자 L3는 증거 검토 후 판정. 로컬 raw bag을 공개 Git에 올리지 않는다. 결과 PASS는 requested profile 한정이며 release/main 승인 아님.

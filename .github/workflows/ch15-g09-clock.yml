@@ -1,0 +1,63 @@
+name: Ch15 G09 R02 read-only clock diagnostics
+on:
+  pull_request:
+    branches: [main]
+    paths: ['Ch15/python/clock_diag.py','Ch15/tests/test_g09_clock_diag.py','Ch15/tests/g08_record_probe.py','Ch15/scripts/owner_runner.py','Ch15/scripts/owner_runtime.sh','.github/workflows/ch15-g09-clock.yml']
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.title, '[RUN G09 CLOCK]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [clock_diag]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Clock contracts and actual pinned entrypoint
+        env:
+          CHECK: ${{ matrix.check }}
+        run: |
+          set -euo pipefail
+          export CH15_SOURCE_SHA="$(git rev-parse HEAD)"
+          export CH15_BOOTSTRAP_SHA256="$(sha256sum Ch15/scripts/bootstrap_ch15.sh | cut -d' ' -f1)"
+          export CH15_WORK_ROOT="$RUNNER_TEMP/ch15-clock-$CHECK"
+          mkdir -p qa-clock
+          echo "$CH15_SOURCE_SHA" > qa-clock/source-sha.txt
+          python3 -m unittest discover -s Ch15/tests -p test_g09_clock_diag.py -v 2>&1 | tee qa-clock/contracts.log
+          args=(--check "$CHECK" --headless)
+          if [[ "$CHECK" == faults ]]; then args+=(--scenario F03_transient); fi
+          bash Ch15/scripts/bootstrap_ch15.sh "${args[@]}" 2>&1 | tee qa-clock/entrypoint.log
+      - name: Verify local archive and stage only textual diagnostic receipts
+        if: always()
+        env:
+          CHECK: ${{ matrix.check }}
+        run: |
+          set -euo pipefail
+          mkdir -p qa-clock
+          work="$RUNNER_TEMP/ch15-clock-$CHECK/runs"
+          shopt -s nullglob
+          for arc in "$work"/*.evidence.tar.gz; do
+            python3 Ch15/scripts/verify_evidence.py "$arc" "$arc.sha256" | tee "qa-clock/$(basename "$arc").verify.json"
+            dir="${arc%.evidence.tar.gz}";dest="qa-clock/$(basename "$dir")";mkdir -p "$dest"
+            for f in owner-result.json source-receipt.json process_audit.json environment.json manifest.sha256; do cp "$dir/$f" "$dest/"; done
+            cp "$arc.sha256" "$dest/archive.sha256.txt"
+            find "$dir" -type f \( -name samples.jsonl -o -name clock-samples.jsonl -o -name summary.json -o -name clock-diagnosis.json -o -name residual.json -o -name metrics.json -o -name record_result.json -o -name host-clock.log -o -name container.log \) | while read -r f; do
+              rel="${f#"$dir"/}";mkdir -p "$dest/$(dirname "$rel")";cp "$f" "$dest/$rel"
+            done
+          done
+          cd qa-clock
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g09-clock-${{ matrix.check }}
+          path: qa-clock/
+          retention-days: 30

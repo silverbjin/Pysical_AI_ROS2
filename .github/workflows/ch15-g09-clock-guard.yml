@@ -1,0 +1,42 @@
+name: Ch15 G09 R03 controlled clock safety regression
+on:
+  pull_request:
+    branches: [main]
+    paths: ['Ch15/tests/g09_clock_guard_probe.py','Ch15/scripts/g09_clock_guard_ci.sh','.github/workflows/ch15-g09-clock-guard.yml']
+permissions:
+  contents: read
+jobs:
+  guard:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.title, '[RUN G09 GUARD]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Actual isolated installed safety nodes
+        run: |
+          set -euo pipefail
+          mkdir -p guard-evidence
+          git rev-parse HEAD > guard-evidence/source-sha.txt
+          python3 - <<'PY'
+          import json,subprocess
+          lock=json.load(open('Ch15/dependencies/reuse.audit.json'))
+          assert all(subprocess.check_output(['git','rev-parse','HEAD:'+p],text=True).strip()==v for p,v in lock['protected_trees'].items())
+          PY
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker run --rm --init -v "$PWD:/repo:ro" -v "$PWD/guard-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g09_clock_guard_ci.sh 2>&1 | tee guard-evidence/run.log
+      - name: Hash receipts
+        if: always()
+        run: |
+          cd guard-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g09-r03-guard
+          path: guard-evidence/
+          retention-days: 30

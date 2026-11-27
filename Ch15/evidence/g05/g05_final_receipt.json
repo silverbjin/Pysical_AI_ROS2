@@ -1,0 +1,139 @@
+{
+  "result": "PASS_SCOPED_G05_T12_T14",
+  "scope": "Mock DDS collaboration, recording, typed analysis and isolated replay",
+  "record_success": {
+    "run": 45949623564,
+    "job": 140342206931,
+    "artifact": 15176233329,
+    "source_sha": "47bba1cc2769621ca68a4fffd025df384f1a755a",
+    "zip_sha256": "8a7005372df230d7e3bc2935870b190b9fd995619c9fde0fdcfa09eb9fdda4d2",
+    "verified_members": 102,
+    "cases": {
+      "normal": {
+        "mission_id": "2bf5b364e520481bba00e832e942ed53",
+        "terminal": "COMPLETED",
+        "events": 23,
+        "statuses": 144,
+        "goals": 4,
+        "messages": 730,
+        "steady_s": 3.6228567
+      },
+      "F01": {
+        "mission_id": "df65a5f06d104f1587cfa4071f116634",
+        "terminal": "ABORTED",
+        "events": 11,
+        "statuses": 90,
+        "goals": 1,
+        "messages": 420,
+        "steady_s": 0.701580911
+      },
+      "F06": {
+        "mission_id": "98b7453ab7534d22aa16f7688f025b3e",
+        "terminal": "ABORTED",
+        "events": 17,
+        "statuses": 103,
+        "goals": 2,
+        "messages": 514,
+        "steady_s": 1.87456115
+      }
+    },
+    "original_replay": "FAIL graph checker; preserved"
+  },
+  "replay_success": {
+    "run": 45950671176,
+    "job": 140345518769,
+    "artifact": 15175994043,
+    "source_sha": "c69fb2585546b89702d21d5e4e86f610d569f330",
+    "zip_sha256": "09a4f74cdff37516aa08335d9f29781e62fc85ecd1e43317d0e0dd3eb07504b3",
+    "verified_members": 42,
+    "rmw": "rmw_cyclonedds_cpp",
+    "normal": {
+      "mission_id": "af8b5f3cb6414391a1ea790aac310d89",
+      "terminal": "COMPLETED",
+      "events": 23,
+      "statuses": 140,
+      "goals": 4,
+      "messages": 712,
+      "steady_s": 3.516272169,
+      "scan_gap_ms": 100.113316,
+      "watchdog_latches": 0,
+      "arbiter_latches": 0,
+      "clean_children": 7
+    },
+    "replay": {
+      "result": "PASS",
+      "source_domain": 76,
+      "domain": 79,
+      "events": 23,
+      "expected_events": 23,
+      "event_payload_exact": true,
+      "states": 140,
+      "expected_states": 140,
+      "state_payload_exact": true,
+      "clock_messages": 147,
+      "clock_one": true,
+      "clock_monotonic": true,
+      "control_publishers": 0,
+      "player_exit": 0,
+      "forced": false,
+      "graph_cleanup": true,
+      "endpoint_bindings": {
+        "/ch15/mission_event": "011069361e60569180015d1b00001803",
+        "/ch15/mission_state": "011069361e60569180015d1b00001903",
+        "/clock": "011069361e60569180015d1b00001703",
+        "/events/read_split": "011069361e60569180015d1b00001a03"
+      },
+      "metadata_loss": [
+        {
+          "topic": "/events/read_split",
+          "owner": "_NODE_NAME_UNKNOWN_",
+          "gid": "011069361e60569180015d1b00001a03"
+        },
+        {
+          "topic": "/clock",
+          "owner": "_NODE_NAME_UNKNOWN_",
+          "gid": "011069361e60569180015d1b00001703"
+        }
+      ]
+    }
+  },
+  "independent": {
+    "zip_members": 144,
+    "case_checks": 48,
+    "combined_checks": 18,
+    "checks": [
+      "v7_all_cases",
+      "v7_distinct",
+      "v7_qualification",
+      "v7_demo_reuse",
+      "v9_normal",
+      "v9_replay_pass",
+      "v9_event_exact",
+      "v9_state_exact",
+      "v9_clock",
+      "v9_domains",
+      "v9_control_zero",
+      "v9_player_exit",
+      "v9_graph_cleanup",
+      "v9_graph_types",
+      "v9_playback_exact",
+      "v9_gid_binding",
+      "v9_metadata_loss",
+      "v9_fault_reuse"
+    ],
+    "raw_bag_independent_reread": false
+  },
+  "t12": {
+    "clean_build": 6,
+    "installed_imports": 6,
+    "explicit_unit_tests": 10,
+    "colcon_registered_tests": 0,
+    "git_lfs_reuse_run": 45946312887,
+    "asset_closure_reuse_run": 45911815970,
+    "synthetic_mcap_reuse_run": 45947575404
+  },
+  "no_guard_relaxation": true,
+  "physical_repeated": false,
+  "main_merged": false,
+  "owner_l3": "NOT_RUN"
+}
