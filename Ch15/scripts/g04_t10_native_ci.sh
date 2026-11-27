@@ -117,6 +117,24 @@ phase=ASSET_MATERIALIZATION
 # No historical audit repetition and no asset upload.
 python3 /work/feature/Ch15/scripts/prepare_native_assets.py --target /work/upstream-iit-locomanipulation-d010212 --receipt "$e/asset-verification.json" > "$e/acquisition.log"
 touch /work/ch13_reuse_engine.lock
+if [[ "${1:-}" == --heading-segment ]]; then
+  phase=HEADING_FIRST_SEGMENT
+  export CMAKE_BUILD_PARALLEL_LEVEL=2
+  bash /work/feature/Ch15/scripts/run_heading_first_segment.sh /work/native /work/feature/Ch15/dependencies/native_local_use_approval.json "$e/case"
+  phase=SEGMENT_RESULT_VERIFICATION
+  python3 - "$e/case/native/segment_result.json" <<'PY'
+import json,sys
+r=json.load(open(sys.argv[1]))
+assert r['result']=='PASS_SCOPED_SEGMENT' and r['source']=='CH15_HEADING_FIRST_V1'
+assert r['original_native_l2_pass'] is False and r['full_mission_success'] is False
+assert set(r['checks'])=={'stage_aligned','straight_map_clear','final_pose','fresh_final_observation','workspace','one_command_chain','no_fault','engine_clean','children_clean'}
+assert all(r['checks'].values()) and len(r['phases'])==3
+assert all(p['terminal']==4 and p['settled'] for p in r['phases'])
+print("CH15_HEADING_FIRST_SEGMENT_PASS")
+PY
+  phase=COMPLETE
+  exit 0
+fi
 phase=NATIVE_BUILD_INSTALL_AND_LEVEL2
 # Original runner owns all commands, shutdown and assessment. No alternate path.
 # Isolate build parallelism only, not runtime control parameters.
