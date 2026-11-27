@@ -28,10 +28,13 @@ def audit_bag(path,discovered):
     metadata_counts={r['topic_metadata']['name']:r['message_count'] for r in meta['topics_with_message_count']}
     checks=bag_checks(counts,metadata_counts,starts,motion,success,discovered)
     checks['metadata_total']=sum(counts.values())==meta['message_count']
+    def file_record(f):
+        with (path/f).open('rb') as stream: digest=hashlib.file_digest(stream,'sha256').hexdigest()
+        return dict(name=f,bytes=(path/f).stat().st_size,sha256=digest)
     return dict(result='PASS' if all(checks.values()) else 'FAIL',checks=checks,
                 counts=dict(counts),start_stamps=starts,first_motion=min(motion) if motion else None,
                 last_motion=max(motion) if motion else None,terminal_stamps=success,
-                mcap_files=[dict(name=f,bytes=(path/f).stat().st_size,sha256=hashlib.file_digest((path/f).open('rb'),'sha256').hexdigest()) for f in files])
+                mcap_files=[file_record(f) for f in files])
 
 class Bridge:
     """Only robot worker owns goal futures; BT owner sees TaskPort snapshots."""
@@ -104,7 +107,9 @@ def main():
     clock=[0];started=[False]
     def on_clock(msg):clock[0]=msg.clock.sec*1_000_000_000+msg.clock.nanosec
     node.create_subscription(Clock,'/clock',on_clock,1)
-    def start(_):started[0]=True;port.event('start_mission_received',clock_ns=clock[0])
+    def start(_):
+        if started[0]:port.fail('duplicate start_mission');port.cancel('duplicate_start');return
+        started[0]=True;port.event('start_mission_received',clock_ns=clock[0])
     node.create_subscription(Empty,'/start_mission',start,1)
     def tick():
         if not started[0] and not port.snapshot()['error']:return

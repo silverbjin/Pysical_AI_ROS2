@@ -203,7 +203,8 @@ def main(argv=None,mission=None):
         def tick():
             nonlocal command
             reason=None
-            if fault():reason='NATIVE_FAULT'
+            if mission and mission.cancel_requested():reason='BT_CANCEL'
+            elif fault():reason='NATIVE_FAULT'
             elif not counts_ok():reason='OWNER_COUNT'
             elif time.monotonic()-last_state_wall>.10:reason='STATE_EXPIRED'
             elif clock-start>budget*1e9:reason='SIM_BUDGET'
@@ -237,7 +238,11 @@ def main(argv=None,mission=None):
             'repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:=vision','vision_inference_hz:=15',
             'manipulation:=true','planning:=false','pick_scene:=true','max_sim_s:=360'],
             stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-        rclpy.init();node=Node('ch15_table_segment')
+        if mission:
+            from rclpy.signals import SignalHandlerOptions
+            rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
+        else:rclpy.init()
+        node=Node('ch15_table_segment')
         mux=node.create_publisher(TwistStamped,N+'/nav_cmd',1)
         node.create_subscription(TwistStamped,'/ch15/table/nav2_private',forward,1)
         node.create_timer(.02,emit)
@@ -335,6 +340,8 @@ def main(argv=None,mission=None):
                         assert until(result.done,3),'cancel terminal timeout'
                         S['cancel_terminal']=result.result().status
                         if mission:mission.goal_terminal(h,S['cancel_terminal'])
+                    elif h is not None and h.accepted and result is not None and result.done() and mission:
+                        mission.goal_terminal(h,result.result().status)
                 call('navigation/idle',1)
                 if until(lambda:snapshot()['platform'].get('stationary_ready'),8):
                     call('platform/shutdown',2);launch.wait(timeout=12)
