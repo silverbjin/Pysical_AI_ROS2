@@ -22,7 +22,7 @@ jobs:
           $tokens=$null; $errors=$null
           [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'Ch15/scripts/clock_diag_windows_recovery.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
           if ($errors.Count) { $errors | Format-List; throw 'PARSER_FAIL' }
-          & ./Ch15/tests/test_clock_windows_recovery.ps1
+          # Run full tests on the downloaded raw bytes in each shell below.
           Write-Host 'Checkout bytes are not a release hash authority.'
           git fetch --no-tags --depth=1 origin a5d0999f1e0c7db4b29409b2eb825a2379c75310
           if ($LASTEXITCODE -ne 0) { throw 'BASE_FETCH_FAILED' }
@@ -45,6 +45,7 @@ jobs:
           $tokens=$null;$errors=$null
           [System.Management.Automation.Language.Parser]::ParseFile($raw,[ref]$tokens,[ref]$errors) | Out-Null
           if ($errors.Count) { throw 'RAW_PARSER_FAIL' }
+          & ./Ch15/tests/test_clock_windows_recovery.ps1 -RunnerPath $raw
           # Verify the immutable owner release, including the historical LF/CRLF regression.
           $release=Join-Path $env:RUNNER_TEMP 'ch15-owner-raw-powershell.ps1'
           Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/dc62260736cc9f6f2a97115db9e1b9045c1ad40b/Ch15/scripts/clock_diag_windows_recovery.ps1' -OutFile $release
@@ -73,6 +74,7 @@ jobs:
           $tokens=$null;$errors=$null
           [System.Management.Automation.Language.Parser]::ParseFile($raw,[ref]$tokens,[ref]$errors) | Out-Null
           if ($errors.Count) { throw 'RAW_PARSER_FAIL' }
+          & ./Ch15/tests/test_clock_windows_recovery.ps1 -RunnerPath $raw
           # Verify the immutable owner release, including the historical LF/CRLF regression.
           $release=Join-Path $env:RUNNER_TEMP 'ch15-owner-raw-pwsh.ps1'
           Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/dc62260736cc9f6f2a97115db9e1b9045c1ad40b/Ch15/scripts/clock_diag_windows_recovery.ps1' -OutFile $release

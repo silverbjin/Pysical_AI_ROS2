@@ -1,5 +1,6 @@
+param([string]$RunnerPath=(Join-Path $PSScriptRoot '../scripts/clock_diag_windows_recovery.ps1'))
 $ErrorActionPreference='Stop'
-. (Join-Path $PSScriptRoot '../scripts/clock_diag_windows_recovery.ps1') -LibraryOnly
+. $RunnerPath -LibraryOnly
 function Assert($C,[string]$Label){if(-not $C){throw "ASSERT $Label"};Write-Host "PASS $Label"}
 function Reject([scriptblock]$Body,[string]$Pattern){
     $caught=$false;try{& $Body}catch{if($_.Exception.Message -match $Pattern){$caught=$true}else{throw}}
@@ -65,3 +66,56 @@ Invoke-VerifyOnly $s
 Assert ($script:status.result -eq 'WINDOWS_TIME_SYNC_HOLD' -and -not $script:calls.Contains('resync') -and -not $script:calls.Contains('start')) 'readonly contradictory status HOLD'
 Reject {Invoke-Repair $s $m} 'ACCURATE_CLOCK_SYNC_STATE_UNCONFIRMED'
 Write-Host 'WINDOWS_RECOVERY_MOCK_QA_PASS; NO REAL MUTATION'
+
+# Exercise the exact production finalizer with real files, ZIP, manifest and SHA256.
+# Re-load original functions to remove orchestration mocks. No service APIs invoked.
+. $RunnerPath -LibraryOnly
+function Test-Finalizer([string]$Case,[string]$Result,[bool]$ReadOnly,[bool]$ExpectComplete,[bool]$WithError=$false,[bool]$WithFinalStateError=$false,[bool]$Changed=$false) {
+    $base=Join-Path ([IO.Path]::GetTempPath()) ('ch15-finalizer-'+[Guid]::NewGuid().ToString('N'))
+    $script:root=$base
+    New-Item -ItemType Directory -Path $base | Out-Null
+    try {
+        $script:changed=$Changed
+        $script:status=@{result=$Result;verify_only=$ReadOnly;clock_correction_attempted=$false;rollback='NOT_NEEDED';owner_environment_acceptance=$false}
+        if($WithError){$script:status.error='fixture query exception'}
+        if($WithFinalStateError){$script:status.final_state_error='fixture final query exception'}
+        Save-Json 'verify-summary.json' @(@{phase='verify-1';sync_pass=$false},@{phase='verify-2';sync_pass=$false})
+        $caught=$false
+        try {Complete-Run} catch {if($_.Exception.Message -notmatch 'WINDOWS_TIME_EXECUTION_INCOMPLETE'){throw};$caught=$true}
+        Assert ($caught -eq (-not $ExpectComplete)) "$Case exception contract"
+        $zip=$base+'.zip'
+        Assert ((Test-Path $zip) -and (Test-Path ($zip+'.sha256'))) "$Case archive exists"
+        $expected=((Get-Content -LiteralPath ($zip+'.sha256') -Raw) -split '\s+')[0]
+        Assert ((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant() -eq $expected) "$Case outer hash"
+        $unpack=$base+'-unpack'
+        Expand-Archive -LiteralPath $zip -DestinationPath $unpack
+        $saved=Get-Content (Join-Path $unpack 'status.json') -Raw | ConvertFrom-Json
+        $expectedExecution=if($ExpectComplete){'COMPLETE'}else{'INCOMPLETE'}
+        $expectedAcceptance=if($ExpectComplete -and $Result -eq 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED'){'CANDIDATE_REVIEW_REQUIRED'}else{'HOLD'}
+        Assert ($saved.execution_status -eq $expectedExecution -and $saved.acceptance_status -eq $expectedAcceptance -and $saved.owner_environment_acceptance -eq $false) "$Case persisted decision"
+        if($ExpectComplete){Assert ($saved.result -eq $Result) "$Case result preserved"}
+        else{Assert ($saved.result -eq 'WINDOWS_TIME_INCOMPLETE') "$Case incomplete persisted"}
+        $lines=@(Get-Content (Join-Path $unpack 'manifest.sha256'))
+        Assert ($lines.Count -eq 2) "$Case manifest count"
+        foreach($line in $lines){
+            $parts=$line -split '  ',2
+            Assert ((Get-FileHash -LiteralPath (Join-Path $unpack $parts[1]) -Algorithm SHA256).Hash.ToLowerInvariant() -eq $parts[0]) "$Case member $($parts[1])"
+        }
+    } finally {
+        Remove-Item -LiteralPath $base,($base+'.zip'),($base+'.zip.sha256'),($base+'-unpack') -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+Test-Finalizer 'owner-readonly-hold' 'WINDOWS_TIME_SYNC_HOLD' $true $true
+Test-Finalizer 'readonly-candidate' 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED' $true $true
+Test-Finalizer 'repair-candidate' 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED' $false $true
+Test-Finalizer 'repair-hold-not-normal' 'WINDOWS_TIME_SYNC_HOLD' $false $false
+Test-Finalizer 'query-exception' 'WINDOWS_TIME_INCOMPLETE' $true $false $true
+Test-Finalizer 'hold-with-query-error' 'WINDOWS_TIME_SYNC_HOLD' $true $false $true
+Test-Finalizer 'candidate-with-final-state-error' 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED' $true $false $false $true
+Test-Finalizer 'readonly-hold-with-mutation' 'WINDOWS_TIME_SYNC_HOLD' $true $false $false $false $true
+# Simulate archive failure, must not announce success or return normally.
+$script:status=@{result='WINDOWS_TIME_SYNC_HOLD';verify_only=$true;rollback='NOT_NEEDED';clock_correction_attempted=$false}
+$script:changed=$false
+function Pack {throw 'FIXTURE_PACK_FAILED'}
+Reject {Complete-Run} 'FIXTURE_PACK_FAILED'
+Write-Host 'FINALIZER_ARCHIVE_AND_EXIT_QA_PASS'

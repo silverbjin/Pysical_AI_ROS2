@@ -143,7 +143,15 @@ function Invoke-VerifyOnly($Original) {
         $rows=@(Measure-Refs $phase)
         $q=Query-Time $phase
         $s=Get-State
-        $results+=@{phase=$phase;offsets_pass=(Check-Offsets $rows);sync_pass=(Check-Sync $q $Original);state=$s.state;config_unchanged=(Same-Config $s $Original)}
+        $row=@{phase=$phase;offsets_pass=(Check-Offsets $rows);sync_pass=(Check-Sync $q $Original);state=$s.state;config_unchanged=(Same-Config $s $Original)}
+        $reasons=@()
+        if(-not $row.offsets_pass){$reasons+='EXTERNAL_OFFSET_OR_COVERAGE'}
+        if(-not $row.sync_pass){$reasons+='W32TIME_SYNC_OR_SOURCE'}
+        if($row.state -ne 'Running'){$reasons+='SERVICE_NOT_RUNNING'}
+        if(-not $row.config_unchanged){$reasons+='CONFIG_CHANGED'}
+        $row.reasons=$reasons
+        $results+=$row
+        Note ("WINDOW_RESULT="+$phase+" reasons="+($reasons -join ','))
     }
     Save-Json 'verify-summary.json' $results
     if(@($results|Where-Object {-not $_.offsets_pass -or -not $_.sync_pass -or $_.state -ne 'Running' -or -not $_.config_unchanged}).Count -eq 0){
@@ -235,6 +243,25 @@ function Pack {
     [IO.File]::WriteAllText($zip+'.sha256',((Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()+'  '+(Split-Path $zip -Leaf)+[Environment]::NewLine),$script:utf8)
     Write-Host "EVIDENCE=$zip";Write-Host "SHA256=$zip.sha256"
 }
+function Complete-Run {
+    # A completed read-only observation may fail the environment gate.
+    # Preserve genuine execution failures and never promote HOLD to acceptance.
+    $candidate=($script:status.result -eq 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED')
+    $hold=($script:status.result -eq 'WINDOWS_TIME_SYNC_HOLD' -and $script:status.verify_only -eq $true -and -not $script:changed -and -not $script:status.clock_correction_attempted -and $script:status.rollback -eq 'NOT_NEEDED')
+    $complete=(($candidate -or $hold) -and -not $script:status.error -and -not $script:status.final_state_error)
+    $script:status.execution_status=if($complete){'COMPLETE'}else{'INCOMPLETE'}
+    $script:status.acceptance_status=if($complete -and $candidate){'CANDIDATE_REVIEW_REQUIRED'}else{'HOLD'}
+    $script:status.owner_environment_acceptance=$false
+    if(-not $complete){$script:status.result='WINDOWS_TIME_INCOMPLETE'}
+    # Pack must succeed before announcing completion. Pack exceptions propagate.
+    Pack
+    Write-Host "EXECUTION_STATUS=$($script:status.execution_status)"
+    Write-Host "ACCEPTANCE_STATUS=$($script:status.acceptance_status)"
+    Write-Host $script:status.result
+    Write-Host "ROLLBACK=$($script:status.rollback)"
+    if(-not $complete){throw 'WINDOWS_TIME_EXECUTION_INCOMPLETE; review evidence (rollback only for repair mode)'}
+    if($hold){Write-Host 'NEXT_ACTION=UPLOAD_EVIDENCE_FOR_REVIEW; NO_AUTOMATIC_RETRY; WSL2_GATE_HOLD'}
+}
 if($LibraryOnly){return}
 if(($VerifyOnly -and $Approved) -or (-not $VerifyOnly -and -not $Approved) -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
 $principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -275,10 +302,8 @@ try{
         try{[void](Native 'sc.exe' @('qtriggerinfo','W32Time') 15 'service-triggers-after')}catch{}
         try{Save-Json 'time-events.json' @(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='Microsoft-Windows-Time-Service'} -MaxEvents 30|Select-Object TimeCreated,Id,Message)}
         catch{Save-Json 'time-events-error.json' @{error=$_.Exception.Message}}
-        Pack
+        Complete-Run
     }
-    Write-Host $script:status.result;Write-Host "ROLLBACK=$($script:status.rollback)"
-    if($script:status.result -ne 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED'){throw 'WINDOWS_TIME_NOT_ACCEPTED; review evidence (rollback only for repair mode)'}
 }finally{
     if($owned){$mutex.ReleaseMutex()}
     $mutex.Dispose()
