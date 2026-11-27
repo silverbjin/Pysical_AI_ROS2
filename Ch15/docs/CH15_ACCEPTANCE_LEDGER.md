@@ -10,7 +10,7 @@
 | G05 | PASS_SCOPED_G05_T12_T14 | PASS 10 explicit tests + C15 synthetic MCAP | T12 scoped PASS; T13 V7 actual 3/3 PASS; T14 V7 typed analysis + V9 actual replay PASS | N/A (mock scope) | NOT_RUN |
 | G06 | PASS_SCOPED_G06_T15 | PASS 5/5 | T15 DDS 10/10 + clock-only PASS | N/A | NOT_RUN |
 | G07 | PASS_SCOPED_G07_T16_T17 | PASS 7/7 | build/install 3/3, 18/18 local wheel lock | independent 1DOF 4800 actual steps + 800 synthetic LPF PASS | NOT_RUN |
-| G08 | IN_PROGRESS_BOUNDARY_V1 | NOT_RUN (candidate) | NOT_RUN | physical F01 BLOCKED | NOT_RUN |
+| G08 | IN_PROGRESS_BOUNDARY_V2 | PASS 8/8 (V1) | V1 build 3/3; probe startup RED, V2 pending | physical F01 BLOCKED | NOT_RUN |
 | G09 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 - G00/G01 CI 45853673522: static 7/7, negative drift/assets, actual mock preflight, native SDF Valid. G00 physical assets/rights/closure HOLD. Previous automatic repeat 45855234520 recorded, workflow dispatch only.
 - G02 runs 45855381985 and 45855811717, source d908f219... and e22c4fb5..., original receipts evidence/g02_ci_receipt.json. 4 package builds, eight IDLs, DDS 3/3 accepted + three reject, QoS 10/0/S10, independent missing predicates, short deadlines, latched reject. G03 start/cancel/reset scoped verified; true safety latch reset G08.
@@ -90,3 +90,5 @@
 - G07 V2 final scoped PASS actual run45952988010 job140352899966 artifact15177811443 source e223f8940315d872e77c74b3148dbde15cd1dfc1: ZIP+30/30 and independent CSV audit. 3 package build/install, exact venv lock18/18, pip check PASS, 7/7 unit. MuJoCo3.3.7 6x800 actual steps; B RMSE .247561rad (A .349641), overshoot 0% (A72.238844%), final .003945rad, settling1.23s; PID5/5, robustness7/7 (baseline B reused; exact4-step delay); synthetic LPF800 raw .194290→.108854 RMSE, lag20ms. All finite/limits; no whole-robot/real-sensor/owner claim. Original RED1 retained; G04–06 not rerun. [Report](reports/G07_FINAL_ACCEPTANCE_KO.md), [receipt](../evidence/g07/final_receipt.json). G08 preview only, safety/physical boundary separate.
 
 - G08 boundary V1 candidate: FMEA and deterministic retry contract, isolated actual safety DDS planned; runtime mission recovery not connected. Prior G07 full SHA fixed, tags BLOCKED_HTTP403, owner script provided. [Report](reports/G08_BOUNDARY_V1_CANDIDATE_KO.md).
+
+- G08 boundary RED1 actual 45955557284 job140361103523 artifact15178880859 sourcef58fca72c4e1d64fe3f4034c8496298401945cdc: build3/3, L0 8/8, probe NameError subprocess before any child launch, injection_observed=false. ZIP+5/5 verified. V2 imports subprocess only, original safety nodes/thresholds unchanged. [Report](reports/G08_BOUNDARY_RED1_PROBE_IMPORT_KO.md).

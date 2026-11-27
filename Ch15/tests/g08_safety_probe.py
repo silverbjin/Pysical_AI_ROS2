@@ -1,7 +1,7 @@
 """Actual DDS boundary witness using installed original mock safety nodes.
 No physical simulator, no Nav2 goal, no claimed complete mission.
 """
-import sys,time,signal,os,json
+import sys,time,signal,os,json,subprocess
 from pathlib import Path
 import rclpy
 from rclpy.node import Node
@@ -96,7 +96,6 @@ try:
         wait(lambda:all(p.get_subscription_count()==1 for p in (hp,rp,cp,mp)) and n.count_publishers('/cmd_vel')==1,8)
         send_at=0.;heartbeat=False
         def pump():
-            nonlocal_dummy=None
             global send_at
             if time.monotonic()-send_at<.03:return
             send_at=time.monotonic()
