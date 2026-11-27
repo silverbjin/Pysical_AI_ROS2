@@ -287,7 +287,7 @@ def main(argv=None,mission=None):
         node.create_subscription(JointState,N+'/joint_states',on_joints,1)
         node.create_subscription(String,N+'/vision/observation',on_observation,1)
         node.create_subscription(OccupancyGrid,N+'/map',on_grid,QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
-        for name in ('gateway','platform','navigation','vision'):
+        for name in ('gateway','platform','navigation','vision')+(('manipulation',) if mission else ()):
             node.create_subscription(String,N+'/'+name+'/status',lambda m,n=name:statuses.__setitem__(n,json.loads(m.data)),1)
         node.create_subscription(NavPath,'/plan',lambda m:plans.append(dict(phase=phase,poses=[[p.pose.position.x,p.pose.position.y] for p in m.poses])),1)
         def ready():
@@ -301,7 +301,11 @@ def main(argv=None,mission=None):
                 if r.current_state.id==3:break
                 assert time.monotonic()<end,('lifecycle not active',name)
         scenario=get_scenario('level2_obstacles')
-        if mission:mission.before_survey(until)
+        if mission:
+            assert until(lambda:bool(statuses.get('manipulation',{}).get('session')) or fault(),3) and not fault(),'actual session missing'
+            mission.bind_session(lambda:statuses.get('manipulation',{}))
+            S['mission_session']=mission.session;write()
+            mission.before_survey(until)
         run_action('survey_setup',nav,nav_goal(scenario.survey_pose,clock,survey=True),120)
         phase='vision_admission'
         target,record,model=select_goal(root,node,until,lambda:observation,lambda:state,lambda:joints,lambda:grid,lambda:clock)
@@ -349,6 +353,7 @@ def main(argv=None,mission=None):
             assert S['checks']['workspace']
             mission.found(until,obs3,clock,S)
         S['checks']['one_command_chain']=counts_ok();S['checks']['no_fault']=not fault()
+        if mission:mission.validate_session();S['checks']['mission_session_stable']=True
         assert all(S['checks'].values())
         phase='shutdown';call('platform/shutdown');S['shutdown_ack']={'wall':time.monotonic(),'clock_ns':clock};launch.wait(timeout=12)
         engine=json.loads((out/'engine.json').read_text())

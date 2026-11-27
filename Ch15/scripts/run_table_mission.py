@@ -39,7 +39,12 @@ def audit_bag(path,discovered):
 class Bridge:
     """Only robot worker owns goal futures; BT owner sees TaskPort snapshots."""
     def __init__(self,port):
-        self.port=port;self.ready=threading.Event();self.futures=[];self.rows=[]
+        self.port=port;self.ready=threading.Event();self.futures=[];self.rows=[];self.session=None;self.session_status=None
+    def bind_session(self,status):
+        self.session_status=status;self.session=status().get('session');self.validate_session()
+    def validate_session(self):
+        status=self.session_status() if self.session_status else {}
+        assert self.session and status.get('session')==self.session and not status.get('fault'),'actual session changed/faulted'
     def cancel_requested(self):return bool(self.port.snapshot()['cancel_reason'])
     def before_survey(self,until):
         self.ready.set()
@@ -47,7 +52,7 @@ class Bridge:
     def await_step(self,name,until):
         assert until(lambda:name in self.port.snapshot()['requested'] or self.cancel_requested(),30),'BT task deadline '+name
         assert not self.cancel_requested(),'BT canceled'
-        self.port.event('started',task=name)
+        self.validate_session();self.port.event('started',task=name,session=self.session)
     def goal_sent(self,sent):self.futures.append(dict(sent=sent,handle=None,row=None,result=None))
     def poll_goals(self):
         for x in self.futures:
@@ -63,14 +68,14 @@ class Bridge:
         if 'terminal' in row and row['terminal']!=terminal:raise RuntimeError('terminal changed')
         row['terminal']=terminal
     def navigated(self,until,s,clock):
-        assert not self.cancel_requested()
+        assert not self.cancel_requested();self.validate_session()
         self.port.complete('navigate',dict(position_error_m=s['final_xy_error_m'],yaw_error_rad=s['final_yaw_error_rad'],
-            goal_id=s['handoff']['nav2_terminal_uuid'],clock_ns=clock,source='actual fixed-world settled V3'))
+            goal_id=s['handoff']['nav2_terminal_uuid'],clock_ns=clock,session=self.session,source='actual fixed-world settled V3'))
         self.await_step('find',until)
     def found(self,until,observation,clock,s):
         from ch13_mission_orchestration.session import admit_observation
-        assert not self.cancel_requested()
-        self.port.complete('find',dict(observation=admit_observation(observation,clock,time.monotonic()),workspace=s['checks']['workspace']))
+        assert not self.cancel_requested();self.validate_session()
+        self.port.complete('find',dict(observation=admit_observation(observation,clock,time.monotonic()),workspace=s['checks']['workspace'],session=self.session))
         self.await_step('finish',until)
     def audit(self):
         a=goal_audit(self.rows)
@@ -129,7 +134,7 @@ def main():
             code=robot(['--repo-root',a.repo_root,'--manifest',a.manifest,'--evidence',str(out)],mission=bridge)
             worker_result['exit_code']=code
             if code:port.fail('actual robot segment failed')
-            elif not bridge.cancel_requested():port.complete('finish',dict(source='actual engine and children closed'))
+            elif not bridge.cancel_requested():port.complete('finish',dict(source='actual engine and children closed',session=bridge.session))
         except BaseException:
             worker_result['exception']=traceback.format_exc();port.fail(worker_result['exception'])
         finally:port.close(code)
@@ -166,7 +171,7 @@ def main():
     for item in work.iterdir():shutil.move(str(item),str(out/item.name))
     work.rmdir()
     data=port.snapshot();bt=dict(profile='actual',terminal=mission.terminal,worker_joined=not thread.is_alive(),
-        port=data,worker=worker_result,goals=bridge.audit(),error=err)
+        port=data,worker=worker_result,goals=bridge.audit(),session=bridge.session,error=err)
     (out/'bt_summary.json').write_text(json.dumps(bt,indent=2)+'\n')
     (out/'bt_ticks.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in mission.ticks))
     (out/'telemetry_delivery.json').write_text(json.dumps(telemetry,indent=2)+'\n')
@@ -193,7 +198,9 @@ def main():
     except BaseException:independent=dict(result='FAIL',error=traceback.format_exc())
     (out/'independent_engine_audit.json').write_text(json.dumps(independent,indent=2)+'\n')
     grade['original_basic_assessor_result']=grade['result']
-    if independent.get('result')!='PASS':grade['result']='FAIL'
+    session_ok=bool(bridge.session and seg.get('mission_session')==bridge.session==manipulation.get('last_status',{}).get('session') and all(data['completed'].get(k,{}).get('session')==bridge.session for k in ('navigate','find','finish')))
+    grade['session_contract']=session_ok
+    if independent.get('result')!='PASS' or not session_ok:grade['result']='FAIL'
     grade.update(independent_engine_audit=independent.get('result'),source='CH15_TABLE_V3_BT',original_native_l2_pass=False,world=world,bag_closed=bag_closed,actual_table_segment=nav['result'],
         segment_checks=seg.get('checks',{}),mission_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     (out/'basic_result.json').write_text(json.dumps(grade,indent=2)+'\n');print(json.dumps(grade,indent=2),flush=True)
