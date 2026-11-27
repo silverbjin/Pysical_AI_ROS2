@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch]$LibraryOnly,[switch]$Approved,[string]$SourcePin,[string]$SourceSha256,
+param([switch]$LibraryOnly,[switch]$VerifyOnly,[switch]$Approved,[string]$SourcePin,[string]$SourceSha256,
       [string]$OutputRoot=(Join-Path $HOME 'ch15-windows-time-evidence'))
 $ErrorActionPreference='Stop'
 $script:root=$null
@@ -117,12 +117,47 @@ function Check-Offsets($Rows,[switch]$ReachableOnly) {
     }
     return $true
 }
+function Parse-SyncStatus([string]$Text) {
+    # Match numeric fields, not translated success words. ASCII regex escapes for PS 5.1 raw UTF-8.
+    $fields=@{leap='Leap Indicator|\uc724\ucd08 \uc870\uc815';stratum='Stratum|\uacc4\uce35';last_error='Last Sync Error|\ub9c8\uc9c0\ub9c9 \ub3d9\uae30\ud654 \uc624\ub958'}
+    $r=@{leap=$null;stratum=$null;last_error=$null;reference_id=$null;age_s=$null;healthy=$false}
+    foreach($k in $fields.Keys){
+        $m=[regex]::Matches($Text,('(?im)^[ \t]*(?:'+$fields[$k]+')[ \t]*:[ \t]*(\d+)\b'))
+        if($m.Count -eq 1){$r[$k]=[long]$m[0].Groups[1].Value}
+    }
+    $m=[regex]::Matches($Text,'(?im)^[ \t]*(?:ReferenceId|Reference ID|\ucc38\uc870 ID)[ \t]*:[ \t]*(0x[0-9a-f]{8})\b')
+    if($m.Count -eq 1){$r.reference_id=$m[0].Groups[1].Value.ToLowerInvariant()}
+    $m=[regex]::Matches($Text,'(?im)^[ \t]*(?:Time since Last Good Sync Time|\ub9c8\uc9c0\ub9c9\uc73c\ub85c \ub3d9\uae30\ud654\ud55c \ud6c4 \uc9c0\ub09c \uc2dc\uac04)[ \t]*:[ \t]*(\d+(?:[.,]\d+)?)[ \t]*s\b')
+    if($m.Count -eq 1){$r.age_s=[double]::Parse($m[0].Groups[1].Value.Replace(',','.'),[Globalization.CultureInfo]::InvariantCulture)}
+    $r.healthy=($null -ne $r.leap -and $r.leap -in @(0,1,2) -and $null -ne $r.stratum -and $r.stratum -ge 1 -and $r.stratum -le 15 -and $null -ne $r.last_error -and $r.last_error -eq 0 -and $null -ne $r.reference_id -and $r.reference_id -ne '0x00000000' -and $null -ne $r.age_s -and $r.age_s -le 3600)
+    return $r
+}
+function Check-Sync($Q,$S) {
+    return ((Check-Source $Q $S) -and $null -ne $Q.sync -and $Q.sync.healthy -eq $true)
+}
+function Invoke-VerifyOnly($Original) {
+    Note 'READ_ONLY_NO_SERVICE_OR_CLOCK_MUTATION'
+    $results=@()
+    foreach($phase in @('verify-1','verify-2')){
+        if($phase -eq 'verify-2'){Note 'VERIFY_WINDOW_2_AFTER_30S';Start-Sleep -Seconds 30}
+        $rows=@(Measure-Refs $phase)
+        $q=Query-Time $phase
+        $s=Get-State
+        $results+=@{phase=$phase;offsets_pass=(Check-Offsets $rows);sync_pass=(Check-Sync $q $Original);state=$s.state;config_unchanged=(Same-Config $s $Original)}
+    }
+    Save-Json 'verify-summary.json' $results
+    if(@($results|Where-Object {-not $_.offsets_pass -or -not $_.sync_pass -or $_.state -ne 'Running' -or -not $_.config_unchanged}).Count -eq 0){
+        $script:status.result='WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED'
+    }else{$script:status.result='WINDOWS_TIME_SYNC_HOLD'}
+}
 function Query-Time([string]$Phase) {
     $s=Native 'w32tm.exe' @('/query','/source') 15 ($Phase+'-source')
     $t=Native 'w32tm.exe' @('/query','/status','/verbose') 15 ($Phase+'-status')
     [void](Native 'w32tm.exe' @('/query','/configuration') 15 ($Phase+'-configuration'))
     [void](Native 'w32tm.exe' @('/query','/peers') 15 ($Phase+'-peers'))
-    return @{source=$s.stdout.Trim();source_exit=$s.exit;status_exit=$t.exit}
+    $sync=Parse-SyncStatus $t.stdout
+    Save-Json ($Phase+'-sync-fields.json') $sync
+    return @{source=$s.stdout.Trim();source_exit=$s.exit;status_exit=$t.exit;sync=$sync}
 }
 function Check-Source($Q,$S) {
     if($Q.source_exit -ne 0 -or $Q.status_exit -ne 0){return $false}
@@ -154,7 +189,8 @@ function Invoke-Repair($Original,$Mgmt) {
     if(-not (Check-Offsets $before -ReachableOnly)){throw 'NTP_REFERENCE_UNAVAILABLE_NO_CHANGE'}
     if ([Math]::Abs($before[0].median_s-$before[1].median_s) -gt .2 -or $before[0].max_abs_s -gt 30 -or $before[1].max_abs_s -gt 30) { throw 'REFERENCE_DISAGREEMENT_OR_LARGE_OFFSET_NO_CHANGE' }
     $q=Query-Time 'before'
-    $healthy=($Original.state -eq 'Running' -and (Check-Source $q $Original) -and (Check-Offsets $before))
+    $healthy=($Original.state -eq 'Running' -and (Check-Sync $q $Original) -and (Check-Offsets $before))
+    if($Original.state -eq 'Running' -and (Check-Offsets $before) -and -not $healthy){throw 'ACCURATE_CLOCK_SYNC_STATE_UNCONFIRMED_USE_VERIFYONLY'}
     if(-not $healthy){
         $script:status.clock_correction_attempted=$true
         if($Original.state -eq 'Stopped'){
@@ -167,12 +203,12 @@ function Invoke-Repair($Original,$Mgmt) {
     }else{Note 'ALREADY_SYNCHRONIZED_NO_RESYNC'}
     Note 'VERIFY_WINDOW_1'
     $one=@(Measure-Refs 'after-1')
-    if(-not (Check-Offsets $one) -or -not (Check-Source (Query-Time 'after-1') $Original)){throw 'FIRST_SYNC_VERIFICATION_FAILED'}
+    if(-not (Check-Offsets $one) -or -not (Check-Sync (Query-Time 'after-1') $Original)){throw 'FIRST_SYNC_VERIFICATION_FAILED'}
     Note 'VERIFY_WINDOW_2_AFTER_30S'
     Start-Sleep -Seconds 30
     $two=@(Measure-Refs 'after-2');$s=Get-State
     Save-Json 'after-state.json' $s
-    if(-not (Check-Offsets $two) -or -not (Check-Source (Query-Time 'after-2') $Original) -or $s.state -ne 'Running' -or -not (Same-Config $s $Original)){throw 'FINAL_SYNC_VERIFICATION_FAILED'}
+    if(-not (Check-Offsets $two) -or -not (Check-Sync (Query-Time 'after-2') $Original) -or $s.state -ne 'Running' -or -not (Same-Config $s $Original)){throw 'FINAL_SYNC_VERIFICATION_FAILED'}
     $script:status.result='WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED'
 }
 function Write-Backup($Original) {
@@ -200,7 +236,7 @@ function Pack {
     Write-Host "EVIDENCE=$zip";Write-Host "SHA256=$zip.sha256"
 }
 if($LibraryOnly){return}
-if(-not $Approved -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
+if(($VerifyOnly -and $Approved) -or (-not $VerifyOnly -and -not $Approved) -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
 $principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'ELEVATED_POWERSHELL_REQUIRED'}
 $mutex=New-Object Threading.Mutex($false,'Global\Ch15WindowsTimeRecovery')
@@ -214,13 +250,19 @@ try{
     $original=$null
     try{
         Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $script:root 'executed-source.ps1')
-        Save-Json 'source-receipt.json' @{pin=$SourcePin;sha256=$SourceSha256;approved=$true}
+        Save-Json 'source-receipt.json' @{pin=$SourcePin;sha256=$SourceSha256;approved=[bool]$Approved;verify_only=[bool]$VerifyOnly}
         $original=Get-State
-        Write-Backup $original
-        Note "BACKUP_SAVED=$script:root"
-        $mgmt=Get-Management;Save-Json 'management.json' $mgmt
-        [void](Native 'wsl.exe' @('--list','--verbose') 20 'wsl-inventory')
-        Invoke-Repair $original $mgmt
+        $script:status.verify_only=[bool]$VerifyOnly
+        if($VerifyOnly){
+            Save-Json 'before-state.json' $original
+            Invoke-VerifyOnly $original
+        }else{
+            Write-Backup $original
+            Note "BACKUP_SAVED=$script:root"
+            $mgmt=Get-Management;Save-Json 'management.json' $mgmt
+            [void](Native 'wsl.exe' @('--list','--verbose') 20 'wsl-inventory')
+            Invoke-Repair $original $mgmt
+        }
     }catch{
         $script:status.error=$_.Exception.Message
         Note ('RECOVERY_NOT_ACCEPTED '+$_.Exception.Message)
@@ -236,7 +278,7 @@ try{
         Pack
     }
     Write-Host $script:status.result;Write-Host "ROLLBACK=$($script:status.rollback)"
-    if($script:status.result -ne 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED'){throw 'WINDOWS_TIME_NOT_ACCEPTED; review evidence and manual-rollback.txt'}
+    if($script:status.result -ne 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED'){throw 'WINDOWS_TIME_NOT_ACCEPTED; review evidence (rollback only for repair mode)'}
 }finally{
     if($owned){$mutex.ReleaseMutex()}
     $mutex.Dispose()

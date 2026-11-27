@@ -21,12 +21,20 @@ $good[1].max_abs_s=.3;Assert (-not (Check-Offsets $good)) 'reject outlier';Asser
 $good[1].max_abs_s=.04;$good[1].count=3;Assert (-not (Check-Offsets $good)) 'reject missing samples';$good[1].count=5
 Assert (Check-Source @{source='time.windows.com,0x9';source_exit=0;status_exit=0} $s) 'configured source'
 Assert (-not (Check-Source @{source='Local CMOS Clock';source_exit=0;status_exit=0} $s)) 'reject local clock'
+$ko=[regex]::Unescape('\uc724\ucd08 \uc870\uc815: 3(\ub3d9\uae30\ud654\ub418\uc9c0 \uc54a\uc74c)\n\uacc4\uce35: 0(\uc9c0\uc815\ub418\uc9c0 \uc54a\uc74c)\n\ucc38\uc870 ID: 0x00000000(\uc9c0\uc815\ub418\uc9c0 \uc54a\uc74c)\n\ub9c8\uc9c0\ub9c9 \ub3d9\uae30\ud654 \uc624\ub958: 1 (\uc0ac\uc6a9 \uac00\ub2a5\ud55c \uc2dc\uac04 \ub370\uc774\ud130\uac00 \uc5c6\uc5b4 \ucef4\ud4e8\ud130\uac00 \ub3d9\uae30\ud654\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4.)\n\ub9c8\uc9c0\ub9c9\uc73c\ub85c \ub3d9\uae30\ud654\ud55c \ud6c4 \uc9c0\ub09c \uc2dc\uac04: 47.7481348s')
+$badSync=Parse-SyncStatus $ko
+Assert ($badSync.leap -eq 3 -and $badSync.stratum -eq 0 -and $badSync.last_error -eq 1 -and -not $badSync.healthy) 'actual Korean RED status rejected despite exit zero'
+$en=@('Leap Indicator: 0(no warning)','Stratum: 5','ReferenceId: 0xB7731234','Last Sync Error: 0 (The command completed successfully.)','Time since Last Good Sync Time: 45.2s') -join [Environment]::NewLine
+Assert ((Parse-SyncStatus $en).healthy) 'English synced status'
+Assert (-not (Parse-SyncStatus ($en.Replace('45.2s','3601s'))).healthy) 'reject stale sync'
+Assert (-not (Parse-SyncStatus 'Leap Indicator: 0').healthy) 'missing fields fail closed'
+Assert (-not (Check-Sync @{source='time.windows.com,0x9';source_exit=0;status_exit=0;sync=$badSync} $s)) 'configured source is not proof of sync'
 $script:fake=$s.Clone();$script:calls=New-Object 'System.Collections.Generic.List[string]';$script:failPhase=''
 function Note($Message){}
 function Save-Json($Name,$Value){}
 function Get-State{return $script:fake.Clone()}
 function Measure-Refs($Phase){$script:calls.Add($Phase);if($Phase -eq $script:failPhase){return @(@{reachable=$false;count=0},@{reachable=$false;count=0})};return $good}
-function Query-Time($Phase){return @{source='time.windows.com,0x9';source_exit=0;status_exit=0}}
+function Query-Time($Phase){return @{source='time.windows.com,0x9';source_exit=0;status_exit=0;sync=@{healthy=$true}}}
 function Native($Exe,$ArgList,$Seconds,$Name){$script:calls.Add($Name);return @{exit=0}}
 function Start-Time{$script:calls.Add('start');$script:fake.state='Running'}
 function Stop-Time{$script:calls.Add('stop');$script:fake.state='Stopped'}
@@ -48,4 +56,12 @@ Reject {Invoke-Repair $s $m} 'FINAL_SYNC_VERIFICATION_FAILED'
 Restore-State $s;Assert ($script:fake.state -eq 'Stopped') 'failure rollback'
 $script:fake=$s.Clone();$script:fake.state='Running';$s=$script:fake.Clone();$script:failPhase='';$script:calls.Clear();$script:changed=$false
 Invoke-Repair $s $m;Assert (-not $script:calls.Contains('resync') -and -not $script:changed) 'healthy no change'
+$script:status=@{result='INCOMPLETE';clock_correction_attempted=$false};$script:calls.Clear()
+Invoke-VerifyOnly $s
+Assert ($script:status.result -eq 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED' -and -not $script:calls.Contains('resync') -and -not $script:calls.Contains('start')) 'readonly healthy no mutations'
+function Query-Time($Phase){return @{source='time.windows.com,0x9';source_exit=0;status_exit=0;sync=@{healthy=$false}}}
+$script:status=@{result='INCOMPLETE';clock_correction_attempted=$false};$script:calls.Clear()
+Invoke-VerifyOnly $s
+Assert ($script:status.result -eq 'WINDOWS_TIME_SYNC_HOLD' -and -not $script:calls.Contains('resync') -and -not $script:calls.Contains('start')) 'readonly contradictory status HOLD'
+Reject {Invoke-Repair $s $m} 'ACCURATE_CLOCK_SYNC_STATE_UNCONFIRMED'
 Write-Host 'WINDOWS_RECOVERY_MOCK_QA_PASS; NO REAL MUTATION'
