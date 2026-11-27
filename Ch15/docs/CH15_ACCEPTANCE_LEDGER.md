@@ -114,3 +114,5 @@
 - R02 read-only clock diagnostic candidate; host/idle ROS/fault probe simultaneous bracketed clocks; CI pending. No safety threshold/auto reset change. [Report](reports/G09_R02_CLOCK_DIAG_CANDIDATE_KO.md).
 
 - R02 V1 run45978901460 unit9/9, instrumented F03 transient actual Linux PASS (2 attempts, 4 goals, 31 events, 7 clean, residual0; probe cleanup gap PARTIAL). Idle host246 samples COMPLETE but ROS init RED missing CycloneDDS shared library. V2 target idle only, original fault path unchanged. [R02 debug](reports/G09_R02_V1_DEBUG_KO.md).
+
+- R02 scoped Linux diagnostic PASS: V1 actual F03 probe PASS; V2 standalone run45979301639/job140438824765/artifact15187604496/source 0b044f528ffd99b23d563f32eddf27833dea7566, 954 host and160 ROS samples COMPLETE/no observed step, 9/9 contracts, host/container exit0, graph/container0. ZIP+17; combined ZIP+50 independent; CI archives61 files. WSL2 cause remains unknown, owner 4/5 partial; R03 next. [R02 final](reports/G09_R02_FINAL_KO.md).
