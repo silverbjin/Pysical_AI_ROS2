@@ -39,13 +39,33 @@ apt-get install -y --no-install-recommends git curl build-essential cmake binuti
  ros-jazzy-rosbag2 ros-jazzy-rosbag2-storage-mcap ros-jazzy-rmw-fastrtps-cpp
 dpkg-query -W > "$e/dpkg-versions.txt"
 phase=PINNED_VENV
-python3 -m venv "$CH13_REUSE_VENV"
+# The ROS Docker image can export ROS site-packages through PYTHONPATH.
+# Keep the pinned pip environment closed; native env.sh later adds ROS and
+# the original sitecustomize appends Ubuntu dist-packages for actual execution.
+printf 'inherited_PYTHONPATH=%s\n' "${PYTHONPATH:-}" > "$e/python-boundary.txt"
+env -u PYTHONPATH -u PYTHONHOME /usr/bin/python3 -m venv "$CH13_REUSE_VENV"
 py="$CH13_REUSE_VENV/bin/python"
-"$py" -m pip install --index-url https://download.pytorch.org/whl/cpu 'torch==2.9.0+cpu'
-"$py" -m pip install -r /work/native/Ch13/evidence/section_13_5_reuse/r0-20261102/pip-freeze.txt
-"$py" -m pip check
-"$py" -m pip freeze > "$e/pip-versions.txt"
-MUJOCO_GL=egl "$py" - <<'PY' | tee "$e/runtime-imports.log"
+isolated() { env -u PYTHONPATH -u PYTHONHOME PYTHONNOUSERSITE=1 "$py" "$@"; }
+isolated -m pip install --index-url https://download.pytorch.org/whl/cpu 'torch==2.9.0+cpu'
+isolated -m pip install -r /work/native/Ch13/evidence/section_13_5_reuse/r0-20261102/pip-freeze.txt
+isolated -m pip freeze > "$e/pip-versions.txt"
+isolated -m pip check | tee "$e/pip-check.log"
+isolated - <<'PY' | tee -a "$e/python-boundary.txt"
+import sys, importlib.metadata as md
+from pathlib import Path
+print("isolated sys.path:", sys.path)
+assert sys.prefix != sys.base_prefix
+assert not any(p.startswith("/opt/ros/") or p.startswith("/usr/lib/python3/dist-packages") for p in sys.path)
+assert all(Path(d.locate_file("")).resolve().is_relative_to(Path(sys.prefix).resolve()) for d in md.distributions())
+print("ISOLATED_PIP_BOUNDARY_PASS")
+PY
+/usr/bin/python3 - <<'PY' | tee -a "$e/python-boundary.txt"
+import typeguard, yaml
+print("system typeguard",typeguard.__file__,"yaml",yaml.__file__)
+assert typeguard.__file__.startswith("/usr/lib/python3/dist-packages/")
+print("SYSTEM_APT_IMPORT_PASS")
+PY
+MUJOCO_GL=egl isolated - <<'PY' | tee "$e/runtime-imports.log"
 import sys, mujoco, torch, onnxruntime, numpy
 print(sys.version)
 print("mujoco",mujoco.__version__,"torch",torch.__version__,"ort",onnxruntime.__version__,"numpy",numpy.__version__)
