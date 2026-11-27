@@ -7,6 +7,7 @@ from table_approach_contract import route,entry_ready,Handoff
 from arc_straight_profile import local,arc_command,arc_ready,straight_command,final_ready,wrap
 from concurrent.futures import ThreadPoolExecutor
 from table_visibility_gate import VisibilityGate,project
+from startup_window import StartupWindow
 
 def main(argv=None,mission=None):
     parser=argparse.ArgumentParser()
@@ -40,10 +41,10 @@ def main(argv=None,mission=None):
     from vision_mission import select_goal,wait_new_capture,current_q
     from run_r2_probe import service_call
     import numpy as np
-    S=dict(source='CH15_TABLE_V3_SEGMENT_V2',scope='actual table approach only; original native L2 and BT not claimed',
+    S=dict(source='CH15_TABLE_V3_SEGMENT_V3',scope='actual table approach only; original native L2 and BT not claimed',
            result='FAIL',full_mission_success=False,original_native_l2_pass=False,phases=[],checks={})
     launch=node=log=None;active=None;clients={};armed=False;phase='startup'
-    clock=0;state=joints=grid=observation=local_grid=None;statuses={};rows=[];last_state_wall=0.;plans=[]
+    clock=0;state=joints=grid=observation=local_grid=None;safe_stamp=0;safe_wall=0.;safe_zero=False;statuses={};rows=[];last_state_wall=0.;plans=[]
     handoff=Handoff();command=(0.,0.);mux=None;mux_last=0;mux_fault='';cost_wall=0.;cost_stamp=0;cost_seq=0;nav2_packets=0;v3_packets=0;cost_checks=[];cost_job=None;cost_good=None
     pool=ThreadPoolExecutor(max_workers=1,thread_name_prefix='ch15_geometry')
     def write():
@@ -51,6 +52,12 @@ def main(argv=None,mission=None):
     def pose():
         q=state.pose.pose.orientation;p=state.pose.pose.position
         return (p.x,p.y,math.atan2(2*(q.w*q.z+q.x*q.y),1-2*(q.y*q.y+q.z*q.z)))
+    def on_safe(m):
+        nonlocal safe_stamp,safe_wall,safe_zero
+        stamp=ns(m.header.stamp)
+        if stamp>safe_stamp:
+            safe_stamp=stamp;safe_wall=time.monotonic()
+            safe_zero=m.header.frame_id=='reuse/nav_base' and m.twist.linear.x==0 and m.twist.angular.z==0
     def on_state(m):
         nonlocal state,last_state_wall
         state=m;last_state_wall=time.monotonic()
@@ -143,7 +150,12 @@ def main(argv=None,mission=None):
         assert until(lambda:result.done() or fault() or prepared_zero(snapshot(),already_armed=armed,now=time.monotonic()),5),'prepare deadline'
         assert not result.done() and not fault() and prepared_zero(snapshot(),already_armed=armed,now=time.monotonic()),'not prepared at zero'
         if not armed:
-            call('gateway/arm');call('platform/arm');armed=True
+            call('gateway/arm');armed_at=clock
+            assert until(lambda:fault() or (statuses.get('gateway',{}).get('mode')=='ARMED' and safe_zero and safe_stamp>armed_at and time.monotonic()-safe_wall<=.10 and snapshot()['platform'].get('stationary_ready')),2),'gateway arm propagation'
+            assert not fault(),'gateway fault during handoff'
+            call('platform/arm')
+            assert until(lambda:fault() or (statuses.get('platform',{}).get('mode')=='ARMED' and snapshot()['platform'].get('stationary_ready')),2),'platform arm propagation'
+            assert not fault();armed=True;S['startup_admission']['both_armed_clock_ns']=clock
         assert not mission or not mission.cancel_requested(),'BT cancel before Nav2 release'
         call('navigation/release');rec['release_sim_ns']=clock
         def interrupted():
@@ -267,11 +279,15 @@ def main(argv=None,mission=None):
         S['native_manifest_sha256']=hashlib.sha256(a.manifest.read_bytes()).hexdigest()
         S['profile_sha256']=hashlib.sha256(Path(__file__).with_name('arc_straight_profile.py').read_bytes()).hexdigest()
         S['runner_sha256']=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+        cpus=sorted(os.sched_getaffinity(0));assert len(cpus)>=4,'four available CPUs required'
+        S['cpu_affinity']={'ingress':cpus[:1],'gateway_boundary':cpus[1:2],'platform':cpus[2:],'auxiliary':cpus[1:],'supervisor':cpus[1:]}
+        env=os.environ.copy();env['CH13_REUSE_STARTUP_TRACE']=str(out)
         log=(out/'launch.log').open('w')
         launch=subprocess.Popen(['/usr/bin/python3','/opt/ros/jazzy/bin/ros2','launch',str(Path(__file__).with_name('table_navigation.launch.py')),
             'repo_root:='+str(root),'report:='+str(out/'engine.json'),'scene:=vision','vision_inference_hz:=15',
             'manipulation:=true','planning:=false','pick_scene:=true','max_sim_s:=360'],
-            stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+            stdout=log,stderr=subprocess.STDOUT,start_new_session=True,env=env)
+        os.sched_setaffinity(0,set(cpus[1:]));write()
         if mission:
             from rclpy.signals import SignalHandlerOptions
             rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
@@ -284,6 +300,7 @@ def main(argv=None,mission=None):
         nav=ActionClient(node,NavigateToPose,'/navigate_to_pose');follow=ActionClient(node,FollowPath,'/follow_path')
         node.create_subscription(Clock,'/clock',on_clock,1)
         node.create_subscription(Odometry,N+'/engine_state',on_state,1)
+        node.create_subscription(TwistStamped,N+'/cmd_vel_safe',on_safe,1)
         node.create_subscription(JointState,N+'/joint_states',on_joints,1)
         node.create_subscription(String,N+'/vision/observation',on_observation,1)
         node.create_subscription(OccupancyGrid,N+'/map',on_grid,QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
@@ -293,7 +310,14 @@ def main(argv=None,mission=None):
         def ready():
             s=snapshot()
             return state is not None and clock>2e9 and s['gateway'].get('ready_for_arm') and s['boundary'].get('frames_ready') and not s['boundary'].get('pending_future_count',0) and s['platform'].get('stationary_ready') and nav.server_is_ready() and follow.server_is_ready() and counts_ok()
-        assert until(lambda:ready() or fault(),35) and ready() and not fault(),'startup readiness'
+        window=StartupWindow()
+        def stable_ready():
+            now=time.monotonic()
+            ok=ready() and not fault() and safe_zero and now-last_state_wall<=.10 and now-safe_wall<=.10
+            return window.observe(now,(clock,ns(state.header.stamp) if state is not None else 0,safe_stamp),ok)
+        assert until(lambda:stable_ready() or fault(),35),'continuous startup readiness'
+        S['startup_admission']={'stable_wall_s':2.,'min_sim_progress_s':1.,'window_resets':window.resets,'admitted_clock_ns':clock,'safe_stamp_ns':safe_stamp}
+        assert not fault(),('native startup fault',statuses.get('gateway',{}).get('fault'),statuses.get('navigation',{}).get('fault'));write()
         for name in ('planner_server','controller_server','velocity_smoother','bt_navigator'):
             end=time.monotonic()+8
             while True:
@@ -399,6 +423,13 @@ def main(argv=None,mission=None):
         if mission:mission.poll_goals()
         pool.shutdown(wait=True,cancel_futures=True)
         S['last_status']=statuses
+        S['startup_traces']={}
+        for name in ('gateway','navigation'):
+            p=out/(name+'_startup_trace.json')
+            if p.is_file():
+                trace=json.loads(p.read_text());S['startup_traces'][name]={'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'first_fault':trace.get('fault'),'events':len(trace.get('events',[]))}
+            else:S['startup_traces'][name]={'missing':True}
+        if S['result']=='PASS_SCOPED_TABLE_SEGMENT' and any(x.get('missing') for x in S['startup_traces'].values()):S['result']='FAIL'
         S['mux']={'nav2_packets':nav2_packets,'v3_packets':v3_packets,'owner':handoff.owner,'fault':mux_fault}
         (out/'local_cost_checks.json').write_text(json.dumps(cost_checks,indent=2)+'\n')
         (out/'visibility_gate_events.json').write_text(json.dumps(vision_events,indent=2)+'\n')
