@@ -1,0 +1,9 @@
+# 15.5 미션 기록·분석 실습 (G05)
+WSL2 Ubuntu24.04/Jazzy, source /opt/ros/jazzy/setup.bash 및 별도 Ch15 install/setup.bash. G03_INSTALL은 해당 install의 절대경로. 빈 로컬 ROS domain을 선택한다. 실제 로봇/기존 Ch13 프로세스와 혼용 금지.
+```bash
+bash Ch15/scripts/record_mission.sh normal "$HOME/g05-normal" 76
+python3 Ch15/python/bag_to_csv.py "$HOME/g05-normal/bag" "$HOME/g05-normal/analysis"
+python3 Ch15/python/plot_mission.py "$HOME/g05-normal/analysis"
+bash Ch15/scripts/replay_mission.sh "$HOME/g05-normal/bag" "$HOME/g05-normal/replay.json" 79 76
+```
+F01/F06은 별도 새 출력 및 domain으로 반복한다. 실제 Mock 장애 주입의 기록만 검증하며 G08 안전 복구는 별도. MCAP recorder가 먼저 기동하고 10개 필수 토픽 discovery 후 start 서비스 호출. 64MiB 제한, 8MiB 분할, 60초 기록 budget. /clock, odom, joints 등 없는 데이터는 N/A. typed Event/Status와 String demo reader는 분리. START/END, producer seq, Goal UUID, record/ROS/steady 시간을 비교한다. Energy는 effort/velocity 없으면 null; 실제 전력 추정 금지. Replay는 별도 domain에서 Event/Status와 생성 /clock만 허용; command/action/기록 clock 재생 금지. 원본 bag은 로컬 보존, 공개 저장소에는 해시 영수증 및 분석 결과만.
