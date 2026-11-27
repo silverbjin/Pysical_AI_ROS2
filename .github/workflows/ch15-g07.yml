@@ -1,0 +1,48 @@
+name: Ch15 G07 independent joint physics and filtering
+on:
+  pull_request:
+    branches: [main]
+    paths: ['Ch15/ros2_ws/src/ch15_simulation/**','Ch15/python/*experiment.py','Ch15/requirements/joint.lock.txt','Ch15/tests/test_joint_experiment.py','Ch15/tests/test_filter.py','Ch15/scripts/g07*','.github/workflows/ch15-g07.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ch15-g07-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  g07:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.title, '[RUN G07]')))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Actual MuJoCo T16 T17
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p g07-evidence
+          git rev-parse HEAD > g07-evidence/source-sha.txt
+          python3 - <<'PY'
+          import json,subprocess
+          lock=json.load(open('Ch15/dependencies/reuse.audit.json'))
+          assert all(subprocess.check_output(['git','rev-parse','HEAD:'+p],text=True).strip()==v for p,v in lock['protected_trees'].items())
+          PY
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker run --rm --init -v "$PWD:/repo:ro" -v "$PWD/g07-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g07_ci.sh 2>&1 | tee g07-evidence/run.log
+      - name: Hash receipts
+        if: always()
+        run: |
+          mkdir -p g07-evidence
+          cd g07-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g07-receipts
+          path: g07-evidence/
+          retention-days: 30
