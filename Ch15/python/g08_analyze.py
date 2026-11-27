@@ -63,6 +63,15 @@ elif mode=='F06':
 elif mode=='F01':
     assert metrics['terminal']=='ABORTED' and not pick and len(terminal)==1
     assert any(x['event']=='STOP_OBSERVED' for x in events)
+    source=json.loads((p/'scan_source_trace.json').read_text())['events'];inj=[x for x in source if x['kind']=='fault_injection'];assert len(inj)==1
+    assert not any(x['kind']=='publish_enter' and x['wall_ns']>inj[0]['wall_ns'] for x in source)
+    w=json.loads((p/'watchdog_native_trace.json').read_text())['events'];latch=next(x for x in w if x.get('first_latch'));last=next(x for x in reversed(w) if x['kind']=='scan' and x['wall_ns']<latch['wall_ns']);guard=(latch['wall_ns']-last['wall_ns'])/1e9
+    assert 0<guard<=1.15
+    a=json.loads((p/'arbiter_native_trace.json').read_text())['events'];block=next(x for x in a if x['kind']=='blocked' and x['latched'] and x['value']);zero=next(x for x in a if x['kind']=='publish' and x['topic']=='/cmd_vel' and x['publish_enter_ns']>=block['wall_ns']);assert zero['zero']
+    gap=(zero['wall_ns']-block['wall_ns'])/1e9;assert 0<=gap<=.10
+    assert any(x['kind']=='publish' and x.get('topic')=='/cmd_vel' and x.get('zero') is False and x['wall_ns']<block['wall_ns'] for x in a)
+    assert all(x['zero'] for x in a if x['kind']=='publish' and x.get('topic')=='/cmd_vel' and x['wall_ns']>=zero['wall_ns'])
+    metrics.update(scan_receipt_to_guard_s=guard,block_to_zero_publish_s=gap,terminal_uuid=terminal[0]['goal_uuid'])
 else:raise ValueError(mode)
 receipt.update(injection_observed=True,result='PASS')
 (p/'fault_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')

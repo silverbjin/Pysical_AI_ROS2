@@ -98,3 +98,5 @@
 - G01–G07 remote owner tags verified 7/7 exact commit. G08-3/4 recovery executor opt-in candidate; existing default MissionExecutor, safety nodes and mock server unchanged. Actual search CI pending; pick separate after search. [Report](reports/G08_RECOVERY_V1_CANDIDATE_KO.md).
 
 - G08 recovery V1 RED run45967669908/job140400162906/artifact15184265031, source 391a6cbeb049c528a25b2881a389b88a5a16e5c7: build4/4, L0 8/8, wrong self node name in domain preflight. No process or fault injection. ZIP+13/13 independently verified; V2 uses actual self name/namespace and captures graph. Runtime unchanged.
+
+- G08-3 actual functional PASS 3/3 at 4d6f207d62051c6d3b17a44d43731a46f1873a8e run45967908191/artifact15184086938. CI postprocessing FAIL (root-owned MCAP unlink denied), original ZIP+3 raw MCAP hashes and 64 exact CSV events independently checked, no internal hash manifest. F03 transient 2 attempts COMPLETED; persistent 3 ABORTED/pick0; F04 82 invalid target observations/ABORTED/pick0; 21 clean. No repeat. G08-4 F06 and F01 focused missing native block→zero witness + installed plugin audit next. [Report](reports/G08_SEARCH_V2_FUNCTION_GREEN_ARTIFACT_RED_KO.md).

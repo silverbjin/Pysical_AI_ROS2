@@ -1,0 +1,12 @@
+# Example only. Do not launch physical recovery motion.
+behavior_server:
+  ros__parameters:
+    use_sim_time: true
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "wait"]
+    spin:
+      plugin: "nav2_behaviors::Spin"
+    backup:
+      plugin: "nav2_behaviors::BackUp"
+    wait:
+      plugin: "nav2_behaviors::Wait"

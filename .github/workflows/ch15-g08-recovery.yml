@@ -34,16 +34,13 @@ jobs:
           PY
           image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
           docker run --rm --init -e G08_CASES="$G08_CASES" -v "$PWD:/repo:ro" -v "$PWD/g08-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g08_recovery_ci.sh 2>&1 | tee g08-evidence/run.log
-      - name: Hash receipts and omit raw MCAP
+      - name: Stage allowlisted receipts without raw MCAP
+        id: sanitize
         if: always()
-        run: |
-          cd g08-evidence
-          find . -name '*.mcap' -type f -exec sha256sum {} \; > raw-mcap-sha256.txt
-          find . -name '*.mcap' -type f -delete
-          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+        run: python3 Ch15/python/stage_g08_receipts.py g08-evidence g08-public
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.sanitize.outcome == 'success'
         with:
           name: ch15-g08-recovery-receipts
-          path: g08-evidence/
+          path: g08-public/
           retention-days: 30

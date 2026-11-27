@@ -12,7 +12,7 @@ unset ROS_STATIC_PEERS ROS_DISCOVERY_SERVER CYCLONEDDS_URI
 python3 -m unittest discover -s /repo/Ch15/tests -p test_g08_contracts.py -v 2>&1 | tee /evidence/contracts.log
 case "${G08_CASES:-search}" in
  search) cases=(F03_transient:90 F03_persistent:91 F04:92);;
- pick) cases=(F06:93);;
+ pick) cases=(F06:93 F01:94);;
  *) exit 2;;
 esac
 for case in "${cases[@]}"; do
@@ -21,4 +21,7 @@ for case in "${cases[@]}"; do
  timeout --signal=INT --kill-after=20s 100s python3 /repo/Ch15/tests/g08_record_probe.py "$mode" "/evidence/$mode"
  python3 /repo/Ch15/python/g08_analyze.py "/evidence/$mode" "$mode"
 done
+if [[ "${G08_CASES:-search}" == pick ]]; then
+  python3 /repo/Ch15/tests/g08_nav2_plugin_audit.py /evidence/nav2-plugin-audit.json
+fi
 echo CH15_G08_RECOVERY_SCOPED_PASS

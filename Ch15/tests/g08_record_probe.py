@@ -85,9 +85,9 @@ try:
     launch('ch15_mission','recovery_executor','--ros-args','-p','evidence_dir:='+str(out/'executor'))
     spawn('mock_servers',[sys.executable,str(ROOT/'tests/g08_fault_fixture.py'),mode,str(out/'mock_native_trace.json'),'--ros-args','-p','nav_fixture_hold_s:=2.0' if mode=='F01' else 'nav_fixture_hold_s:=0.0','-p','publish_scan:=false','-p','publish_target:=false'])
     until(scan_stable,15);stage('scan_stable')
-    spawn('sensor_watchdog',[sys.executable,str(ROOT/'tests/g05_safety_trace.py'),'watchdog',str(out/'watchdog_native_trace.json')])
+    spawn('sensor_watchdog',[sys.executable,str(ROOT/'tests/g08_safety_trace.py'),'watchdog',str(out/'watchdog_native_trace.json')])
     until(heartbeat_stable,10);stage('heartbeat_stable')
-    spawn('command_arbiter',[sys.executable,str(ROOT/'tests/g05_safety_trace.py'),'arbiter',str(out/'arbiter_native_trace.json'),'--ros-args','-p','require_mission_authorization:=true'])
+    spawn('command_arbiter',[sys.executable,str(ROOT/'tests/g08_safety_trace.py'),'arbiter',str(out/'arbiter_native_trace.json'),'--ros-args','-p','require_mission_authorization:=true'])
     until(admission,20);stage('mission_admission')
     assert not events
     start_wall=time.monotonic_ns();f=start.call_async(Trigger.Request());until(f.done,4)
