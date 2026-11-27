@@ -72,7 +72,7 @@ def native_inputs(a):
     return nr,ap
 def main():
     p=argparse.ArgumentParser()
-    p.add_argument('--check',required=True,choices=[*ORDER,'all','icd','design','git','analysis','markers'])
+    p.add_argument('--check',required=True,choices=[*ORDER,'all','icd','design','git','analysis','markers','clock_diag'])
     p.add_argument('--headless',action='store_true');p.add_argument('--scenario',choices=SCENARIOS)
     p.add_argument('--acknowledge-assets',action='store_true');p.add_argument('--bag',type=Path)
     a=p.parse_args()
@@ -126,16 +126,39 @@ def main():
                 cmd=['docker','run','--rm','--init','--name',name,'--label','ch15.owner.run='+rid,'--shm-size=1g','-v',str(ROOT)+':/repo:ro','-v',str(case)+':/evidence','-e','CH15_FAULT_SCENARIO='+str(a.scenario or '')]
                 if check=='analysis':cmd+=['-v',str(a.bag.resolve())+':/input-bag:ro']
                 cmd += [image,'bash','/repo/Ch15/scripts/owner_runtime.sh',check]
-                code=1
-                try:code=run_logged(cmd,case/'container.log',timeout=1200)
+                code=1;clock_process=None;clock_log=None;clock_exit=None
+                try:
+                    if check in ('clock_diag','faults'):
+                        clock_log=(case/'host-clock.log').open('wb')
+                        clock_process=subprocess.Popen([sys.executable,str(CH/'python/clock_diag.py'),'--out',str(case/'host-clock'),'--duration','1300','--scope','wsl_host'],stdout=clock_log,stderr=subprocess.STDOUT,start_new_session=True)
+                        deadline=time.monotonic()+5
+                        while not (case/'host-clock/samples.jsonl').is_file():
+                            if clock_process.poll() is not None or time.monotonic()>deadline:raise RuntimeError('HOST_CLOCK_DIAG_START_FAILED')
+                            time.sleep(.02)
+                    code=run_logged(cmd,case/'container.log',timeout=1200)
                 finally:
+                    if clock_process is not None:
+                        if clock_process.poll() is None:clock_process.terminate()
+                        try:clock_exit=clock_process.wait(timeout=8)
+                        except subprocess.TimeoutExpired:
+                            clock_process.kill();clock_exit=clock_process.wait();code=1
+                        if clock_exit!=0:code=1
+                    if clock_log is not None:clock_log.close()
                     # Only inspect/remove this run's uniquely named container.
                     remaining=subprocess.run(['docker','ps','-aq','--filter','name=^/'+name+'$'],capture_output=True,text=True,check=True).stdout.strip()
                     forced=bool(remaining)
                     if forced:subprocess.run(['docker','rm','-f',name],check=False,stdout=subprocess.DEVNULL)
                     residual=subprocess.run(['docker','ps','-aq','--filter','label=ch15.owner.run='+rid],capture_output=True,text=True,check=True).stdout.split()
-                    audit.append(dict(profile=check,image=image,exit=code,forced_cleanup=forced,residual_containers=residual))
+                    audit.append(dict(profile=check,image=image,exit=code,forced_cleanup=forced,residual_containers=residual,host_clock_exit=clock_exit))
                     if forced or residual:code=1
+                if check in ('clock_diag','faults'):
+                    diag_files=sorted(case.glob('**/clock-diagnosis.json'))+sorted(case.glob('*/summary.json'))
+                    diagnoses=[]
+                    for dp in diag_files:
+                        d=json.loads(dp.read_text())
+                        diagnoses.append(dict(path=str(dp.relative_to(case)),result=d.get('result'),quality=d.get('quality'),observed_system_or_ros_step=d.get('observed_system_or_ros_step')))
+                    result['clock_diagnosis']=diagnoses
+                    if code==0 and (clock_exit!=0 or not diagnoses):code=1
                 if code==0:
                     rr=json.loads((case/'residual.json').read_text())
                     if rr.get('result')!='PASS':code=1

@@ -5,6 +5,13 @@ kind="$1"
 CH=/repo/Ch15
 export DEBIAN_FRONTEND=noninteractive PYTHONDONTWRITEBYTECODE=1 ROS_LOCALHOST_ONLY=1 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 unset ROS_STATIC_PEERS ROS_DISCOVERY_SERVER CYCLONEDDS_URI RMW_FASTRTPS_PUBLICATION_MODE FASTDDS_DEFAULT_PROFILES_FILE FASTRTPS_DEFAULT_PROFILES_FILE RMW_FASTRTPS_USE_QOS_FROM_XML
+if [[ "$kind" == clock_diag ]]; then
+  source /opt/ros/jazzy/setup.bash
+  export ROS_DOMAIN_ID=96
+  python3 "$CH/python/clock_diag.py" --out /evidence/container-clock --duration 8 --scope container_idle --ros
+  python3 "$CH/scripts/owner_graph_audit.py" /evidence/residual.json 96
+  exit 0
+fi
 if [[ "$kind" == joint ]]; then
   bash "$CH/scripts/g07_ci.sh"
   printf '{"result":"PASS","scope":"no ROS graph launched (joint)"}\n' > /evidence/residual.json
@@ -77,6 +84,7 @@ case "$kind" in
   timeout --signal=INT --kill-after=10s 90s python3 "$CH/tests/g06_marker_probe.py" /evidence/marker-capture.json
   timeout --signal=INT --kill-after=10s 45s python3 "$CH/tests/g06_clock_probe.py" /evidence/clock-capture.json;;
  faults)
+  export CH15_CLOCK_DIAG=1
   cases=(F03_transient:90 F03_persistent:91 F04:92 F06:93 F01:94)
   for row in "${cases[@]}"; do
     mode="${row%:*}";domain="${row#*:}"

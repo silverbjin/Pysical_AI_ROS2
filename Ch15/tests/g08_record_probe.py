@@ -9,6 +9,7 @@ from sensor_msgs.msg import LaserScan
 from ch15_interfaces.msg import MissionStatus,MissionEvent,ReadyState,SafetyState,TargetObservation
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'python'))
 from fault_injector import new_receipt
+from clock_diag import sample as clock_sample,write_summary as clock_summary
 from ch15_adapters.qos_profiles import profile,state_qos,sensor_qos
 ROOT=Path(__file__).resolve().parents[1]
 cfg=json.loads((ROOT/'config/g08_record.json').read_text())
@@ -24,6 +25,19 @@ def spawn(name,args):
 def launch(pkg,exe,*args):
     return spawn(exe,[str(Path(os.environ['G03_INSTALL'])/pkg/'lib'/pkg/exe),*args])
 rclpy.init();n=Node('g08_record_probe')
+clock_rows=[];clock_next=0
+clock_enabled=os.environ.get('CH15_CLOCK_DIAG')=='1'
+if clock_enabled:
+    from rclpy.clock import Clock,ClockType
+    system_clock=Clock(clock_type=ClockType.SYSTEM_TIME)
+    steady_clock=Clock(clock_type=ClockType.STEADY_TIME)
+    clock_reads={'system_time':lambda:system_clock.now().nanoseconds,'steady_time':lambda:steady_clock.now().nanoseconds,'ros_time':lambda:n.get_clock().now().nanoseconds}
+def observe_clock():
+    global clock_next
+    if clock_enabled and time.monotonic_ns()>=clock_next:
+        row=clock_sample(clock_reads,'fault_probe',bool(n.get_parameter('use_sim_time').value))
+        clock_rows.append(row);clock_next=row['monotonic_ns']+50_000_000
+observe_clock()
 n.create_subscription(MissionStatus,'/ch15/mission_state',statuses.append,state_qos)
 n.create_subscription(MissionEvent,'/ch15/mission_event',events.append,profile(100))
 n.create_subscription(TargetObservation,'/ch15/target_observation',lambda m:targets.append(dict(epoch=m.epoch,mission_id=m.mission_id,stamp_ns=m.header.stamp.sec*10**9+m.header.stamp.nanosec,wall_ns=time.monotonic_ns())),profile())
@@ -44,6 +58,7 @@ def until(pred,seconds):
         assert all(p.poll() is None for _,p,_ in children),'child exited'
         assert size()<=cfg['max_bytes'],'archive limit exceeded'
         rclpy.spin_once(n,timeout_sec=.02)
+        observe_clock()
         if pred():return
     raise RuntimeError('deadline')
 def graph():
@@ -108,6 +123,10 @@ finally:
         try:rc=p.wait(timeout=8)
         except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);rc=p.wait(timeout=3);forced=True
         log.close();exits.append(dict(name=name,exit=rc,forced=forced))
+    observe_clock()
+    if clock_enabled:
+        (out/'clock-samples.jsonl').write_text(''.join(json.dumps(row,separators=(',',':'))+'\n' for row in clock_rows))
+        clock_summary(out/'clock-diagnosis.json',clock_rows)
     n.destroy_node();rclpy.try_shutdown()
     (out/'target_observed.json').write_text(json.dumps(targets,indent=2)+'\n')
     (out/'fault_receipt.json').write_text(json.dumps(fault_receipt,indent=2)+'\n')
