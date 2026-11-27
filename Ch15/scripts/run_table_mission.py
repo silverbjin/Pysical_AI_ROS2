@@ -109,6 +109,8 @@ def main():
     node.create_subscription(Clock,'/clock',on_clock,1)
     def start(_):
         if started[0]:port.fail('duplicate start_mission');port.cancel('duplicate_start');return
+        if not sent_start or set(discovered)!=set(TOPICS) or clock[0]<=0 or node.count_publishers('/start_mission')!=1:
+            port.fail('start before recorder admission or unexpected publisher');port.cancel('start_not_admitted');return
         started[0]=True;port.event('start_mission_received',clock_ns=clock[0])
     node.create_subscription(Empty,'/start_mission',start,1)
     def tick():
@@ -139,9 +141,9 @@ def main():
         while thread.is_alive() or mission.terminal is None:
             ex.spin_once(timeout_sec=.05)
             if bag.poll() is not None:port.fail('recorder exited early');port.cancel('recorder_exit')
-            if bridge.ready.is_set() and not sent_start and not bridge.cancel_requested():
+            if bridge.ready.is_set() and not sent_start and not bridge.cancel_requested() and not port.snapshot()['error']:
                 discovered=[t for t in TOPICS if any(i.node_name=='rosbag2_recorder' for i in node.get_subscriptions_info_by_topic(t))]
-                if set(discovered)==set(TOPICS) and clock[0]>0:
+                if set(discovered)==set(TOPICS) and clock[0]>0 and node.count_publishers('/start_mission')==1:
                     sent_start=True;start_pub.publish(Empty())
                 elif time.monotonic()-begin>60:port.fail('recorder discovery deadline');port.cancel('recorder_discovery')
             if time.monotonic()-begin>1200:port.fail('mission wall budget');port.cancel('wall_budget')

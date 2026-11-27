@@ -98,7 +98,8 @@ def main(argv=None,mission=None):
         # Do not renew stale source or send nonzero after a supervisor fault.
         if fault() or time.monotonic()-last_state_wall>.10:return
         m=TwistStamped();set_stamp(m.header.stamp,stamp);m.header.frame_id='reuse/nav_base'
-        m.twist.linear.x,m.twist.angular.z=command;mux.publish(m);mux_last=stamp;v3_packets+=1
+        value=(0.,0.) if mission and mission.cancel_requested() else command
+        m.twist.linear.x,m.twist.angular.z=value;mux.publish(m);mux_last=stamp;v3_packets+=1
     def until(predicate,timeout):
         end=time.monotonic()+timeout
         while time.monotonic()<end:
@@ -131,7 +132,9 @@ def main(argv=None,mission=None):
         rec=dict(phase=label,start_pose=pose(),start_sim_ns=started,behavior_tree=getattr(goal,'behavior_tree',None),goal_checker=('survey_checker' if label=='survey_setup' else 'goal_checker'))
         S['phases'].append(rec);write()
         assert not fault() and counts_ok() and snapshot()['platform'].get('stationary_ready'),'not ready'
+        assert not mission or not mission.cancel_requested(),'BT cancel before new Nav2 action'
         call('navigation/enable')
+        assert not mission or not mission.cancel_requested(),'BT cancel before goal send'
         sent=client.send_goal_async(goal);active=(sent,None,None)
         if mission:mission.goal_sent(sent)
         assert until(sent.done,5),'goal admission deadline'
@@ -141,6 +144,7 @@ def main(argv=None,mission=None):
         assert not result.done() and not fault() and prepared_zero(snapshot(),already_armed=armed,now=time.monotonic()),'not prepared at zero'
         if not armed:
             call('gateway/arm');call('platform/arm');armed=True
+        assert not mission or not mission.cancel_requested(),'BT cancel before Nav2 release'
         call('navigation/release');rec['release_sim_ns']=clock
         def interrupted():
             reason=None
@@ -209,6 +213,7 @@ def main(argv=None,mission=None):
         rec=dict(phase=label,start_pose=pose(),start_sim_ns=start,owner='V3')
         S['phases'].append(rec);write()
         assert not fault() and counts_ok() and snapshot()['platform'].get('stationary_ready')
+        assert not mission or not mission.cancel_requested(),'BT cancel before V3 admission'
         command=(0.,0.)
         assert until(lambda:local_clear() or fault(),3) and not fault(),'local costmap admission'
         # Original Ch13 requires fresh capture health continuously. For this
@@ -221,9 +226,11 @@ def main(argv=None,mission=None):
             S['arc_reacquired_capture_ns']=fresh_observation['capture_ns']
         ok,reason=vision_admission(source_point)
         assert ok,reason
+        assert not mission or not mission.cancel_requested(),'BT cancel before V3 enable'
         call('navigation/require_vision');call('navigation/enable')
         assert until(lambda:fault() or prepared_zero(snapshot(),already_armed=True,now=time.monotonic()),5)
         assert not fault() and prepared_zero(snapshot(),already_armed=True,now=time.monotonic()),'V3 held zero not ready'
+        assert not mission or not mission.cancel_requested(),'BT cancel before V3 release'
         call('navigation/release');rec['release_sim_ns']=clock
         def tick():
             nonlocal command
