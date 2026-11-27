@@ -8,6 +8,11 @@ mkdir /tmp/g06; cd /tmp/g06
 colcon build --base-paths /repo/Ch15/ros2_ws/src --packages-select ch15_interfaces ch15_visualization --event-handlers console_direct+ 2>&1 | tee /evidence/build.log
 source install/setup.bash
 export ROS_LOCALHOST_ONLY=1 ROS_DOMAIN_ID=85 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+if [[ "${G06_MODE:-baseline}" == clock-only ]]; then
+  timeout --signal=INT --kill-after=10s 45s python3 /repo/Ch15/tests/g06_clock_probe.py /evidence/clock-capture.json
+  echo CH15_G06_T15_CLOCK_PASS
+  exit 0
+fi
 python3 -m unittest discover -s /repo/Ch15/tests -p test_markers.py -v 2>&1 | tee /evidence/unit.log
 python3 - <<'PY' | tee /evidence/config-audit.json
 import json,yaml,xml.etree.ElementTree as ET

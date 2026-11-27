@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   g06:
-    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.title, '[RUN G06]')))
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && (contains(github.event.pull_request.title, '[RUN G06]') || contains(github.event.pull_request.title, '[RUN G06 CLOCK]'))))
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -23,6 +23,8 @@ jobs:
           lfs: false
       - name: Clean build and actual DDS T15
         shell: bash
+        env:
+          G06_MODE: ${{ contains(github.event.pull_request.title, '[RUN G06 CLOCK]') && 'clock-only' || 'baseline' }}
         run: |
           set -euo pipefail
           mkdir -p g06-evidence
@@ -33,7 +35,7 @@ jobs:
           assert all(subprocess.check_output(['git','rev-parse','HEAD:'+p],text=True).strip()==v for p,v in lock['protected_trees'].items())
           PY
           image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
-          docker run --rm --init -v "$PWD:/repo:ro" -v "$PWD/g06-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g06_ci.sh 2>&1 | tee g06-evidence/run.log
+          docker run --rm --init -e G06_MODE="$G06_MODE" -v "$PWD:/repo:ro" -v "$PWD/g06-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g06_ci.sh 2>&1 | tee g06-evidence/run.log
       - name: Hash receipts
         if: always()
         run: |
