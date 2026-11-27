@@ -6,7 +6,7 @@
 | G01 | T01/T02 scoped | PASS | NOT_RUN | NOT_RUN | NOT_RUN |
 | G02 | SCOPED_PASS | PASS 6 pure/IDL tests | SCOPED_PASS T03–05 | NOT_RUN | NOT_RUN |
 | G03 | MOCK_MISSION_PASS; T06–09 scoped | PASS 16 pure tests | SCOPED_PASS | NOT_RUN | NOT_RUN |
-| G04 | PARTIAL_PASS_T11; T10 ASSET_SOURCE_PREFLIGHT_PASS | PASS 13 baseline +3 targeted | SCOPED_PASS cube + native 8-package build/install | T11 PASS; T10 NATIVE_L2_FAIL (RED3) | NOT_RUN |
+| G04 | PARTIAL_PASS_T11; T10 ASSET_SOURCE_PREFLIGHT_PASS | PASS 13 baseline +3 targeted | SCOPED_PASS cube + native 8-package build/install | T11 PASS; T10 ORIGINAL_NATIVE_L2_FAIL (RED4); ISOLATED_ARC_STRAIGHT_PASS | NOT_RUN |
 | G05 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 | G06 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 | G07 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
@@ -40,3 +40,5 @@
 - ARC RED3 actual 45932381041 / artifact 15169266117 ZIP+53 verified. ARM pass, real clockwise arc 670 samples, no active fault, settled XY39.44mm>30mm/yaw .00817rad, straight NOT_RUN. Inward cross drift ~31.88mm, tangent only controller. V2 bounded radial feedback/real trace proxy candidate; shutdown ACK timing receipt; original gates unchanged. [교육 보고서](reports/G04_T10_ARC_RED3_CROSS_TRACK_DEBUG_KO.md). Actual V2 pending.
 
 - ARC RED4 actual 45933266376 / artifact 15169796413 ZIP+53 verified: startup PASS, V2 arc settled XY20.15mm/yaw .00513rad PASS, straight actual pre-stop12.46mm→settled17.09mm FAIL >15mm. Post-stop lateral +6.58mm; measured body vy -2.92mm/s. V3 straight-only slip/stop compensation, arc unchanged. [교육 보고서](reports/G04_T10_ARC_RED4_STRAIGHT_SETTLE_DEBUG_KO.md). Actual V3 pending, original L2 remains FAIL.
+
+- ARC GREEN actual 45934040387 artifact 15169973234 ZIP+54 verified. V3 same model, actual arc19.898mm/.010083rad, straight12.266mm/.051915rad, 9/9 scoped checks, engine/3 children/residual PASS. First source timeout after stationary shutdown ACK278.660ms, no motion fault. Scoped open-area acceptance only; table-area/BT/rosbag/original native L2 not accepted. [교육용 인수 보고서](reports/G04_T10_ARC_GREEN_CLOSEOUT_KO.md).
