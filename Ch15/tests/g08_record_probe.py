@@ -71,7 +71,10 @@ def heartbeat_stable():
     a=stop_trace[-8:]
     return all(not x['stop'] for x in a) and all(0<b['wall_ns']-c['wall_ns']<=100_000_000 for c,b in zip(a,a[1:])) and a[-1]['wall_ns']-a[0]['wall_ns']>=300_000_000 and 0<=time.monotonic_ns()-a[-1]['wall_ns']<=100_000_000
 try:
-    assert not n.get_node_names_and_namespaces() or set(n.get_node_names())<= {'g05_record_probe'},'domain not empty'
+    graph_before=n.get_node_names_and_namespaces()
+    stage('preflight_graph')
+    (out/'preflight_graph.json').write_text(json.dumps(graph_before,indent=2)+'\n')
+    assert all(name==n.get_name() and namespace==n.get_namespace() for name,namespace in graph_before) and len(graph_before)<=1,('domain not empty',graph_before)
     spawn('recorder',['ros2','bag','record','--storage','mcap','--storage-config-file',str(ROOT/'config/mcap_storage.yaml'),'--max-bag-size',str(cfg['split_bytes']),'--qos-profile-overrides-path',str(ROOT/'config/g08_bag_qos.yaml'),'-o',str(out/'bag'),'--topics',*cfg['required']])
     until(lambda:'rosbag2_recorder' in n.get_node_names(),10)
     stage('recorder_ready')
