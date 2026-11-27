@@ -184,7 +184,15 @@ def main():
     grade=assess_basic(bt,nav,engine,recording_complete=bag_closed and bag_receipt.get('result')=='PASS',
         telemetry_joined=telemetry.get('joined') is True and telemetry.get('write_errors')==0,
         world_pass=world.get('result')=='PASS',manipulation_artifacts=not no_actions or any((out/n).exists() for n in ('arm_probe.json','pick_mission.json')))
-    grade.update(source='CH15_TABLE_V3_BT',original_native_l2_pass=False,world=world,bag_closed=bag_closed,actual_table_segment=nav['result'],
+    from table_engine_audit import audit_phases
+    try:
+        native_rows=[json.loads(line) for line in (out/'engine_observations.jsonl').read_text().splitlines()]
+        independent=audit_phases(native_rows,seg['phases'],seg['entry_goal'],seg['final_goal'],engine)
+    except BaseException:independent=dict(result='FAIL',error=traceback.format_exc())
+    (out/'independent_engine_audit.json').write_text(json.dumps(independent,indent=2)+'\n')
+    grade['original_basic_assessor_result']=grade['result']
+    if independent.get('result')!='PASS':grade['result']='FAIL'
+    grade.update(independent_engine_audit=independent.get('result'),source='CH15_TABLE_V3_BT',original_native_l2_pass=False,world=world,bag_closed=bag_closed,actual_table_segment=nav['result'],
         segment_checks=seg.get('checks',{}),mission_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     (out/'basic_result.json').write_text(json.dumps(grade,indent=2)+'\n');print(json.dumps(grade,indent=2),flush=True)
     return 0 if grade['result']=='PASS' else 1
