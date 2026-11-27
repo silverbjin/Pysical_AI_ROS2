@@ -1,7 +1,7 @@
 import sys, unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'python'))
-from clock_drift_analyzer import analyze
+from clock_drift_analyzer import analyze, rate, delta
 
 
 def rows(ppm=0,step=0,missing=False,gap=False,bracket=1000,sim=False):
@@ -38,6 +38,14 @@ class Drift(unittest.TestCase):
         with self.assertRaises(ValueError): analyze(list(reversed(rows())))
     def test_compound(self):
         a=analyze(rows(90962,step=2_940_000_000,gap=True)); self.assertEqual([e['kind'] for e in a['clocks']['realtime']['events']],['COVERAGE_GAP','FORWARD'])
+    def test_actual_f06_red_witness(self):
+        # Minimal anonymized intervals from verified F06; no absolute timestamps.
+        a={'m0':0,'m1':550,'value_ns':0}
+        b={'m0':9999989913,'m1':9999990096,'value_ns':10909609400}
+        self.assertAlmostEqual(rate(a,b)['midpoint_ppm'],90962,delta=2)
+        a={'m0':0,'m1':3850,'value_ns':0}
+        b={'m0':50053711,'m1':50057286,'value_ns':3014474671}
+        lo,hi=delta(a,b); self.assertGreater(lo,2_964_000_000); self.assertLess(hi,2_965_000_000)
     def test_empty(self):
         self.assertEqual(analyze([])['quality'],'INSUFFICIENT')
 
