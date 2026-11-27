@@ -62,7 +62,7 @@ function Get-Management {
         }
     }
     return @{domain=[bool]$cs.PartOfDomain; identity=$fields;
-      mdm_url=([regex]::IsMatch($ds.stdout,'(?im)^\s*MdmUrl\s*:\s*\S+')); enrollment=$enrolled;
+      mdm_url=([regex]::IsMatch($ds.stdout,'(?im)^[ \t]*MdmUrl[ \t]*:[ \t]*\S+')); enrollment=$enrolled;
       policy=(Test-Path 'HKLM:\SOFTWARE\Policies\Microsoft\W32Time');
       mdm_policy=(Test-Path 'HKLM:\SOFTWARE\Microsoft\PolicyManager\current\device\ADMX_W32Time')}
 }
@@ -132,11 +132,11 @@ function Same-Config($A,$B) {
     return ($A.start -eq $B.start -and $A.delayed -eq $B.delayed -and $A.type -ceq $B.type -and $A.peers -ceq $B.peers -and $A.ntp_enabled -eq $B.ntp_enabled)
 }
 function Start-Time {
-    Require-Ok (Native 'sc.exe' @('start','W32Time') 25 'start-service') 'START_FAILED'
+    if ((Get-Service W32Time).Status -ne 'Running') { Require-Ok (Native 'sc.exe' @('start','W32Time') 25 'start-service') 'START_FAILED' }
     (Get-Service W32Time).WaitForStatus('Running',[TimeSpan]::FromSeconds(20))
 }
 function Stop-Time {
-    Require-Ok (Native 'sc.exe' @('stop','W32Time') 25 'rollback-stop-service') 'STOP_FAILED'
+    if ((Get-Service W32Time).Status -ne 'Stopped') { Require-Ok (Native 'sc.exe' @('stop','W32Time') 25 'rollback-stop-service') 'STOP_FAILED' }
     (Get-Service W32Time).WaitForStatus('Stopped',[TimeSpan]::FromSeconds(20))
 }
 function Restore-State($Original) {
@@ -152,16 +152,17 @@ function Invoke-Repair($Original,$Mgmt) {
     Note 'PRECHECK_PASS_MEASURE_EXTERNAL_NTP'
     $before=@(Measure-Refs 'before')
     if(-not (Check-Offsets $before -ReachableOnly)){throw 'NTP_REFERENCE_UNAVAILABLE_NO_CHANGE'}
+    if ([Math]::Abs($before[0].median_s-$before[1].median_s) -gt .2 -or $before[0].max_abs_s -gt 30 -or $before[1].max_abs_s -gt 30) { throw 'REFERENCE_DISAGREEMENT_OR_LARGE_OFFSET_NO_CHANGE' }
     $q=Query-Time 'before'
     $healthy=($Original.state -eq 'Running' -and (Check-Source $q $Original) -and (Check-Offsets $before))
     if(-not $healthy){
+        $script:status.clock_correction_attempted=$true
         if($Original.state -eq 'Stopped'){
             $script:changed=$true
             Note 'START_EXISTING_W32TIME'
             Start-Time
         }
         Note 'RESYNC_EXISTING_NTP_SOURCE'
-        $script:status.clock_correction_attempted=$true
         Require-Ok (Native 'w32tm.exe' @('/resync','/rediscover') 60 'resync') 'RESYNC_FAILED'
     }else{Note 'ALREADY_SYNCHRONIZED_NO_RESYNC'}
     Note 'VERIFY_WINDOW_1'

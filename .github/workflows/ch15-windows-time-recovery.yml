@@ -26,6 +26,6 @@ jobs:
           (Get-FileHash Ch15/scripts/clock_diag_windows_recovery.ps1 -Algorithm SHA256).Hash.ToLowerInvariant()
           git fetch --no-tags --depth=1 origin a5d0999f1e0c7db4b29409b2eb825a2379c75310
           if ($LASTEXITCODE -ne 0) { throw 'BASE_FETCH_FAILED' }
-          $allowed=@('Ch15/scripts/clock_diag_windows_recovery.ps1','Ch15/tests/test_clock_windows_recovery.ps1','.github/workflows/ch15-windows-time-recovery.yml','Ch15/docs/reports/G09_R10_WINDOWS_TIME_RECOVERY_KO.md','Ch15/docs/CH15_ACCEPTANCE_LEDGER.md')
+          $allowed=@('Ch15/scripts/clock_diag_windows_recovery.ps1','Ch15/tests/test_clock_windows_recovery.ps1','.github/workflows/ch15-windows-time-recovery.yml','.github/workflows/ch15-clock-stability.yml','Ch15/docs/reports/G09_R10_WINDOWS_TIME_RECOVERY_KO.md','Ch15/docs/CH15_ACCEPTANCE_LEDGER.md')
           $bad=@(git diff --name-only FETCH_HEAD HEAD | Where-Object { $_ -notin $allowed })
           if ($LASTEXITCODE -ne 0 -or $bad.Count) { throw "SCOPE_FAIL $bad" }

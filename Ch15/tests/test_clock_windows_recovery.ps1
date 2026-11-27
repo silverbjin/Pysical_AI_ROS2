@@ -39,6 +39,10 @@ Restore-State $s;Assert ($script:fake.state -eq 'Stopped') 'rollback'
 $script:fake=$s.Clone();$script:changed=$false;$script:failPhase='before';$script:calls.Clear()
 Reject {Invoke-Repair $s $m} 'NTP_REFERENCE_UNAVAILABLE'
 Assert (-not $script:changed -and -not $script:calls.Contains('start')) 'no mutation when unreachable'
+$script:failPhase='';$good[1].median_s=1.0
+Reject {Invoke-Repair $s $m} 'REFERENCE_DISAGREEMENT_OR_LARGE_OFFSET'
+Assert (-not $script:changed) 'no mutation on reference disagreement'
+$good[1].median_s=-.02
 $script:failPhase='after-2';$script:status=@{result='INCOMPLETE';clock_correction_attempted=$false}
 Reject {Invoke-Repair $s $m} 'FINAL_SYNC_VERIFICATION_FAILED'
 Restore-State $s;Assert ($script:fake.state -eq 'Stopped') 'failure rollback'
