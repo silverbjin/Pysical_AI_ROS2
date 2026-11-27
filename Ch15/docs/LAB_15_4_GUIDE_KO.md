@@ -4,3 +4,5 @@
 2. `python3 Ch15/python/g05_lock.py Ch15`: 승인된 URL과 40자리 SHA를 비교한다. .repos import는 검증용 로컬 전용이며 mock은 외부 모델이 필요 없다. 실제 자산은 승인된 94개 closure만 prepare_assets.sh로 가져온다.
 3. ROS Jazzy 환경에서 `rosdep install --from-paths Ch15/ros2_ws/src --ignore-src --rosdistro jazzy -y`, 별도 workspace에서 colcon build/test. Python 의존성과 apt 의존성은 섞지 않는다. CI dpkg inventory로 확인한다.
 4. PR_TEMPLATE.md를 사용해 RED/GREEN과 검수 범위를 기록한다. G06 시각화 package는 설치 골격만 제공한다.
+
+5. 실제 [PR #207 CI 사례](reports/CI_DEBUG_CASE_STUDY_KO.md)를 읽고, sparse checkout과 import dependency가 일치하는지 검토한다.
