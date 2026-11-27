@@ -289,107 +289,9 @@ function Get-PollSnapshot([string]$Phase) {
     $qc=Native 'sc.exe' @('qc','W32Time') 15 ($Phase+'-qc')
     Require-Ok $tr 'TRIGGER_QUERY_FAILED'
     Require-Ok $qc 'SERVICE_CONFIG_QUERY_FAILED'
-    $peer=@($rows|Where-Object {$_.key -match '\\Parameters
-if((([int][bool]$VerifyOnly+[int][bool]$Approved+[int][bool]$PollChangeApproved) -ne 1) -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
-$principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'ELEVATED_POWERSHELL_REQUIRED'}
-$mutex=New-Object Threading.Mutex($false,'Global\Ch15WindowsTimeRecovery')
-$owned=$false
-try{
-    $owned=$mutex.WaitOne(0)
-    if(-not $owned){throw 'ANOTHER_RECOVERY_RUNNING'}
-    $script:root=Join-Path $OutputRoot ([Guid]::NewGuid().ToString('N'))
-    New-Item -ItemType Directory -Path $script:root -Force|Out-Null
-    $script:status=@{result='WINDOWS_TIME_INCOMPLETE';source_pin=$SourcePin;source_sha256=$SourceSha256;clock_correction_attempted=$false;rollback='NOT_NEEDED';owner_environment_acceptance=$false}
-    if($PollChangeApproved){
-        Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $script:root 'executed-source.ps1')
-        Save-Json 'source-receipt.json' @{pin=$SourcePin;sha256=$SourceSha256;poll_change_approved=$true;approved=$false;verify_only=$false}
-        Invoke-PollLifecycle
-        return
-    }
-    $original=$null
-    try{
-        Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $script:root 'executed-source.ps1')
-        Save-Json 'source-receipt.json' @{pin=$SourcePin;sha256=$SourceSha256;approved=[bool]$Approved;verify_only=[bool]$VerifyOnly}
-        $original=Get-State
-        $script:status.verify_only=[bool]$VerifyOnly
-        if($VerifyOnly){
-            Save-Json 'before-state.json' $original
-            Invoke-VerifyOnly $original
-        }else{
-            Write-Backup $original
-            Note "BACKUP_SAVED=$script:root"
-            $mgmt=Get-Management;Save-Json 'management.json' $mgmt
-            [void](Native 'wsl.exe' @('--list','--verbose') 20 'wsl-inventory')
-            Invoke-Repair $original $mgmt
-        }
-    }catch{
-        $script:status.error=$_.Exception.Message
-        Note ('RECOVERY_NOT_ACCEPTED '+$_.Exception.Message)
-    }finally{
-        if($script:status.result -ne 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED' -and $script:changed){
-            try{Restore-State $original;$script:status.rollback='VERIFIED'}
-            catch{$script:status.rollback='FAILED_OR_UNVERIFIED';$script:status.rollback_error=$_.Exception.Message}
-        }
-        try{Save-Json 'final-state.json' (Get-State)}catch{$script:status.final_state_error=$_.Exception.Message}
-        try{[void](Native 'sc.exe' @('qtriggerinfo','W32Time') 15 'service-triggers-after')}catch{}
-        try{Save-Json 'time-events.json' @(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='Microsoft-Windows-Time-Service'} -MaxEvents 30|Select-Object TimeCreated,Id,Message)}
-        catch{Save-Json 'time-events-error.json' @{error=$_.Exception.Message}}
-        Complete-Run
-    }
-}finally{
-    if($owned){$mutex.ReleaseMutex()}
-    $mutex.Dispose()
-}
- -and $_.name -eq 'NtpServer'})
+    $peer=@($rows|Where-Object {$_.key -match '\\Parameters$' -and $_.name -eq 'NtpServer'})
     if($peer.Count -ne 1 -or ($peer[0].value_json|ConvertFrom-Json) -cne $s.peers){throw 'PEER_SNAPSHOT_INCONSISTENT'}
-    $other=@($rows|Where-Object {-not ($_.key -match '\\Parameters
-if(($VerifyOnly -and $Approved) -or (-not $VerifyOnly -and -not $Approved) -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
-$principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'ELEVATED_POWERSHELL_REQUIRED'}
-$mutex=New-Object Threading.Mutex($false,'Global\Ch15WindowsTimeRecovery')
-$owned=$false
-try{
-    $owned=$mutex.WaitOne(0)
-    if(-not $owned){throw 'ANOTHER_RECOVERY_RUNNING'}
-    $script:root=Join-Path $OutputRoot ([Guid]::NewGuid().ToString('N'))
-    New-Item -ItemType Directory -Path $script:root -Force|Out-Null
-    $script:status=@{result='WINDOWS_TIME_INCOMPLETE';source_pin=$SourcePin;source_sha256=$SourceSha256;clock_correction_attempted=$false;rollback='NOT_NEEDED';owner_environment_acceptance=$false}
-    $original=$null
-    try{
-        Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $script:root 'executed-source.ps1')
-        Save-Json 'source-receipt.json' @{pin=$SourcePin;sha256=$SourceSha256;approved=[bool]$Approved;verify_only=[bool]$VerifyOnly}
-        $original=Get-State
-        $script:status.verify_only=[bool]$VerifyOnly
-        if($VerifyOnly){
-            Save-Json 'before-state.json' $original
-            Invoke-VerifyOnly $original
-        }else{
-            Write-Backup $original
-            Note "BACKUP_SAVED=$script:root"
-            $mgmt=Get-Management;Save-Json 'management.json' $mgmt
-            [void](Native 'wsl.exe' @('--list','--verbose') 20 'wsl-inventory')
-            Invoke-Repair $original $mgmt
-        }
-    }catch{
-        $script:status.error=$_.Exception.Message
-        Note ('RECOVERY_NOT_ACCEPTED '+$_.Exception.Message)
-    }finally{
-        if($script:status.result -ne 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED' -and $script:changed){
-            try{Restore-State $original;$script:status.rollback='VERIFIED'}
-            catch{$script:status.rollback='FAILED_OR_UNVERIFIED';$script:status.rollback_error=$_.Exception.Message}
-        }
-        try{Save-Json 'final-state.json' (Get-State)}catch{$script:status.final_state_error=$_.Exception.Message}
-        try{[void](Native 'sc.exe' @('qtriggerinfo','W32Time') 15 'service-triggers-after')}catch{}
-        try{Save-Json 'time-events.json' @(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='Microsoft-Windows-Time-Service'} -MaxEvents 30|Select-Object TimeCreated,Id,Message)}
-        catch{Save-Json 'time-events-error.json' @{error=$_.Exception.Message}}
-        Complete-Run
-    }
-}finally{
-    if($owned){$mutex.ReleaseMutex()}
-    $mutex.Dispose()
-}
- -and $_.name -eq 'NtpServer')})
+    $other=@($rows|Where-Object {-not ($_.key -match '\\Parameters$' -and $_.name -eq 'NtpServer')})
     $snap=@{state=$s;registry=$rows;other_json=(ConvertTo-Json -InputObject $other -Depth 10 -Compress);peer_kind=$peer[0].kind;trigger=$tr.stdout;qc=$qc.stdout}
     Save-Json ($Phase+'-snapshot.json') $snap
     return $snap
@@ -574,7 +476,7 @@ function Invoke-PollLifecycle {
     }
 }
 if($LibraryOnly){return}
-if(($VerifyOnly -and $Approved) -or (-not $VerifyOnly -and -not $Approved) -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
+if((([int][bool]$VerifyOnly+[int][bool]$Approved+[int][bool]$PollChangeApproved) -ne 1) -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
 $principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'ELEVATED_POWERSHELL_REQUIRED'}
 $mutex=New-Object Threading.Mutex($false,'Global\Ch15WindowsTimeRecovery')
@@ -585,6 +487,12 @@ try{
     $script:root=Join-Path $OutputRoot ([Guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $script:root -Force|Out-Null
     $script:status=@{result='WINDOWS_TIME_INCOMPLETE';source_pin=$SourcePin;source_sha256=$SourceSha256;clock_correction_attempted=$false;rollback='NOT_NEEDED';owner_environment_acceptance=$false}
+    if($PollChangeApproved){
+        Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $script:root 'executed-source.ps1')
+        Save-Json 'source-receipt.json' @{pin=$SourcePin;sha256=$SourceSha256;poll_change_approved=$true;approved=$false;verify_only=$false}
+        Invoke-PollLifecycle
+        return
+    }
     $original=$null
     try{
         Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $script:root 'executed-source.ps1')
