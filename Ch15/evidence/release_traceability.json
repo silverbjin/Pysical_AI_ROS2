@@ -1,0 +1,434 @@
+{
+  "schema": 1,
+  "code": {
+    "C01": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/mission_context.py",
+        "Ch15/evidence/g01_local_test_summary.json"
+      ],
+      "test": "T01",
+      "gates": "G01",
+      "note": "RobotState/MissionContext/ErrorCode"
+    },
+    "C02": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_simulation/models/red_cube/model.sdf",
+        "Ch15/ros2_ws/src/ch15_simulation/worlds/fetch_carry.sdf",
+        "Ch15/evidence/g04/t10_mission_green_receipt.json"
+      ],
+      "test": "T02,T11",
+      "gates": "G04",
+      "note": "cube geometry and actual RGB-D"
+    },
+    "C03": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_interfaces/action/PickObject.action",
+        "Ch15/evidence/g02_ci_receipt.json"
+      ],
+      "test": "T03",
+      "gates": "G02",
+      "note": "IDL, mock only"
+    },
+    "C04": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_interfaces/srv/SwitchGait.srv",
+        "Ch15/evidence/g02_ci_receipt.json"
+      ],
+      "test": "T03",
+      "gates": "G02",
+      "note": "request vs observed gait"
+    },
+    "C05": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_adapters/ch15_adapters/qos_profiles.py",
+        "Ch15/ros2_ws/src/ch15_adapters/ch15_adapters/qos_demo.py",
+        "Ch15/evidence/g02_ci_receipt.json"
+      ],
+      "test": "T04",
+      "gates": "G02",
+      "note": "separate String demo"
+    },
+    "C06": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_mission/launch/mission.launch.py",
+        "Ch15/ros2_ws/src/ch15_safety/ch15_safety/readiness_monitor.py",
+        "Ch15/evidence/g02_ci_receipt.json"
+      ],
+      "test": "T05",
+      "gates": "G02",
+      "note": "explicit start"
+    },
+    "C07": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/behaviours.py",
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/action_supervisor.py",
+        "Ch15/evidence/g03/receipt.json"
+      ],
+      "test": "T06",
+      "gates": "G03",
+      "note": "PickObjectBehaviour teaching leaf; runtime Task delegates supervisor"
+    },
+    "C08": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/blackboard_context.py",
+        "Ch15/evidence/g03/receipt.json"
+      ],
+      "test": "T07",
+      "gates": "G03",
+      "note": "typed immutable snapshot"
+    },
+    "C09": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/mission_tree.py",
+        "Ch15/docs/BT_TREE.mmd",
+        "Ch15/evidence/g03/receipt.json"
+      ],
+      "test": "T08",
+      "gates": "G03",
+      "note": "profile selector"
+    },
+    "C10": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/mission_tree.py",
+        "Ch15/ros2_ws/src/ch15_safety/ch15_safety/command_arbiter.py",
+        "Ch15/evidence/g03/receipt.json",
+        "Ch15/evidence/g08/final_receipt.json"
+      ],
+      "test": "T06,T08,T18",
+      "gates": "G03,G08",
+      "note": "deviation: safety sequence memory=False and external arbiter, not named Safe Navigation sequence; manuscript crosswalk"
+    },
+    "C11": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/mission_tree.py",
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/mission_executor.py",
+        "Ch15/evidence/g03/receipt.json"
+      ],
+      "test": "T08,T09",
+      "gates": "G03",
+      "note": "actual timers"
+    },
+    "C12": {
+      "paths": [
+        "Ch15/dependencies/quadruped_robot.repos",
+        "Ch15/dependencies/quadruped_robot.lock.repos",
+        "Ch15/evidence/g05/g05_final_receipt.json"
+      ],
+      "test": "T12",
+      "gates": "G05",
+      "note": "lock, no arbitrary import"
+    },
+    "C13": {
+      "paths": [
+        "Ch15/requirements/cpu.lock.txt",
+        "Ch15/requirements/joint.lock.txt",
+        "Ch15/ros2_ws/src/ch15_interfaces/package.xml",
+        "Ch15/ros2_ws/src/ch15_simulation/package.xml",
+        "Ch15/ros2_ws/src/ch15_visualization/package.xml",
+        "Ch15/evidence/g05/g05_final_receipt.json"
+      ],
+      "test": "T03,T12",
+      "gates": "G05",
+      "note": "ROS deps vs Python locks"
+    },
+    "C14": {
+      "paths": [
+        ".github/workflows/ch15-ci.yml",
+        ".github/workflows/ch15-g08-recovery.yml",
+        ".github/workflows/ch15-g09.yml",
+        "Ch15/evidence/g05/g05_final_receipt.json",
+        "Ch15/docs/reports/G09_RELEASE_QA_KO.md"
+      ],
+      "test": "T12,T20",
+      "gates": "G05,G09",
+      "note": "opt-in paths and failure evidence"
+    },
+    "C15": {
+      "paths": [
+        "Ch15/python/bag_to_csv.py",
+        "Ch15/evidence/g05/g05_final_receipt.json"
+      ],
+      "test": "T13,T14",
+      "gates": "G05",
+      "note": "demo vs typed"
+    },
+    "C16": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_visualization/ch15_visualization/detection_marker_node.py",
+        "Ch15/evidence/g06/final_receipt.json"
+      ],
+      "test": "T15",
+      "gates": "G06",
+      "note": "read-only original header and DELETE"
+    },
+    "C17": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_visualization/launch/visualization.launch.xml",
+        "Ch15/ros2_ws/src/ch15_visualization/rviz/debug.rviz",
+        "Ch15/ros2_ws/src/ch15_visualization/rviz/presentation.rviz",
+        "Ch15/evidence/g06/final_receipt.json"
+      ],
+      "test": "T15",
+      "gates": "G06",
+      "note": "installed share"
+    },
+    "C18": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_simulation/models/joint_lab.xml",
+        "Ch15/ros2_ws/src/ch15_simulation/models/joint_dynamics_example.urdf",
+        "Ch15/evidence/g07/final_receipt.json"
+      ],
+      "test": "T16",
+      "gates": "G07",
+      "note": "independent 1DOF"
+    },
+    "C19": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_simulation/ch15_simulation/joint_tuner.py",
+        "Ch15/python/pid_experiment.py",
+        "Ch15/evidence/g07/final_receipt.json"
+      ],
+      "test": "T16",
+      "gates": "G07",
+      "note": "parameter snapshot"
+    },
+    "C20": {
+      "paths": [
+        "Ch15/python/filter_experiment.py",
+        "Ch15/evidence/g07/final_receipt.json"
+      ],
+      "test": "T17",
+      "gates": "G07",
+      "note": "synthetic LPF"
+    },
+    "C21": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_safety/ch15_safety/sensor_watchdog.py",
+        "Ch15/evidence/g08/final_receipt.json"
+      ],
+      "test": "T18",
+      "gates": "G08",
+      "note": "scan/tick actual methods correspond to scan_callback/check_health"
+    },
+    "C22": {
+      "paths": [
+        "Ch15/config/nav2_behaviors_example.yaml",
+        "Ch15/evidence/g08/final_receipt.json"
+      ],
+      "test": "T19",
+      "gates": "G08",
+      "note": "installed plugin audit, no motion"
+    },
+    "C23": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/recovery.py",
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/recovery_executor.py",
+        "Ch15/evidence/g08/final_receipt.json"
+      ],
+      "test": "T19",
+      "gates": "G08",
+      "note": "original objective verification"
+    },
+    "C24": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/recovery.py",
+        "Ch15/ros2_ws/src/ch15_mission/ch15_mission/recovery_executor.py",
+        "Ch15/evidence/g08/final_receipt.json"
+      ],
+      "test": "T19",
+      "gates": "G08",
+      "note": "deviation: explicit RetryBudget instead of stock Retry decorator; preparation+terminal counted"
+    }
+  },
+  "cli": {
+    "CLI01": {
+      "paths": [
+        "Ch15/scripts/prepare_assets.sh",
+        "Ch15/evidence/g05/g05_final_receipt.json"
+      ],
+      "note": "vcs lock/approved bytes"
+    },
+    "CLI02": {
+      "paths": [
+        "Ch15/scripts/g05_git_lab.sh",
+        "Ch15/evidence/g05/g05_final_receipt.json"
+      ],
+      "note": "isolated Git conflict"
+    },
+    "CLI03": {
+      "paths": [
+        "Ch15/scripts/g05_git_lab.sh",
+        "Ch15/evidence/g05/g05_final_receipt.json"
+      ],
+      "note": "LFS synthetic fixture"
+    },
+    "CLI04": {
+      "paths": [
+        "Ch15/scripts/preflight.sh",
+        "Ch15/evidence/g05/g05_final_receipt.json"
+      ],
+      "note": "rosdep via build owner path"
+    },
+    "CLI05": {
+      "paths": [
+        "Ch15/scripts/record_mission.sh",
+        "Ch15/evidence/g05/g05_final_receipt.json"
+      ],
+      "note": "MCAP"
+    },
+    "CLI06": {
+      "paths": [
+        "Ch15/scripts/replay_mission.sh",
+        "Ch15/evidence/g05/g05_final_receipt.json"
+      ],
+      "note": "isolated replay"
+    },
+    "CLI07": {
+      "paths": [
+        "Ch15/ros2_ws/src/ch15_simulation/ch15_simulation/joint_tuner.py",
+        "Ch15/evidence/g07/final_receipt.json"
+      ],
+      "note": "idle parameter snapshot"
+    }
+  },
+  "exercises": {
+    "Q1": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "ICD layers"
+    },
+    "Q2": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "BT PressButton mock design"
+    },
+    "Q3": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "QoS mismatch"
+    },
+    "Q4": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "FMEA"
+    },
+    "Q5": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "32GB data design only"
+    },
+    "Q6": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "response tuning"
+    },
+    "Q7": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "BT extension mock"
+    },
+    "Q8": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "contact marker provenance"
+    },
+    "Q9": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "sole arbiter"
+    },
+    "Q10": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "fixed policy evaluation design"
+    },
+    "Q11": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "mechanical work/cycle"
+    },
+    "Q12": {
+      "paths": [
+        "Ch15/docs/EXERCISE_GUIDE_KO.md"
+      ],
+      "note": "architecture elevator design only"
+    }
+  },
+  "guides": {
+    "15.1": {
+      "paths": [
+        "Ch15/docs/LAB_15_1_GUIDE_KO.md",
+        "Ch15/scripts/run_lab.sh"
+      ],
+      "note": "canonical route in guide"
+    },
+    "15.2": {
+      "paths": [
+        "Ch15/docs/LAB_15_2_GUIDE_KO.md",
+        "Ch15/scripts/run_lab.sh"
+      ],
+      "note": "canonical route in guide"
+    },
+    "15.3": {
+      "paths": [
+        "Ch15/docs/LAB_15_3_GUIDE_KO.md",
+        "Ch15/scripts/run_lab.sh"
+      ],
+      "note": "canonical route in guide"
+    },
+    "15.4": {
+      "paths": [
+        "Ch15/docs/LAB_15_4_GUIDE_KO.md",
+        "Ch15/scripts/run_lab.sh"
+      ],
+      "note": "canonical route in guide"
+    },
+    "15.5": {
+      "paths": [
+        "Ch15/docs/LAB_15_5_GUIDE_KO.md",
+        "Ch15/scripts/run_lab.sh"
+      ],
+      "note": "canonical route in guide"
+    },
+    "15.6": {
+      "paths": [
+        "Ch15/docs/LAB_15_6_GUIDE_KO.md",
+        "Ch15/scripts/run_lab.sh"
+      ],
+      "note": "canonical route in guide"
+    },
+    "15.7": {
+      "paths": [
+        "Ch15/docs/LAB_15_7_GUIDE_KO.md",
+        "Ch15/scripts/run_lab.sh"
+      ],
+      "note": "canonical route in guide"
+    },
+    "15.8": {
+      "paths": [
+        "Ch15/docs/LAB_15_8_GUIDE_KO.md",
+        "Ch15/scripts/run_lab.sh"
+      ],
+      "note": "canonical route in guide"
+    },
+    "15.9": {
+      "paths": [
+        "Ch15/docs/LAB_15_9_GUIDE_KO.md",
+        "Ch15/scripts/run_lab.sh"
+      ],
+      "note": "canonical route in guide"
+    }
+  },
+  "scope": "mapped does not mean physical/L3 acceptance"
+}

@@ -16,3 +16,7 @@ ros2 launch ch15_visualization visualization.launch.xml mode:=replay gui:=true u
 별도 replay domain 내에서 시작 후 관측 전용 playback을 사용한다. G05 엄격 graph 전용 probe와 동시 실행하지 말고 별도 시연으로 수행한다. G05 기록/격리 검수는 그대로 재사용.
 
 검수 근거: [G06 최종 인수 보고서](reports/G06_FINAL_ACCEPTANCE_KO.md). PHYSICAL 표시는 실제 T11 타입과 계약을 사용하는 fixture로 검증한 것이며, 새 Gazebo 물리 실행 성공을 의미하지 않습니다.
+
+## G09 공통 실행 경로
+Ch15 루트, `CH15_SOURCE_SHA`를 실제 고정 HEAD로 설정하고 `bash scripts/run_lab.sh 15.6 --bag /absolute/mission_bag` 실행. 상세 선행 환경과 evidence archive는 [15.9](LAB_15_9_GUIDE_KO.md) 참조. 문서 조회와 실제 실행을 구분한다.
+GUI는 별도 WSLg 설치 overlay에서 위 수동 명령으로 사용. 공통 headless marker 검수와 G05 replay 검수는 분리; --gui는 자동 인수 경로에서 BLOCKED.

@@ -17,3 +17,6 @@ export MUJOCO_GL=disable MPLBACKEND=Agg
 A underdamped / B tuned / C overdamped. 4초/200Hz 실제 800스텝, 관절 ±2rad, torque ±60Nm. CSV에는 요청/clip/적용/실제 actuator torque 및 제어 계산 ns가 분리된다. B의 기준은 overshoot≤5%, 마지막 .5s 오차≤.02rad, A 대비 RMSE·overshoot 개선. Rise/settling 미도달 null. 강건성은 B CSV 재사용 후 inertia+10%, damping 반감, 20ms 명령 지연 각각 1조건. URDF friction과 MJCF frictionloss는 물리 엔진별 해석 차이를 설명한다. LPF는 seed15의 합성 데이터이고 실제 센서 노이즈를 의미하지 않는다. 강건 보행/학습/실제 전력에 대한 결론을 내리지 않는다. GUI는 별도 사용자 시각 검수.
 
 실제 검수: [G07 최종 보고서](reports/G07_FINAL_ACCEPTANCE_KO.md), [receipt](../evidence/g07/final_receipt.json). WSL2 사용자 실행은 별도 L3 NOT_RUN.
+
+## G09 공통 실행 경로
+Ch15 루트, `CH15_SOURCE_SHA`를 실제 고정 HEAD로 설정하고 `bash scripts/run_lab.sh 15.7 --profile joint` 실행. 상세 선행 환경과 evidence archive는 [15.9](LAB_15_9_GUIDE_KO.md) 참조. 문서 조회와 실제 실행을 구분한다.

@@ -47,3 +47,6 @@ metadata.yaml/topic counts → executor/mission-events.jsonl → analysis/events
 
 ## 6. 실제 CI 및 보고서
 V7 record3/3 run45949623564, V9 replay run45950671176. [최종 인수 보고서](reports/G05_FINAL_ACCEPTANCE_KO.md), [독립 진단 보고서](reports/G05_SCAN_DIAGNOSTIC_RESULT_KO.md). CI 재현 full opt-in [RUN G05], replay-only [RUN G05 REPLAY]는 V7 timing/fault receipts 재사용을 전제로 하는 검수 유지보수용.
+
+## G09 공통 실행 경로
+Ch15 루트, `CH15_SOURCE_SHA`를 실제 고정 HEAD로 설정하고 `bash scripts/run_lab.sh 15.5 --bag /absolute/mission_bag` 실행. 상세 선행 환경과 evidence archive는 [15.9](LAB_15_9_GUIDE_KO.md) 참조. 문서 조회와 실제 실행을 구분한다.

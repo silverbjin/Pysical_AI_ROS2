@@ -1,0 +1,4 @@
+# G09 WSL2 사용자 인수 준비 (후보)
+실제 인수 PIN 및 bootstrap SHA256은 최종 CI 결과 확인 후 안내한다. WSL2 Ubuntu24.04 amd64, Python3, Git, curl, Docker Desktop WSL integration 또는 Docker Engine (실행 확인 docker info), 가용 CPU≥4, 충분한 디스크. Docker image digest 고정; 필요한 apt/pip은 격리 컨테이너에서만 설치. GitHub GHCR 접근 필요하면 사용자의 인증을 활용, 비밀번호/토큰 로그 금지.
+native physical_basic: 별도의 clean Ch13 checkout pinned main 1931cac92585fc155357880b584c72c76d67257c, 승인된 94개 실제 자산 및 shared lock, Ch13 검증 venv/build 필요. CH15_NATIVE_ROOT, CH15_ASSET_APPROVAL, CH13_REUSE_BUILD, CH13_REUSE_VENV 절대 경로, --acknowledge-assets. 기존 환경 변경 금지, Ch13 실제 setup guide 참조. 부족하면 BLOCKED exit2, all에서 숨기지 않음.
+각 실행은 run-local archive, SHA256/내부 manifest 확인. exit0 scoped pass/1 fail/2 blocked/130 canceled. Raw MCAP·자산은 사용자 로컬 보존, 공개 배포 금지. 사용자 archive 검토 전 L3 NOT_RUN, main merge HOLD.

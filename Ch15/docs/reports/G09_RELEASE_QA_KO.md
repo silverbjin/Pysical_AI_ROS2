@@ -1,0 +1,2 @@
+# G09 T20 QA — V1 후보
+G08 scoped PASS 기준 cc7ba2e42cbaab8beb3fec87e62beb50e29f2e92. 실제 G01~G07 tags 확인. 신규 canonical bootstrap/verify/run_lab, strict archive verifier, profile dispatcher, Docker isolated runtime and native G04 exact delegation. C01–24/CLI01–07/Q1–12/guides9 traceability. C10/C24/Watchdog 시그니처 차이를 명시. CI run pending. Native physical successful underlying G04 V6 run reused; new wrapper actual success not yet verified. GUI explicit BLOCKED in wrapper, manual WSLg separate. No main merge, L3 NOT_RUN.

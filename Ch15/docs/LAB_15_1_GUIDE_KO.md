@@ -14,4 +14,7 @@ mission_context.py에서 mark_ready 전 advance를 거절하며 terminal 이후 
 ## 과제
 정상 및 F01에서 테스트 PASS와 미션 결과의 차이를 설명하고, 큐브 크기 변경 시 관성·접촉 초기 조건을 계산한다. 원본 월드를 수정하여 검수를 우회하지 않는다.
 ## 제출
-실제 unittest 출력, 프로파일 비교표, 물리 성공을 주장하지 않는 보고서. 현재 T02 native SDF validator 및 G04 actual sensor는 NOT_RUN.
+실제 unittest 출력, 프로파일 비교표, 물리 성공을 주장하지 않는 보고서. G04 T11 actual RGB-D PASS; G01 정적 시험과 구분.
+
+## G09 공통 실행 경로
+Ch15 루트, `CH15_SOURCE_SHA`를 실제 고정 HEAD로 설정하고 `bash scripts/run_lab.sh 15.1 --profile mock` 실행. 상세 선행 환경과 evidence archive는 [15.9](LAB_15_9_GUIDE_KO.md) 참조. 문서 조회와 실제 실행을 구분한다.

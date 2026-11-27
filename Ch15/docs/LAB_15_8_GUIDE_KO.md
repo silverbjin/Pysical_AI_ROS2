@@ -30,3 +30,6 @@ python3 Ch15/python/stage_g08_receipts.py "$OUT" "$OUT-public"
 ## 원리
 F03 탐색1 실패 → 정착 및 fresh target → 탐색2 성공 → 원래 업무 leaf 전부 성공. persistent 3번 실패는 ABORTED. F04는 APPROACHING wrong epoch/stale을 거절하고 Pick Goal0. F06은 ABORTED exact UUID terminal 이후 새로운 관측 및 정착을 확인한 뒤 다음 Goal; 3회 실패 ABORTED. recovery 자체 성공이 원 업무 완료가 아니다. 준비 실패도 3회 예산 포함. 안전 latch 상태에서 신규 Goal 금지; reset 우회 없음. C24 예제의 py_trees Retry와 달리 실제 executor는 RetryBudget으로 준비/Goal/terminal을 명시적으로 관리한다. G09에서 본문 코드와 API 대응 검수.
 F01은 actual Mock command 차단과 UUID 회수; source stamp 만료 및 paused clock receipt 감시를 분리한다. Zero Twist는 실물 정지 증거가 아니다. Nav2 behavior example YAML은 설치 plugin declaration/library audit만, Spin/BackUp 실제 실행 금지. FMEA/최종 인수 보고서 및 receipt를 함께 읽는다.
+
+## G09 공통 실행 경로
+Ch15 루트, `CH15_SOURCE_SHA`를 실제 고정 HEAD로 설정하고 `bash scripts/run_lab.sh 15.8 --profile mock --scenario F01` 실행. 상세 선행 환경과 evidence archive는 [15.9](LAB_15_9_GUIDE_KO.md) 참조. 문서 조회와 실제 실행을 구분한다.
