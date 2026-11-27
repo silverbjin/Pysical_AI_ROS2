@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "profile": "mock",
+  "physical_fault": "BLOCKED_PHYSICAL_FAULT",
+  "fixtures": [
+    {
+      "fault_id": "F01",
+      "profile": "mock",
+      "trigger": {
+        "phase": "NAVIGATING",
+        "kind": "scan_receipt_loss"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "ABORTED",
+      "required_witness": [
+        "last_scan_receipt",
+        "guard",
+        "zero",
+        "uuid_terminal"
+      ],
+      "retry_budget": 0
+    },
+    {
+      "fault_id": "F02",
+      "profile": "mock",
+      "trigger": {
+        "phase": "NAVIGATING",
+        "kind": "obstacle_fixture"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "BLOCK_OR_REPLAN",
+      "required_witness": [
+        "blocked",
+        "replan_requested"
+      ],
+      "retry_budget": 0
+    },
+    {
+      "fault_id": "F03",
+      "profile": "mock",
+      "trigger": {
+        "phase": "SEARCHING",
+        "kind": "target_missing"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "COMPLETED_OR_ABORTED",
+      "required_witness": [
+        "attempt",
+        "fresh_target",
+        "original_task_verified"
+      ],
+      "retry_budget": 3
+    },
+    {
+      "fault_id": "F04",
+      "profile": "mock",
+      "trigger": {
+        "phase": "APPROACHING",
+        "kind": "stale_or_wrong_epoch_target"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "ABORTED",
+      "required_witness": [
+        "invalid_target",
+        "pick_goals_zero"
+      ],
+      "retry_budget": 0
+    },
+    {
+      "fault_id": "F05",
+      "profile": "mock",
+      "trigger": {
+        "phase": "MANIPULATING",
+        "kind": "ik_unavailable"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "BLOCKED",
+      "required_witness": [
+        "new_goal_zero"
+      ],
+      "retry_budget": 0
+    },
+    {
+      "fault_id": "F06",
+      "profile": "mock",
+      "trigger": {
+        "phase": "MANIPULATING",
+        "kind": "pick_aborted_false"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "ABORTED",
+      "required_witness": [
+        "uuid_terminal",
+        "fresh_after_settle",
+        "attempt"
+      ],
+      "retry_budget": 3
+    },
+    {
+      "fault_id": "F07",
+      "profile": "mock",
+      "trigger": {
+        "phase": "NAVIGATING",
+        "kind": "stop_heartbeat_loss"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "LATCHED",
+      "required_witness": [
+        "last_heartbeat",
+        "blocked",
+        "zero",
+        "no_resume"
+      ],
+      "retry_budget": 0
+    },
+    {
+      "fault_id": "F08",
+      "profile": "mock",
+      "trigger": {
+        "phase": "ANY_ACTIVE",
+        "kind": "invalid_tilt_or_height"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "BLOCKED",
+      "required_witness": [
+        "hold",
+        "self_righting_zero"
+      ],
+      "retry_budget": 0
+    },
+    {
+      "fault_id": "F09",
+      "profile": "mock",
+      "trigger": {
+        "phase": "ANY_ACTIVE",
+        "kind": "virtual_battery_below20"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "ABORTED",
+      "required_witness": [
+        "blocked",
+        "automatic_rth_zero"
+      ],
+      "retry_budget": 0
+    },
+    {
+      "fault_id": "F10",
+      "profile": "mock",
+      "trigger": {
+        "phase": "ANY_ACTIVE",
+        "kind": "clock_pause_or_rewind"
+      },
+      "seed": 15,
+      "expected_mission_terminal": "BLOCKED",
+      "required_witness": [
+        "invalid_epoch",
+        "steady_watchdog",
+        "no_resume"
+      ],
+      "retry_budget": 0
+    }
+  ]
+}
