@@ -128,7 +128,7 @@ assert r['source']=='CH15_TABLE_V3_BT' and r['result']=='PASS'
 assert len(r['checks'])==10 and all(r['checks'].values())
 assert r['original_native_l2_pass'] is False and r['full_mission_success'] is False
 assert r['actual_table_segment']=='PASS' and all(r['segment_checks'].values())
-assert r['original_basic_assessor_result']=='PASS' and r['independent_engine_audit']=='PASS' and r['session_contract'] is True
+assert r['original_basic_assessor_result']=='PASS' and r['independent_engine_audit']=='PASS' and r['session_contract'] is True and r['exact_goal_trace'] is True
 print('CH15_TABLE_BASIC_L2_PASS_10_OF_10')
 PY
   phase=COMPLETE

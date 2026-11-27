@@ -24,3 +24,16 @@ def goal_audit(rows):
     if any(r.get('terminal') not in (4,5,6) for r in rows if 'terminal' in r):errors.append('invalid terminal')
     return dict(terminals=[r['terminal'] for r in rows if 'terminal' in r],
                 errors=errors,pending=sum('terminal' not in r for r in rows),rows=rows)
+
+def goal_trace_matches(audit,phases):
+    """Exactly two actual Nav2 UUIDs must match the physical phase evidence."""
+    try:
+        expected=[{'goal_id':p['goal_id'],'terminal':4} for p in phases[:2]]
+        return (len(phases)==4 and [p['phase'] for p in phases]==['survey_setup','entry_travel','clockwise_arc','straight']
+            and all(p.get('terminal')==4 and p.get('settled') is True for p in phases[:2])
+            and all(p.get('ready') is True for p in phases[2:])
+            and all(len(x['goal_id'])==32 and int(x['goal_id'],16)>=0 for x in expected)
+            and expected[0]['goal_id']!=expected[1]['goal_id']
+            and audit['pending']==0 and audit['errors']==[] and audit['terminals']==[4,4]
+            and audit['rows']==expected)
+    except (KeyError,TypeError,ValueError,IndexError):return False

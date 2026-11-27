@@ -2,7 +2,7 @@
 """Opt-in Ch15 basic BT/MCAP integration; original physical guards and assessor."""
 import argparse,collections,hashlib,json,signal,subprocess,sys,threading,time,traceback
 from pathlib import Path
-from table_l2_contract import TOPICS,N,bag_checks,goal_audit
+from table_l2_contract import TOPICS,N,bag_checks,goal_audit,goal_trace_matches
 
 def audit_bag(path,discovered):
     import yaml,rosbag2_py
@@ -200,7 +200,8 @@ def main():
     grade['original_basic_assessor_result']=grade['result']
     session_ok=bool(bridge.session and seg.get('mission_session')==bridge.session==manipulation.get('last_status',{}).get('session') and all(data['completed'].get(k,{}).get('session')==bridge.session for k in ('navigate','find','finish')))
     grade['session_contract']=session_ok
-    if independent.get('result')!='PASS' or not session_ok:grade['result']='FAIL'
+    grade['exact_goal_trace']=goal_trace_matches(bt['goals'],seg.get('phases',[]))
+    if independent.get('result')!='PASS' or not session_ok or not grade['exact_goal_trace']:grade['result']='FAIL'
     grade.update(independent_engine_audit=independent.get('result'),source='CH15_TABLE_V3_BT',original_native_l2_pass=False,world=world,bag_closed=bag_closed,actual_table_segment=nav['result'],
         segment_checks=seg.get('checks',{}),mission_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     (out/'basic_result.json').write_text(json.dumps(grade,indent=2)+'\n');print(json.dumps(grade,indent=2),flush=True)
