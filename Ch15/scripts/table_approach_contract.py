@@ -20,13 +20,18 @@ def segment(a,b):
     return [(a[0]+(b[0]-a[0])*i/n,a[1]+(b[1]-a[1])*i/n,wrap(a[2]+h*i/n)) for i in range(n+1)]
 
 
-def route(start,goal):
+def route(start,goal,arc_bias_m=0.):
     if len(start)!=3 or not all(math.isfinite(v) for v in start):raise ValueError('invalid start')
-    e=entry_for(goal);b=math.atan2(e[1]-start[1],e[0]-start[0])
+    if not math.isfinite(arc_bias_m) or not 0<=arc_bias_m<=.025:raise ValueError('invalid arc bias')
+    reference=entry_for(goal)
+    # Translate only the approach arc along the final heading left normal.
+    # The straight controller and final gate retain the original goal frame.
+    e=(reference[0]-arc_bias_m*math.sin(goal[2]),reference[1]+arc_bias_m*math.cos(goal[2]),reference[2])
+    b=math.atan2(e[1]-start[1],e[0]-start[0])
     if math.dist(start[:2],e[:2])<.1 or abs(wrap(b-e[2]))>.04:raise ValueError('entry tangent mismatch')
     n=max(math.ceil(RADIUS*ANGLE/.005),math.ceil(ANGLE/math.radians(1)))
     arc=[world((*arc_point(ANGLE*i/n),-ANGLE*i/n),e) for i in range(n+1)]
-    return {'entry':e,'initial_turn':segment(start,(*start[:2],b)),
+    return {'entry':e,'straight_reference_entry':reference,'arc_bias_m':arc_bias_m,'initial_turn':segment(start,(*start[:2],b)),
             'travel':segment((*start[:2],b),e),'arc':arc,'straight':segment(arc[-1],goal)}
 
 

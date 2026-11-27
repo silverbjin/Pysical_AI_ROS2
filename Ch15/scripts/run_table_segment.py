@@ -3,8 +3,8 @@
 Actual survey, explicit entry path, V3 arc and straight. No BT acceptance in this runner."""
 import argparse, hashlib, json, math, os, re, signal, subprocess, sys, time, traceback
 from pathlib import Path
-from table_approach_contract import route,entry_ready,Handoff
-from arc_straight_profile import local,arc_command,arc_ready,straight_command,final_ready,wrap
+from table_approach_contract import route,entry_ready,Handoff,world
+from arc_straight_profile import local,arc_command,arc_ready,straight_command,final_ready,wrap,final_target
 from concurrent.futures import ThreadPoolExecutor
 from table_visibility_gate import VisibilityGate,project
 from startup_window import StartupWindow
@@ -41,7 +41,7 @@ def main(argv=None,mission=None):
     from vision_mission import select_goal,wait_new_capture,current_q
     from run_r2_probe import service_call
     import numpy as np
-    S=dict(source='CH15_TABLE_V3_SEGMENT_V4',scope='actual table approach only; original native L2 and BT not claimed',
+    S=dict(source='CH15_TABLE_V3_SEGMENT_V5',scope='actual table approach only; original native L2 and BT not claimed',
            result='FAIL',full_mission_success=False,original_native_l2_pass=False,phases=[],checks={})
     launch=node=log=None;active=None;clients={};armed=False;phase='startup'
     clock=0;state=joints=grid=observation=local_grid=None;safe_stamp=0;safe_wall=0.;safe_zero=False;statuses={};rows=[];last_state_wall=0.;plans=[]
@@ -342,7 +342,13 @@ def main(argv=None,mission=None):
         assert np.linalg.norm(delta)<.03,'target changed'
         target=[target[0]+float(delta[0]),target[1]+float(delta[1]),target[2]]
         source_point=np.array(obs['point']);S['final_goal']=target
-        path=route(pose(),target);entry=path['entry'];S['entry_goal']=entry
+        # Measured table-arc lateral bias was 21.714/20.890mm in two
+        # actual runs. Shift the approach only, not the observed final goal.
+        path=route(pose(),target,arc_bias_m=.020);entry=path['entry'];S['entry_goal']=entry
+        straight_entry=path['straight_reference_entry'];S['straight_reference_entry']=straight_entry
+        fixed_goal=world(final_target(),straight_entry)
+        S['checks']['fixed_absolute_goal']=math.dist(fixed_goal[:2],target[:2])<=1e-9 and abs(wrap(fixed_goal[2]-target[2]))<=1e-9
+        assert S['checks']['fixed_absolute_goal']
         (out/'fixed_world_route.json').write_text(json.dumps(path,indent=2)+'\n')
         # Pinned static map, original filled rectangle + 50mm candidate
         # tracking envelope. This is not a replacement for live costmap.
@@ -363,7 +369,7 @@ def main(argv=None,mission=None):
         handoff.switch(goal_terminal=S['phases'][-1]['terminal'],goal_active=active is not None,stationary=snapshot()['platform'].get('stationary_ready'),boundary_phase=snapshot()['boundary'].get('phase'),entry_ok=S['checks']['entry_pose'],chain_ok=counts_ok(),fault=fault())
         S['handoff']={'owner':handoff.owner,'clock_ns':clock,'nav2_terminal_uuid':S['phases'][-1]['goal_id'],'entry_pose':pose()};write()
         custom_phase('clockwise_arc',arc_command,arc_ready,25,entry,source_point)
-        custom_phase('straight',straight_command,final_ready,15,entry,source_point)
+        custom_phase('straight',straight_command,final_ready,15,straight_entry,source_point)
         S['final_xy_error_m']=math.dist(pose()[:2],target[:2]);S['final_yaw_error_rad']=abs(wrap(pose()[2]-target[2]))
         S['checks']['absolute_final_pose']=S['final_xy_error_m']<=.015 and S['final_yaw_error_rad']<=.06
         assert S['checks']['absolute_final_pose']
