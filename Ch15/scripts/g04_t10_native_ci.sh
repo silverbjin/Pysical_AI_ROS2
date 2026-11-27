@@ -117,6 +117,24 @@ phase=ASSET_MATERIALIZATION
 # No historical audit repetition and no asset upload.
 python3 /work/feature/Ch15/scripts/prepare_native_assets.py --target /work/upstream-iit-locomanipulation-d010212 --receipt "$e/asset-verification.json" > "$e/acquisition.log"
 touch /work/ch13_reuse_engine.lock
+if [[ "${1:-}" == --table-segment ]]; then
+  phase=TABLE_SEGMENT
+  export CMAKE_BUILD_PARALLEL_LEVEL=2
+  bash /work/feature/Ch15/scripts/run_table_segment.sh /work/native /work/feature/Ch15/dependencies/native_local_use_approval.json "$e/case"
+  python3 - "$e/case/native/segment_result.json" <<'PY'
+import json,sys
+r=json.load(open(sys.argv[1]))
+assert r['source']=='CH15_TABLE_V3_SEGMENT_V1' and r['result']=='PASS_SCOPED_TABLE_SEGMENT'
+assert not r['original_native_l2_pass'] and not r['full_mission_success']
+assert len(r['phases'])==4 and all(r['checks'].values())
+assert all(p['terminal']==4 and p['settled'] for p in r['phases'][:2])
+assert all(p['ready'] for p in r['phases'][2:])
+assert r['handoff']['owner']=='V3' and r['mux']['nav2_packets']>0 and r['mux']['v3_packets']>0
+print('CH15_TABLE_SEGMENT_PASS')
+PY
+  phase=COMPLETE
+  exit 0
+fi
 if [[ "${1:-}" == --arc-straight ]]; then
   phase=ISOLATED_ARC_STRAIGHT
   export CMAKE_BUILD_PARALLEL_LEVEL=2

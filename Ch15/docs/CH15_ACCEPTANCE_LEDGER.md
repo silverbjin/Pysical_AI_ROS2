@@ -44,3 +44,5 @@
 - ARC GREEN actual 45934040387 artifact 15169973234 ZIP+54 verified. V3 same model, actual arc19.898mm/.010083rad, straight12.266mm/.051915rad, 9/9 scoped checks, engine/3 children/residual PASS. First source timeout after stationary shutdown ACK278.660ms, no motion fault. Scoped open-area acceptance only; table-area/BT/rosbag/original native L2 not accepted. [교육용 인수 보고서](reports/G04_T10_ARC_GREEN_CLOSEOUT_KO.md).
 
 - Fixed-world table preintegration: local pure 5/5, verified archived geometry 2/2 (59+58 file hashes), min .175437/.175447m vs .127264m; absolute goal preserved, one-way handoff state contract only. Actual table ROS runner NOT_IMPLEMENTED/NOT_RUN, original L2 FAIL unchanged. [교육 보고서](reports/G04_T10_TABLE_FIXED_WORLD_CONTRACT_KO.md).
+
+- Actual table segment V1 candidate: Ch15 launch, single mux before original smoother/boundary/gateway, explicit entry FollowPath then absolute-frame V3, static expanded footprint and live local costmap checks, no raw/safe bypass. Actual validation pending; original L2 FAIL. [교육 보고서](reports/G04_T10_TABLE_SEGMENT_V1_KO.md).
