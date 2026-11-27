@@ -1,0 +1,39 @@
+name: Ch15 G09 R04 clock failure evidence classification
+on:
+  pull_request:
+    branches: [main]
+    paths: ['Ch15/python/clock_failure_classifier.py','Ch15/tests/test_g09_clock_classification.py','.github/workflows/ch15-g09-clock-classification.yml']
+permissions:
+  contents: read
+jobs:
+  classify:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.title, '[RUN G09 CLASSIFY]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: Ch15
+          persist-credentials: false
+          lfs: false
+      - name: Actual pure classification and archive contract
+        run: |
+          set -euo pipefail
+          mkdir -p classification-evidence
+          git rev-parse HEAD > classification-evidence/source-sha.txt
+          git hash-object Ch15/python/clock_failure_classifier.py > classification-evidence/classifier-blob.txt
+          test "$(cat classification-evidence/classifier-blob.txt)" = af97def23061013bda0456c4c70c0fb5a762d4b4
+          python3 -m unittest discover -s Ch15/tests -p test_g09_clock_classification.py -v 2>&1 | tee classification-evidence/contracts.log
+          python3 -m unittest discover -s Ch15/tests -p test_g09_clock_diag.py -v 2>&1 | tee classification-evidence/clock-contracts.log
+      - name: Hash receipts
+        if: always()
+        run: |
+          cd classification-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-g09-r04-classifier
+          path: classification-evidence/
+          retention-days: 30

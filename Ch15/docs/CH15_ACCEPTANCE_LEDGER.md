@@ -120,3 +120,5 @@
 - R03 controlled ROS /clock forward/rewind candidate (original safety runtime unchanged). Actual DDS regression pending; no system time write, no physical motion. [Candidate](reports/G09_R03_CLOCK_GUARD_CANDIDATE_KO.md).
 
 - R03 actual controlled ROS clock regression PASS 2/2 run45979686052/job140440118378/artifact15189555018/source 170adb7a7d3c90a700cfac1d0ce445b1939e7c4a; ZIP+16. Forward +2.927308797s and rewind -.5s, native receipt age21.348/21.074ms, guard21.985/21.716ms, block→zero .071028/.072559ms, no auto-resume, clean4/4 and graph0. Original safety code unchanged; no system clock modification or physical/mission acceptance. [R03 final](reports/G09_R03_FINAL_KO.md).
+
+- R04 classifier local original owner RED analysis CLOCK_DISCONTINUITY_CORRELATED; owner FAIL unchanged, origin UNKNOWN, no automatic retry. Local exact classifier blob af97def23061013bda0456c4c70c0fb5a762d4b4; CI unit/archive pending. [Candidate](reports/G09_R04_CLASSIFIER_CANDIDATE_KO.md).
