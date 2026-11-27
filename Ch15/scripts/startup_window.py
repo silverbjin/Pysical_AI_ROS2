@@ -11,10 +11,13 @@ class StartupWindow:
         if self.last is None:
             self.begin=(now,stamps);self.last=stamps;self.last_advance=[now]*len(stamps)
             return False
-        for i,(a,b) in enumerate(zip(stamps,self.last)):
-            if a>b:self.last_advance[i]=now
+        # Check the OLD receipt ages before accepting newly advanced stamps.
+        # Otherwise a stopped executor could resume with fresh samples and
+        # conceal the gap in the continuous admission window.
         if any(now-t>.10 for t in self.last_advance):
             self.clear();return False
+        for i,(a,b) in enumerate(zip(stamps,self.last)):
+            if a>b:self.last_advance[i]=now
         self.last=stamps
         return now-self.begin[0]>=2.0 and all(a-b>=1_000_000_000 for a,b in zip(stamps,self.begin[1]))
     def clear(self):

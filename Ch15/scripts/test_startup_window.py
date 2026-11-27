@@ -12,6 +12,11 @@ class Tests(unittest.TestCase):
         # Recorded 360ms engine-publication gap. Cached stamps cannot admit.
         self.assertFalse(g.observe(2.340347897,tuple([1+99*20_000_000]*3),True))
         self.assertEqual(g.resets,1)
+    def test_fresh_on_resumption(self):
+        g=StartupWindow()
+        for i in range(100):g.observe(i*.02,tuple([1+i*20_000_000]*3),True)
+        self.assertFalse(g.observe(2.340347897,(2_000_000_001,)*3,True))
+        self.assertEqual(g.resets,1)
     def test_bad_readiness(self):
         g=StartupWindow();g.observe(0,(1,1,1),True)
         self.assertFalse(g.observe(.02,(2,2,2),False))
