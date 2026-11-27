@@ -23,9 +23,65 @@ jobs:
           [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'Ch15/scripts/clock_diag_windows_recovery.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
           if ($errors.Count) { $errors | Format-List; throw 'PARSER_FAIL' }
           & ./Ch15/tests/test_clock_windows_recovery.ps1
-          (Get-FileHash Ch15/scripts/clock_diag_windows_recovery.ps1 -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host 'Checkout bytes are not a release hash authority.'
           git fetch --no-tags --depth=1 origin a5d0999f1e0c7db4b29409b2eb825a2379c75310
           if ($LASTEXITCODE -ne 0) { throw 'BASE_FETCH_FAILED' }
           $allowed=@('Ch15/scripts/clock_diag_windows_recovery.ps1','Ch15/tests/test_clock_windows_recovery.ps1','.github/workflows/ch15-windows-time-recovery.yml','.github/workflows/ch15-clock-stability.yml','Ch15/docs/reports/G09_R10_WINDOWS_TIME_RECOVERY_KO.md','Ch15/docs/CH15_ACCEPTANCE_LEDGER.md')
           $bad=@(git diff --name-only FETCH_HEAD HEAD | Where-Object { $_ -notin $allowed })
           if ($LASTEXITCODE -ne 0 -or $bad.Count) { throw "SCOPE_FAIL $bad" }
+      - name: Raw download byte integrity and fail-closed handoff (powershell)
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $path='Ch15/scripts/clock_diag_windows_recovery.ps1'
+          $raw=Join-Path $env:RUNNER_TEMP 'ch15-current-raw-powershell.ps1'
+          Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/$env:GITHUB_SHA/$path" -OutFile $raw
+          # Git object bytes, not autocrlf-converted checkout bytes.
+          $expected=(python -c "import subprocess,hashlib; print(hashlib.sha256(subprocess.check_output(['git','show','HEAD:Ch15/scripts/clock_diag_windows_recovery.ps1'])).hexdigest())")
+          if ($LASTEXITCODE -ne 0 -or $expected -notmatch '^[0-9a-f]{64}$') { throw 'GIT_BLOB_HASH_FAILED' }
+          $actual=(Get-FileHash -LiteralPath $raw -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "RAW_BLOB_MISMATCH expected=$expected actual=$actual" }
+          Write-Host "RAW_RELEASE_SHA256=$actual shell=$($PSVersionTable.PSVersion)"
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile($raw,[ref]$tokens,[ref]$errors) | Out-Null
+          if ($errors.Count) { throw 'RAW_PARSER_FAIL' }
+          # Verify the immutable owner release, including the historical LF/CRLF regression.
+          $release=Join-Path $env:RUNNER_TEMP 'ch15-owner-raw-powershell.ps1'
+          Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/dc62260736cc9f6f2a97115db9e1b9045c1ad40b/Ch15/scripts/clock_diag_windows_recovery.ps1' -OutFile $release
+          $sha='a318278aae159a15cf937f05f56345b772b13c369082ecd754da76e88f726378'
+          $actual=(Get-FileHash -LiteralPath $release -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $sha) { throw "OWNER_RAW_HASH_MISMATCH $actual" }
+          $rejected=$false
+          try { & $release -Approved -SourcePin 'dc62260736cc9f6f2a97115db9e1b9045c1ad40b' -SourceSha256 '7e06e8ddd31944cfb2fbd72dbc97bc86b6548199aa7fdbeb37ace9709d2a7b94' }
+          catch { if ($_.Exception.Message -match 'APPROVAL_OR_SOURCE_HASH_INVALID') { $rejected=$true } else { throw } }
+          if (-not $rejected) { throw 'WRONG_HASH_NOT_REJECTED' }
+          & $release -LibraryOnly
+          Write-Host "OWNER_RAW_SHA256_PASS=$sha WRONG_HASH_REJECTED; NO REAL MUTATION"
+      - name: Raw download byte integrity and fail-closed handoff (pwsh)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $path='Ch15/scripts/clock_diag_windows_recovery.ps1'
+          $raw=Join-Path $env:RUNNER_TEMP 'ch15-current-raw-pwsh.ps1'
+          Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/$env:GITHUB_SHA/$path" -OutFile $raw
+          # Git object bytes, not autocrlf-converted checkout bytes.
+          $expected=(python -c "import subprocess,hashlib; print(hashlib.sha256(subprocess.check_output(['git','show','HEAD:Ch15/scripts/clock_diag_windows_recovery.ps1'])).hexdigest())")
+          if ($LASTEXITCODE -ne 0 -or $expected -notmatch '^[0-9a-f]{64}$') { throw 'GIT_BLOB_HASH_FAILED' }
+          $actual=(Get-FileHash -LiteralPath $raw -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "RAW_BLOB_MISMATCH expected=$expected actual=$actual" }
+          Write-Host "RAW_RELEASE_SHA256=$actual shell=$($PSVersionTable.PSVersion)"
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile($raw,[ref]$tokens,[ref]$errors) | Out-Null
+          if ($errors.Count) { throw 'RAW_PARSER_FAIL' }
+          # Verify the immutable owner release, including the historical LF/CRLF regression.
+          $release=Join-Path $env:RUNNER_TEMP 'ch15-owner-raw-pwsh.ps1'
+          Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/dc62260736cc9f6f2a97115db9e1b9045c1ad40b/Ch15/scripts/clock_diag_windows_recovery.ps1' -OutFile $release
+          $sha='a318278aae159a15cf937f05f56345b772b13c369082ecd754da76e88f726378'
+          $actual=(Get-FileHash -LiteralPath $release -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $sha) { throw "OWNER_RAW_HASH_MISMATCH $actual" }
+          $rejected=$false
+          try { & $release -Approved -SourcePin 'dc62260736cc9f6f2a97115db9e1b9045c1ad40b' -SourceSha256 '7e06e8ddd31944cfb2fbd72dbc97bc86b6548199aa7fdbeb37ace9709d2a7b94' }
+          catch { if ($_.Exception.Message -match 'APPROVAL_OR_SOURCE_HASH_INVALID') { $rejected=$true } else { throw } }
+          if (-not $rejected) { throw 'WRONG_HASH_NOT_REJECTED' }
+          & $release -LibraryOnly
+          Write-Host "OWNER_RAW_SHA256_PASS=$sha WRONG_HASH_REJECTED; NO REAL MUTATION"
