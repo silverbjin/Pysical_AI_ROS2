@@ -3,6 +3,7 @@
 Original ingress/gateway/platform and model; one raw owner. Not production control."""
 import argparse,hashlib,json,math,os,signal,subprocess,sys,time,traceback
 from pathlib import Path
+from startup_window import StartupWindow
 from arc_straight_profile import local,arc_command,arc_ready,straight_command,final_ready,arc_point,final_target,ANGLE
 
 def yaw(q):
@@ -24,12 +25,18 @@ def main():
     from ch13_navigation_reuse.command_gateway import N,ns,set_stamp
     from run_r2_probe import service_call
     S=dict(source='CH15_COUPLED_ARC_STRAIGHT_V1',result='FAIL',full_mission_success=False,original_native_l2_pass=False,segment_pass=False,phases=[],checks={})
-    children=[];logs=[];node=None;clock=0;state=None;state_wall=0.;statuses={};clients={};vx=wz=0.;origin=None;trace=[]
+    children=[];logs=[];node=None;clock=0;state=None;state_wall=0.;safe_stamp=0;safe_wall=0.;safe_zero=False;statuses={};clients={};vx=wz=0.;origin=None;trace=[]
     def write():
         (out/'arc_straight_result.json').write_text(json.dumps(S,indent=2,allow_nan=False)+'\n')
     def on_clock(m):
         nonlocal clock
         clock=ns(m.clock)
+    def on_safe(m):
+        nonlocal safe_stamp,safe_wall,safe_zero
+        stamp=ns(m.header.stamp)
+        if stamp>safe_stamp:
+            safe_stamp=stamp;safe_wall=time.monotonic()
+            safe_zero=m.header.frame_id=='reuse/nav_base' and m.twist.linear.x==0 and m.twist.angular.z==0
     def on_state(m):
         nonlocal state,state_wall
         state=m;state_wall=time.monotonic()
@@ -65,17 +72,34 @@ def main():
         S['runner_sha256']=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
         commands=[('ingress',[get_package_prefix('ch13_reuse_wire')+'/lib/ch13_reuse_wire/ingress','--manipulation']),
                   ('gateway',[sys.executable,'-m','ch13_navigation_reuse.command_gateway','--manipulation','true']),
-                  ('platform',[sys.executable,'-m','ch13_navigation_reuse.platform_adapter','--repo-root',str(root),'--report',str(out/'engine.json'),'--max-sim-s','50','--scene','vision','--manipulation','true','--pick-scene','true'])]
+                  ('platform',[sys.executable,'-m','ch13_navigation_reuse.platform_adapter','--repo-root',str(root),'--report',str(out/'engine.json'),'--max-sim-s','60','--scene','vision','--manipulation','true','--pick-scene','true'])]
         for name,cmd in commands:
             log=(out/(name+'.log')).open('w');logs.append(log);children.append((name,subprocess.Popen(cmd,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)))
         rclpy.init();node=Node('ch15_coupled_arc_straight')
         node.create_subscription(Clock,'/clock',on_clock,1)
         node.create_subscription(Odometry,N+'/engine_state',on_state,1)
+        node.create_subscription(TwistStamped,N+'/cmd_vel_safe',on_safe,1)
         for name in ('gateway','platform'):
             node.create_subscription(String,N+'/'+name+'/status',lambda m,n=name:statuses.__setitem__(n,json.loads(m.data)),1)
         pub=node.create_publisher(TwistStamped,N+'/cmd_vel_raw',1);node.create_timer(.02,send)
-        assert until(lambda:state is not None and clock>2e9 and statuses.get('gateway',{}).get('ready_for_arm') and stationary() and counts(),35),'startup readiness'
-        assert not fault();origin=xy();call('gateway/arm');call('platform/arm')
+        window=StartupWindow()
+        def prearm():
+            now=time.monotonic()
+            ready=state is not None and clock>2e9 and statuses.get('gateway',{}).get('ready_for_arm') and stationary() and counts() and not fault() and safe_zero and now-state_wall<=.10 and now-safe_wall<=.10
+            stamps=(clock,ns(state.header.stamp) if state is not None else 0,safe_stamp)
+            return window.observe(now,stamps,ready)
+        assert until(prearm,35),'continuous startup readiness'
+        S['startup_admission']={'stable_wall_s':2.,'min_sim_progress_s':1.,'window_resets':window.resets,'admitted_clock_ns':clock,'safe_stamp_ns':safe_stamp}
+        assert not fault();origin=xy()
+        call('gateway/arm')
+        armed_at=clock
+        # Confirm an advancing zero command from the actual armed gateway.
+        assert until(lambda:fault() or (statuses.get('gateway',{}).get('mode')=='ARMED' and safe_zero and safe_stamp>armed_at and time.monotonic()-safe_wall<=.10 and stationary()),2),'gateway arm propagation'
+        assert not fault(),'native gateway fault during handoff'
+        call('platform/arm')
+        assert until(lambda:fault() or (statuses.get('platform',{}).get('mode')=='ARMED' and stationary()),2),'platform arm propagation'
+        assert not fault()
+        S['startup_admission']['both_armed_clock_ns']=clock;write()
         frame=(*xy(),heading());S['frame_origin']=frame
         S['reference_arc_end']=[*arc_point(ANGLE),-ANGLE];S['reference_final']=final_target()
         def observed():return local((*xy(),heading()),frame)

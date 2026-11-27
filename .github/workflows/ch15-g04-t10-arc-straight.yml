@@ -42,6 +42,7 @@ jobs:
           bash -n feature/Ch15/scripts/run_arc_straight_qualification.sh
           python3 -m py_compile feature/Ch15/scripts/run_arc_straight_qualification.py feature/Ch15/scripts/arc_straight_profile.py
           python3 feature/Ch15/scripts/test_arc_straight_profile.py
+          python3 feature/Ch15/scripts/test_startup_window.py
           image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
           docker pull "$image"
           docker image inspect "$image" > t10-evidence/image.json
