@@ -1,0 +1,140 @@
+{
+  "gate": "G08",
+  "status": "PASS_SCOPED_G08_T18_T19_MOCK",
+  "owner_l3": "NOT_RUN",
+  "physical_F01": "BLOCKED_PHYSICAL_FAULT",
+  "physical_recovery_motion": "NOT_RUN",
+  "main_merge": "HOLD",
+  "runtime": "opt-in recovery_executor (default G03/G05 unchanged)",
+  "boundary": {
+    "run": 45955737237,
+    "source_sha": "086fa15b636304fafbd080312ec751f380af1e73",
+    "artifact": 15178861198,
+    "inner_verified": 7,
+    "unit": 8,
+    "receipt_guard_s": 1.008634106,
+    "source_guard_s": 0.029397563,
+    "heartbeat_latch_s": 0.168776794,
+    "heartbeat_zero_s": 0.168405634,
+    "post_resume_nonzero": 0
+  },
+  "search": {
+    "run": 45967908191,
+    "job": 140400942944,
+    "source_sha": "4d6f207d62051c6d3b17a44d43731a46f1873a8e",
+    "artifact": 15184086938,
+    "zip_sha256": "ad0b2d2b00348926d735e6e31c046ce35b1ba5b3bfd57970f48bd32ac977b2ef",
+    "ci": "FUNCTION_GREEN_ARTIFACT_RED",
+    "raw_mcap_hashes_verified": 3,
+    "original_internal_manifest": "MISSING",
+    "derived_sanitized_zip_sha256": "7ce89d88966abfe58aeb947920ebd73e6add8b8a6f038420d63c0f044c387d8b",
+    "derived_members_hashed": 86,
+    "derived_archive": "local independently derived, NOT original CI artifact"
+  },
+  "pick_stop": {
+    "run": 45968356728,
+    "job": 140402408362,
+    "source_sha": "3a35404ce7cb7965adad5a4bc54c9efdce1f8153",
+    "artifact": 15183652813,
+    "zip_sha256": "498781e564f6ffa1fc5d280e9315ff3e5a61e204ed2a0c92a7b3dbd767782a4d",
+    "internal_verified": 60,
+    "raw_mcap_omitted": 2,
+    "ci": "PASS"
+  },
+  "cases": [
+    {
+      "mode": "F03_transient",
+      "run_id": "62d7ad3eb14b4a63a1596462dca1d9c3",
+      "terminal": "COMPLETED",
+      "attempts": [
+        1,
+        2
+      ],
+      "pick_goals": 1,
+      "goals": 4,
+      "events": 31,
+      "mcap_messages": 857
+    },
+    {
+      "mode": "F03_persistent",
+      "run_id": "b5d92f884b0c448e91b7aba1521ffe9a",
+      "terminal": "ABORTED",
+      "attempts": [
+        1,
+        2,
+        3
+      ],
+      "pick_goals": 0,
+      "goals": 1,
+      "events": 17,
+      "mcap_messages": 822
+    },
+    {
+      "mode": "F04",
+      "run_id": "bf90f3afae784abcb7ea4f496dc84174",
+      "terminal": "ABORTED",
+      "invalid_target_observations": 82,
+      "pick_goals": 0,
+      "goals": 1,
+      "events": 16,
+      "mcap_messages": 1369
+    },
+    {
+      "mode": "F06",
+      "run_id": "bb51933f01b54b0c93651d2f931b88b4",
+      "terminal": "ABORTED",
+      "pick_attempts": [
+        1,
+        2,
+        3
+      ],
+      "pick_goals": 3,
+      "goals": 4,
+      "events": 35,
+      "mcap_messages": 584,
+      "prepared_verified": 3,
+      "uuid_terminal6": [
+        "02a399d08c0a4269a468dd9fdedc9541",
+        "74d3cad7503147b8a06685861f8e37e5",
+        "cf13de6c5cb34bf997457364766bf3d0"
+      ],
+      "retry_outcomes": [
+        "RETRY",
+        "RETRY",
+        "ABORT"
+      ]
+    },
+    {
+      "mode": "F01",
+      "run_id": "8954b503e025457980c9a2fcb9ae5d86",
+      "terminal": "ABORTED",
+      "pick_goals": 0,
+      "goals": 1,
+      "events": 10,
+      "mcap_messages": 416,
+      "scan_receipt_to_guard_s": 0.337987493,
+      "block_to_zero_publish_s": 0.000067793,
+      "terminal_uuid": "9728c1f164154b7ea8b758d56f2af6ca",
+      "terminal_status": 6
+    }
+  ],
+  "totals": {
+    "actual_cases": 5,
+    "exact_event_rows": 109,
+    "unique_goal_terminals": 11,
+    "typed_mcap_messages": 4048,
+    "clean_processes": 35
+  },
+  "plugin_audit": [
+    "nav2_behaviors::Spin",
+    "nav2_behaviors::BackUp",
+    "nav2_behaviors::Wait"
+  ],
+  "fixture_sha256": "3707f70598602066042ae6963983f88779951ab53aa99643fd93ef6855e05bc2",
+  "limitations": [
+    "original search CI final artifact failure retained; raw mock MCAP inadvertently included, owner may remove original artifact after preserving sanitized evidence",
+    "C24 runtime uses explicit RetryBudget not stock py_trees Retry decorator; manuscript API mapping review G09",
+    "no physical fault hook, no motion recovery, no actual behavior_server launch, no L3",
+    "all owned child exits zero, global residual graph not independently asserted; G09 residual acceptance pending"
+  ]
+}

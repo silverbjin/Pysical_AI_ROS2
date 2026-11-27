@@ -9,3 +9,6 @@ G06 scoped T15 PASS: [실습 15.6](docs/LAB_15_6_GUIDE_KO.md), [최종 인수 �
 
 ### G07 T16/T17 scoped acceptance (2026-11-27)
 Actual MuJoCo 3.3.7 independent 1DOF six cases, 4800 steps; 800 synthetic LPF samples; V2 CI PASS. [Lab 15.7](docs/LAB_15_7_GUIDE_KO.md), [report](docs/reports/G07_FINAL_ACCEPTANCE_KO.md), [receipt](evidence/g07/final_receipt.json). Not full-robot/owner acceptance. G08/G09 pending.
+
+### G08 T18/T19 mock recovery
+Scoped actual 5/5 fault mission scenarios and 3/3 independent DDS safety boundaries. [Lab 15.8](docs/LAB_15_8_GUIDE_KO.md), [FMEA](docs/FMEA_KO.md), [report](docs/reports/G08_FINAL_ACCEPTANCE_KO.md), [receipt](evidence/g08/final_receipt.json). Physical fault BLOCKED, physical recovery motion NOT_RUN, owner L3 NOT_RUN; G09 next.
