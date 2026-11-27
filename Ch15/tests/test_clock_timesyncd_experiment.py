@@ -5,7 +5,6 @@ import subprocess
 import tarfile
 import tempfile
 import unittest
-from unittest.mock import patch
 
 path = Path(__file__).resolve().parents[1] / "scripts/clock_diag_timesyncd_experiment.py"
 spec = importlib.util.spec_from_file_location("experiment", path)
@@ -33,6 +32,8 @@ class Fake(m.Experiment):
             if self.failure == "restore":
                 raise RuntimeError("restore failure")
             self.active = True
+        if args[:3] == ["systemctl", "is-active", "--quiet"] and self.failure == "guard" and self.armed:
+            raise RuntimeError("timer lost")
         if "systemd-run" in args and self.failure == "arm":
             raise RuntimeError("timer failure")
         return subprocess.CompletedProcess(args, 0, "inactive\n", "")
@@ -104,6 +105,20 @@ class Tests(unittest.TestCase):
             r = f.execute(Path("unused"))
             self.assertEqual(r["restore"], "NOT_NEEDED")
             self.assertFalse(any(isinstance(x,tuple) and "systemd-run" in x for x in f.calls))
+
+    def test_timer_lost_before_stop_no_mutation(self):
+        f, r = self.run_case("guard")
+        self.assertTrue(f.active)
+        self.assertNotIn(("sudo","-n","systemctl","stop",m.SERVICE), f.calls)
+        self.assertEqual(r["status"], "EXPERIMENT_INCOMPLETE")
+
+    def test_restart_during_capture_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = Fake(Path(d))
+            f.original = f.state("before")
+            f.armed = True
+            with self.assertRaisesRegex(RuntimeError, "SERVICE_NOT_INACTIVE_DURING"):
+                f.check_inactive("during")
 
     def test_archive_hash(self):
         with tempfile.TemporaryDirectory() as d:

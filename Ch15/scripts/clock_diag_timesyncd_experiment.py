@@ -2,13 +2,13 @@
 """Approved R10 single-variable experiment. No permanent service or clock changes."""
 import argparse
 import hashlib
+import fcntl
 import json
 import os
 from pathlib import Path
 import re
 import signal
 import subprocess
-import sys
 import tarfile
 import tempfile
 import time
@@ -119,9 +119,19 @@ class Experiment:
         self.armed = True
         self.note("INDEPENDENT_RESTORE_TIMER_ARMED " + self.timer)
 
+    def guard_active(self):
+        self.cmd(["systemctl", "is-active", "--quiet", self.timer])
+
+    def check_inactive(self, phase):
+        self.guard_active()
+        s = self.state(phase)
+        if (s["ActiveState"], s["SubState"], s["MainPID"]) != ("inactive", "dead", "0") or s["UnitFileState"] != self.original["UnitFileState"]:
+            raise RuntimeError("SERVICE_NOT_INACTIVE_" + phase.upper())
+
     def stop(self):
         if not self.armed:
             raise RuntimeError("RESTORE_TIMER_NOT_ARMED")
+        self.guard_active()
         # Restore even if stop times out or returns nonzero after partially succeeding.
         self.restore_needed = True
         self.cmd(["sudo", "-n", "systemctl", "stop", SERVICE], timeout=25)
@@ -148,9 +158,7 @@ class Experiment:
                 if now-start > TRACE_LIMIT*10**9:
                     raise TimeoutError("TRACE_RAW_TIMEOUT")
                 if now >= next_check:
-                    s = self.state("during")
-                    if (s["ActiveState"], s["SubState"], s["MainPID"]) != ("inactive", "dead", "0") or s["UnitFileState"] != self.original["UnitFileState"]:
-                        raise RuntimeError("SERVICE_NOT_INACTIVE_DURING_CAPTURE")
+                    self.check_inactive("during")
                     next_check = now + 5_000_000_000
                 if now >= next_print:
                     self.note(f"TRACE_PROGRESS raw elapsed={(now-start)//10**9}s")
@@ -160,9 +168,7 @@ class Experiment:
             self.child = None
         if rc:
             raise RuntimeError(f"TRACE_FAILED rc={rc}")
-        s = self.state("capture-end")
-        if (s["ActiveState"], s["SubState"], s["MainPID"]) != ("inactive", "dead", "0") or s["UnitFileState"] != self.original["UnitFileState"]:
-            raise RuntimeError("SERVICE_NOT_INACTIVE_AT_CAPTURE_END")
+        self.check_inactive("capture-end")
         archives = list(home.glob("ch15-clock-writer.*.tar.gz"))
         if len(archives) != 1:
             raise RuntimeError("TRACE_ARCHIVE_MISSING_OR_AMBIGUOUS")
@@ -276,6 +282,12 @@ def main():
     if os.geteuid() == 0:
         p.error("Run as normal WSL user, not root.")
     os.umask(0o077)
+    # A per-user advisory lock prevents overlapping runs from this launcher.
+    lock = (Path.home() / ".ch15-clock-timesyncd.lock").open("a")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        p.error("ANOTHER_EXPERIMENT_RUNNING")
     out = Path(tempfile.mkdtemp(prefix="ch15-clock-timesyncd.", dir=Path.home()))
     e = Experiment(out)
     def interrupt(_sig, _frame):
