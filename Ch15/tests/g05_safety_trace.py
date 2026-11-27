@@ -37,8 +37,10 @@ class TracedWatchdog(SensorWatchdog):
         super().scan(msg);event('scan',stamp_ns=self.stamp,valid=self.valid)
     def tick(self):
         before=self.latched;age=None if self.last is None else time.monotonic()-self.last
+        start=time.monotonic_ns();cpu=time.thread_time_ns()
+        event('watchdog_enter',age_s=age,source_stamp_ns=self.stamp)
         super().tick()
-        event('watchdog',age_s=age,source_stamp_ns=self.stamp,latched=self.latched,first_latch=not before and self.latched)
+        event('watchdog',age_s=age,source_stamp_ns=self.stamp,latched=self.latched,first_latch=not before and self.latched,wall_duration_ns=time.monotonic_ns()-start,cpu_duration_ns=time.thread_time_ns()-cpu)
 rclpy.init()
 if mode=='arbiter':
     node=TracedArbiter()
@@ -46,7 +48,8 @@ if mode=='arbiter':
     node.status=TimedPublisher(node.status,'/ch15/safety_state')
     # No executor callbacks have run yet. Same initial SafetyGate values.
     node.gate=TracedGate()
-elif mode=='watchdog':node=TracedWatchdog()
+elif mode=='watchdog':
+    node=TracedWatchdog();node.pub=TimedPublisher(node.pub,'/ch15/stop_request')
 else:raise ValueError(mode)
 try:rclpy.spin(node)
 except (KeyboardInterrupt,rclpy.executors.ExternalShutdownException):pass

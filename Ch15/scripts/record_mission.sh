@@ -6,4 +6,7 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 [[ "$3" =~ ^[0-9]+$ ]] && (( 1 <= $3 && $3 <= 232 )) || exit 2
 export ROS_DOMAIN_ID="$3" ROS_LOCALHOST_ONLY=1 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 unset ROS_STATIC_PEERS ROS_DISCOVERY_SERVER
+# G05 local mock only. Keep native publishers/subscribers QoS and safety limits.
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp RMW_FASTRTPS_PUBLICATION_MODE=ASYNCHRONOUS
+unset FASTDDS_DEFAULT_PROFILES_FILE FASTRTPS_DEFAULT_PROFILES_FILE RMW_FASTRTPS_USE_QOS_FROM_XML
 exec python3 "$here/tests/g05_record_probe.py" "$1" "$2"

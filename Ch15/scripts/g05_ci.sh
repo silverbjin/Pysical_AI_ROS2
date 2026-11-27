@@ -28,7 +28,19 @@ python3 - <<'PY'
 import ch15_interfaces.msg, ch15_adapters.mock_servers, ch15_safety.readiness_monitor, ch15_mission.mission_executor, ch15_simulation.cube_detector, ch15_visualization
 print('G05_INSTALLED_IMPORTS_6_OF_6')
 PY
-python3 /repo/Ch15/tests/g05_demo_mcap.py /evidence/demo-smoke
+printf 'REUSE run45947575404 artifact15175486140 demo-smoke/demo_result.json\n' > /evidence/demo-reuse.txt
+# G05 local mock only. Keep native publishers/subscribers QoS and safety limits.
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp RMW_FASTRTPS_PUBLICATION_MODE=ASYNCHRONOUS
+unset FASTDDS_DEFAULT_PROFILES_FILE FASTRTPS_DEFAULT_PROFILES_FILE RMW_FASTRTPS_USE_QOS_FROM_XML
+python3 - <<'PY' | tee /evidence/rmw.json
+import json,os
+from rclpy.utilities import get_rmw_implementation_identifier
+actual=get_rmw_implementation_identifier()
+assert actual=='rmw_fastrtps_cpp'
+print(json.dumps(dict(rmw=actual,publication_mode=os.environ['RMW_FASTRTPS_PUBLICATION_MODE'])))
+PY
+# No motion. Qualify actual timing before any normal mission.
+timeout --signal=INT --kill-after=15s 60s python3 /repo/Ch15/tests/g05_scan_diag.py /evidence/async-qualification --async-qualify
 for row in normal:76 F01:77 F06:78; do
   mode="${row%:*}"; domain="${row#*:}"
   timeout --signal=INT --kill-after=20s 90s bash /repo/Ch15/scripts/record_mission.sh "$mode" "/evidence/$mode" "$domain"

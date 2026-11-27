@@ -8,6 +8,10 @@ mode=sys.argv.pop(1);out=Path(sys.argv.pop(1));trace=[]
 assert mode in ('normal','F01','F06')
 def row(kind,**fields):trace.append(dict(kind=kind,wall_ns=time.monotonic_ns(),cpu_ns=time.thread_time_ns(),**fields))
 class Fixture(MockServers):
+    def sample(self):
+        start=time.monotonic_ns();cpu=time.thread_time_ns();row('sample_enter')
+        try:super().sample()
+        finally:row('sample_exit',wall_duration_ns=time.monotonic_ns()-start,cpu_duration_ns=time.thread_time_ns()-cpu)
     def on_ready(self,msg):
         super().on_ready(msg);row('ready_receipt',ready=msg.ready,stamp_ns=msg.header.stamp.sec*10**9+msg.header.stamp.nanosec)
     def on_safety(self,msg):

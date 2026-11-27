@@ -109,5 +109,7 @@ if __name__=='__main__':
     if sys.argv[1]=='producer':producer(Path(sys.argv[2]),sys.argv[3])
     else:
         out=Path(sys.argv[1]);out.mkdir(parents=True,exist_ok=False)
-        results=[run_case(out/name,kind,on,d) for name,kind,on,d in [('original-off','original',False,81),('original-on','original',True,82),('isolated-on','isolated',True,83)]]
-        write(out/'diagnosis.json',dict(result='DIAGNOSTIC_COMPLETE',cases=results,original_source_unchanged=True,physical_motion=False))
+        cases=[('original-on-async','original',True,84)] if len(sys.argv)>2 and sys.argv[2]=='--async-qualify' else [('original-off','original',False,81),('original-on','original',True,82),('isolated-on','isolated',True,83)]
+        results=[run_case(out/name,kind,on,d) for name,kind,on,d in cases]
+        write(out/'diagnosis.json',dict(result='DIAGNOSTIC_COMPLETE',cases=results,original_source_unchanged=True,physical_motion=False,rmw=os.environ.get('RMW_IMPLEMENTATION'),publication_mode=os.environ.get('RMW_FASTRTPS_PUBLICATION_MODE')))
+        if '--async-qualify' in sys.argv and not all(r['qualified'] for r in results):raise SystemExit(1)
