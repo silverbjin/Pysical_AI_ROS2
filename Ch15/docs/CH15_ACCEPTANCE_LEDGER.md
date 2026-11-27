@@ -42,3 +42,5 @@
 - ARC RED4 actual 45933266376 / artifact 15169796413 ZIP+53 verified: startup PASS, V2 arc settled XY20.15mm/yaw .00513rad PASS, straight actual pre-stop12.46mm→settled17.09mm FAIL >15mm. Post-stop lateral +6.58mm; measured body vy -2.92mm/s. V3 straight-only slip/stop compensation, arc unchanged. [교육 보고서](reports/G04_T10_ARC_RED4_STRAIGHT_SETTLE_DEBUG_KO.md). Actual V3 pending, original L2 remains FAIL.
 
 - ARC GREEN actual 45934040387 artifact 15169973234 ZIP+54 verified. V3 same model, actual arc19.898mm/.010083rad, straight12.266mm/.051915rad, 9/9 scoped checks, engine/3 children/residual PASS. First source timeout after stationary shutdown ACK278.660ms, no motion fault. Scoped open-area acceptance only; table-area/BT/rosbag/original native L2 not accepted. [교육용 인수 보고서](reports/G04_T10_ARC_GREEN_CLOSEOUT_KO.md).
+
+- Fixed-world table preintegration: local pure 5/5, verified archived geometry 2/2 (59+58 file hashes), min .175437/.175447m vs .127264m; absolute goal preserved, one-way handoff state contract only. Actual table ROS runner NOT_IMPLEMENTED/NOT_RUN, original L2 FAIL unchanged. [교육 보고서](reports/G04_T10_TABLE_FIXED_WORLD_CONTRACT_KO.md).
