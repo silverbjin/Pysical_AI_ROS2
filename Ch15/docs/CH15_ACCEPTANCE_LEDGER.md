@@ -8,8 +8,8 @@
 | G03 | MOCK_MISSION_PASS; T06–09 scoped | PASS 16 pure tests | SCOPED_PASS | NOT_RUN | NOT_RUN |
 | G04 | PASS_SCOPED_CH15_BASIC_V6_AND_T11; original native RED4 retained | PASS 13 baseline +3 targeted; Ch15 profile contracts PASS | SCOPED_PASS cube + native 8-package build/install | T11 PASS; T10 CH15_TABLE_V3_BT V6 PASS (10/10); original CH13_NATIVE FAIL (RED4) | NOT_RUN |
 | G05 | PASS_SCOPED_G05_T12_T14 | PASS 10 explicit tests + C15 synthetic MCAP | T12 scoped PASS; T13 V7 actual 3/3 PASS; T14 V7 typed analysis + V9 actual replay PASS | N/A (mock scope) | NOT_RUN |
-| G06 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
-| G07 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
+| G06 | PASS_SCOPED_G06_T15 | PASS 5/5 | T15 DDS 10/10 + clock-only PASS | N/A | NOT_RUN |
+| G07 | PASS_SCOPED_G07_T16_T17 | PASS 7/7 | build/install 3/3, 18/18 local wheel lock | independent 1DOF 4800 actual steps + 800 synthetic LPF PASS | NOT_RUN |
 | G08 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 | G09 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 - G00/G01 CI 45853673522: static 7/7, negative drift/assets, actual mock preflight, native SDF Valid. G00 physical assets/rights/closure HOLD. Previous automatic repeat 45855234520 recorded, workflow dispatch only.
@@ -86,3 +86,5 @@
 - G06 final scoped T15 PASS: V1 actual run45951984368 artifact15177381140 source75c72106be3c447e296c424974159da7a310e333, unit5/5, 10/10 baseline ADD, invalid/stale/context DELETE, replay ghost0, config2/2, 65 captures. Clock-only actual run45952218641 artifact15176778952 source409d492ed327a8c518a364fa3c51a2106bb562cc, PHYSICAL RGBD_COLOR fixture target stamps 10s→9s DELETE0/2, REPLAY status20s→19s DELETE1, resumed ghost0, control publisher/service0, 6 captures, four total process exits0. ZIPs 7+4 internal hashes verified, runtime source unchanged, no repeat of prior DDS/physical. GUI/WSL2 L3 NOT_RUN; no actual physical mission claim. [Report](reports/G06_FINAL_ACCEPTANCE_KO.md), [receipt](../evidence/g06/final_receipt.json).
 
 - G07 RED1 actual run45952688381 artifact15177686113 source96c924fc297ff51ef0fa8a0fe2c4d5fb0f74beb3, ZIP+6/6 verified. Three packages built and joint XML/URDF installed. pip check: python-dateutil4.0.0 requires tzdata. No tests or MuJoCo executed. Candidate adds exact Ch14 tzdata pin and local wheel provenance gate, no experiment changes. [Report](reports/G07_RED1_DEPENDENCY_DEBUG_KO.md).
+
+- G07 V2 final scoped PASS actual run45952988010 job140352899966 artifact15177811443 source e223f8940315d872e77c74b3148dbde15cd1dfc1: ZIP+30/30 and independent CSV audit. 3 package build/install, exact venv lock18/18, pip check PASS, 7/7 unit. MuJoCo3.3.7 6x800 actual steps; B RMSE .247561rad (A .349641), overshoot 0% (A72.238844%), final .003945rad, settling1.23s; PID5/5, robustness7/7 (baseline B reused; exact4-step delay); synthetic LPF800 raw .194290→.108854 RMSE, lag20ms. All finite/limits; no whole-robot/real-sensor/owner claim. Original RED1 retained; G04–06 not rerun. [Report](reports/G07_FINAL_ACCEPTANCE_KO.md), [receipt](../evidence/g07/final_receipt.json). G08 preview only, safety/physical boundary separate.

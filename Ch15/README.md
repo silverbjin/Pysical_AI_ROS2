@@ -6,3 +6,6 @@ G05 scoped T12–T14 PASS: [실습 15.4](docs/LAB_15_4_GUIDE_KO.md), [실습 15.
 
 ## G06 시각화
 G06 scoped T15 PASS: [실습 15.6](docs/LAB_15_6_GUIDE_KO.md), [최종 인수 보고서](docs/reports/G06_FINAL_ACCEPTANCE_KO.md). DDS와 설치 검증 PASS; 실제 RViz GUI 및 WSL2 owner L3 NOT_RUN.
+
+### G07 T16/T17 scoped acceptance (2026-11-27)
+Actual MuJoCo 3.3.7 independent 1DOF six cases, 4800 steps; 800 synthetic LPF samples; V2 CI PASS. [Lab 15.7](docs/LAB_15_7_GUIDE_KO.md), [report](docs/reports/G07_FINAL_ACCEPTANCE_KO.md), [receipt](evidence/g07/final_receipt.json). Not full-robot/owner acceptance. G08/G09 pending.
