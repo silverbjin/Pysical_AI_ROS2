@@ -119,3 +119,142 @@ $script:changed=$false
 function Pack {throw 'FIXTURE_PACK_FAILED'}
 Reject {Complete-Run} 'FIXTURE_PACK_FAILED'
 Write-Host 'FINALIZER_ARCHIVE_AND_EXIT_QA_PASS'
+
+# Single-variable poll experiment: exact production lifecycle, real archive/finalizer.
+. $RunnerPath -LibraryOnly
+function Poll-FixtureSnapshot([string]$Peer,[string]$Other='fixed',[string]$Trigger='same') {
+    return @{state=@{state='Running';start=3;delayed=$null;type='NTP';peers=$Peer;ntp_enabled=1};other_json=$Other;peer_kind='String';trigger=$Trigger;qc='same'}
+}
+$a=Poll-FixtureSnapshot 'time.windows.com,0x9'
+$b=Poll-FixtureSnapshot 'time.windows.com,0x8'
+Assert (Same-PollSnapshot $a $b 'time.windows.com,0x8') 'poll exact single variable'
+Assert (-not (Same-PollSnapshot $a (Poll-FixtureSnapshot 'time.windows.com,0x8' 'changed') 'time.windows.com,0x8')) 'poll rejects other registry change'
+Assert (-not (Same-PollSnapshot $a (Poll-FixtureSnapshot 'time.windows.com,0x8' 'fixed' 'changed') 'time.windows.com,0x8')) 'poll rejects trigger change'
+$b.state.start=2
+Assert (-not (Same-PollSnapshot $a $b 'time.windows.com,0x8')) 'poll rejects startup change'
+function Poll-FixtureQuery([bool]$Healthy,[double]$Age) {
+    $leap=if($Healthy){0}else{3}
+    $stratum=if($Healthy){5}else{0}
+    $err=if($Healthy){0}else{1}
+    $ref=if($Healthy){'0xB7731234'}else{'0x00000000'}
+    return @{source='time.windows.com,0x8';source_exit=0;status_exit=0;sync=@{healthy=$Healthy;leap=$leap;stratum=$stratum;last_error=$err;reference_id=$ref;age_s=$Age}}
+}
+Assert (Test-FreshPoll (Poll-FixtureQuery $false 720) (Poll-FixtureQuery $true 3) 100 101 106) 'poll fresh age reset'
+Assert (-not (Test-FreshPoll (Poll-FixtureQuery $false 720) (Poll-FixtureQuery $true 725) 100 101 106)) 'poll rejects stale healthy status'
+Assert (-not (Test-FreshPoll (Poll-FixtureQuery $false 1) (Poll-FixtureQuery $true 1) 100 101 101)) 'poll rejects ambiguous age reset'
+Assert (-not (Test-FreshPoll (Poll-FixtureQuery $false 720) (Poll-FixtureQuery $true 3) 100 101 99)) 'poll rejects invalid QPC'
+# Fixture overrides only hardware/network dependencies. Real lifecycle, ZIP and manual rollback.
+function Get-State {return (Poll-FixtureSnapshot $script:peer).state}
+function Get-Management {
+    $managed=($script:case -eq 'managed')
+    return @{domain=$managed;policy=$false;mdm_policy=$false;mdm_url=$false;enrollment=$false;identity=@{AzureAdJoined='NO';EnterpriseJoined='NO';DomainJoined='NO';WorkplaceJoined='NO'}}
+}
+function Write-Backup($Original) {
+    $script:calls.Add('backup')
+    Save-Json 'before-state.json' $Original
+    Set-Content -LiteralPath (Join-Path $script:root 'w32time-before.reg') -Value 'fixture backup'
+}
+function Get-PollSnapshot($Phase) {
+    $other=if($script:case -eq 'config-drift' -and $script:peer -eq 'time.windows.com,0x8'){'changed'}else{'fixed'}
+    $snap=Poll-FixtureSnapshot $script:peer $other
+    Save-Json ($Phase+'-snapshot.json') $snap
+    return $snap
+}
+function Measure-Refs($Phase) {
+    $script:calls.Add($Phase)
+    if($script:case -eq 'reference-fail' -or ($script:case -eq 'post-fail' -and $Phase -eq 'poll-after-2')){
+        return @(@{reachable=$false;count=0},@{reachable=$false;count=0})
+    }
+    return @(@{reachable=$true;count=5;median_s=.015;max_abs_s=.016},@{reachable=$true;count=5;median_s=.014;max_abs_s=.017})
+}
+function Query-Time($Phase) {
+    $script:clock+=1
+    $script:calls.Add($Phase)
+    if($Phase -eq 'poll-before'){
+        if($script:case -eq 'already-healthy'){return (Poll-FixtureQuery $true 15)}
+        return (Poll-FixtureQuery $false 720)
+    }
+    if($script:case -in @('no-sync','rollback-fail')){return (Poll-FixtureQuery $false 720)}
+    if($script:case -eq 'stale-sync'){return (Poll-FixtureQuery $true 720)}
+    return (Poll-FixtureQuery $true 1)
+}
+function Poll-Now {return $script:clock}
+function Poll-Wait($Seconds){$script:clock+=$Seconds}
+function Native($Exe,$ArgList,$Seconds,$Name) {
+    $script:calls.Add($Name)
+    if($Exe -ne 'w32tm.exe'){throw 'UNEXPECTED_NATIVE_FIXTURE_CALL'}
+    if($Name -in @('apply-peer','rollback-peer')){
+        Assert ($ArgList.Count -eq 3 -and $ArgList[0] -eq '/config' -and $ArgList[2] -eq '/update') "$Name exact arguments"
+        if($Name -eq 'apply-peer'){
+            Assert ((Test-Path (Join-Path $script:root 'manual-rollback.txt')) -and $script:calls.Contains('backup')) 'backup before apply'
+            $script:peer='time.windows.com,0x8'
+            if($script:case -eq 'apply-partial'){return @{exit=1}}
+            if($script:case -eq 'unexpected-peer'){$script:peer='other.invalid,0x8'}
+        }else{
+            if($script:case -eq 'rollback-fail'){return @{exit=1}}
+            $script:peer='time.windows.com,0x9'
+        }
+        return @{exit=0}
+    }
+    if($Name -eq 'poll-resync'){return @{exit=0;stdout='no time data fixture'}}
+    throw 'UNEXPECTED_NATIVE_NAME'
+}
+# No actual service/event query in fixture; real archive still exercised.
+function Get-WinEvent {return @()}
+function Test-PollLifecycle($Case,$Expected,$ExpectedRollback,$ExpectedPeer,[bool]$ExpectThrow=$false) {
+    $script:case=$Case;$script:peer='time.windows.com,0x9';$script:clock=100.0
+    if($Case -eq 'unexpected-initial-peer'){$script:peer='time.windows.com,0x8'}
+    $script:calls=New-Object 'System.Collections.Generic.List[string]'
+    $script:changed=$false
+    $base=Join-Path ([IO.Path]::GetTempPath()) ('ch15-poll-'+[Guid]::NewGuid().ToString('N'))
+    $script:root=$base
+    New-Item -ItemType Directory -Path $base|Out-Null
+    $script:status=@{result='WINDOWS_TIME_INCOMPLETE';rollback='NOT_NEEDED';clock_correction_attempted=$false;owner_environment_acceptance=$false}
+    try{
+        $caught=$false
+        try{Invoke-PollLifecycle}catch{if($_.Exception.Message -notmatch 'WINDOWS_POLL_EXECUTION_INCOMPLETE'){throw};$caught=$true}
+        Assert ($caught -eq $ExpectThrow) "$Case terminal exception"
+        Assert ($script:peer -eq $ExpectedPeer) "$Case final peer"
+        Assert (@($script:calls|Where-Object {$_ -eq 'poll-resync'}).Count -le 1) "$Case bounded resync"
+        if($Case -in @('managed','already-healthy','reference-fail','unexpected-initial-peer')){Assert (-not $script:calls.Contains('apply-peer')) "$Case no change"}
+        $zip=$base+'.zip'
+        Assert (Test-Path $zip) "$Case archive"
+        $expectedHash=((Get-Content ($zip+'.sha256') -Raw)-split '\s+')[0]
+        Assert ((Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant() -eq $expectedHash) "$Case archive hash"
+        $dest=$base+'-unpack';Expand-Archive $zip -DestinationPath $dest
+        $saved=Get-Content (Join-Path $dest 'status.json') -Raw|ConvertFrom-Json
+        Assert ($saved.result -eq $Expected -and $saved.rollback -eq $ExpectedRollback -and -not $saved.owner_environment_acceptance) "$Case persisted decision"
+        $expectedExec=if($ExpectThrow){'INCOMPLETE'}else{'COMPLETE'}
+        Assert ($saved.execution_status -eq $expectedExec) "$Case execution state"
+        foreach($line in (Get-Content (Join-Path $dest 'manifest.sha256'))){
+            $parts=$line -split '  ',2
+            Assert ((Get-FileHash (Join-Path $dest $parts[1]) -Algorithm SHA256).Hash.ToLowerInvariant() -eq $parts[0]) "$Case member $($parts[1])"
+        }
+    }finally{
+        Remove-Item -LiteralPath $base,($base+'.zip'),($base+'.zip.sha256'),($base+'-unpack') -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+Test-PollLifecycle 'success' 'WINDOWS_POLL_CHANGE_CANDIDATE_REVIEW_REQUIRED' 'NOT_NEEDED' 'time.windows.com,0x8'
+Test-PollLifecycle 'no-sync' 'WINDOWS_POLL_CHANGE_HOLD' 'VERIFIED' 'time.windows.com,0x9'
+Test-PollLifecycle 'stale-sync' 'WINDOWS_POLL_CHANGE_HOLD' 'VERIFIED' 'time.windows.com,0x9'
+Test-PollLifecycle 'post-fail' 'WINDOWS_POLL_CHANGE_HOLD' 'VERIFIED' 'time.windows.com,0x9'
+Test-PollLifecycle 'config-drift' 'WINDOWS_POLL_CHANGE_HOLD' 'VERIFIED' 'time.windows.com,0x9'
+Test-PollLifecycle 'managed' 'WINDOWS_POLL_CHANGE_HOLD' 'NOT_NEEDED' 'time.windows.com,0x9'
+Test-PollLifecycle 'reference-fail' 'WINDOWS_POLL_CHANGE_HOLD' 'NOT_NEEDED' 'time.windows.com,0x9'
+Test-PollLifecycle 'already-healthy' 'WINDOWS_POLL_CHANGE_HOLD' 'NOT_NEEDED' 'time.windows.com,0x9'
+Test-PollLifecycle 'unexpected-initial-peer' 'WINDOWS_POLL_CHANGE_HOLD' 'NOT_NEEDED' 'time.windows.com,0x8'
+Test-PollLifecycle 'apply-partial' 'WINDOWS_POLL_CHANGE_INCOMPLETE' 'VERIFIED' 'time.windows.com,0x9' $true
+Test-PollLifecycle 'rollback-fail' 'WINDOWS_POLL_CHANGE_INCOMPLETE' 'FAILED_OR_UNVERIFIED' 'time.windows.com,0x8' $true
+Test-PollLifecycle 'unexpected-peer' 'WINDOWS_POLL_CHANGE_INCOMPLETE' 'FAILED_OR_UNVERIFIED' 'other.invalid,0x8' $true
+# A real pack failure after successful candidate must rollback.
+$script:case='success';$script:peer='time.windows.com,0x9';$script:clock=100.0;$script:changed=$false
+$script:calls=New-Object 'System.Collections.Generic.List[string]'
+$script:root=Join-Path ([IO.Path]::GetTempPath()) ('ch15-poll-pack-'+[Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $script:root|Out-Null
+$script:status=@{result='WINDOWS_TIME_INCOMPLETE';rollback='NOT_NEEDED';clock_correction_attempted=$false;owner_environment_acceptance=$false}
+function Pack {throw 'FIXTURE_ARCHIVE_FAILURE'}
+try{
+    Reject {Invoke-PollLifecycle} 'POLL_EVIDENCE_PACK_FAILED'
+    Assert ($script:peer -eq 'time.windows.com,0x9' -and $script:status.rollback -eq 'VERIFIED' -and $script:status.execution_status -eq 'INCOMPLETE') 'pack failure rollback'
+}finally{Remove-Item -LiteralPath $script:root -Recurse -Force}
+Write-Host 'POLL_LIFECYCLE_QA_PASS; NO REAL TIME MUTATION'

@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch]$LibraryOnly,[switch]$VerifyOnly,[switch]$Approved,[string]$SourcePin,[string]$SourceSha256,
+param([switch]$LibraryOnly,[switch]$VerifyOnly,[switch]$Approved,[switch]$PollChangeApproved,[string]$SourcePin,[string]$SourceSha256,
       [string]$OutputRoot=(Join-Path $HOME 'ch15-windows-time-evidence'))
 $ErrorActionPreference='Stop'
 $script:root=$null
@@ -261,6 +261,317 @@ function Complete-Run {
     Write-Host "ROLLBACK=$($script:status.rollback)"
     if(-not $complete){throw 'WINDOWS_TIME_EXECUTION_INCOMPLETE; review evidence (rollback only for repair mode)'}
     if($hold){Write-Host 'NEXT_ACTION=UPLOAD_EVIDENCE_FOR_REVIEW; NO_AUTOMATIC_RETRY; WSL2_GATE_HOLD'}
+}
+# R10 approved single-variable adaptive polling experiment.
+$script:pollOld='time.windows.com,0x9'
+$script:pollNew='time.windows.com,0x8'
+function Poll-Now { return ([double][Diagnostics.Stopwatch]::GetTimestamp()/[Diagnostics.Stopwatch]::Frequency) }
+function Poll-Wait([int]$Seconds) { Start-Sleep -Seconds $Seconds }
+function Read-PollRegistry {
+    $base='HKLM:\SYSTEM\CurrentControlSet\Services\W32Time'
+    $rows=@()
+    foreach($section in @('Config','Parameters','TimeProviders')){
+        $path=Join-Path $base $section
+        $keys=@(Get-Item -LiteralPath $path)+@(Get-ChildItem -LiteralPath $path -Recurse)
+        foreach($key in ($keys|Sort-Object Name)){
+            foreach($name in ($key.GetValueNames()|Sort-Object)){
+                $v=$key.GetValue($name,$null,[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+                $rows+=[ordered]@{key=$key.Name;name=$name;kind=$key.GetValueKind($name).ToString();value_json=(ConvertTo-Json -InputObject $v -Compress -Depth 10)}
+            }
+        }
+    }
+    return $rows
+}
+function Get-PollSnapshot([string]$Phase) {
+    $s=Get-State
+    $rows=@(Read-PollRegistry)
+    $tr=Native 'sc.exe' @('qtriggerinfo','W32Time') 15 ($Phase+'-trigger')
+    $qc=Native 'sc.exe' @('qc','W32Time') 15 ($Phase+'-qc')
+    Require-Ok $tr 'TRIGGER_QUERY_FAILED'
+    Require-Ok $qc 'SERVICE_CONFIG_QUERY_FAILED'
+    $peer=@($rows|Where-Object {$_.key -match '\\Parameters
+if((([int][bool]$VerifyOnly+[int][bool]$Approved+[int][bool]$PollChangeApproved) -ne 1) -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
+$principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'ELEVATED_POWERSHELL_REQUIRED'}
+$mutex=New-Object Threading.Mutex($false,'Global\Ch15WindowsTimeRecovery')
+$owned=$false
+try{
+    $owned=$mutex.WaitOne(0)
+    if(-not $owned){throw 'ANOTHER_RECOVERY_RUNNING'}
+    $script:root=Join-Path $OutputRoot ([Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $script:root -Force|Out-Null
+    $script:status=@{result='WINDOWS_TIME_INCOMPLETE';source_pin=$SourcePin;source_sha256=$SourceSha256;clock_correction_attempted=$false;rollback='NOT_NEEDED';owner_environment_acceptance=$false}
+    if($PollChangeApproved){
+        Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $script:root 'executed-source.ps1')
+        Save-Json 'source-receipt.json' @{pin=$SourcePin;sha256=$SourceSha256;poll_change_approved=$true;approved=$false;verify_only=$false}
+        Invoke-PollLifecycle
+        return
+    }
+    $original=$null
+    try{
+        Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $script:root 'executed-source.ps1')
+        Save-Json 'source-receipt.json' @{pin=$SourcePin;sha256=$SourceSha256;approved=[bool]$Approved;verify_only=[bool]$VerifyOnly}
+        $original=Get-State
+        $script:status.verify_only=[bool]$VerifyOnly
+        if($VerifyOnly){
+            Save-Json 'before-state.json' $original
+            Invoke-VerifyOnly $original
+        }else{
+            Write-Backup $original
+            Note "BACKUP_SAVED=$script:root"
+            $mgmt=Get-Management;Save-Json 'management.json' $mgmt
+            [void](Native 'wsl.exe' @('--list','--verbose') 20 'wsl-inventory')
+            Invoke-Repair $original $mgmt
+        }
+    }catch{
+        $script:status.error=$_.Exception.Message
+        Note ('RECOVERY_NOT_ACCEPTED '+$_.Exception.Message)
+    }finally{
+        if($script:status.result -ne 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED' -and $script:changed){
+            try{Restore-State $original;$script:status.rollback='VERIFIED'}
+            catch{$script:status.rollback='FAILED_OR_UNVERIFIED';$script:status.rollback_error=$_.Exception.Message}
+        }
+        try{Save-Json 'final-state.json' (Get-State)}catch{$script:status.final_state_error=$_.Exception.Message}
+        try{[void](Native 'sc.exe' @('qtriggerinfo','W32Time') 15 'service-triggers-after')}catch{}
+        try{Save-Json 'time-events.json' @(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='Microsoft-Windows-Time-Service'} -MaxEvents 30|Select-Object TimeCreated,Id,Message)}
+        catch{Save-Json 'time-events-error.json' @{error=$_.Exception.Message}}
+        Complete-Run
+    }
+}finally{
+    if($owned){$mutex.ReleaseMutex()}
+    $mutex.Dispose()
+}
+ -and $_.name -eq 'NtpServer'})
+    if($peer.Count -ne 1 -or ($peer[0].value_json|ConvertFrom-Json) -cne $s.peers){throw 'PEER_SNAPSHOT_INCONSISTENT'}
+    $other=@($rows|Where-Object {-not ($_.key -match '\\Parameters
+if(($VerifyOnly -and $Approved) -or (-not $VerifyOnly -and -not $Approved) -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
+$principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'ELEVATED_POWERSHELL_REQUIRED'}
+$mutex=New-Object Threading.Mutex($false,'Global\Ch15WindowsTimeRecovery')
+$owned=$false
+try{
+    $owned=$mutex.WaitOne(0)
+    if(-not $owned){throw 'ANOTHER_RECOVERY_RUNNING'}
+    $script:root=Join-Path $OutputRoot ([Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $script:root -Force|Out-Null
+    $script:status=@{result='WINDOWS_TIME_INCOMPLETE';source_pin=$SourcePin;source_sha256=$SourceSha256;clock_correction_attempted=$false;rollback='NOT_NEEDED';owner_environment_acceptance=$false}
+    $original=$null
+    try{
+        Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $script:root 'executed-source.ps1')
+        Save-Json 'source-receipt.json' @{pin=$SourcePin;sha256=$SourceSha256;approved=[bool]$Approved;verify_only=[bool]$VerifyOnly}
+        $original=Get-State
+        $script:status.verify_only=[bool]$VerifyOnly
+        if($VerifyOnly){
+            Save-Json 'before-state.json' $original
+            Invoke-VerifyOnly $original
+        }else{
+            Write-Backup $original
+            Note "BACKUP_SAVED=$script:root"
+            $mgmt=Get-Management;Save-Json 'management.json' $mgmt
+            [void](Native 'wsl.exe' @('--list','--verbose') 20 'wsl-inventory')
+            Invoke-Repair $original $mgmt
+        }
+    }catch{
+        $script:status.error=$_.Exception.Message
+        Note ('RECOVERY_NOT_ACCEPTED '+$_.Exception.Message)
+    }finally{
+        if($script:status.result -ne 'WINDOWS_TIME_CANDIDATE_REVIEW_REQUIRED' -and $script:changed){
+            try{Restore-State $original;$script:status.rollback='VERIFIED'}
+            catch{$script:status.rollback='FAILED_OR_UNVERIFIED';$script:status.rollback_error=$_.Exception.Message}
+        }
+        try{Save-Json 'final-state.json' (Get-State)}catch{$script:status.final_state_error=$_.Exception.Message}
+        try{[void](Native 'sc.exe' @('qtriggerinfo','W32Time') 15 'service-triggers-after')}catch{}
+        try{Save-Json 'time-events.json' @(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='Microsoft-Windows-Time-Service'} -MaxEvents 30|Select-Object TimeCreated,Id,Message)}
+        catch{Save-Json 'time-events-error.json' @{error=$_.Exception.Message}}
+        Complete-Run
+    }
+}finally{
+    if($owned){$mutex.ReleaseMutex()}
+    $mutex.Dispose()
+}
+ -and $_.name -eq 'NtpServer')})
+    $snap=@{state=$s;registry=$rows;other_json=(ConvertTo-Json -InputObject $other -Depth 10 -Compress);peer_kind=$peer[0].kind;trigger=$tr.stdout;qc=$qc.stdout}
+    Save-Json ($Phase+'-snapshot.json') $snap
+    return $snap
+}
+function Same-PollSnapshot($Original,$Actual,[string]$ExpectedPeer) {
+    $a=$Original.state;$b=$Actual.state
+    return ($b.peers -ceq $ExpectedPeer -and $a.state -eq $b.state -and $a.start -eq $b.start -and $a.delayed -eq $b.delayed -and $a.type -ceq $b.type -and $a.ntp_enabled -eq $b.ntp_enabled -and $Original.other_json -ceq $Actual.other_json -and $Original.peer_kind -ceq $Actual.peer_kind -and $Original.trigger -ceq $Actual.trigger -and $Original.qc -ceq $Actual.qc)
+}
+function Set-PollPeer([string]$Peer,[string]$Phase) {
+    if($Peer -cnotin @($script:pollOld,$script:pollNew)){throw 'UNAPPROVED_PEER_CHANGE'}
+    # Type already NTP. Omit /syncfromflags to avoid rewriting unrelated settings.
+    return (Native 'w32tm.exe' @('/config',"/manualpeerlist:$Peer",'/update') 30 $Phase)
+}
+function Write-PollRollback {
+    $lines=@(
+        '# Elevated PowerShell. Use only if this experiment left 0x8 and rollback is needed.',
+        '# Do not run if another administrator changed the peer or management policy.',
+        '$p=(Get-ItemProperty -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters").NtpServer',
+        'if ($p -ne "time.windows.com,0x8") { throw "UNEXPECTED_PEER_NO_CHANGE" }',
+        'w32tm.exe /config /manualpeerlist:time.windows.com,0x9 /update',
+        'if ($LASTEXITCODE -ne 0) { throw "ROLLBACK_COMMAND_FAILED" }',
+        '$p=(Get-ItemProperty -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters").NtpServer',
+        'if ($p -ne "time.windows.com,0x9") { throw "ROLLBACK_READBACK_FAILED" }',
+        'w32tm.exe /query /configuration',
+        '# No forced clock rewind, service restart or resync. Review full configuration against backup.'
+    )
+    [IO.File]::WriteAllLines((Join-Path $script:root 'manual-rollback.txt'),[string[]]$lines,$script:utf8)
+}
+function Restore-Poll($Original) {
+    $script:status.rollback='FAILED_OR_UNVERIFIED'
+    try {
+        $mg=Get-Management
+        Check-Preflight (Get-State) $mg
+        $current=Get-PollSnapshot 'rollback-before'
+        if($current.state.peers -ceq $script:pollNew){
+            Require-Ok (Set-PollPeer $script:pollOld 'rollback-peer') 'ROLLBACK_COMMAND_FAILED'
+        }elseif($current.state.peers -cne $script:pollOld){throw 'EXTERNAL_PEER_CHANGE_NO_OVERWRITE'}
+        $after=Get-PollSnapshot 'rollback-after'
+        if(-not (Same-PollSnapshot $Original $after $script:pollOld)){throw 'ROLLBACK_CONFIG_MISMATCH'}
+        $script:status.rollback='VERIFIED'
+        Note 'ORIGINAL_POLL_CONFIGURATION_RESTORED'
+    }catch{
+        $script:status.rollback_error=$_.Exception.Message
+        Note ('ROLLBACK_UNVERIFIED '+$_.Exception.Message)
+    }
+}
+function Has-PollFields($Q) {
+    if($Q.source_exit -ne 0 -or $Q.status_exit -ne 0 -or $null -eq $Q.sync){return $false}
+    foreach($k in @('leap','stratum','last_error','reference_id','age_s')){
+        if($null -eq $Q.sync[$k]){return $false}
+    }
+    return $true
+}
+function Test-FreshPoll($Before,$After,[double]$BeforeQpc,[double]$ChangeQpc,[double]$AfterQpc) {
+    if(-not (Has-PollFields $Before) -or -not (Has-PollFields $After)){return $false}
+    $elapsed=$AfterQpc-$BeforeQpc
+    $sinceChange=$AfterQpc-$ChangeQpc
+    if($elapsed -lt 0 -or $sinceChange -lt 0){return $false}
+    # Age reset must be large enough and fall within intervention window.
+    # QPC is independent of wall-clock steps. No stale successful status reuse.
+    return ($After.sync.age_s -ge 0 -and $After.sync.age_s -le ($sinceChange+2) -and ($Before.sync.age_s+$elapsed-$After.sync.age_s) -ge 3)
+}
+function Set-PollHold([string]$Reason) {
+    $script:status.result='WINDOWS_POLL_CHANGE_HOLD'
+    $script:status.hold_reason=$Reason
+    Note ("POLL_HOLD="+$Reason)
+}
+function Invoke-PollExperiment($Original,$Mgmt) {
+    try{Check-Preflight $Original.state $Mgmt}
+    catch{Set-PollHold $_.Exception.Message;return}
+    if($Original.state.state -ne 'Running' -or $Original.state.peers -cne $script:pollOld){
+        Set-PollHold 'EXPECTED_RUNNING_0X9_NOT_PRESENT_NO_CHANGE';return
+    }
+    $refs=@(Measure-Refs 'poll-before')
+    if(-not (Check-Offsets $refs)){Set-PollHold 'EXTERNAL_REFERENCE_NOT_IN_SAFE_RANGE_NO_CHANGE';return}
+    $before=Query-Time 'poll-before'
+    $beforeQpc=Poll-Now
+    if(-not (Has-PollFields $before)){Set-PollHold 'BASELINE_SYNC_FIELDS_UNAVAILABLE_NO_CHANGE';return}
+    if(Check-Sync $before $Original.state){Set-PollHold 'ALREADY_SYNCHRONIZED_NO_CHANGE';return}
+    $latest=Get-PollSnapshot 'poll-preapply'
+    if(-not (Same-PollSnapshot $Original $latest $script:pollOld)){Set-PollHold 'CONFIG_DRIFT_BEFORE_APPLY_NO_CHANGE';return}
+    try{Check-Preflight $latest.state (Get-Management)}
+    catch{Set-PollHold $_.Exception.Message;return}
+    # Save restoration instructions before the first mutating command.
+    Write-PollRollback
+    $changeQpc=Poll-Now
+    $script:status.change_qpc_s=$changeQpc
+    $script:changed=$true
+    $script:status.clock_correction_attempted=$true
+    $script:status.mutation_attempted=$true
+    Note 'APPLY_POLL_FLAG_0X9_TO_0X8'
+    Require-Ok (Set-PollPeer $script:pollNew 'apply-peer') 'APPLY_COMMAND_FAILED'
+    $applied=Get-PollSnapshot 'poll-applied'
+    if(-not (Same-PollSnapshot $Original $applied $script:pollNew)){Set-PollHold 'CONFIG_CHANGE_NOT_ISOLATED';return}
+    Note 'SINGLE_RESYNC_REQUEST'
+    $res=Native 'w32tm.exe' @('/resync','/rediscover') 60 'poll-resync'
+    $script:status.resync_exit=$res.exit
+    # Exit zero or a localized success message is not a sync certificate.
+    $fresh=$false
+    for($i=1;$i -le 6;$i++){
+        $q=Query-Time ("poll-settle-"+$i)
+        $now=Poll-Now
+        $ok=(Check-Sync $q $applied.state)
+        $fresh=(Test-FreshPoll $before $q $beforeQpc $changeQpc $now)
+        Save-Json ("poll-settle-"+$i+"-decision.json") @{qpc_s=$now;sync_ok=$ok;fresh=$fresh}
+        Note ("SYNC_OBSERVATION=$i healthy=$ok fresh=$fresh")
+        if($ok -and $fresh){break}
+        if($i -lt 6){Poll-Wait 10}
+    }
+    if(-not ($ok -and $fresh)){Set-PollHold 'NO_FRESH_SERVICE_SYNC_AFTER_SINGLE_RESYNC';return}
+    $results=@()
+    foreach($phase in @('poll-after-1','poll-after-2')){
+        if($phase -eq 'poll-after-2'){Note 'VERIFY_WINDOW_2_AFTER_30S';Poll-Wait 30}
+        $rows=@(Measure-Refs $phase)
+        $q=Query-Time $phase
+        $now=Poll-Now
+        $snap=Get-PollSnapshot $phase
+        $row=@{phase=$phase;qpc_s=$now;offsets_pass=(Check-Offsets $rows);sync_pass=(Check-Sync $q $applied.state);fresh=(Test-FreshPoll $before $q $beforeQpc $changeQpc $now);config_isolated=(Same-PollSnapshot $Original $snap $script:pollNew)}
+        $results+=$row
+        Note ("POLL_WINDOW="+$phase+" offsets="+$row.offsets_pass+" sync="+$row.sync_pass+" fresh="+$row.fresh+" isolated="+$row.config_isolated)
+    }
+    Save-Json 'poll-verify-summary.json' $results
+    if(@($results|Where-Object {-not $_.offsets_pass -or -not $_.sync_pass -or -not $_.fresh -or -not $_.config_isolated}).Count){Set-PollHold 'POST_CHANGE_GATE_FAILED';return}
+    $script:status.result='WINDOWS_POLL_CHANGE_CANDIDATE_REVIEW_REQUIRED'
+}
+function Complete-Poll($Original) {
+    $candidate=($script:status.result -eq 'WINDOWS_POLL_CHANGE_CANDIDATE_REVIEW_REQUIRED' -and $script:changed -and -not $script:status.error)
+    if($candidate){
+        try{
+            $final=Get-PollSnapshot 'poll-final'
+            if(-not (Same-PollSnapshot $Original $final $script:pollNew)){Set-PollHold 'FINAL_CONFIG_DRIFT';$candidate=$false}
+        }catch{$script:status.error=$_.Exception.Message;$candidate=$false}
+    }
+    if(-not $candidate -and $script:changed){Restore-Poll $Original}
+    $hold=($script:status.result -eq 'WINDOWS_POLL_CHANGE_HOLD' -and -not $script:status.error -and ((-not $script:changed -and $script:status.rollback -eq 'NOT_NEEDED') -or ($script:changed -and $script:status.rollback -eq 'VERIFIED')))
+    $complete=($candidate -or $hold)
+    $script:status.execution_status=if($complete){'COMPLETE'}else{'INCOMPLETE'}
+    $script:status.acceptance_status=if($candidate){'CANDIDATE_REVIEW_REQUIRED'}else{'HOLD'}
+    $script:status.owner_environment_acceptance=$false
+    $script:status.flag_retained=$candidate
+    if(-not $complete){$script:status.result='WINDOWS_POLL_CHANGE_INCOMPLETE'}
+    try{Pack}
+    catch{
+        # Do not leave a permanent change accepted without evidence.
+        $script:status.archive_error=$_.Exception.Message
+        if($candidate){Restore-Poll $Original}
+        $script:status.result='WINDOWS_POLL_CHANGE_INCOMPLETE'
+        $script:status.execution_status='INCOMPLETE'
+        $script:status.acceptance_status='HOLD'
+        $script:status.flag_retained=$false
+        try{Save-Json 'status.json' $script:status}catch{}
+        throw 'POLL_EVIDENCE_PACK_FAILED; review local directory and rollback state'
+    }
+    Write-Host "EXECUTION_STATUS=$($script:status.execution_status)"
+    Write-Host "ACCEPTANCE_STATUS=$($script:status.acceptance_status)"
+    Write-Host $script:status.result
+    Write-Host "ROLLBACK=$($script:status.rollback)"
+    Write-Host 'NEXT_ACTION=UPLOAD_EVIDENCE_FOR_REVIEW; NO_AUTOMATIC_RETRY; WSL2_GATE_HOLD'
+    if(-not $complete){throw 'WINDOWS_POLL_EXECUTION_INCOMPLETE; review evidence and rollback'}
+}
+function Invoke-PollLifecycle {
+    $original=$null
+    $script:status.mode='POLL_CHANGE_0X9_TO_0X8'
+    $script:status.mutation_attempted=$false
+    try{
+        $state=Get-State
+        Write-Backup $state
+        Write-PollRollback
+        Note "BACKUP_SAVED=$script:root"
+        $mg=Get-Management
+        Save-Json 'poll-management.json' $mg
+        $original=Get-PollSnapshot 'poll-original'
+        if(-not (Same-Config $state $original.state) -or $state.state -ne $original.state.state){Set-PollHold 'BACKUP_STATE_CHANGED_NO_CHANGE'}
+        else{Invoke-PollExperiment $original $mg}
+    }catch{
+        $script:status.error=$_.Exception.Message
+        Note ('POLL_EXECUTION_ERROR '+$_.Exception.Message)
+    }finally{
+        try{Save-Json 'poll-time-events.json' @(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='Microsoft-Windows-Time-Service'} -MaxEvents 50|Select-Object RecordId,TimeCreated,Id,Message)}
+        catch{Save-Json 'poll-time-events-error.json' @{error=$_.Exception.Message}}
+        Complete-Poll $original
+    }
 }
 if($LibraryOnly){return}
 if(($VerifyOnly -and $Approved) -or (-not $VerifyOnly -and -not $Approved) -or $SourcePin -notmatch '^[0-9a-f]{40}$' -or $SourceSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $SourceSha256){throw 'APPROVAL_OR_SOURCE_HASH_INVALID'}
