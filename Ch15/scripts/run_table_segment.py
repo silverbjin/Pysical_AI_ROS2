@@ -41,7 +41,7 @@ def main(argv=None,mission=None):
     from vision_mission import select_goal,wait_new_capture,current_q
     from run_r2_probe import service_call
     import numpy as np
-    S=dict(source='CH15_TABLE_V3_SEGMENT_V3',scope='actual table approach only; original native L2 and BT not claimed',
+    S=dict(source='CH15_TABLE_V3_SEGMENT_V4',scope='actual table approach only; original native L2 and BT not claimed',
            result='FAIL',full_mission_success=False,original_native_l2_pass=False,phases=[],checks={})
     launch=node=log=None;active=None;clients={};armed=False;phase='startup'
     clock=0;state=joints=grid=observation=local_grid=None;safe_stamp=0;safe_wall=0.;safe_zero=False;statuses={};rows=[];last_state_wall=0.;plans=[]
@@ -383,6 +383,9 @@ def main(argv=None,mission=None):
         engine=json.loads((out/'engine.json').read_text())
         S['checks']['engine_clean']=bool(launch.returncode==0 and engine['normal_shutdown_requested'] and engine['rx_joined'] and engine['upstream_threads_joined'])
         assert S['checks']['engine_clean']
+        gc_receipt=json.loads((out/'gc_policy_receipt.json').read_text())
+        S['gc_policy']=gc_receipt
+        S['checks']['gc_policy']=bool(gc_receipt['restored'] and gc_receipt['enabled'] and gc_receipt['collections'][2]==0 and gc_receipt['active_at_exit']==gc_receipt['active'] and 0<gc_receipt['peak_rss_kib']<=4*1024*1024)
         S['checks']['model_identity']=engine.get('compiled_model_sha256')=='6ab165146bd617a8d99e6e71109bd140a7c9d56d30ddc91b3cf98e66914d25ff'
         assert all(S['checks'].values())
         S['result']='PASS_SCOPED_TABLE_SEGMENT'
