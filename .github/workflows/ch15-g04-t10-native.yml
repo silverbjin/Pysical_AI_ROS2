@@ -5,15 +5,16 @@ on:
     paths:
       - 'Ch15/scripts/g04_t10_native_ci.sh'
       - '.github/workflows/ch15-g04-t10-native.yml'
+  # PR paths use the cumulative PR diff; explicit title opt-in is required for heavy run.
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: ch15-g04-t10-native
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   native:
-    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/ch15-mission-engineering'))
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/ch15-mission-engineering' && contains(github.event.pull_request.title, '[RUN T10 NATIVE]')))
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:

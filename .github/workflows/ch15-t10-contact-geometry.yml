@@ -1,11 +1,6 @@
 name: Ch15 G04 T10 archived geometry diagnostic
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'Ch15/scripts/diagnose_t10_contact_geometry.py'
-      - 'Ch15/evidence/g04/t10_contact_states.json'
-      - '.github/workflows/ch15-t10-contact-geometry.yml'
+  # Preserve the already-triggered diagnostic; do not rerun on later PR commits.
   workflow_dispatch:
 permissions:
   contents: read
