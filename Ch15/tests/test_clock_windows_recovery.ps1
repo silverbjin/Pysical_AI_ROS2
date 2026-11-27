@@ -137,9 +137,30 @@ function Poll-FixtureQuery([bool]$Healthy,[double]$Age) {
     $stratum=if($Healthy){5}else{0}
     $err=if($Healthy){0}else{1}
     $ref=if($Healthy){'0xB7731234'}else{'0x00000000'}
-    return @{source='time.windows.com,0x8';source_exit=0;status_exit=0;sync=@{healthy=$Healthy;leap=$leap;stratum=$stratum;last_error=$err;reference_id=$ref;age_s=$Age}}
+    $last=if($Healthy){'2026-11-28 07:00:01'}else{'2026-11-28 00:53:00'}
+    return @{source='time.windows.com,0x8';source_exit=0;status_exit=0;sync=@{healthy=$Healthy;leap=$leap;stratum=$stratum;last_error=$err;reference_id=$ref;age_s=$Age;last_sync_text=$last}}
 }
 Assert (Test-FreshPoll (Poll-FixtureQuery $false 720) (Poll-FixtureQuery $true 3) 100 101 106) 'poll fresh age reset'
+$old=Poll-FixtureQuery $false 720
+$new=Poll-FixtureQuery $true 3
+$new.sync.last_sync_text=$old.sync.last_sync_text
+Assert (-not (Test-FreshPoll $old $new 100 101 106)) 'poll rejects unchanged last successful sync timestamp'
+$actualLabel=[regex]::Unescape('\ub9c8\uc9c0\ub9c9\uc73c\ub85c \ub3d9\uae30\ud654\ud55c \uc2dc\uac04')
+$parsed=Parse-SyncStatus ($actualLabel+': 2026-11-28 00:53:00')
+Assert ($parsed.last_sync_text -eq '2026-11-28 00:53:00') 'parse actual Korean timestamp label'
+Assert ((Parse-SyncStatus 'Last Successful Sync Time: 11/28/2026 7:00:01 AM').last_sync_text -eq '11/28/2026 7:00:01 AM') 'parse English timestamp label'
+# Read actual runner registry/config and backup, no service or clock mutation.
+$script:root=Join-Path ([IO.Path]::GetTempPath()) ('ch15-poll-native-read-'+[Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $script:root|Out-Null
+try{
+    $real=Get-PollSnapshot 'native-read'
+    Assert ($real.registry.Count -gt 0 -and $null -ne $real.state.peers -and $real.peer_kind -ne '') 'actual Windows registry snapshot'
+    Write-Backup $real.state
+    Assert ((Test-Path (Join-Path $script:root 'w32time-before.reg')) -and (Test-Path (Join-Path $script:root 'manual-rollback.txt'))) 'actual Windows registry export'
+    Write-PollRollback
+    Assert ((Get-Content (Join-Path $script:root 'manual-rollback.txt') -Raw) -match 'time.windows.com,0x9') 'actual rollback instructions'
+}finally{Remove-Item -LiteralPath $script:root -Recurse -Force}
+
 Assert (-not (Test-FreshPoll (Poll-FixtureQuery $false 720) (Poll-FixtureQuery $true 725) 100 101 106)) 'poll rejects stale healthy status'
 Assert (-not (Test-FreshPoll (Poll-FixtureQuery $false 1) (Poll-FixtureQuery $true 1) 100 101 101)) 'poll rejects ambiguous age reset'
 Assert (-not (Test-FreshPoll (Poll-FixtureQuery $false 720) (Poll-FixtureQuery $true 3) 100 101 99)) 'poll rejects invalid QPC'
@@ -155,7 +176,7 @@ function Write-Backup($Original) {
     Set-Content -LiteralPath (Join-Path $script:root 'w32time-before.reg') -Value 'fixture backup'
 }
 function Get-PollSnapshot($Phase) {
-    $other=if($script:case -eq 'config-drift' -and $script:peer -eq 'time.windows.com,0x8'){'changed'}else{'fixed'}
+    $other=if(($script:case -eq 'config-drift' -and $script:peer -eq 'time.windows.com,0x8') -or ($script:case -eq 'persistent-config-drift' -and $script:calls.Contains('apply-peer'))){'changed'}else{'fixed'}
     $snap=Poll-FixtureSnapshot $script:peer $other
     Save-Json ($Phase+'-snapshot.json') $snap
     return $snap
@@ -239,6 +260,7 @@ Test-PollLifecycle 'no-sync' 'WINDOWS_POLL_CHANGE_HOLD' 'VERIFIED' 'time.windows
 Test-PollLifecycle 'stale-sync' 'WINDOWS_POLL_CHANGE_HOLD' 'VERIFIED' 'time.windows.com,0x9'
 Test-PollLifecycle 'post-fail' 'WINDOWS_POLL_CHANGE_HOLD' 'VERIFIED' 'time.windows.com,0x9'
 Test-PollLifecycle 'config-drift' 'WINDOWS_POLL_CHANGE_HOLD' 'VERIFIED' 'time.windows.com,0x9'
+Test-PollLifecycle 'persistent-config-drift' 'WINDOWS_POLL_CHANGE_INCOMPLETE' 'FAILED_OR_UNVERIFIED' 'time.windows.com,0x9' $true
 Test-PollLifecycle 'managed' 'WINDOWS_POLL_CHANGE_HOLD' 'NOT_NEEDED' 'time.windows.com,0x9'
 Test-PollLifecycle 'reference-fail' 'WINDOWS_POLL_CHANGE_HOLD' 'NOT_NEEDED' 'time.windows.com,0x9'
 Test-PollLifecycle 'already-healthy' 'WINDOWS_POLL_CHANGE_HOLD' 'NOT_NEEDED' 'time.windows.com,0x9'

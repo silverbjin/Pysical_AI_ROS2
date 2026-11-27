@@ -120,7 +120,7 @@ function Check-Offsets($Rows,[switch]$ReachableOnly) {
 function Parse-SyncStatus([string]$Text) {
     # Match numeric fields, not translated success words. ASCII regex escapes for PS 5.1 raw UTF-8.
     $fields=@{leap='Leap Indicator|\uc724\ucd08 \uc870\uc815';stratum='Stratum|\uacc4\uce35';last_error='Last Sync Error|\ub9c8\uc9c0\ub9c9 \ub3d9\uae30\ud654 \uc624\ub958'}
-    $r=@{leap=$null;stratum=$null;last_error=$null;reference_id=$null;age_s=$null;healthy=$false}
+    $r=@{leap=$null;stratum=$null;last_error=$null;reference_id=$null;age_s=$null;last_sync_text=$null;healthy=$false}
     foreach($k in $fields.Keys){
         $m=[regex]::Matches($Text,('(?im)^[ \t]*(?:'+$fields[$k]+')[ \t]*:[ \t]*(\d+)\b'))
         if($m.Count -eq 1){$r[$k]=[long]$m[0].Groups[1].Value}
@@ -129,6 +129,8 @@ function Parse-SyncStatus([string]$Text) {
     if($m.Count -eq 1){$r.reference_id=$m[0].Groups[1].Value.ToLowerInvariant()}
     $m=[regex]::Matches($Text,'(?im)^[ \t]*(?:Time since Last Good Sync Time|\ub9c8\uc9c0\ub9c9\uc73c\ub85c \ub3d9\uae30\ud654\ud55c \ud6c4 \uc9c0\ub09c \uc2dc\uac04)[ \t]*:[ \t]*(\d+(?:[.,]\d+)?)[ \t]*s\b')
     if($m.Count -eq 1){$r.age_s=[double]::Parse($m[0].Groups[1].Value.Replace(',','.'),[Globalization.CultureInfo]::InvariantCulture)}
+    $m=[regex]::Matches($Text,'(?im)^[ \t]*(?:Last Successful Sync Time|\ub9c8\uc9c0\ub9c9\uc73c\ub85c \ub3d9\uae30\ud654\ud55c \uc2dc\uac04)[ \t]*:[ \t]*([^\r\n]+)')
+    if($m.Count -eq 1){$r.last_sync_text=$m[0].Groups[1].Value.Trim()}
     $r.healthy=($null -ne $r.leap -and $r.leap -in @(0,1,2) -and $null -ne $r.stratum -and $r.stratum -ge 1 -and $r.stratum -le 15 -and $null -ne $r.last_error -and $r.last_error -eq 0 -and $null -ne $r.reference_id -and $r.reference_id -ne '0x00000000' -and $null -ne $r.age_s -and $r.age_s -le 3600)
     return $r
 }
@@ -340,7 +342,7 @@ function Restore-Poll($Original) {
 }
 function Has-PollFields($Q) {
     if($Q.source_exit -ne 0 -or $Q.status_exit -ne 0 -or $null -eq $Q.sync){return $false}
-    foreach($k in @('leap','stratum','last_error','reference_id','age_s')){
+    foreach($k in @('leap','stratum','last_error','reference_id','age_s','last_sync_text')){
         if($null -eq $Q.sync[$k]){return $false}
     }
     return $true
@@ -350,9 +352,9 @@ function Test-FreshPoll($Before,$After,[double]$BeforeQpc,[double]$ChangeQpc,[do
     $elapsed=$AfterQpc-$BeforeQpc
     $sinceChange=$AfterQpc-$ChangeQpc
     if($elapsed -lt 0 -or $sinceChange -lt 0){return $false}
-    # Age reset must be large enough and fall within intervention window.
+    # Require a different last-successful-sync timestamp and a sufficiently large age reset within the intervention window.
     # QPC is independent of wall-clock steps. No stale successful status reuse.
-    return ($After.sync.age_s -ge 0 -and $After.sync.age_s -le ($sinceChange+2) -and ($Before.sync.age_s+$elapsed-$After.sync.age_s) -ge 3)
+    return ($Before.sync.last_sync_text -cne $After.sync.last_sync_text -and $After.sync.age_s -ge 0 -and $After.sync.age_s -le ($sinceChange+2) -and ($Before.sync.age_s+$elapsed-$After.sync.age_s) -ge 3)
 }
 function Set-PollHold([string]$Reason) {
     $script:status.result='WINDOWS_POLL_CHANGE_HOLD'
@@ -463,6 +465,8 @@ function Invoke-PollLifecycle {
         Note "BACKUP_SAVED=$script:root"
         $mg=Get-Management
         Save-Json 'poll-management.json' $mg
+        try{Save-Json 'poll-time-events-before.json' @(Get-WinEvent -FilterHashtable @{LogName='System';ProviderName='Microsoft-Windows-Time-Service'} -MaxEvents 50|Select-Object RecordId,TimeCreated,Id,Message)}
+        catch{Save-Json 'poll-time-events-before-error.json' @{error=$_.Exception.Message}}
         $original=Get-PollSnapshot 'poll-original'
         if(-not (Same-Config $state $original.state) -or $state.state -ne $original.state.state){Set-PollHold 'BACKUP_STATE_CHANGED_NO_CHANGE'}
         else{Invoke-PollExperiment $original $mg}
