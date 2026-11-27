@@ -141,7 +141,7 @@ if [[ "${1:-}" == --table-segment ]]; then
   python3 - "$e/case/native/segment_result.json" <<'PY'
 import json,sys
 r=json.load(open(sys.argv[1]))
-assert r['source']=='CH15_TABLE_V3_SEGMENT_V5' and r['result']=='PASS_SCOPED_TABLE_SEGMENT'
+assert r['source']=='CH15_TABLE_V3_SEGMENT_V6' and r['result']=='PASS_SCOPED_TABLE_SEGMENT'
 assert not r['original_native_l2_pass'] and not r['full_mission_success']
 assert len(r['phases'])==4 and all(r['checks'].values())
 assert all(p['terminal']==4 and p['settled'] for p in r['phases'][:2])
