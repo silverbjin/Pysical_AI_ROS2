@@ -28,9 +28,10 @@ git config --global --add safe.directory /work/native
 git config --global --add safe.directory /work/feature
 phase=APT_DEPENDENCIES
 apt-get update
-# Original guide's build/runtime dependencies; BT deb bytes are checked by
-# original prepare_bt_deps.sh, not replaced with newer packages.
-apt-cache policy ros-jazzy-py-trees ros-jazzy-py-trees-ros ros-jazzy-py-trees-ros-interfaces python3-pydot python3-pyparsing > "$e/bt-apt-policy.txt"
+phase=BT_EXACT_PACKAGE_AVAILABILITY
+bash /work/feature/Ch15/scripts/prepare_t10_bt_apt.sh "$e"
+phase=APT_DEPENDENCIES
+# Original prepare_bt_deps.sh still verifies all five downloaded packages.
 apt-get install -y --no-install-recommends git curl build-essential cmake binutils \
  python3-venv python3-pip python3-colcon-common-extensions python3-pytest \
  python3-numpy python3-scipy libssl-dev libegl1 libegl-mesa0 libgl1-mesa-dri libglfw3 libglx-mesa0 libosmesa6 \
@@ -86,7 +87,13 @@ phase=NATIVE_BUILD_INSTALL_AND_LEVEL2
 # Original runner owns all commands, shutdown and assessment. No alternate path.
 # Isolate build parallelism only, not runtime control parameters.
 export CMAKE_BUILD_PARALLEL_LEVEL=2
-bash /work/feature/Ch15/scripts/run_physical_basic.sh /work/native /work/feature/Ch15/dependencies/native_local_use_approval.json "$e/case"
+if bash /work/feature/Ch15/scripts/run_physical_basic.sh /work/native /work/feature/Ch15/dependencies/native_local_use_approval.json "$e/case"; then
+  :
+else
+  rc=$?
+  if [[ -f "$e/case/build.log" ]]; then tail -n 100 "$e/case/build.log"; fi
+  exit "$rc"
+fi
 phase=RESULT_VERIFICATION
 python3 - "$e/case/result.json" <<'PY'
 import json,sys
