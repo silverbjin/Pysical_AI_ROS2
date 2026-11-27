@@ -1,0 +1,91 @@
+name: Ch15 G04 T10 table basic BT MCAP
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Ch15/scripts/*table*'
+      - '.github/workflows/ch15-g04-t10-table-mission.yml'
+  # PR paths use the cumulative PR diff; explicit title opt-in is required for heavy run.
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ch15-g04-t10-table-mission
+  cancel-in-progress: true
+jobs:
+  native:
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/ch15-mission-engineering' && contains(github.event.pull_request.title, '[RUN T10 MISSION]')))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          sparse-checkout: Ch15
+          persist-credentials: false
+          path: feature
+      - uses: actions/checkout@v4
+        with:
+          ref: 1931cac92585fc155357880b584c72c76d67257c
+          sparse-checkout: Ch13
+          persist-credentials: false
+          path: native
+      - name: Pinned source and table basic BT MCAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p t10-evidence
+          git -C feature rev-parse HEAD > t10-evidence/source-sha.txt
+          git -C native rev-parse HEAD > t10-evidence/native-sha.txt
+          test "$(cat t10-evidence/native-sha.txt)" = 1931cac92585fc155357880b584c72c76d67257c
+          bash -n feature/Ch15/scripts/g04_t10_native_ci.sh
+          bash -n feature/Ch15/scripts/run_table_mission.sh
+          python3 -m py_compile feature/Ch15/scripts/run_table_mission.py feature/Ch15/scripts/table_l2_contract.py
+          python3 feature/Ch15/scripts/test_table_l2_contract.py
+          python3 -m py_compile feature/Ch15/scripts/run_table_segment.py feature/Ch15/scripts/table_navigation.launch.py feature/Ch15/scripts/table_approach_contract.py
+          python3 feature/Ch15/scripts/test_table_approach_contract.py
+          python3 feature/Ch15/scripts/test_arc_straight_profile.py
+          python3 feature/Ch15/scripts/test_startup_window.py
+          image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
+          docker pull "$image"
+          docker image inspect "$image" > t10-evidence/image.json
+          docker run --rm --init --shm-size=1g -v "$PWD:/work" "$image" bash /work/feature/Ch15/scripts/g04_t10_native_ci.sh --table-mission
+      - name: Preserve scoped receipts even on failure
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p t10-public-evidence
+          # Allowlist diagnostic logs, JSON/text results, and bag metadata.
+          # Do not publish asset/model/weight bytes, images or bag payload.
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, shutil
+          root=Path('t10-evidence')
+          dest=Path('t10-public-evidence')
+          if root.exists():
+              for p in sorted(root.rglob('*')):
+                  if p.is_symlink() or not p.is_file(): continue
+                  rel=p.relative_to(root)
+                  if p.suffix not in {'.json','.jsonl','.log','.txt','.csv'} and p.name!='metadata.yaml': continue
+                  if 'bag' in rel.parts and p.name!='metadata.yaml': continue
+                  if p.stat().st_size>25*1024*1024: continue
+                  q=dest/rel; q.parent.mkdir(parents=True,exist_ok=True); shutil.copyfile(p,q)
+              rows=[]
+              bag=root/'case/native/bag'
+              for p in sorted(bag.glob('*')):
+                  if p.is_file() and not p.is_symlink():
+                      h=hashlib.sha256()
+                      with p.open('rb') as f:
+                          for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+                      rows.append(dict(name=p.name,bytes=p.stat().st_size,sha256=h.hexdigest()))
+              (dest/'bag-payload-receipt.json').write_text(json.dumps(rows,indent=2)+'\n')
+          PY
+          cd t10-public-evidence
+          find . -type f ! -name sha256sums.txt -print0 | sort -z | xargs -0 -r sha256sum > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch15-t10-table-mission-receipts
+          path: t10-public-evidence/
+          if-no-files-found: error
+          retention-days: 30

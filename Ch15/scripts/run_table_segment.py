@@ -7,12 +7,12 @@ from table_approach_contract import route,entry_ready,Handoff
 from arc_straight_profile import local,arc_command,arc_ready,straight_command,final_ready,wrap
 from concurrent.futures import ThreadPoolExecutor
 
-def main():
+def main(argv=None,mission=None):
     parser=argparse.ArgumentParser()
     parser.add_argument('--repo-root',type=Path,required=True)
     parser.add_argument('--manifest',type=Path,required=True)
     parser.add_argument('--evidence',type=Path,required=True)
-    a=parser.parse_args();root=a.repo_root.resolve();out=a.evidence.resolve()
+    a=parser.parse_args(argv);root=a.repo_root.resolve();out=a.evidence.resolve()
     out.mkdir(parents=True,exist_ok=False)
     os.environ.update(CH13_VALIDATION_PROFILE='carry_v1',CH13_VALIDATION_SCENARIO='level2_obstacles',
         CH13_CAPTURE_OVERLAP='1',CH13_EXPERIMENTAL_SE2='0',CH13_CALLBACK_TIMING='0')
@@ -100,6 +100,7 @@ def main():
         end=time.monotonic()+timeout
         while time.monotonic()<end:
             rclpy.spin_once(node,timeout_sec=.01)
+            if mission:mission.poll_goals()
             if predicate():return True
             if launch.poll() is not None:raise RuntimeError('owned launch exited: '+str(launch.returncode))
         return False
@@ -129,6 +130,7 @@ def main():
         assert not fault() and counts_ok() and snapshot()['platform'].get('stationary_ready'),'not ready'
         call('navigation/enable')
         sent=client.send_goal_async(goal);active=(sent,None,None)
+        if mission:mission.goal_sent(sent)
         assert until(sent.done,5),'goal admission deadline'
         h=sent.result();assert h.accepted,'goal rejected'
         result=h.get_result_async();active=(sent,h,result);rec['goal_id']=bytes(h.goal_id.uuid).hex()
@@ -139,7 +141,8 @@ def main():
         call('navigation/release');rec['release_sim_ns']=clock
         def interrupted():
             reason=None
-            if fault():reason='NATIVE_FAULT'
+            if mission and mission.cancel_requested():reason='BT_CANCEL'
+            elif fault():reason='NATIVE_FAULT'
             elif clock-started>budget*1e9:reason='SIM_BUDGET'
             elif monitor and time.monotonic()-last_state_wall>.3:reason='STATE_EXPIRED'
             elif monitor and not monitor(pose()):reason='CANDIDATE_ENVELOPE'
@@ -150,6 +153,7 @@ def main():
         assert until(interrupted,240),'action wall deadline'
         if result.done():
             rec['terminal']=result.result().status;rec['terminal_sim_ns']=clock
+            if mission:mission.goal_terminal(h,rec['terminal'])
         assert result.done() and 'interruption' not in rec and not fault() and counts_ok() and clock-started<=budget*1e9 and (monitor is None or monitor(pose())),'action interrupted by fault/deadline/corridor'
         active=None
         call('navigation/idle');zero=clock
@@ -258,6 +262,7 @@ def main():
                 if r.current_state.id==3:break
                 assert time.monotonic()<end,('lifecycle not active',name)
         scenario=get_scenario('level2_obstacles')
+        if mission:mission.before_survey(until)
         run_action('survey_setup',nav,nav_goal(scenario.survey_pose,clock,survey=True),120)
         phase='vision_admission'
         target,record,model=select_goal(root,node,until,lambda:observation,lambda:state,lambda:joints,lambda:grid,lambda:clock)
@@ -295,10 +300,15 @@ def main():
         S['final_xy_error_m']=math.dist(pose()[:2],target[:2]);S['final_yaw_error_rad']=abs(wrap(pose()[2]-target[2]))
         S['checks']['absolute_final_pose']=S['final_xy_error_m']<=.015 and S['final_yaw_error_rad']<=.06
         assert S['checks']['absolute_final_pose']
+        if mission:mission.navigated(until,S,clock)
         obs3=wait_new_capture(until,lambda:observation,lambda:clock,timeout=3)
         S['checks']['fresh_final_observation']=bool(admissible(obs3['capture_ns'],obs3['capture_wall'],clock,time.monotonic(),obs3['tf_stamp_ns']) and np.linalg.norm(np.array(obs3['point'])-np.array(obs2['point']))<.03)
         assert S['checks']['fresh_final_observation']
         S['checks']['workspace']=position_ik(model,current_q(state,joints),obs3['point']) is not None
+        S['final_observation']=obs3
+        if mission:
+            assert S['checks']['workspace']
+            mission.found(until,obs3,clock,S)
         S['checks']['one_command_chain']=counts_ok();S['checks']['no_fault']=not fault()
         assert all(S['checks'].values())
         phase='shutdown';call('platform/shutdown');S['shutdown_ack']={'wall':time.monotonic(),'clock_ns':clock};launch.wait(timeout=12)
@@ -321,9 +331,10 @@ def main():
                         if h.accepted:result=h.get_result_async()
                     if h is not None and h.accepted and result is not None and not result.done():
                         c=h.cancel_goal_async();assert until(c.done,3),'cancel ACK timeout'
-                        S['cancel_ack']=bool(c.result().goals_canceling)
+                        S['cancel_ack']=any(bytes(g.goal_id.uuid)==bytes(h.goal_id.uuid) for g in c.result().goals_canceling)
                         assert until(result.done,3),'cancel terminal timeout'
                         S['cancel_terminal']=result.result().status
+                        if mission:mission.goal_terminal(h,S['cancel_terminal'])
                 call('navigation/idle',1)
                 if until(lambda:snapshot()['platform'].get('stationary_ready'),8):
                     call('platform/shutdown',2);launch.wait(timeout=12)
@@ -336,9 +347,10 @@ def main():
         if log is not None:log.close()
         if (out/'launch.log').exists():
             t=(out/'launch.log').read_text();pids=re.findall(r'process started with pid \[(\d+)\]',t)
-            S['children']=dict(started=len(pids),clean=t.count('process has finished cleanly'),remaining=[int(p) for p in pids if (Path('/proc')/p/'cmdline').exists()],launch_exit=launch.returncode)
+            S['children']=dict(pids=[int(p) for p in pids],started=len(pids),clean=t.count('process has finished cleanly'),remaining=[int(p) for p in pids if (Path('/proc')/p/'cmdline').exists()],launch_exit=launch.returncode)
             S['checks']['children_clean']=bool(pids) and S['children']['started']==S['children']['clean'] and not S['children']['remaining'] and launch.returncode==0 and 'process has died' not in t
             if not S['checks']['children_clean']:S['result']='FAIL'
+        if mission:mission.poll_goals()
         pool.shutdown(wait=True,cancel_futures=True)
         S['last_status']=statuses
         S['mux']={'nav2_packets':nav2_packets,'v3_packets':v3_packets,'owner':handoff.owner,'fault':mux_fault}

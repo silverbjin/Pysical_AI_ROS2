@@ -117,6 +117,22 @@ phase=ASSET_MATERIALIZATION
 # No historical audit repetition and no asset upload.
 python3 /work/feature/Ch15/scripts/prepare_native_assets.py --target /work/upstream-iit-locomanipulation-d010212 --receipt "$e/asset-verification.json" > "$e/acquisition.log"
 touch /work/ch13_reuse_engine.lock
+if [[ "${1:-}" == --table-mission ]]; then
+  phase=TABLE_BASIC_BT_MCAP
+  export CMAKE_BUILD_PARALLEL_LEVEL=2
+  bash /work/feature/Ch15/scripts/run_table_mission.sh /work/native /work/feature/Ch15/dependencies/native_local_use_approval.json "$e/case"
+  python3 - "$e/case/native/basic_result.json" <<'PY'
+import json,sys
+r=json.load(open(sys.argv[1]))
+assert r['source']=='CH15_TABLE_V3_BT' and r['result']=='PASS'
+assert len(r['checks'])==10 and all(r['checks'].values())
+assert r['original_native_l2_pass'] is False and r['full_mission_success'] is False
+assert r['actual_table_segment']=='PASS' and all(r['segment_checks'].values())
+print('CH15_TABLE_BASIC_L2_PASS_10_OF_10')
+PY
+  phase=COMPLETE
+  exit 0
+fi
 if [[ "${1:-}" == --table-segment ]]; then
   phase=TABLE_SEGMENT
   export CMAKE_BUILD_PARALLEL_LEVEL=2
