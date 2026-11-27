@@ -18,6 +18,10 @@ class TestAnalysis(unittest.TestCase):
             with self.assertRaises(ValueError):analyze(e,s)
         e,s=fixture()
         with self.assertRaises(ValueError):analyze(e[:-1],s)
+    def test_rejected_goal_abort(self):
+        e,s=fixture();e[2].update(event='GOAL_REJECTED',goal_uuid='',detail={'requested_uuid':'a'*32})
+        e.pop(3);e[-1]['event_seq']=4;e[-1]['detail'].update(state='ABORTED',mock_mission_success=False);s[-1]['state']='ABORTED'
+        self.assertEqual(analyze(e,s)['rejected_goals'],1)
     def test_energy(self):
         self.assertAlmostEqual(energy_j([(0,[2],[3]),(1000000000,[2],[3])]),6,places=6)
         self.assertIsNone(energy_j([(0,[],[3]),(1000000000,[2],[3])]))

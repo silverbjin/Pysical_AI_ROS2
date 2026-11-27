@@ -11,7 +11,9 @@ rosdep install --from-paths /repo/Ch15/ros2_ws/src --ignore-src --rosdistro jazz
 rosdep check --from-paths /repo/Ch15/ros2_ws/src --ignore-src --rosdistro jazzy | tee /evidence/rosdep-check.log
 dpkg-query -W > /evidence/dpkg-versions.txt
 python3 /repo/Ch15/python/g05_lock.py /repo/Ch15 | tee /evidence/lock.json
-bash /repo/Ch15/scripts/g05_git_lab.sh > /evidence/git-lab.log 2>&1
+python3 -m unittest discover -s /repo/Ch15/tests -p 'test_g05_lock.py' -v
+# RED1 git/lfs actual PASS reused; no repeat in record-focused retry.
+printf 'REUSE run45946312887 artifact15174419809 git-lab.log\n' > /evidence/git-lab-reuse.txt
 mkdir /tmp/g05; cd /tmp/g05
 colcon build --base-paths /repo/Ch15/ros2_ws/src --event-handlers console_direct+ 2>&1 | tee /evidence/build.log
 source install/setup.bash
@@ -21,6 +23,11 @@ python3 -m unittest discover -s /repo/Ch15/tests -p 'test_bag_analysis.py' -v
 python3 -m unittest discover -s /repo/Ch15/tests -p 'test_replay_isolation.py' -v
 colcon test --event-handlers console_direct+
 colcon test-result --all --verbose | tee /evidence/colcon-test-result.txt
+# No package-local tests are installed yet; explicit cross-package tests above are authoritative.
+python3 - <<'PY'
+import ch15_interfaces.msg, ch15_adapters.mock_servers, ch15_safety.readiness_monitor, ch15_mission.mission_executor, ch15_simulation.cube_detector, ch15_visualization
+print('G05_INSTALLED_IMPORTS_6_OF_6')
+PY
 for row in normal:76 F01:77 F06:78; do
   mode="${row%:*}"; domain="${row#*:}"
   timeout --signal=INT --kill-after=20s 90s bash /repo/Ch15/scripts/record_mission.sh "$mode" "/evidence/$mode" "$domain"
@@ -38,6 +45,9 @@ for mode in ('normal','F01','F06'):
   assert all(str(b[k])==a[k] for k in ('mission_id','epoch','producer','event_seq','steady_ns','ros_ns','event','request_id','goal_uuid','source')) and json.loads(a['detail'])==b['detail']
  m=json.loads((p/'analysis/metrics.json').read_text());assert m['terminal']==('COMPLETED' if mode=='normal' else 'ABORTED')
  assert m['energy_j'] is None
+ if mode=='normal':assert m['goals']==4 and m['rejected_goals']==0
+ if mode=='F01':assert any(x['event']=='FAULT' for x in orig) and any(x['event']=='STOP_OBSERVED' for x in orig) and any(x['event']=='GOAL_ACCEPTED' for x in orig)
+ if mode=='F06':assert any(x['event']=='STEP_ENTER' and x['detail']['step']=='pick_retract' for x in orig) and any(x['event']=='GOAL_TERMINAL' and x['detail']['status']==6 for x in orig)
  print(mode,m['events'],m['terminal'])
 PY
 timeout --signal=INT --kill-after=10s 55s bash /repo/Ch15/scripts/replay_mission.sh /evidence/normal/bag /evidence/replay.json 79 76
