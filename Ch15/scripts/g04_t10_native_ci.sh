@@ -30,6 +30,25 @@ phase=APT_DEPENDENCIES
 apt-get update
 phase=BT_EXACT_PACKAGE_AVAILABILITY
 bash /work/feature/Ch15/scripts/prepare_t10_bt_apt.sh "$e"
+phase=NAV2_HISTORICAL_PARITY
+# One evidence-driven physical candidate: restore historical Nav2 family,
+# not the full host, no changes to controller parameters or contact guard.
+cat > /etc/apt/preferences.d/ch15-t10-nav2-parity <<'PREF'
+Package: ros-jazzy-nav2-* ros-jazzy-navigation2
+Pin: version 1.3.13-*
+Pin-Priority: 1001
+PREF
+historical=/work/native/Ch13/evidence/section_13_5_reuse/r5_preflight_20261103_v2/nav2_packages.txt
+test -s "$historical"
+# Precheck all 1.3.13 entries from original R5 environment receipt.
+while read -r pkg ver; do
+  [[ "$ver" == 1.3.13-* ]] || continue
+  candidate="$(apt-cache policy "$pkg" | awk '/Candidate:/ {print $2}')"
+  printf '%s expected=%s candidate=%s\n' "$pkg" "$ver" "$candidate"
+  test "$candidate" = "$ver"
+done < "$historical" | tee "$e/nav2-parity-candidates.txt"
+candidate="$(apt-cache policy ros-jazzy-navigation2 | awk '/Candidate:/ {print $2}')"
+[[ "$candidate" == 1.3.13-* ]]
 phase=APT_DEPENDENCIES
 # Original prepare_bt_deps.sh still verifies all five downloaded packages.
 apt-get install -y --no-install-recommends git curl build-essential cmake binutils \
@@ -39,6 +58,21 @@ apt-get install -y --no-install-recommends git curl build-essential cmake binuti
  ros-jazzy-moveit ros-jazzy-moveit-py ros-jazzy-moveit-msgs ros-jazzy-trac-ik-kinematics-plugin \
  ros-jazzy-rosbag2 ros-jazzy-rosbag2-storage-mcap ros-jazzy-rmw-fastrtps-cpp
 dpkg-query -W > "$e/dpkg-versions.txt"
+phase=NAV2_INSTALLED_PARITY
+/usr/bin/python3 - "$historical" "$e/dpkg-versions.txt" <<'PY' | tee "$e/nav2-parity-installed.txt"
+import sys
+from pathlib import Path
+expected=dict(line.split() for line in Path(sys.argv[1]).read_text().splitlines() if line.strip())
+installed=dict(line.split() for line in Path(sys.argv[2]).read_text().splitlines() if line.strip())
+required={"ros-jazzy-nav2-controller","ros-jazzy-nav2-smac-planner","ros-jazzy-nav2-regulated-pure-pursuit-controller","ros-jazzy-nav2-bringup","ros-jazzy-nav2-planner","ros-jazzy-nav2-velocity-smoother","ros-jazzy-nav2-bt-navigator","ros-jazzy-nav2-costmap-2d"}
+assert required <= installed.keys()
+for name,version in installed.items():
+    if name=="ros-jazzy-navigation2" or (name.startswith("ros-jazzy-nav2-") and name in expected and expected[name].startswith("1.3.13-")):
+        assert version.startswith("1.3.13-"), (name,version)
+        if name in expected: assert version==expected[name], (name,version,expected[name])
+        print(name,version)
+print("NAV2_HISTORICAL_PACKAGE_PARITY_PASS")
+PY
 phase=PINNED_VENV
 # The ROS Docker image can export ROS site-packages through PYTHONPATH.
 # Keep the pinned pip environment closed; native env.sh later adds ROS and

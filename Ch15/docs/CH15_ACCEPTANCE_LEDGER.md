@@ -6,7 +6,7 @@
 | G01 | T01/T02 scoped | PASS | NOT_RUN | NOT_RUN | NOT_RUN |
 | G02 | SCOPED_PASS | PASS 6 pure/IDL tests | SCOPED_PASS T03–05 | NOT_RUN | NOT_RUN |
 | G03 | MOCK_MISSION_PASS; T06–09 scoped | PASS 16 pure tests | SCOPED_PASS | NOT_RUN | NOT_RUN |
-| G04 | PARTIAL_PASS_T11; T10 ASSET_SOURCE_PREFLIGHT_PASS | PASS 13 baseline +3 targeted | SCOPED_PASS 3 package cube build | T11 PASS; T10 NATIVE_L2_NOT_RUN | NOT_RUN |
+| G04 | PARTIAL_PASS_T11; T10 ASSET_SOURCE_PREFLIGHT_PASS | PASS 13 baseline +3 targeted | SCOPED_PASS cube + native 8-package build/install | T11 PASS; T10 NATIVE_L2_FAIL (RED3) | NOT_RUN |
 | G05 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 | G06 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 | G07 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
@@ -20,3 +20,5 @@
 - G05 independent code/Mock+cube evidence reuse may proceed with T10 native execution pending explicitly retained; full G04/G09 acceptance cannot be claimed until T10 is actually verified or owner formally revises scope. No MCAP yet, no WSL2 owner. CI ≠ Owner L3. main unmerged, publication HOLD.
 
 - T10 native CI RED1 45916811032 (pip boundary), RED2 45918686561 (exact BT Debian versions missing, exit100); Python pip/system/EGL actual PASS and 94/94 preflight PASS in RED2. Artifact 15163184267 original ZIP +22/22 inner hashes verified. Build and L2 NOT_RUN. Supplemental signed snapshot recovery prepared; no physical acceptance. [Debug report](reports/G04_T10_BT_APT_SNAPSHOT_DEBUG_KO.md).
+
+- T10 RED3 run 45919308935, artifact 15163622279 ZIP/72 internal hashes verified: signed BT snapshot five exact pins, 8-package build, 75 module install audit, 407 source/94 asset freeze & stage PASS; actual basic L2 FAIL, 3/10 checks, forbidden RR_calf:world:WAITING engine exit1 before VISION_EXPIRED; bag closed, residual PASS. Historical Nav2 1.3.13 vs actual 1.3.14; one parity candidate prepared, not a proven cause. [Debug report](reports/G04_T10_NATIVE_CONTACT_DEBUG_KO.md).

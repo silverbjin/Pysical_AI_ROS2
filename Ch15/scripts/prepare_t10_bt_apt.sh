@@ -28,7 +28,8 @@ check_index() {
   return "$missing"
 }
 apt-cache policy ros-jazzy-py-trees ros-jazzy-py-trees-ros ros-jazzy-py-trees-ros-interfaces python3-pydot python3-pyparsing > "$e/bt-apt-policy-before.txt"
-if ! check_index > "$e/bt-index-before.log"; then
+# Historical Nav2 parity also requires snapshot even if BT happens to be available.
+if ! check_index > "$e/bt-index-before.log" || ! apt-cache show ros-jazzy-nav2-controller 2>/dev/null | grep -E '^Version: 1\.3\.13-' > /dev/null; then
   apt-get install -y --no-install-recommends curl gnupg ca-certificates
   key=/etc/apt/keyrings/ros-snapshots-archive-keyring.gpg
   mkdir -p /etc/apt/keyrings
