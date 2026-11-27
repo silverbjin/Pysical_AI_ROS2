@@ -118,3 +118,5 @@
 - R02 scoped Linux diagnostic PASS: V1 actual F03 probe PASS; V2 standalone run45979301639/job140438824765/artifact15187604496/source 0b044f528ffd99b23d563f32eddf27833dea7566, 954 host and160 ROS samples COMPLETE/no observed step, 9/9 contracts, host/container exit0, graph/container0. ZIP+17; combined ZIP+50 independent; CI archives61 files. WSL2 cause remains unknown, owner 4/5 partial; R03 next. [R02 final](reports/G09_R02_FINAL_KO.md).
 
 - R03 controlled ROS /clock forward/rewind candidate (original safety runtime unchanged). Actual DDS regression pending; no system time write, no physical motion. [Candidate](reports/G09_R03_CLOCK_GUARD_CANDIDATE_KO.md).
+
+- R03 actual controlled ROS clock regression PASS 2/2 run45979686052/job140440118378/artifact15189555018/source 170adb7a7d3c90a700cfac1d0ce445b1939e7c4a; ZIP+16. Forward +2.927308797s and rewind -.5s, native receipt age21.348/21.074ms, guard21.985/21.716ms, block→zero .071028/.072559ms, no auto-resume, clean4/4 and graph0. Original safety code unchanged; no system clock modification or physical/mission acceptance. [R03 final](reports/G09_R03_FINAL_KO.md).
