@@ -7,7 +7,7 @@
 | G02 | SCOPED_PASS | PASS 6 pure/IDL tests | SCOPED_PASS T03–05 | NOT_RUN | NOT_RUN |
 | G03 | MOCK_MISSION_PASS; T06–09 scoped | PASS 16 pure tests | SCOPED_PASS | NOT_RUN | NOT_RUN |
 | G04 | PASS_SCOPED_CH15_BASIC_V6_AND_T11; original native RED4 retained | PASS 13 baseline +3 targeted; Ch15 profile contracts PASS | SCOPED_PASS cube + native 8-package build/install | T11 PASS; T10 CH15_TABLE_V3_BT V6 PASS (10/10); original CH13_NATIVE FAIL (RED4) | NOT_RUN |
-| G05 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
+| G05 | PASS_SCOPED_G05_T12_T14 | PASS 10 explicit tests + C15 synthetic MCAP | T12 scoped PASS; T13 V7 actual3/3 PASS; T14 V7 typed analysis + V9 actual replay PASS; L3 NOT_RUN |
 | G06 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 | G07 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 | G08 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
@@ -80,3 +80,5 @@
 - G05 V7 actual45949623564 artifact15176233329 ZIP+102: Cyclone isolated timing PASS, normal/F01/F06 actual recording and typed analysis 3/3 PASS, 1664 MCAP msgs, 51 exact events, 7 UUID terminal, 21 clean, 36/36 independent case checks. Replay graph internal /events/read_split rejected before playback; V8 strict type/owner graph-only allowance and actual replay payload parity. Original V7 raw withheld; only new normal required for same-bag replay, no F01/F06 repeat. [Report](reports/G05_V7_RECORD_GREEN_REPLAY_RED_KO.md).
 
 - G05 V8 actual45950200814 artifact15175798913 ZIP+42: normal COMPLETED, replay received full23/23 event payload,140/140 status,151 clock, exact read_split infrastructure, then unexpected /clock owner; player exit0, raw failed owner not logged. V9 bind exact GID and allow only known same-GID unknown-name metadata after complete data; wrong/new/duplicate endpoint rejects, post-exit graph cleanup. [Report](reports/G05_V8_REPLAY_ENDPOINT_DEBUG_KO.md). T14 final HOLD until actual PASS.
+
+- G05 final scoped PASS: V7 record run45949623564 artifact15176233329 source47bba1cc2769621ca68a4fffd025df384f1a755a (actual normal/F01/F06 record+analysis 3/3, 1664 MCAP messages, 51 events,7 UUID terminals,21 clean); V9 replay run45950671176 artifact15175994043 source c69fb2585546b89702d21d5e4e86f610d569f330 (normal COMPLETED, 712 msgs, replay23/23 full events,140/140 states,147 monotonic clock, control0, graph cleanup, same GID metadata-loss x2, player exit0). Independent ZIP+144, case48/48, combined18/18. T12 build/import6/6, explicit10/10; colcon registered tests0; demo and Git/LFS/asset receipts reused. Original RED evidence retained, no raw mission MCAP redistribution, G04 preserved, G06–09 NOT_STARTED, owner L3 NOT_RUN, main merge HOLD. [최종 보고서](reports/G05_FINAL_ACCEPTANCE_KO.md), [receipt](../evidence/g05/g05_final_receipt.json).

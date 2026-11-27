@@ -1,21 +1,49 @@
-# 15.5 미션 기록·분석 실습 (G05)
-WSL2 Ubuntu24.04/Jazzy, source /opt/ros/jazzy/setup.bash 및 별도 Ch15 install/setup.bash. G03_INSTALL은 해당 install의 절대경로. 빈 로컬 ROS domain을 선택한다. 실제 로봇/기존 Ch13 프로세스와 혼용 금지.
+# 15.5 미션 기록·분석·격리 재생 실습 — G05 인수판
+목표: 실제 ROS 2 DDS mock mission을 MCAP에 기록하고 사건/상태를 분석한 다음, 제어 명령 없는 격리 재생을 검증한다. 실제 로봇/Ch13/Ch14 물리 환경과 동시에 실행하지 않는다.
+
+## 1. 준비
+Ubuntu 24.04 / ROS 2 Jazzy / WSL2. 최소 4개 사용 가능한 CPU, 새 workspace 및 빈 localhost ROS domain. G05 실제 최종 실행 PIN: c69fb2585546b89702d21d5e4e86f610d569f330. 다음은 G05 WSL2 실습 명령이며 CI 성공과 owner L3는 구분한다.
 ```bash
-bash Ch15/scripts/record_mission.sh normal "$HOME/g05-normal" 76
-python3 Ch15/python/bag_to_csv.py "$HOME/g05-normal/bag" "$HOME/g05-normal/analysis"
-python3 Ch15/python/plot_mission.py "$HOME/g05-normal/analysis"
-bash Ch15/scripts/replay_mission.sh "$HOME/g05-normal/bag" "$HOME/g05-normal/replay.json" 79 76
+sudo apt update
+sudo apt install -y python3-rosdep python3-colcon-common-extensions python3-matplotlib ros-jazzy-rosbag2 ros-jazzy-rosbag2-storage-mcap ros-jazzy-rmw-cyclonedds-cpp
+source /opt/ros/jazzy/setup.bash
+ROOT="$(git rev-parse --show-toplevel)"
+rosdep install --from-paths "$ROOT/Ch15/ros2_ws/src" --ignore-src --rosdistro jazzy -y
+mkdir -p "$HOME/ch15_g05_ws"
+cd "$HOME/ch15_g05_ws"
+colcon build --base-paths "$ROOT/Ch15/ros2_ws/src"
+source install/setup.bash
+export G03_INSTALL="$PWD/install"
 ```
-F01/F06은 별도 새 출력 및 domain으로 반복한다. 실제 Mock 장애 주입의 기록만 검증하며 G08 안전 복구는 별도. MCAP recorder가 먼저 기동하고 10개 필수 토픽 discovery 후 start 서비스 호출. 64MiB 제한, 8MiB 분할, 60초 기록 budget. /clock, odom, joints 등 없는 데이터는 N/A. typed Event/Status와 String demo reader는 분리. START/END, producer seq, Goal UUID, record/ROS/steady 시간을 비교한다. Energy는 effort/velocity 없으면 null; 실제 전력 추정 금지. Replay는 별도 domain에서 Event/Status와 생성 /clock만 허용; command/action/기록 clock 재생 금지. 원본 bag은 로컬 보존, 공개 저장소에는 해시 영수증 및 분석 결과만.
+ROOT는 PIN checkout 경로. Mock은 외부 물리 모델 불필요. G05 script에서만 Cyclone DDS/local domain 설정. 기존 안전 정책 및 command QoS 유지.
 
-기록 실행기는 최소 4개 사용 가능한 CPU가 필요합니다(안전 pair/recorder/worker 분리). 실제 scan과 false heartbeat가 충분히 진행된 뒤 Arbiter를 기동합니다. 이미 latch 상태이면 미션을 시작하지 않으며 자동 reset하지 않습니다. `startup_stages.json`, `arbiter_native_trace.json`, `watchdog_native_trace.json`을 분석하십시오.
+## 2. 정상 기록
+```bash
+bash "$ROOT/Ch15/scripts/record_mission.sh" normal "$HOME/g05-normal" 76
+python3 "$ROOT/Ch15/python/bag_to_csv.py" "$HOME/g05-normal/bag" "$HOME/g05-normal/analysis"
+python3 "$ROOT/Ch15/python/plot_mission.py" "$HOME/g05-normal/analysis"
+```
+새 출력 경로. Recorder 먼저, Scan 단일 발행자 10Hz, Watchdog false heartbeat, Arbiter 및 Ready/Safety 600ms 연속 검증, discovery 10개 후 명시 start. 64MiB budget, 8MiB split. 정상 COMPLETED, 4 accepted/terminal UUID. 7 owned process exit0. F01만 실제 양의 command 관측 후 scan 중단. Record QoS event + tf_static Reliable, 연속 telemetry Best Effort. /clock, odom, joints 등 없는 mock 물리 토픽 N/A, energy null.
 
-V4의 기록기 구독은 continuous telemetry Best Effort, MissionEvent 및 /tf_static Reliable로 구분합니다. 원본 제어 QoS는 그대로입니다. Event 무결성은 반드시 100% 일치해야 하고 sampled telemetry는 모든 필수 토픽과 마지막 상태를 검증합니다. `mock_native_trace.json`의 actual goal gate와 `arbiter_native_trace.json`의 publisher 시간을 대조하십시오.
+## 3. 장애 기록
+```bash
+for row in F01:77 F06:78; do
+  mode="${row%:*}"; domain="${row#*:}"
+  bash "$ROOT/Ch15/scripts/record_mission.sh" "$mode" "$HOME/g05-$mode" "$domain"
+  python3 "$ROOT/Ch15/python/bag_to_csv.py" "$HOME/g05-$mode/bag" "$HOME/g05-$mode/analysis"
+  python3 "$ROOT/Ch15/python/plot_mission.py" "$HOME/g05-$mode/analysis"
+done
+```
+ABORTED 기대 상태. F01 scan receipt loss, F06 실제 mock pick result6. G08 안전 반응/복구 acceptance 아님.
 
-V6에서는 G05 전용 Scan 노드가 독립 SingleThreadedExecutor에서 원본과 동일한 10Hz LaserScan을 발행합니다. 기존 Mock Action 서버는 Scan publisher를 제거하고, 실제 `/scan` 발행자 1개를 확인합니다. Fast DDS 비동기 모드는 G05 스크립트 내에서만 적용됩니다. F01은 실제 양의 `/ch15/cmd_vel_in`을 관측한 뒤 Scan 발행을 중단하며 명령을 생성하지 않습니다. 7개 프로세스 정상 종료와 `scan_source_trace.json`을 확인하십시오.
+## 4. 실제 재생
+```bash
+bash "$ROOT/Ch15/scripts/replay_mission.sh" "$HOME/g05-normal/bag" "$HOME/g05-normal/replay.json" 79 76
+```
+Consumer 먼저, 다른 빈 domain, 정확한 Event/Status 두 토픽만 play. 새 /clock 1개, 기록 clock 제외. /events/read_split은 rosbag2 내부 타입으로 playback allowlist에 추가하지 않는다. 실제 player GID 고정 후 완전 데이터 수신 뒤 동일 GID unknown-name metadata loss만 허용. 새 GID/소유자/타입/복수 writer 거절. 상태·이벤트 전체 데이터, 시계 단조 증가, endpoint cleanup, player exit0, 제어 발행0 확인.
 
-V7 검증 후보: G05 스크립트에서만 Cyclone DDS 사용(`sudo apt install ros-jazzy-rmw-cyclonedds-cpp`). G03/G04 설정은 수정하지 않습니다. `executor_native_trace.json`에서 실제 미션 실행기의 ready_count, 수신 age, safety latch와 start 결과를 확인하십시오. V7 실제 인수 전까지 후보입니다.
+## 5. 증거 분석
+metadata.yaml/topic counts → executor/mission-events.jsonl → analysis/events.csv, states.csv, metrics.json, mission.png → replay.json. record/ROS/steady clock 분리, UUID 수락-종료, source/epoch/producer sequence 확인. String demo read_states와 typed decoder 구분. Scan 및 watchdog/arbiter/executor native traces로 최초 실패 경계 분석. Raw bag은 로컬 보존; 공개 Git에는 해시/요약만.
 
-V7 actual normal/F01/F06 recording and analysis PASS. Replay allows only two data topics as before. ROS bag player internal `/events/read_split` must be exact `rosbag2_interfaces/msg/ReadSplitEvent` from `rosbag2_player`; not a playable data topic. Generated `/clock` one, control topics/services zero, full event payload/order match, terminal state match. V8 replay-only CI creates one fresh original normal MCAP then plays it in another domain; V7 F01/F06 reused. Full CI opt-in remains available.
-
-V9 재생 검사기는 Player의 실제 DDS endpoint GID를 최초 정상 발행자 확인 시 고정합니다. 전체 원본 데이터가 이미 수신된 종료 구간에만 동일 GID의 node-name 미해결 표기를 추적하며, 새 GID/다른 소유자/다중 발행자는 거절합니다. `graph_cleanup`과 `metadata_loss`를 확인하십시오.
+## 6. 실제 CI 및 보고서
+V7 record3/3 run45949623564, V9 replay run45950671176. [최종 인수 보고서](reports/G05_FINAL_ACCEPTANCE_KO.md), [독립 진단 보고서](reports/G05_SCAN_DIAGNOSTIC_RESULT_KO.md). CI 재현 full opt-in [RUN G05], replay-only [RUN G05 REPLAY]는 V7 timing/fault receipts 재사용을 전제로 하는 검수 유지보수용.
