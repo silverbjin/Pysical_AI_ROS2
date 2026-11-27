@@ -64,3 +64,5 @@
 - G05 candidate: dependency pin/clean build, 10-topic actual mock MCAP normal/F01/F06, typed CSV/KPI, read-only replay. G04 preserved; no G08 fault acceptance claim. [교육 보고서](reports/G05_IMPLEMENTATION_CANDIDATE_KO.md).
 
 - G05 RED1 45946312887 / artifact15174419809 ZIP+22 verified: actual rosdep/Git/LFS/6 packages build/5 pure PASS; normal recording START 1.25ms after final recorder subscription, first readiness_or_safety_lost and rejected goal, ABORTED, six clean. V2 600ms advancing admission plus ready/safety trace, no original limits changed; reject audit separated. [교육 보고서](reports/G05_RED1_START_ADMISSION_DEBUG_KO.md). T13/T14 not accepted.
+
+- G05 RED2 actual45946688628 artifact15174523716 ZIP+24 verified: exact lock2/2, 6 build/install, analysis4+replay2 pass; normal no start, 193 consecutive Ready but arbiter latched after source gap365.354ms. No reset/motion, 6 clean. V3 staged scan→watchdog→arbiter startup, dedicated CPU boundaries and original safety method trace; original guards unchanged. [교육 보고서](reports/G05_RED2_SAFETY_LATCH_DEBUG_KO.md). Actual pending.
