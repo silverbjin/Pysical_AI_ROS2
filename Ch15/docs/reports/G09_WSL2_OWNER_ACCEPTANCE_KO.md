@@ -30,3 +30,6 @@ all 순서 build→mock→physical_basic→cube→joint→faults. all과 개별 
 
 ## 4. 증거 제출
 터미널 CH15_OWNER_EVIDENCE 및 CH15_ARCHIVE_SHA256. 각 run의 .evidence.tar.gz와 .sha256, .archive-verification.json은 $CH15_WORK_ROOT/runs/ 아래 생성. exit0 scoped pass/1 fail/2 blocked/130 canceled. 원본 MCAP·외부 모델은 로컬에 보존하고 공개 업로드 금지; 필요한 경우 정제 영수증만 제출. WSL2 L3와 main merge는 실제 증거 검토 및 승인 후에만 결정.
+
+## 후속 인수 (R01~R04 이후)
+기존 4개 프로파일 WSL2 PASS 보존 완료; faults F03_transient RED, source clock step correlated, OS origin unknown. 이전 전체 5-profile 명령을 반복하지 말 것. [R05/R06 targeted PIN 및 실행 안내](G09_R05_R06_WSL2_KO.md)를 사용한다. Main HOLD.
