@@ -7,7 +7,7 @@
 | G02 | SCOPED_PASS | PASS 6 pure/IDL tests | SCOPED_PASS T03–05 | NOT_RUN | NOT_RUN |
 | G03 | MOCK_MISSION_PASS; T06–09 scoped | PASS 16 pure tests | SCOPED_PASS | NOT_RUN | NOT_RUN |
 | G04 | PASS_SCOPED_CH15_BASIC_V6_AND_T11; original native RED4 retained | PASS 13 baseline +3 targeted; Ch15 profile contracts PASS | SCOPED_PASS cube + native 8-package build/install | T11 PASS; T10 CH15_TABLE_V3_BT V6 PASS (10/10); original CH13_NATIVE FAIL (RED4) | NOT_RUN |
-| G05 | PASS_SCOPED_G05_T12_T14 | PASS 10 explicit tests + C15 synthetic MCAP | T12 scoped PASS; T13 V7 actual3/3 PASS; T14 V7 typed analysis + V9 actual replay PASS; L3 NOT_RUN |
+| G05 | PASS_SCOPED_G05_T12_T14 | PASS 10 explicit tests + C15 synthetic MCAP | T12 scoped PASS; T13 V7 actual 3/3 PASS; T14 V7 typed analysis + V9 actual replay PASS | N/A (mock scope) | NOT_RUN |
 | G06 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 | G07 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
 | G08 | NOT_STARTED | NOT_RUN | NOT_RUN | NOT_RUN |
