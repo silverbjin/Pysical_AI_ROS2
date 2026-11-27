@@ -116,7 +116,7 @@ if __name__=='__main__':
     if sys.argv[1]=='producer':producer(Path(sys.argv[2]),sys.argv[3],sys.argv[4] if len(sys.argv)>4 else 'normal')
     else:
         out=Path(sys.argv[1]);out.mkdir(parents=True,exist_ok=False)
-        cases=[('isolated-on-async','isolated',True,85)] if '--isolated-async-qualify' in sys.argv else [('original-on-async','original',True,84)] if '--async-qualify' in sys.argv else [('original-off','original',False,81),('original-on','original',True,82),('isolated-on','isolated',True,83)]
+        cases=[('isolated-on-cyclone','isolated',True,86)] if '--isolated-cyclone-qualify' in sys.argv else [('isolated-on-async','isolated',True,85)] if '--isolated-async-qualify' in sys.argv else [('original-on-async','original',True,84)] if '--async-qualify' in sys.argv else [('original-off','original',False,81),('original-on','original',True,82),('isolated-on','isolated',True,83)]
         results=[run_case(out/name,kind,on,d) for name,kind,on,d in cases]
         write(out/'diagnosis.json',dict(result='DIAGNOSTIC_COMPLETE',cases=results,original_source_unchanged=True,physical_motion=False,rmw=os.environ.get('RMW_IMPLEMENTATION'),publication_mode=os.environ.get('RMW_FASTRTPS_PUBLICATION_MODE')))
-        if any(x in sys.argv for x in ('--async-qualify','--isolated-async-qualify')) and not all(r['qualified'] for r in results):raise SystemExit(1)
+        if any(x in sys.argv for x in ('--async-qualify','--isolated-async-qualify','--isolated-cyclone-qualify')) and not all(r['qualified'] for r in results):raise SystemExit(1)

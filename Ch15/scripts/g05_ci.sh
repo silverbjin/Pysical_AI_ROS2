@@ -2,7 +2,7 @@
 set -eo pipefail
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends git git-lfs python3-rosdep python3-colcon-common-extensions python3-pytest python3-yaml python3-matplotlib ros-jazzy-rosbag2 ros-jazzy-rosbag2-storage-mcap ros-jazzy-py-trees
+apt-get install -y --no-install-recommends git git-lfs python3-rosdep python3-colcon-common-extensions python3-pytest python3-yaml python3-matplotlib ros-jazzy-rosbag2 ros-jazzy-rosbag2-storage-mcap ros-jazzy-py-trees ros-jazzy-rmw-cyclonedds-cpp
 source /opt/ros/jazzy/setup.bash
 if [[ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then rosdep init; fi
 rosdep update --rosdistro jazzy
@@ -30,17 +30,18 @@ print('G05_INSTALLED_IMPORTS_6_OF_6')
 PY
 printf 'REUSE run45947575404 artifact15175486140 demo-smoke/demo_result.json\n' > /evidence/demo-reuse.txt
 # G05 local mock only. Keep native publishers/subscribers QoS and safety limits.
-export RMW_IMPLEMENTATION=rmw_fastrtps_cpp RMW_FASTRTPS_PUBLICATION_MODE=ASYNCHRONOUS
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+unset RMW_FASTRTPS_PUBLICATION_MODE CYCLONEDDS_URI
 unset FASTDDS_DEFAULT_PROFILES_FILE FASTRTPS_DEFAULT_PROFILES_FILE RMW_FASTRTPS_USE_QOS_FROM_XML
 python3 - <<'PY' | tee /evidence/rmw.json
 import json,os
 from rclpy.utilities import get_rmw_implementation_identifier
 actual=get_rmw_implementation_identifier()
-assert actual=='rmw_fastrtps_cpp'
-print(json.dumps(dict(rmw=actual,publication_mode=os.environ['RMW_FASTRTPS_PUBLICATION_MODE'])))
+assert actual=='rmw_cyclonedds_cpp'
+print(json.dumps(dict(rmw=actual,publication_mode=None)))
 PY
 # No motion. Qualify actual timing before any normal mission.
-timeout --signal=INT --kill-after=15s 60s python3 /repo/Ch15/tests/g05_scan_diag.py /evidence/async-qualification --isolated-async-qualify
+timeout --signal=INT --kill-after=15s 60s python3 /repo/Ch15/tests/g05_scan_diag.py /evidence/cyclone-qualification --isolated-cyclone-qualify
 for row in normal:76 F01:77 F06:78; do
   mode="${row%:*}"; domain="${row#*:}"
   timeout --signal=INT --kill-after=20s 90s bash /repo/Ch15/scripts/record_mission.sh "$mode" "/evidence/$mode" "$domain"

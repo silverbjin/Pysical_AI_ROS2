@@ -75,7 +75,7 @@ try:
     spawn('scan_source',[sys.executable,str(ROOT/'tests/g05_scan_diag.py'),'producer',str(out/'scan_source_trace.json'),'isolated',mode])
     until(scan_stable,15);stage('isolated_scan_stable')
     launch('ch15_safety','readiness_monitor')
-    launch('ch15_mission','mission_executor','--ros-args','-p','evidence_dir:='+str(out/'executor'))
+    spawn('mission_executor',[sys.executable,str(ROOT/'tests/g05_executor_trace.py'),str(out/'executor_native_trace.json'),'--ros-args','-p','evidence_dir:='+str(out/'executor')])
     spawn('mock_servers',[sys.executable,str(ROOT/'tests/g05_fault_fixture.py'),mode,str(out/'mock_native_trace.json'),'--ros-args','-p','nav_fixture_hold_s:=2.0' if mode=='F01' else 'nav_fixture_hold_s:=0.0','-p','publish_scan:=false'])
     until(scan_stable,15);stage('scan_stable')
     spawn('sensor_watchdog',[sys.executable,str(ROOT/'tests/g05_safety_trace.py'),'watchdog',str(out/'watchdog_native_trace.json')])
@@ -83,7 +83,8 @@ try:
     spawn('command_arbiter',[sys.executable,str(ROOT/'tests/g05_safety_trace.py'),'arbiter',str(out/'arbiter_native_trace.json'),'--ros-args','-p','require_mission_authorization:=true'])
     until(admission,20);stage('mission_admission')
     assert not events
-    start_wall=time.monotonic_ns();f=start.call_async(Trigger.Request());until(f.done,4);assert f.result().success
+    start_wall=time.monotonic_ns();f=start.call_async(Trigger.Request());until(f.done,4)
+    assert f.result().success,('start_request_rejected',f.result().message)
     until(lambda:statuses and statuses[-1].state in ('COMPLETED','ABORTED','ERROR'),30)
     expected='COMPLETED' if mode=='normal' else 'ABORTED'
     until(lambda:any(e.event=='END' for e in events),3)
