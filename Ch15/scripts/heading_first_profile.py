@@ -38,3 +38,14 @@ def corridor(p,g):
 
 def final(p,g):
     return valid(p) and valid(g) and math.dist(p[:2],g[:2])<=FINAL_XY and yaw_error(p[2],g[2])<=FINAL_YAW
+
+
+def staging_guard(p,g,entered):
+    """Latch a near-stage envelope; never let repeated fine alignment wander.
+
+    The 100/120 mm values are candidate-only monitors, not a physical guarantee.
+    """
+    if not valid(p) or not valid(g):return False,entered
+    d=math.dist(p[:2],stage(g)[:2])
+    entered=entered or d<=.10
+    return (not entered or d<=.12),entered

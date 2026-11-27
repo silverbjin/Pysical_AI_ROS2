@@ -3,7 +3,7 @@
 then explicit straight FollowPath. No new velocity publisher or BT mission."""
 import argparse, hashlib, json, math, os, re, signal, subprocess, sys, time, traceback
 from pathlib import Path
-from heading_first_profile import aligned, stage, straight, corridor, final, yaw_error
+from heading_first_profile import aligned, stage, straight, corridor, final, yaw_error, staging_guard
 
 def main():
     parser=argparse.ArgumentParser()
@@ -37,7 +37,7 @@ def main():
     from vision_mission import select_goal,wait_new_capture,current_q
     from run_r2_probe import service_call
     import numpy as np
-    S=dict(source='CH15_HEADING_FIRST_V1',scope='actual heading and straight segment only',
+    S=dict(source='CH15_HEADING_FIRST_V2',scope='actual heading and straight segment only',
            result='FAIL',full_mission_success=False,original_native_l2_pass=False,phases=[],checks={})
     launch=node=log=None;active=None;clients={};armed=False;phase='startup'
     clock=0;state=joints=grid=observation=None;statuses={};rows=[];last_state_wall=0.;plans=[]
@@ -86,14 +86,14 @@ def main():
         m.pose.position.x,m.pose.position.y=map(float,p[:2])
         m.pose.orientation.z=math.sin(p[2]/2);m.pose.orientation.w=math.cos(p[2]/2)
         return m
-    def nav_goal(p,stamp):
+    def nav_goal(p,stamp,survey=False):
         g=NavigateToPose.Goal();g.pose=stamped(p,stamp)
-        g.behavior_tree=str(Path(get_package_share_directory('ch13_navigation_reuse'))/'config/navigate_survey.xml')
+        g.behavior_tree=str(Path(get_package_share_directory('ch13_navigation_reuse'))/'config'/('navigate_survey.xml' if survey else 'navigate_no_recovery.xml'))
         return g
     def run_action(label,client,goal,budget,monitor=None):
         nonlocal active,armed,phase
         phase=label;started=clock
-        rec=dict(phase=label,start_pose=pose(),start_sim_ns=started)
+        rec=dict(phase=label,start_pose=pose(),start_sim_ns=started,behavior_tree=getattr(goal,'behavior_tree',None),goal_checker=('survey_checker' if label=='survey_setup' else 'goal_checker'))
         S['phases'].append(rec);write()
         assert not fault() and counts_ok() and snapshot()['platform'].get('stationary_ready'),'not ready'
         call('navigation/enable')
@@ -107,13 +107,20 @@ def main():
             call('gateway/arm');call('platform/arm');armed=True
         call('navigation/release');rec['release_sim_ns']=clock
         def interrupted():
-            if fault():return True
-            if clock-started>budget*1e9:return True
-            if monitor and (time.monotonic()-last_state_wall>.3 or not monitor(pose())):return True
+            reason=None
+            if fault():reason='NATIVE_FAULT'
+            elif clock-started>budget*1e9:reason='SIM_BUDGET'
+            elif monitor and time.monotonic()-last_state_wall>.3:reason='STATE_EXPIRED'
+            elif monitor and not monitor(pose()):reason='CANDIDATE_ENVELOPE'
+            if reason:
+                rec.update(interruption=reason,interruption_pose=pose(),interruption_sim_ns=clock)
+                write();return True
             return result.done()
         assert until(interrupted,240),'action wall deadline'
-        assert result.done() and not fault() and counts_ok() and clock-started<=budget*1e9 and (monitor is None or monitor(pose())),'action interrupted by fault/deadline/corridor'
-        rec['terminal']=result.result().status;active=None
+        if result.done():
+            rec['terminal']=result.result().status;rec['terminal_sim_ns']=clock
+        assert result.done() and 'interruption' not in rec and not fault() and counts_ok() and clock-started<=budget*1e9 and (monitor is None or monitor(pose())),'action interrupted by fault/deadline/corridor'
+        active=None
         call('navigation/idle');zero=clock
         assert until(lambda:snapshot()['platform'].get('stationary_ready') or fault(),8),'settle deadline'
         assert not fault() and snapshot()['platform'].get('stationary_ready') and clock-zero<=5e9,'settle failed'
@@ -150,7 +157,7 @@ def main():
                 if r.current_state.id==3:break
                 assert time.monotonic()<end,('lifecycle not active',name)
         scenario=get_scenario('level2_obstacles')
-        run_action('survey_setup',nav,nav_goal(scenario.survey_pose,clock),120)
+        run_action('survey_setup',nav,nav_goal(scenario.survey_pose,clock,survey=True),120)
         phase='vision_admission'
         target,record,model=select_goal(root,node,until,lambda:observation,lambda:state,lambda:joints,lambda:grid,lambda:clock)
         S['vision_admission']=record;S['initial_goal']=target
@@ -159,7 +166,15 @@ def main():
         assert path_footprint_clear([staging],grid,fp),'stage footprint blocked'
         assert until(lambda:statuses['navigation'].get('vision_capture_ns',0)>=record['source_observation']['capture_ns'] and statuses['navigation'].get('vision_capture_age_wall_s',1)<=.3,2),'vision health admission'
         call('navigation/require_vision')
-        run_action('heading_alignment',nav,nav_goal(staging,clock),90)
+        # RED1: survey_checker 60mm permits a terminal with >30mm lateral error.
+        # Reuse the existing strict 15mm, non-stateful checker at the safer staging
+        # waypoint, not at the table. Latch bounded near-stage correction.
+        entered=False
+        def stage_monitor(p):
+            nonlocal entered
+            ok,entered=staging_guard(p,target,entered)
+            return ok
+        run_action('heading_alignment',nav,nav_goal(staging,clock),90,stage_monitor)
         S['checks']['stage_aligned']=aligned(pose(),target)
         assert S['checks']['stage_aligned'],('stage alignment failed',pose(),staging,target)
         phase='fresh_target'

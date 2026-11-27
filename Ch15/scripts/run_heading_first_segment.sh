@@ -33,5 +33,5 @@ python3 Ch13/scripts/reuse_13_5/inspect_r2_residuals.py "$out/after.json"
 residual_rc=$?
 printf '{"runner_exit":%d,"residual_exit":%d}\n' "$rc" "$residual_rc" >"$out/exit-contract.json"
 set -e
-test "$rc" = 0 && test "$residual_rc" = 0
+if ((rc != 0 || residual_rc != 0)); then exit 1; fi
 python3 "$adapter" residual --residual "$out/after.json" --out "$out/after-verdict.json"

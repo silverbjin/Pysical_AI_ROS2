@@ -1,5 +1,5 @@
 import unittest,math
-from heading_first_profile import stage,aligned,straight,corridor,final,yaw_error
+from heading_first_profile import stage,aligned,straight,corridor,final,yaw_error,staging_guard
 
 class TestProfile(unittest.TestCase):
     def test_stage(self):
@@ -24,4 +24,11 @@ class TestProfile(unittest.TestCase):
         self.assertTrue(final((2.21,1.,.05),g))
         self.assertFalse(final((2.216,1.,0),g))
         self.assertFalse(final((2.2,1.,.061),g))
+    def test_stage_envelope(self):
+        g=(2.2,1.,0.)
+        self.assertEqual(staging_guard((1.5,1.,0),g,False),(True,False))
+        self.assertEqual(staging_guard((1.75,1.,0),g,False),(True,True))
+        self.assertEqual(staging_guard((1.7,1.,0),g,True),(True,True))
+        self.assertEqual(staging_guard((1.65,1.,0),g,True),(False,True))
+        self.assertEqual(staging_guard((float('nan'),1.,0),g,True),(False,True))
 if __name__=='__main__':unittest.main()

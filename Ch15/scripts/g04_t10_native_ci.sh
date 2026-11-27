@@ -125,7 +125,7 @@ if [[ "${1:-}" == --heading-segment ]]; then
   python3 - "$e/case/native/segment_result.json" <<'PY'
 import json,sys
 r=json.load(open(sys.argv[1]))
-assert r['result']=='PASS_SCOPED_SEGMENT' and r['source']=='CH15_HEADING_FIRST_V1'
+assert r['result']=='PASS_SCOPED_SEGMENT' and r['source']=='CH15_HEADING_FIRST_V2'
 assert r['original_native_l2_pass'] is False and r['full_mission_success'] is False
 assert set(r['checks'])=={'stage_aligned','straight_map_clear','final_pose','fresh_final_observation','workspace','one_command_chain','no_fault','engine_clean','children_clean'}
 assert all(r['checks'].values()) and len(r['phases'])==3
