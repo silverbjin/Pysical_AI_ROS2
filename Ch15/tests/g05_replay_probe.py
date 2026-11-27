@@ -14,7 +14,7 @@ topics=validate(domain,source,SAFE)
 assert os.environ.get('ROS_DOMAIN_ID')==str(domain) and os.environ.get('ROS_LOCALHOST_ONLY')=='1'
 rclpy.init();n=Node('g05_replay_consumer');events=[];states=[];clock=[];seen=set();p=None;error=None;clock_one=False
 n.create_subscription(MissionEvent,SAFE[0],events.append,profile(100))
-n.create_subscription(MissionStatus,SAFE[1],states.append,state_qos)
+n.create_subscription(MissionStatus,SAFE[1],states.append,profile(10,reliable=False,transient=True))
 n.create_subscription(Clock,'/clock',clock.append,profile(10,reliable=False))
 try:
     end=time.monotonic()+.5

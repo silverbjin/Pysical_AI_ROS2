@@ -28,6 +28,7 @@ python3 - <<'PY'
 import ch15_interfaces.msg, ch15_adapters.mock_servers, ch15_safety.readiness_monitor, ch15_mission.mission_executor, ch15_simulation.cube_detector, ch15_visualization
 print('G05_INSTALLED_IMPORTS_6_OF_6')
 PY
+python3 /repo/Ch15/tests/g05_demo_mcap.py /evidence/demo-smoke
 for row in normal:76 F01:77 F06:78; do
   mode="${row%:*}"; domain="${row#*:}"
   timeout --signal=INT --kill-after=20s 90s bash /repo/Ch15/scripts/record_mission.sh "$mode" "/evidence/$mode" "$domain"
