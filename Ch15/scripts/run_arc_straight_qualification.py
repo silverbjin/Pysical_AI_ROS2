@@ -73,8 +73,21 @@ def main():
         commands=[('ingress',[get_package_prefix('ch13_reuse_wire')+'/lib/ch13_reuse_wire/ingress','--manipulation']),
                   ('gateway',[sys.executable,'-m','ch13_navigation_reuse.command_gateway','--manipulation','true']),
                   ('platform',[sys.executable,'-m','ch13_navigation_reuse.platform_adapter','--repo-root',str(root),'--report',str(out/'engine.json'),'--max-sim-s','60','--scene','vision','--manipulation','true','--pick-scene','true'])]
+        # Candidate-only scheduling isolation. Never change Ch13 source,
+        # clock stamps, DDS QoS, safety deadlines, or model/policy.
+        cpus=sorted(os.sched_getaffinity(0))
+        assert len(cpus)>=4,'qualification requires four available CPUs'
+        groups={'ingress':cpus[:1],'gateway':cpus[1:2],'platform':cpus[2:]}
+        S['cpu_affinity']={**groups,'supervisor':cpus[1:2]}
         for name,cmd in commands:
-            log=(out/(name+'.log')).open('w');logs.append(log);children.append((name,subprocess.Popen(cmd,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)))
+            env=os.environ.copy()
+            if name=='gateway':env['CH13_REUSE_STARTUP_TRACE']=str(out)
+            log=(out/(name+'.log')).open('w');logs.append(log)
+            command=['taskset','-c',','.join(map(str,groups[name])),*cmd]
+            child=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,start_new_session=True,env=env)
+            children.append((name,child))
+        os.sched_setaffinity(0,set(cpus[1:2]))
+        write()
         rclpy.init();node=Node('ch15_coupled_arc_straight')
         node.create_subscription(Clock,'/clock',on_clock,1)
         node.create_subscription(Odometry,N+'/engine_state',on_state,1)
@@ -88,7 +101,9 @@ def main():
             ready=state is not None and clock>2e9 and statuses.get('gateway',{}).get('ready_for_arm') and stationary() and counts() and not fault() and safe_zero and now-state_wall<=.10 and now-safe_wall<=.10
             stamps=(clock,ns(state.header.stamp) if state is not None else 0,safe_stamp)
             return window.observe(now,stamps,ready)
-        assert until(prearm,35),'continuous startup readiness'
+        assert until(lambda: fault() or prearm(),35),'continuous startup readiness'
+        S['startup_window_resets']=window.resets
+        assert not fault(),('native prearm fault',statuses.get('gateway',{}).get('fault'),statuses.get('platform',{}).get('fault'))
         S['startup_admission']={'stable_wall_s':2.,'min_sim_progress_s':1.,'window_resets':window.resets,'admitted_clock_ns':clock,'safe_stamp_ns':safe_stamp}
         assert not fault();origin=xy()
         call('gateway/arm')
@@ -175,6 +190,12 @@ def main():
         S['checks']['children_clean']=len(children)==3 and all(c.returncode==0 for _,c in children)
         if not S['checks']['children_clean']:S['result']='FAIL'
         S['last_status']=statuses
+        trace_path=out/'gateway_startup_trace.json'
+        S['gateway_startup_trace_present']=trace_path.is_file()
+        if trace_path.is_file():
+            native_trace=json.loads(trace_path.read_text())
+            S['gateway_first_fault']=native_trace.get('fault')
+        elif S['result']=='PASS_SCOPED_ARC_STRAIGHT':S['result']='FAIL'
         (out/'arc_straight_trace.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in trace))
         write();print(json.dumps(S,indent=2),flush=True)
     return 0 if S['result']=='PASS_SCOPED_ARC_STRAIGHT' else 1
