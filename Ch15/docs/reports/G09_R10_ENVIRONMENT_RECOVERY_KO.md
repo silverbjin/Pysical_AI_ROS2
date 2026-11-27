@@ -5,3 +5,6 @@ R11 F06, R12 F01 미실행. 최종 WSL2_CLOCK_STABILITY_ACCEPTED 부여 금지.
 
 ## Owner baseline update
 Actual baseline DIAGNOSTIC_FAIL (71/71 files). Direct time discipline mechanism measured; writer unknown. First authorized action proposed: short temporary per-instance tracefs observation of time-changing syscall callers plus read-only timex samples. No service or clock write. Root required for tracefs only; if unavailable fail closed and preserve evidence; no mount/installation. A syscall trace cannot decode user-pointer modes by itself, and kernel internal changes may bypass syscall tracepoints; correlate caller and timestamp, do not equate any adjtimex call with a write. If needed propose a separate scoped argument trace or a single service experiment with rollback after approval. Windows W32Time was stopped, external offset about +4.37s; do not switch guest solely to host until host accuracy addressed. F06/F01 blocked.
+
+## Actual single-change experiment result
+[Owner result](G09_R10_TIMESYNCD_OWNER_RESULT_KO.md): temporary stop verified, step 5→0, tick 9167→10058→10000 in 35.932s, normal suffix144s; service and enablement restored. Environment HOLD; Windows authority check next, no further changes without approval.

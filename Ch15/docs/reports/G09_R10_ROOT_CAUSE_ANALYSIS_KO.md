@@ -17,3 +17,6 @@ R09 Docker anchors use host MONOTONIC as reference for container RAW and REALTIM
 
 ## 실제 writer trace 후속
 [180초 추적 결과](G09_R10_WRITER_TRACE_KO.md): 5/5 steps enclose systemd-timesyn syscall; chronyd 76 calls, tick9167 throughout. Direct initial tick writer UNKNOWN. No setting change. Approved reversible one-service experiment next.
+
+## Intervention evidence
+[Owner result](G09_R10_TIMESYNCD_OWNER_RESULT_KO.md): timesyncd calls 5→0 and steps 5→0 during verified stop; chronyd calls bracket both recovery tick transitions. Interaction hypothesis strongly supported, initial writer and exact modes remain unknown. No permanent setting change.

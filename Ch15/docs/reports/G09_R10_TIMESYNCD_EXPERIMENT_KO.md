@@ -15,3 +15,6 @@ BOOT="$HOME/ch15-clock-timesyncd-experiment.py"
 curl -fsSLo "$BOOT" "https://raw.githubusercontent.com/silverbjin/Pysical_AI_ROS2/$PIN/Ch15/scripts/clock_diag_timesyncd_experiment.py" && printf '%s  %s\n' "$SHA256" "$BOOT" | sha256sum -c - && python3 "$BOOT" --source-pin "$PIN" --source-sha256 "$SHA256" --approved
 ```
 - Submit outer tar.gz and tar.gz.sha256 privately even on failure. Source receipt inside. Verify restored active/running + unit-file-state match; if unverified, run sudo systemctl start systemd-timesyncd.service and systemctl is-active systemd-timesyncd.service. Timer is guest monotonic, not guaranteed against VM/systemd loss. No retry until review.
+
+## Owner result
+Actual stop/capture/restore completed; see [independent evidence analysis](G09_R10_TIMESYNCD_OWNER_RESULT_KO.md). No permanent change; no mission acceptance.
