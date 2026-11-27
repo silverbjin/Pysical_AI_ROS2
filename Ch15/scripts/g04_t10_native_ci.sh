@@ -117,6 +117,22 @@ phase=ASSET_MATERIALIZATION
 # No historical audit repetition and no asset upload.
 python3 /work/feature/Ch15/scripts/prepare_native_assets.py --target /work/upstream-iit-locomanipulation-d010212 --receipt "$e/asset-verification.json" > "$e/acquisition.log"
 touch /work/ch13_reuse_engine.lock
+if [[ "${1:-}" == --arc-straight ]]; then
+  phase=ISOLATED_ARC_STRAIGHT
+  export CMAKE_BUILD_PARALLEL_LEVEL=2
+  bash /work/feature/Ch15/scripts/run_arc_straight_qualification.sh /work/native /work/feature/Ch15/dependencies/native_local_use_approval.json "$e/case"
+  python3 - "$e/case/native/arc_straight_result.json" <<'PY'
+import json,sys
+r=json.load(open(sys.argv[1]))
+assert r['source']=='CH15_COUPLED_ARC_STRAIGHT_V1' and r['result']=='PASS_SCOPED_ARC_STRAIGHT'
+assert not r['original_native_l2_pass'] and not r['segment_pass'] and not r['full_mission_success']
+assert len(r['phases'])==2 and all(p['ready'] for p in r['phases'])
+assert all(r['checks'].values())
+print('CH15_COUPLED_ARC_STRAIGHT_PASS')
+PY
+  phase=COMPLETE
+  exit 0
+fi
 if [[ "${1:-}" == --plant-identification ]]; then
   phase=ISOLATED_PLANT_IDENTIFICATION
   export CMAKE_BUILD_PARALLEL_LEVEL=2
