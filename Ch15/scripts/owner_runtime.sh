@@ -66,7 +66,11 @@ case "$kind" in
   python3 "$CH/python/plot_mission.py" /evidence/analysis
   timeout --signal=INT --kill-after=10s 55s bash "$CH/scripts/replay_mission.sh" /input-bag /evidence/replay.json 79 76;;
  cube)
-  export ROS_DOMAIN_ID=79 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST;domains=(79)
+  export ROS_DOMAIN_ID=95 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST;domains=(95 79)
+  for mode in SIGINT SIGTERM exception; do
+    timeout --signal=INT --kill-after=5s 20s python3 "$CH/tests/g09_detector_shutdown_probe.py" "$mode" "/evidence/detector-shutdown-probe-$mode.json"
+  done
+  export ROS_DOMAIN_ID=79
   bash "$CH/scripts/run_cube_lab.sh" /evidence/cube;;
  markers)
   export ROS_DOMAIN_ID=85;domains=(85)

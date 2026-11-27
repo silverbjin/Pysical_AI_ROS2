@@ -29,7 +29,6 @@ def rotation(q):
 def main():
     import json,time
     from collections import OrderedDict
-    import rclpy
     from rclpy.node import Node
     from rclpy.time import Time
     from rclpy.clock import Clock,ClockType
@@ -99,8 +98,6 @@ def main():
                 row.update(result,xyz=world.tolist(),valid=True)
                 self.pose.publish(obs.target_pose)
             row['reason']=reason;self.target.publish(obs);self.diag.publish(String(data=json.dumps(row,allow_nan=False)))
-    rclpy.init();node=Detector()
-    try:rclpy.spin(node)
-    except (KeyboardInterrupt,rclpy.executors.ExternalShutdownException):pass
-    finally:node.destroy_node();rclpy.try_shutdown()
+    from ch15_simulation.graceful_spin import run_node
+    run_node(Detector)
 if __name__=='__main__':main()

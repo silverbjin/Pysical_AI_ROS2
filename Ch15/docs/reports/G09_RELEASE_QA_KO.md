@@ -2,3 +2,5 @@
 G08 scoped PASS 기준 cc7ba2e42cbaab8beb3fec87e62beb50e29f2e92. 실제 G01~G07 tags 확인. 신규 canonical bootstrap/verify/run_lab, strict archive verifier, profile dispatcher, Docker isolated runtime and native G04 exact delegation. C01–24/CLI01–07/Q1–12/guides9 traceability. C10/C24/Watchdog 시그니처 차이를 명시. CI run pending. Native physical successful underlying G04 V6 run reused; new wrapper actual success not yet verified. GUI explicit BLOCKED in wrapper, manual WSLg separate. No main merge, L3 NOT_RUN.
 
 V1 actual CI 45969586572: 5/6 jobs PASS (contract/build/mock/joint/faults). Cube function PASS identical T11 numbers; exit1 before residual. Archive succeeds even failure; see [RED](G09_V1_CUBE_SHUTDOWN_RED_KO.md). V2 cube-only environment restore + extra canonical ICD/marker checks. No repeat successes.
+
+V2 actual CI 45970210242: ICD and markers PASS. Cube functional witness PASS, shutdown RED reproduced. Detector alone exit 1; traceback publish into invalid ROS context during shutdown. V3 changes only detector lifecycle and adds real installed-node signal and exception regression, then reruns cube only. See [V2 debug report](G09_V2_CUBE_LIFECYCLE_RED_KO.md).

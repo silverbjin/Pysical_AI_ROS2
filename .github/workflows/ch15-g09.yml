@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [cube, icd, markers]
+        check: [cube]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -84,7 +84,7 @@ jobs:
             find "$dir" -type f \( -name container.log -o -name shutdown.tsv -o -name result.json -o -name gazebo.log -o -name bridge.log -o -name detector.log -o -name server-stop.log -o -name tf.log \) | while read -r f; do
               rel="${f#"$dir"/}";mkdir -p "$dest/$(dirname "$rel")";tail -c 65536 "$f" > "$dest/$rel"
             done
-            find "$dir" -name residual.json -o -name metrics.json -o -name record_result.json -o -name replay.json -o -name cube-result.json -o -name nav2-plugin-audit.json | while read -r f; do
+            find "$dir" -name residual.json -o -name metrics.json -o -name record_result.json -o -name replay.json -o -name cube-result.json -o -name nav2-plugin-audit.json -o -name 'detector-shutdown-probe-*.json' | while read -r f; do
               rel="${f#"$dir"/}";mkdir -p "$dest/$(dirname "$rel")";cp "$f" "$dest/$rel"
             done
           done
