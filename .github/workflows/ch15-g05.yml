@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   g05:
-    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.title, '[RUN G05]')))
+    if: github.repository == 'silverbjin/Pysical_AI_ROS2' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && (contains(github.event.pull_request.title, '[RUN G05]') || contains(github.event.pull_request.title, '[RUN G05 REPLAY]'))))
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -34,6 +34,8 @@ jobs:
           lfs: false
       - name: Clean ROS build and actual recorded mock missions
         shell: bash
+        env:
+          G05_MODE: ${{ contains(github.event.pull_request.title, '[RUN G05 REPLAY]') && 'replay-only' || 'full' }}
         run: |
           set -euo pipefail
           mkdir -p g05-evidence
@@ -46,7 +48,7 @@ jobs:
           image=ros@sha256:5147d3ae250ce754afd399f6bfec15b33dd4e473ca357e30432a3182031bfad6
           docker pull "$image"
           docker image inspect "$image" > g05-evidence/image.json
-          docker run --rm --init -v "$PWD:/repo:ro" -v "$PWD/g05-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g05_ci.sh 2>&1 | tee g05-evidence/run.log
+          docker run --rm --init -e G05_MODE="$G05_MODE" -v "$PWD:/repo:ro" -v "$PWD/g05-evidence:/evidence" "$image" bash /repo/Ch15/scripts/g05_ci.sh 2>&1 | tee g05-evidence/run.log
       - name: Hash and preserve public receipts
         if: always()
         run: |

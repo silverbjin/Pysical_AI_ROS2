@@ -15,3 +15,5 @@ V4의 기록기 구독은 continuous telemetry Best Effort, MissionEvent 및 /tf
 V6에서는 G05 전용 Scan 노드가 독립 SingleThreadedExecutor에서 원본과 동일한 10Hz LaserScan을 발행합니다. 기존 Mock Action 서버는 Scan publisher를 제거하고, 실제 `/scan` 발행자 1개를 확인합니다. Fast DDS 비동기 모드는 G05 스크립트 내에서만 적용됩니다. F01은 실제 양의 `/ch15/cmd_vel_in`을 관측한 뒤 Scan 발행을 중단하며 명령을 생성하지 않습니다. 7개 프로세스 정상 종료와 `scan_source_trace.json`을 확인하십시오.
 
 V7 검증 후보: G05 스크립트에서만 Cyclone DDS 사용(`sudo apt install ros-jazzy-rmw-cyclonedds-cpp`). G03/G04 설정은 수정하지 않습니다. `executor_native_trace.json`에서 실제 미션 실행기의 ready_count, 수신 age, safety latch와 start 결과를 확인하십시오. V7 실제 인수 전까지 후보입니다.
+
+V7 actual normal/F01/F06 recording and analysis PASS. Replay allows only two data topics as before. ROS bag player internal `/events/read_split` must be exact `rosbag2_interfaces/msg/ReadSplitEvent` from `rosbag2_player`; not a playable data topic. Generated `/clock` one, control topics/services zero, full event payload/order match, terminal state match. V8 replay-only CI creates one fresh original normal MCAP then plays it in another domain; V7 F01/F06 reused. Full CI opt-in remains available.

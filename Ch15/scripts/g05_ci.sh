@@ -40,17 +40,25 @@ actual=get_rmw_implementation_identifier()
 assert actual=='rmw_cyclonedds_cpp'
 print(json.dumps(dict(rmw=actual,publication_mode=None)))
 PY
-# No motion. Qualify actual timing before any normal mission.
-timeout --signal=INT --kill-after=15s 60s python3 /repo/Ch15/tests/g05_scan_diag.py /evidence/cyclone-qualification --isolated-cyclone-qualify
-for row in normal:76 F01:77 F06:78; do
+# Full profile remains executable. Targeted replay uses accepted V7 timing/F01/F06 receipts.
+case "${G05_MODE:-full}" in
+ full)
+   timeout --signal=INT --kill-after=15s 60s python3 /repo/Ch15/tests/g05_scan_diag.py /evidence/cyclone-qualification --isolated-cyclone-qualify
+   cases=(normal:76 F01:77 F06:78);;
+ replay-only)
+   printf 'REUSE V7 run45949623564 artifact15176233329 source47bba1cc2769621ca68a4fffd025df384f1a755a timing/F01/F06 actual record and analysis; raw bag withheld, new normal only for actual replay\n' > /evidence/v7-reuse.txt
+   cases=(normal:76);;
+ *) exit 2;;
+esac
+for row in "${cases[@]}"; do
   mode="${row%:*}"; domain="${row#*:}"
   timeout --signal=INT --kill-after=20s 90s bash /repo/Ch15/scripts/record_mission.sh "$mode" "/evidence/$mode" "$domain"
   python3 /repo/Ch15/python/bag_to_csv.py "/evidence/$mode/bag" "/evidence/$mode/analysis"
   python3 /repo/Ch15/python/plot_mission.py "/evidence/$mode/analysis"
 done
 python3 - <<'PY'
-import csv,json,pathlib
-for mode in ('normal','F01','F06'):
+import csv,json,pathlib,os
+for mode in (('normal',) if os.getenv('G05_MODE')=='replay-only' else ('normal','F01','F06')):
  p=pathlib.Path('/evidence')/mode
  rows=list(csv.DictReader((p/'analysis/events.csv').open()))
  orig=[json.loads(x) for x in (p/'executor/mission-events.jsonl').read_text().splitlines()]
